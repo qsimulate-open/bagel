@@ -66,6 +66,7 @@ class Tensor_ {
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
+      allocated_ = true;
       return *this;
     }
 

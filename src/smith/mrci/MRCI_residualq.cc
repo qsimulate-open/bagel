@@ -766,29 +766,31 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task216->add_dep(task108);
   residualq->add_task(task216);
 
-  auto tensor217 = vector<shared_ptr<Tensor>>{I37, t2, v2_};
+  vector<IndexRange> I613_index = {virt_, active_, closed_, closed_};
+  auto I613 = make_shared<Tensor>(I613_index);
+  auto tensor217 = vector<shared_ptr<Tensor>>{I37, t2, I613};
   auto task217 = make_shared<Task217>(tensor217, pindex);
   task200->add_dep(task217);
   task217->add_dep(task108);
   residualq->add_task(task217);
 
-  vector<IndexRange> I616_index = {virt_, active_, closed_, closed_};
-  auto I616 = make_shared<Tensor>(I616_index);
-  auto tensor218 = vector<shared_ptr<Tensor>>{I37, t2, I616};
+  auto tensor218 = vector<shared_ptr<Tensor>>{I613, v2_};
   auto task218 = make_shared<Task218>(tensor218, pindex);
-  task200->add_dep(task218);
+  task217->add_dep(task218);
   task218->add_dep(task108);
   residualq->add_task(task218);
 
-  auto tensor219 = vector<shared_ptr<Tensor>>{I616, v2_};
+  vector<IndexRange> I616_index = {virt_, active_, closed_, closed_};
+  auto I616 = make_shared<Tensor>(I616_index);
+  auto tensor219 = vector<shared_ptr<Tensor>>{I37, t2, I616};
   auto task219 = make_shared<Task219>(tensor219, pindex);
-  task218->add_dep(task219);
+  task200->add_dep(task219);
   task219->add_dep(task108);
   residualq->add_task(task219);
 
-  auto tensor220 = vector<shared_ptr<Tensor>>{I37, v2_, t2};
+  auto tensor220 = vector<shared_ptr<Tensor>>{I616, v2_};
   auto task220 = make_shared<Task220>(tensor220, pindex);
-  task200->add_dep(task220);
+  task219->add_dep(task220);
   task220->add_dep(task108);
   residualq->add_task(task220);
 
@@ -1246,25 +1248,27 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task286->add_dep(task108);
   residualq->add_task(task286);
 
-  auto tensor287 = vector<shared_ptr<Tensor>>{I444, Gamma197_(), v2_};
+  vector<IndexRange> I445_index = {virt_, virt_, active_, active_};
+  auto I445 = make_shared<Tensor>(I445_index);
+  auto tensor287 = vector<shared_ptr<Tensor>>{I444, Gamma197_(), I445};
   auto task287 = make_shared<Task287>(tensor287, pindex);
   task286->add_dep(task287);
   task287->add_dep(task108);
   residualq->add_task(task287);
 
-  auto tensor288 = vector<shared_ptr<Tensor>>{I444, Gamma2_(), v2_};
+  auto tensor288 = vector<shared_ptr<Tensor>>{I445, v2_};
   auto task288 = make_shared<Task288>(tensor288, pindex);
-  task286->add_dep(task288);
+  task287->add_dep(task288);
   task288->add_dep(task108);
   residualq->add_task(task288);
 
-  auto tensor289 = vector<shared_ptr<Tensor>>{I444, Gamma155_(), v2_};
+  auto tensor289 = vector<shared_ptr<Tensor>>{I444, Gamma2_(), v2_};
   auto task289 = make_shared<Task289>(tensor289, pindex);
   task286->add_dep(task289);
   task289->add_dep(task108);
   residualq->add_task(task289);
 
-  auto tensor290 = vector<shared_ptr<Tensor>>{I444, v2_, Gamma197_()};
+  auto tensor290 = vector<shared_ptr<Tensor>>{I444, Gamma155_(), v2_};
   auto task290 = make_shared<Task290>(tensor290, pindex);
   task286->add_dep(task290);
   task290->add_dep(task108);
@@ -3602,7 +3606,7 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task635->add_dep(task108);
   residualq->add_task(task635);
 
-  vector<IndexRange> I192_index = {active_, closed_};
+  vector<IndexRange> I192_index = {closed_, active_};
   auto I192 = make_shared<Tensor>(I192_index);
   auto tensor636 = vector<shared_ptr<Tensor>>{I162, t2, I192};
   auto task636 = make_shared<Task636>(tensor636, pindex);
@@ -3610,7 +3614,7 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task636->add_dep(task108);
   residualq->add_task(task636);
 
-  auto tensor637 = vector<shared_ptr<Tensor>>{I192, h1_, Gamma32_()};
+  auto tensor637 = vector<shared_ptr<Tensor>>{I192, Gamma32_(), h1_};
   auto task637 = make_shared<Task637>(tensor637, pindex);
   task636->add_dep(task637);
   task637->add_dep(task108);
@@ -4291,7 +4295,7 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task730->add_dep(task108);
   residualq->add_task(task730);
 
-  vector<IndexRange> I198_index = {active_, active_, virt_, closed_};
+  vector<IndexRange> I198_index = {virt_, closed_, active_, active_};
   auto I198 = make_shared<Tensor>(I198_index);
   auto tensor731 = vector<shared_ptr<Tensor>>{I194, h1_, I198};
   auto task731 = make_shared<Task731>(tensor731, pindex);
@@ -4299,7 +4303,7 @@ shared_ptr<Queue> MRCI::MRCI::make_residualq(const bool reset, const bool diagon
   task731->add_dep(task108);
   residualq->add_task(task731);
 
-  auto tensor732 = vector<shared_ptr<Tensor>>{I198, t2, Gamma27_()};
+  auto tensor732 = vector<shared_ptr<Tensor>>{I198, Gamma27_(), t2};
   auto task732 = make_shared<Task732>(tensor732, pindex);
   task731->add_dep(task732);
   task732->add_dep(task108);

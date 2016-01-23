@@ -41,27 +41,27 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   auto task967 = make_shared<Task967>(tensor967, reset);
   normq->add_task(task967);
 
-  vector<IndexRange> I1774_index = {closed_, closed_, active_, active_};
+  vector<IndexRange> I1774_index = {active_, active_, closed_, closed_};
   auto I1774 = make_shared<Tensor>(I1774_index);
   auto tensor968 = vector<shared_ptr<Tensor>>{n, I1774};
   auto task968 = make_shared<Task968>(tensor968, pindex);
   task968->add_dep(task967);
   normq->add_task(task968);
 
-  auto tensor969 = vector<shared_ptr<Tensor>>{I1774, Gamma0_(), t2};
+  auto tensor969 = vector<shared_ptr<Tensor>>{I1774, t2, Gamma0_()};
   auto task969 = make_shared<Task969>(tensor969, pindex);
   task968->add_dep(task969);
   task969->add_dep(task967);
   normq->add_task(task969);
 
-  vector<IndexRange> I1776_index = {closed_, active_, active_, active_};
+  vector<IndexRange> I1776_index = {active_, active_, active_, closed_};
   auto I1776 = make_shared<Tensor>(I1776_index);
   auto tensor970 = vector<shared_ptr<Tensor>>{n, I1776};
   auto task970 = make_shared<Task970>(tensor970, pindex);
   task970->add_dep(task967);
   normq->add_task(task970);
 
-  auto tensor971 = vector<shared_ptr<Tensor>>{I1776, Gamma4_(), t2};
+  auto tensor971 = vector<shared_ptr<Tensor>>{I1776, t2, Gamma4_()};
   auto task971 = make_shared<Task971>(tensor971, pindex);
   task970->add_dep(task971);
   task971->add_dep(task967);
@@ -80,7 +80,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task973->add_dep(task967);
   normq->add_task(task973);
 
-  auto tensor974 = vector<shared_ptr<Tensor>>{I1778, Gamma12_(), t2};
+  auto tensor974 = vector<shared_ptr<Tensor>>{I1778, t2, Gamma12_()};
   auto task974 = make_shared<Task974>(tensor974, pindex);
   task972->add_dep(task974);
   task974->add_dep(task967);
@@ -99,7 +99,7 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
   task976->add_dep(task967);
   normq->add_task(task976);
 
-  auto tensor977 = vector<shared_ptr<Tensor>>{I1782, Gamma29_(), t2};
+  auto tensor977 = vector<shared_ptr<Tensor>>{I1782, t2, Gamma29_()};
   auto task977 = make_shared<Task977>(tensor977, pindex);
   task975->add_dep(task977);
   task977->add_dep(task967);
@@ -159,33 +159,33 @@ shared_ptr<Queue> MRCI::MRCI::make_normq(const bool reset, const bool diagonal) 
     normq->add_task(task984);
   }
 
-  vector<IndexRange> I1794_index = {virt_, closed_, virt_, active_};
+  vector<IndexRange> I1794_index = {active_, virt_, closed_, virt_};
   auto I1794 = make_shared<Tensor>(I1794_index);
   auto tensor985 = vector<shared_ptr<Tensor>>{n, I1794};
   auto task985 = make_shared<Task985>(tensor985, pindex);
   task985->add_dep(task967);
   normq->add_task(task985);
 
-  auto tensor986 = vector<shared_ptr<Tensor>>{I1794, Gamma32_(), t2};
+  auto tensor986 = vector<shared_ptr<Tensor>>{I1794, t2, Gamma32_()};
   auto task986 = make_shared<Task986>(tensor986, pindex);
   task985->add_dep(task986);
   task986->add_dep(task967);
   normq->add_task(task986);
 
-  auto tensor987 = vector<shared_ptr<Tensor>>{I1794, t2, Gamma32_()};
+  auto tensor987 = vector<shared_ptr<Tensor>>{I1794, Gamma32_(), t2};
   auto task987 = make_shared<Task987>(tensor987, pindex);
   task985->add_dep(task987);
   task987->add_dep(task967);
   normq->add_task(task987);
 
-  vector<IndexRange> I1798_index = {virt_, virt_, active_, active_};
+  vector<IndexRange> I1798_index = {active_, active_, virt_, virt_};
   auto I1798 = make_shared<Tensor>(I1798_index);
   auto tensor988 = vector<shared_ptr<Tensor>>{n, I1798};
   auto task988 = make_shared<Task988>(tensor988, pindex);
   task988->add_dep(task967);
   normq->add_task(task988);
 
-  auto tensor989 = vector<shared_ptr<Tensor>>{I1798, Gamma51_(), t2};
+  auto tensor989 = vector<shared_ptr<Tensor>>{I1798, t2, Gamma51_()};
   auto task989 = make_shared<Task989>(tensor989, pindex);
   task988->add_dep(task989);
   task989->add_dep(task967);

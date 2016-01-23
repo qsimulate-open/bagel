@@ -38,7 +38,8 @@ void Task250::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -57,7 +58,7 @@ void Task250::Task_local::compute() {
     }
   }
   sort_indices<2,1,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), c3.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task251::Task_local::compute() {
@@ -66,7 +67,8 @@ void Task251::Task_local::compute() {
   const Index x1 = b(2);
   const Index x0 = b(3);
   // tensor label: I402
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x1, x0);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x1, x0)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x1, x0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x1, x0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x1, x0), 0.0);
   for (auto& x3 : *range_[1]) {
@@ -85,7 +87,7 @@ void Task251::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x1.size(), x0.size(), c1.size(), c4.size());
-  out()->put_block(odata, c1, c4, x1, x0);
+  out()->add_block(odata, c1, c4, x1, x0);
 }
 
 void Task252::Task_local::compute() {
@@ -94,7 +96,8 @@ void Task252::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -113,7 +116,7 @@ void Task252::Task_local::compute() {
     }
   }
   sort_indices<0,2,3,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task253::Task_local::compute() {
@@ -122,7 +125,8 @@ void Task253::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I405
-  std::unique_ptr<double[]> odata = out()->move_block(c3, x0, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, x0, x2, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -143,7 +147,7 @@ void Task253::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x2.size(), x1.size(), c3.size());
-  out()->put_block(odata, c3, x0, x2, x1);
+  out()->add_block(odata, c3, x0, x2, x1);
 }
 
 void Task254::Task_local::compute() {
@@ -152,7 +156,8 @@ void Task254::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -171,7 +176,7 @@ void Task254::Task_local::compute() {
     }
   }
   sort_indices<2,0,3,1,1,1,1,1>(odata_sorted, odata, c3.size(), a2.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task255::Task_local::compute() {
@@ -180,7 +185,8 @@ void Task255::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I408
-  std::unique_ptr<double[]> odata = out()->move_block(c1, x0, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c1, x0, x2, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, x0, x2, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, x0, x2, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -201,7 +207,7 @@ void Task255::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x2.size(), x1.size(), c1.size());
-  out()->put_block(odata, c1, x0, x2, x1);
+  out()->add_block(odata, c1, x0, x2, x1);
 }
 
 void Task256::Task_local::compute() {
@@ -210,7 +216,8 @@ void Task256::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -229,7 +236,7 @@ void Task256::Task_local::compute() {
     }
   }
   sort_indices<0,2,3,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task257::Task_local::compute() {
@@ -238,7 +245,8 @@ void Task257::Task_local::compute() {
   const Index x1 = b(2);
   const Index x2 = b(3);
   // tensor label: I411
-  std::unique_ptr<double[]> odata = out()->move_block(c3, x0, x1, x2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, x0, x1, x2)]);
+  std::fill_n(odata.get(), out()->get_size(c3, x0, x1, x2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, x0, x1, x2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, x0, x1, x2), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -259,7 +267,7 @@ void Task257::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x1.size(), x2.size(), c3.size());
-  out()->put_block(odata, c3, x0, x1, x2);
+  out()->add_block(odata, c3, x0, x1, x2);
 }
 
 void Task258::Task_local::compute() {
@@ -268,7 +276,8 @@ void Task258::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -287,7 +296,7 @@ void Task258::Task_local::compute() {
     }
   }
   sort_indices<2,0,3,1,1,1,1,1>(odata_sorted, odata, c3.size(), a2.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task259::Task_local::compute() {
@@ -296,7 +305,8 @@ void Task259::Task_local::compute() {
   const Index x0 = b(2);
   const Index x2 = b(3);
   // tensor label: I414
-  std::unique_ptr<double[]> odata = out()->move_block(c1, x1, x0, x2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, x1, x0, x2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, x1, x0, x2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, x1, x0, x2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, x1, x0, x2), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -317,7 +327,7 @@ void Task259::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x1.size(), x0.size(), x2.size(), c1.size());
-  out()->put_block(odata, c1, x1, x0, x2);
+  out()->add_block(odata, c1, x1, x0, x2);
 }
 
 void Task260::Task_local::compute() {
@@ -326,7 +336,8 @@ void Task260::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -345,7 +356,7 @@ void Task260::Task_local::compute() {
     }
   }
   sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), c1.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task261::Task_local::compute() {
@@ -354,7 +365,8 @@ void Task261::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I417
-  std::unique_ptr<double[]> odata = out()->move_block(c3, x0, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, x0, x2, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -375,7 +387,7 @@ void Task261::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x2.size(), x1.size(), c3.size());
-  out()->put_block(odata, c3, x0, x2, x1);
+  out()->add_block(odata, c3, x0, x2, x1);
 }
 
 void Task262::Task_local::compute() {
@@ -384,7 +396,8 @@ void Task262::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -403,7 +416,7 @@ void Task262::Task_local::compute() {
     }
   }
   sort_indices<2,1,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), c3.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task263::Task_local::compute() {
@@ -412,7 +425,8 @@ void Task263::Task_local::compute() {
   const Index x0 = b(2);
   const Index x1 = b(3);
   // tensor label: I420
-  std::unique_ptr<double[]> odata = out()->move_block(c1, x2, x0, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, x2, x0, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c1, x2, x0, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, x2, x0, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, x2, x0, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -433,7 +447,7 @@ void Task263::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x2.size(), x0.size(), x1.size(), c1.size());
-  out()->put_block(odata, c1, x2, x0, x1);
+  out()->add_block(odata, c1, x2, x0, x1);
 }
 
 void Task264::Task_local::compute() {
@@ -442,7 +456,8 @@ void Task264::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -461,7 +476,7 @@ void Task264::Task_local::compute() {
     }
   }
   sort_indices<0,2,3,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task265::Task_local::compute() {
@@ -470,7 +485,8 @@ void Task265::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I423
-  std::unique_ptr<double[]> odata = out()->move_block(c3, x0, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, x0, x2, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, x0, x2, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -491,7 +507,7 @@ void Task265::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x2.size(), x1.size(), c3.size());
-  out()->put_block(odata, c3, x0, x2, x1);
+  out()->add_block(odata, c3, x0, x2, x1);
 }
 
 void Task266::Task_local::compute() {
@@ -500,7 +516,8 @@ void Task266::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -519,7 +536,7 @@ void Task266::Task_local::compute() {
     }
   }
   sort_indices<2,0,3,1,1,1,1,1>(odata_sorted, odata, c3.size(), a2.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task267::Task_local::compute() {
@@ -528,7 +545,8 @@ void Task267::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I426
-  std::unique_ptr<double[]> odata = out()->move_block(c1, x0, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c1, x0, x2, x1), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, x0, x2, x1)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, x0, x2, x1), 0.0);
   for (auto& x5 : *range_[1]) {
@@ -549,7 +567,7 @@ void Task267::Task_local::compute() {
     }
   }
   sort_indices<3,0,1,2,1,1,1,1>(odata_sorted, odata, x0.size(), x2.size(), x1.size(), c1.size());
-  out()->put_block(odata, c1, x0, x2, x1);
+  out()->add_block(odata, c1, x0, x2, x1);
 }
 
 void Task268::Task_local::compute() {
@@ -558,7 +576,8 @@ void Task268::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -575,14 +594,15 @@ void Task268::Task_local::compute() {
            1.0, odata_sorted, c1.size()*c3.size()*a2.size());
   }
   sort_indices<0,1,3,2,1,1,1,1>(odata_sorted, odata, c1.size(), c3.size(), a2.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task269::Task_local::compute() {
   const Index c4 = b(0);
   const Index x0 = b(1);
   // tensor label: I429
-  std::unique_ptr<double[]> odata = out()->move_block(c4, x0);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c4, x0)]);
+  std::fill_n(odata.get(), out()->get_size(c4, x0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c4, x0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c4, x0), 0.0);
   for (auto& x3 : *range_[1]) {
@@ -603,7 +623,7 @@ void Task269::Task_local::compute() {
     }
   }
   sort_indices<1,0,1,1,1,1>(odata_sorted, odata, x0.size(), c4.size());
-  out()->put_block(odata, c4, x0);
+  out()->add_block(odata, c4, x0);
 }
 
 void Task270::Task_local::compute() {
@@ -612,7 +632,8 @@ void Task270::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -629,14 +650,15 @@ void Task270::Task_local::compute() {
            1.0, odata_sorted, c1.size()*a2.size()*c3.size());
   }
   sort_indices<0,2,3,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task271::Task_local::compute() {
   const Index c4 = b(0);
   const Index x0 = b(1);
   // tensor label: I432
-  std::unique_ptr<double[]> odata = out()->move_block(c4, x0);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c4, x0)]);
+  std::fill_n(odata.get(), out()->get_size(c4, x0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c4, x0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c4, x0), 0.0);
   for (auto& x3 : *range_[1]) {
@@ -657,7 +679,7 @@ void Task271::Task_local::compute() {
     }
   }
   sort_indices<1,0,1,1,1,1>(odata_sorted, odata, x0.size(), c4.size());
-  out()->put_block(odata, c4, x0);
+  out()->add_block(odata, c4, x0);
 }
 
 void Task272::Task_local::compute() {
@@ -666,7 +688,8 @@ void Task272::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -685,7 +708,7 @@ void Task272::Task_local::compute() {
     }
   }
   sort_indices<2,1,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), c3.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task273::Task_local::compute() {
@@ -694,7 +717,8 @@ void Task273::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I435
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -713,7 +737,7 @@ void Task273::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), c1.size(), c4.size());
-  out()->put_block(odata, c1, c4, x0, x3);
+  out()->add_block(odata, c1, c4, x0, x3);
 }
 
 void Task274::Task_local::compute() {
@@ -722,7 +746,8 @@ void Task274::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I436
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x2, x1), 0.0);
   {
     // tensor label: v2
     std::unique_ptr<double[]> i0data = in(0)->get_block(c1, c4, x2, x1);
@@ -738,7 +763,7 @@ void Task274::Task_local::compute() {
     std::unique_ptr<double[]> i2data = in(0)->get_block(x2, x1, c1, c4);
     sort_indices<2,3,0,1,1,1,-1,1>(i2data, odata, x2.size(), x1.size(), c1.size(), c4.size());
   }
-  out()->put_block(odata, c1, c4, x2, x1);
+  out()->add_block(odata, c1, c4, x2, x1);
 }
 
 void Task275::Task_local::compute() {
@@ -747,7 +772,8 @@ void Task275::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I435
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -766,7 +792,7 @@ void Task275::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), c1.size(), c4.size());
-  out()->put_block(odata, c1, c4, x0, x3);
+  out()->add_block(odata, c1, c4, x0, x3);
 }
 
 void Task276::Task_local::compute() {
@@ -775,7 +801,8 @@ void Task276::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -794,7 +821,7 @@ void Task276::Task_local::compute() {
     }
   }
   sort_indices<2,0,3,1,1,1,1,1>(odata_sorted, odata, c3.size(), a2.size(), c1.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task277::Task_local::compute() {
@@ -803,7 +830,8 @@ void Task277::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I438
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -822,7 +850,7 @@ void Task277::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), c1.size(), c4.size());
-  out()->put_block(odata, c1, c4, x0, x3);
+  out()->add_block(odata, c1, c4, x0, x3);
 }
 
 void Task278::Task_local::compute() {
@@ -831,7 +859,8 @@ void Task278::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I439
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x2, x1), 0.0);
   {
     // tensor label: v2
     std::unique_ptr<double[]> i0data = in(0)->get_block(c1, c4, x2, x1);
@@ -842,7 +871,7 @@ void Task278::Task_local::compute() {
     std::unique_ptr<double[]> i1data = in(0)->get_block(x2, x1, c1, c4);
     sort_indices<2,3,0,1,1,1,1,2>(i1data, odata, x2.size(), x1.size(), c1.size(), c4.size());
   }
-  out()->put_block(odata, c1, c4, x2, x1);
+  out()->add_block(odata, c1, c4, x2, x1);
 }
 
 void Task279::Task_local::compute() {
@@ -851,7 +880,8 @@ void Task279::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I438
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -870,7 +900,7 @@ void Task279::Task_local::compute() {
     }
   }
   sort_indices<2,3,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c1.size(), c4.size());
-  out()->put_block(odata, c1, c4, x0, x3);
+  out()->add_block(odata, c1, c4, x0, x3);
 }
 
 void Task280::Task_local::compute() {
@@ -879,7 +909,8 @@ void Task280::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I438
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -898,7 +929,7 @@ void Task280::Task_local::compute() {
     }
   }
   sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c4.size(), c1.size());
-  out()->put_block(odata, c1, c4, x0, x3);
+  out()->add_block(odata, c1, c4, x0, x3);
 }
 
 void Task281::Task_local::compute() {
@@ -907,7 +938,8 @@ void Task281::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -926,7 +958,7 @@ void Task281::Task_local::compute() {
     }
   }
   sort_indices<1,2,3,0,1,1,1,1>(odata_sorted, odata, a2.size(), c1.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task282::Task_local::compute() {
@@ -935,7 +967,8 @@ void Task282::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I441
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -954,7 +987,7 @@ void Task282::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), c3.size(), c4.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task283::Task_local::compute() {
@@ -963,7 +996,8 @@ void Task283::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I442
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x2, x1), 0.0);
   {
     // tensor label: v2
     std::unique_ptr<double[]> i0data = in(0)->get_block(c3, c4, x2, x1);
@@ -974,7 +1008,7 @@ void Task283::Task_local::compute() {
     std::unique_ptr<double[]> i1data = in(0)->get_block(x2, x1, c3, c4);
     sort_indices<2,3,0,1,1,1,1,2>(i1data, odata, x2.size(), x1.size(), c3.size(), c4.size());
   }
-  out()->put_block(odata, c3, c4, x2, x1);
+  out()->add_block(odata, c3, c4, x2, x1);
 }
 
 void Task284::Task_local::compute() {
@@ -983,7 +1017,8 @@ void Task284::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I441
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -1002,7 +1037,7 @@ void Task284::Task_local::compute() {
     }
   }
   sort_indices<2,3,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c3.size(), c4.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task285::Task_local::compute() {
@@ -1011,7 +1046,8 @@ void Task285::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I441
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1030,7 +1066,7 @@ void Task285::Task_local::compute() {
     }
   }
   sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c4.size(), c3.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task286::Task_local::compute() {
@@ -1039,7 +1075,8 @@ void Task286::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& a4 : *range_[2]) {
@@ -1058,7 +1095,7 @@ void Task286::Task_local::compute() {
     }
   }
   sort_indices<1,0,3,2,1,1,1,1>(odata_sorted, odata, c3.size(), c1.size(), a2.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task287::Task_local::compute() {
@@ -1067,7 +1104,8 @@ void Task287::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I444
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1076,26 +1114,48 @@ void Task287::Task_local::compute() {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x0, x3, x2, x1);
       std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, x3, x2, x1)]);
       sort_indices<2,3,0,1,0,1,1,1>(i0data, i0data_sorted, x0.size(), x3.size(), x2.size(), x1.size());
-      // tensor label: v2
+      // tensor label: I445
       std::unique_ptr<double[]> i1data = in(1)->get_block(a4, a2, x2, x1);
       std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(a4, a2, x2, x1)]);
-      sort_indices<2,3,0,1,0,1,-1,2>(i1data, i1data_sorted, a4.size(), a2.size(), x2.size(), x1.size());
+      sort_indices<2,3,0,1,0,1,1,1>(i1data, i1data_sorted, a4.size(), a2.size(), x2.size(), x1.size());
       dgemm_("T", "N", x0.size()*x3.size(), a4.size()*a2.size(), x2.size()*x1.size(),
              1.0, i0data_sorted, x2.size()*x1.size(), i1data_sorted, x2.size()*x1.size(),
              1.0, odata_sorted, x0.size()*x3.size());
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), a4.size(), a2.size());
-  out()->put_block(odata, a4, a2, x0, x3);
+  out()->add_block(odata, a4, a2, x0, x3);
 }
 
 void Task288::Task_local::compute() {
   const Index a4 = b(0);
   const Index a2 = b(1);
+  const Index x2 = b(2);
+  const Index x1 = b(3);
+  // tensor label: I445
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x2, x1), 0.0);
+  {
+    // tensor label: v2
+    std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a2, x2, x1);
+    sort_indices<0,1,2,3,1,1,-1,2>(i0data, odata, a4.size(), a2.size(), x2.size(), x1.size());
+  }
+  {
+    // tensor label: v2
+    std::unique_ptr<double[]> i1data = in(0)->get_block(x2, x1, a4, a2);
+    sort_indices<2,3,0,1,1,1,-1,2>(i1data, odata, x2.size(), x1.size(), a4.size(), a2.size());
+  }
+  out()->add_block(odata, a4, a2, x2, x1);
+}
+
+void Task289::Task_local::compute() {
+  const Index a4 = b(0);
+  const Index a2 = b(1);
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I444
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -1114,16 +1174,17 @@ void Task288::Task_local::compute() {
     }
   }
   sort_indices<2,3,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), a4.size(), a2.size());
-  out()->put_block(odata, a4, a2, x0, x3);
+  out()->add_block(odata, a4, a2, x0, x3);
 }
 
-void Task289::Task_local::compute() {
+void Task290::Task_local::compute() {
   const Index a4 = b(0);
   const Index a2 = b(1);
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I444
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1142,35 +1203,7 @@ void Task289::Task_local::compute() {
     }
   }
   sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), a2.size(), a4.size());
-  out()->put_block(odata, a4, a2, x0, x3);
-}
-
-void Task290::Task_local::compute() {
-  const Index a4 = b(0);
-  const Index a2 = b(1);
-  const Index x0 = b(2);
-  const Index x3 = b(3);
-  // tensor label: I444
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
-  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
-  std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
-  for (auto& x2 : *range_[1]) {
-    for (auto& x1 : *range_[1]) {
-      // tensor label: v2
-      std::unique_ptr<double[]> i0data = in(0)->get_block(x2, x1, a4, a2);
-      std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x2, x1, a4, a2)]);
-      sort_indices<0,1,2,3,0,1,1,1>(i0data, i0data_sorted, x2.size(), x1.size(), a4.size(), a2.size());
-      // tensor label: Gamma197
-      std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x3, x2, x1);
-      std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x3, x2, x1)]);
-      sort_indices<2,3,0,1,0,1,-1,2>(i1data, i1data_sorted, x0.size(), x3.size(), x2.size(), x1.size());
-      dgemm_("T", "N", a4.size()*a2.size(), x0.size()*x3.size(), x2.size()*x1.size(),
-             1.0, i0data_sorted, x2.size()*x1.size(), i1data_sorted, x2.size()*x1.size(),
-             1.0, odata_sorted, a4.size()*a2.size());
-    }
-  }
-  sort_indices<0,1,2,3,1,1,1,1>(odata_sorted, odata, a4.size(), a2.size(), x0.size(), x3.size());
-  out()->put_block(odata, a4, a2, x0, x3);
+  out()->add_block(odata, a4, a2, x0, x3);
 }
 
 void Task291::Task_local::compute() {
@@ -1179,7 +1212,8 @@ void Task291::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& c4 : *range_[0]) {
@@ -1198,7 +1232,7 @@ void Task291::Task_local::compute() {
     }
   }
   sort_indices<0,2,3,1,1,1,1,1>(odata_sorted, odata, c1.size(), a2.size(), c3.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task292::Task_local::compute() {
@@ -1207,7 +1241,8 @@ void Task292::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I447
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1226,7 +1261,7 @@ void Task292::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), c3.size(), c4.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task293::Task_local::compute() {
@@ -1235,7 +1270,8 @@ void Task293::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I448
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x2, x1), 0.0);
   {
     // tensor label: v2
     std::unique_ptr<double[]> i0data = in(0)->get_block(c3, c4, x2, x1);
@@ -1246,7 +1282,7 @@ void Task293::Task_local::compute() {
     std::unique_ptr<double[]> i1data = in(0)->get_block(x2, x1, c3, c4);
     sort_indices<2,3,0,1,1,1,-1,1>(i1data, odata, x2.size(), x1.size(), c3.size(), c4.size());
   }
-  out()->put_block(odata, c3, c4, x2, x1);
+  out()->add_block(odata, c3, c4, x2, x1);
 }
 
 void Task294::Task_local::compute() {
@@ -1255,7 +1291,8 @@ void Task294::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I447
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -1274,7 +1311,7 @@ void Task294::Task_local::compute() {
     }
   }
   sort_indices<2,3,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c3.size(), c4.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task295::Task_local::compute() {
@@ -1283,7 +1320,8 @@ void Task295::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I447
-  std::unique_ptr<double[]> odata = out()->move_block(c3, c4, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c4, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c3, c4, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c3, c4, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1302,7 +1340,7 @@ void Task295::Task_local::compute() {
     }
   }
   sort_indices<3,2,1,0,1,1,1,1>(odata_sorted, odata, x3.size(), x0.size(), c4.size(), c3.size());
-  out()->put_block(odata, c3, c4, x0, x3);
+  out()->add_block(odata, c3, c4, x0, x3);
 }
 
 void Task296::Task_local::compute() {
@@ -1311,7 +1349,8 @@ void Task296::Task_local::compute() {
   const Index x0 = b(2);
   const Index a2 = b(3);
   // tensor label: I27
-  std::unique_ptr<double[]> odata = out()->move_block(c1, c3, x0, a2);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(c1, c3, x0, a2)]);
+  std::fill_n(odata.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(c1, c3, x0, a2)]);
   std::fill_n(odata_sorted.get(), out()->get_size(c1, c3, x0, a2), 0.0);
   for (auto& a4 : *range_[2]) {
@@ -1330,7 +1369,7 @@ void Task296::Task_local::compute() {
     }
   }
   sort_indices<0,1,3,2,1,1,1,1>(odata_sorted, odata, c1.size(), c3.size(), a2.size(), x0.size());
-  out()->put_block(odata, c1, c3, x0, a2);
+  out()->add_block(odata, c1, c3, x0, a2);
 }
 
 void Task297::Task_local::compute() {
@@ -1339,7 +1378,8 @@ void Task297::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I450
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   for (auto& x2 : *range_[1]) {
@@ -1358,7 +1398,7 @@ void Task297::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), a4.size(), a2.size());
-  out()->put_block(odata, a4, a2, x0, x3);
+  out()->add_block(odata, a4, a2, x0, x3);
 }
 
 void Task298::Task_local::compute() {
@@ -1367,7 +1407,8 @@ void Task298::Task_local::compute() {
   const Index x2 = b(2);
   const Index x1 = b(3);
   // tensor label: I451
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x2, x1);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x2, x1), 0.0);
   {
     // tensor label: v2
     std::unique_ptr<double[]> i0data = in(0)->get_block(a4, a2, x2, x1);
@@ -1383,7 +1424,7 @@ void Task298::Task_local::compute() {
     std::unique_ptr<double[]> i2data = in(0)->get_block(x2, x1, a4, a2);
     sort_indices<2,3,0,1,1,1,1,1>(i2data, odata, x2.size(), x1.size(), a4.size(), a2.size());
   }
-  out()->put_block(odata, a4, a2, x2, x1);
+  out()->add_block(odata, a4, a2, x2, x1);
 }
 
 void Task299::Task_local::compute() {
@@ -1392,7 +1433,8 @@ void Task299::Task_local::compute() {
   const Index x0 = b(2);
   const Index x3 = b(3);
   // tensor label: I450
-  std::unique_ptr<double[]> odata = out()->move_block(a4, a2, x0, x3);
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a4, a2, x0, x3)]);
+  std::fill_n(odata.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(a4, a2, x0, x3)]);
   std::fill_n(odata_sorted.get(), out()->get_size(a4, a2, x0, x3), 0.0);
   for (auto& x1 : *range_[1]) {
@@ -1411,7 +1453,7 @@ void Task299::Task_local::compute() {
     }
   }
   sort_indices<2,3,0,1,1,1,1,1>(odata_sorted, odata, x0.size(), x3.size(), a4.size(), a2.size());
-  out()->put_block(odata, a4, a2, x0, x3);
+  out()->add_block(odata, a4, a2, x0, x3);
 }
 
 #endif

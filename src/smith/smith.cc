@@ -46,10 +46,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
-#if 0
   } else if (method == "mrci") {
     algo_ = make_shared<MRCI::MRCI>(info);
-#endif
   } else {
 #else
   {
