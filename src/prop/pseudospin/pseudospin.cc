@@ -37,6 +37,19 @@ using namespace std;
 using namespace bagel;
 
 
+namespace {
+// simple local function to convert N electrons into S string - for printout
+string spin_val(const int nspin) {
+  string out = to_string(nspin / 2);
+  if (nspin % 2 == 1)
+    out += " 1/2";
+  if (nspin == 1)
+    out.erase(0, 2);
+  return out;
+}
+}
+
+
 Stevens_Operator::Stevens_Operator(shared_ptr<const ZMatrix> _mat, const int _ord, const int _ind)
  : nspin_(_mat->ndim() - 1), matrix_(_mat), order_(_ord), index_(_ind) {
   coeff_ = nan("");
@@ -114,7 +127,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   cout << setprecision(8);
   cout << endl << "    ********      " << endl;
-  cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << nspin_ / 2 << (nspin_ % 2 == 0 ? "" : " 1/2") << endl;
+  cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << spin_val(nspin_) << endl;
 
   vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
 
