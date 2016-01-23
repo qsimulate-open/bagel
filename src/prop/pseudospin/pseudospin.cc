@@ -530,6 +530,33 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
     }
   }
 
+  // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
+  const shared_ptr<const PTree> phase_input = zfci.idata()->get_child_optional("aniso_phases");
+  if (phase_input) {
+    vector<double> phase_adjust = {};
+    for (auto& i : *phase_input)
+      phase_adjust.push_back(lexical_cast<double>(i->data()));
+
+    if (phase_adjust.size() != nspin1_ / 2)
+      throw runtime_error("Sorry, you seem to be trying to adjust the phase of pseudospin eigenfunctions.  We expect " + to_string(nspin1_/2) + " phases, one for each pair of time-reversal symmetric states.");
+
+    for (int i = 0; i != nspin1_ / 2; ++i) {
+      const complex<double> adjustment = std::polar(1.0, phase_adjust[i]);
+      cout << "  **  The phase of the m_s = " << " " + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << std::setw(11) <<  phase_adjust[i] << " radians." << endl;
+      cout << "  **  The phase of the m_s = " << "-" + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << std::setw(11) << -phase_adjust[i] << " radians." << endl;
+      for (int j = 0; j != nspin1_; ++j) {
+        transform.element(j, i) = adjustment * transform.element(j, i);
+        transform.element(j, nspin_ - i) = std::conj(adjustment) * transform.element(j, nspin_ - i);
+      }
+    }
+    cout << endl;
+  }
+
+  const double phase_input_2 = zfci.idata()->get<double>("aniso_phase_full", 0.0);
+  if (phase_input_2 != 0.0) {
+    transform.scale(std::polar(1.0, phase_input_2));
+    cout << "  **  The phase of all pseudospin functions will be shifted by " << setw(4) <<  phase_input_2 << " radians.  (This should have no effect.)" << endl << endl;
+  }
 
 #ifndef NDEBUG
   {
@@ -587,7 +614,10 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
       const double val = (k % 2 == 0) ? -1.0 : 1.0;
       trev_target->element(k, nspin_ - k) = val;
     }
-    assert((*trev_s - *trev_target).rms() < 1.0e-10);
+    if (phase_input_2 != 0.0) {
+      trev_target->scale(std::polar(1.0, -2.0 * phase_input_2));
+      assert((*trev_s - *trev_target).rms() < 1.0e-10);
+    }
   }
 #endif
 
