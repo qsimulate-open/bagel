@@ -109,11 +109,6 @@ class Tensor_ {
     }
 
     template<typename ...args>
-    std::unique_ptr<DataType[]> move_block(args&& ...p) {
-      return data_->move_block(std::forward<args>(p)...);
-    }
-
-    template<typename ...args>
     void put_block(std::unique_ptr<DataType[]>& o, args&& ...p) {
       data_->put_block(o, std::forward<args>(p)...);
     }

@@ -87,7 +87,6 @@ class StorageIncore {
     bool initialized_;
 
     std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
-    std::unique_ptr<DataType[]> move_block_(const size_t& key);
     void put_block_(std::unique_ptr<DataType[]>& dat, const size_t& key);
     void add_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
 
@@ -109,20 +108,6 @@ class StorageIncore {
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7) const;
     virtual std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const;
-
-    virtual std::unique_ptr<DataType[]> move_block();
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                   const Index& i4);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                   const Index& i4, const Index& i5);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                   const Index& i4, const Index& i5, const Index& i6);
-    virtual std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7);
 
     virtual void put_block(std::unique_ptr<DataType[]>& dat);
     virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0);

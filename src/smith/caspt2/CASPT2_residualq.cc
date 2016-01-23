@@ -329,7 +329,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_residualq(const bool reset, const bool di
   task112->add_dep(task69);
   residualq->add_task(task112);
 
-  vector<IndexRange> I66_index = {virt_, closed_, active_, active_};
+  vector<IndexRange> I66_index = {active_, active_, virt_, closed_};
   auto I66 = make_shared<Tensor>(I66_index);
   auto tensor113 = vector<shared_ptr<Tensor>>{I31, f1_, I66};
   auto task113 = make_shared<Task113>(tensor113, pindex);
@@ -337,17 +337,15 @@ shared_ptr<Queue> CASPT2::CASPT2::make_residualq(const bool reset, const bool di
   task113->add_dep(task69);
   residualq->add_task(task113);
 
-  vector<IndexRange> I67_index = {active_, virt_, closed_, active_};
-  auto I67 = make_shared<Tensor>(I67_index);
-  auto tensor114 = vector<shared_ptr<Tensor>>{I66, Gamma12_(), I67};
+  auto tensor114 = vector<shared_ptr<Tensor>>{I66, t2, Gamma12_()};
   auto task114 = make_shared<Task114>(tensor114, pindex);
   task113->add_dep(task114);
   task114->add_dep(task69);
   residualq->add_task(task114);
 
-  auto tensor115 = vector<shared_ptr<Tensor>>{I67, t2};
+  auto tensor115 = vector<shared_ptr<Tensor>>{I66, Gamma12_(), t2};
   auto task115 = make_shared<Task115>(tensor115, pindex);
-  task114->add_dep(task115);
+  task113->add_dep(task115);
   task115->add_dep(task69);
   residualq->add_task(task115);
 

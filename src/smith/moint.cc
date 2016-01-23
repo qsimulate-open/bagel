@@ -47,6 +47,7 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
   data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value, unordered_set<size_t>{}, /*alloc*/true);
+  data_->zero();
   init();
 }
 
@@ -108,7 +109,8 @@ void K2ext<complex<double>>::init() {
             // contract
             // TODO form_4index function now generates global 4 index tensor. This should be localized.
             // conjugating because (ai|ai) is associated with an excitation operator
-            unique_ptr<complex<double>[]> target = data_->move_block(i0, i1, i2, i3);
+            unique_ptr<complex<double>[]> target(new complex<double>[data_->get_size(i0, i1, i2, i3)]);
+            fill_n(target.get(), data_->get_size(i0, i1, i2, i3), 0.0);
             {
               shared_ptr<ZMatrix> tmp = df01->form_4index(df23_2, 1.0)->get_conjg();
               blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
@@ -118,7 +120,7 @@ void K2ext<complex<double>>::init() {
               blas::ax_plus_y_n(gscale, tmp->data(), tmp->size(), target.get());
             }
             if (data_->is_local(i0, i1, i2, i3))
-              data_->put_block(target, i0, i1, i2, i3);
+              data_->add_block(target, i0, i1, i2, i3);
           }
         }
       }

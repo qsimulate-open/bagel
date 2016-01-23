@@ -83,56 +83,6 @@ unique_ptr<DataType[]> StorageKramers<DataType>::get_block(const Index& i0, cons
 
 
 template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block() {
-  return StorageIncore<DataType>::move_block_(generate_hash_key());
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0) {
-  return move_block_(i0);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1) {
-  return move_block_(i0, i1);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2) {
-  return move_block_(i0, i1, i2);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
-  return move_block_(i0, i1, i2, i3);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                            const Index& i4) {
-  return move_block_(i0, i1, i2, i3, i4);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                            const Index& i4, const Index& i5) {
-  return move_block_(i0, i1, i2, i3, i4, i5);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                            const Index& i4, const Index& i5, const Index& i6) {
-  return move_block_(i0, i1, i2, i3, i4, i5, i6);
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageKramers<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                            const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
-  return move_block_(i0, i1, i2, i3, i4, i5, i6, i7);
-}
-
-
-template<typename DataType>
 void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat) {
   put_block_(dat);
 }

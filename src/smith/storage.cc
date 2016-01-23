@@ -111,12 +111,6 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
 
 
 template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block_(const size_t& key) {
-  return get_block_(key);
-}
-
-
-template<typename DataType>
 void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size_t& key) {
   assert(initialized_);
   auto hash = hashtable_.find(key);
@@ -193,56 +187,6 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block(vector<Index> i) const {
   return get_block_(generate_hash_key(i));
-}
-
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block() {
-  return move_block_(generate_hash_key());
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0) {
-  return move_block_(generate_hash_key(i0));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1) {
-  return move_block_(generate_hash_key(i0, i1));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2) {
-  return move_block_(generate_hash_key(i0, i1, i2));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
-  return move_block_(generate_hash_key(i0, i1, i2, i3));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4) {
-  return move_block_(generate_hash_key(i0, i1, i2, i3, i4));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5) {
-  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5, const Index& i6) {
-  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
-}
-
-template<typename DataType>
-unique_ptr<DataType[]> StorageIncore<DataType>::move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
-  return move_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
 }
 
 

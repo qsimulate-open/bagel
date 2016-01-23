@@ -118,16 +118,6 @@ class StorageKramers : public StorageIncore<DataType> {
     }
 
     template<typename... args>
-    std::unique_ptr<DataType[]> move_block_(const args& ...key) {
-      // Use this function with caution. It creates a block with key if it is not present.
-      return move_block_(arg_convert(key...));
-    }
-
-    std::unique_ptr<DataType[]> move_block_(std::vector<Index> indices) {
-      return StorageIncore<DataType>::move_block_(generate_hash_key(indices));
-    }
-
-    template<typename... args>
     void put_block_(std::unique_ptr<DataType[]>& dat, const args& ...key) {
       put_block_(dat, arg_convert(key...));
     }
@@ -168,20 +158,6 @@ class StorageKramers : public StorageIncore<DataType> {
     std::unique_ptr<DataType[]> get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) const override;
     std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const override { assert(false); return std::unique_ptr<DataType[]>(); }
-
-    std::unique_ptr<DataType[]> move_block() override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                           const Index& i4) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                           const Index& i4, const Index& i5) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                           const Index& i4, const Index& i5, const Index& i6) override;
-    std::unique_ptr<DataType[]> move_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
 
     void put_block(std::unique_ptr<DataType[]>& dat) override;
     void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0) override;
