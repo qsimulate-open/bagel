@@ -40,6 +40,8 @@ namespace CASPT2{
 
 class Task50 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,3> in_;
     class Task_local : public SubTask<7,3> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -54,10 +56,8 @@ class Task50 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task50" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -67,6 +67,8 @@ std::cout << "Task50" << std::endl;
 
 class Task51 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<5,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -81,10 +83,8 @@ class Task51 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task51" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -94,6 +94,8 @@ std::cout << "Task51" << std::endl;
 
 class Task52 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,4> in_;
     class Task_local : public SubTask<7,4> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -108,10 +110,8 @@ class Task52 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task52" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -121,6 +121,8 @@ std::cout << "Task52" << std::endl;
 
 class Task53 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<5,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -135,10 +137,8 @@ class Task53 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task53" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -148,6 +148,8 @@ std::cout << "Task53" << std::endl;
 
 class Task54 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,4> in_;
     class Task_local : public SubTask<7,4> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -162,10 +164,8 @@ class Task54 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task54" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -175,6 +175,8 @@ std::cout << "Task54" << std::endl;
 
 class Task55 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<5,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -189,10 +191,8 @@ class Task55 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task55" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -202,6 +202,8 @@ std::cout << "Task55" << std::endl;
 
 class Task56 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -216,10 +218,8 @@ class Task56 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task56" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -229,6 +229,8 @@ std::cout << "Task56" << std::endl;
 
 class Task57 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<3,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -243,10 +245,8 @@ class Task57 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task57" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -256,6 +256,8 @@ std::cout << "Task57" << std::endl;
 
 class Task58 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -270,10 +272,8 @@ class Task58 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task58" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -283,6 +283,8 @@ std::cout << "Task58" << std::endl;
 
 class Task59 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -297,10 +299,8 @@ class Task59 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task59" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -310,6 +310,8 @@ std::cout << "Task59" << std::endl;
 
 class Task60 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -324,10 +326,8 @@ class Task60 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task60" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -337,6 +337,8 @@ std::cout << "Task60" << std::endl;
 
 class Task61 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,4> in_;
     class Task_local : public SubTask<9,4> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -351,10 +353,8 @@ class Task61 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task61" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -364,6 +364,8 @@ std::cout << "Task61" << std::endl;
 
 class Task62 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -378,10 +380,8 @@ class Task62 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task62" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -391,6 +391,8 @@ std::cout << "Task62" << std::endl;
 
 class Task63 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<5,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -405,10 +407,8 @@ class Task63 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task63" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -418,6 +418,8 @@ std::cout << "Task63" << std::endl;
 
 class Task64 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<3,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -432,10 +434,8 @@ class Task64 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task64" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -445,6 +445,8 @@ std::cout << "Task64" << std::endl;
 
 class Task65 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<5,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -459,10 +461,8 @@ class Task65 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task65" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -472,6 +472,8 @@ std::cout << "Task65" << std::endl;
 
 class Task66 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<7,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -486,10 +488,8 @@ class Task66 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task66" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -499,6 +499,8 @@ std::cout << "Task66" << std::endl;
 
 class Task67 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,3> in_;
     class Task_local : public SubTask<7,3> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -513,10 +515,8 @@ class Task67 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task67" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -526,6 +526,8 @@ std::cout << "Task67" << std::endl;
 
 class Task68 : public Task {  // associated with gamma
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,3> in_;
     class Task_local : public SubTask<7,3> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
@@ -540,10 +542,8 @@ class Task68 : public Task {  // associated with gamma
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-std::cout << "Task68" << std::endl;
-      auto out = subtasks_.front()->out_tensor();
-      if (!out->allocated())
-        out->allocate();
+      if (!out_->allocated())
+        out_->allocate();
       for (auto& i : subtasks_) i->compute();
     }
   public:
@@ -568,6 +568,8 @@ class Task69 : public Task {
 
 class Task70 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<4,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -582,11 +584,9 @@ class Task70 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task70" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -597,6 +597,8 @@ std::cout << "Task70" << std::endl;
 
 class Task71 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -611,11 +613,9 @@ class Task71 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task71" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -626,6 +626,8 @@ std::cout << "Task71" << std::endl;
 
 class Task72 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -641,11 +643,9 @@ class Task72 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task72" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -656,6 +656,8 @@ std::cout << "Task72" << std::endl;
 
 class Task73 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<4,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -670,11 +672,9 @@ class Task73 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task73" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -685,6 +685,8 @@ std::cout << "Task73" << std::endl;
 
 class Task74 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -699,11 +701,9 @@ class Task74 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task74" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -714,6 +714,8 @@ std::cout << "Task74" << std::endl;
 
 class Task75 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -728,11 +730,9 @@ class Task75 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task75" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -743,6 +743,8 @@ std::cout << "Task75" << std::endl;
 
 class Task76 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -757,11 +759,9 @@ class Task76 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task76" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -772,6 +772,8 @@ std::cout << "Task76" << std::endl;
 
 class Task77 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -786,11 +788,9 @@ class Task77 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task77" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -801,6 +801,8 @@ std::cout << "Task77" << std::endl;
 
 class Task78 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -815,11 +817,9 @@ class Task78 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task78" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -830,6 +830,8 @@ std::cout << "Task78" << std::endl;
 
 class Task79 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -844,11 +846,9 @@ class Task79 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task79" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -859,6 +859,8 @@ std::cout << "Task79" << std::endl;
 
 class Task80 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<4,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -873,11 +875,9 @@ class Task80 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task80" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -888,6 +888,8 @@ std::cout << "Task80" << std::endl;
 
 class Task81 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -902,11 +904,9 @@ class Task81 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task81" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -917,6 +917,8 @@ std::cout << "Task81" << std::endl;
 
 class Task82 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -931,11 +933,9 @@ class Task82 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task82" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -946,6 +946,8 @@ std::cout << "Task82" << std::endl;
 
 class Task83 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -960,11 +962,9 @@ class Task83 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task83" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -975,6 +975,8 @@ std::cout << "Task83" << std::endl;
 
 class Task84 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -989,11 +991,9 @@ class Task84 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task84" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1004,6 +1004,8 @@ std::cout << "Task84" << std::endl;
 
 class Task85 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<4,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1019,11 +1021,9 @@ class Task85 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task85" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1034,6 +1034,8 @@ std::cout << "Task85" << std::endl;
 
 class Task86 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1048,11 +1050,9 @@ class Task86 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task86" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1063,6 +1063,8 @@ std::cout << "Task86" << std::endl;
 
 class Task87 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1077,11 +1079,9 @@ class Task87 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task87" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1092,6 +1092,8 @@ std::cout << "Task87" << std::endl;
 
 class Task88 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1106,11 +1108,9 @@ class Task88 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task88" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1121,6 +1121,8 @@ std::cout << "Task88" << std::endl;
 
 class Task89 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1135,11 +1137,9 @@ class Task89 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task89" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1150,6 +1150,8 @@ std::cout << "Task89" << std::endl;
 
 class Task90 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1164,11 +1166,9 @@ class Task90 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task90" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1179,6 +1179,8 @@ std::cout << "Task90" << std::endl;
 
 class Task91 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1193,11 +1195,9 @@ class Task91 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task91" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1208,6 +1208,8 @@ std::cout << "Task91" << std::endl;
 
 class Task92 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1222,11 +1224,9 @@ class Task92 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task92" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1237,6 +1237,8 @@ std::cout << "Task92" << std::endl;
 
 class Task93 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<4,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1251,11 +1253,9 @@ class Task93 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task93" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1266,6 +1266,8 @@ std::cout << "Task93" << std::endl;
 
 class Task94 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1280,11 +1282,9 @@ class Task94 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task94" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1295,6 +1295,8 @@ std::cout << "Task94" << std::endl;
 
 class Task95 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1309,11 +1311,9 @@ class Task95 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task95" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1324,6 +1324,8 @@ std::cout << "Task95" << std::endl;
 
 class Task96 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1338,11 +1340,9 @@ class Task96 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task96" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1353,6 +1353,8 @@ std::cout << "Task96" << std::endl;
 
 class Task97 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1367,11 +1369,9 @@ class Task97 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task97" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1382,6 +1382,8 @@ std::cout << "Task97" << std::endl;
 
 class Task98 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1396,11 +1398,9 @@ class Task98 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task98" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }
@@ -1411,6 +1411,8 @@ std::cout << "Task98" << std::endl;
 
 class Task99 : public Task {
   protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -1425,11 +1427,9 @@ class Task99 : public Task {
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
     void compute_() override {
-      auto out = subtasks_.front()->out_tensor();
-std::cout << "Task99" << std::endl;
-      if (!out->allocated())
-        out->allocate();
-      for (auto& i : subtasks_.front()->in_tensors())
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
         i->init();
       for (auto& i : subtasks_) i->compute();
     }

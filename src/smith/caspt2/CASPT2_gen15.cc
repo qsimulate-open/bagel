@@ -34,6 +34,8 @@ using namespace bagel::SMITH::CASPT2;
 
 Task700::Task700(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[0]->nblock());
   for (auto& a2 : *range[2])
     for (auto& c1 : *range[0])
@@ -43,6 +45,8 @@ Task700::Task700(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task701::Task701(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[0]->nblock());
   for (auto& a2 : *range[2])
     for (auto& c1 : *range[0])
@@ -52,6 +56,8 @@ Task701::Task701(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task702::Task702(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -61,6 +67,8 @@ Task702::Task702(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task703::Task703(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[2]->nblock());
   for (auto& c1 : *range[0])
     for (auto& a4 : *range[2])
@@ -70,6 +78,8 @@ Task703::Task703(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task704::Task704(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -79,6 +89,8 @@ Task704::Task704(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task705::Task705(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[2]->nblock());
   for (auto& c1 : *range[0])
     for (auto& a2 : *range[2])
@@ -88,6 +100,8 @@ Task705::Task705(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task706::Task706(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -97,6 +111,8 @@ Task706::Task706(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task707::Task707(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[2]->nblock());
   for (auto& c1 : *range[0])
     for (auto& a4 : *range[2])
@@ -106,6 +122,8 @@ Task707::Task707(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task708::Task708(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -115,6 +133,8 @@ Task708::Task708(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task709::Task709(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[2]->nblock());
   for (auto& c1 : *range[0])
     for (auto& a2 : *range[2])
@@ -124,6 +144,8 @@ Task709::Task709(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task710::Task710(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -133,6 +155,8 @@ Task710::Task710(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task711::Task711(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[0]->nblock());
   for (auto& x1 : *range[1])
     for (auto& c3 : *range[0])
@@ -142,6 +166,8 @@ Task711::Task711(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task712::Task712(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[0]->nblock());
   for (auto& x1 : *range[1])
     for (auto& c3 : *range[0])
@@ -151,6 +177,8 @@ Task712::Task712(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task713::Task713(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -160,6 +188,8 @@ Task713::Task713(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task714::Task714(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
   for (auto& c4 : *range[0])
     for (auto& x0 : *range[1])
@@ -169,6 +199,8 @@ Task714::Task714(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task715::Task715(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[1]->nblock());
   for (auto& c4 : *range[0])
     for (auto& x0 : *range[1])
@@ -178,6 +210,8 @@ Task715::Task715(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task716::Task716(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -187,6 +221,8 @@ Task716::Task716(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task717::Task717(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[1]->nblock()*range[2]->nblock()*range[2]->nblock());
   for (auto& c4 : *range[0])
     for (auto& x0 : *range[1])
@@ -198,6 +234,8 @@ Task717::Task717(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task718::Task718(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -207,6 +245,8 @@ Task718::Task718(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task719::Task719(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[1]->nblock()*range[2]->nblock()*range[2]->nblock());
   for (auto& c4 : *range[0])
     for (auto& x0 : *range[1])
@@ -218,6 +258,8 @@ Task719::Task719(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task720::Task720(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -227,6 +269,8 @@ Task720::Task720(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task721::Task721(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[0]->nblock()*range[2]->nblock());
   for (auto& a4 : *range[2])
     for (auto& x0 : *range[1])
@@ -238,6 +282,8 @@ Task721::Task721(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task722::Task722(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -247,6 +293,8 @@ Task722::Task722(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task723::Task723(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[0]->nblock()*range[2]->nblock());
   for (auto& a4 : *range[2])
     for (auto& x0 : *range[1])
@@ -258,6 +306,8 @@ Task723::Task723(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task724::Task724(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -267,6 +317,8 @@ Task724::Task724(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task725::Task725(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[0]->nblock());
   for (auto& a4 : *range[2])
     for (auto& x0 : *range[1])
@@ -278,6 +330,8 @@ Task725::Task725(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task726::Task726(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -287,6 +341,8 @@ Task726::Task726(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task727::Task727(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[2]->nblock()*range[1]->nblock()*range[2]->nblock()*range[0]->nblock());
   for (auto& a4 : *range[2])
     for (auto& x0 : *range[1])
@@ -298,6 +354,8 @@ Task727::Task727(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task728::Task728(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range, const double e) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -307,6 +365,8 @@ Task728::Task728(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task729::Task729(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range, const double e) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -316,6 +376,8 @@ Task729::Task729(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task730::Task730(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -325,6 +387,8 @@ Task730::Task730(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task731::Task731(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -334,6 +398,8 @@ Task731::Task731(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task732::Task732(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -343,6 +409,8 @@ Task732::Task732(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task733::Task733(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -352,6 +420,8 @@ Task733::Task733(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task734::Task734(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -361,6 +431,8 @@ Task734::Task734(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task735::Task735(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[2]->nblock()*range[0]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& a1 : *range[2])
@@ -372,6 +444,8 @@ Task735::Task735(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task736::Task736(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -381,6 +455,8 @@ Task736::Task736(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task737::Task737(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& c1 : *range[0])
     for (auto& a2 : *range[2])
@@ -392,6 +468,8 @@ Task737::Task737(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task738::Task738(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[3]->nblock());
   for (auto& ci0 : *range[3])
     if (t[0]->is_local(ci0))
@@ -400,6 +478,8 @@ Task738::Task738(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task739::Task739(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x3 : *range[1])
     for (auto& x4 : *range[1])
@@ -413,6 +493,8 @@ Task739::Task739(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task740::Task740(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x2 : *range[1])
     for (auto& a2 : *range[2])
@@ -424,6 +506,8 @@ Task740::Task740(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task741::Task741(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x3 : *range[1])
     for (auto& x4 : *range[1])
@@ -437,6 +521,8 @@ Task741::Task741(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task742::Task742(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[3]->nblock());
   for (auto& ci0 : *range[3])
     if (t[0]->is_local(ci0))
@@ -445,6 +531,8 @@ Task742::Task742(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task743::Task743(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -458,6 +546,8 @@ Task743::Task743(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task744::Task744(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x4 : *range[1])
     for (auto& a1 : *range[2])
@@ -469,6 +559,8 @@ Task744::Task744(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task745::Task745(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[3]->nblock());
   for (auto& ci0 : *range[3])
     if (t[0]->is_local(ci0))
@@ -477,6 +569,8 @@ Task745::Task745(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task746::Task746(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -490,6 +584,8 @@ Task746::Task746(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task747::Task747(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[2]->nblock()*range[1]->nblock());
   for (auto& x4 : *range[1])
     for (auto& x5 : *range[1])
@@ -501,6 +597,8 @@ Task747::Task747(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task748::Task748(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& x0 : *range[1])
     for (auto& x1 : *range[1])
@@ -514,6 +612,8 @@ Task748::Task748(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 
 Task749::Task749(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
   subtasks_.reserve(range[3]->nblock());
   for (auto& ci0 : *range[3])
     if (t[0]->is_local(ci0))

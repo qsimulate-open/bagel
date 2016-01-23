@@ -54,7 +54,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
         for (auto& i1 : virt_) {
           for (auto& i0 : closed_) {
             // if this block is not included in the current wave function, skip it
-            if (!r->at(ist)->get_size_alloc(i0, i1, i2, i3)) continue;
+            if (!t->at(ist)->is_local(i0, i1, i2, i3) || !r->at(ist)->get_size_alloc(i0, i1, i2, i3)) continue;
             unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i0, i1, i2, i3);
 
             // this is an inverse of the overlap.
@@ -103,6 +103,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i3 : virt_) {
             for (auto& i1 : virt_) {
+              if (!t->at(jst)->is_local(i0t, i1, i2t, i3)) continue;
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = r->at(ist)->get_size_alloc(i0, i1, i2, i3);
               const size_t blocksizet = r->at(jst)->get_size_alloc(i0t, i1, i2t, i3);
@@ -162,6 +163,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i3 : virt_) {
             for (auto& i2 : closed_) {
               for (auto& i1 : virt_) {
+                if (!t->at(jst)->is_local(i0t, i1, i2, i3)) continue;
                 const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
                 const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3, i0t, i1);
                 if (!blocksize || !blocksizet) continue;
@@ -222,6 +224,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           for (auto& i2 : closed_) {
             for (auto& i1 : virt_) {
               for (auto& i0 : closed_) {
+                if (!t->at(jst)->is_local(i0, i1, i2, i3t)) continue;
                 const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
                 const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3t, i0, i1);
                 if (!blocksize || !blocksizet) continue;
@@ -284,6 +287,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i2 : closed_) {
             for (auto& i0 : closed_) {
+              if (!t->at(jst)->is_local(i0, i1t, i2, i3t)) continue;
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = r->at(ist)->get_size_alloc(i0, i1, i2, i3);
               const size_t blocksizet = r->at(jst)->get_size_alloc(i0, i1t, i2, i3t);
@@ -349,6 +353,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
+              if (!t->at(jst)->is_local(i0, i1, i2t, i3t)) continue;
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
               const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0, i1);
@@ -411,6 +416,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
           for (auto& i1 : virt_) {
             for (auto& i0 : closed_) {
+              if (!t->at(jst)->is_local(i0, i1, i2t, i3t)) continue;
               // if this block is not included in the current wave function, skip it
               const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
               const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0, i1);
@@ -474,6 +480,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           blas::conj_n(transp2.get(), i0t.size()*i2t.size()*i3t.size()*interm_size);
 
           for (auto& i1 : virt_) {
+            if (!t->at(jst)->is_local(i0t, i1, i2t, i3t)) continue;
             // if this block is not included in the current wave function, skip it
             const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
             const size_t blocksizet = r->at(jst)->get_size_alloc(i2t, i3t, i0t, i1);
@@ -536,6 +543,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
           blas::conj_n(transp2.get(), i0t.size()*i1t.size()*i3t.size()*interm_size);
 
           for (auto& i2 : closed_) {
+            if (!t->at(jst)->is_local(i0t, i1t, i2, i3t)) continue;
             // if this block is not included in the current wave function, skip it
             const size_t blocksize = r->at(ist)->get_size_alloc(i2, i3, i0, i1);
             const size_t blocksizet = r->at(jst)->get_size_alloc(i2, i3t, i0t, i1t);
@@ -576,6 +584,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
     } // jst loop
   } // ist loop
 
+  GA_Sync();
 }
 
 #endif

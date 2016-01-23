@@ -217,6 +217,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
       auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
+      rdm0t->allocate();
       rdm0t->put_block(data0);
 
       const int n = info_->nact();

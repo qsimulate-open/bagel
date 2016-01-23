@@ -71,7 +71,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_deciq(const bool reset, const bool diagon
   task542->add_dep(task538);
   deciq->add_task(task542);
 
-  vector<IndexRange> I703_index = {active_, active_, closed_, closed_};
+  vector<IndexRange> I703_index = {closed_, active_, active_, closed_};
   auto I703 = make_shared<Tensor>(I703_index);
   auto tensor543 = vector<shared_ptr<Tensor>>{I702, t2, I703};
   auto task543 = make_shared<Task543>(tensor543, cindex);

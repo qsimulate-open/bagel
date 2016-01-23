@@ -41,14 +41,14 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density2q(const bool reset, const bool di
   auto task515 = make_shared<Task515>(tensor515, reset);
   density2q->add_task(task515);
 
-  vector<IndexRange> I672_index = {active_, active_, closed_, closed_};
+  vector<IndexRange> I672_index = {closed_, closed_, active_, active_};
   auto I672 = make_shared<Tensor>(I672_index);
   auto tensor516 = vector<shared_ptr<Tensor>>{Den1, I672};
   auto task516 = make_shared<Task516>(tensor516, pindex);
   task516->add_dep(task515);
   density2q->add_task(task516);
 
-  auto tensor517 = vector<shared_ptr<Tensor>>{I672, t2, Gamma92_()};
+  auto tensor517 = vector<shared_ptr<Tensor>>{I672, Gamma92_(), t2};
   auto task517 = make_shared<Task517>(tensor517, pindex);
   task516->add_dep(task517);
   task517->add_dep(task515);
@@ -74,15 +74,17 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density2q(const bool reset, const bool di
   task520->add_dep(task515);
   density2q->add_task(task520);
 
-  auto tensor521 = vector<shared_ptr<Tensor>>{I676, Gamma16_(), t2};
+  vector<IndexRange> I677_index = {closed_, virt_, closed_, active_};
+  auto I677 = make_shared<Tensor>(I677_index);
+  auto tensor521 = vector<shared_ptr<Tensor>>{I676, Gamma16_(), I677};
   auto task521 = make_shared<Task521>(tensor521, pindex);
   task520->add_dep(task521);
   task521->add_dep(task515);
   density2q->add_task(task521);
 
-  auto tensor522 = vector<shared_ptr<Tensor>>{I676, t2, Gamma16_()};
+  auto tensor522 = vector<shared_ptr<Tensor>>{I677, t2};
   auto task522 = make_shared<Task522>(tensor522, pindex);
-  task520->add_dep(task522);
+  task521->add_dep(task522);
   task522->add_dep(task515);
   density2q->add_task(task522);
 
@@ -99,7 +101,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density2q(const bool reset, const bool di
   task524->add_dep(task515);
   density2q->add_task(task524);
 
-  auto tensor525 = vector<shared_ptr<Tensor>>{I680, t2, Gamma35_()};
+  auto tensor525 = vector<shared_ptr<Tensor>>{I680, Gamma35_(), t2};
   auto task525 = make_shared<Task525>(tensor525, pindex);
   task523->add_dep(task525);
   task525->add_dep(task515);
