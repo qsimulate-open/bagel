@@ -28,6 +28,7 @@
 #include <thread>
 #include <stdexcept>
 #include <algorithm>
+#include <ga.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/util/parallel/scalapack.h>
@@ -80,6 +81,9 @@ MPI_Interface::MPI_Interface()
     assert(flag && *get_val >= 32767); // this is what the standard says
     tag_ub_ = *get_val;
   }
+
+  // start Global Arrays here
+  GA_Initialize();
 #else
   rank_ = 0;
   size_ = 1;
@@ -89,6 +93,7 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
+  GA_Terminate();
 #ifndef HAVE_SCALAPACK
   MPI_Finalize();
 #else

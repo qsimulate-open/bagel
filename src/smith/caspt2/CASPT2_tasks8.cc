@@ -33,6 +33,20 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
 void Task350::Task_local::compute() {
+  const Index a2 = b(0);
+  const Index x1 = b(1);
+  // tensor label: r
+  std::unique_ptr<double[]> odata(new double[out()->get_size(a2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(a2, x1), 0.0);
+  {
+    // tensor label: I407
+    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, a2);
+    sort_indices<1,0,1,1,1,1>(i0data, odata, x1.size(), a2.size());
+  }
+  out()->add_block(odata, a2, x1);
+}
+
+void Task351::Task_local::compute() {
   const Index x1 = b(0);
   const Index a2 = b(1);
   // tensor label: I407
@@ -61,7 +75,7 @@ void Task350::Task_local::compute() {
   out()->add_block(odata, x1, a2);
 }
 
-void Task351::Task_local::compute() {
+void Task352::Task_local::compute() {
   const Index c1 = b(0);
   const Index c3 = b(1);
   const Index x1 = b(2);
@@ -90,7 +104,7 @@ void Task351::Task_local::compute() {
   out()->add_block(odata, c1, c3, x1, x0);
 }
 
-void Task352::Task_local::compute() {
+void Task353::Task_local::compute() {
   const Index a2 = b(0);
   const Index c1 = b(1);
   // tensor label: r
@@ -104,7 +118,7 @@ void Task352::Task_local::compute() {
   out()->add_block(odata, a2, c1);
 }
 
-void Task353::Task_local::compute() {
+void Task354::Task_local::compute() {
   const Index a2 = b(0);
   const Index c1 = b(1);
   // tensor label: I410
@@ -131,7 +145,7 @@ void Task353::Task_local::compute() {
   out()->add_block(odata, a2, c1);
 }
 
-void Task354::Task_local::compute() {
+void Task355::Task_local::compute() {
   const Index c3 = b(0);
   const Index x0 = b(1);
   // tensor label: I411
@@ -160,7 +174,7 @@ void Task354::Task_local::compute() {
   out()->add_block(odata, c3, x0);
 }
 
-void Task355::Task_local::compute() {
+void Task356::Task_local::compute() {
   const Index a2 = b(0);
   const Index c3 = b(1);
   // tensor label: r
@@ -174,7 +188,7 @@ void Task355::Task_local::compute() {
   out()->add_block(odata, a2, c3);
 }
 
-void Task356::Task_local::compute() {
+void Task357::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   // tensor label: I413
@@ -201,7 +215,7 @@ void Task356::Task_local::compute() {
   out()->add_block(odata, c3, a2);
 }
 
-void Task357::Task_local::compute() {
+void Task358::Task_local::compute() {
   const Index c1 = b(0);
   const Index x0 = b(1);
   // tensor label: I414
@@ -230,7 +244,7 @@ void Task357::Task_local::compute() {
   out()->add_block(odata, c1, x0);
 }
 
-void Task358::Task_local::compute() {
+void Task359::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   // tensor label: I413
@@ -257,7 +271,7 @@ void Task358::Task_local::compute() {
   out()->add_block(odata, c3, a2);
 }
 
-void Task359::Task_local::compute() {
+void Task360::Task_local::compute() {
   const Index a4 = b(0);
   const Index c1 = b(1);
   // tensor label: I570
@@ -284,7 +298,7 @@ void Task359::Task_local::compute() {
   out()->add_block(odata, a4, c1);
 }
 
-void Task360::Task_local::compute() {
+void Task361::Task_local::compute() {
   const Index x1 = b(0);
   const Index a4 = b(1);
   const Index c1 = b(2);
@@ -305,7 +319,7 @@ void Task360::Task_local::compute() {
   out()->add_block(odata, x1, a4, c1, x0);
 }
 
-void Task361::Task_local::compute() {
+void Task362::Task_local::compute() {
   const Index x1 = b(0);
   const Index x2 = b(1);
   // tensor label: r
@@ -319,7 +333,7 @@ void Task361::Task_local::compute() {
   out()->add_block(odata, x1, x2);
 }
 
-void Task362::Task_local::compute() {
+void Task363::Task_local::compute() {
   const Index x2 = b(0);
   const Index x1 = b(1);
   // tensor label: I416
@@ -346,7 +360,7 @@ void Task362::Task_local::compute() {
   out()->add_block(odata, x2, x1);
 }
 
-void Task363::Task_local::compute() {
+void Task364::Task_local::compute() {
   const Index x0 = b(0);
   const Index x3 = b(1);
   // tensor label: I417
@@ -375,7 +389,7 @@ void Task363::Task_local::compute() {
   out()->add_block(odata, x0, x3);
 }
 
-void Task364::Task_local::compute() {
+void Task365::Task_local::compute() {
   const Index x0 = b(0);
   const Index x3 = b(1);
   // tensor label: I417
@@ -404,7 +418,7 @@ void Task364::Task_local::compute() {
   out()->add_block(odata, x0, x3);
 }
 
-void Task365::Task_local::compute() {
+void Task366::Task_local::compute() {
   const Index x2 = b(0);
   const Index x1 = b(1);
   // tensor label: I416
@@ -431,7 +445,7 @@ void Task365::Task_local::compute() {
   out()->add_block(odata, x2, x1);
 }
 
-void Task366::Task_local::compute() {
+void Task367::Task_local::compute() {
   const Index x0 = b(0);
   const Index x3 = b(1);
   // tensor label: I626
@@ -460,7 +474,7 @@ void Task366::Task_local::compute() {
   out()->add_block(odata, x0, x3);
 }
 
-void Task367::Task_local::compute() {
+void Task368::Task_local::compute() {
   const Index x0 = b(0);
   const Index x3 = b(1);
   // tensor label: I626
@@ -489,7 +503,7 @@ void Task367::Task_local::compute() {
   out()->add_block(odata, x0, x3);
 }
 
-void Task368::Task_local::compute() {
+void Task369::Task_local::compute() {
   const Index c4 = b(0);
   const Index c1 = b(1);
   // tensor label: r
@@ -503,7 +517,7 @@ void Task368::Task_local::compute() {
   out()->add_block(odata, c4, c1);
 }
 
-void Task369::Task_local::compute() {
+void Task370::Task_local::compute() {
   const Index c1 = b(0);
   const Index c4 = b(1);
   // tensor label: I422
@@ -532,7 +546,7 @@ void Task369::Task_local::compute() {
   out()->add_block(odata, c1, c4);
 }
 
-void Task370::Task_local::compute() {
+void Task371::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -559,7 +573,7 @@ void Task370::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task371::Task_local::compute() {
+void Task372::Task_local::compute() {
   const Index c1 = b(0);
   const Index c4 = b(1);
   // tensor label: I422
@@ -588,7 +602,7 @@ void Task371::Task_local::compute() {
   out()->add_block(odata, c1, c4);
 }
 
-void Task372::Task_local::compute() {
+void Task373::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -615,7 +629,7 @@ void Task372::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task373::Task_local::compute() {
+void Task374::Task_local::compute() {
   const Index c4 = b(0);
   const Index c3 = b(1);
   // tensor label: r
@@ -629,7 +643,7 @@ void Task373::Task_local::compute() {
   out()->add_block(odata, c4, c3);
 }
 
-void Task374::Task_local::compute() {
+void Task375::Task_local::compute() {
   const Index c3 = b(0);
   const Index c4 = b(1);
   // tensor label: I428
@@ -658,7 +672,7 @@ void Task374::Task_local::compute() {
   out()->add_block(odata, c3, c4);
 }
 
-void Task375::Task_local::compute() {
+void Task376::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -685,7 +699,7 @@ void Task375::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task376::Task_local::compute() {
+void Task377::Task_local::compute() {
   const Index c3 = b(0);
   const Index c4 = b(1);
   // tensor label: I428
@@ -714,7 +728,7 @@ void Task376::Task_local::compute() {
   out()->add_block(odata, c3, c4);
 }
 
-void Task377::Task_local::compute() {
+void Task378::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -741,7 +755,7 @@ void Task377::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task378::Task_local::compute() {
+void Task379::Task_local::compute() {
   const Index a2 = b(0);
   const Index a4 = b(1);
   // tensor label: r
@@ -755,7 +769,7 @@ void Task378::Task_local::compute() {
   out()->add_block(odata, a2, a4);
 }
 
-void Task379::Task_local::compute() {
+void Task380::Task_local::compute() {
   const Index a2 = b(0);
   const Index a4 = b(1);
   // tensor label: I431
@@ -784,7 +798,7 @@ void Task379::Task_local::compute() {
   out()->add_block(odata, a2, a4);
 }
 
-void Task380::Task_local::compute() {
+void Task381::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -811,7 +825,7 @@ void Task380::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task381::Task_local::compute() {
+void Task382::Task_local::compute() {
   const Index a2 = b(0);
   const Index a4 = b(1);
   // tensor label: I431
@@ -840,7 +854,7 @@ void Task381::Task_local::compute() {
   out()->add_block(odata, a2, a4);
 }
 
-void Task382::Task_local::compute() {
+void Task383::Task_local::compute() {
   const Index c3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -867,7 +881,7 @@ void Task382::Task_local::compute() {
   out()->add_block(odata, c3, a2, c1, x1);
 }
 
-void Task383::Task_local::compute() {
+void Task384::Task_local::compute() {
   const Index x1 = b(0);
   const Index c1 = b(1);
   // tensor label: r
@@ -881,7 +895,7 @@ void Task383::Task_local::compute() {
   out()->add_block(odata, x1, c1);
 }
 
-void Task384::Task_local::compute() {
+void Task385::Task_local::compute() {
   const Index x1 = b(0);
   const Index c1 = b(1);
   // tensor label: I440
@@ -910,7 +924,7 @@ void Task384::Task_local::compute() {
   out()->add_block(odata, x1, c1);
 }
 
-void Task385::Task_local::compute() {
+void Task386::Task_local::compute() {
   const Index a2 = b(0);
   const Index c3 = b(1);
   const Index x1 = b(2);
@@ -939,7 +953,7 @@ void Task385::Task_local::compute() {
   out()->add_block(odata, a2, c3, x1, x0);
 }
 
-void Task386::Task_local::compute() {
+void Task387::Task_local::compute() {
   const Index a2 = b(0);
   const Index c3 = b(1);
   const Index x1 = b(2);
@@ -968,7 +982,7 @@ void Task386::Task_local::compute() {
   out()->add_block(odata, a2, c3, x1, x0);
 }
 
-void Task387::Task_local::compute() {
+void Task388::Task_local::compute() {
   const Index x1 = b(0);
   const Index c3 = b(1);
   // tensor label: r
@@ -982,7 +996,7 @@ void Task387::Task_local::compute() {
   out()->add_block(odata, x1, c3);
 }
 
-void Task388::Task_local::compute() {
+void Task389::Task_local::compute() {
   const Index x1 = b(0);
   const Index c3 = b(1);
   // tensor label: I443
@@ -1011,7 +1025,7 @@ void Task388::Task_local::compute() {
   out()->add_block(odata, x1, c3);
 }
 
-void Task389::Task_local::compute() {
+void Task390::Task_local::compute() {
   const Index a2 = b(0);
   const Index c1 = b(1);
   const Index x0 = b(2);
@@ -1040,7 +1054,7 @@ void Task389::Task_local::compute() {
   out()->add_block(odata, a2, c1, x0, x1);
 }
 
-void Task390::Task_local::compute() {
+void Task391::Task_local::compute() {
   const Index x3 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -1061,7 +1075,7 @@ void Task390::Task_local::compute() {
   out()->add_block(odata, x3, a2, c1, x2);
 }
 
-void Task391::Task_local::compute() {
+void Task392::Task_local::compute() {
   const Index x1 = b(0);
   const Index a4 = b(1);
   // tensor label: r
@@ -1075,7 +1089,7 @@ void Task391::Task_local::compute() {
   out()->add_block(odata, x1, a4);
 }
 
-void Task392::Task_local::compute() {
+void Task393::Task_local::compute() {
   const Index a4 = b(0);
   const Index x1 = b(1);
   // tensor label: I452
@@ -1100,7 +1114,7 @@ void Task392::Task_local::compute() {
   out()->add_block(odata, a4, x1);
 }
 
-void Task393::Task_local::compute() {
+void Task394::Task_local::compute() {
   const Index x0 = b(0);
   const Index a4 = b(1);
   // tensor label: I453
@@ -1129,7 +1143,7 @@ void Task393::Task_local::compute() {
   out()->add_block(odata, x0, a4);
 }
 
-void Task394::Task_local::compute() {
+void Task395::Task_local::compute() {
   const Index x0 = b(0);
   const Index a4 = b(1);
   // tensor label: I453
@@ -1158,7 +1172,7 @@ void Task394::Task_local::compute() {
   out()->add_block(odata, x0, a4);
 }
 
-void Task395::Task_local::compute() {
+void Task396::Task_local::compute() {
   const Index a1 = b(0);
   const Index x2 = b(1);
   // tensor label: r
@@ -1172,7 +1186,7 @@ void Task395::Task_local::compute() {
   out()->add_block(odata, a1, x2);
 }
 
-void Task396::Task_local::compute() {
+void Task397::Task_local::compute() {
   const Index x2 = b(0);
   const Index a1 = b(1);
   // tensor label: I458
@@ -1201,7 +1215,7 @@ void Task396::Task_local::compute() {
   out()->add_block(odata, x2, a1);
 }
 
-void Task397::Task_local::compute() {
+void Task398::Task_local::compute() {
   const Index c2 = b(0);
   const Index x1 = b(1);
   const Index x2 = b(2);
@@ -1232,7 +1246,7 @@ void Task397::Task_local::compute() {
   out()->add_block(odata, c2, x1, x2, x0);
 }
 
-void Task398::Task_local::compute() {
+void Task399::Task_local::compute() {
   const Index c3 = b(0);
   const Index x2 = b(1);
   // tensor label: r
@@ -1244,35 +1258,6 @@ void Task398::Task_local::compute() {
     sort_indices<1,0,1,1,1,1>(i0data, odata, x2.size(), c3.size());
   }
   out()->add_block(odata, c3, x2);
-}
-
-void Task399::Task_local::compute() {
-  const Index x2 = b(0);
-  const Index c3 = b(1);
-  // tensor label: I461
-  std::unique_ptr<double[]> odata(new double[out()->get_size(x2, c3)]);
-  std::fill_n(odata.get(), out()->get_size(x2, c3), 0.0);
-  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x2, c3)]);
-  std::fill_n(odata_sorted.get(), out()->get_size(x2, c3), 0.0);
-  for (auto& a1 : *range_[2]) {
-    for (auto& c2 : *range_[0]) {
-      for (auto& x3 : *range_[1]) {
-        // tensor label: t2
-        std::unique_ptr<double[]> i0data = in(0)->get_block(c3, a1, c2, x3);
-        std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(c3, a1, c2, x3)]);
-        sort_indices<1,2,3,0,0,1,1,1>(i0data, i0data_sorted, c3.size(), a1.size(), c2.size(), x3.size());
-        // tensor label: I462
-        std::unique_ptr<double[]> i1data = in(1)->get_block(c2, a1, x3, x2);
-        std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(c2, a1, x3, x2)]);
-        sort_indices<1,0,2,3,0,1,1,1>(i1data, i1data_sorted, c2.size(), a1.size(), x3.size(), x2.size());
-        dgemm_("T", "N", c3.size(), x2.size(), c2.size()*a1.size()*x3.size(),
-               1.0, i0data_sorted, c2.size()*a1.size()*x3.size(), i1data_sorted, c2.size()*a1.size()*x3.size(),
-               1.0, odata_sorted, c3.size());
-      }
-    }
-  }
-  sort_indices<1,0,1,1,1,1>(odata_sorted, odata, c3.size(), x2.size());
-  out()->add_block(odata, x2, c3);
 }
 
 #endif

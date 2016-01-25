@@ -40,9 +40,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
-  // start Global Arrays here
-  GA_Initialize();
-
   Timer timer;
   const int max = info_->maxtile();
   if (info_->ncore() > info_->nclosed())
@@ -128,7 +125,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
 template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
-  GA_Terminate();
 }
 
 

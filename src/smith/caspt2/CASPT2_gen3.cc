@@ -218,26 +218,26 @@ Task114::Task114(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& c1 : *range[0])
-    for (auto& a2 : *range[2])
-      for (auto& x1 : *range[1])
-        for (auto& x0 : *range[1])
-          if (t[0]->is_local(x0, x1, a2, c1))
-            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x1, a2, c1}}, in, t[0], range));
+  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[0]->nblock()*range[2]->nblock());
+  for (auto& x1 : *range[1])
+    for (auto& x0 : *range[1])
+      for (auto& c1 : *range[0])
+        for (auto& a2 : *range[2])
+          if (t[0]->is_local(a2, c1, x0, x1))
+            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{a2, c1, x0, x1}}, in, t[0], range));
 }
 
 Task115::Task115(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& c1 : *range[0])
-    for (auto& a2 : *range[2])
-      for (auto& x1 : *range[1])
-        for (auto& x0 : *range[1])
-          if (t[0]->is_local(x0, x1, a2, c1))
-            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x1, a2, c1}}, in, t[0], range));
+  subtasks_.reserve(range[1]->nblock()*range[0]->nblock()*range[2]->nblock()*range[1]->nblock());
+  for (auto& x2 : *range[1])
+    for (auto& c1 : *range[0])
+      for (auto& a2 : *range[2])
+        for (auto& x3 : *range[1])
+          if (t[0]->is_local(x3, a2, c1, x2))
+            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, a2, c1, x2}}, in, t[0], range));
 }
 
 Task116::Task116(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {

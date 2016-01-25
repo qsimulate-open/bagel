@@ -36,14 +36,14 @@ Task50::Task50(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x4 : *range[1])
         for (auto& x1 : *range[1])
-          for (auto& x4 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x0 : *range[1])
                 if (t[0]->is_local(ci0, x5, x4, x1, x3, x2, x0))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x4, x1, x3, x2, x0}}, in, t[0], range));
 }
@@ -52,12 +52,12 @@ Task51::Task51(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x2 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x1 : *range[1])
       for (auto& x3 : *range[1])
-        for (auto& x1 : *range[1])
-          for (auto& ci0 : *range[3])
+        for (auto& x2 : *range[1])
+          for (auto& x0 : *range[1])
             if (t[0]->is_local(ci0, x1, x3, x2, x0))
               subtasks_.push_back(make_shared<Task_local>(array<const Index,5>{{ci0, x1, x3, x2, x0}}, in, t[0], range));
 }
@@ -66,14 +66,14 @@ Task52::Task52(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x4 : *range[1])
-    for (auto& x1 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
       for (auto& x0 : *range[1])
-        for (auto& x5 : *range[1])
-          for (auto& ci0 : *range[3])
-            for (auto& x2 : *range[1])
-              for (auto& x3 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& x4 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& x2 : *range[1])
                 if (t[0]->is_local(ci0, x5, x0, x1, x4))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x0, x1, x4, x3, x2}}, in, t[0], range));
 }
@@ -82,12 +82,12 @@ Task53::Task53(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x2 : *range[1])
-    for (auto& x1 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x3 : *range[1])
       for (auto& x0 : *range[1])
-        for (auto& x3 : *range[1])
-          for (auto& ci0 : *range[3])
+        for (auto& x1 : *range[1])
+          for (auto& x2 : *range[1])
             if (t[0]->is_local(ci0, x3, x0, x1, x2))
               subtasks_.push_back(make_shared<Task_local>(array<const Index,5>{{ci0, x3, x0, x1, x2}}, in, t[0], range));
 }
@@ -96,14 +96,14 @@ Task54::Task54(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x1 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
       for (auto& x4 : *range[1])
-        for (auto& x5 : *range[1])
-          for (auto& ci0 : *range[3])
-            for (auto& x2 : *range[1])
-              for (auto& x3 : *range[1])
+        for (auto& x1 : *range[1])
+          for (auto& x0 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& x2 : *range[1])
                 if (t[0]->is_local(ci0, x5, x4, x1, x0))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x4, x1, x0, x3, x2}}, in, t[0], range));
 }
@@ -112,12 +112,12 @@ Task55::Task55(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x1 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x3 : *range[1])
       for (auto& x2 : *range[1])
-        for (auto& x3 : *range[1])
-          for (auto& ci0 : *range[3])
+        for (auto& x1 : *range[1])
+          for (auto& x0 : *range[1])
             if (t[0]->is_local(ci0, x3, x2, x1, x0))
               subtasks_.push_back(make_shared<Task_local>(array<const Index,5>{{ci0, x3, x2, x1, x0}}, in, t[0], range));
 }
@@ -126,14 +126,14 @@ Task56::Task56(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x2 : *range[1])
-    for (auto& x1 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x0 : *range[1])
         for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x1 : *range[1])
+              for (auto& x2 : *range[1])
                 if (t[0]->is_local(ci0, x5, x0, x4, x3, x1, x2))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x0, x4, x3, x1, x2}}, in, t[0], range));
 }
@@ -142,10 +142,10 @@ Task57::Task57(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
     for (auto& x1 : *range[1])
-      for (auto& ci0 : *range[3])
+      for (auto& x0 : *range[1])
         if (t[0]->is_local(ci0, x1, x0))
           subtasks_.push_back(make_shared<Task_local>(array<const Index,3>{{ci0, x1, x0}}, in, t[0], range));
 }
@@ -154,14 +154,14 @@ Task58::Task58(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x1 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x2 : *range[1])
         for (auto& x4 : *range[1])
-          for (auto& x2 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x1 : *range[1])
+              for (auto& x0 : *range[1])
                 if (t[0]->is_local(ci0, x5, x2, x4, x3, x1, x0))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x2, x4, x3, x1, x0}}, in, t[0], range));
 }
@@ -170,14 +170,14 @@ Task59::Task59(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x4 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x0 : *range[1])
         for (auto& x3 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x4 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x1 : *range[1])
                 if (t[0]->is_local(ci0, x5, x0, x3, x4, x2, x1))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x0, x3, x4, x2, x1}}, in, t[0], range));
 }
@@ -186,14 +186,14 @@ Task60::Task60(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x0 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x4 : *range[1])
         for (auto& x3 : *range[1])
-          for (auto& x4 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x0 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x1 : *range[1])
                 if (t[0]->is_local(ci0, x5, x4, x3, x0, x2, x1))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x4, x3, x0, x2, x1}}, in, t[0], range));
 }
@@ -202,16 +202,16 @@ Task61::Task61(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,4> in = {{t[1], t[2], t[3], t[4]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x5 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x7 : *range[1])
+      for (auto& x0 : *range[1])
         for (auto& x6 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x7 : *range[1])
-              for (auto& ci0 : *range[3])
-                for (auto& x3 : *range[1])
-                  for (auto& x4 : *range[1])
+          for (auto& x5 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x1 : *range[1])
+                for (auto& x4 : *range[1])
+                  for (auto& x3 : *range[1])
                     if (t[0]->is_local(ci0, x7, x0, x6, x5, x2, x1))
                       subtasks_.push_back(make_shared<Task_local>(array<const Index,9>{{ci0, x7, x0, x6, x5, x2, x1, x4, x3}}, in, t[0], range));
 }
@@ -220,14 +220,14 @@ Task62::Task62(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x0 : *range[1])
         for (auto& x4 : *range[1])
-          for (auto& x0 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x1 : *range[1])
                 if (t[0]->is_local(ci0, x5, x0, x4, x3, x2, x1))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x0, x4, x3, x2, x1}}, in, t[0], range));
 }
@@ -236,12 +236,12 @@ Task63::Task63(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x3 : *range[1])
       for (auto& x0 : *range[1])
-        for (auto& x3 : *range[1])
-          for (auto& ci0 : *range[3])
+        for (auto& x2 : *range[1])
+          for (auto& x1 : *range[1])
             if (t[0]->is_local(ci0, x3, x0, x2, x1))
               subtasks_.push_back(make_shared<Task_local>(array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range));
 }
@@ -252,8 +252,8 @@ Task64::Task64(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   in_ = in;
   subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
   for (auto& ci0 : *range[3])
-    for (auto& x0 : *range[1])
-      for (auto& x1 : *range[1])
+    for (auto& x1 : *range[1])
+      for (auto& x0 : *range[1])
         if (t[0]->is_local(ci0))
           subtasks_.push_back(make_shared<Task_local>(array<const Index,3>{{ci0, x1, x0}}, in, t[0], range));
 }
@@ -262,12 +262,12 @@ Task65::Task65(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x0 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
     for (auto& x3 : *range[1])
-      for (auto& ci0 : *range[3])
-        for (auto& x1 : *range[1])
-          for (auto& x2 : *range[1])
+      for (auto& x0 : *range[1])
+        for (auto& x2 : *range[1])
+          for (auto& x1 : *range[1])
             if (t[0]->is_local(ci0, x3, x0))
               subtasks_.push_back(make_shared<Task_local>(array<const Index,5>{{ci0, x3, x0, x2, x1}}, in, t[0], range));
 }
@@ -276,14 +276,14 @@ Task66::Task66(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x4 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
       for (auto& x0 : *range[1])
-        for (auto& x5 : *range[1])
-          for (auto& ci0 : *range[3])
-            for (auto& x2 : *range[1])
-              for (auto& x3 : *range[1])
+        for (auto& x4 : *range[1])
+          for (auto& x1 : *range[1])
+            for (auto& x3 : *range[1])
+              for (auto& x2 : *range[1])
                 if (t[0]->is_local(ci0, x5, x0, x4, x1))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x0, x4, x1, x3, x2}}, in, t[0], range));
 }
@@ -292,14 +292,14 @@ Task67::Task67(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x1 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x2 : *range[1])
+      for (auto& x5 : *range[1])
         for (auto& x4 : *range[1])
-          for (auto& x5 : *range[1])
-            for (auto& x2 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x1 : *range[1])
+              for (auto& x0 : *range[1])
                 if (t[0]->is_local(ci0, x2, x5, x4, x3, x1, x0))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x2, x5, x4, x3, x1, x0}}, in, t[0], range));
 }
@@ -308,14 +308,14 @@ Task68::Task68(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,
   array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[3]->nblock());
-  for (auto& x1 : *range[1])
-    for (auto& x2 : *range[1])
-      for (auto& x3 : *range[1])
+  subtasks_.reserve(range[3]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& ci0 : *range[3])
+    for (auto& x5 : *range[1])
+      for (auto& x4 : *range[1])
         for (auto& x0 : *range[1])
-          for (auto& x4 : *range[1])
-            for (auto& x5 : *range[1])
-              for (auto& ci0 : *range[3])
+          for (auto& x3 : *range[1])
+            for (auto& x2 : *range[1])
+              for (auto& x1 : *range[1])
                 if (t[0]->is_local(ci0, x5, x4, x0, x3, x2, x1))
                   subtasks_.push_back(make_shared<Task_local>(array<const Index,7>{{ci0, x5, x4, x0, x3, x2, x1}}, in, t[0], range));
 }
