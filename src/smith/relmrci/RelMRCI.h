@@ -156,6 +156,7 @@ class RelMRCI : public SpinFreeMethod<std::complex<double>> {
       double sum = 0.0;
       while (!queue->done())
         sum += queue->next_compute()->target();
+      mpi__->allreduce(&sum, 1);
       return sum;
     }
 

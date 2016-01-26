@@ -133,7 +133,7 @@ class Kramers {
     std::list<std::vector<bool>> listkramers() const {
       std::list<std::vector<bool>> out;
       for (auto& i : data_) {
-        std::vector<bool> v = i.vec();
+        std::vector<bool> v = i.first.vec();
         if (std::find(out.begin(), out.end(), v) == out.end())
           out.push_back(v);
       }
@@ -141,7 +141,7 @@ class Kramers {
     }
 
     size_t size() const { return data_.size(); }
-    const std::map<std::vector<int>, double>& perm() const { return perm_; }
+    const std::map<std::vector<int>, std::pair<double,bool>>& perm() const { return perm_; }
 
     std::shared_ptr<Type>& at(const KTag<N>& i) { return data_.at(i); }
     std::shared_ptr<const Type> at(const KTag<N>& i) const { return data_.at(i); }
