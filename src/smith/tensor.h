@@ -28,14 +28,10 @@
 #define __SRC_SMITH_TENSOR_H
 
 #include <stddef.h>
-#include <list>
-#include <map>
-#include <unordered_set>
-#include <memory>
 #include <iostream>
 #include <iomanip>
-#include <cassert>
 #include <type_traits>
+#include <unordered_set>
 #include <src/ci/fci/civec.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
@@ -124,11 +120,6 @@ class Tensor_ {
       return data_->blocksize(std::forward<args>(p)...);
     }
 
-    template<typename ...args>
-    size_t get_size_alloc(args&& ...p) const {
-      return data_->blocksize_alloc(std::forward<args>(p)...);
-    }
-
     void zero() {
       data_->zero();
     }
@@ -142,6 +133,7 @@ class Tensor_ {
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
+    void set_stored_sectors(const std::list<std::vector<bool>>& s) { data_->set_stored_sectors(s); }
 };
 
 extern template class Tensor_<double>;

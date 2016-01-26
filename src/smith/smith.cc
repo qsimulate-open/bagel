@@ -89,15 +89,13 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
-#if 0
-  if (method == "mrci") {
-    algo_ = make_shared<RelMRCI::RelMRCI>(info);
-  } else if (method == "caspt2") {
+  if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
-  } else {
-#else
-  {
+#if 0
+  } else if (method == "mrci") {
+    algo_ = make_shared<RelMRCI::RelMRCI>(info);
 #endif
+  } else {
 #else
   {
 #endif

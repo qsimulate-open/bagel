@@ -111,7 +111,7 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
 
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block_(unique_ptr<DataType[]>& dat, const size_t& key) {
+void StorageIncore<DataType>::put_block_(const unique_ptr<DataType[]>& dat, const size_t& key) {
   assert(initialized_);
   auto hash = hashtable_.find(key);
   if (hash == hashtable_.end())
@@ -162,25 +162,25 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4) const {
+                                                          const Index& i4) const {
   return get_block_(generate_hash_key(i0, i1, i2, i3, i4));
 }
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5) const {
+                                                          const Index& i4, const Index& i5) const {
   return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5));
 }
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5, const Index& i6) const {
+                                                          const Index& i4, const Index& i5, const Index& i6) const {
   return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
 }
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block(const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) const {
+                                                          const Index& i4, const Index& i5, const Index& i6, const Index& i7) const {
   return get_block_(generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
 }
 
@@ -191,56 +191,56 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block(vector<Index> i) const
 
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat) {
   put_block_(dat, generate_hash_key());
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0) {
   put_block_(dat, generate_hash_key(i0));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
   put_block_(dat, generate_hash_key(i0, i1));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
   put_block_(dat, generate_hash_key(i0, i1, i2));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
   put_block_(dat, generate_hash_key(i0, i1, i2, i3));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                     const Index& i4) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4) {
   put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                     const Index& i4, const Index& i5) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5) {
   put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                     const Index& i4, const Index& i5, const Index& i6) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5, const Index& i6) {
   put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                     const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
   put_block_(dat, generate_hash_key(i0, i1, i2, i3, i4, i5, i6, i7));
 }
 
 template<typename DataType>
-void StorageIncore<DataType>::put_block(unique_ptr<DataType[]>& dat, vector<Index> i) {
+void StorageIncore<DataType>::put_block(const unique_ptr<DataType[]>& dat, vector<Index> i) {
   put_block_(dat, generate_hash_key(i));
 }
 

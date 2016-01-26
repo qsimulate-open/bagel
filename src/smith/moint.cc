@@ -46,20 +46,36 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<Tensor_<DataType>>(blocks_, is_same<DataType,complex<double>>::value, unordered_set<size_t>{}, /*alloc*/true);
-  data_->zero();
   init();
 }
 
 
 template<>
 void K2ext<complex<double>>::init() {
-
   // bits to store
   const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
-  const vector<vector<int>> cblocks = braket ?
-    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
-    vector<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
+  const list<vector<int>> cblocks_int = braket ?
+    list<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
+    list<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
+  // convert this to list<vector<bool>>
+  list<vector<bool>> cblocks;
+  for (auto& i : cblocks_int) {
+    vector<bool> tmp;
+    for (auto& j : i)
+      tmp.push_back(static_cast<bool>(j));
+    cblocks.push_back(tmp);
+  }
+  // tabluate all the blocks that are to be stored
+  unordered_set<size_t> sparse;
+  for (auto& i0 : blocks_[0])
+    for (auto& i1 : blocks_[1])
+      for (auto& i2 : blocks_[2])
+        for (auto& i3 : blocks_[3])
+          if (find(cblocks.begin(), cblocks.end(), vector<bool>{i0.kramers(), i1.kramers(), i2.kramers(), i3.kramers()}) != cblocks.end())
+            sparse.insert(generate_hash_key(i0, i1, i2, i3));
+  // allocate
+  data_ = make_shared<Tensor_<complex<double>>>(blocks_, /*kramers*/true, sparse, /*alloc*/true);
+  data_->set_stored_sectors(cblocks);
 
   auto compute = [this, &cblocks](const bool gaunt, const bool breit) {
 
@@ -90,17 +106,17 @@ void K2ext<complex<double>>::init() {
         assert(dflist.find(hashkey01) != dflist.end());
         shared_ptr<const ListRelDFFull> df01   = dflist.find(hashkey01)->second;
         shared_ptr<const ListRelDFFull> df01_2 = dflist2.find(hashkey01)->second;
-        const int t0 = i0.kramers() ? 1 : 0;
-        const int t1 = i1.kramers() ? 1 : 0;
+        const bool t0 = i0.kramers();
+        const bool t1 = i1.kramers();
 
         for (auto& i2 : blocks_[2]) {
           for (auto& i3 : blocks_[3]) {
-            // find three-index integrals
-            const int t2 = i2.kramers() ? 1 : 0;
-            const int t3 = i3.kramers() ? 1 : 0;
-            if (find(cblocks.begin(), cblocks.end(), vector<int>{t0, t1, t2, t3}) == cblocks.end())
+            const bool t2 = i2.kramers();
+            const bool t3 = i3.kramers();
+            if (find(cblocks.begin(), cblocks.end(), vector<bool>{t0, t1, t2, t3}) == cblocks.end())
               continue;
 
+            // find three-index integrals
             size_t hashkey23 = generate_hash_key(i2, i3);
             assert(dflist.find(hashkey23) != dflist.end());
             shared_ptr<const ListRelDFFull> df23   = dflist.find(hashkey23)->second;
@@ -143,6 +159,9 @@ void K2ext<complex<double>>::init() {
 
 template<>
 void K2ext<double>::init() {
+  data_ = make_shared<Tensor_<double>>(blocks_);
+  data_->allocate();
+
   shared_ptr<const DFDist> df = info_->geom()->df();
 
   // It is the easiest to do integral transformation for each blocks.
@@ -207,8 +226,6 @@ template<typename DataType>
 MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<IndexRange>& b) : info_(r), coeff_(info_->coeff()), blocks_(b) {
   assert(b.size() == 2 && b[0] == b[1]);
 
-  data_  = make_shared<Tensor_<DataType>>(blocks_);
-  h1_    = make_shared<Tensor_<DataType>>(blocks_);
   init();
 }
 
@@ -289,8 +306,8 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0}, blocks_);
-  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0}, blocks_);
+  data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
+  h1_   = fill_block<2,complex<double>>(h1->get_conjg(), {0,0}, blocks_);
 }
 
 template<>
@@ -359,8 +376,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  fill_block<2,double>(data_,  f, {0,0}, blocks_);
-  fill_block<2,double>(h1_,   h1, {0,0}, blocks_);
+  data_ = fill_block<2,double>(f, {0,0}, blocks_);
+  h1_   = fill_block<2,double>(h1, {0,0}, blocks_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

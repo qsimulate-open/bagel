@@ -52,9 +52,8 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unor
         h.push_back(j.key());
       }
       auto key = generate_hash_key(h);
-      if (!sparse.empty() && !sparse.count(key))
-        size = 0lu;
-      hashmap.emplace(key, size);
+      if (sparse.empty() || sparse.count(key))
+        hashmap.emplace(key, size);
     }
 
     if (!kramers)
@@ -112,7 +111,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
 
   for (auto& i1 : o[1].range()) {
     for (auto& i0 : o[0].range()) {
-      if (get_size_alloc(i0, i1)) {
+      if (get_size(i0, i1)) {
         unique_ptr<DataType[]> target = get_block(i0, i1);
         out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
       }
@@ -142,7 +141,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          if (get_size_alloc(i0, i1, i2, i3)) {
+          if (get_size(i0, i1, i2, i3)) {
             unique_ptr<DataType[]> target = get_block(i0, i1, i2, i3);
             const DataType* ptr = target.get();
             for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)

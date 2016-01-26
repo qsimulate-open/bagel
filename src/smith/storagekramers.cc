@@ -83,59 +83,58 @@ unique_ptr<DataType[]> StorageKramers<DataType>::get_block(const Index& i0, cons
 
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat) {
   put_block_(dat);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0) {
   put_block_(dat, i0);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) {
   put_block_(dat, i0, i1);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) {
   put_block_(dat, i0, i1, i2);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
   put_block_(dat, i0, i1, i2, i3);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                      const Index& i4) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                            const Index& i4) {
   put_block_(dat, i0, i1, i2, i3, i4);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                      const Index& i4, const Index& i5) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                            const Index& i4, const Index& i5) {
   put_block_(dat, i0, i1, i2, i3, i4, i5);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                      const Index& i4, const Index& i5, const Index& i6) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                            const Index& i4, const Index& i5, const Index& i6) {
   put_block_(dat, i0, i1, i2, i3, i4, i5, i6);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                                      const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                            const Index& i4, const Index& i5, const Index& i6, const Index& i7) {
   put_block_(dat, i0, i1, i2, i3, i4, i5, i6, i7);
 }
 
 template<typename DataType>
-void StorageKramers<DataType>::put_block(unique_ptr<DataType[]>& dat, vector<Index> indices) {
+void StorageKramers<DataType>::put_block(const unique_ptr<DataType[]>& dat, vector<Index> indices) {
   put_block_(dat, indices);
 }
-
 
 
 template<typename DataType>

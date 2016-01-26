@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <memory>
 #include <tuple>
+#include <list>
 #include <vector>
 #include <cassert>
 #include <stdexcept>
@@ -72,6 +73,22 @@ size_t generate_hash_key(const T& head, const args&... tail) {
 }
 
 
+namespace {
+  void arg_convert_impl(std::vector<Index>& a) { }
+  template<typename... args>
+  void arg_convert_impl(std::vector<Index>& a, const Index& i, args... tail) {
+    a.push_back(i);
+    arg_convert_impl(a, tail...);
+  }
+  template<typename... args>
+  std::vector<Index> arg_convert(args... p) {
+    std::vector<Index> a;
+    arg_convert_impl(a, p...);
+    return a;
+  }
+}
+
+
 template<typename DataType>
 class StorageIncore {
   protected:
@@ -87,7 +104,7 @@ class StorageIncore {
     bool initialized_;
 
     std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
-    void put_block_(std::unique_ptr<DataType[]>& dat, const size_t& key);
+    void put_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
     void add_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
 
   public:
@@ -109,20 +126,20 @@ class StorageIncore {
                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7) const;
     virtual std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const;
 
-    virtual void put_block(std::unique_ptr<DataType[]>& dat);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                             const Index& i4);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                             const Index& i4, const Index& i5);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                             const Index& i4, const Index& i5, const Index& i6);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                             const Index& i4, const Index& i5, const Index& i6, const Index& i7);
-    virtual void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> i);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5, const Index& i6);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                                   const Index& i4, const Index& i5, const Index& i6, const Index& i7);
+    virtual void put_block(const std::unique_ptr<DataType[]>& dat, const std::vector<Index> i);
 
     virtual void add_block(const std::unique_ptr<DataType[]>& dat);
     virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0);
@@ -138,16 +155,10 @@ class StorageIncore {
     virtual void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
                                                                    const Index& i4, const Index& i5, const Index& i6, const Index& i7);
 
+    size_t blocksize() const { return 1lu; }
     template<typename ...args>
-    size_t blocksize(const args& ...p) const {
-      auto a = hashtable_.find(generate_hash_key(p...));
-      return a != hashtable_.end() ? (a->second.second - a->second.first + 1) : 0lu;
-    }
-    template<typename ...args>
-    size_t blocksize_alloc(const args& ...p) const {
-      auto a = hashtable_.find(generate_hash_key(p...));
-      return (a != hashtable_.end() && initialized_) ? (a->second.second - a->second.first + 1) : 0lu;
-    }
+    size_t blocksize(const Index& i, args&& ...p) const { return i.size()*blocksize(p...); }
+    size_t blocksize(const std::vector<Index>& p) const { return std::accumulate(p.begin(), p.end(), 1lu, [](size_t a, const Index& b){ return a*b.size(); }); }
 
     size_t size() const { return totalsize_; }
     size_t size_alloc() const { return initialized_ ? size() : 0lu; }
@@ -166,7 +177,9 @@ class StorageIncore {
     void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
     DataType dot_product(const StorageIncore<DataType>& o) const;
 
+    // for Kramers storage
     virtual void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { }
+    virtual void set_stored_sectors(const std::list<std::vector<bool>>& p) { }
 };
 
 template<> double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const;

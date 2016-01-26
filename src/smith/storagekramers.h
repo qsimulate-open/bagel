@@ -34,27 +34,26 @@
 namespace bagel {
 namespace SMITH {
 
-namespace {
-  void arg_convert_impl(std::vector<Index>& a) { }
-  template<typename... args>
-  void arg_convert_impl(std::vector<Index>& a, const Index& i, args... tail) {
-    a.push_back(i);
-    arg_convert_impl(a, tail...);
-  }
-  template<typename... args>
-  std::vector<Index> arg_convert(args... p) {
-    std::vector<Index> a;
-    arg_convert_impl(a, p...);
-    return a;
-  }
-}
-
-
 template<typename DataType>
 class StorageKramers : public StorageIncore<DataType> {
   protected:
-    std::list<std::vector<bool>> stored_sector_;
+    std::list<std::vector<bool>> stored_sectors_;
     std::map<std::vector<int>, std::pair<double,bool>> perm_;
+
+    template<int N>
+    std::pair<std::vector<int>, std::pair<double,bool>> find_permutation(const KTag<N>& tag) const {
+      auto trans = std::make_pair(std::vector<int>{0}, std::make_pair(0.0,false));
+      for (auto& i : perm_)
+        for (auto& j : stored_sectors_) {
+          const KTag<N> ctag(j);
+          if (tag == ctag.perm(i.first)) {
+            trans = i;
+            goto end;
+          }
+        }
+      end:
+      return trans;
+    }
 
     template<typename... args>
     std::unique_ptr<DataType[]> get_block_(args&& ...key) const {
@@ -65,26 +64,13 @@ class StorageKramers : public StorageIncore<DataType> {
         kramers[i] = indices[i].kramers();
 
       // if this block is stored return immediately
-      auto iter = std::find(stored_sector_.begin(), stored_sector_.end(), kramers);
-      if (iter != stored_sector_.end())
+      auto iter = std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers);
+      if (iter != stored_sectors_.end())
         return StorageIncore<DataType>::get_block_(generate_hash_key(key...));
 
       // if not, first find the right permutation
       const KTag<N> tag(kramers);
-      std::pair<std::vector<int>, std::pair<double,bool>>
-        trans = std::make_pair(std::vector<int>{0}, std::make_pair(0.0,false));
-      for (auto& i : perm_) {
-        bool found = false;
-        for (auto& j : stored_sector_) {
-          const KTag<N> ctag(j);
-          if (tag == ctag.perm(i.first)) {
-            trans = i;
-            found = true;
-            break;
-          }
-        }
-        if (found) break;
-      }
+      std::pair<std::vector<int>, std::pair<double,bool>> trans = find_permutation(tag);
       // allocate output area
       size_t buffersize = 1ull;
       for (auto& i : indices)
@@ -118,22 +104,35 @@ class StorageKramers : public StorageIncore<DataType> {
     }
 
     template<typename... args>
-    void put_block_(std::unique_ptr<DataType[]>& dat, const args& ...key) {
+    void put_block_(const std::unique_ptr<DataType[]>& dat, const args& ...key) {
       put_block_(dat, arg_convert(key...));
     }
 
-    void put_block_(std::unique_ptr<DataType[]>& dat, std::vector<Index> indices) {
-      StorageIncore<DataType>::put_block_(dat, generate_hash_key(indices));
+    void put_block_(const std::unique_ptr<DataType[]>& dat, std::vector<Index> indices) {
+#ifndef NDEBUG
       std::vector<bool> kramers(indices.size());
       for (int i = 0; i != indices.size(); ++i)
         kramers[i] = indices[i].kramers();
-      if (std::find(stored_sector_.begin(), stored_sector_.end(), kramers) == stored_sector_.end())
-        stored_sector_.push_back(kramers);
+      if (std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers) == stored_sectors_.end())
+        throw std::logic_error("Kramers::put_block should only be called for existing blocks");
+#endif
+      StorageIncore<DataType>::put_block_(dat, generate_hash_key(indices));
     }
 
     template<typename... args>
     void add_block_(const std::unique_ptr<DataType[]>& dat, const args& ...key) {
-      throw std::logic_error("StorageKramers is designed for input tensors");
+      add_block_(dat, arg_convert(key...));
+    }
+
+    void add_block_(const std::unique_ptr<DataType[]>& dat, std::vector<Index> indices) {
+#ifndef NDEBUG
+      std::vector<bool> kramers(indices.size());
+      for (int i = 0; i != indices.size(); ++i)
+        kramers[i] = indices[i].kramers();
+      if (std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers) == stored_sectors_.end())
+        throw std::logic_error("Kramers::add_block should only be called for existing blocks");
+#endif
+      StorageIncore<DataType>::add_block_(dat, generate_hash_key(indices));
     }
 
   public:
@@ -159,20 +158,20 @@ class StorageKramers : public StorageIncore<DataType> {
                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) const override;
     std::unique_ptr<DataType[]> get_block(std::vector<Index> i) const override { assert(false); return std::unique_ptr<DataType[]>(); }
 
-    void put_block(std::unique_ptr<DataType[]>& dat) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                     const Index& i4) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                     const Index& i4, const Index& i5) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                     const Index& i4, const Index& i5, const Index& i6) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
-                                                     const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
-    void put_block(std::unique_ptr<DataType[]>& dat, std::vector<Index> indices);
+    void put_block(const std::unique_ptr<DataType[]>& dat) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const Index& i0, const Index& i1, const Index& i2, const Index& i3,
+                                                           const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
+    void put_block(const std::unique_ptr<DataType[]>& dat, const std::vector<Index> indices);
 
     void add_block(const std::unique_ptr<DataType[]>& dat) override;
     void add_block(const std::unique_ptr<DataType[]>& dat, const Index& i0) override;
@@ -189,6 +188,8 @@ class StorageKramers : public StorageIncore<DataType> {
                                                            const Index& i4, const Index& i5, const Index& i6, const Index& i7) override;
 
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) override { perm_ = p; }
+    void set_stored_sectors(const std::list<std::vector<bool>>& s) override { stored_sectors_ = s; }
+
 };
 
 extern template class StorageKramers<double>;
