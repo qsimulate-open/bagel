@@ -30,7 +30,6 @@
 #include <iomanip>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/util/math/linearRM.h>
-#include <src/util/math/davidson.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,10 +44,10 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 //  r = init_residual();
 //  s = init_residual();
 
-// in order to compute MS for more than one state. need t2 and s as MultiTensor (t2all, sall)
+// MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
     auto tmp = make_shared<MultiTensor>(nstates_);
-    for (auto& j : *tmp)
+    for (auto& j : *tmp) 
       j = init_amplitude();
     t2all_.push_back(tmp);
 
@@ -56,92 +55,115 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
     for (auto& j : *tmp2)
       j = init_residual();
     sall_.push_back(tmp2);
+// added rall here.... maybe wrong
+    rall_.push_back(tmp2->copy());
   }
 }
+
 
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
 
-// <proj| H |0> set to s in the ss-caspt2 code 
+// <proj| H |0> set to s in ss-caspt2 
   //shared_ptr<Queue> sourceq = make_sourceq();
   //while (!sourceq->done())
     //sourceq->next_compute();
 
-//ms-caspt2 changes 
-  for (int istate = 0; istate != nstates_; ++istate) {
-    const double refen = info_->ciwfn()->energy(istate);
-// takes care of ref coefficients
+//<proj_jst|H|0_K> set to sall in ms-caspt2 
+  for (int istate = 0; istate != nstates_; ++istate) { //K states
+    const double refen = info_->ciwfn()->energy(istate); 
     t2all_[istate]->fac(istate) = 0.0;
     sall_[istate]->fac(istate)  = 0.0;
 
-    for (int jst=0; jst != nstates_; ++jst) {
+    for (int jst=0; jst != nstates_; ++jst) { // <jst| 
       set_rdm(jst, istate);
       s = sall_[istate]->at(jst);
-
-      shared_ptr<Queue> sourceq = make_sourceq();
+      shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
       while(!sourceq->done())
         sourceq->next_compute();
-
     }
   } 
 
-#if 0
-  LinearRM<MultiTensor> solver(30, sall);
-  t2->zero();
-  update_amplitude(t2, s);
+// set t2 to zero
+ {
+   for (int i = 0; i != nstates_; ++i) {
+    t2all_[i]->zero();
+    update_amplitude(t2all_[i], sall_[i]);
+   }
+  }
 
+//maybe wrong... solver still not working
+ LinearRM<Tensor> solver(30, s);
 
-//probbaly need to set residual etc to zero first...
   Timer mtimer;
   int iter = 0;
   for ( ; iter != info_->maxiter(); ++iter) {
-    //set results to t2
-    // orthogonalizing current delta T with the previous vectors
-    for (int i = 0; i != nstates_; ++i) {
-        t2all_[i]->zero();
-        update_amplitude(t2all_[i], r);
-        //solver.orthog(t2all_[i]);
+   
+//ss-caspt2: R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
+//  first term
+  //    shared_ptr<Queue> queue = make_residualq();
+  //    while (!queue->done())
+  //      queue->next_compute();
+  //    diagonal(r, t2);
+
+//ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+    //loop over state of interest
+    for (int i = 0; i != nstates_; ++i) {  // K states
+
+      //compute residuals named r for each K
+      for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
+        for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+        //first term <proj_jst| H0 - E0_K |1_ist>
+           set_rdm(jst, ist);
+           t2 = t2all_[i]->at(ist);
+           r = rall_[i]->at(jst);
+           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
+           while (!queue->done())
+             queue->next_compute();
+           diagonal(r, t2);
+
+//getting errors with solver lines...
+//           r = solver.compute_residual(t2, r);
+//           t2 = solver.civec();
+
+//cout << setprecision(10) << setw(20) << fixed << rall_[i]->rms() << "   rall in loop for state "<< i << endl;
+//cout << setprecision(10) << setw(20) << fixed << t2all_[i]->rms() << "   t2all in loop for state  " << i << endl;
+
+        }
+      }
     }
-  }    
+  }
 
-    // R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
-    //  first term
-       for 
-         shared_ptr<Queue> queue = make_residualq();
-         while (!queue->done())
-         queue->next_compute();
-         diagonal(r, t2all_[i]);
 
-    // TODO this will be replaced by subspace updates
-    //  update_amplitude(t2, r);
-    r = solver.compute_residual(t2, r);
-    t2 = solver.civec();
-
+#if 0
     // E is now Hylleraas energy 
     // E = <1| H |0>
     // E += <1| H0 - E0 |1> + <1| H |0>
-    energy_ = detail::real(dot_product_transpose(s, t2));
-    energy_ += detail::real(dot_product_transpose(r, t2));
-
+    for (int istate = 0; istate != nstates_; ++istate) {
+      for (int ist = 0; ist != nstates_; ++ist) { // ket sector
+        for (int jst = 0; jst != nstates_; ++jst) { // bra sector
+          energy_ = detail::real(dot_product_transpose(sall_[istate], t2all_[istate]));
+          cout << setprecision(10) << setw(20) << fixed << energy_[istate] << "E in loop " << endl;
+          energy_[istate] += detail::real(dot_product_transpose(rall_[istate], t2all_[istate]));
 
     // get the root mean square
-    const double err = r->rms();
-    print_iteration(iter, energy_, err, mtimer.tick());
+  for (int i = 0; i != nstates_; ++i) {
+    const double err = rall_[i]->rms();
+    print_iteration(iter, energy_[i], err, mtimer.tick());
 
     // computing delta T
-    t2->zero();
-    update_amplitude(t2, r);
+    t2all_[i]->zero();
+    update_amplitude(t2all_[i], rall_[i]);
     // zeroing out the residual
-    r->zero();
+    rall_[i]->zero();
     if (err < info_->thresh()) break;
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
+//  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
 #endif
 }
-#endif
 
 void CASPT2::CASPT2::solve_deriv() {
 
@@ -176,3 +198,5 @@ void CASPT2::CASPT2::solve_deriv() {
 #endif
  }
 
+
+#endif
