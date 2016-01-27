@@ -470,49 +470,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   assert (ibas >= 0);
   const size_t size = basis.size();
 
-#if 0
-  // NAI for close-range
-  vector<shared_ptr<const Atom>> atoms;
-  for (auto& body : bodies_) {
-    const vector<shared_ptr<const Atom>> atvec = body->atoms();
-    atoms.insert(atoms.end(), atvec.begin(), atvec.end());
-  }
-  auto mol = make_shared<const Molecule>(atoms, vector<shared_ptr<const Atom>>{});
-
-  for (auto& a3 : bodies_) {
-    size_t iat3 = 0;
-    for (auto& atom3 : a3->atoms()) {
-      size_t ish3 = 0;
-      for (auto& b3 : atom3->shells()) {
-        const int b3size = b3->nbasis();
-        const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
-        ++ish3;
-
-        for (int i2 = 0; i2 != size; ++i2) {
-          const shared_ptr<const Shell>  b2 = basis[i2];
-          const int b2offset = new_offset[i2];
-          const int b2size = b2->nbasis();
-          {
-            array<shared_ptr<const Shell>,2> shells = {{b3, b2}};
-            NAIBatch naibatch(shells, mol);
-            naibatch.compute();
-            const double* naidata = naibatch.data();
-            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
-                const double nai = *naidata;
-                out->element(j2, j3) += nai;
-              }
-            }
-          }
-        }
-
-      }
-      ++iat3;
-    }
-  }
-#endif
-
-
   if (!dodf) {
     const double* density_data = density->data();
 
@@ -622,6 +579,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
       o0 += b0size;
     }
   }
+
 
   return out;
 }

@@ -265,10 +265,10 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
     for (int i = 1; i != nnode_; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
         tasks.emplace_back(
-          [this, i, &out, &density, lmax, offsets, dodf, auxfile] () {
+          [this, i, &out, &density, lmax, offsets] () {
             nodes_[i]->compute_local_expansions(density, lmax, offsets);
             if (nodes_[i]->is_leaf()) {
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
               *out += *tmp;
             }
           }
@@ -281,22 +281,24 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
       if (u++ % mpi__->size() == mpi__->rank()) {
         nodes_[i]->compute_local_expansions(density, lmax, offsets);
         if (nodes_[i]->is_leaf()) {
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, dodf, auxfile);
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, true, auxfile);
           *out += *tmp;
         }
       }
     }
   }
-  out->allreduce();
 
   fmmtime.tick_print("    Upward pass");
   cout << endl;
 
+#if 0
   // NAI
   auto nai = make_shared<const TreeNAI>(geom_);
   *out += *nai;
+#endif
 
   // return the Coulomb matrix
+  out->allreduce();
   coulomb_ = out;
 }
 
