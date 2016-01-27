@@ -166,9 +166,15 @@ void K2ext<double>::init() {
 
   // It is the easiest to do integral transformation for each blocks.
   assert(blocks_.size() == 4);
-  map<size_t, shared_ptr<DFFullDist>> dflist;
   // AO dimension
   assert(df->nbasis0() == df->nbasis1());
+
+  // Aux index blocking
+  const IndexRange aux(df->adist_now());
+
+  // create a GA array
+  Tensor_<double> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]});
+  ext.allocate();
 
   // occ loop
   for (auto& i0 : blocks_[0]) {
@@ -176,45 +182,47 @@ void K2ext<double>::init() {
     // virtual loop
     for (auto& i1 : blocks_[1]) {
       shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-      dflist.emplace(generate_hash_key(i0, i1), df_full);
+      const size_t bufsize = df_full->block(0)->size();
+      unique_ptr<double[]> buf(new double[bufsize]);
+      copy_n(df_full->block(0)->data(), bufsize, buf.get());
+
+      // set the local copy to the GA
+      for (auto& a : aux)
+        if (a.offset() == df->block(0)->astart())
+          ext.put_block(buf, a, i0, i1);
     }
   }
 
   // form four-index integrals
-  // TODO this part should be heavily parallelized
   for (auto& i0 : blocks_[0]) {
     for (auto& i1 : blocks_[1]) {
-      // find three-index integrals
-      auto iter01 = dflist.find(generate_hash_key(i0, i1));
-      assert(iter01 != dflist.end());
-      shared_ptr<DFFullDist> df01 = iter01->second;
-      size_t hashkey01 = generate_hash_key(i0, i1);
-
       for (auto& i2 : blocks_[2]) {
         for (auto& i3 : blocks_[3]) {
-          // find three-index integrals
-          size_t hashkey23 = generate_hash_key(i2, i3);
+          const size_t hashkey01 = generate_hash_key(i0, i1);
+          const size_t hashkey23 = generate_hash_key(i2, i3);
           if (hashkey23 > hashkey01) continue;
+          if (!data_->is_local(i0, i1, i2, i3)) continue;
 
-          auto iter23 = dflist.find(generate_hash_key(i2, i3));
-          assert(iter23 != dflist.end());
-          shared_ptr<const DFFullDist> df23 = iter23->second;
+          const size_t bufsize = data_->get_size(i0, i1, i2, i3);
+          unique_ptr<double[]> buf0(new double[bufsize]);
+          fill_n(buf0.get(), bufsize, 0.0);
 
-          // contract
-          // TODO form_4index function now generates global 4 index tensor. This should be localized.
-          shared_ptr<Matrix> tmp = df01->form_4index(df23, 1.0);
-          unique_ptr<double[]> target(new double[tmp->size()]);
-          copy_n(tmp->data(), tmp->size(), target.get()); // unnecessary copy
-
-          // move in place
-          if (hashkey23 != hashkey01) {
-            unique_ptr<double[]> target2(new double[i0.size()*i1.size()*i2.size()*i3.size()]);
-            blas::transpose(target.get(), i0.size()*i1.size(), i2.size()*i3.size(), target2.get());
-            if (data_->is_local(i2, i3, i0, i1))
-              data_->put_block(target2, i2, i3, i0, i1);
+          for (auto& a : aux) {
+            unique_ptr<double[]> data01 = ext.get_block(a, i0, i1);
+            unique_ptr<double[]> data23 = ext.get_block(a, i2, i3);
+            // contract and accumulate
+            btas::gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size(), a.size(),
+                                        1.0, data01.get(), a.size(), data23.get(), a.size(), 1.0, buf0.get(), i0.size()*i1.size());
           }
-          if (data_->is_local(i0, i1, i2, i3))
-            data_->put_block(target, i0, i1, i2, i3);
+
+          // put in place
+          data_->put_block(buf0, i0, i1, i2, i3);
+
+          if (hashkey23 != hashkey01) {
+            unique_ptr<double[]> buf1(new double[bufsize]);
+            blas::transpose(buf0.get(), i0.size()*i1.size(), i2.size()*i3.size(), buf1.get());
+            data_->put_block(buf1, i2, i3, i0, i1);
+          }
         }
       }
     }
