@@ -54,6 +54,7 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     pdata_[block]->copy_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, k);
   }
 
+#if 0
   if (!lattice->primitive_cell()->do_periodic_df()) {
     /** (r0 sL'|\delta_L) */
     for (auto& gvec : lattice->lattice_vectors()) {
@@ -66,6 +67,7 @@ void PHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
       pdata_[block]->add_real_block(1.0, offsetb1, offsetb0, dimb1, dimb0, n);
     }
   }
+#endif
 
 }
 
