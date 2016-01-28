@@ -93,8 +93,10 @@ void CASPT2::CASPT2::solve() {
    }
   }
 
-//maybe wrong... solver still not working
- LinearRM<Tensor> solver(30, s);
+//LinearRM for each state
+  vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
+  for (int i = 0; i != nstates_; ++i)
+    solvers[i] = make_shared<LinearRM<MultiTensor>>(30, sall_[i]);
 
   Timer mtimer;
   int iter = 0;
@@ -110,10 +112,10 @@ void CASPT2::CASPT2::solve() {
 //ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
     //loop over state of interest
     for (int i = 0; i != nstates_; ++i) {  // K states
-
       //compute residuals named r for each K
       for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
         for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+
         //first term <proj_jst| H0 - E0_K |1_ist>
            set_rdm(jst, ist);
            t2 = t2all_[i]->at(ist);
@@ -122,19 +124,16 @@ void CASPT2::CASPT2::solve() {
            while (!queue->done())
              queue->next_compute();
            diagonal(r, t2);
-
-//getting errors with solver lines...
-//           r = solver.compute_residual(t2, r);
-//           t2 = solver.civec();
-
-//cout << setprecision(10) << setw(20) << fixed << rall_[i]->rms() << "   rall in loop for state "<< i << endl;
-//cout << setprecision(10) << setw(20) << fixed << t2all_[i]->rms() << "   t2all in loop for state  " << i << endl;
-
         }
       }
+
+      //update t2 here
+      rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
+//      t2all_[i] = solvers[i]->civec();
+//      cout << setprecision(10) << setw(20) << fixed << t2all_[i]->rms() << "t2all after solver state   "<< i << endl;
+
     }
   }
-
 
 #if 0
     // E is now Hylleraas energy 

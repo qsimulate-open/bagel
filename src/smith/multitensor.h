@@ -111,6 +111,16 @@ class MultiTensor_ {
       return std::sqrt(out/size);
     }
 
+    DataType dot_product(const MultiTensor_<DataType>& o) const {
+      DataType out = 0.0;
+        assert(fac_.size() == o.fac_.size());
+      for (int i = 0; i != fac_.size(); ++i) {
+        out += detail::conj(fac_[i]) * o.fac_[i];
+        out += tensors_[i]->dot_product(o.tensor_[i]);
+      }
+      return out;
+    }
+
     DataType& fac(const int i) { return fac_[i]; }
     const DataType& fac(const int i) const { return fac_[i]; }
 };
