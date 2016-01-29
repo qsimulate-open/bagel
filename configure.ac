@@ -117,9 +117,20 @@ if test "x${compile_smith}" != xno; then
     AC_MSG_ERROR("SMITH requires MPI + GA")
   fi
   AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
+fi
+
+#see if GA is available.
+if test "x${with_mpi}" != xno; then
   AH_TEMPLATE([HAVE_GA], [Global Arrays will be used.])
-  AC_CHECK_HEADERS([ga.h], [], [AC_MSG_ERROR([ga.h not found or not working])], [])
-  AC_CHECK_LIB(ga, main,  [AC_DEFINE([HAVE_GA]) LIBS="-lga -lgfortran $LIBS"], [AC_MSG_ERROR("Linking against GA failed.")])
+  if test "x${compile_smith}" != xno; then
+    AC_CHECK_HEADERS([ga.h], [
+      AC_CHECK_LIB(ga, main,  [AC_DEFINE([HAVE_GA]) LIBS="-lga -lgfortran $LIBS"], [AC_MSG_ERROR("Linking against GA failed.")])
+    ], [AC_MSG_ERROR([ga.h not found or not working, while SMITH is requested.])], [])
+  else
+    AC_CHECK_HEADERS([ga.h], [
+      AC_CHECK_LIB(ga, main,  [AC_DEFINE([HAVE_GA]) LIBS="-lga -lgfortran $LIBS"], [AC_MSG_ERROR("Linking against GA failed.")])
+    ], [], [])
+  fi
 fi
 
 AC_LANG_POP()
