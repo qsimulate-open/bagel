@@ -26,6 +26,7 @@
 
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
+#include <src/integral/os/overlapbatch.h>
 #include <src/periodic/localexpansion.h>
 
 using namespace bagel;
@@ -244,27 +245,39 @@ void Node::compute_multipoles(const int lmax) {
   bool skip = false;
   if (is_leaf_) { //compute multipole integrals
     size_t ob0 = 0;
+    size_t iat0 = 0;
     for (auto& a0 : bodies_) {
       for (auto& atom0 : a0->atoms()) {
         for (auto& b0 : atom0->shells()) {
           size_t ob1 = 0;
+          size_t iat1 = 0;
           for (auto& a1 : bodies_) {
             for (auto& atom1 : a1->atoms()) {
               for (auto& b1 : atom1->shells()) {
                 //array<double, 3> centre = compute_centre({{b1, b0}});
                 //MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre, lmax);
-                MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
-                mpole.compute();
-                for (int i = 0; i != nmultipole; ++i)
-                  multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+                {
+                  MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+                  mpole.compute();
+                  for (int i = 0; i != nmultipole; ++i)
+                    multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+                }
+                if (iat0 == iat1) {
+                  OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
+                  overlap.compute();
+                  Matrix o(b1->nbasis(), b0->nbasis());
+                  o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
+                  multipoles[0]->add_real_block(-atom1->atom_charge(), ob1, ob0, b1->nbasis(), b0->nbasis(), o);
+                }
 
                 ob1 += b1->nbasis();
               }
+              ++iat1;
             }
           }
           ob0 += b0->nbasis();
         }
-
+        ++iat0;
       }
     }
   } else { //shift children's multipoles
@@ -443,6 +456,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   assert(iself_ >= 0);
   int ibas = -1;
   vector<shared_ptr<const Atom>> close_atoms;
+  vector<double> close_charges;
   int nbas = 0;
   int inode = 0;
   for (auto& close_node : neighbour_) {
@@ -454,6 +468,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         close_atoms.push_back(close_atom);
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
+        fill_n(close_charges.begin(), tmp.size(), close_atom->atom_charge());
         vector<int> tmpoff;
         size_t ish = 0;
         for (auto& shell : close_atom->shells()) {
@@ -469,6 +484,48 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
   assert (ibas >= 0);
   const size_t size = basis.size();
+  assert(close_charges.size() == size);
+
+  // NAI for close-range
+  vector<shared_ptr<const Atom>> atoms;
+  for (auto& body : bodies_) {
+    const vector<shared_ptr<const Atom>> atvec = body->atoms();
+    atoms.insert(atoms.end(), atvec.begin(), atvec.end());
+  }
+  auto mol = make_shared<const Molecule>(atoms, vector<shared_ptr<const Atom>>{});
+
+  for (auto& a3 : bodies_) {
+    size_t iat3 = 0;
+    for (auto& atom3 : a3->atoms()) {
+      size_t ish3 = 0;
+      for (auto& b3 : atom3->shells()) {
+        const int b3size = b3->nbasis();
+        const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+        ++ish3;
+
+        for (int i2 = 0; i2 != size; ++i2) {
+          const shared_ptr<const Shell>  b2 = basis[i2];
+          const int b2offset = new_offset[i2];
+          const int b2size = b2->nbasis();
+          {
+            array<shared_ptr<const Shell>,2> shells = {{b3, b2}};
+            NAIBatch naibatch(shells, mol);
+            naibatch.compute();
+            const double* naidata = naibatch.data();
+            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
+                const double nai = *naidata;
+                out->element(j2, j3) += nai;
+              }
+            }
+          }
+        }
+
+      }
+      ++iat3;
+    }
+  }
+
 
   if (!dodf) {
     const double* density_data = density->data();
