@@ -26,9 +26,6 @@
 #include <src/ci/fci/civec.h>
 #include <src/util/math/algo.h>
 
-template class bagel::Civector<double>;
-template class bagel::Civector<std::complex<double>>;
-
 using namespace std;
 using namespace bagel;
 
@@ -94,4 +91,7 @@ void CASDvec::apply_and_fill(shared_ptr<const CASDvec> source_dvec, const int or
     }
   }
 }
+
+template class bagel::Civector<double>;
+template class bagel::Civector<std::complex<double>>;
 

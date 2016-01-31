@@ -208,14 +208,12 @@ class Dvector_base {
       std::vector<CiPtr> out;
       for (int i = 0; i < ij_; ++i) {
 #ifdef HAVE_MPI_H
-        if ( (i % mpi__->size()) == mpi__->rank() ) {
-          out.push_back( func(data(i)) );
-        }
-        else {
-          out.push_back( std::make_shared<CiType>(d) );
-        }
+        if ((i % mpi__->size()) == mpi__->rank())
+          out.push_back(func(data(i)));
+        else
+          out.push_back(std::make_shared<CiType>(d));
 #else
-        out.push_back( func(data(i)) );
+        out.push_back(func(data(i)));
 #endif
       }
 #ifdef HAVE_MPI_H

@@ -26,19 +26,41 @@
 #ifndef BAGEL_FCI_CIVEC_H
 #define BAGEL_FCI_CIVEC_H
 
+#include <bagel_config.h>
 #include <list>
 #include <numeric>
 #include <src/util/math/algo.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/staticdist.h>
-#include <src/util/parallel/accrequest.h>
-#include <src/util/parallel/recvrequest.h>
 #include <src/ci/fci/determinants.h>
 #include <src/ci/fci/dvector_base.h>
+#ifdef HAVE_GA
+#include <ga.h>
+#endif
 
 namespace bagel {
 
 template<typename DataType> class Civector;
+
+// task class
+template<typename DataType>
+class GA_Task {
+#ifndef HAVE_GA
+  public:
+    using ga_nbhdl_t = long; // jsut to compile
+#endif
+  protected:
+    ga_nbhdl_t tag;
+    std::unique_ptr<DataType[]> buf;
+  public:
+    GA_Task(ga_nbhdl_t t) : tag(t) { }
+    GA_Task(ga_nbhdl_t t, std::unique_ptr<DataType[]>&& o) : tag(t), buf(std::move(o)) { }
+    void wait();
+};
+
+extern template class GA_Task<double>;
+extern template class GA_Task<std::complex<double>>;
+
 
 template<typename DataType>
 class DistCivector {
@@ -52,68 +74,34 @@ class DistCivector {
     size_t lena_;
     size_t lenb_;
 
-    // local storage
-    std::unique_ptr<DataType[]> local_;
+    // global array tag
+    int ga_;
 
     // local alpha strings
     size_t astart_;
     size_t aend_;
 
-    // allocation size
-    size_t alloc_;
-
     // table for alpha string distribution
     const StaticDist dist_;
-
-    // MPI send/receive management
-    mutable std::shared_ptr<AccRequest> accum_;
-    mutable std::shared_ptr<SendRequest> send_;
-    mutable std::shared_ptr<PutRequest> put_;
-    mutable std::shared_ptr<RecvRequest> recv_;
-
-    // mutex for write accesses to local_
-    mutable std::vector<std::mutex> mutex_;
-
-    // for transpose, buffer can be appended
-    mutable std::shared_ptr<DistCivector<DataType>> buf_;
-    mutable std::vector<int> transp_;
+    // distribution information
+    std::vector<int64_t> blocks_;
 
   public:
-    DistCivector(std::shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()) {
-      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
-      alloc_ = size();
-      local_ = std::unique_ptr<DataType[]>(new DataType[alloc_]);
-      std::fill_n(local_.get(), alloc_, 0.0);
-      mutex_ = std::vector<std::mutex>(asize());
-    }
+    DistCivector(std::shared_ptr<const Determinants> det);
 
-    DistCivector(const DistCivector<DataType>& o) : det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), dist_(lena_, mpi__->size()) {
-      std::tie(astart_, aend_) = dist_.range(mpi__->rank());
-      alloc_ = size();
-      local_ = std::unique_ptr<DataType[]>(new DataType[alloc_]);
-      std::copy_n(o.local_.get(), alloc_, local_.get());
-      mutex_ = std::vector<std::mutex>(asize());
-    }
+    DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { *this = o; }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
-    DistCivector(const Civector<DataType>& o) : DistCivector(o.det()) {
-      std::copy_n(o.element_ptr(0, astart()), size(), local());
-    }
+#if 0
+    DistCivector(const Civector<DataType>& o);
+#else
+    DistCivector(const Civector<DataType>& o) : DistCivector(o.det()) {  }
+#endif
 
-    DistCivector<DataType>& operator=(const DistCivector<DataType>& o) {
-      assert(o.size() == size());
-      std::copy_n(o.local_.get(), alloc_, local_.get());
-      return *this;
-    }
+    DistCivector<DataType>& operator=(const DistCivector<DataType>& o);
 
     std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
     std::shared_ptr<DistCivector<DataType>> copy() const { return std::make_shared<DistCivector<DataType>>(*this); }
-
-    DataType& local(const size_t i) { return local_[i]; }
-    const DataType& local(const size_t i) const { return local_[i]; }
-
-    DataType* local() { return local_.get(); }
-    const DataType* local() const { return local_.get(); }
 
     size_t size() const { return lenb_*(aend_-astart_); }
     size_t global_size() const { return lena_*lenb_; }
@@ -124,7 +112,7 @@ class DistCivector {
     size_t aend() const { return aend_; }
     size_t asize() const { return aend_ - astart_; }
 
-    void zero() { std::fill_n(local_.get(), size(), DataType(0.0)); }
+    void zero();
     void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const { return std::make_shared<Civector<DataType>>(*this); }
@@ -132,116 +120,27 @@ class DistCivector {
 
     void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
 
-    // MPI Isend Irecv
-    void init_mpi_accumulate() const {
-      send_  = std::make_shared<SendRequest>();
-      accum_ = std::make_shared<AccRequest>(local_.get(), &mutex_);
-    }
+    bool is_local(const size_t a) const;
+    std::unique_ptr<DataType[]> local() const;
+    void set_local(const size_t la, const size_t lb, const DataType a);
 
-    void accumulate_bstring_buf(std::unique_ptr<DataType[]>& buf, const size_t a) const {
-      assert(accum_ && send_);
-      const size_t mpirank = mpi__->rank();
-      size_t rank, off;
-      std::tie(rank, off) = dist_.locate(a);
+    std::shared_ptr<GA_Task<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
+    std::shared_ptr<GA_Task<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
 
-      if (mpirank == rank) {
-        std::lock_guard<std::mutex> lock(mutex_[off]);
-        std::transform(buf.get(), buf.get()+lenb_, local_.get()+off*lenb_, local_.get()+off*lenb_,
-                       [](DataType p, DataType q){ return p+q; });
-      } else {
-        send_->request_send(std::move(buf), lenb_, rank, off*lenb_);
-      }
-    }
-
-    void terminate_mpi_accumulate() const {
-      assert(accum_ && send_);
-      bool done;
-      do {
-        done = send_->test();
-        done &= accum_->test();
-#ifndef USE_SERVER_THREAD
-        // in case no thread is running behind, we need to cycle this to flush
-        size_t d = done ? 0 : 1;
-        mpi__->soft_allreduce(&d, 1);
-        done = d == 0;
-        if (!done) send_->flush();
-        if (!done) accum_->flush();
-#endif
-        if (!done) std::this_thread::sleep_for(sleeptime__);
-      } while (!done);
-      // cancel all MPI calls
-      send_.reset();
-      accum_.reset();
-    }
-
-    void init_mpi_recv() const {
-      put_   = std::make_shared<PutRequest>(local_.get());
-      recv_  = std::make_shared<RecvRequest>();
-    }
-
-    int get_bstring_buf(double* buf, const size_t a) const {
-      assert(put_ && recv_);
-      const size_t mpirank = mpi__->rank();
-      size_t rank, off;
-      std::tie(rank, off) = dist_.locate(a);
-
-      int out = -1;
-      if (mpirank == rank) {
-        std::copy_n(local_.get()+off*lenb_, lenb_, buf);
-      } else {
-        out = recv_->request_recv(buf, lenb_, rank, off*lenb_);
-      }
-      return out;
-    }
-
-    void terminate_mpi_recv() const {
-      assert(put_ && recv_);
-      bool done;
-      do {
-        done = recv_->test();
-        // in case no thread is running behind, we need to cycle this to flush
-        size_t d = done ? 0 : 1;
-        mpi__->soft_allreduce(&d, 1);
-        done = d == 0;
-#ifndef USE_SERVER_THREAD
-        if (!done) put_->flush();
-#endif
-        if (!done) std::this_thread::sleep_for(sleeptime__);
-      } while (!done);
-      // cancel all MPI calls
-      recv_.reset();
-      put_.reset();
-    }
+    void local_accumulate(const DataType a, const std::unique_ptr<DataType[]>& buf);
 
     // utility functions
-    DataType dot_product(const DistCivector<DataType>& o) const {
-      assert(size() == o.size());
-      DataType sum = size() ? blas::dot_product(local(), size(), o.local()) : 0.0;
-      mpi__->allreduce(&sum, 1);
-      return sum;
-    }
+    DataType dot_product(const DistCivector<DataType>& o) const;
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / (lena_*lenb_); }
     double rms() const { return std::sqrt(variance()); }
 
-    void scale(const DataType a) {
-      for (size_t i = 0; i != asize(); ++i) {
-        std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::for_each(local()+i*lenb_, local()+(i+1)*lenb_, [&a](DataType& p) { p *= a; });
-      }
-    }
-
-    void ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
-      assert(size() == o.size());
-      for (size_t i = 0; i != asize(); ++i) {
-        std::lock_guard<std::mutex> lock(mutex_[i]);
-        std::transform(o.local()+i*lenb_, o.local()+(i+1)*lenb_, local()+i*lenb_, local()+i*lenb_, [&a](const DataType& p, DataType q){ return a*p+q; });
-      }
-    }
+    void scale(const DataType a);
+    void ax_plus_y(const DataType a, const DistCivector<DataType>& o);
     void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
+    void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
-    void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-dot_product(*o), *o); }
-
+#if 0
     DataType spin_expectation() const {
       std::shared_ptr<DistCivector<DataType>> S2 = spin();
       return dot_product(*S2);
@@ -251,6 +150,14 @@ class DistCivector {
     std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const;
     std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const;
     std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const;
+#else
+    DataType spin_expectation() const { return 0.0; }
+    std::shared_ptr<DistCivector<DataType>> spin() const { return nullptr; }
+    void spin_decontaminate(const double thresh = 1.0e-4) { }
+    std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const { return nullptr; }
+    std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const { return nullptr; }
+    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const  { return nullptr; }
+#endif
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -265,64 +172,14 @@ class DistCivector {
     double normalize() {
       const double norm = this->norm();
       const double scal = (norm*norm<1.0e-60 ? 0.0 : 1.0/norm);
-      scale(DataType(scal));
+      scale(static_cast<DataType>(scal));
       return norm;
     }
 
-    // mutex
-    std::mutex& cimutex(const size_t& i) const { return mutex_[i]; }
-
-// if we use a dedicated server. currently not using this. defined in src/util/serverflush.h
-#ifndef USE_SERVER_THREAD
-    void flush() const {
-      if (accum_) accum_->flush();
-      if (send_ ) send_->flush();
-      if (put_  ) put_->flush();
-    }
-#endif
-
-    std::shared_ptr<DistCivector<DataType>> transpose() const {
-      auto out = std::make_shared<DistCivector<DataType>>(det_->transpose());
-      const size_t myrank = mpi__->rank();
-
-      // transpose each segment
-      std::shared_ptr<DistCivector<DataType>> trans = clone();
-      for (int i = 0; i != mpi__->size(); ++i) {
-        std::tuple<size_t, size_t> outrange = out->dist_.range(i);
-        std::tuple<size_t, size_t> thisrange = dist_.range(i);
-
-        std::unique_ptr<DataType[]> tmp(new DataType[out->dist_.size(i)*asize()]);
-        for (size_t j = 0; j != asize(); ++j)
-          std::copy_n(local()+std::get<0>(outrange)+j*lenb_, out->dist_.size(i), tmp.get()+j*out->dist_.size(i));
-
-        const size_t off = std::get<0>(outrange)*asize();
-        std::copy_n(tmp.get(), out->dist_.size(i)*asize(), trans->local()+off);
-        if (det_->nelea()*det_->neleb() & 1)
-          blas::scale_n(static_cast<DataType>(-1.0), trans->local()+off, out->dist_.size(i)*asize());
-
-        if (i != myrank) {
-          out->transp_.push_back(mpi__->request_send(trans->local()+off, out->dist_.size(i)*asize(), i, myrank));
-          out->transp_.push_back(mpi__->request_recv(out->local()+out->asize()*std::get<0>(thisrange), out->asize()*dist_.size(i), i, i));
-        } else {
-          std::copy_n(trans->local()+off, out->asize()*asize(), out->local()+astart()*out->asize());
-        }
-      }
-      // keep trans
-      out->buf_ = trans;
-      return out;
-    }
-
-    void transpose_wait() {
-      for (auto& i : transp_)
-        mpi__->wait(i);
-      buf_.reset();
-      buf_ = clone();
-      blas::transpose(local(), asize(), lenb_, buf_->local());
-      std::copy_n(buf_->local(), asize()*lenb_, local());
-      buf_.reset();
-    }
+    std::shared_ptr<DistCivector<DataType>> transpose() const;
 
     void print(const double thresh = 0.05) const {
+#if 0
       std::vector<DataType> data;
       std::vector<size_t> abits;
       std::vector<size_t> bbits;
@@ -367,22 +224,35 @@ class DistCivector {
 
         }
       }
+#else
+      std::cout << " **** DistCivector::print to be implemented **** " << std::endl;
+#endif
     }
 
 };
 
+#if 0
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
 template <> void DistCivector<double>::spin_decontaminate(const double);
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(std::shared_ptr<const Determinants>) const;
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(std::shared_ptr<const Determinants>) const;
-
 template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, const bool action, const bool spin) const;
+#endif
 
+template <> double DistCivector<double>::dot_product(const DistCivector<double>&) const;
+template <> std::complex<double> DistCivector<std::complex<double>>::dot_product(const DistCivector<std::complex<double>>&) const;
+
+extern template class DistCivector<double>;
+extern template class DistCivector<std::complex<double>>;
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;
 
+#if 0
 template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const;
+#else
+template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const { return nullptr; }
+#endif
 
 using DistDvec = Dvector_base<DistCivec>;
 
@@ -454,6 +324,7 @@ class Civector {
       std::copy_n(o.cc(), lena_*lenb_, cc());
     }
 
+#if 0
     // from a distribtued Civec  TODO not efficient
     Civector(const DistCivector<DataType>& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) {
       cc_ = std::unique_ptr<DataType[]>(new DataType[size()]);
@@ -462,6 +333,9 @@ class Civector {
       std::copy_n(o.local(), o.asize()*lenb_, cc()+o.astart()*lenb_);
       mpi__->allreduce(cc_ptr_, size());
     }
+#else
+    Civector(const DistCivector<DataType>& o) : det_(o.det()), lena_(o.lena()), lenb_(o.lenb()) { assert(false); }
+#endif
 
     // this is not a copy constructor.
     Civector(std::shared_ptr<Civector<DataType>> o, std::shared_ptr<const Determinants> det) : det_(det), lena_(o->lena_), lenb_(o->lenb_) {
@@ -750,11 +624,13 @@ class Civector {
                   << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(iter.second) << std::endl;
     }
 
+#if 0
     std::shared_ptr<DistCivector<DataType>> distcivec() const {
       auto dist = std::make_shared<DistCivector<DataType>>(det_);
       std::copy_n(cc_ptr_+dist->astart()*lenb_, dist->asize()*lenb_, dist->local());
       return dist;
     }
+#endif
 
     void synchronize(const int root = 0) {
 #ifdef HAVE_MPI_H

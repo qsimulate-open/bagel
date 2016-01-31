@@ -103,13 +103,15 @@ void DistFCI::common_init() {
   det_ = space_->finddet(nelea_, neleb_);
 }
 
+
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
   multimap<double, pair<size_t, size_t>> ordered_elements;
-  const double* d = denom_->local();
-  for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia) {
-    for (size_t ib = 0; ib < det_->lenb(); ++ib) {
-      ordered_elements.emplace(*d++, make_pair(ia, ib));
-    }
+  {
+    const unique_ptr<double[]> denom = denom_->local();
+    const double* d = denom.get();
+    for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia)
+      for (size_t ib = 0; ib < det_->lenb(); ++ib)
+        ordered_elements.emplace(*d++, make_pair(ia, ib));
   }
 
   vector<double> energies;
@@ -191,7 +193,7 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
         ia -= denom_->astart();
         const size_t ib = det_->lexical<1>(basis[i].second);
         for (int j = 0; j < nstate_; ++j)
-          out[j]->local(ib + ia*lenb) = coeffs1->element(i, j);
+          out[j]->set_local(ia, ib, coeffs1->element(i, j));
       }
     }
   }
@@ -234,9 +236,10 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     for (auto& ad : adapt.first) {
       const int aloc = get<1>(ad) - out[oindex]->astart();
       if (aloc >= 0 && aloc < out[oindex]->asize())
-        out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
+        out[oindex]->set_local(aloc, get<0>(ad), get<2>(ad)*fac);
     }
-    out[oindex]->spin_decontaminate();
+// TODO
+//  out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
@@ -257,7 +260,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
   for (int i = 0; i != ndet; ++i)
     tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
-  double* diter = denom_->local();
+  const unique_ptr<double[]> denom = denom_->local();
+  const double* diter = denom.get();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
@@ -348,7 +352,8 @@ void DistFCI::const_denom() {
 
   denom_ = make_shared<DistCivec>(det_);
 
-  double* iter = denom_->local();
+  unique_ptr<double[]> buf(new double[denom_->size()]);
+  auto iter = buf.get();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
     tasks.emplace_back(iter, denom_->det()->string_bits_a(i), det_, jop, kop, h);
@@ -356,6 +361,8 @@ void DistFCI::const_denom() {
   }
   tasks.compute();
 
+  denom_->local_accumulate(1.0, buf);
+  GA_Sync();
   denom_t.tick_print("denom");
 }
 
@@ -428,15 +435,17 @@ void DistFCI::compute() {
         if (!conv[ist]) {
           shared_ptr<DistCivec> c = errvec[ist]->clone();
           const int size = c->size();
-          double* target_array = c->local();
-          double* source_array = errvec[ist]->local();
-          double* denom_array = denom_->local();
+          unique_ptr<double[]> target_array(new double[c->size()]);
+          const unique_ptr<double[]> source_array = errvec[ist]->local();
+          const unique_ptr<double[]> denom_array = denom_->local();
           const double en = energies[ist];
           // TODO this should be threaded
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
-          c->spin_decontaminate();
+          c->local_accumulate(1.0, target_array);
+// TODO
+//        c->spin_decontaminate();
           c->normalize();
           cc.push_back(c);
         } else {
@@ -462,7 +471,9 @@ void DistFCI::compute() {
   // TODO RDM etc is not properly done yet
   cc_ = make_shared<DistDvec>(davidson.civec());
   for (int ist = 0; ist < nstate_; ++ist) {
-    const double s2 = cc_->data(ist)->spin_expectation();
+//  const double s2 = cc_->data(ist)->spin_expectation();
+// TODO
+    const double s2 = -1.0;
     if (mpi__->rank() == 0)
       cout << endl << "     * ci vector " << setw(3) << ist
                    << ", <S^2> = " << setw(6) << setprecision(4) << s2
