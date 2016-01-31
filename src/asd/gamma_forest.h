@@ -398,12 +398,6 @@ class GammaForest {
 #include <src/asd/gamma_coupling.hpp>
 #undef ASD_HEADERS
 
-template <>
-void GammaForest<DistDvec, 2>::compute();
-
-template <>
-void GammaForest<DistRASDvec, 2>::compute();
-
 template <class Branch>
 class RASTask {
   protected:

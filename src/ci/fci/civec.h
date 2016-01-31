@@ -149,14 +149,12 @@ class DistCivector {
     void spin_decontaminate(const double thresh = 1.0e-4);
     std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const;
     std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const;
-    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const;
 #else
     DataType spin_expectation() const { return 0.0; }
     std::shared_ptr<DistCivector<DataType>> spin() const { return nullptr; }
     void spin_decontaminate(const double thresh = 1.0e-4) { }
     std::shared_ptr<DistCivector<DataType>> spin_lower(std::shared_ptr<const Determinants> det = nullptr) const { return nullptr; }
     std::shared_ptr<DistCivector<DataType>> spin_raise(std::shared_ptr<const Determinants> det = nullptr) const { return nullptr; }
-    std::shared_ptr<DistCivector<DataType>> apply(const int orbital, const bool action, const bool spin) const  { return nullptr; }
 #endif
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
@@ -247,12 +245,6 @@ extern template class DistCivector<std::complex<double>>;
 
 using DistCivec = DistCivector<double>;
 using ZDistCivec = DistCivector<std::complex<double>>;
-
-#if 0
-template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const;
-#else
-template <> std::shared_ptr<Dvector_base<DistCivec>> Dvector_base<DistCivec>::apply(const int orbital, const bool action, const bool spin) const { return nullptr; }
-#endif
 
 using DistDvec = Dvector_base<DistCivec>;
 
