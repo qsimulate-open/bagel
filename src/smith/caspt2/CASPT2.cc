@@ -38,7 +38,7 @@ using namespace bagel::SMITH;
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   eig_ = f1_->diag();
   nstates_ = ref->ciwfn()->nstates();
- 
+
 // from ss-caspt2 version for t2, r and s. 
 //  t2 = init_amplitude(); 
 //  r = init_residual();
@@ -55,7 +55,6 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
     for (auto& j : *tmp2)
       j = init_residual();
     sall_.push_back(tmp2);
-// added rall here.... maybe wrong
     rall_.push_back(tmp2->copy());
   }
 }
@@ -72,7 +71,6 @@ void CASPT2::CASPT2::solve() {
 
 //<proj_jst|H|0_K> set to sall in ms-caspt2 
   for (int istate = 0; istate != nstates_; ++istate) { //K states
-    const double refen = info_->ciwfn()->energy(istate); 
     t2all_[istate]->fac(istate) = 0.0;
     sall_[istate]->fac(istate)  = 0.0;
 
@@ -115,7 +113,6 @@ void CASPT2::CASPT2::solve() {
       //compute residuals named r for each K
       for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
         for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
-
         //first term <proj_jst| H0 - E0_K |1_ist>
            set_rdm(jst, ist);
            t2 = t2all_[i]->at(ist);
@@ -127,41 +124,41 @@ void CASPT2::CASPT2::solve() {
         }
       }
 
-      //update t2 here
+      //solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
-//      t2all_[i] = solvers[i]->civec();
-//      cout << setprecision(10) << setw(20) << fixed << t2all_[i]->rms() << "t2all after solver state   "<< i << endl;
+      t2all_[i] = solvers[i]->civec();  
 
-    }
+      print_iteration(iter, 0.0, , rall_[i]->rms(), mtimer.tick());
+
+      //energy is now the Hylleraas energy
+      energy_[i] = detail::real(dot_product_transpose(sall_[i], t2all_[i]));
+      energy_[i] += detail::real(dot_product_transpose(rall_[i], t2all_[i]));
+
+//   cout << " energy_[i] for state: " << i  << fixed << setw(20) << setprecision(10) << energy_[i] << endl;
+
+      // get the root mean square
+      err_[i] = rall_[i]->rms();
+      print_iteration(iter, energy_[i], err_[i], mtimer.tick());
+
+      //compute delta T for each state K
+      t2all_[i]->zero();
+      e0_ = e0all_[i];
+
+# if 1
+       cout << " e0all for state: " << i  << fixed << setw(20) << setprecision(10) << e0all_[i] << endl;  
+
+      update_amplitude(t2all_[i], rall_[i]);
+      //zeroing out the residual
+      rall_[i]->zero();
+      if (err_[i]<info_->thresh()) break; 
+ #endif
+   }
+//    print_iteration(iter == info_->maxiter());
+    timer.tick_print("CASPT2 energy evaluation");
+      for (int istate = 0; istate != nstates_; ++istate) {
+      cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
+      }
   }
-
-#if 0
-    // E is now Hylleraas energy 
-    // E = <1| H |0>
-    // E += <1| H0 - E0 |1> + <1| H |0>
-    for (int istate = 0; istate != nstates_; ++istate) {
-      for (int ist = 0; ist != nstates_; ++ist) { // ket sector
-        for (int jst = 0; jst != nstates_; ++jst) { // bra sector
-          energy_ = detail::real(dot_product_transpose(sall_[istate], t2all_[istate]));
-          cout << setprecision(10) << setw(20) << fixed << energy_[istate] << "E in loop " << endl;
-          energy_[istate] += detail::real(dot_product_transpose(rall_[istate], t2all_[istate]));
-
-    // get the root mean square
-  for (int i = 0; i != nstates_; ++i) {
-    const double err = rall_[i]->rms();
-    print_iteration(iter, energy_[i], err, mtimer.tick());
-
-    // computing delta T
-    t2all_[i]->zero();
-    update_amplitude(t2all_[i], rall_[i]);
-    // zeroing out the residual
-    rall_[i]->zero();
-    if (err < info_->thresh()) break;
-  }
-  print_iteration(iter == info_->maxiter());
-  timer.tick_print("CASPT2 energy evaluation");
-//  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
-#endif
 }
 
 void CASPT2::CASPT2::solve_deriv() {

@@ -61,6 +61,8 @@ class SpinFreeMethod {
 
     std::shared_ptr<const MatType> coeff_;
     double e0_;
+    std::vector<DataType> e0all_;
+
     double core_energy_;
     double energy_;
 

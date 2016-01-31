@@ -373,6 +373,7 @@ template<typename DataType>
 double SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
   const size_t nstates = info_->ciwfn()->nstates();
+  e0all_.resize(nstates);
   DataType sum = 0.0;
   for (int ist = 0; ist != nstates; ++ist) {
     set_rdm(ist, ist);
@@ -385,9 +386,9 @@ double SpinFreeMethod<DataType>::compute_e0() {
         sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
       }
     }
+    e0all_[ist] = sum;
+    cout << "    - Zeroth order energy, state " << setw(2) << ist << ": " << setw(20) << setprecision(10) << sum << endl;
   }
-  sum /= nstates;
-  cout << "    - Zeroth order energy: " << setw(20) << setprecision(10) << sum << endl;
   return detail::real(sum);
 }
 
