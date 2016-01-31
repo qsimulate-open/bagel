@@ -41,14 +41,15 @@ void GA_Task<DataType>::wait() {
 
 
 template<typename DataType>
-DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()) {
+DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()),
+                                                                           astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
   // create GA
   auto type = is_same<double,DataType>::value ? MT_C_DBL : MT_C_DCPL;
   auto atable = dist_.atable();
   int64_t tsize = 0;
   for (auto& i : atable) {
-    blocks_.push_back(i.first);
-    tsize += i.first;
+    blocks_.push_back(i.first * lenb_);
+    tsize += i.second * lenb_;
   }
   blocks_.push_back(tsize);
 
@@ -77,7 +78,7 @@ unique_ptr<DataType[]> DistCivector<DataType>::local() const {
   int64_t start = astart_*lenb_;
   int64_t last  = start+size()-1;
   int64_t ld  = size();
-  assert(is_local(start));
+  assert(is_local(astart_));
   NGA_Get64(ga_, &start, &last, out.get(), &ld);
   return move(out);
 }
@@ -180,7 +181,44 @@ void DistCivector<DataType>::ax_plus_y(const DataType a, const DistCivector<Data
 template<typename DataType>
 shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   auto out = make_shared<DistCivector<DataType>>(det_->transpose());
-  GA_Transpose(ga_, out->ga_);
+  // send buffer
+  unique_ptr<DataType[]> send(new DataType[max(size(),out->size())]);
+  {
+    unique_ptr<DataType[]> tmp = local();
+    blas::transpose(tmp.get(), lenb_, asize(), send.get());
+  }
+  // recieve buffer
+  unique_ptr<DataType[]> recv = out->local();
+  // issue send and recv requests
+  vector<int> rqs;
+  const int tagoff = 32767 - mpi__->size()*mpi__->size();
+  if (tagoff < 0)
+    throw runtime_error("Set larger MPI tag offset in DistCivector<DataType>::transpose.");
+
+  for (int i = 0; i != mpi__->size(); ++i) {
+    const size_t soffset = out->dist_.start(i) * asize();
+    const size_t ssize   = out->dist_.size(i)  * asize();
+    const size_t roffset = dist_.start(i) * out->asize();
+    const size_t rsize   = dist_.size(i)  * out->asize();
+    if (i != mpi__->rank()) {
+      rqs.push_back(mpi__->request_send(send.get()+soffset, ssize, i, tagoff+mpi__->rank()+i*mpi__->size()));
+      rqs.push_back(mpi__->request_recv(recv.get()+roffset, rsize, i, tagoff+i+mpi__->rank()*mpi__->size()));
+    } else {
+      assert(rsize == ssize);
+      copy_n(send.get()+soffset, ssize, recv.get()+roffset);
+    }
+  }
+  for (auto& i : rqs)
+    mpi__->wait(i);
+
+  // rearrange recv buffer
+  for (int i = 0; i != mpi__->size(); ++i) {
+    const size_t roffset = dist_.start(i) * out->asize();
+    const size_t size1   = dist_.size(i);
+    for (int j = 0; j != out->asize(); ++j)
+      copy_n(recv.get()+roffset+j*size1, size1, send.get()+dist_.start(i)+j*out->lenb_);
+  }
+  out->local_accumulate(1.0, send);
   return out;
 }
 

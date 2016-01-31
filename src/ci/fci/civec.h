@@ -77,12 +77,13 @@ class DistCivector {
     // global array tag
     int ga_;
 
+    // table for alpha string distribution
+    StaticDist dist_;
+
     // local alpha strings
     size_t astart_;
     size_t aend_;
 
-    // table for alpha string distribution
-    const StaticDist dist_;
     // distribution information
     std::vector<int64_t> blocks_;
 
