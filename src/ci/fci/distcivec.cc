@@ -101,7 +101,7 @@ void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const D
 
 
 template<typename DataType>
-std::shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a) {
+shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_buf(unique_ptr<DataType[]>&& buf, const size_t a) {
   int64_t offset = a*lenb_;
   int64_t last = offset + lenb_ - 1;
   int64_t size = lenb_;
@@ -109,12 +109,12 @@ std::shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_bu
   ga_nbhdl_t handle;
   // non-blocking accumulate call
   NGA_NbAcc64(ga_, &offset, &last, buf.get(), &size, &one, &handle);
-  return make_shared<GA_Task<DataType>>(handle, std::move(buf));
+  return make_shared<GA_Task<DataType>>(handle, move(buf));
 }
 
 
 template<typename DataType>
-std::shared_ptr<GA_Task<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* buf, const size_t a) const {
+shared_ptr<GA_Task<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* buf, const size_t a) const {
   int64_t offset = a*lenb_;
   int64_t last = offset + lenb_ - 1;
   int64_t size = lenb_;
@@ -220,6 +220,53 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   }
   out->local_accumulate(1.0, send);
   return out;
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::print(const double thresh) const {
+  vector<DataType> data;
+  vector<size_t> abits;
+  vector<size_t> bbits;
+
+  const unique_ptr<DataType[]> loc = local();
+  DataType* d = loc.get();
+
+  for (size_t ia = astart_; ia < aend_; ++ia)
+    for (size_t ib = 0; ib < det_->lenb(); ++ib, ++d)
+      if (abs(*d) >= thresh) {
+        data.push_back(*d);
+        abits.push_back(ia);
+        bbits.push_back(ib);
+      }
+
+  vector<size_t> nelements(mpi__->size(), 0);
+  const size_t nn = data.size();
+  mpi__->allgather(&nn, 1, nelements.data(), 1);
+
+  const size_t chunk = *max_element(nelements.begin(), nelements.end());
+  data.resize(chunk, 0);
+  abits.resize(chunk, 0);
+  bbits.resize(chunk, 0);
+
+  vector<DataType> alldata(chunk * mpi__->size());
+  mpi__->allgather(data.data(), chunk, alldata.data(), chunk);
+  vector<size_t> allabits(chunk * mpi__->size());
+  mpi__->allgather(abits.data(), chunk, allabits.data(), chunk);
+  vector<size_t> allbbits(chunk * mpi__->size());
+  mpi__->allgather(bbits.data(), chunk, allbbits.data(), chunk);
+
+  if (mpi__->rank() == 0) {
+    multimap<double, tuple<DataType, bitset<nbit__>, bitset<nbit__>>> tmp;
+    for (int i = 0; i < chunk * mpi__->size(); ++i)
+      if (alldata[i] != 0.0)
+        tmp.emplace(-abs(alldata[i]), make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
+
+    for (auto& i : tmp)
+      cout << "       " << print_bit(get<1>(i.second), get<2>(i.second), det()->norb())
+                << "  " << setprecision(10) << setw(15) << get<0>(i.second) << endl;
+
+  }
 }
 
 
@@ -719,7 +766,7 @@ shared_ptr<DistDvec> DistDvec::apply(const int orbital, const bool action, const
 #endif
 
 template class bagel::GA_Task<double>;
-template class bagel::GA_Task<std::complex<double>>;
+template class bagel::GA_Task<complex<double>>;
 template class bagel::DistCivector<double>;
 template class bagel::DistCivector<complex<double>>;
 

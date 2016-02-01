@@ -177,57 +177,7 @@ class DistCivector {
 
     std::shared_ptr<DistCivector<DataType>> transpose() const;
 
-    void print(const double thresh = 0.05) const {
-#if 0
-      std::vector<DataType> data;
-      std::vector<size_t> abits;
-      std::vector<size_t> bbits;
-
-      const DataType* d = local();
-
-      for (size_t ia = astart_; ia < aend_; ++ia) {
-        for (size_t ib = 0; ib < det_->lenb(); ++ib, ++d) {
-          if ( std::abs(*d) >= thresh ) {
-            data.push_back(*d);
-            abits.push_back(ia);
-            bbits.push_back(ib);
-          }
-        }
-      }
-      std::vector<size_t> nelements(mpi__->size(), 0);
-      const size_t nn = data.size();
-      mpi__->allgather(&nn, 1, nelements.data(), 1);
-
-      const size_t chunk = *std::max_element(nelements.begin(), nelements.end());
-      data.resize(chunk, 0);
-      abits.resize(chunk, 0);
-      bbits.resize(chunk, 0);
-
-      std::vector<double> alldata(chunk * mpi__->size());
-      mpi__->allgather(data.data(), chunk, alldata.data(), chunk);
-      std::vector<size_t> allabits(chunk * mpi__->size());
-      mpi__->allgather(abits.data(), chunk, allabits.data(), chunk);
-      std::vector<size_t> allbbits(chunk * mpi__->size());
-      mpi__->allgather(bbits.data(), chunk, allbbits.data(), chunk);
-
-      if (mpi__->rank() == 0) {
-        std::multimap<double, std::tuple<double, std::bitset<nbit__>, std::bitset<nbit__>>> tmp;
-        for (int i = 0; i < chunk * mpi__->size(); ++i) {
-          if (alldata[i] != 0.0)
-            tmp.emplace(-std::abs(alldata[i]), std::make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
-        }
-
-        for (auto& i : tmp) {
-          std::cout << "       " << print_bit(std::get<1>(i.second), std::get<2>(i.second), det()->norb())
-                    << "  " << std::setprecision(10) << std::setw(15) << std::get<0>(i.second) << std::endl;
-
-        }
-      }
-#else
-      std::cout << " **** DistCivector::print to be implemented **** " << std::endl;
-#endif
-    }
-
+    void print(const double thresh = 0.05) const;
 };
 
 #if 0
