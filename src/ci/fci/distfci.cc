@@ -40,8 +40,8 @@ DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 
-#ifndef HAVE_MPI_H
-  throw logic_error("DistFCI can be used only with MPI");
+#ifndef HAVE_GA
+  throw logic_error("DistFCI can be used only with GA");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;
@@ -186,7 +186,6 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
 
     auto coeffs1 = (coeffs * *hamiltonian).slice_copy(0, nstate_);
     mpi__->broadcast(coeffs1->data(), coeffs1->ndim() * coeffs1->mdim(), 0);
-    const size_t lenb = det_->lenb();
     for (int i = 0; i < nguess; ++i) {
       size_t ia = det_->lexical<0>(basis[i].first);
       if ( ia >= denom_->astart() && ia < denom_->aend() ) {
@@ -362,7 +361,9 @@ void DistFCI::const_denom() {
   tasks.compute();
 
   denom_->local_accumulate(1.0, buf);
+#ifdef HAVE_GA
   GA_Sync();
+#endif
   denom_t.tick_print("denom");
 }
 

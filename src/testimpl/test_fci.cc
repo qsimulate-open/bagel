@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(HARRISON_ZARRABIAN) {
     BOOST_CHECK(compare(fci_energy("hhe_svp_fci_hz_trip"), reference_fci_energy2()));
 }
 
-#ifdef HAVE_MPI_H
+#ifdef HAVE_GA
 BOOST_AUTO_TEST_CASE(DIST_FCI) {
     BOOST_CHECK(compare(fci_energy("hf_sto3g_fci_dist"), reference_fci_energy()));
 }

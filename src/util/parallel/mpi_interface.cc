@@ -28,11 +28,13 @@
 #include <thread>
 #include <stdexcept>
 #include <algorithm>
-#include <ga.h>
 #include <src/util/f77.h>
 #include <src/util/constants.h>
 #include <src/util/parallel/scalapack.h>
 #include <src/util/parallel/mpi_interface.h>
+#ifdef HAVE_GA
+#include <ga.h>
+#endif
 
 using namespace std;
 using namespace bagel;
@@ -83,7 +85,9 @@ MPI_Interface::MPI_Interface()
   }
 
   // start Global Arrays here
+#ifdef HAVE_GA
   GA_Initialize();
+#endif
 #else
   rank_ = 0;
   size_ = 1;
@@ -93,7 +97,9 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
+#ifdef HAVE_GA
   GA_Terminate();
+#endif
 #ifndef HAVE_SCALAPACK
   MPI_Finalize();
 #else

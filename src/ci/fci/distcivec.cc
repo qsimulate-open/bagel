@@ -25,6 +25,7 @@
 #include <bagel_config.h>
 #ifdef HAVE_GA
 #include <ga.h>
+#endif
 #include <src/ci/fci/civec.h>
 #include <src/util/math/algo.h>
 #include <src/util/parallel/distqueue.h>
@@ -36,13 +37,18 @@ using namespace bagel;
 
 template<typename DataType>
 void GA_Task<DataType>::wait() {
+#ifdef HAVE_GA
   NGA_NbWait(&tag);
+#else
+  assert(false);
+#endif
 }
 
 
 template<typename DataType>
 DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()),
                                                                            astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
+#ifdef HAVE_GA
   // create GA
   auto type = is_same<double,DataType>::value ? MT_C_DBL : MT_C_DCPL;
   auto atable = dist_.atable();
@@ -63,45 +69,60 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(
   assert(NGA_Nodeid() == NGA_Locate64(ga_, &offset));
   assert(NGA_Nodeid() == NGA_Locate64(ga_, &last));
 #endif
+#else
+  assert(false);
+#endif
 }
 
 
 template<typename DataType>
 DistCivector<DataType>& DistCivector<DataType>::operator=(const DistCivector<DataType>& o) {
+#ifdef HAVE_GA
   GA_Copy(o.ga_, ga_);
+#endif
+  return *this;
 }
 
 
 template<typename DataType>
 unique_ptr<DataType[]> DistCivector<DataType>::local() const {
   unique_ptr<DataType[]> out(new DataType[size()]);
+#ifdef HAVE_GA
   int64_t start = astart_*lenb_;
   int64_t last  = start+size()-1;
   int64_t ld  = size();
   assert(is_local(astart_));
   NGA_Get64(ga_, &start, &last, out.get(), &ld);
+#endif
   return move(out);
 }
 
 
 template<typename DataType>
 bool DistCivector<DataType>::is_local(const size_t a) const {
+#ifdef HAVE_GA
   const size_t lo = a*lenb_;
   int64_t nodeid = NGA_Nodeid();
   return (nodeid+1 < blocks_.size()) && (lo >= blocks_[nodeid] && lo < blocks_[nodeid+1]);
+#else
+  return true;
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const DataType a) {
+#ifdef HAVE_GA
   int64_t element = astart_*lenb_ + lb + la*lenb_;
   int64_t one = 1;
   NGA_Put64(ga_, &element, &element, const_cast<DataType*>(&a), &one);
+#endif
 }
 
 
 template<typename DataType>
 shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_buf(unique_ptr<DataType[]>&& buf, const size_t a) {
+#ifdef HAVE_GA
   int64_t offset = a*lenb_;
   int64_t last = offset + lenb_ - 1;
   int64_t size = lenb_;
@@ -110,11 +131,15 @@ shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_buf(uni
   // non-blocking accumulate call
   NGA_NbAcc64(ga_, &offset, &last, buf.get(), &size, &one, &handle);
   return make_shared<GA_Task<DataType>>(handle, move(buf));
+#else
+  return nullptr;
+#endif
 }
 
 
 template<typename DataType>
 shared_ptr<GA_Task<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* buf, const size_t a) const {
+#ifdef HAVE_GA
   int64_t offset = a*lenb_;
   int64_t last = offset + lenb_ - 1;
   int64_t size = lenb_;
@@ -122,33 +147,45 @@ shared_ptr<GA_Task<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* 
   // non-blocking get acall
   NGA_NbGet64(ga_, &offset, &last, buf, &size, &handle);
   return make_shared<GA_Task<DataType>>(handle);
+#else
+  return nullptr;
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::local_accumulate(const DataType a, const unique_ptr<DataType[]>& buf) {
+#ifdef HAVE_GA
   // asusming that the size is identical to local tile
   int64_t start = astart_ * lenb_;
   int64_t last = start + size() - 1;
   int64_t ld = size();
   NGA_Acc64(ga_, &start, &last, const_cast<DataType*>(buf.get()), &ld, const_cast<DataType*>(&a));
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::zero() {
+#ifdef HAVE_GA
   GA_Zero(ga_);
+#endif
 }
 
 
 template<>
 double DistCivector<double>::dot_product(const DistCivector<double>& o) const {
+#ifdef HAVE_GA
   return GA_Ddot(ga_, o.ga_);
+#else
+  return 0.0;
+#endif
 }
 
 
 template<>
 complex<double> DistCivector<complex<double>>::dot_product(const DistCivector<complex<double>>& o) const {
+#ifdef HAVE_GA
   assert(size() == o.size());
   // GA_Zdot is zdotu, so we have to compute this manually
   int64_t start = astart_ * lenb_;
@@ -161,25 +198,33 @@ complex<double> DistCivector<complex<double>>::dot_product(const DistCivector<co
   complex<double> sum = blas::dot_product(a.get(), ld, b.get());
   mpi__->allreduce(&sum, 1);
   return sum;
+#else
+  return 0.0;
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::scale(const DataType a) {
+#ifdef HAVE_GA
   GA_Scale(ga_, const_cast<DataType*>(&a));
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
+#ifdef HAVE_GA
   assert(size() == o.size());
   DataType one = 1.0;
   GA_Add(const_cast<DataType*>(&a), o.ga_, &one, ga_, ga_);
+#endif
 }
 
 
 template<typename DataType>
 shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
+#ifdef HAVE_GA
   auto out = make_shared<DistCivector<DataType>>(det_->transpose());
   // send buffer
   unique_ptr<DataType[]> send(new DataType[max(size(),out->size())]);
@@ -220,11 +265,15 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   }
   out->local_accumulate(1.0, send);
   return out;
+#else
+  return nullptr;
+#endif
 }
 
 
 template<typename DataType>
 void DistCivector<DataType>::print(const double thresh) const {
+#ifdef HAVE_GA
   vector<DataType> data;
   vector<size_t> abits;
   vector<size_t> bbits;
@@ -267,6 +316,7 @@ void DistCivector<DataType>::print(const double thresh) const {
                 << "  " << setprecision(10) << setw(15) << get<0>(i.second) << endl;
 
   }
+#endif
 }
 
 
@@ -769,5 +819,3 @@ template class bagel::GA_Task<double>;
 template class bagel::GA_Task<complex<double>>;
 template class bagel::DistCivector<double>;
 template class bagel::DistCivector<complex<double>>;
-
-#endif // end of HAVE_GA
