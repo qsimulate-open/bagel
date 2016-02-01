@@ -487,12 +487,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   assert(close_charges.size() == size);
 
   // NAI for close-range
-  vector<shared_ptr<const Atom>> atoms;
-  for (auto& body : bodies_) {
-    const vector<shared_ptr<const Atom>> atvec = body->atoms();
-    atoms.insert(atoms.end(), atvec.begin(), atvec.end());
-  }
-  auto mol = make_shared<const Molecule>(atoms, vector<shared_ptr<const Atom>>{});
+  auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
 
   for (auto& a3 : bodies_) {
     size_t iat3 = 0;
@@ -516,6 +511,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
               for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
                 const double nai = *naidata;
                 out->element(j2, j3) += nai;
+                out->element(j3, j2) += nai;
               }
             }
           }
