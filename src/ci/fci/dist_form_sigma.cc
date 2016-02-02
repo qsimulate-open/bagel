@@ -124,7 +124,7 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
 
 // beta-beta block has no communication (and should be cheap)
 void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop,
-                       const shared_ptr<const Determinants> base_det, const shared_ptr<const Determinants> int_det) const {
+                                shared_ptr<const Determinants> base_det, shared_ptr<const Determinants> int_det) const {
 
   const int norb = cc->det()->norb();
   const size_t lb = sigma->lenb();

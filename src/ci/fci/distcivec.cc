@@ -22,12 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <bagel_config.h>
-#ifdef HAVE_GA
-#include <ga.h>
-#endif
-#include <src/ci/fci/civec.h>
-#include <src/util/math/algo.h>
+#include <src/ci/fci/distcivec.h>
 #include <src/util/parallel/distqueue.h>
 #include <src/util/parallel/mpi_interface.h>
 
@@ -81,6 +76,16 @@ DistCivector<DataType>& DistCivector<DataType>::operator=(const DistCivector<Dat
   GA_Copy(o.ga_, ga_);
 #endif
   return *this;
+}
+
+
+template<typename DataType>
+shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
+  auto out = make_shared<Civector<DataType>>(det_);
+  const unique_ptr<DataType[]> loc = local();
+  copy_n(loc.get(), asize()*lenb_, out->data()+astart()*lenb_);
+  mpi__->allreduce(out->data(), out->size());
+  return out;
 }
 
 

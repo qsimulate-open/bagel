@@ -25,7 +25,7 @@
 #ifndef __BAGEL_FCI_DIST_FORM_SIGMA_H
 #define __BAGEL_FCI_DIST_FORM_SIGMA_H
 
-#include <src/ci/fci/civec.h>
+#include <src/ci/fci/distcivec.h>
 #include <src/ci/fci/mofile.h>
 #include <src/ci/fci/space.h>
 
@@ -45,7 +45,7 @@ class FormSigmaDistFCI {
   private:
     // Helper functions for sigma formation
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop,
-                  const std::shared_ptr<const Determinants>, const std::shared_ptr<const Determinants>) const;
+                  std::shared_ptr<const Determinants>, std::shared_ptr<const Determinants>) const;
 
     void sigma_bb(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop) const;
     void sigma_aa(std::shared_ptr<const DistCivec> cc, std::shared_ptr<DistCivec> sigma, std::shared_ptr<const MOFile> jop, std::shared_ptr<const Determinants> int_det) const;

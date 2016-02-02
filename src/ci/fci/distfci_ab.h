@@ -28,9 +28,8 @@
 #include <bitset>
 #include <memory>
 #include <src/util/f77.h>
-#include <src/ci/fci/determinants.h>
 #include <src/ci/fci/mofile.h>
-#include <src/ci/fci/civec.h>
+#include <src/ci/fci/distcivec.h>
 
 namespace bagel {
 
