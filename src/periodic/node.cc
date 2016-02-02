@@ -387,7 +387,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets, const bool dodf, const string auxfile) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -456,7 +456,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   assert(iself_ >= 0);
   int ibas = -1;
   vector<shared_ptr<const Atom>> close_atoms;
-  vector<double> close_charges;
   int nbas = 0;
   int inode = 0;
   for (auto& close_node : neighbour_) {
@@ -468,7 +467,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         close_atoms.push_back(close_atom);
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
-        fill_n(close_charges.begin(), tmp.size(), close_atom->atom_charge());
         vector<int> tmpoff;
         size_t ish = 0;
         for (auto& shell : close_atom->shells()) {
@@ -484,7 +482,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
   assert (ibas >= 0);
   const size_t size = basis.size();
-  assert(close_charges.size() == size);
 
   // NAI for close-range
   auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
@@ -510,8 +507,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
             for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
               for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
                 const double nai = *naidata;
-                out->element(j2, j3) += nai;
-                out->element(j3, j2) += nai;
+                out->element(j2, j3) += 2.0 * nai;
               }
             }
           }
@@ -638,7 +634,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, vector<int> offsets) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());

@@ -268,7 +268,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
           [this, i, &out, &density, lmax, offsets] () {
             nodes_[i]->compute_local_expansions(density, lmax, offsets);
             if (nodes_[i]->is_leaf()) {
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets);
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, offsets);
               *out += *tmp;
             }
           }
@@ -281,7 +281,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
       if (u++ % mpi__->size() == mpi__->rank()) {
         nodes_[i]->compute_local_expansions(density, lmax, offsets);
         if (nodes_[i]->is_leaf()) {
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, lmax, offsets, true, auxfile);
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, offsets, true, auxfile);
           *out += *tmp;
         }
       }
