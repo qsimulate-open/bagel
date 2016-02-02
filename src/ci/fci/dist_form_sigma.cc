@@ -98,6 +98,9 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
     auto t = (*i)->compute();
     acctasks.insert(acctasks.end(), t.begin(), t.end());
     i = tasks.erase(i);
+
+    for (auto j = acctasks.begin(); j != acctasks.end(); )
+      j = (*j)->test() ? acctasks.erase(j) : ++j;
   }
 
   for (auto i = acctasks.begin(); i != acctasks.end(); ) {

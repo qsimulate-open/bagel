@@ -48,6 +48,7 @@ class GA_Task {
     GA_Task(ga_nbhdl_t t) : tag(t) { }
     GA_Task(ga_nbhdl_t t, std::unique_ptr<DataType[]>&& o) : tag(t), buf(std::move(o)) { }
     void wait();
+    bool test();
 };
 
 extern template class GA_Task<double>;
@@ -127,18 +128,12 @@ class DistCivector {
     void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
-#if 0
     DataType spin_expectation() const {
       std::shared_ptr<DistCivector<DataType>> S2 = spin();
       return dot_product(*S2);
     }
     std::shared_ptr<DistCivector<DataType>> spin() const;
     void spin_decontaminate(const double thresh = 1.0e-4);
-#else
-    DataType spin_expectation() const { return 0.0; }
-    std::shared_ptr<DistCivector<DataType>> spin() const { return nullptr; }
-    void spin_decontaminate(const double thresh = 1.0e-4) { }
-#endif
 
     double orthog(std::list<std::shared_ptr<const DistCivector<DataType>>> c) {
       for (auto& iter : c)
@@ -162,11 +157,8 @@ class DistCivector {
     void print(const double thresh = 0.05) const;
 };
 
-#if 0
-template <> std::shared_ptr<DistCivector<double>> DistCivector<double>::spin() const;
 template <> void DistCivector<double>::spin_decontaminate(const double);
-#endif
-
+template <> void DistCivector<std::complex<double>>::spin_decontaminate(const double);
 template <> double DistCivector<double>::dot_product(const DistCivector<double>&) const;
 template <> std::complex<double> DistCivector<std::complex<double>>::dot_product(const DistCivector<std::complex<double>>&) const;
 

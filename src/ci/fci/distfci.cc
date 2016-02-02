@@ -237,8 +237,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
       if (aloc >= 0 && aloc < out[oindex]->asize())
         out[oindex]->set_local(aloc, get<0>(ad), get<2>(ad)*fac);
     }
-// TODO
-//  out[oindex]->spin_decontaminate();
+    out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
           setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
@@ -445,8 +444,7 @@ void DistFCI::compute() {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
           c->local_accumulate(1.0, target_array);
-// TODO
-//        c->spin_decontaminate();
+          c->spin_decontaminate();
           c->normalize();
           cc.push_back(c);
         } else {
@@ -472,9 +470,7 @@ void DistFCI::compute() {
   // TODO RDM etc is not properly done yet
   cc_ = make_shared<DistDvec>(davidson.civec());
   for (int ist = 0; ist < nstate_; ++ist) {
-//  const double s2 = cc_->data(ist)->spin_expectation();
-// TODO
-    const double s2 = -1.0;
+    const double s2 = cc_->data(ist)->spin_expectation();
     if (mpi__->rank() == 0)
       cout << endl << "     * ci vector " << setw(3) << ist
                    << ", <S^2> = " << setw(6) << setprecision(4) << s2
