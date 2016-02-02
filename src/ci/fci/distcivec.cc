@@ -268,6 +268,8 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
     for (int j = 0; j != out->asize(); ++j)
       copy_n(recv.get()+roffset+j*size1, size1, send.get()+dist_.start(i)+j*out->lenb_);
   }
+  if (det_->nelea()*det_->neleb() & 1)
+    out->scale(-1.0);
   out->local_accumulate(1.0, send);
   return out;
 #else
