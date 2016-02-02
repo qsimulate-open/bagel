@@ -39,19 +39,14 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
   eig_ = f1_->diag();
   nstates_ = ref->ciwfn()->nstates();
 
-// from ss-caspt2 version for t2, r and s. 
-//  t2 = init_amplitude(); 
-//  r = init_residual();
-//  s = init_residual();
-
 // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
     auto tmp = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp) 
       j = init_amplitude();
     t2all_.push_back(tmp);
-
-   auto tmp2 = make_shared<MultiTensor>(nstates_);
+    
+    auto tmp2 = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp2)
       j = init_residual();
     sall_.push_back(tmp2);
@@ -63,11 +58,6 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
-
-// <proj| H |0> set to s in ss-caspt2 
-  //shared_ptr<Queue> sourceq = make_sourceq();
-  //while (!sourceq->done())
-    //sourceq->next_compute();
 
 //<proj_jst|H|0_K> set to sall in ms-caspt2 
   for (int istate = 0; istate != nstates_; ++istate) { //K states
@@ -84,86 +74,76 @@ void CASPT2::CASPT2::solve() {
   } 
 
 // set t2 to zero
- {
-   for (int i = 0; i != nstates_; ++i) {
-    t2all_[i]->zero();
-    update_amplitude(t2all_[i], sall_[i]);
-   }
-  }
+  {
+    for (int i = 0; i != nstates_; ++i) {
+     t2all_[i]->zero();
+     e0_ = compute_e0(); 
+     update_amplitude(t2all_[i], sall_[i]);
+    }
+  } 
 
 //LinearRM for each state
   vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
-  for (int i = 0; i != nstates_; ++i)
+  for (int i = 0; i != nstates_; ++i) {
     solvers[i] = make_shared<LinearRM<MultiTensor>>(30, sall_[i]);
+    energy_.push_back(detail::real(dot_product_transpose(sall_[i], t2all_[i])));
+  }
 
   Timer mtimer;
   int iter = 0;
+  vector<bool> conv(nstates_, false);
   for ( ; iter != info_->maxiter(); ++iter) {
-   
-//ss-caspt2: R = <proj| H0 - E0 |1> + <proj | H |0> is set to r
-//  first term
-  //    shared_ptr<Queue> queue = make_residualq();
-  //    while (!queue->done())
-  //      queue->next_compute();
-  //    diagonal(r, t2);
-
-//ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+    //ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
     //loop over state of interest
     for (int i = 0; i != nstates_; ++i) {  // K states
       //compute residuals named r for each K
       for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
         for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
         //first term <proj_jst| H0 - E0_K |1_ist>
-           set_rdm(jst, ist);
-           t2 = t2all_[i]->at(ist);
-           r = rall_[i]->at(jst);
-           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
-           while (!queue->done())
+          set_rdm(jst, ist);
+          t2 = t2all_[i]->at(ist);
+          r = rall_[i]->at(jst);
+          shared_ptr<Queue> queue = make_residualq(false, jst == ist);
+          while (!queue->done())
              queue->next_compute();
-           diagonal(r, t2);
+          diagonal(r, t2);
         }
       }
-
+      
       //solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
       t2all_[i] = solvers[i]->civec();  
-
-      print_iteration(iter, 0.0, , rall_[i]->rms(), mtimer.tick());
 
       //energy is now the Hylleraas energy
       energy_[i] = detail::real(dot_product_transpose(sall_[i], t2all_[i]));
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t2all_[i]));
 
-//   cout << " energy_[i] for state: " << i  << fixed << setw(20) << setprecision(10) << energy_[i] << endl;
+      //compute rms for state i
+      const double err = rall_[i]->rms();  
+      print_iteration(iter, energy_[i], err, mtimer.tick(), i);
 
-      // get the root mean square
-      err_[i] = rall_[i]->rms();
-      print_iteration(iter, energy_[i], err_[i], mtimer.tick());
+      //compute delta t2 and update amplitude 
+      t2all_[i]->zero(); // zero before update in MRCI. why?
+      conv[i] = err < info_->thresh();
 
-      //compute delta T for each state K
-      t2all_[i]->zero();
-      e0_ = e0all_[i];
+      if (!conv[i])  //if not converged update
+        update_amplitude(t2all_[i],rall_[i]);
 
-# if 1
-       cout << " e0all for state: " << i  << fixed << setw(20) << setprecision(10) << e0all_[i] << endl;  
-
-      update_amplitude(t2all_[i], rall_[i]);
-      //zeroing out the residual
-      rall_[i]->zero();
-      if (err_[i]<info_->thresh()) break; 
- #endif
-   }
-//    print_iteration(iter == info_->maxiter());
-    timer.tick_print("CASPT2 energy evaluation");
-      for (int istate = 0; istate != nstates_; ++istate) {
-      cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
-      }
-  }
+      rall_[i]->zero(); // in old CASPT2
+    }
+      if (nstates_ > 1) cout << endl; 
+      if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break; 
+  } 
+  print_iteration(iter == info_->maxiter());
+  timer.tick_print("CASPT2 energy evaluation");
+    for (int istate = 0; istate != nstates_; ++istate) {
+      cout << "    * CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
+    }
 }
 
 void CASPT2::CASPT2::solve_deriv() {
 
-#if 0   
+#if 1   
   Timer timer;
   shared_ptr<Queue> corrq = make_corrq();
   correlated_norm_ = accumulate(corrq);
