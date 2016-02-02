@@ -27,6 +27,7 @@
 
 #include <src/ci/fci/distcivec.h>
 #include <src/ci/fci/space.h>
+#include <src/ci/fci/mofile.h>
 
 namespace bagel {
 
