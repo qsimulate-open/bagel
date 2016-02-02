@@ -159,22 +159,6 @@ class Dvector_base {
       return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
     }
 
-    void spin_decontaminate() {
-      for (int i = 0; i < ij_; ++i) {
-#ifdef HAVE_MPI_H
-        if (i % mpi__->size() == mpi__->rank())
-          data(i)->spin_decontaminate();
-#else
-        data(i)->spin_decontaminate();
-#endif
-      }
-
-#ifdef HAVE_MPI_H
-      for (int i = 0; i < ij_; ++i)
-        data(i)->synchronize(i%mpi__->size());
-#endif
-    }
-
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::orthog called inconsistently");
       std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
