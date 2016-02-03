@@ -44,6 +44,7 @@ class SCF_base_ : public Method {
     std::shared_ptr<const HcType> hcore_;
     std::shared_ptr<const Coeff_<MatType>> coeff_;
 
+    bool dofmm_;
     int max_iter_;
 
     int diis_start_;

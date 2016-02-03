@@ -41,7 +41,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
+Hcore::Hcore(shared_ptr<const Molecule> mol, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
 
   init(mol);
   fill_upper();
@@ -60,11 +60,14 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
-  {
-    NAIBatch nai(input, mol);
-    nai.compute();
 
-    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+  if (!dofmm_) {
+    {
+      NAIBatch nai(input, mol);
+      nai.compute();
+
+      add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    }
   }
 
   if (mol->atoms().front()->use_ecp_basis()) {

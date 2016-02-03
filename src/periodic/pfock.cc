@@ -83,5 +83,9 @@ void PFock::form_pfock_fmm(const bool dodf, const int lmax, const int ws, const 
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*jop)(i));
 
-  time.tick_print("Coulomb build in PFock with P-FMM-DF");
+  if (dodf) {
+      time.tick_print("Coulomb build in PFock with P-FMM-DF");
+  } else {
+      time.tick_print("Coulomb build in PFock with P-FMM");
+  }
 }

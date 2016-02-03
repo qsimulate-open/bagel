@@ -42,6 +42,7 @@ class Matrix1e_ : public MatType{
   protected:
     virtual void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) = 0;
     virtual void init(std::shared_ptr<const Molecule>);
+    bool dofmm_;
 
   private:
     // serialization
@@ -54,7 +55,7 @@ class Matrix1e_ : public MatType{
 
   public:
     Matrix1e_() { }
-    Matrix1e_(std::shared_ptr<const Molecule>);
+    Matrix1e_(std::shared_ptr<const Molecule>, const bool dofmm = false);
     Matrix1e_(const Matrix1e_&);
     virtual ~Matrix1e_() { }
 

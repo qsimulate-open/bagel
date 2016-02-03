@@ -26,6 +26,7 @@
 
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
+#include <src/integral/os/overlapbatch.h>
 #include <src/periodic/localexpansion.h>
 
 using namespace bagel;
@@ -253,10 +254,22 @@ void Node::compute_multipoles(const int lmax) {
               for (auto& b1 : atom1->shells()) {
                 //array<double, 3> centre = compute_centre({{b1, b0}});
                 //MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, centre, lmax);
-                MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
-                mpole.compute();
-                for (int i = 0; i != nmultipole; ++i)
-                  multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+                {
+                  MultipoleBatch mpole(array<shared_ptr<const Shell>, 2>{{b1, b0}}, position_, lmax);
+                  mpole.compute();
+                  for (int i = 0; i != nmultipole; ++i)
+                    multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
+                }
+#if 0
+                const double dist = atom0->distance(atom1);
+                if (dist < numerical_zero__) {
+                  OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
+                  overlap.compute();
+                  Matrix o(b1->nbasis(), b0->nbasis());
+                  o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
+                  multipoles[0]->add_real_block(-atom1->atom_charge(), ob1, ob0, b1->nbasis(), b0->nbasis(), o);
+                }
+#endif
 
                 ob1 += b1->nbasis();
               }
@@ -367,13 +380,60 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
       *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
     }
+
+#if 0
+    shared_ptr<const ZMatrix> nai = compute_nuclear_charge();
+    complex<double> contract = 0.0;
+    for (int j = 0; j != dimb; ++j)
+      for (int k = 0; k != dimb; ++k)
+        contract += lmoments[0]->element(k, j) * subden.element(k, j);
+    *out -= contract * *nai;
+#endif
   }
 
   local_expansion_ = out;
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets, const bool dodf, const string auxfile) {
+shared_ptr<const ZMatrix> Node::compute_nuclear_charge() {
+
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+
+  size_t ob0 = 0;
+  for (auto& a0 : bodies_) {
+    for (auto& atom0 : a0->atoms()) {
+      const int scale = atom0->atom_charge()/nbasis_;
+      for (auto& b0 : atom0->shells()) {
+
+        size_t ob1 = 0;
+        for (auto& a1 : bodies_) {
+          for (auto& atom1 : a1->atoms()) {
+            for (auto& b1 : atom1->shells()) {
+              const double dist = atom0->distance(atom1);
+
+              if (dist < numerical_zero__) {
+                OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
+                overlap.compute();
+                Matrix o(b1->nbasis(), b0->nbasis());
+                o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
+                out->add_real_block(scale, ob1, ob0, b1->nbasis(), b0->nbasis(), o);
+              }
+
+              ob1 += b1->nbasis();
+            }
+          }
+        }
+
+        ob0 += b0->nbasis();
+      }
+    }
+  }
+
+  return out;
+}
+
+
+shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -469,6 +529,42 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   assert (ibas >= 0);
   const size_t size = basis.size();
 
+  // NAI for close-range
+  auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
+
+  for (auto& a3 : bodies_) {
+    size_t iat3 = 0;
+    for (auto& atom3 : a3->atoms()) {
+      size_t ish3 = 0;
+      for (auto& b3 : atom3->shells()) {
+        const int b3size = b3->nbasis();
+        const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
+        ++ish3;
+
+        for (int i2 = 0; i2 != size; ++i2) {
+          const shared_ptr<const Shell>  b2 = basis[i2];
+          const int b2offset = new_offset[i2];
+          const int b2size = b2->nbasis();
+          {
+            array<shared_ptr<const Shell>,2> shells = {{b3, b2}};
+            NAIBatch naibatch(shells, mol);
+            naibatch.compute();
+            const double* naidata = naibatch.data();
+            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
+                const double nai = *naidata;
+                out->element(j2, j3) += 2.0 * nai;
+              }
+            }
+          }
+        }
+
+      }
+      ++iat3;
+    }
+  }
+
+
   if (!dodf) {
     const double* density_data = density->data();
 
@@ -512,6 +608,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
                     }
                   }
                 }
+
               }
               ++iat3;
             }
@@ -578,11 +675,12 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     }
   }
 
+
   return out;
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, const int lmax, vector<int> offsets) {
+shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix> density, vector<int> offsets) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());

@@ -45,11 +45,13 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   do_grad_ = idata_->get<bool>("gradient", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
+  // FMM
+  dofmm_   = idata_->get<bool>("cfmm", false);
 
   Timer scfb;
   overlap_ = make_shared<const OvlType>(geom);
   scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom);
+  hcore_ = make_shared<const HcType>(geom, dofmm_);
   scfb.tick_print("Hcore matrix");
 
   max_iter_ = idata_->get<int>("maxiter", 100);
