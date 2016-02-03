@@ -27,6 +27,7 @@
 #ifdef COMPILE_SMITH
 
 #include <ga.h>
+#include <numeric>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/smith_util.h>
@@ -86,7 +87,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     // canonical orbitals within closed and virtual subspaces
     coeff_ = fock.coeff();
   }
-
+  
   // v2 tensor.
   {
     IndexRange occ(closed_);  occ.merge(active_);
@@ -122,7 +123,10 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   }
 
   // set e0
-  e0_ = compute_e0();
+  compute_e0();
+  // TODO for the time being
+  const int nstates = info_->ciwfn()->nstates();
+  e0_ = accumulate(e0all_.begin(), e0all_.end(), 0)/nstates;
 }
 
 
@@ -160,6 +164,8 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
       shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+cout << ist << " " << jst << endl;
+rdm1->print();
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
@@ -370,12 +376,12 @@ void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
 
 
 template<typename DataType>
-double SpinFreeMethod<DataType>::compute_e0() {
+void SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
   const size_t nstates = info_->ciwfn()->nstates();
   e0all_.resize(nstates);
-  DataType sum = 0.0;
   for (int ist = 0; ist != nstates; ++ist) {
+    DataType sum = 0.0;
     set_rdm(ist, ist);
     assert(!!rdm1_);
     for (auto& i1 : active_) {
@@ -387,9 +393,8 @@ double SpinFreeMethod<DataType>::compute_e0() {
       }
     }
     e0all_[ist] = detail::real(sum);
-//    cout << "    - Zeroth order energy, state " << setw(2) << ist << ": " << setw(20) << setprecision(10) << sum << endl;
+    cout << "    - Zeroth order energy, state " << setw(2) << ist << ": " << setw(20) << setprecision(10) << sum << endl;
   }
-  return detail::real(sum);
 }
 
 

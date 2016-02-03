@@ -76,9 +76,9 @@ void CASPT2::CASPT2::solve() {
 // set t2 to zero
   {
     for (int i = 0; i != nstates_; ++i) {
-     t2all_[i]->zero();
-     e0_ = compute_e0(); 
-     update_amplitude(t2all_[i], sall_[i]);
+      t2all_[i]->zero();
+      e0_ = e0all_[i];
+      update_amplitude(t2all_[i], sall_[i]);
     }
   } 
 
@@ -86,9 +86,10 @@ void CASPT2::CASPT2::solve() {
   vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
   for (int i = 0; i != nstates_; ++i) {
     solvers[i] = make_shared<LinearRM<MultiTensor>>(30, sall_[i]);
-    energy_.push_back(detail::real(dot_product_transpose(sall_[i], t2all_[i])));
   }
 
+  energy_.resize(nstates_);
+  vector<double> error(nstates_);
   Timer mtimer;
   int iter = 0;
   vector<bool> conv(nstates_, false);
@@ -96,6 +97,13 @@ void CASPT2::CASPT2::solve() {
     //ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
     //loop over state of interest
     for (int i = 0; i != nstates_; ++i) {  // K states
+      if (conv[i]) {
+        print_iteration(iter, energy_[i], error[i], 0.0);
+        continue;
+      }
+      const double norm = t2all_[i]->norm();
+      t2all_[i]->scale(1.0/norm);
+
       //compute residuals named r for each K
       for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
         for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
@@ -103,13 +111,15 @@ void CASPT2::CASPT2::solve() {
           set_rdm(jst, ist);
           t2 = t2all_[i]->at(ist);
           r = rall_[i]->at(jst);
+          e0_ = e0all_[i];
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
-             queue->next_compute();
-          diagonal(r, t2);
+            queue->next_compute();
+          if (ist == jst)
+            diagonal(r, t2);
         }
       }
-      
+ 
       //solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
       t2all_[i] = solvers[i]->civec();  
@@ -119,26 +129,26 @@ void CASPT2::CASPT2::solve() {
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t2all_[i]));
 
       //compute rms for state i
-      const double err = rall_[i]->rms();  
-      print_iteration(iter, energy_[i], err, mtimer.tick(), i);
+      error[i] = rall_[i]->rms();  
+      print_iteration(iter, energy_[i], error[i], mtimer.tick());
+
+      conv[i] = error[i] < info_->thresh();
 
       //compute delta t2 and update amplitude 
-      t2all_[i]->zero(); // zero before update in MRCI. why?
-      conv[i] = err < info_->thresh();
-
-      if (!conv[i])  //if not converged update
-        update_amplitude(t2all_[i],rall_[i]);
-
-      rall_[i]->zero(); // in old CASPT2
+      if (!conv[i]) {  //if not converged update
+        t2all_[i]->zero(); // zero before update in MRCI. why?
+        update_amplitude(t2all_[i], rall_[i]);
+        rall_[i]->zero();
+      }
     }
-      if (nstates_ > 1) cout << endl; 
-      if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break; 
+    if (nstates_ > 1) cout << endl; 
+    if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break; 
   } 
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-    for (int istate = 0; istate != nstates_; ++istate) {
-      cout << "    * CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
-    }
+  for (int istate = 0; istate != nstates_; ++istate) {
+    cout << "    * CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
+  }
 }
 
 void CASPT2::CASPT2::solve_deriv() {

@@ -29,6 +29,8 @@
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
 
+#include "string"
+
 // Solves a linear equation using residual minimization.
 // Compared to Linear, this is robust because we don't assume
 // positive definiteness of the A matrix here.

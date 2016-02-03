@@ -62,7 +62,6 @@ class SpinFreeMethod {
     std::shared_ptr<const MatType> coeff_;
     double e0_;
     std::vector<double> e0all_;
-
     double core_energy_;
     double energy_;
 
@@ -108,7 +107,7 @@ class SpinFreeMethod {
     static void print_iteration(const bool noconv);
 
     // compute e0 which is defined as Trace(f(x,x), gamma(x,x))
-    double compute_e0();
+    void compute_e0();
 
     // denominator objects
     std::shared_ptr<const Denom<DataType>> denom_;
