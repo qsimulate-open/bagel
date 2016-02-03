@@ -556,9 +556,6 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // translate Olm(L), contract with Slm
-  const size_t nbasis1 = scell_->multipoles().front()->ndim();
-  const size_t nbasis0 = scell_->multipoles().front()->mdim();
-
   vector<shared_ptr<const ZMatrix>> out(nvec);
   for (int ivec = 0; ivec != nvec; ++ivec) {
     array<int, 3> idx = vidx[ivec];

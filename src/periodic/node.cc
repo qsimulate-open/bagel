@@ -485,11 +485,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : atom->shells()) {
+        for (int ish = 0; ish != atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -514,11 +511,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : close_atom->shells()) {
+        for (int ish = 0; ish != close_atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -695,11 +689,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : atom->shells()) {
+        for (int ish = 0; ish != atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -712,11 +703,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
           const vector<shared_ptr<const Shell>> tmp = distant_atom->shells();
           basis.insert(basis.end(), tmp.begin(), tmp.end());
           vector<int> tmpoff;
-          size_t ish = 0;
-          for (auto& shell : distant_atom->shells()) {
+          for (int ish = 0; ish != distant_atom->shells().size(); ++ish)
             tmpoff.insert(tmpoff.end(), offsets[distant_body->ishell(iat) + ish]);
-            ++ish;
-          }
 
           new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
           ++iat;
