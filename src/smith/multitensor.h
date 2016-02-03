@@ -102,18 +102,17 @@ class MultiTensor_ {
 
     double norm() const {
       double out = 0.0;
-      size_t size = fac_.size();
       for (auto& i : fac_)
         out += detail::real(detail::conj(i)*i);
-      for (auto& i : tensors_) {
+      for (auto& i : tensors_)
         out += std::pow(i->norm(),2);
-        size += i->size_alloc();
-      }
       return std::sqrt(out);
     }
 
     double rms() const {
       size_t size = fac_.size();
+      for (auto& i : tensors_)
+        size += i->size_alloc();
       return norm() / std::sqrt(size);
     }
 
