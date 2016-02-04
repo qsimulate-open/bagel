@@ -30,9 +30,6 @@
 #include <src/util/taskqueue.h>
 #include <src/ci/ras/civec_spinop.h>
 
-template class bagel::RASCivector<double>;
-template class bagel::RASCivecView_<double>;
-
 using namespace std;
 using namespace bagel;
 
@@ -85,3 +82,6 @@ template<> shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_raise(sha
   RAS::spin_raise_impl(*this, *out);
   return out;
 }
+
+template class bagel::RASCivector<double>;
+template class bagel::RASCivecView_<double>;

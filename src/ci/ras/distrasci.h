@@ -31,7 +31,7 @@
 #include <src/ci/fci/properties.h>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
-#include <src/ci/ras/civector.h>
+#include <src/ci/ras/distcivector.h>
 
 namespace bagel {
 

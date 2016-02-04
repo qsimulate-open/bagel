@@ -38,7 +38,7 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
   const int nstate = ccvec->ij();
   shared_ptr<const RASDeterminants> det = ccvec->det();
 
-#if 1
+#if 0
   vector<shared_ptr<RASCivec>> tmpvecs;
   for (int i = 0; i < nstate; ++i) {
     tmpvecs.push_back(ccvec->data(i)->civec());
@@ -87,10 +87,6 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     sigma_bb(cc, sigma, g->data(), jop->mo2e_ptr());
     pdebug.tick_print("taskbb");
 
-    // finish transpose
-    cctrans->transpose_wait();
-    pdebug.tick_print("wait");
-
     // (taskaa)
     shared_ptr<DistRASCivec> strans = cctrans->clone();
     sigma_bb(cctrans, strans, g->data(), jop->mo2e_ptr());
@@ -105,7 +101,6 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     pdebug.tick_print("taskab");
 
     // finish transpose back
-    saa->transpose_wait();
     pdebug.tick_print("wait1");
     sigma->ax_plus_y(1.0, *saa);
   }
@@ -135,13 +130,11 @@ shared_ptr<DistRASDvec> DistFormSigmaRAS::operator()(shared_ptr<const DistRASDve
     sigma_bb(cc, sigma, mo1e, blank2e.get());
 
     shared_ptr<DistRASCivec> strans = cctrans->clone();
-    cctrans->transpose_wait();
 
     // (taskaa)
     sigma_bb(cctrans, strans, mo1e, blank2e.get());
 
     shared_ptr<DistRASCivec> saa = strans->transpose();
-    saa->transpose_wait();
 
     sigma->ax_plus_y(1.0, *saa);
   }

@@ -295,8 +295,6 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
 
       if (std::find(serial_options.begin(), serial_options.end(), method) != serial_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<RASCI, RASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
-      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
-        results.push_back(std::make_shared<VecType>(embedded_ci<DistRASCI, DistRASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
       else
         throw std::logic_error("Unrecognized RAS type algorithm");
 
