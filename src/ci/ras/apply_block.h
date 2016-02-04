@@ -27,6 +27,7 @@
 
 #include <src/util/math/algo.h>
 #include <src/ci/ciutil/citraits.h>
+#include <src/ci/ciutil/bitutil.h>
 
 namespace bagel {
 
@@ -80,8 +81,7 @@ class Apply_block {
             blas::ax_plus_y_n(sign, sourcedata, lb, targetdata);
           }
         }
-      }
-      else {
+      } else {
         assert( source->lena() == target->lena() );
 
         const size_t tlb = target->lenb();

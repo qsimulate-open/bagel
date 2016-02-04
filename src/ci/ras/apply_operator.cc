@@ -22,6 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <src/ci/ras/apply_block.h>
 #include <src/ci/ras/apply_operator.h>
 #include <src/util/math/algo.h>
 
