@@ -39,12 +39,11 @@ namespace bagel {
 template <typename CiType>
 class Dvector_base {
   // used for template magicking
-  public: using DetType = typename CiType::DetType;
-  public: using Ci = CiType;
-
-  // only for use in lambdas
-  using CiPtr = std::shared_ptr<CiType>;
-  using CiConstPtr = std::shared_ptr<const CiType>;
+  public:
+    using DetType = typename CiType::DetType;
+    using Ci = CiType;
+    using CiPtr = std::shared_ptr<CiType>;
+    using CiConstPtr = std::shared_ptr<const CiType>;
 
   protected:
     // the determinant space where Dvector_base's are sitting
@@ -87,7 +86,7 @@ class Dvector_base {
     std::shared_ptr<const DetType> det() const { return det_; }
 
     CiPtr& data(const size_t i) { return dvec_[i]; }
-    CiPtr data(const size_t i) const { return dvec_[i]; }
+    CiConstPtr data(const size_t i) const { return dvec_[i]; }
 
     std::vector<CiPtr>& dvec() { return dvec_; }
     const std::vector<CiPtr>& dvec() const { return dvec_; }

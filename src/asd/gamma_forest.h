@@ -28,6 +28,7 @@
 #include <set>
 #include <src/ci/fci/dvec.h>
 #include <src/ci/ras/civector.h>
+#include <src/ci/ras/apply_block.h>
 #include <src/util/math/matrix.h>
 #include <src/util/taskqueue.h>
 #include <src/asd/coupling.h>
@@ -438,33 +439,27 @@ class RASTask {
           if (info[0] == ras[0]) {
             // no alpha holes, only beta holes
             needed.insert(static_cast<int>(GammaSQ::CreateBeta));
-          }
-          else if (info[1] == ras[0]) {
+          } else if (info[1] == ras[0]) {
             // no beta holes, only alpha holes
             needed.insert(static_cast<int>(GammaSQ::CreateAlpha));
-          }
-          else {
+          } else {
             // both types of holes present
             needed.insert(static_cast<int>(GammaSQ::CreateAlpha));
             needed.insert(static_cast<int>(GammaSQ::CreateBeta));
           }
-        }
-        else if (nparts == (particles_+1)) {
+        } else if (nparts == (particles_+1)) {
           if (info[4] == 0) {
             // no alpha particles, only beta particles
             needed.insert(static_cast<int>(GammaSQ::AnnihilateBeta));
-          }
-          else if (info[5] == 0) {
+          } else if (info[5] == 0) {
             // no beta particles, only alpha particles
             needed.insert(static_cast<int>(GammaSQ::AnnihilateAlpha));
-          }
-          else {
+          } else {
             // both present
             needed.insert(static_cast<int>(GammaSQ::AnnihilateBeta));
             needed.insert(static_cast<int>(GammaSQ::AnnihilateAlpha));
           }
-        }
-        else {
+        } else {
           // impossible to contribute
           return nullptr;
         }
