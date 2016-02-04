@@ -72,7 +72,7 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
-    std::shared_ptr<const ZMatrix> compute_nuclear_charge();
+    std::shared_ptr<const ZMatrix> compute_NAI_far_field(const int lmax);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
     std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, std::vector<int> offsets, const bool dodf = false, const std::string auxfile = "");
     std::shared_ptr<const ZMatrix> compute_exact_Coulomb_FF(std::shared_ptr<const Matrix> density, std::vector<int> offsets);

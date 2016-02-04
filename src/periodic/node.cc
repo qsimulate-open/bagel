@@ -260,16 +260,6 @@ void Node::compute_multipoles(const int lmax) {
                   for (int i = 0; i != nmultipole; ++i)
                     multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
                 }
-#if 0
-                const double dist = atom0->distance(atom1);
-                if (dist < numerical_zero__) {
-                  OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
-                  overlap.compute();
-                  Matrix o(b1->nbasis(), b0->nbasis());
-                  o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
-                  multipoles[0]->add_real_block(-atom1->atom_charge(), ob1, ob0, b1->nbasis(), b0->nbasis(), o);
-                }
-#endif
 
                 ob1 += b1->nbasis();
               }
@@ -380,51 +370,37 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
       *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
     }
-
-#if 0
-    shared_ptr<const ZMatrix> nai = compute_nuclear_charge();
-    complex<double> contract = 0.0;
-    for (int j = 0; j != dimb; ++j)
-      for (int k = 0; k != dimb; ++k)
-        contract += lmoments[0]->element(k, j) * subden.element(k, j);
-    *out -= contract * *nai;
-#endif
   }
 
-  local_expansion_ = out;
+  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax);
+  local_expansion_ = make_shared<const ZMatrix>(*out + *nai);
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_nuclear_charge() {
+shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
+
+  const int nmultipole = (lmax + 1) * (lmax + 1);
+  vector<int> l_map(nmultipole);
+  int cnt = 0;
+  for (int l = 0; l <= lmax; ++l)
+    for (int m = 0; m <= 2 * l; ++m, ++cnt)
+      l_map[cnt] = l;
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-  size_t ob0 = 0;
-  for (auto& a0 : bodies_) {
-    for (auto& atom0 : a0->atoms()) {
-      const int scale = atom0->atom_charge()/nbasis_;
-      for (auto& b0 : atom0->shells()) {
+  for (auto& distant_node : interaction_list_) {
+    array<double, 3> r12;
+    r12[0] = distant_node->position(0) - position_[0];
+    r12[1] = distant_node->position(1) - position_[1];
+    r12[2] = distant_node->position(2) - position_[2];
+    LocalExpansion lx(r12, multipoles_, lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-        size_t ob1 = 0;
-        for (auto& a1 : bodies_) {
-          for (auto& atom1 : a1->atoms()) {
-            for (auto& b1 : atom1->shells()) {
-              const double dist = atom0->distance(atom1);
-
-              if (dist < numerical_zero__) {
-                OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
-                overlap.compute();
-                Matrix o(b1->nbasis(), b0->nbasis());
-                o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
-                out->add_real_block(scale, ob1, ob0, b1->nbasis(), b0->nbasis(), o);
-              }
-
-              ob1 += b1->nbasis();
-            }
-          }
-        }
-
-        ob0 += b0->nbasis();
+    for (auto& body : distant_node->bodies()) {
+      for (auto& atom : body->atoms()) {
+        const double Z = atom->atom_charge();
+        for (int i = 0; i != nmultipole; ++i)
+          *out += -2.0 * pow(-1.0, l_map[i]) * Z * *lmoments[i];
       }
     }
   }
