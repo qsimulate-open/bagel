@@ -116,7 +116,9 @@ BOOST_AUTO_TEST_SUITE(TEST_RELCAS)
 BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931815));
   BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
+#ifndef HAVE_MPI_H
   BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
+#endif
   BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281524));
   BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647946));
 #ifndef DISABLE_SERIALIZATION
