@@ -24,19 +24,20 @@
 
 #include <src/pt2/mp2/mp2cache.h>
 
+using namespace std;
 using namespace bagel;
 
 template<>
 MP2Tag<double> MP2Cache_<double>::create_cache_and_request_recv(const int i, const int origin) {
-  cache_[i] = std::make_shared<Matrix>(naux_, nvirt_, true);
+  cache_[i] = make_shared<Matrix>(naux_, nvirt_, true);
   return MP2Tag<double>{mpi__->request_recv(cache_[i]->data(), cache_[i]->size(), origin, myrank_*nocc_+i)};
 }
 
 template<>
-MP2Tag<std::complex<double>> MP2Cache_<std::complex<double>>::create_cache_and_request_recv(const int i, const int origin) {
-  cache_[i] = {std::make_shared<Matrix>(naux_, nvirt_, true), std::make_shared<Matrix>(naux_, nvirt_, true)};
-  return MP2Tag<std::complex<double>>{mpi__->request_recv(cache_[i].first->data(),  cache_[i].first->size(),  origin, myrank_*nocc_*2+i*2),
-                                      mpi__->request_recv(cache_[i].second->data(), cache_[i].second->size(), origin, myrank_*nocc_*2+i*2+1)};
+MP2Tag<complex<double>> MP2Cache_<complex<double>>::create_cache_and_request_recv(const int i, const int origin) {
+  cache_[i] = {make_shared<Matrix>(naux_, nvirt_, true), make_shared<Matrix>(naux_, nvirt_, true)};
+  return MP2Tag<complex<double>>{mpi__->request_recv(cache_[i].first->data(),  cache_[i].first->size(),  origin, myrank_*nocc_*2+i*2),
+                                 mpi__->request_recv(cache_[i].second->data(), cache_[i].second->size(), origin, myrank_*nocc_*2+i*2+1)};
 }
 
 template<>
@@ -45,21 +46,21 @@ MP2Tag<double> MP2Cache_<double>::request_send(const int i, const int dest) {
 }
 
 template<>
-MP2Tag<std::complex<double>> MP2Cache_<std::complex<double>>::request_send(const int i, const int dest) {
-  return MP2Tag<std::complex<double>>{mpi__->request_send(fullt_->data(0) + (i*nvirt_-fullt_->bstart())*naux_, nvirt_*naux_, dest, dest*nocc_*2+i*2),
-                                      mpi__->request_send(fullt_->data(1) + (i*nvirt_-fullt_->bstart())*naux_, nvirt_*naux_, dest, dest*nocc_*2+i*2+1)};
+MP2Tag<complex<double>> MP2Cache_<complex<double>>::request_send(const int i, const int dest) {
+  return MP2Tag<complex<double>>{mpi__->request_send(fullt_->data(0) + (i*nvirt_-fullt_->bstart())*naux_, nvirt_*naux_, dest, dest*nocc_*2+i*2),
+                                 mpi__->request_send(fullt_->data(1) + (i*nvirt_-fullt_->bstart())*naux_, nvirt_*naux_, dest, dest*nocc_*2+i*2+1)};
 }
 
 template<>
-std::shared_ptr<const Matrix> MP2Cache_<double>::operator()(const int i) const {
+shared_ptr<const Matrix> MP2Cache_<double>::operator()(const int i) const {
   return cache_.at(i);
 }
 
 template<>
-std::shared_ptr<const ZMatrix> MP2Cache_<std::complex<double>>::operator()(const int i) const {
-  return std::make_shared<ZMatrix>(*cache_.at(i).first, *cache_.at(i).second);
+shared_ptr<const ZMatrix> MP2Cache_<complex<double>>::operator()(const int i) const {
+  return make_shared<ZMatrix>(*cache_.at(i).first, *cache_.at(i).second);
 }
 
 /// specialization ///
 template class MP2Cache_<double>;
-template class MP2Cache_<std::complex<double>>;
+template class MP2Cache_<complex<double>>;
