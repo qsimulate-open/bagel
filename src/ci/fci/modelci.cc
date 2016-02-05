@@ -81,13 +81,12 @@ class CIHamTask : public CITask<CIHamTask> {
         for (auto i = boccs.begin(); i != boccs.end(); ++i)
           for (auto j = boccs.begin(); j != i; ++j)
             out += jop_->mo2e(*j,*j,*i,*i) - jop_->mo2e(*j,*i,*j,*i);
-      }
-      else if (nexch == 2) {
+      } else if (nexch == 2) {
         // single exchange
         vector<int> exch_ind = bit_to_numbers(naexch==2 ? aexch : bexch);
         const int i = exch_ind.front();
         const int j = exch_ind.back();
-        const double signij = static_cast<double>( sign((naexch==2?abra:bbra), i, j) );
+        const double signij = sign((naexch==2?abra:bbra), i, j);
 
         // one-body
         out += signij * mo1e_->element(i,j);
@@ -96,14 +95,13 @@ class CIHamTask : public CITask<CIHamTask> {
         bitset<nbit__> acomm = abra & aket;
         bitset<nbit__> bcomm = bbra & bket;
         for (int k = 0; k < norb; ++k) {
-          const double nj = static_cast<double>(acomm[k] + bcomm[k]);
+          const double nj = acomm[k] + bcomm[k];
           out += nj * signij * jop_->mo2e(i, j, k, k);
         }
 
         for (int& k : bit_to_numbers((naexch==2?acomm:bcomm)))
           out -= signij * mo2e(i, k, j, k);
-      }
-      else if (nexch == 4) {
+      } else if (nexch == 4) {
         // double exchange (two-body only)
         if (naexch == nbexch) {
           vector<int> alphas = bit_to_numbers(aexch);
@@ -116,8 +114,7 @@ class CIHamTask : public CITask<CIHamTask> {
           const int signij = sign(abra, i, j);
           const int signkl = sign(bbra, k, l);
           out += signij * signkl * jop_->mo2e(i,j,k,l);
-        }
-        else {
+        } else {
           bitset<nbit__> exch = (naexch==4 ? aexch : bexch);
           bitset<nbit__> eket = (naexch==4 ? aket : bket);
           bitset<nbit__> ebra = (naexch==4 ? abra : bbra);
@@ -129,7 +126,7 @@ class CIHamTask : public CITask<CIHamTask> {
           const int l = cre_list.back();
           bitset<nbit__> tmp = eket;
           tmp.reset(i); tmp.reset(j);
-          const double phase = static_cast<double>(sign(eket, i, j) * sign(tmp, k, l));
+          const double phase = sign(eket, i, j) * sign(tmp, k, l);
           out += phase * (mo2e(i,k,j,l) - mo2e(i,l,k,j));
         }
       }
@@ -137,8 +134,8 @@ class CIHamTask : public CITask<CIHamTask> {
       return out;
     }
 
-    CIHamTask(vector<SD>* b, shared_ptr<const MOFile>& jop, shared_ptr<const CSymMatrix>& mo1e, const size_t c1, double* d1, const size_t c2, double* d2) :
-      CITask(b, jop->nocc(), c1, d1, c2, d2), jop_(jop), mo1e_(mo1e) {}
+    CIHamTask(vector<SD>* b, shared_ptr<const MOFile>& jop, shared_ptr<const CSymMatrix>& mo1e, const size_t c1, double* d1, const size_t c2, double* d2)
+     : CITask(b, jop->nocc(), c1, d1, c2, d2), jop_(jop), mo1e_(mo1e) {}
 
 };
 
@@ -206,10 +203,9 @@ class CISpinTask : public CITask<CISpinTask> {
         const int nexch = (abra ^ aket).count() + (bbra ^ bket).count();
 
         if (nexch == 0) {
-          const double sz = 0.5*static_cast<double>(bra.first.count() - bra.second.count());
-          out += sz*sz + sz + static_cast<double>(bket.count());
-        }
-        else if (nexch == 4) {
+          const double sz = 0.5*(bra.first.count() - bra.second.count());
+          out += sz*sz + sz + bket.count();
+        } else if (nexch == 4) {
           vector<int> bra_indices = bit_to_numbers(bbra);
           vector<int> ket_indices = bit_to_numbers(bket);
           for (auto& ibra : bra_indices) {
@@ -218,9 +214,8 @@ class CISpinTask : public CITask<CISpinTask> {
             for (auto& jket : ket_indices) {
               bitset<nbit__> aketp = aket; aketp.set(jket);
               bitset<nbit__> bketp = bket; bketp.reset(jket);
-              if ( (abrap == aketp) && (bbrap == bketp) ) {
-                out += static_cast<double>(sign(bra.first, bra.second, ibra) * sign(ket.first, ket.second, jket));
-              }
+              if (abrap == aketp && bbrap == bketp)
+                out += sign(bra.first, bra.second, ibra) * sign(ket.first, ket.second, jket);
             }
           }
         }
@@ -229,8 +224,8 @@ class CISpinTask : public CITask<CISpinTask> {
       return out;
     }
 
-    CISpinTask(vector<SD>* b, const int norb, const size_t c1, double* d1, const size_t c2, double* d2) :
-      CITask(b, norb, c1, d1, c2, d2) {}
+    CISpinTask(vector<SD>* b, const int norb, const size_t c1, double* d1, const size_t c2, double* d2)
+     : CITask(b, norb, c1, d1, c2, d2) {}
 
 };
 

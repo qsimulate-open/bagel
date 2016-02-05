@@ -100,7 +100,7 @@ void FCI::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     for (auto& iter : cc->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = target_base + iter.source*lb;
-      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
+      blas::ax_plus_y_n(sign, source_base + iter.target*lb, lb, target_array);
     }
   }
 }
@@ -129,7 +129,7 @@ void KnowlesHandy::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, 
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
       const double hc = h * iter.sign;
-      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
+      blas::ax_plus_y_n(hc, cc->element_ptr(0, iter.source), lb, sigma->element_ptr(0, iter.target));
     }
   }
 }
@@ -142,7 +142,7 @@ void KnowlesHandy::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) 
     for (auto& iter : e->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = sigma->element_ptr(0, iter.target);
-      daxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
+      blas::ax_plus_y_n(sign, source_base + lb*iter.source, lb, target_array);
     }
   }
 }
