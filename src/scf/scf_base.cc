@@ -47,6 +47,10 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   restart_ = idata_->get<bool>("restart", false);
   // FMM
   dofmm_   = idata_->get<bool>("cfmm", false);
+  if (dofmm_) {
+    fmmtree_ = make_shared<const Tree>(geom_);
+    fmm_lmax_ = idata_->get<int>("l_max", 21);
+  }
 
   Timer scfb;
   overlap_ = make_shared<const OvlType>(geom);

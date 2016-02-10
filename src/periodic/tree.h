@@ -67,15 +67,12 @@ class Tree {
     void get_particle_key(); // a place holder and (nbit__-1)/3 per coordinate
     void keysort();
 
-    std::shared_ptr<const ZMatrix> coulomb_;
-
   public:
     Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const bool do_contract = false,
          const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
     ~Tree() { }
 
-    void fmm(const int lmax, std::shared_ptr<const Matrix> density, const bool dodf = false, const std::string auxfile = " ");
-    std::shared_ptr<const ZMatrix> coulomb() { return coulomb_; }
+    std::shared_ptr<const ZMatrix> fmm(const int lmax, std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const std::string auxfile = " ") const;
 
     void print_tree_xyz() const;
 };

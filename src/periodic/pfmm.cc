@@ -610,7 +610,6 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   int offset = 0;
   int blk0 = -1;
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
-    array<int, 3> idx = vidx[i];
     switch(ndim_) {
       case 1 :
         {
@@ -640,8 +639,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
-  fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
-  shared_ptr<const ZMatrix> coulomb = fmm_tree.coulomb();
+  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
   time.tick_print("  Compute Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);

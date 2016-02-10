@@ -31,6 +31,7 @@
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
+#include <src/periodic/tree.h>
 
 namespace bagel {
 
@@ -69,6 +70,10 @@ class SCF_base_ : public Method {
     // TODO so far only implemented in closed-shell SCF
     bool do_grad_;
     std::shared_ptr<DFHalfDist> half_;
+
+    // FMM
+    std::shared_ptr<const Tree> fmmtree_;
+    int fmm_lmax_;
 
     bool restart_;
 

@@ -47,10 +47,7 @@ void Tree::init() {
   atomgroup_.resize(geom_->natom());
   coordinates_.resize(geom_->natom());
 
-  nbasis_ = 0;
-  for (int i = 0; i != geom_->natom(); ++i)
-    nbasis_ += geom_->atoms(i)->nbasis();
-
+  nbasis_ = geom_->nbasis();
   shell_id_.resize(geom_->natom());
   shell_id_[0] = 0;
   for (int i = 1; i != geom_->natom(); ++i)
@@ -155,12 +152,9 @@ void Tree::contract_vertex() {
     coordinates_[i][0] = atomgroup_[i]->position(0) - position_[0];
     coordinates_[i][1] = atomgroup_[i]->position(1) - position_[1];
     coordinates_[i][2] = atomgroup_[i]->position(2) - position_[2];
-    int iat = 0;
-    for (auto& atom : atomgroup_[i]->atoms()) {
-      cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
-      ++iat;
-    }
-    cout << endl;
+    //for (int iat = 0; iat != atom_group_[i]->atoms().size(); ++iat)
+    //  cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
+    //cout << endl;
   }
 }
 
@@ -239,7 +233,7 @@ void Tree::build_tree() {
 }
 
 
-void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile) {
+shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile) const {
 
   if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
@@ -268,7 +262,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
           [this, i, &out, &density, lmax, offsets] () {
             nodes_[i]->compute_local_expansions(density, lmax, offsets);
             if (nodes_[i]->is_leaf()) {
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, offsets);
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets);
               *out += *tmp;
             }
           }
@@ -281,7 +275,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
       if (u++ % mpi__->size() == mpi__->rank()) {
         nodes_[i]->compute_local_expansions(density, lmax, offsets);
         if (nodes_[i]->is_leaf()) {
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, offsets, true, auxfile);
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true, auxfile);
           *out += *tmp;
         }
       }
@@ -299,7 +293,7 @@ void Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf
 
   // return the Coulomb matrix
   out->allreduce();
-  coulomb_ = out;
+  return out;
 }
 
 

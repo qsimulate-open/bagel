@@ -53,6 +53,12 @@ void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
+  shared_ptr<const Matrix> nai;
+  if (dofmm_) {
+    nai = fmmtree_->fmm(fmm_lmax_)->get_real_part();
+    previous_fock = make_shared<const Matrix>(*hcore_ + 0.5 * *nai);
+  }
+
   shared_ptr<const Matrix> aodensity_;
 
   shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
@@ -63,7 +69,7 @@ void RHF::compute() {
 
   if (!restarted_) {
     if (coeff_ == nullptr) {
-      shared_ptr<const DistMatrix> fock = hcore;
+      shared_ptr<const DistMatrix> fock = previous_fock;
       if (dodf_ && geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
         auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
@@ -120,7 +126,11 @@ void RHF::compute() {
 #endif
 
     if (!dodf_) {
-      previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
+      if (!dofmm_) {
+        previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
+      } else {
+        previous_fock = make_shared<Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+      }
       mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
       previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
@@ -131,6 +141,8 @@ void RHF::compute() {
 
     pdebug.tick_print("Fock build");
 
+    if (dofmm_)
+      fock = make_shared<const DistMatrix>(*fock-0.5 * *nai);
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 
