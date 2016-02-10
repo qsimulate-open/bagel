@@ -103,14 +103,18 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   }
   timer.tick_print("MO integral evaluation");
 
+  auto fockact = make_shared<MatType>(active_.size(), active_.size());
+  const int nclosed2 = info_->nclosed() * (is_same<DataType,double>::value ? 1 : 2);
+  for (auto& i1 : active_)
+    for (auto& i0 : active_)
+      fockact->copy_block(i0.offset()-nclosed2, i1.offset()-nclosed2, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
+  fockact = fockact->get_conjg();
+
+  if (info_->do_xms())
+    rotate_xms(fockact);
+
   // rdms.
   if (info_->ciwfn()) {
-    auto fockact = make_shared<MatType>(active_.size(), active_.size());
-    const int nclosed2 = info_->nclosed() * (is_same<DataType,double>::value ? 1 : 2);
-    for (auto& i1 : active_)
-      for (auto& i0 : active_)
-        fockact->copy_block(i0.offset()-nclosed2, i1.offset()-nclosed2, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
-    fockact = fockact->get_conjg();
 
     feed_rdm_denom(fockact);
     timer.tick_print("RDM + denominator evaluation");
@@ -133,6 +137,44 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 template<typename DataType>
 SpinFreeMethod<DataType>::~SpinFreeMethod() {
 //GA_Terminate();
+}
+
+
+template<>
+void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
+  const int nstates = info_->ciwfn()->nstates();
+#if 1
+  // TODO XMS thing
+  Matrix fmn(nstates, nstates);
+
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst <= ist; ++jst) {
+      // first compute 1RDM
+      shared_ptr<const RDM<1>> rdm1;
+      shared_ptr<const RDM<2>> rdm2;
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      // then assign the dot product
+      fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
+      fmn(jst, ist) = fmn(ist, jst);
+    }
+  }
+
+fmn.print("fmn");
+
+  // TODO construct CIWfn
+   
+  // TODO construct Reference
+
+  // TODO construct SMITH_info
+  //info_ = make_shared<SMITH_info>(.....);
+#endif
+
+}
+
+
+template<>
+void SpinFreeMethod<complex<double>>::rotate_xms(shared_ptr<const ZMatrix> fockact) {
+  assert(false);
 }
 
 
@@ -164,8 +206,6 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
       shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-cout << ist << " " << jst << endl;
-rdm1->print();
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 

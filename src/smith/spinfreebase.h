@@ -98,6 +98,7 @@ class SpinFreeMethod {
     std::vector<double> eig_;
 
     // init functions
+    void rotate_xms(std::shared_ptr<const MatType> fockact);
     void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
     void feed_rdm_deriv(std::shared_ptr<const MatType> fockact);
 
@@ -142,8 +143,10 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 };
 
+template<> void SpinFreeMethod<double>::rotate_xms(std::shared_ptr<const Matrix>);
 template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
 template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
+template<> void SpinFreeMethod<std::complex<double>>::rotate_xms(std::shared_ptr<const ZMatrix>);
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom(std::shared_ptr<const ZMatrix>);
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
 extern template class SpinFreeMethod<double>;

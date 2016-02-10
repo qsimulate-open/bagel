@@ -39,7 +39,7 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
   eig_ = f1_->diag();
   nstates_ = ref->ciwfn()->nstates();
 
-// MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
+  // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
     auto tmp = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp) 
@@ -59,7 +59,7 @@ void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
 
-//<proj_jst|H|0_K> set to sall in ms-caspt2 
+  //<proj_jst|H|0_K> set to sall in ms-caspt2 
   for (int istate = 0; istate != nstates_; ++istate) { //K states
     t2all_[istate]->fac(istate) = 0.0;
     sall_[istate]->fac(istate)  = 0.0;
@@ -73,7 +73,7 @@ void CASPT2::CASPT2::solve() {
     }
   } 
 
-// set t2 to zero
+  // set t2 to zero
   {
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
@@ -82,7 +82,7 @@ void CASPT2::CASPT2::solve() {
     }
   } 
 
-//LinearRM for each state
+  //LinearRM for each state
   vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
   for (int i = 0; i != nstates_; ++i) {
     solvers[i] = make_shared<LinearRM<MultiTensor>>(30, sall_[i]);
@@ -96,6 +96,7 @@ void CASPT2::CASPT2::solve() {
   for ( ; iter != info_->maxiter(); ++iter) {
     //ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
     //loop over state of interest
+
     for (int i = 0; i != nstates_; ++i) {  // K states
       if (conv[i]) {
         print_iteration(iter, energy_[i], error[i], 0.0);
@@ -107,7 +108,7 @@ void CASPT2::CASPT2::solve() {
       //compute residuals named r for each K
       for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
         for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
-        //first term <proj_jst| H0 - E0_K |1_ist>
+          //first term <proj_jst| H0 - E0_K |1_ist>
           set_rdm(jst, ist);
           t2 = t2all_[i]->at(ist);
           r = rall_[i]->at(jst);
@@ -119,7 +120,7 @@ void CASPT2::CASPT2::solve() {
             diagonal(r, t2);
         }
       }
- 
+
       //solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
       t2all_[i] = solvers[i]->civec();  
@@ -131,12 +132,11 @@ void CASPT2::CASPT2::solve() {
       //compute rms for state i
       error[i] = rall_[i]->rms();  
       print_iteration(iter, energy_[i], error[i], mtimer.tick());
-
       conv[i] = error[i] < info_->thresh();
 
       //compute delta t2 and update amplitude 
-      if (!conv[i]) {  //if not converged update
-        t2all_[i]->zero(); // zero before update in MRCI. why?
+      if (!conv[i]) {  
+        t2all_[i]->zero(); 
         update_amplitude(t2all_[i], rall_[i]);
         rall_[i]->zero();
       }
@@ -147,13 +147,44 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   for (int istate = 0; istate != nstates_; ++istate) {
-    cout << "    * CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(0) << endl;
+    cout << "    * CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(istate) << endl;
+  }
+
+  //MS-CASPT2
+  if (info_->do_ms()) {
+    Matrix a(nstates_, nstates_);
+    VectorB eig(nstates_);
+     
+    for (int ist = 0; ist != nstates_; ++ist) {  
+      for (int jst = 0; jst != nstates_; ++jst) {
+
+        if (ist == jst) { 
+          //set diagonal elements
+          a(ist, ist) = energy_[ist]+info_->ciwfn()->energy(ist);
+        } else if (ist < jst) {
+          // set off-diag elements
+          // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
+          a(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
+                           + detail::real(dot_product_transpose(sall_[jst], t2all_[ist]))); 
+          a(ist, jst) = a(jst, ist); 
+   
+        }
+      }
+    }
+    a.print();
+    a.diagonalize(eig);
+    a.print();
+
+    //energy printout
+    for (int istate = 0; istate != nstates_; ++istate) {
+      cout << "    * MS-CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
+    }
   }
 }
 
+
 void CASPT2::CASPT2::solve_deriv() {
 
-#if 1   
   Timer timer;
   shared_ptr<Queue> corrq = make_corrq();
   correlated_norm_ = accumulate(corrq);
@@ -181,7 +212,6 @@ void CASPT2::CASPT2::solve_deriv() {
     dec->next_compute();
   timer.tick_print("CI derivative evaluation");
   cout << endl;
-#endif
  }
 
 
