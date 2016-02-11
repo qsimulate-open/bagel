@@ -79,14 +79,24 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spin_plus_;
     std::shared_ptr<ZMatrix> spin_minus_;
 
-    // These are over eigenstates of the (ZFCI) Hamiltonian; those over pseudospin eigenstates are not saved as members
+    // Columns of this matrix give the axes along which we define Sx, Sy, and Sz
+    // Normally, they are eigenvectors of the Abragam-Bleaney tensor (G)
+    std::shared_ptr<const Matrix> spin_axes_;
+
+    // These matrices run over eigenstates of the (ZFCI) Hamiltonian; those over pseudospin eigenstates are not saved as members
     std::shared_ptr<ZMatrix> spinham_h_;
     std::shared_ptr<ZMatrix> trev_h_;
-    std::array<std::shared_ptr<ZMatrix>,3> spinop_h_;
+    std::array<std::shared_ptr<ZMatrix>,3> zfci_mu_;
     std::array<std::shared_ptr<ZMatrix>,3> zfci_spin_;
     std::array<std::shared_ptr<ZMatrix>,3> zfci_orbang_;
 
+    // Same as the above three, but rotated from geometric axes to spin_axes_
+    std::array<std::shared_ptr<ZMatrix>, 3> zfci2_mu_;
+    std::array<std::shared_ptr<ZMatrix>, 3> zfci2_spin_;
+    std::array<std::shared_ptr<ZMatrix>, 3> zfci2_orbang_;
+
     void update_spin_matrices(VectorB spinvals);
+    std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const;
     std::shared_ptr<Matrix> enforce_right_handed(std::shared_ptr<const Matrix>) const;
 
   public:
@@ -105,9 +115,9 @@ class Pseudospin {
     std::shared_ptr<const Matrix> identify_magnetic_axes() const;
 
     // to extract D-tensor
-    std::shared_ptr<const ZMatrix> compute_spin_eigenvalues(const std::array<double, 3> rotation, const ZHarrison& zfci) const;
+    std::shared_ptr<const ZMatrix> compute_spin_eigenvalues(const ZHarrison& zfci) const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-    static std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
+    std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively

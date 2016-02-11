@@ -102,6 +102,57 @@ shared_ptr<Matrix> Pseudospin::enforce_right_handed(shared_ptr<const Matrix> in)
 }
 
 
+shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const {
+  array<double,3> default_x, default_z;
+  const array<int,3> fwd = {{ 1, 2, 0 }};
+  const array<int,3> bck = {{ 2, 0, 1 }};
+
+  for (int i = 0; i != 3; ++i) {
+    default_x[i] = default_axes->element(i, 0);
+    default_z[i] = default_axes->element(i, 2);
+  }
+
+  array<array<double, 3>, 3> new_axes;
+  new_axes[2] = zfci.idata()->get_array<double,3>("aniso_zaxis", default_z);
+  new_axes[0] = zfci.idata()->get_array<double,3>("aniso_xaxis", default_x);
+  if (default_z != new_axes[2] && default_x == new_axes[0]) {
+    // No x-axis was given to us, so generate one by taking cross product of default y and input z axes
+    for (int i = 0; i != 3; ++i)
+      new_axes[0][i] = ((default_axes->element(fwd[i], 1) * new_axes[2][bck[i]]) - (new_axes[2][fwd[i]] * default_axes->element(bck[i], 1)));
+  } else {
+    const double dotprod = new_axes[0][0] * new_axes[2][0] + new_axes[0][1] * new_axes[2][1] + new_axes[0][2] * new_axes[2][2];
+    if (std::abs(dotprod) > 1.0e-6)
+      throw runtime_error("Axes defining the quantization of spin must be orthogonal.");
+  }
+  for (int i = 0; i != 3; ++i)
+    new_axes[1][i] = ((new_axes[2][fwd[i]] * new_axes[0][bck[i]]) - (new_axes[0][fwd[i]] * new_axes[2][bck[i]]));
+
+  array<double, 3> factors;
+  for (int i = 0; i != 3; ++i) {
+    double tmp = 0.0;
+    for (int j = 0; j != 3; ++j) {
+      tmp += new_axes[i][j] * new_axes[i][j];
+    }
+    factors[i] = 1.0 / std::sqrt(tmp);
+  }
+
+  shared_ptr<Matrix> out = default_axes->clone();
+  for (int i = 0; i != 3; ++i)
+    for (int j = 0; j != 3; ++j)
+      out->element(i, j) = factors[j] * new_axes[j][i];
+
+  out->print("New spin quantization axes");
+#ifndef NDEBUG
+  // Ensure the rotation matrix defining spin quantization axes is unitary
+  auto iden = out->clone();
+  iden->unit();
+  assert(((*out ^ *out) - *iden).rms() < 1.0e-8);
+#endif
+
+  return out;
+}
+
+
 Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
 
   VectorB spinvals(nspin1_);
@@ -140,13 +191,20 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
   shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
-  array<double,3> rotation;
-    for (int i = 0; i != 3; ++i)
-      rotation[i] = mag_axes->element(i, 2);
+  spin_axes_ = read_axes(mag_axes, zfci);
 
-  array<double, 3> rotin = zfci.idata()->get_array<double,3>("aniso_axis", rotation);
+  for (int i = 0; i != 3; ++i) {
+    zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    zfci2_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    zfci2_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    for (int j = 0; j != 3; ++j) {
+      *zfci2_mu_[i] += spin_axes_->element(j, i) * *zfci_mu_[j];
+      *zfci2_spin_[i] += spin_axes_->element(j, i) * *zfci_spin_[j];
+      *zfci2_orbang_[i] += spin_axes_->element(j, i) * *zfci_orbang_[j];
+    }
+  }
 
-  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(rotin, zfci);
+  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(zfci);
 
   if (nspin_ > 1) {
     ESO = extract_hamiltonian_parameters(ESO, spinham_s);
@@ -366,7 +424,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
   // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
   for (int i = 0; i != 3; ++i) {
-    spinop_h_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+    zfci_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
     zfci_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
     zfci_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
   }
@@ -387,7 +445,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       ZMatrix aodenconj = (*active_coeff * *modensity.get_conjg() ^ *active_coeff);
 
       for (int k = 0; k != 3; ++k) {
-        spinop_h_[k]->element(i,j) = aodenconj.dot_product(*magnetic_moment[k]);
+        zfci_mu_[k]->element(i,j) = aodenconj.dot_product(*magnetic_moment[k]);
         zfci_spin_[k]->element(i,j) = aodenconj.dot_product(*ao_spin(k));
         zfci_orbang_[k]->element(i,j) = aodenconj.dot_product(*ao_orbang[k]);
       }
@@ -427,13 +485,12 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
       for (int j = 0; j != 3; ++j)
         for (int k = 0; k != nspin1_; ++k)
           for (int l = 0; l != nspin1_; ++l)
-            temp->element(i, j) += 0.5 * spinop_h_[i]->element(k, l) * spinop_h_[j]->element(l, k);
+            temp->element(i, j) += 0.5 * zfci_mu_[i]->element(k, l) * zfci_mu_[j]->element(l, k);
 
     Atensor = temp->get_real_part();
     assert(temp->get_imag_part()->rms() < 1.0e-10);
     Atransform = Atensor->copy();
     Atransform->diagonalize(Aeig);
-
     Atransform = enforce_right_handed(Atransform);
 
     Atensor->print("A tensor");
@@ -459,11 +516,11 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     }
 
     *gtensor = (*Atransform * *gtensor ^ *Atransform);
-    auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
+    gtensor->print("g-tensor in the original coordinate system");
 
-    gtensor->print("g-tensor");
     cout << endl;
-    Gtensor->print("G-tensor");
+    auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
+    Gtensor->print("G-tensor in the original coordinate system");
     cout << endl;
 
     assert((*Gtensor - 4.0 * factor * *Atensor).rms() < 1.0e-8);
@@ -481,22 +538,21 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
 }
 
 
-shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<double, 3> rotation, const ZHarrison& zfci) const {
+shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& zfci) const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   ZMatrix transform(nspin1_, nspin1_);
-  const double scale = 1.0 / std::sqrt(rotation[0]*rotation[0] + rotation[1]*rotation[1] + rotation[2]*rotation[2]);
   const string diagset = zfci.idata()->get<string>("aniso_diagop", "Mu");
   if (diagset != "Mu" && diagset != "J" && diagset != "S" && diagset != "L")
     throw runtime_error("Sorry, the only options for which angular momentum to diagonalize are S, L, J and Mu for the magnetic moment");
 
   for (int i = 0; i != 3; ++i) {
     if (diagset == "Mu")
-      transform += scale * rotation[i] * *spinop_h_[i];
+      transform += spin_axes_->element(i, 2) * *zfci_mu_[i];
     if (diagset == "S" || diagset == "J")
-      transform += scale * rotation[i] * *zfci_spin_[i];
+      transform += spin_axes_->element(i, 2) * *zfci_spin_[i];
     if (diagset == "L" || diagset == "J")
-      transform += scale * rotation[i] * *zfci_orbang_[i];
+      transform += spin_axes_->element(i, 2) * *zfci_orbang_[i];
   }
   VectorB zeig(nspin1_);
 #ifndef NDEBUG
@@ -569,7 +625,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   }
 #endif
 
-  cout << "    The z-axis is set to (" << scale*rotation[0] << ", " << scale*rotation[1] << ", " << scale*rotation[2] << ")." << endl << endl;
+  cout << "    The z-axis is set to (" << spin_axes_->element(0, 2) << ", " << spin_axes_->element(1, 2) << ", " << spin_axes_->element(2, 2) << ")." << endl << endl;
   for (int i = 0; i != nspin1_; ++i)
     cout << "    Pseudospin eigenvalue " << i+1 << " = " << setw(12) << zeig[i] << endl;
 
@@ -580,28 +636,34 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const array<doubl
   //}
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(transform % *spinham_h_ * transform);
-  array<shared_ptr<ZMatrix>, 3> spinop_s;
+  array<shared_ptr<ZMatrix>, 3> mu_s;
+  array<shared_ptr<ZMatrix>, 3> spin_s;
+  array<shared_ptr<ZMatrix>, 3> orbang_s;
   auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
-  for (int i = 0; i != 3; ++i)
-    spinop_s[i] = make_shared<ZMatrix>(transform % *spinop_h_[i] * transform);
+  for (int i = 0; i != 3; ++i) {
+    mu_s[i] = make_shared<ZMatrix>(transform % *zfci2_mu_[i] * transform);
+    spin_s[i] = make_shared<ZMatrix>(transform % *zfci2_spin_[i] * transform);
+    orbang_s[i] = make_shared<ZMatrix>(transform % *zfci2_orbang_[i] * transform);
+  }
 
   spinham_s->print("Pseudospin Hamiltonian", 24);
   cout << endl;
-  for (int i = 0; i != 3; ++i)
-    spinop_s[i]->print("Magnetic moment matrix, component " + to_string(i), 24);
+  trev_s->print("Time-reversal operator in pseudospin states", 24);
+  cout << endl;
+  for (int i = 0; i != 3; ++i) {
+    mu_s[i]->print("Magnetic moment matrix, component " + to_string(i), 24);
+    spin_s[i]->print("Spin matrix, component " + to_string(i), 24);
+    orbang_s[i]->print("Orbital moment matrix, component " + to_string(i), 24);
+    cout << endl;
+  }
+  cout << endl;
 
   if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
   cout << endl;
   for (int i = 0; i != 3; ++i) {
-#if 0
-    spinop_s[i]->print("Pseudospin eigenfunction basis magnetic moment matrix " + to_string(i+1));
-    (transform % *zfci_spin_[i] * transform).print("Pseudospin eigenfunction basis spin angular momentum matrix " + to_string(i+1));
-    (transform % *zfci_orbang_[i] * transform).print("Pseudospin eigenfunction basis orbital angular momentum matrix " + to_string(i+1));
-    cout << endl;
-#endif
-    assert(is_t_symmetric(*spinop_s[i], /*hermitian*/true, /*time reversal*/false));
+    assert(is_t_symmetric(*mu_s[i], /*hermitian*/true, /*time reversal*/false));
   }
   assert(is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true));
 
@@ -759,6 +821,10 @@ shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> in
   cout << " ** E = " << setw(12) << std::abs(Eval) << " E_h = " << setw(14) << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
   cout << " ** E / D = " << std::abs(Eval / Dval) << endl;
 
+  cout << endl << " ** Axis of principle D-value (relative to spin quant. axes) = (" << Dtensor_diag->element(0, jmax) << ", " << Dtensor_diag->element(1, jmax) << ", " << Dtensor_diag->element(2, jmax) << ")" << endl;
+
+  Matrix full_rotation = *spin_axes_ * *Dtensor_diag;
+  cout << endl << " ** Axis of principle D-value (relative to input geometry)  =  (" << full_rotation.element(0, jmax) << ", " << full_rotation.element(1, jmax) << ", " << full_rotation.element(2, jmax) << ")" << endl;
   return out;
 }
 
