@@ -97,7 +97,6 @@ class Pseudospin {
 
     void update_spin_matrices(VectorB spinvals);
     std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const;
-    std::shared_ptr<Matrix> enforce_right_handed(std::shared_ptr<const Matrix>) const;
 
   public:
     Pseudospin(const int nspin);

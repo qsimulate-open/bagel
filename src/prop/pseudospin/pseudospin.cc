@@ -72,36 +72,6 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
-// Simple helper function to ensure a right-handed coordinate system
-shared_ptr<Matrix> Pseudospin::enforce_right_handed(shared_ptr<const Matrix> in) const {
-  assert(in->ndim() == 3 && in->mdim() == 3);
-  const array<int,3> fwd = {{ 1, 2, 0 }};
-  const array<int,3> bck = {{ 2, 0, 1 }};
-
-  array<double,3> crossprod_zx;
-  for (int i = 0; i != 3; ++i)
-    crossprod_zx[i] = (in->element(fwd[i], 2) * in->element(bck[i], 0)) - (in->element(fwd[i], 0) * in->element(bck[i], 2));
-
-  shared_ptr<Matrix> out = in->copy();
-  for (int i = 0; i != 3; ++i)
-    out->element(i, 1) = crossprod_zx[i];
-
-#ifndef NDEBUG
-  // Ensure the new y-axis is the same as the old one, multiplied by +/- 1.0
-  int max_pos = 0;
-  for (int i = 1; i != 3; ++i)
-    if (std::abs(in->element(i, 1)) > std::abs(in->element(max_pos, 1)))
-      max_pos = i;
-
-  const int sign = (std::abs(crossprod_zx[max_pos] - in->element(max_pos, 1)) < 1.0e-4) ? 1.0 : -1.0;
-  for (int i = 0; i != 3; ++i)
-    assert(std::abs(crossprod_zx[i] - sign * in->element(i, 1)) < 1.0e-8);
-#endif
-
-  return out;
-}
-
-
 shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const {
   array<double,3> default_x, default_z;
   const array<int,3> fwd = {{ 1, 2, 0 }};
@@ -491,7 +461,6 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     assert(temp->get_imag_part()->rms() < 1.0e-10);
     Atransform = Atensor->copy();
     Atransform->diagonalize(Aeig);
-    Atransform = enforce_right_handed(Atransform);
 
     Atensor->print("A tensor");
     cout << endl;
