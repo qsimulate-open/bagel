@@ -399,13 +399,9 @@ shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
     LocalExpansion lx(r12, multipoles_, lmax);
     vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-    for (auto& body : distant_node->bodies()) {
-      for (auto& atom : body->atoms()) {
-        const double Z = atom->atom_charge();
-        for (int i = 0; i != nmultipole; ++i)
-          *out += -2.0 * pow(-1.0, l_map[i]) * Z * *lmoments[i];
-      }
-    }
+    for (auto& body : distant_node->bodies())
+      for (auto& atom : body->atoms())
+        *out += -2.0 * atom->atom_charge() * *lmoments[0];
   }
 
   return out;
