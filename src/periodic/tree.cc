@@ -285,12 +285,6 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   fmmtime.tick_print("    Upward pass");
   cout << endl;
 
-#if 0
-  // NAI
-  auto nai = make_shared<const TreeNAI>(geom_);
-  *out += *nai;
-#endif
-
   // return the Coulomb matrix
   out->allreduce();
   return out;

@@ -376,7 +376,6 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
   shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax);
   local_expansion_ = make_shared<const ZMatrix>(*out + *nai);
-  //local_expansion_ = make_shared<const ZMatrix>(*out);
 }
 
 
@@ -499,7 +498,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   const size_t size = basis.size();
 
   // NAI for close-range
-#if 1
   auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
 
   for (auto& a3 : bodies_) {
@@ -533,10 +531,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       ++iat3;
     }
   }
-#endif
 
 
-#if 1
   if (!dodf && density != nullptr) {
     const double* density_data = density->data();
 
@@ -646,7 +642,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       o0 += b0size;
     }
   }
-#endif
 
   return out;
 }
