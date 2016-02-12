@@ -578,6 +578,38 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& 
     }
   }
 
+  { // Adjust the phase to make the (M+1, M) elements of the raising operator real (default choice)
+    const string diagset = zfci.idata()->get<string>("aniso_diagop", "Mu");
+    ZMatrix raising_op(nspin1_, nspin1_);
+
+    if (diagset == "Mu") {
+      raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_mu_[0] * transform);
+      raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_mu_[1] * transform);
+    }
+    if (diagset == "S" || diagset == "J") {
+      raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_spin_[0] * transform);
+      raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_spin_[1] * transform);
+    }
+    if (diagset == "L" || diagset == "J") {
+      raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_orbang_[0] * transform);
+      raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_orbang_[1] * transform);
+    }
+
+    complex<double> adjust = 1.0;
+    for (int i = nspin1_ / 2 - 1; i >= 0; --i) {
+
+      double phase_check = std::arg(raising_op.element(i, i+1));
+      if (i + 1 == nspin1_ / 2 && nspin1_ % 2 == 0)
+        phase_check *= 0.5;
+      adjust *= std::polar(1.0, phase_check);
+
+      for (int j = 0; j != nspin1_; ++j) {
+        transform.element(j, i) = adjust * transform.element(j, i);
+        transform.element(j, nspin_ - i) = std::conj(adjust) * transform.element(j, nspin_ - i);
+      }
+    }
+  }
+
   // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
   const shared_ptr<const PTree> phase_input = zfci.idata()->get_child_optional("aniso_phases");
   if (phase_input) {
