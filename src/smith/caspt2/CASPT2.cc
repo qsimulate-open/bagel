@@ -116,8 +116,7 @@ void CASPT2::CASPT2::solve() {
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
-          if (ist == jst)
-            diagonal(r, t2);
+          diagonal(r, t2, jst == ist);
         }
       }
 
