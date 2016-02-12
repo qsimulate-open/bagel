@@ -152,33 +152,32 @@ void CASPT2::CASPT2::solve() {
 
   //MS-CASPT2
   if (info_->do_ms()) {
-    Matrix a(nstates_, nstates_);
+    Matrix fmn(nstates_, nstates_);
     VectorB eig(nstates_);
      
     for (int ist = 0; ist != nstates_; ++ist) {  
       for (int jst = 0; jst != nstates_; ++jst) {
-
         if (ist == jst) { 
           //set diagonal elements
-          a(ist, ist) = energy_[ist]+info_->ciwfn()->energy(ist);
+          fmn(ist, ist) = energy_[ist]+info_->ciwfn()->energy(ist);
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
-          a(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
-                           + detail::real(dot_product_transpose(sall_[jst], t2all_[ist]))); 
-          a(ist, jst) = a(jst, ist); 
-   
+          fmn(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
+                             + detail::real(dot_product_transpose(sall_[jst], t2all_[ist]))); 
+          fmn(ist, jst) = fmn(jst, ist); 
         }
       }
     }
-    a.print();
-    a.diagonalize(eig);
-    a.print();
+
+    cout << endl;
+    fmn.print("    * MS-CASPT2 Heff ");
+    cout << endl;
+    fmn.diagonalize(eig);
 
     //energy printout
-    for (int istate = 0; istate != nstates_; ++istate) {
+    for (int istate = 0; istate != nstates_; ++istate)
       cout << "    * MS-CASPT2 energy : state " << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
-    }
   }
 }
 
