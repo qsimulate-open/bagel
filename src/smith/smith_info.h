@@ -51,6 +51,9 @@ class SMITH_Info {
 
     bool grad_;
 
+    bool do_ms_;
+    bool do_xms_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : ref_(o) {
       method_ = idata->get<std::string>("method");
@@ -67,6 +70,9 @@ class SMITH_Info {
       target_  = idata->get<int>("target",   0);
       maxtile_ = idata->get<int>("maxtile", 10);
       grad_    = idata->get<bool>("grad", false);
+
+      do_ms_   = idata->get<bool>("ms",  true);
+      do_xms_  = idata->get<bool>("xms", false);
 
       thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
       davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
@@ -94,6 +100,8 @@ class SMITH_Info {
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+    bool do_ms() const { return do_ms_; }
+    bool do_xms() const { return do_xms_; }
 
     template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
     bool gaunt() const { return relref()->gaunt(); }
