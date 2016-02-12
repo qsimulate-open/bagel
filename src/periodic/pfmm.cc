@@ -475,9 +475,7 @@ vector<shared_ptr<const ZMatrix>> PFMM::compute_multipoles(shared_ptr<const Geom
 }
 
 
-vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const {
-
-  //density->print_real_part("Density");
+shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density) const {
 
   // sums over L and m have extent ws_ for now
   const int nvec = pow(2*ws_+1, ndim_);
@@ -491,11 +489,10 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
     primvecs[i] = {{0.0, 0.0, 0.0}};
 
   // compute Olm(m), contract with density D_ab(m), and sum over m
-
-  const size_t nbasis1 = scell_->multipoles().front()->ndim();
-  const size_t nbasis0 = scell_->multipoles().front()->mdim();
+  const size_t nbas = scell_->nbasis();
   vector<complex<double>> olm(osize_);
 
+  vector<shared_ptr<const ZMatrix>> nai(nvec);
   for (int ivec = 0; ivec != nvec; ++ivec) { // m
     array<int, 3> idx = vidx[ivec];
     // compute multipoles (0|Olm|m)
@@ -509,68 +506,58 @@ vector<complex<double>> PFMM::compute_Slm(shared_ptr<const PData> density) const
     shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
     for (int i = 0; i != osize_; ++i) {
       complex<double> olm_m = 0.0;
-      for (int a = 0; a != nbasis1; ++a)
-        for (int b = 0; b != nbasis0; ++b)
+      for (int a = 0; a != nbas; ++a)
+        for (int b = 0; b != nbas; ++b)
           olm_m += olm_ab_m[i]->element(b, a) * ffden->element(b, a);
       olm[i] += olm_m;
     }
+
+    // NAI
+    auto tmpnai = make_shared<ZMatrix>(nbas, nbas);
+    for (auto& atom : cell->atoms())
+      for (int j = 0; j <= lmax_; ++j)
+        for (int k = 0; k <= 2*j; ++k) {
+          const int im = j * j + k;
+          *tmpnai += -2.0 * atom->atom_charge() * mlm_.at(im) * *olm_ab_m.at(im); // 2*NAI
+        }
+    nai[ivec] = make_shared<const ZMatrix>(*tmpnai);
   }
 
   // contract with Mlm
-  vector<complex<double>> out(osize_);
+  vector<complex<double>> slm(osize_);
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2*l; ++m) {
       const int im1 = l * l + m;
 
-      complex<double> slm;
+      complex<double> slmjk;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2*j; ++k) {
           const int im2 = j * j + k;
           const int im = (l+j)*(l+j) + m + k;
-          slm += mlm_.at(im) * olm.at(im2);
+          slmjk += mlm_.at(im) * olm.at(im2);
         }
       }
-      out[im1] = pow(-1.0, l) * slm;
-////      cout << "Slm(" << l << ", " << m << ") = " << setprecision(10) << out[im1] << "   " << olm[im1]<< endl;
+      slm[im1] = pow(-1.0, l) * slmjk;
     }
   }
 
-  return out;
-  // should be the same as getting Slm(0) from Olm(0) and Mlm, translate Slm(0) then sum over m
-}
-
-
-shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density) const {
-
-  vector<complex<double>> slm = compute_Slm(density);
-  // sums over L and m have extent ws_ for now
-  const int nvec = pow(2*ws_+1, ndim_);
-  const size_t nbas = scell_->nbasis();
-  vector<array<int, 3>> vidx = generate_vidx(ws_);
-  assert(vidx.size() == nvec);
-
-  vector<array<double, 3>> primvecs(3);
-  for (int i = 0; i != ndim_; ++i)
-    primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3; ++i)
-    primvecs[i] = {{0.0, 0.0, 0.0}};
-
   // translate Olm(L), contract with Slm
   vector<shared_ptr<const ZMatrix>> out(nvec);
-  for (int ivec = 0; ivec != nvec; ++ivec) {
+  for (int ivec = 0; ivec != nvec; ++ivec) { // L
     array<int, 3> idx = vidx[ivec];
-    array<double, 3> Lvec;
-    Lvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    Lvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    Lvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
-    vector<shared_ptr<const ZMatrix>> tmp = scell_->shift_multipoles(Lvec);
-    assert(tmp.size() == osize_);
+    // re-compute multipoles (0|Olm|L)
+    array<double, 3> lvec;
+    lvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+    lvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+    lvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    auto cell = make_shared<const Geometry>(*scell_->geom(), lvec);
+    vector<shared_ptr<const ZMatrix>> olm_rs_L = compute_multipoles(scell_->geom(), cell);
 
-    auto o = make_shared<ZMatrix>(nbas, nbas);
+    auto jrs_L = make_shared<ZMatrix>(nbas, nbas);
     for (int i = 0; i != osize_; ++i)
-      *o += slm[i] * *tmp.at(i);
+      *jrs_L += slm[i] * *olm_rs_L.at(i);
 
-    out[ivec] = make_shared<const ZMatrix>(*o);
+    out[ivec] = make_shared<const ZMatrix>(*jrs_L + *nai[ivec]);
   }
 
   return make_shared<const PData>(out);
@@ -680,9 +667,7 @@ vector<array<int, 3>> PFMM::generate_vidx(const int n) const {
 
 shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) const {
   shared_ptr<const PData> nf = compute_cfmm(density);
-  assert(nf->nblock() == 2*ws_+1);
   shared_ptr<const PData> ff = compute_far_field(density);
-  assert(nf->nblock() == 2*ws_+1);
 
 //  return make_shared<const PData>(*nf);
   return make_shared<const PData>(*nf + *ff);
