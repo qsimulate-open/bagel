@@ -462,14 +462,36 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     Atransform = Atensor->copy();
     Atransform->diagonalize(Aeig);
 
+    // All eigenvalues of A should be positive, since they are proportional to squares of the principle g-values
+    assert(Aeig[0] > 0.0 && Aeig[1] > 0.0 && Aeig[2] > 0.0);
+
+    // Reorder eigenvectors so we quantize spin along the most anisotropic g-axis, rather than just the greatest g
+    const double Asqrt_avg = (std::sqrt(Aeig[0]) + std::sqrt(Aeig[1]) + std::sqrt(Aeig[2])) / 3.0;
+    if (std::sqrt(Aeig[1]) - Asqrt_avg > 0.0) {
+      const double temp = Aeig[0];
+      Aeig[0] = Aeig[2];
+      Aeig[2] = temp;
+      auto tmp = Atransform->copy();
+      for (int i = 0; i != 3; ++i) {
+        tmp->element(i, 0) = Atransform->element(i, 2);
+        tmp->element(i, 2) = Atransform->element(i, 0);
+      }
+      Atransform = tmp;
+    }
+#ifndef NDEBUG
+    auto Adiag = Atransform->clone();
+    for (int i = 0; i != 3; ++i)
+      Adiag->element(i, i) = Aeig[i];
+    assert((*Atensor - (*Atransform * *Adiag ^ *Atransform)).rms() < 1.0e-10);
+    assert(std::abs(std::sqrt(Aeig[2]) - Asqrt_avg) > std::abs(std::sqrt(Aeig[1]) - Asqrt_avg));
+    assert(std::abs(std::sqrt(Aeig[2]) - Asqrt_avg) > std::abs(std::sqrt(Aeig[0]) - Asqrt_avg));
+#endif
+
     Atensor->print("A tensor");
     cout << endl;
     for (int i = 0; i != 3; ++i)
       cout << " *** A tensor eigenvalue " << i << " = " << Aeig[i] << endl;
     cout << endl;
-
-    // All eigenvalues of A should be positive, since they are proportional to squares of the principle g-values
-    assert(Aeig[0] > 0.0 && Aeig[1] > 0.0 && Aeig[2] > 0.0);
   }
 
   {
@@ -503,6 +525,7 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     }
     cout << endl;
   }
+
   return Atransform;
 }
 
