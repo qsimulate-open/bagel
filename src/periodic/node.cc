@@ -381,13 +381,6 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
 shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
 
-  const int nmultipole = (lmax + 1) * (lmax + 1);
-  vector<int> l_map(nmultipole);
-  int cnt = 0;
-  for (int l = 0; l <= lmax; ++l)
-    for (int m = 0; m <= 2 * l; ++m, ++cnt)
-      l_map[cnt] = l;
-
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
   for (auto& distant_node : interaction_list_) {
