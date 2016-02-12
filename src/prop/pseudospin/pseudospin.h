@@ -74,6 +74,8 @@ class Pseudospin {
     int nspin1_;
     std::vector<double> ref_energy_;
 
+    std::shared_ptr<const PTree> idata_;
+
     // These are the basic spin operators
     std::array<std::shared_ptr<ZMatrix>,3> spin_xyz_;
     std::shared_ptr<ZMatrix> spin_plus_;
@@ -96,10 +98,10 @@ class Pseudospin {
     std::array<std::shared_ptr<ZMatrix>, 3> zfci2_orbang_;
 
     void update_spin_matrices(VectorB spinvals);
-    std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const;
+    std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes) const;
 
   public:
-    Pseudospin(const int nspin);
+    Pseudospin(const int nspin, std::shared_ptr<const PTree> idata);
 
     void compute(const ZHarrison& zfci);
 
@@ -114,7 +116,7 @@ class Pseudospin {
     std::shared_ptr<const Matrix> identify_magnetic_axes() const;
 
     // to extract D-tensor
-    std::shared_ptr<const ZMatrix> compute_spin_eigenvalues(const ZHarrison& zfci) const;
+    std::shared_ptr<const ZMatrix> compute_spin_eigenvalues() const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
     std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
 

@@ -390,15 +390,16 @@ void ZHarrison::compute() {
 
 
   // TODO When the Property class is implemented, this should be one
-  if (idata_->get<bool>("aniso", false)) {
+  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+  if (aniso_data) {
     if (geom_->magnetism()) {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
 
-      assert(!idata_->get<bool>("aniso_numerical", false));  // This feature is deactivated
+      assert(!idata_->get<bool>("numerical", false));  // This feature is deactivated
 
-      const int nspin = idata_->get<int>("aniso_spin", states_.size()-1);
-      Pseudospin ps(nspin);
+      const int nspin = aniso_data->get<int>("nspin", states_.size()-1);
+      Pseudospin ps(nspin, aniso_data);
       ps.compute(*this);
 
     }

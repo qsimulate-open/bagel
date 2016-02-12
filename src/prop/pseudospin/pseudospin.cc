@@ -72,7 +72,7 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
-shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_axes, const ZHarrison& zfci) const {
+shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_axes) const {
   array<double,3> default_x, default_z;
   const array<int,3> fwd = {{ 1, 2, 0 }};
   const array<int,3> bck = {{ 2, 0, 1 }};
@@ -83,8 +83,8 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
   }
 
   array<array<double, 3>, 3> new_axes;
-  new_axes[2] = zfci.idata()->get_array<double,3>("aniso_zaxis", default_z);
-  new_axes[0] = zfci.idata()->get_array<double,3>("aniso_xaxis", default_x);
+  new_axes[2] = idata_->get_array<double,3>("zaxis", default_z);
+  new_axes[0] = idata_->get_array<double,3>("xaxis", default_x);
   if (default_z != new_axes[2] && default_x == new_axes[0]) {
     // No x-axis was given to us, so generate one by taking cross product of default y and input z axes
     for (int i = 0; i != 3; ++i)
@@ -123,7 +123,7 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
 }
 
 
-Pseudospin::Pseudospin(const int _nspin) : nspin_(_nspin), nspin1_(_nspin + 1) {
+Pseudospin::Pseudospin(const int _nspin, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), idata_(_idata) {
 
   VectorB spinvals(nspin1_);
   for (int i = 0; i != nspin1_; ++i)
@@ -139,7 +139,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   vector<int> ranks = {};
   for (int i = 2; i <= nspin_; i += 2)
     ranks.push_back(i);
-  const shared_ptr<const PTree> eso_ranks = zfci.idata()->get_child_optional("aniso_rank");
+  const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("ranks");
   if (eso_ranks) {
     ranks = {};
     for (auto& i : *eso_ranks)
@@ -161,7 +161,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
   shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
-  spin_axes_ = read_axes(mag_axes, zfci);
+  spin_axes_ = read_axes(mag_axes);
 
   for (int i = 0; i != 3; ++i) {
     zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
@@ -174,7 +174,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
     }
   }
 
-  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues(zfci);
+  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
 
   if (nspin_ > 1) {
     ESO = extract_hamiltonian_parameters(ESO, spinham_s);
@@ -249,7 +249,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       aniso_state[i] = i;
 
     // aniso_state can be used to request mapping excited states instead
-    const shared_ptr<const PTree> exstates = zfci.idata()->get_child_optional("aniso_state");
+    const shared_ptr<const PTree> exstates = idata_->get_child_optional("states");
     if (exstates) {
       aniso_state = {};
       for (auto& i : *exstates)
@@ -322,7 +322,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   array<shared_ptr<ZMatrix>,3> ao_orbang;
   { // orbital angular momentum
     // TODO For geometries with only one metal atom, use that atom's position as default mcoord
-    const array<double, 3> mcoord = zfci.idata()->get_array<double,3>("aniso_center", array<double, 3>({{0.0, 0.0, 0.0}}));
+    const array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
     const int n = zfci.geom()->nbasis();
 
     array<shared_ptr<ZMatrix>,3> angmom_large;
@@ -370,7 +370,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     aniso_state[i] = i;
 
   // aniso_state can be used to request mapping excited states instead
-  const shared_ptr<const PTree> exstates = zfci.idata()->get_child_optional("aniso_state");
+  const shared_ptr<const PTree> exstates = idata_->get_child_optional("states");
   if (exstates) {
     aniso_state = {};
     for (auto& i : *exstates)
@@ -424,7 +424,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 
 #if 0
   for (int k = 0; k != 3; ++k) {
-    spinop_h_[k]->print("Magnetic moment in ZFCI basis - " + to_string(k), 24);
+    zfci_mu_[k]->print("Magnetic moment in ZFCI basis - " + to_string(k), 24);
     zfci_spin_[k]->print("Spin angular momentum in ZFCI basis - " + to_string(k), 24);
     zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis - " + to_string(k), 24);
   }
@@ -530,11 +530,11 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
 }
 
 
-shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& zfci) const {
+shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   ZMatrix transform(nspin1_, nspin1_);
-  const string diagset = zfci.idata()->get<string>("aniso_diagop", "Mu");
+  const string diagset = idata_->get<string>("diagop", "Mu");
   if (diagset != "Mu" && diagset != "J" && diagset != "S" && diagset != "L")
     throw runtime_error("Sorry, the only options for which angular momentum to diagonalize are S, L, J and Mu for the magnetic moment");
 
@@ -579,7 +579,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& 
   }
 
   { // Adjust the phase to make the (M+1, M) elements of the raising operator real (default choice)
-    const string diagset = zfci.idata()->get<string>("aniso_diagop", "Mu");
+    const string diagset = idata_->get<string>("diagop", "Mu");
     ZMatrix raising_op(nspin1_, nspin1_);
 
     if (diagset == "Mu") {
@@ -609,9 +609,10 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& 
       }
     }
   }
+  transform.print("Pseudospin eigenvector matrix with time-reversal symmetry fixed");
 
   // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
-  const shared_ptr<const PTree> phase_input = zfci.idata()->get_child_optional("aniso_phases");
+  const shared_ptr<const PTree> phase_input = idata_->get_child_optional("phases");
   if (phase_input) {
     vector<double> phase_adjust = {};
     for (auto& i : *phase_input)
@@ -632,7 +633,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues(const ZHarrison& 
     cout << endl;
   }
 
-  const double phase_input_2 = zfci.idata()->get<double>("aniso_phase_full", 0.0);
+  const double phase_input_2 = idata_->get<double>("phase_full", 0.0);
   if (phase_input_2 != 0.0) {
     transform.scale(std::polar(1.0, phase_input_2));
     cout << "  **  The phase of all pseudospin functions will be shifted by " << setw(4) <<  phase_input_2 << " radians.  (This should have no effect.)" << endl << endl;
