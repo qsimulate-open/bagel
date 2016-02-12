@@ -77,7 +77,6 @@ class PFMM {
     void compute_Mlm_direct();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
-    std::vector<std::complex<double>> compute_Slm(std::shared_ptr<const PData> density) const;
     std::shared_ptr<const PData> compute_far_field(std::shared_ptr<const PData> density) const;
     std::shared_ptr<const PData> compute_cfmm(std::shared_ptr<const PData> density) const;
     std::vector<std::shared_ptr<const ZMatrix>> compute_multipoles(std::shared_ptr<const Geometry>, std::shared_ptr<const Geometry>) const;

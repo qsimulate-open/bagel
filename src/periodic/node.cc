@@ -260,16 +260,6 @@ void Node::compute_multipoles(const int lmax) {
                   for (int i = 0; i != nmultipole; ++i)
                     multipoles[i]->copy_block(ob1, ob0, b1->nbasis(), b0->nbasis(), mpole.data(i));
                 }
-#if 0
-                const double dist = atom0->distance(atom1);
-                if (dist < numerical_zero__) {
-                  OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
-                  overlap.compute();
-                  Matrix o(b1->nbasis(), b0->nbasis());
-                  o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
-                  multipoles[0]->add_real_block(-atom1->atom_charge(), ob1, ob0, b1->nbasis(), b0->nbasis(), o);
-                }
-#endif
 
                 ob1 += b1->nbasis();
               }
@@ -327,116 +317,93 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-  for (auto& distant_node : interaction_list_) { // M2L
-    array<double, 3> r12;
-    r12[0] = position_[0] - distant_node->position(0);
-    r12[1] = position_[1] - distant_node->position(1);
-    r12[2] = position_[2] - distant_node->position(2);
-    LocalExpansion lx(r12, distant_node->multipoles(), lmax);
-    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
+  if (density != nullptr) {
+    for (auto& distant_node : interaction_list_) { // M2L
+      array<double, 3> r12;
+      r12[0] = position_[0] - distant_node->position(0);
+      r12[1] = position_[1] - distant_node->position(1);
+      r12[2] = position_[2] - distant_node->position(2);
+      LocalExpansion lx(r12, distant_node->multipoles(), lmax);
+      vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-    const int dimb = distant_node->nbasis();
-    // need to get a sub-density matrix corresponding to distant_node
-    Matrix subden(dimb, dimb);
-    subden.zero();
-    size_t ob0 = 0;
-    for (auto& body0 : distant_node->bodies()) {
-      size_t iat0 = 0;
-      for (auto& atom0 : body0->atoms()) {
-        size_t ish0 = 0;
-        for (auto& b0 : atom0->shells()) {
-          const int offset0 = offsets[body0->ishell(iat0) + ish0];
-          const size_t size0 = b0->nbasis();
-          ++ish0;
+      // need to get a sub-density matrix corresponding to distant_node
+      const int dimb = distant_node->nbasis();
+      Matrix subden(dimb, dimb);
+      subden.zero();
+      size_t ob0 = 0;
+      for (auto& body0 : distant_node->bodies()) {
+        size_t iat0 = 0;
+        for (auto& atom0 : body0->atoms()) {
+          size_t ish0 = 0;
+          for (auto& b0 : atom0->shells()) {
+            const int offset0 = offsets[body0->ishell(iat0) + ish0];
+            const size_t size0 = b0->nbasis();
+            ++ish0;
 
-          size_t ob1 = 0;
-          for (auto& body1 : distant_node->bodies()) {
-            size_t iat1 = 0;
-            for (auto& atom1 : body1->atoms()) {
-              size_t ish1 = 0;
-              for (auto& b1 : atom1->shells()) {
-                const int offset1 = offsets[body1->ishell(iat1) + ish1];
-                const size_t size1 = b1->nbasis();
-                ++ish1;
+            size_t ob1 = 0;
+            for (auto& body1 : distant_node->bodies()) {
+              size_t iat1 = 0;
+              for (auto& atom1 : body1->atoms()) {
+                size_t ish1 = 0;
+                for (auto& b1 : atom1->shells()) {
+                  const int offset1 = offsets[body1->ishell(iat1) + ish1];
+                  const size_t size1 = b1->nbasis();
+                  ++ish1;
 
-                shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-                subden.copy_block(ob1, ob0, size1, size0, tmp);
-                ob1 += size1;
+                  shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+                  subden.copy_block(ob1, ob0, size1, size0, tmp);
+                  ob1 += size1;
+                }
+                ++iat1;
               }
-              ++iat1;
             }
+            ob0 += size0;
           }
-          ob0 += size0;
+          ++iat0;
         }
-        ++iat0;
+      }
+
+      for (int i = 0; i != nmultipole; ++i) {
+        complex<double> contract = 0.0;
+        for (int j = 0; j != dimb; ++j)
+          for (int k = 0; k != dimb; ++k)
+            contract += lmoments[i]->element(k, j) * subden.element(k, j);
+
+        *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
       }
     }
-
-    for (int i = 0; i != nmultipole; ++i) {
-      complex<double> contract = 0.0;
-      for (int j = 0; j != dimb; ++j)
-        for (int k = 0; k != dimb; ++k)
-          contract += lmoments[i]->element(k, j) * subden.element(k, j);
-
-      *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
-    }
-
-#if 0
-    shared_ptr<const ZMatrix> nai = compute_nuclear_charge();
-    complex<double> contract = 0.0;
-    for (int j = 0; j != dimb; ++j)
-      for (int k = 0; k != dimb; ++k)
-        contract += lmoments[0]->element(k, j) * subden.element(k, j);
-    *out -= contract * *nai;
-#endif
   }
 
-  local_expansion_ = out;
+  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax);
+  local_expansion_ = make_shared<const ZMatrix>(*out + *nai);
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_nuclear_charge() {
+shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-  size_t ob0 = 0;
-  for (auto& a0 : bodies_) {
-    for (auto& atom0 : a0->atoms()) {
-      const int scale = atom0->atom_charge()/nbasis_;
-      for (auto& b0 : atom0->shells()) {
+  for (auto& distant_node : interaction_list_) {
+    array<double, 3> r12;
+    r12[0] = distant_node->position(0) - position_[0];
+    r12[1] = distant_node->position(1) - position_[1];
+    r12[2] = distant_node->position(2) - position_[2];
+    LocalExpansion lx(r12, multipoles_, lmax);
+    vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-        size_t ob1 = 0;
-        for (auto& a1 : bodies_) {
-          for (auto& atom1 : a1->atoms()) {
-            for (auto& b1 : atom1->shells()) {
-              const double dist = atom0->distance(atom1);
-
-              if (dist < numerical_zero__) {
-                OverlapBatch overlap(array<shared_ptr<const Shell>, 2>{{b1, b0}});
-                overlap.compute();
-                Matrix o(b1->nbasis(), b0->nbasis());
-                o.copy_block(0, 0, b1->nbasis(), b0->nbasis(), overlap.data());
-                out->add_real_block(scale, ob1, ob0, b1->nbasis(), b0->nbasis(), o);
-              }
-
-              ob1 += b1->nbasis();
-            }
-          }
-        }
-
-        ob0 += b0->nbasis();
-      }
-    }
+    for (auto& body : distant_node->bodies())
+      for (auto& atom : body->atoms())
+        *out += -2.0 * atom->atom_charge() * *lmoments[0];
   }
 
   return out;
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile) {
 
   assert(is_leaf());
-  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
+  auto out = make_shared<ZMatrix>(nbasis, nbasis);
   out->zero();
 
   // add FF local expansions to coulomb matrix
@@ -485,11 +452,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : atom->shells()) {
+        for (int ish = 0; ish != atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -514,11 +478,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : close_atom->shells()) {
+        for (int ish = 0; ish != close_atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -565,7 +526,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
   }
 
 
-  if (!dodf) {
+  if (!dodf && density != nullptr) {
     const double* density_data = density->data();
 
     for (int i0 = 0; i0 != size; ++i0) {
@@ -616,7 +577,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
         }
       }
     }
-  } else { /* dodf */
+  } else if (dodf && density != nullptr) {
     vector<shared_ptr<const Atom>> aux_atoms;
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
     int naux =  0;
@@ -675,7 +636,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(shared_ptr<const Matrix> density
     }
   }
 
-
   return out;
 }
 
@@ -695,11 +655,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        size_t ish = 0;
-        for (auto& shell : atom->shells()) {
+        for (int ish = 0; ish != atom->shells().size(); ++ish)
           tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-          ++ish;
-        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         ++iat;
@@ -712,11 +669,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
           const vector<shared_ptr<const Shell>> tmp = distant_atom->shells();
           basis.insert(basis.end(), tmp.begin(), tmp.end());
           vector<int> tmpoff;
-          size_t ish = 0;
-          for (auto& shell : distant_atom->shells()) {
+          for (int ish = 0; ish != distant_atom->shells().size(); ++ish)
             tmpoff.insert(tmpoff.end(), offsets[distant_body->ishell(iat) + ish]);
-            ++ish;
-          }
 
           new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
           ++iat;
