@@ -69,7 +69,7 @@ void RHF::compute() {
 
   if (!restarted_) {
     if (coeff_ == nullptr) {
-      shared_ptr<const DistMatrix> fock = previous_fock;
+      shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
       if (dodf_ && geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
         auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
