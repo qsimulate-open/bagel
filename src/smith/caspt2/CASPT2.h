@@ -63,7 +63,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
 
-    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
 
     std::shared_ptr<FutureTensor> Gamma0_();

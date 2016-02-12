@@ -45,7 +45,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
-    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
 
     std::shared_ptr<FutureTensor> Gamma0_();
