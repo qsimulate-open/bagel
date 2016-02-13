@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/util/timer.h>
-#include <src/util/math/diis.h>
+//#include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
 //#include <src/periodic/pfmm.h>
@@ -142,7 +142,7 @@ void PSCF::compute() {
   cout << endl;
 
   cout << indent << "=== PSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
-  DIIS<ZMatrix, ZMatrix> diis(diis_size_);
+  //DIIS<ZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter !=  max_iter_; ++iter) {
     auto c = make_shared<PCoeff>(*coeff);
@@ -162,8 +162,8 @@ void PSCF::compute() {
       error += error_vector->rms();
     }
     //auto diis_vector = make_shared<const ZMatrix>(*((*kdensity)(gamma)) - *olddensity);
-    auto diis_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
-                                          - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *fock0);
+    //auto diis_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
+    //                                      - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *fock0);
 
     complex<double> energy;
     double charge = 0.0;
@@ -212,11 +212,12 @@ void PSCF::compute() {
     }
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
-    if (iter >= diis_start_)
-      fock0 = diis.extrapolate({(*kfock)(gamma), diis_vector});
+//    if (iter >= diis_start_)
+//      fock0 = diis.extrapolate({(*kfock)(gamma), diis_vector});
 
     for (int i = 0; i != nkblock; ++i) {
-      if (iter < diis_start_) *fock0 = *(*kfock)(i);
+      //if (iter < diis_start_) *fock0 = *(*kfock)(i);
+      *fock0 = *(*kfock)(i);
       ZMatrix kblock = *((*ktildex_)(i)) % *fock0 * *((*ktildex_)(i));
       //cout << i << "   " << setprecision(15) << (kblock - *(kblock.transpose_conjg())).norm()/kblock.size() << endl;
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
