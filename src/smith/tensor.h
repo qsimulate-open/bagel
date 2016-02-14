@@ -88,6 +88,8 @@ class Tensor_ {
 
     template<typename ...args>
     bool is_local(args&& ...p) const { return data_->is_local(std::forward<args>(p)...); }
+    template<typename ...args>
+    bool exists(args&& ...p) const { return sparse_.empty() || sparse_.count(generate_hash_key(std::forward<args>(p)...)); }
 
     DataType dot_product(const Tensor_<DataType>& o) const { return data_->dot_product(*o.data_); }
     DataType dot_product(std::shared_ptr<const Tensor_<DataType>> o) const { return dot_product(*o); }
