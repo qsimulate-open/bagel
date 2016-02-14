@@ -120,6 +120,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   // set e0
   e0_ = compute_e0();
+
+  GA_Sync();
 }
 
 
@@ -325,6 +327,9 @@ void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
   rdm2_ = rdm2all_->at(jst, ist);
   rdm3_ = rdm3all_->at(jst, ist);
   rdm4_ = rdm4all_->at(jst, ist);
+
+  // ensure that get_block calls are done after RDMs are set in every node
+  GA_Sync();
 }
 
 
