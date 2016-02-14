@@ -513,6 +513,30 @@ void sort_indices<1,0,2,3,1,1,-1,1>(const double* unsorted, double* sorted,
                                     const int d, const int c, const int b, const int a) {
   sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c, b*a);
 }
+template<>
+void sort_indices<0,2,1,3,0,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        std::copy_n(unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
+}
+template<>
+void sort_indices<0,2,1,3,1,1,1,1>(const double* unsorted, double* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        blas::ax_plus_y_n(1.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
+}
+template<>
+void sort_indices<0,2,1,3,1,1,-1,1>(const double* unsorted, double* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        blas::ax_plus_y_n(-1.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
+}
 
 template<>
 void sort_indices<0,1,2,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
@@ -663,6 +687,30 @@ template<>
 void sort_indices<1,0,2,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
                                     const int d, const int c, const int b, const int a) {
   sort_indices<1,0,2,1,1,-1,1>(unsorted, sorted, d, c, b*a);
+}
+template<>
+void sort_indices<0,2,1,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        std::copy_n(unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
+}
+template<>
+void sort_indices<0,2,1,3,1,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                   const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        blas::ax_plus_y_n(1.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
+}
+template<>
+void sort_indices<0,2,1,3,1,1,-1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  for (int i = 0; i != a; ++i)
+    for (int j = 0; j != b; ++j)
+      for (int k = 0; k != c; ++k)
+        blas::ax_plus_y_n(-1.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
 }
 #endif
 

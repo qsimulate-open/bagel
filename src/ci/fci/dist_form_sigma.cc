@@ -46,28 +46,21 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_p
     sigma->zero();
 
     Timer fcitime(1);
-    sigma->init_mpi_accumulate();
-
-    shared_ptr<DistCivec> ctrans = cc->transpose();
 
     sigma_ab(cc, sigma, jop);
     fcitime.tick_print("alpha-beta");
 
-    ctrans->transpose_wait();
+    shared_ptr<DistCivec> ctrans = cc->transpose();
     shared_ptr<DistCivec> strans = ctrans->clone();
     sigma_aa(ctrans, strans, jop, cc->det()->remalpha()->rembeta());
-    shared_ptr<DistCivec> sigma_aa = strans->transpose();
     fcitime.tick_print("alpha-alpha");
 
     sigma_bb(cc, sigma, jop);
     fcitime.tick_print("beta-beta");
 
-    sigma_aa->transpose_wait();
+    shared_ptr<DistCivec> sigma_aa = strans->transpose();
     sigma->ax_plus_y(1.0, *sigma_aa);
-    fcitime.tick_print("wait1");
-
-    sigma->terminate_mpi_accumulate();
-    fcitime.tick_print("wait");
+    fcitime.tick_print("post process");
 
     sigmavec.push_back(sigma);
   }
@@ -89,55 +82,31 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   const int rank = mpi__->rank();
   const int size = mpi__->size();
 
-  cc->init_mpi_recv();
-
-  vector<shared_ptr<DistABTask>> tasks;
+  list<shared_ptr<DistABTask>> tasks;
 
   // shamelessly statically distributing across processes
   for (size_t a = 0; a != int_det->lena(); ++a) {
     if (a%size != rank) continue;
 
     const bitset<nbit__> astring = int_det->string_bits_a(a);
-
     tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
-
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if ((*i)->test()) {
-         (*i)->compute();
-        i = tasks.erase(i);
-      } else {
-        ++i;
-      }
-    }
-#ifndef USE_SERVER_THREAD
-    cc->flush();
-    sigma->flush();
-#endif
   }
 
-  bool done;
-  do {
-    done = true;
-    for (auto i = tasks.begin(); i != tasks.end(); ) {
-      if ((*i)->test()) {
-        (*i)->compute();
-        i = tasks.erase(i);
-      } else {
-        ++i;
-        done = false;
-      }
-    }
-#ifndef USE_SERVER_THREAD
-    size_t d = done ? 0 : 1;
-    mpi__->soft_allreduce(&d, 1);
-    done = d == 0;
-    if (!done) cc->flush();
-    if (!done) sigma->flush();
-#endif
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
+  list<shared_ptr<GA_Task<double>>> acctasks;
+  for (auto i = tasks.begin(); i != tasks.end(); ) {
+    (*i)->wait();
+    auto t = (*i)->compute();
+    acctasks.insert(acctasks.end(), t.begin(), t.end());
+    i = tasks.erase(i);
 
-  cc->terminate_mpi_recv();
+    for (auto j = acctasks.begin(); j != acctasks.end(); )
+      j = (*j)->test() ? acctasks.erase(j) : ++j;
+  }
+
+  for (auto i = acctasks.begin(); i != acctasks.end(); ) {
+    (*i)->wait();
+    i = acctasks.erase(i); // this deallocates buffer memory
+  }
 }
 
 
@@ -158,17 +127,16 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
 
 // beta-beta block has no communication (and should be cheap)
 void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistCivec> sigma, shared_ptr<const MOFile> jop,
-                       const shared_ptr<const Determinants> base_det, const shared_ptr<const Determinants> int_det) const {
+                                shared_ptr<const Determinants> base_det, shared_ptr<const Determinants> int_det) const {
 
   const int norb = cc->det()->norb();
   const size_t lb = sigma->lenb();
   const size_t la = sigma->asize();
 
-  unique_ptr<double[]> target(new double[la*lb]);
-  unique_ptr<double[]> source(new double[la*lb]);
-
   // (astart:aend, b)
-  blas::transpose(cc->local(), lb, la, source.get());
+  unique_ptr<double[]> source(new double[la*lb]);
+  unique_ptr<double[]> target = cc->local();
+  blas::transpose(target.get(), lb, la, source.get());
   fill_n(target.get(), la*lb, 0.0);
 
   // preparing Hamiltonian
@@ -184,11 +152,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
           hamil2[ijkl] = jop->mo2e_hz(l,k,j,i) - jop->mo2e_hz(k,l,j,i);
     }
   }
-
-#ifndef USE_SERVER_THREAD
-  // for accumulate in aa and ab
-  sigma->flush();
-#endif
 
   const size_t neleb = base_det->neleb();
 
@@ -217,13 +180,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   tasks.compute();
 
   blas::transpose(target.get(), la, lb, source.get());
-  for (size_t i = 0; i != la; ++i) {
-    lock_guard<mutex> lock(sigma->cimutex(i));
-    daxpy_(lb, 1.0, source.get()+i*lb, 1, sigma->local()+i*lb, 1);
-  }
+  sigma->local_accumulate(1.0, source);
 
-  // for accumulate in aa and ab
-#ifndef USE_SERVER_THREAD
-  sigma->flush();
-#endif
 }

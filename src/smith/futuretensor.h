@@ -27,6 +27,9 @@
 #ifndef __SRC_SMITH_FUTURETENSOR_H
 #define __SRC_SMITH_FUTURETENSOR_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/tensor.h>
 #include <src/smith/task.h>
 
@@ -39,14 +42,17 @@ class FutureTensor_ : public Tensor_<DataType> {
     using Tensor_<DataType>::initialized_;
 
   protected:
-    // TODO actually not const, but this is the only way to make it compiled...
-    void init() const override { init_->compute(); initialized_ = true; }
     mutable std::shared_ptr<Task> init_;
 
   public:
-    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) { }
+    FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j);
+
+    void init() const override;
 
 };
+
+extern template class FutureTensor_<double>;
+extern template class FutureTensor_<std::complex<double>>;
 
 namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
 namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
@@ -56,4 +62,5 @@ namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; 
 }
 }
 
+#endif
 #endif

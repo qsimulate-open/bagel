@@ -21,6 +21,7 @@ template<bool _Finalize> struct gemm_impl { };
 
 template<> struct gemm_impl<true>
 {
+#if 0
    /// GEMM implementation
    template<typename _T, class _IteratorA, class _IteratorB, class _IteratorC>
    static void call (
@@ -223,6 +224,7 @@ template<> struct gemm_impl<true>
         assert(false);
       }
    }
+#endif
 
 #ifdef _HAS_CBLAS
 

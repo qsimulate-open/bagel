@@ -48,8 +48,10 @@ class MP2Tag {
     MP2Tag<DataType>& operator=(const MP2Tag<DataType>& o) { tag_ = o.tag_; return *this; }
     bool operator<(const MP2Tag<DataType>& o) const {
       auto j = tag_.begin();
-      for (auto i : o.tag_)
-        if (*j++ != i) return *j++ < i;
+      for (auto i : o.tag_) {
+        if (*j != i) return *j < i;
+        ++j;
+      }
       return false;
     }
     bool operator==(const MP2Tag<DataType>& o) const {

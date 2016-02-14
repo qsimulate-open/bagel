@@ -92,18 +92,16 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
 #if 0
-  if (method == "mrci") {
-    algo_ = make_shared<RelMRCI::RelMRCI>(info);
-  } else if (method == "caspt2") {
+  if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+  } else if (method == "mrci") {
+    algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {
-#else
-  {
-#endif
 #else
   {
 #endif
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
   }
+#endif
 }

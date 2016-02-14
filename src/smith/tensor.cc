@@ -34,7 +34,9 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template <typename DataType>
-Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(in), rank_(in.size()), initialized_(false) {
+Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unordered_set<size_t> sparse, const bool alloc)
+  : range_(in), rank_(in.size()), sparse_(sparse), initialized_(false), allocated_(alloc) {
+
   // make block list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -42,7 +44,6 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(i
 
     // first compute hashtags and length
     map<size_t, size_t> hashmap;
-    size_t off = 0;
     for (auto& i : index) {
       size_t size = 1lu;
       vector<size_t> h;
@@ -50,34 +51,34 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(i
         size *= j.size();
         h.push_back(j.key());
       }
-      hashmap.emplace(generate_hash_key(h), size);
-      off += size;
+      auto key = generate_hash_key(h);
+      if (sparse.empty() || sparse.count(key))
+        hashmap.emplace(key, size);
     }
 
     if (!kramers)
-      data_ = make_shared<Storage<DataType>>(hashmap, false);
+      data_ = make_shared<Storage<DataType>>(hashmap, alloc);
     else
-      data_ = make_shared<StorageKramers<DataType>>(hashmap, false);
+      data_ = make_shared<StorageKramers<DataType>>(hashmap, alloc);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
-    data_ = make_shared<Storage<DataType>>(hashmap, false);
+    data_ = make_shared<Storage<DataType>>(hashmap, alloc);
   }
 }
 
 
 template <typename DataType>
+void Tensor_<DataType>::allocate() {
+  assert(!allocated_);
+  data_->initialize();
+  allocated_ = true;
+}
+
+
+template <typename DataType>
 size_t Tensor_<DataType>::size_alloc() const {
-  size_t out = 0lu;
-  LoopGenerator lg(range_);
-  vector<vector<Index>> index = lg.block_loop();
-  for (auto& i : index) {
-    vector<size_t> h;
-    for (auto& j : i)
-      h.push_back(j.key());
-    out += data_->blocksize_alloc(h);
-  }
-  return out;
+  return data_->size_alloc();
 }
 
 
@@ -110,7 +111,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
 
   for (auto& i1 : o[1].range()) {
     for (auto& i0 : o[0].range()) {
-      if (get_size_alloc(i0, i1)) {
+      if (get_size(i0, i1)) {
         unique_ptr<DataType[]> target = get_block(i0, i1);
         out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
       }
@@ -140,7 +141,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          if (get_size_alloc(i0, i1, i2, i3)) {
+          if (get_size(i0, i1, i2, i3)) {
             unique_ptr<DataType[]> target = get_block(i0, i1, i2, i3);
             const DataType* ptr = target.get();
             for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)

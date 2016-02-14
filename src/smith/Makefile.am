@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
 lib_LTLIBRARIES = libbagel_smith.la
-libbagel_smith_la_SOURCES = smith_info.cc storage.cc storagekramers.cc loopgenerator.cc denom.cc tensor.cc \
-spinfreebase.cc subtask.cc smith.cc caspt2grad.cc moint.cc diagonal.cc \
+libbagel_smith_la_SOURCES = smith_info.cc storage.cc storagekramers.cc loopgenerator.cc denom.cc tensor.cc futuretensor.cc \
+spinfreebase.cc subtask.cc smith.cc caspt2grad.cc moint.cc diagonal.cc queue.cc \
 \
 caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_residualq.cc caspt2/CASPT2_corrq.cc caspt2/CASPT2_deciq.cc \
 caspt2/CASPT2_densityq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \

@@ -25,96 +25,186 @@
 
 #include <iomanip>
 #include <unordered_map>
-#include <src/ci/ras/civector.h>
+#include <src/ci/ras/distcivector.h>
 #include <src/util/parallel/distqueue.h>
 
 using namespace std;
 using namespace bagel;
 
-// Computes <S^2>
 
-namespace bagel {
-  namespace RAS {
-    struct DistSpinTask {
-      const std::bitset<nbit__> abit_;
-      const DistRASCivector<double>* this_;
-      shared_ptr<DistRASCivector<double>> out_;
-      shared_ptr<const RASDeterminants> det_;
-      unordered_map<bitset<nbit__>, size_t>* lexicalmap_;
+template<typename DataType>
+DistRASCivector<DataType>::DistRASCivector(shared_ptr<const RASDeterminants> det) : RASCivector_base<DistCIBlock<DataType>>(det), global_size_(det->size()) {
+#if 0
+  size_t block_offset = 0;
+  for (auto& ipair : det->blockinfo()) {
+    if (!ipair->empty())
+      blocks_.push_back(make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), block_offset));
+    else
+      blocks_.push_back(nullptr);
+    ++block_offset;
+  }
+#endif
+}
 
-      unique_ptr<double[]> buf_;
-      list<int> requests_;
 
-      DistSpinTask(const std::bitset<nbit__> t, const DistRASCivector<double>* th, shared_ptr<DistRASCivector<double>> o, shared_ptr<const RASDeterminants> d, unordered_map<bitset<nbit__>, size_t>* lex) :
-        abit_(t), this_(th), out_(o), det_(d), lexicalmap_(lex)
-      {
-        const size_t lb = det_->lenb();
+template<typename DataType>
+DistRASCivector<DataType>::DistRASCivector(const DistRASCivector<DataType>& o) : DistRASCivector(o.det_) {
+#if 0
+  auto j = o.blocks_.begin();
+  for (auto i = blocks_.begin(); i != blocks_.end(); ++i, ++j) {
+    if (*i) copy_n((*j)->local(), (*i)->size(), (*i)->local());
+  }
+#endif
+}
 
-        const size_t alexical = det_->lexical_offset<0>(abit_);
-        buf_ = unique_ptr<double[]>(new double[lb * det_->phia(alexical).size()]);
 
-        int k = 0;
-        for (auto& iter : det_->phia(alexical)) {
-          // loop through blocks
-          const int l = this_->get_bstring_buf(buf_.get() + lb*k++, iter.source) ;
-          if (l >= 0) requests_.push_back(l);
-        }
-      }
-
-      DistSpinTask(const DistSpinTask& o)=delete;
-      DistSpinTask& operator=(const DistSpinTask& o)=delete;
-
-      bool test() {
-        bool out = true;
-        for (auto i = requests_.begin(); i != requests_.end(); ) {
-          if (mpi__->test(*i)) {
-            i = requests_.erase(i);
-          }
-          else {
-            ++i;
-            out = false;
-          }
-        }
-        return out;
-      }
-
-      void compute() {
-        const int norb = det_->norb();
-        const size_t lex_a = det_->lexical_zero<0>(abit_);
-
-        vector<shared_ptr<DistCIBlock<double>>> allowed_blocks = out_->allowed_blocks<0>(abit_);
-
-        int k = 0;
-        for (auto& iter : det_->phia(det_->lexical_offset<0>(abit_))) {
-          const int j = iter.ij / norb;
-          const int i = iter.ij % norb;
-          bitset<nbit__> mask1; mask1.set(j); mask1.set(i);
-          bitset<nbit__> mask2; mask2.set(j);
-
-          bitset<nbit__> maskij; maskij.set(j); maskij.flip(i);
-
-          const double* source = buf_.get() + det_->lenb() * k++;
-          for (auto& iblock : allowed_blocks) {
-            const size_t lb = iblock->lenb();
-            double* odata = iblock->local() + lb * (lex_a - iblock->astart());
-            for (auto& ib : *iblock->stringsb()) {
-              if ( ((ib & mask1) ^ mask2).none() ) { // equivalent to "ib[j] && (ii == jj || !ib[i])"
-                const bitset<nbit__> bsostring = ib ^ maskij;
-                *odata -= static_cast<double>(iter.sign * det_->sign(bsostring, i, j)) * source[(*lexicalmap_)[bsostring]];
-              }
-              ++odata;
-            }
-          }
-        }
-      }
-    };
+template<typename DataType>
+DistRASCivector<DataType>::DistRASCivector(DistRASCivector<DataType>&& o) : RASCivector_base<DistCIBlock<DataType>>(o.det_), global_size_(det_->size()) {
+  for (auto& iblock : o.blocks()) {
+    blocks_.push_back(iblock);
   }
 }
+
+
+// Copy assignment
+template<typename DataType>
+DistRASCivector<DataType>& DistRASCivector<DataType>::operator=(const DistRASCivector<DataType>& o) {
+#if 0
+  assert(*det_ == *o.det_);
+  for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i)
+    if (*i) copy_n((*j)->local(), (*i)->size(), (*i)->local());
+#endif
+  return *this;
+}
+
+// Move assignment
+template<typename DataType>
+DistRASCivector<DataType>& DistRASCivector<DataType>::operator=(DistRASCivector<DataType>&& o) {
+#if 0
+  assert(*det_ == *o.det_);
+  for (auto i = blocks_.begin(), j = o.blocks_.begin(); i != blocks_.end(); ++i) { *i = *j; }
+#endif
+  return *this;
+}
+
+
+template<typename DataType>
+int DistRASCivector<DataType>::get_bstring_buf(double* buf, const size_t a) const {
+#if 0
+  assert(put_ && recv_);
+  const size_t mpirank = mpi__->rank();
+  shared_ptr<const RASString> aspace = det_->template space<0>(det_->string_bits_a(a));
+  size_t rank, off;
+  tie(rank, off) = aspace->dist()->locate(a - aspace->offset());
+
+  int out = -1;
+  if (mpirank == rank) {
+    fill_n(buf, det_->lenb(), 0.0);
+    for (auto b : this->template allowed_blocks<0>(aspace))
+      copy_n(b->local()+off*b->lenb(), b->lenb(), buf + b->stringsb()->offset());
+  } else {
+    out = recv_->request_recv(buf, det_->lenb(), rank, a);
+  }
+  return out;
+#else
+  return 0.0;
+#endif
+}
+
+
+template<typename DataType>
+void DistRASCivector<DataType>::zero() {
+#if 0
+  this->for_each_block( [] (shared_ptr<RBlock> i) { fill_n(i->local(), i->size(), 0.0 ); } );
+#endif
+}
+
+
+template<typename DataType>
+shared_ptr<DistRASCivector<DataType>> DistRASCivector<DataType>::transpose(shared_ptr<const RASDeterminants> det) const {
+  if (!det) det = det_->transpose();
+  auto out = make_shared<DistRASCivector<DataType>>(det);
+#if 0
+  const int myrank = mpi__->rank();
+
+  shared_ptr<DistRASCivector<DataType>> trans = clone();
+  for (auto& sblock : blocks_) {
+    if (!sblock) continue;
+    shared_ptr<RBlock> tblock = out->block(sblock->stringsa(), sblock->stringsb());
+    shared_ptr<RBlock> bufblock = trans->block(sblock->stringsb(), sblock->stringsa());
+    assert(tblock->global_size() == sblock->global_size() && bufblock->global_size() == sblock->global_size());
+
+    for (int i = 0; i < mpi__->size(); ++i) {
+      tuple<size_t, size_t> outrange = tblock->dist().range(i);
+      tuple<size_t, size_t> thisrange = sblock->dist().range(i);
+
+      unique_ptr<DataType[]> tmp(new DataType[tblock->dist().size(i)*sblock->asize()]);
+      for (size_t j = 0; j != sblock->asize(); ++j)
+        copy_n(sblock->local()+get<0>(outrange)+j*sblock->lenb(), tblock->dist().size(i), tmp.get()+j*tblock->dist().size(i));
+
+      const size_t off = get<0>(outrange) * sblock->asize();
+      copy_n(tmp.get(), tblock->dist().size(i)*sblock->asize(), bufblock->local()+off);
+      if ( i != myrank ) {
+        const int tag_offset = sblock->block_offset() * mpi__->size();
+        const size_t sendsize = tblock->dist().size(i) * sblock->asize();
+        if (sendsize)
+          out->transp_.push_back(mpi__->request_send(bufblock->local()+off, sendsize, i, tag_offset + myrank));
+        const size_t recvsize = tblock->asize() * sblock->dist().size(i);
+        if (recvsize)
+          out->transp_.push_back(mpi__->request_recv(tblock->local()+tblock->asize()*get<0>(thisrange), recvsize, i, tag_offset + i));
+      }
+      else {
+        copy_n(bufblock->local() + off, tblock->asize() * sblock->asize(), tblock->local() + sblock->astart() * tblock->asize());
+      }
+    }
+  }
+  out->buf_ = trans;
+#endif
+  return out;
+}
+
+
+template<typename DataType>
+DataType DistRASCivector<DataType>::dot_product(const DistRASCivector<DataType>& o) const {
+  assert(det_->nelea() == o.det()->nelea() && det_->neleb() == o.det()->neleb() && det_->norb() == o.det()->norb());
+  DataType out(0.0);
+#if 0
+  for (auto& iblock : this->blocks()) {
+    if (!iblock) continue;
+    shared_ptr<const RBlock> jblock = o.block(iblock->stringsb(), iblock->stringsa());
+    if (jblock) out += blas::dot_product(iblock->local(), iblock->size(), jblock->local());
+  }
+  mpi__->allreduce(&out, 1);
+#endif
+  return out;
+}
+
+
+template<typename DataType>
+void DistRASCivector<DataType>::scale(const DataType a) {
+#if 0
+  this->for_each_block( [&a] (shared_ptr<RBlock> b) { for_each(b->local(), b->local()+b->size(), [&a] (DataType& p) { p*= a; }); });
+#endif
+}
+
+
+template<typename DataType>
+void DistRASCivector<DataType>::ax_plus_y(const DataType a, const DistRASCivector<DataType>& o) {
+#if 0
+  this->for_each_block( [&a, &o] (shared_ptr<RBlock> iblock) {
+    shared_ptr<const RBlock> jblock = o.block(iblock->stringsb(), iblock->stringsa());
+    assert(jblock);
+    blas::ax_plus_y_n(a, jblock->local(), iblock->size(), iblock->local());
+  } );
+#endif
+}
+
 
 // Returns S^2 | civec >
 // S^2 = S_z^2 + S_z + S_-S_+ with S_-S_+ = nbeta - \sum_{ij} j_alpha^dagger i_alpha i_beta^dagger j_beta
 template<>
 shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
+#if 0
 #if 1
   auto local = civec();
   auto spun = local->spin();
@@ -175,145 +265,15 @@ shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin() const {
 
   return out;
 #endif
-}
-
-// S_- = \sum_i i^dagger_beta i_alpha
-template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_lower(shared_ptr<const RASDeterminants> tdet) const {
-#if 1
-  shared_ptr<RASCivector<double>> local = civec();
-  shared_ptr<RASCivector<double>> lowered = local->spin_lower(tdet);
-  return lowered->distcivec();
 #else
-  shared_ptr<const RASDeterminants> sdet = det_;
-  if (!tdet) tdet = sdet->clone(sdet->nelea()-1, sdet->neleb()+1);
-  assert( (tdet->nelea() == sdet->nelea()-1) && (tdet->neleb() == sdet->neleb()+1) );
-  auto out = make_shared<DistRASCivec>(tdet);
-
-  const int norb = sdet->norb();
-  const int ras1 = sdet->ras(0);
-  const int ras2 = sdet->ras(1);
-  const int ras3 = sdet->ras(2);
-
-  // maps bits to their local offsets
-  unordered_map<bitset<nbit__>, size_t> alex;
-  for (auto& ispace : *sdet->stringspacea()) {
-    if (ispace)
-      for (auto& abit : *ispace) alex[abit] = ispace->lexical<0>(abit);
-  }
-
-  unordered_map<bitset<nbit__>, size_t> blex;
-  for (auto& ispace : *sdet->stringspaceb()) {
-    if (ispace)
-      for (auto& bbit : *ispace) blex[bbit] = ispace->lexical<0>(bbit);
-  }
-
-  auto lower_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
-    const size_t lb = sblock->lenb();
-    double* odata = tblock->data();
-    for (auto& abit : *tblock->string_bits_a()) {
-      for (auto& bbit : *tblock->string_bits_b()) {
-        for ( int i = nstart; i < nfence; ++i) {
-          if (abit[i] || !bbit[i]) continue;
-          bitset<nbit__> sabit = abit; sabit.set(i);
-          bitset<nbit__> sbbit = bbit; sbbit.reset(i);
-
-          const double phase = static_cast<double>(-1 * sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
-
-          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
-        }
-        ++odata;
-      }
-    }
-  };
-
-  // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
-  for (auto& iblock : out->blocks()) {
-    if (!iblock) continue;
-    const int nha = iblock->string_bits_a()->nholes();
-    const int nhb = iblock->string_bits_b()->nholes();
-    const int npa = iblock->string_bits_a()->nparticles();
-    const int npb = iblock->string_bits_b()->nparticles();
-    const int n2a = iblock->string_bits_a()->nele2();
-    const int n2b = iblock->string_bits_b()->nele2();
-
-    if ( (ras1 > 0) && (nhb < ras1) && (nha > 0) ) lower_ras(this->block(nha-1,nhb+1,npa,npb), iblock, 0, ras1);
-    if ( (ras2 > 0) && (n2b > 0) && (n2a < ras2) ) lower_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
-    if ( (ras3 > 0) && (npb > 0) && (npa < ras3) ) lower_ras(this->block(nha, nhb, npa+1, npb-1), iblock, ras1+ras2, ras1+ras2+ras3);
-  }
-
-  return out;
+  return nullptr;
 #endif
 }
 
-// S_+ = \sum_i i^dagger_alpha i_beta
-template<> shared_ptr<DistRASCivector<double>> DistRASCivector<double>::spin_raise(shared_ptr<const RASDeterminants> tdet) const {
-#if 1
-  shared_ptr<RASCivector<double>> local = civec();
-  shared_ptr<RASCivector<double>> raised = local->spin_raise(tdet);
-  return raised->distcivec();
-#else
-  shared_ptr<const RASDeterminants> sdet = det_;
-  if (!tdet) tdet = sdet->clone(sdet->nelea()+1, sdet->neleb()-1);
-  assert( (tdet->nelea() == sdet->nelea()+1) && (tdet->neleb() == sdet->neleb()-1) );
-  auto out = make_shared<DistRASCivec>(tdet);
 
-  const int norb = sdet->norb();
-  const int ras1 = sdet->ras(0);
-  const int ras2 = sdet->ras(1);
-  const int ras3 = sdet->ras(2);
-
-  // maps bits to their local offsets
-  unordered_map<bitset<nbit__>, size_t> alex;
-  for (auto& ispace : *det_->stringspacea()) {
-    if (ispace)
-      for (auto& abit : *ispace) alex[abit] = ispace->lexical<0>(abit);
-  }
-
-  unordered_map<bitset<nbit__>, size_t> blex;
-  for (auto& ispace : *det_->stringspaceb()) {
-    if (ispace)
-      for (auto& bbit : *ispace) blex[bbit] = ispace->lexical<0>(bbit);
-  }
-
-  auto raise_ras = [&sdet, &alex, &blex] (shared_ptr<const RASBlock<double>> sblock, shared_ptr<RASBlock<double>> tblock, const int nstart, const int nfence) {
-    const size_t lb = sblock->lenb();
-    double* odata = tblock->data();
-    for (auto& abit : *tblock->string_bits_a()) {
-      for (auto& bbit : *tblock->string_bits_b()) {
-        for ( int i = nstart; i < nfence; ++i) {
-          if (!abit[i] || bbit[i]) continue;
-          bitset<nbit__> sabit = abit; sabit.reset(i);
-          bitset<nbit__> sbbit = bbit; sbbit.set(i);
-
-          const double phase = static_cast<double>(sdet->sign<0>(sabit, i) * sdet->sign<1>(sbbit,i));
-
-          *odata += phase * sblock->element( blex[sbbit] + alex[sabit] * lb );
-        }
-        ++odata;
-      }
-    }
-  };
-
-  // The important thing to notice is that for all orbitals in a single RAS space, each block in the source is sent to a single block in target
-  for (auto& iblock : out->blocks()) {
-    if (!iblock) continue;
-    const int nha = iblock->string_bits_a()->nholes();
-    const int nhb = iblock->string_bits_b()->nholes();
-    const int npa = iblock->string_bits_a()->nparticles();
-    const int npb = iblock->string_bits_b()->nparticles();
-    const int n2a = iblock->string_bits_a()->nele2();
-    const int n2b = iblock->string_bits_b()->nele2();
-
-    if ( (ras1 > 0) && (nha < ras1) && (nhb > 0) ) raise_ras(this->block(nha+1,nhb-1,npa,npb), iblock, 0, ras1);
-    if ( (ras2 > 0) && (n2a > 0) && (n2b < ras2) ) raise_ras(this->block(nha, nhb, npa, npb), iblock, ras1, ras1 + ras2);
-    if ( (ras3 > 0) && (npa > 0) && (npb < ras3) ) raise_ras(this->block(nha, nhb, npa-1, npb+1), iblock, ras1+ras2, ras1+ras2+ras3);
-  }
-
-  return out;
-#endif
-}
-
-template<> void DistRASCivector<double>::spin_decontaminate(const double thresh) {
+template<>
+void DistRASCivector<double>::spin_decontaminate(const double thresh) {
+#if 0
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
 
@@ -338,4 +298,65 @@ template<> void DistRASCivector<double>::spin_decontaminate(const double thresh)
 
     k += 2;
   }
+#endif
 }
+
+
+template<typename DataType>
+void DistRASCivector<DataType>::print(const double thr) const {
+#if 0
+  vector<DataType> data;
+  vector<size_t> abits;
+  vector<size_t> bbits;
+  // multimap sorts elements so that they will be shown in the descending order in magnitude
+  multimap<double, tuple<DataType, bitset<nbit__>, bitset<nbit__>>> tmp;
+  for (auto& iblock : blocks_) {
+    if (!iblock) continue;
+    double* i = iblock->local();
+    for (size_t ia = iblock->astart(); ia < iblock->aend(); ++ia) {
+      for (size_t ib = 0; ib < iblock->lenb(); ++ib) {
+        if (abs(*i) >= thr) {
+          data.push_back(*i);
+          abits.push_back(ia + iblock->stringsa()->offset());
+          bbits.push_back(ib + iblock->stringsb()->offset());
+        }
+        ++i;
+      }
+    }
+  }
+  vector<size_t> nelements(mpi__->size(), 0);
+  const size_t nn = data.size();
+  mpi__->allgather(&nn, 1, nelements.data(), 1);
+
+  const size_t chunk = *max_element(nelements.begin(), nelements.end());
+  data.resize(chunk, 0);
+  abits.resize(chunk, 0);
+  bbits.resize(chunk, 0);
+
+  vector<double> alldata(chunk * mpi__->size());
+  mpi__->allgather(data.data(), chunk, alldata.data(), chunk);
+  vector<size_t> allabits(chunk * mpi__->size());
+  mpi__->allgather(abits.data(), chunk, allabits.data(), chunk);
+  vector<size_t> allbbits(chunk * mpi__->size());
+  mpi__->allgather(bbits.data(), chunk, allbbits.data(), chunk);
+
+  if (mpi__->rank() == 0) {
+    multimap<double, tuple<double, bitset<nbit__>, bitset<nbit__>>> tmp;
+    for (int i = 0; i < chunk * mpi__->size(); ++i) {
+      if (alldata[i] != 0.0)
+        tmp.emplace(-abs(alldata[i]), make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
+    }
+
+    for (auto& i : tmp) {
+      cout << "       " << print_bit(get<1>(i.second), get<2>(i.second), det_->ras(0))
+                << "-" << print_bit(get<1>(i.second), get<2>(i.second), det_->ras(0), det_->ras(0)+det_->ras(1))
+                << "-" << print_bit(get<1>(i.second), get<2>(i.second), det_->ras(0)+det_->ras(1), det_->norb())
+                << "  " << setprecision(10) << setw(15) << get<0>(i.second) << endl;
+
+    }
+  }
+#endif
+}
+
+
+template class bagel::DistRASCivector<double>;

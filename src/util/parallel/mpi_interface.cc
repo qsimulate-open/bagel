@@ -32,6 +32,9 @@
 #include <src/util/constants.h>
 #include <src/util/parallel/scalapack.h>
 #include <src/util/parallel/mpi_interface.h>
+#ifdef HAVE_GA
+#include <ga.h>
+#endif
 
 using namespace std;
 using namespace bagel;
@@ -80,6 +83,11 @@ MPI_Interface::MPI_Interface()
     assert(flag && *get_val >= 32767); // this is what the standard says
     tag_ub_ = *get_val;
   }
+
+  // start Global Arrays here
+#ifdef HAVE_GA
+  GA_Initialize();
+#endif
 #else
   rank_ = 0;
   size_ = 1;
@@ -89,6 +97,9 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
+#ifdef HAVE_GA
+  GA_Terminate();
+#endif
 #ifndef HAVE_SCALAPACK
   MPI_Finalize();
 #else
@@ -266,6 +277,17 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
+#endif
+}
+
+
+void MPI_Interface::allgather(const complex<double>* send, const size_t ssize, complex<double>* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE_COMPLEX, static_cast<void*>(rec), rsize, MPI_DOUBLE_COMPLEX, MPI_COMM_WORLD);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);

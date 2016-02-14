@@ -27,7 +27,6 @@
 #include <src/util/math/matrix.h>
 #include <src/util/parallel/scalapack.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <src/util/parallel/accrequest.h>
 
 using namespace std;
 using namespace bagel;

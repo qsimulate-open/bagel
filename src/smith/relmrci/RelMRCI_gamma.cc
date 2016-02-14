@@ -23,9 +23,9 @@
 //
 
 
-#include <src/smith/relmrci/RelMRCI.h>
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
+#include <src/smith/relmrci/RelMRCI.h>
 #include <src/smith/relmrci/RelMRCI_tasks.h>
 
 using namespace std;

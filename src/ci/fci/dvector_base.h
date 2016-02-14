@@ -39,12 +39,11 @@ namespace bagel {
 template <typename CiType>
 class Dvector_base {
   // used for template magicking
-  public: using DetType = typename CiType::DetType;
-  public: using Ci = CiType;
-
-  // only for use in lambdas
-  using CiPtr = std::shared_ptr<CiType>;
-  using CiConstPtr = std::shared_ptr<const CiType>;
+  public:
+    using DetType = typename CiType::DetType;
+    using Ci = CiType;
+    using CiPtr = std::shared_ptr<CiType>;
+    using CiConstPtr = std::shared_ptr<const CiType>;
 
   protected:
     // the determinant space where Dvector_base's are sitting
@@ -87,7 +86,7 @@ class Dvector_base {
     std::shared_ptr<const DetType> det() const { return det_; }
 
     CiPtr& data(const size_t i) { return dvec_[i]; }
-    CiPtr data(const size_t i) const { return dvec_[i]; }
+    CiConstPtr data(const size_t i) const { return dvec_[i]; }
 
     std::vector<CiPtr>& dvec() { return dvec_; }
     const std::vector<CiPtr>& dvec() const { return dvec_; }
@@ -159,22 +158,6 @@ class Dvector_base {
       return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
     }
 
-    void spin_decontaminate() {
-      for (int i = 0; i < ij_; ++i) {
-#ifdef HAVE_MPI_H
-        if (i % mpi__->size() == mpi__->rank())
-          data(i)->spin_decontaminate();
-#else
-        data(i)->spin_decontaminate();
-#endif
-      }
-
-#ifdef HAVE_MPI_H
-      for (int i = 0; i < ij_; ++i)
-        data(i)->synchronize(i%mpi__->size());
-#endif
-    }
-
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::orthog called inconsistently");
       std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
@@ -208,14 +191,12 @@ class Dvector_base {
       std::vector<CiPtr> out;
       for (int i = 0; i < ij_; ++i) {
 #ifdef HAVE_MPI_H
-        if ( (i % mpi__->size()) == mpi__->rank() ) {
-          out.push_back( func(data(i)) );
-        }
-        else {
-          out.push_back( std::make_shared<CiType>(d) );
-        }
+        if ((i % mpi__->size()) == mpi__->rank())
+          out.push_back(func(data(i)));
+        else
+          out.push_back(std::make_shared<CiType>(d));
 #else
-        out.push_back( func(data(i)) );
+        out.push_back(func(data(i)));
 #endif
       }
 #ifdef HAVE_MPI_H

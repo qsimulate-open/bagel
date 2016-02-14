@@ -25,8 +25,9 @@
 #ifndef __BAGEL_FCI_DISTFCI_H
 #define __BAGEL_FCI_DISTFCI_H
 
-#include <src/ci/fci/fci.h>
+#include <src/ci/fci/distcivec.h>
 #include <src/ci/fci/space.h>
+#include <src/ci/fci/mofile.h>
 
 namespace bagel {
 

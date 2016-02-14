@@ -23,9 +23,7 @@
 //
 
 #include <src/asd/asd_cas.h>
-#include <src/asd/asd_distcas.h>
 #include <src/asd/asd_ras.h>
-#include <src/asd/asd_distras.h>
 
 using namespace std;
 using namespace bagel;
@@ -41,29 +39,17 @@ shared_ptr<ASD_base> construct_ASD(shared_ptr<const PTree> itree, shared_ptr<Dim
     if (variant == "local") {
       shared_ptr<DimerCAS> cispace = dimer->compute_cispace<CASDvec>(itree);
       out = make_shared<ASD_CAS>(itree, dimer, cispace, rdm);
-    }
-    else if (variant == "dist" || variant == "parallel") {
-      shared_ptr<DimerDistCAS> cispace = dimer->compute_cispace<DistDvec>(itree);
-      out = make_shared<ASD_DistCAS>(itree, dimer, cispace);
-    }
-    else {
+    } else {
       throw logic_error("Unrecognized variant of CAS ASD");
     }
-  }
-  else if (method == "ras") {
+  } else if (method == "ras") {
     if (variant == "local") {
       shared_ptr<DimerRAS> cispace = dimer->compute_rcispace<RASDvec>(itree);
       out = make_shared<ASD_RAS>(itree, dimer, cispace, rdm);
-    }
-    else if (variant == "dist" || variant == "parallel") {
-      shared_ptr<DimerDistRAS> cispace = dimer->compute_rcispace<DistRASDvec>(itree);
-      out = make_shared<ASD_DistRAS>(itree, dimer, cispace);
-    }
-    else {
+    } else {
       throw logic_error("Unrecognized variant of RAS ASD");
     }
-  }
-  else {
+  } else {
     throw runtime_error("Unrecognized method for ASD");
   }
 

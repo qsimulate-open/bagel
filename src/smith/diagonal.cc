@@ -25,6 +25,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
+#include <ga.h>
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relmrci/RelMRCI.h>
@@ -38,18 +39,23 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, 
   double sum = 0.0;
   for (auto& i1 : active_) {
     for (auto& i0 : active_) {
-      unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
-      unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
-      sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      if (f1_->is_local(i0, i1)) {
+        assert(rdm1_->is_local(i0, i1));
+        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
     }
   }
+  mpi__->allreduce(&sum, 1);
+
   const double e0loc = sum - (diag ? e0_ : 0.0);
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
+          if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
           unique_ptr<double[]>       data0 = t->get_block(i0, i1, i2, i3);
           const unique_ptr<double[]> data1 = t->get_block(i0, i3, i2, i1);
 
@@ -69,6 +75,7 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, 
       }
     }
   }
+  GA_Sync();
 }
 
 
@@ -76,18 +83,22 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
   complex<double> sum = 0.0;
   for (auto& i1 : active_) {
     for (auto& i0 : active_) {
-      unique_ptr<complex<double>[]> fdata = f1_->get_block(i0, i1);
-      unique_ptr<complex<double>[]> rdata = rdm1_->get_block(i0, i1);
-      sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      if (f1_->is_local(i0, i1)) {
+        unique_ptr<complex<double>[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<complex<double>[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
     }
   }
+  mpi__->allreduce(&sum, 1);
+
   const complex<double> e0loc = sum - (diag ? e0_ : 0.0);
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
         for (auto& i0 : closed_) {
           // if this block is not included in the current wave function, skip it
-          if (!r->get_size_alloc(i0, i1, i2, i3)) continue;
+          if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
           unique_ptr<complex<double>[]> data = t->get_block(i0, i1, i2, i3);
           if (diag) {
             size_t iall = 0;
@@ -104,6 +115,7 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
       }
     }
   }
+  GA_Sync();
 }
 
 
@@ -116,10 +128,11 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
         for (auto& i1 : virt_) {
           for (auto& i0 : closed_) {
             // if this block is not included in the current wave function, skip it
-            const size_t tsize = r->get_size_alloc(i0, i1, i2, i3);
-            if (!tsize) continue;
-            unique_ptr<double[]> local = r->move_block(i0, i1, i2, i3);
+            if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+            const size_t tsize = r->get_size(i0, i1, i2, i3);
+            unique_ptr<double[]> local(new double[tsize]);
             unique_ptr<double[]> buf(new double[tsize]);
+            fill_n(buf.get(), tsize, 0.0);
 
             for (auto& i3t : virt_) {
               for (auto& i1t : virt_) {
@@ -133,17 +146,17 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
                 sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
 
                 dgemm_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
-                        1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 0.0, buf, i0.size()*i2.size());
-
-                sort_indices<0,2,1,3,1,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+                        1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
               }
             }
-            r->put_block(local, i0, i1, i2, i3);
+            sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+            r->add_block(local, i0, i1, i2, i3);
           }
         }
       }
     }
   }
+  GA_Sync();
 }
 
 
@@ -156,10 +169,11 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
         for (auto& i1 : virt_) {
           for (auto& i0 : closed_) {
             // if this block is not included in the current wave function, skip it
-            const size_t tsize = r->get_size_alloc(i0, i1, i2, i3);
-            if (!tsize) continue;
-            unique_ptr<complex<double>[]> local = r->move_block(i0, i1, i2, i3);
+            if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+            const size_t tsize = r->get_size(i0, i1, i2, i3);
+            unique_ptr<complex<double>[]> local(new complex<double>[tsize]);
             unique_ptr<complex<double>[]> buf(new complex<double>[tsize]);
+            fill_n(buf.get(), tsize, 0.0);
 
             for (auto& i3t : virt_) {
               for (auto& i1t : virt_) {
@@ -172,17 +186,17 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
                 sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
 
                 zgemm3m_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
-                         1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 0.0, buf, i0.size()*i2.size());
-
-                sort_indices<0,2,1,3,1,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+                         1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
               }
             }
-            r->put_block(local, i0, i1, i2, i3);
+            sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+            r->add_block(local, i0, i1, i2, i3);
           }
         }
       }
     }
   }
+  GA_Sync();
 }
 
 #endif

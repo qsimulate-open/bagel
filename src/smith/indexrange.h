@@ -33,6 +33,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <memory>
+#include <src/util/parallel/staticdist.h>
 
 namespace bagel {
 namespace SMITH {
@@ -93,8 +95,7 @@ class IndexRange {
         // key is offsetted by the input value
         size_t cnt = boffset;
         for (auto& i : blocksizes) {
-          Index t(off, off2, i, cnt++);
-          range_.push_back(t);
+          range_.emplace_back(off, off2, i, cnt++);
           off += i;
           off2 += i;
         }
@@ -104,6 +105,25 @@ class IndexRange {
         size_ = 0;
       }
     }
+
+    // make IndexRange based on StaticDist. The offset in StaticDist is ignored
+    IndexRange(std::shared_ptr<const StaticDist> dist, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
+     : keyoffset_(boffset), orboffset_(orboff), orboffset2_(orboff2 < 0 ? orboff : orboff2) {
+      // push back to range_
+      size_t off = orboffset_;
+      size_t off2 = orboffset2_;
+      // key is offsetted by the input value
+      size_t cnt = boffset;
+      std::vector<std::pair<size_t,size_t>> table = dist->atable();
+      for (auto& i : table) {
+        range_.emplace_back(off, off2, i.second, cnt++);
+        off += i.second;
+        off2 += i.second;
+      }
+      // set size_
+      size_ = off - orboffset_;
+    }
+
     IndexRange() {}
     ~IndexRange() {}
 

@@ -286,9 +286,7 @@ class DimerCISpace_base {
 };
 
 using DimerCAS = DimerCISpace_base<CASDvec>;
-using DimerDistCAS = DimerCISpace_base<DistDvec>;
 using DimerRAS = DimerCISpace_base<RASDvec>;
-using DimerDistRAS = DimerCISpace_base<DistRASDvec>;
 
 }
 
