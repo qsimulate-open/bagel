@@ -27,7 +27,7 @@
 
 
 #include <src/smith/mrci/MRCI.h>
-#include <src/smith/mrci/MRCI_tasks.h>
+#include <src/smith/mrci/MRCI_tasks20.h>
 
 using namespace std;
 using namespace bagel;
