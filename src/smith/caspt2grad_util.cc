@@ -57,7 +57,6 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
   auto input = make_shared<Tensor>(vector<IndexRange>{aux, ind[0], ind[1]});
   input->allocate();
   auto output = input->clone();
-  output->allocate();
 
   // fill into input
   for (auto& a : aux) {
