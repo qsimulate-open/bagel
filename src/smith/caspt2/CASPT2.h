@@ -123,13 +123,26 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<FutureTensor> Gamma340_();
     std::shared_ptr<FutureTensor> Gamma355_();
     std::shared_ptr<FutureTensor> Gamma373_();
+
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    void make_residualq1(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+    void make_residualq2(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+    void make_residualq3(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_corrq(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
+
+    std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
+    void make_densityq1(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+    void make_densityq2(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+    void make_densityq3(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
+
     std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
+    void make_deciq1(std::shared_ptr<Queue>, std::shared_ptr<Task>, std::shared_ptr<Task>, const bool, std::shared_ptr<Tensor>);
+    void make_deciq2(std::shared_ptr<Queue>, std::shared_ptr<Task>, std::shared_ptr<Task>, const bool, std::shared_ptr<Tensor>);
+    void make_deciq3(std::shared_ptr<Queue>, std::shared_ptr<Task>, std::shared_ptr<Task>, const bool, std::shared_ptr<Tensor>);
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);

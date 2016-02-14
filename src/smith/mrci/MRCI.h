@@ -166,7 +166,18 @@ class MRCI : public SpinFreeMethod<double> {
     std::shared_ptr<FutureTensor> Gamma560_();
     std::shared_ptr<FutureTensor> Gamma566_();
     std::shared_ptr<FutureTensor> Gamma567_();
+
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    void make_residualq1(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq2(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq3(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq4(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq5(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq6(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq7(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq8(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq9(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 

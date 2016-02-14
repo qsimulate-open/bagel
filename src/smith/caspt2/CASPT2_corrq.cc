@@ -27,7 +27,7 @@
 
 
 #include <src/smith/caspt2/CASPT2.h>
-#include <src/smith/caspt2/CASPT2_tasks.h>
+#include <src/smith/caspt2/CASPT2_tasks6.h>
 
 using namespace std;
 using namespace bagel;
