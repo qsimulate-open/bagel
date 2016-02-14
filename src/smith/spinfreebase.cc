@@ -419,8 +419,12 @@ void SpinFreeMethod<DataType>::compute_e0() {
     }
     mpi__->allreduce(&sum, 1);
     e0all_[ist] = detail::real(sum);
-    cout << "    - Zeroth order energy, state " << setw(2) << ist << ": " << setw(20) << setprecision(10) << sum << endl;
   }
+  // printout
+  cout << endl;
+  for (int ist = 0; ist != nstates; ++ist)
+    cout << "    * Zeroth order energy : state " << setw(2) << ist << setw(20) << setprecision(10) << e0all_[ist] << endl;
+  cout << endl;
 }
 
 
