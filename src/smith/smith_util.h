@@ -85,6 +85,7 @@ static std::shared_ptr<Tensor_<DataType>>
 
     target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
   }
+  mpi__->barrier();
   return target;
 }
 
@@ -164,6 +165,7 @@ static std::shared_ptr<Tensor_<DataType>>
     }
   }
   target->set_perm(input->perm());
+  mpi__->barrier();
   return target;
 }
 

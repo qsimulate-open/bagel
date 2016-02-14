@@ -26,6 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
+#include <ga.h>
 #include <src/smith/moint.h>
 #include <src/smith/smith_util.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -124,6 +125,8 @@ void K2ext<complex<double>>::init() {
       }
     }
     if (!breit) ext2 = ext;
+    // wait for other nodes
+    GA_Sync();
 
     // form four-index integrals
     const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
@@ -156,6 +159,7 @@ void K2ext<complex<double>>::init() {
         }
       }
     }
+    GA_Sync();
   };
 
   // coulomb operator
@@ -207,6 +211,8 @@ void K2ext<double>::init() {
           ext.put_block(buf, a, i0, i1);
     }
   }
+  // wait for other nodes
+  GA_Sync();
 
   // form four-index integrals
   for (auto& i0 : blocks_[0]) {
@@ -242,6 +248,7 @@ void K2ext<double>::init() {
       }
     }
   }
+  GA_Sync();
 }
 
 
