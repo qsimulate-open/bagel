@@ -67,7 +67,7 @@ class Tensor_ {
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_);
+      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_, true);
     }
 
     std::shared_ptr<Tensor_<DataType>> copy() const {

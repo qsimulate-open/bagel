@@ -189,13 +189,11 @@ void CASPT2::CASPT2::solve_deriv() {
   timer.tick_print("T1 norm evaluation");
 
   den2 = h1_->clone();
-  den2->allocate();
   shared_ptr<Queue> dens2 = make_densityq();
   while (!dens2->done())
     dens2->next_compute();
 
   den1 = h1_->clone();
-  den1->allocate();
   shared_ptr<Queue> dens1 = make_density1q();
   while (!dens1->done())
     dens1->next_compute();
