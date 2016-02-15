@@ -136,6 +136,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // function to copy positronic rotations from a rotation file TODO: make lambda
     std::shared_ptr<ZRotFile> copy_positronic_rotations(std::shared_ptr<const ZRotFile> rot) const;
 
+    std::shared_ptr<const ZHarrison> fci() const { return fci_; }
 };
 
 static const double zoccup_thresh = 1.0e-10;
