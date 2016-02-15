@@ -139,7 +139,7 @@ SpinFreeMethod<DataType>::~SpinFreeMethod() {
 template<>
 void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
   const int nstates = info_->ciwfn()->nstates();
-#if 1
+
   // TODO XMS thing
   Matrix fmn(nstates, nstates);
 
@@ -149,21 +149,42 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<1>> rdm1;
       shared_ptr<const RDM<2>> rdm2;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      // then assign the dot product
+      // then assign the dot product: fmn=fij rdm1
       fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
 
-fmn.print("fmn");
+  //diagonalize fmn
+  VectorB eig(nstates);
+  fmn.diagonalize(eig);
 
-  // TODO construct CIWfn
+  //construct CIWfn
+  shared_ptr<const CIWfn> ciwfn = info_->ciwfn(); 
+  shared_ptr<const Dvec> dvec = ciwfn->civectors(); 
+  shared_ptr<Dvec> new_dvec = dvec->clone();
+  vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
+  vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
    
-  // TODO construct Reference
+  for (int jst =0; jst != nstates; ++jst) {
+    for (int ist =0; ist != nstates; ++ist)
+      new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
+  }
 
-  // TODO construct SMITH_info
-  //info_ = make_shared<SMITH_info>(.....);
-#endif
+  vector<double> energies(ciwfn->nstates());
+  for (int i = 0; i != ciwfn->nstates(); ++i)
+    energies[i] = ciwfn->energy(i);
+
+  auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
+                                      energies, new_dvec, ciwfn->det());
+
+  //construct Reference
+  auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
+                                        info_->nvirt(), 0.0, info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
+    
+  //construct SMITH_info
+  info_ = make_shared<SMITH_Info<double>>(new_ref, info_); 
 
 }
 

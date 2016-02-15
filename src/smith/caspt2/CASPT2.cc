@@ -168,6 +168,7 @@ void CASPT2::CASPT2::solve() {
       }
     }
 
+  
     // print out the effective Hamiltonian
     cout << endl;
     cout << "    * MS-CASPT2 Heff";
@@ -189,6 +190,7 @@ void CASPT2::CASPT2::solve() {
   }
 }
 
+//Where to add XMS part here?
 
 void CASPT2::CASPT2::solve_deriv() {
 
