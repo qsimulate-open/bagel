@@ -158,27 +158,32 @@ void Pseudospin::compute(const ZHarrison& zfci) {
       ESO[i].print();
   }
 
-  compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
+  if (nspin_ > 0) {
 
-  shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
-  spin_axes_ = read_axes(mag_axes);
+    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
-  for (int i = 0; i != 3; ++i) {
-    zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-    zfci2_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-    zfci2_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-    for (int j = 0; j != 3; ++j) {
-      *zfci2_mu_[i] += spin_axes_->element(j, i) * *zfci_mu_[j];
-      *zfci2_spin_[i] += spin_axes_->element(j, i) * *zfci_spin_[j];
-      *zfci2_orbang_[i] += spin_axes_->element(j, i) * *zfci_orbang_[j];
+    shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
+    spin_axes_ = read_axes(mag_axes);
+
+    for (int i = 0; i != 3; ++i) {
+      zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      zfci2_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      zfci2_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      for (int j = 0; j != 3; ++j) {
+        *zfci2_mu_[i] += spin_axes_->element(j, i) * *zfci_mu_[j];
+        *zfci2_spin_[i] += spin_axes_->element(j, i) * *zfci_spin_[j];
+        *zfci2_orbang_[i] += spin_axes_->element(j, i) * *zfci_orbang_[j];
+      }
     }
-  }
 
-  shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
+    shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
 
-  if (nspin_ > 1) {
-    ESO = extract_hamiltonian_parameters(ESO, spinham_s);
-    shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
+    if (nspin_ > 1) {
+      ESO = extract_hamiltonian_parameters(ESO, spinham_s);
+      shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
+    }
+  } else {
+    cout << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
   }
 }
 
