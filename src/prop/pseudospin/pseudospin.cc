@@ -150,12 +150,12 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   cout << endl << "    ********      " << endl;
   cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << spin_val(nspin_) << endl;
 
-  vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
+  ESO_ = build_extended_stevens_operators(ranks);
 
   if (idata_->get<bool>("print_operators", false)) {
-    cout << "Number of Stevens operators = " << ESO.size() << endl;
-    for (int i = 0; i != ESO.size(); ++i)
-      ESO[i].print();
+    cout << "Number of Stevens operators = " << ESO_.size() << endl;
+    for (int i = 0; i != ESO_.size(); ++i)
+      ESO_[i].print();
   }
 
   if (nspin_ > 0) {
@@ -179,8 +179,11 @@ void Pseudospin::compute(const ZHarrison& zfci) {
     shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
 
     if (nspin_ > 1) {
-      ESO = extract_hamiltonian_parameters(ESO, spinham_s);
-      shared_ptr<Matrix> dtens = compute_Dtensor(ESO);
+      ESO_ = extract_hamiltonian_parameters(ESO_, spinham_s);
+      tuple<shared_ptr<const Matrix>, double, double> D_params = compute_Dtensor(ESO_);
+      dtensor_ = std::get<0>(D_params);
+      Dval_ = std::get<1>(D_params);
+      Eval_ = std::get<2>(D_params);
     }
   } else {
     cout << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
@@ -789,7 +792,7 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
 }
 
 
-shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> input) {
+tuple<shared_ptr<const Matrix>, double, double> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> input) const {
   auto out = make_shared<Matrix>(3, 3);
   out->zero();
 
@@ -825,7 +828,6 @@ shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> in
   }
 
   /**** PRINTOUT ***/
-
   shared_ptr<Matrix> Dtensor_diag = out->copy();
   Dtensor_diag->print("D tensor");
   cout << setprecision(8);
@@ -855,7 +857,8 @@ shared_ptr<Matrix> Pseudospin::compute_Dtensor(const vector<Stevens_Operator> in
 
   Matrix full_rotation = *spin_axes_ * *Dtensor_diag;
   cout << endl << " ** Axis of principle D-value (relative to input geometry)  =  (" << full_rotation.element(0, jmax) << ", " << full_rotation.element(1, jmax) << ", " << full_rotation.element(2, jmax) << ")" << endl;
-  return out;
+  tuple<shared_ptr<Matrix>, double, double> results(out, Dval, Eval);
+  return results;
 }
 
 

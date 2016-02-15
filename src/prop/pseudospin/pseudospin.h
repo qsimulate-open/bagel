@@ -73,6 +73,10 @@ class Pseudospin {
     int nspin_;
     int nspin1_;
     std::vector<double> ref_energy_;
+    std::vector<Stevens_Operator> ESO_;
+    std::shared_ptr<const Matrix> dtensor_;
+    double Dval_;
+    double Eval_;
 
     std::shared_ptr<const PTree> idata_;
 
@@ -110,6 +114,13 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spin_plus() const { return spin_plus_; }
     std::shared_ptr<ZMatrix> spin_minus() const { return spin_minus_; }
 
+    // return calculated ZFS parameters
+    std::vector<Stevens_Operator> ESO() const { return ESO_; }
+    Stevens_Operator ESO(const int i) const { return ESO_[i]; }
+    std::shared_ptr<const Matrix> dtensor() const { return dtensor_; }
+    double Dval() const { return Dval_; }
+    double Eval() const { return Eval_; }
+
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
@@ -118,7 +129,7 @@ class Pseudospin {
     // to extract D-tensor
     std::shared_ptr<const ZMatrix> compute_spin_eigenvalues() const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-    std::shared_ptr<Matrix> compute_Dtensor(const std::vector<Stevens_Operator> input);
+    std::tuple<std::shared_ptr<const Matrix>, double, double> compute_Dtensor(const std::vector<Stevens_Operator> input) const;
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively
