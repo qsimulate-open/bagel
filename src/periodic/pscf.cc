@@ -151,7 +151,7 @@ void PSCF::compute() {
     if (!dofmm_) {
       fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     } else {
-      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, true, dodf_, fmm_lmax_, fmm_ws_, fmm_extent_);
+      fock = make_shared<const PFock>(lattice_, hcore_, pdensity, fmm_);
     }
     shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
     auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));

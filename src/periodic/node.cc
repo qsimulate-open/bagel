@@ -317,7 +317,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
-  if (density != nullptr) {
+  if (density) {
     for (auto& distant_node : interaction_list_) { // M2L
       array<double, 3> r12;
       r12[0] = position_[0] - distant_node->position(0);
@@ -526,7 +526,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   }
 
 
-  if (!dodf && density != nullptr) {
+  if (!dodf && density) {
     const double* density_data = density->data();
 
     for (int i0 = 0; i0 != size; ++i0) {
@@ -577,7 +577,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
       }
     }
-  } else if (dodf && density != nullptr) {
+  } else if (dodf && density) {
     vector<shared_ptr<const Atom>> aux_atoms;
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
     int naux =  0;

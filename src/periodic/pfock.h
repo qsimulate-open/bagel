@@ -28,7 +28,7 @@
 #define __SRC_PERIODIC_PFOCK_H
 
 #include <src/periodic/lattice.h>
-#include <src/periodic/pdata.h>
+#include <src/periodic/pfmm.h>
 
 namespace bagel {
 
@@ -52,12 +52,12 @@ class PFock : public PData {
   public:
     PFock() { }
     PFock(const std::shared_ptr<const Lattice> lattice, std::shared_ptr<const PData> previous, const std::shared_ptr<const PData> pdensity,
-          const bool fmm = false, const bool dodf = false, const int lmax = 10, const int ws = 2, const int extent = 10);
+          std::shared_ptr<const PFMM> fmm = nullptr);
     ~PFock() { }
 
     double correction() const { return correction_; }
     void form_pfock();  /* add 2-electron part */
-    void form_pfock_fmm(const bool dodf, const int lmax, const int ws, const int extent);  // fmm
+    void form_pfock_fmm(std::shared_ptr<const PFMM> fmm);
 };
 
 }

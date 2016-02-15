@@ -46,6 +46,7 @@ class PSCF_base : public Method {
     std::shared_ptr<const PData> koverlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;
+    std::shared_ptr<const PFMM> fmm_;
 
     int max_iter_;
 
