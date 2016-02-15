@@ -25,9 +25,13 @@
 
 #include <bagel_config.h>
 #include <src/smith/caspt2grad.h>
+#ifdef COMPILE_SMITH
+#include <ga.h>
+#endif
 
 using namespace std;
 using namespace bagel;
+using namespace bagel::SMITH;
 
 shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full) const {
 #ifdef COMPILE_SMITH
@@ -36,68 +40,100 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
   const int nall = nocc + ref_->nvirt();
   const int n = nocc-ncore_;
 
-  // TODO D1 must be parallelised as it is very big.
-  // construct D1 to be used in Y4 and Y5
+  shared_ptr<DFFullDist> out = full->clone();
+  double* optr = out->block(0)->data();
+  const double* iptr = full->block(0)->data();
+  const size_t asize = full->block(0)->asize();
 
-  auto dm2 = d2_->matrix2();
-  auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
-  fill(D1->begin(), D1->end(), 0.0);
-  {
-    auto is_cc = [&](const int& i) { return i < nclosed; };
-    auto is_closed = [&](const int& i) { return i < nclosed && i >= ncore_; };
-    auto is_act = [&](const int& i) { return i >= nclosed && i < nocc; };
-    auto is_virt = [&](const int& i) { return i >= nocc; };
-    auto is_exc = [&](const int& i, const int& j) { return is_virt(i) || (is_act(i) && is_cc(j)); };
+  // first create a tensor for full.
+  // Aux index blocking
+  shared_ptr<const StaticDist> adist = ref_->geom()->df()->adist_now();
+  const IndexRange aux(adist);
 
-    // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
-    for (int s = 0; s != nall-nclosed; ++s) // extend
-      for (int k = 0; k != nocc-ncore_; ++k)
-        for (int t = 0; t != nall-nclosed; ++t) // extend
-          for (int l = 0; l != nocc-ncore_; ++l) {
-            const int ss = s + nclosed;
-            const int tt = t + nclosed;
-            const int kk = k + ncore_;
-            const int ll = l + ncore_;
-            // ccaa, cxaa, xxaa
-            if (is_virt(tt) && is_virt(ss)) {
-              (*D1)(ll,tt,kk,ss) = dm2->element(l+n*t, k+n*s);
-              // cxaa
-              if (is_act(kk) ^ is_act(ll))
-                (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
-            // ccxa, ccxx
-            } else if (is_closed(kk) && is_closed(ll)) {
-              (*D1)(ll,tt,kk,ss) = dm2->element(l+n*t, k+n*s);
-              // ccxa
-              if (is_act(tt) ^ is_act(ss))
-                (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
-            // cxxa, xcxa
-            } else if ((is_act(kk) ^ is_act(ll)) && (is_act(tt) ^ is_act(ss))) {
-              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
-              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
-            // cxxx
-            } else if ((is_act(kk) ^ is_act(ll)) && is_act(tt) && is_act(ss)) {
-              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
-              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
-            // xxxa
-            } else if (is_act(kk) && is_act(ll) && (is_act(tt) ^ is_act(ss))) {
-              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
-              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
+  vector<IndexRange> ind = d2_->indexrange();
+  assert(ind[0] == ind[2] && ind[1] == ind[3]);
+
+  // create a GA array
+  auto input = make_shared<Tensor>(vector<IndexRange>{aux, ind[0], ind[1]});
+  input->allocate();
+  auto output = input->clone();
+  output->allocate();
+
+  // fill into input
+  for (auto& a : aux) {
+    tuple<size_t, size_t> loc = adist->locate(a.offset());
+    if (get<0>(loc) != mpi__->rank())
+      continue;
+    for (auto& j : ind[1])
+      for (auto& i : ind[0]) {
+        unique_ptr<double[]> buf(new double[a.size()*i.size()*j.size()]);
+        for (int ej = 0; ej != j.size(); ++ej)
+          for (int ei = 0; ei != i.size(); ++ei)
+            copy_n(iptr + get<1>(loc)+asize*(i.offset()+ei+full->nocc1()*(j.offset()+ej)), a.size(), buf.get()+a.size()*(ei+i.size()*ej));
+        input->put_block(buf, a, i, j);
+      }
+  }
+  GA_Sync();
+
+  // next contract
+  for (auto& j : ind[1])
+    for (auto& i : ind[0])
+      for (auto& a : aux) {
+        if (!output->is_local(a, i, j)) continue;
+        unique_ptr<double[]> buf(new double[a.size()*i.size()*j.size()]);
+        fill_n(buf.get(), a.size()*i.size()*j.size(), 0.0);
+        for (auto& l : ind[1]) {
+          for (auto& k : ind[0]) {
+            unique_ptr<double[]> in = input->get_block(a, k, l);
+            if (d2_->exists(k, l, i, j)) {
+              unique_ptr<double[]> d = d2_->get_block(k, l, i, j);
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, a.size(), i.size()*j.size(), k.size()*l.size(),
+                                          1.0, in.get(), a.size(), d.get(), k.size()*l.size(), 1.0, buf.get(), a.size());
+            } else if (d2_->exists(i, j, k, l)) {
+              unique_ptr<double[]> d = d2_->get_block(i, j, k, l);
+              btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, a.size(), i.size()*j.size(), k.size()*l.size(),
+                                          1.0, in.get(), a.size(), d.get(), i.size()*j.size(), 1.0, buf.get(), a.size());
             }
           }
+        }
+        output->add_block(buf, a, i, j);
+      }
+  GA_Sync();
 
-    for (int s = 0; s != nclosed; ++s)
-      for (int t = 0; t != nall; ++t)
-        for (int l = 0; l != nocc; ++l)
-          // c(cc)x, c(cc)a, x(cc)a
-          if (is_exc(t, l)) {
-            (*D1)(l, t, s, s)  += 2.0*d11_->element(l, t); // (g|lt)dlt -> (g|ss)
-            (*D1)(s, t, l, s)  -=     d11_->element(l, t); // (g|st)dlt -> (g|ls)
-            (*D1)(s, s, l, t)  += 2.0*d11_->element(l, t); // (g|ss)dlt -> (g|lt)
-            (*D1)(l, s, s, t)  -=     d11_->element(l, t); // (g|ls)dlt -> (g|st)
-          }
-
+  // finally fill back into output
+  for (auto& a : aux) {
+    tuple<size_t, size_t> loc = adist->locate(a.offset());
+    if (get<0>(loc) != mpi__->rank())
+      continue;
+    for (auto& j : ind[1])
+      for (auto& i : ind[0]) {
+        unique_ptr<double[]> buf = output->get_block(a, i, j);
+        for (int ej = 0; ej != j.size(); ++ej)
+          for (int ei = 0; ei != i.size(); ++ei)
+            copy_n(buf.get()+a.size()*(ei+i.size()*ej), a.size(), optr + get<1>(loc)+asize*(i.offset()+ei+full->nocc1()*(j.offset()+ej)));
+      }
   }
-  return full->apply_2rdm(*D1);
+  GA_Sync();
+
+  // one body part
+  {
+    auto is_cc   = [&](const int& i) { return i < nclosed; };
+    auto is_act  = [&](const int& i) { return i >= nclosed && i < nocc; };
+    auto is_virt = [&](const int& i) { return i >= nocc; };
+    auto is_exc  = [&](const int& i, const int& j) { return is_virt(i) || (is_act(i) && is_cc(j)); };
+
+    for (int t = 0; t != nall; ++t)
+      for (int l = 0; l != nocc; ++l)
+        // c(cc)x, c(cc)a, x(cc)a
+        if (is_exc(t, l))
+          for (int s = 0; s != nclosed; ++s) {
+            blas::ax_plus_y_n(2.0*d11_->element(l,t), iptr + asize*(l+nocc*t), asize, optr + asize*(s+nocc*s));
+            blas::ax_plus_y_n(   -d11_->element(l,t), iptr + asize*(s+nocc*t), asize, optr + asize*(l+nocc*s));
+            blas::ax_plus_y_n(2.0*d11_->element(l,t), iptr + asize*(s+nocc*s), asize, optr + asize*(l+nocc*t));
+            blas::ax_plus_y_n(   -d11_->element(l,t), iptr + asize*(l+nocc*s), asize, optr + asize*(s+nocc*t));
+          }
+  }
+  return out;
 #else
   return full->clone(); // dummy
 #endif
