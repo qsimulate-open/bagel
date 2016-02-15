@@ -34,6 +34,7 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nall = nocc + ref_->nvirt();
+  const int n = nocc-ncore_;
 
   // TODO D1 must be parallelised as it is very big.
   // construct D1 to be used in Y4 and Y5
@@ -46,55 +47,55 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
     auto is_closed = [&](const int& i) { return i < nclosed && i >= ncore_; };
     auto is_act = [&](const int& i) { return i >= nclosed && i < nocc; };
     auto is_virt = [&](const int& i) { return i >= nocc; };
+    auto is_exc = [&](const int& i, const int& j) { return is_virt(i) || (is_act(i) && is_cc(j)); };
 
     // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
-    for (int s = 0; s != nall; ++s) // extend
-      for (int k = 0; k != nocc; ++k)
-        for (int t = 0; t != nall; ++t) // extend
-          for (int l = 0; l != nocc; ++l) {
-            // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
-            if (k >=  ncore_ && l >= ncore_) {
-              // ccaa, cxaa, xxaa
-              if (is_virt(t) && is_virt(s)) {
-                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                // cxaa
-                if (is_act(k) ^ is_act(l))
-                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // ccxa, ccxx
-              } else if (t >= nclosed && s >= nclosed && is_closed(k) && is_closed(l)) {
-                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                // ccxa
-                if ((t < nocc) ^ (s < nocc))
-                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // cxxa, xcxa
-              } else if ((is_act(k) ^ is_act(l)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // cxxx
-              } else if ((is_act(k) ^ is_act(l)) && is_act(t) && is_act(s)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // xxxa
-              } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              }
-            }
-
-            // c(cc)x, c(cc)a, x(cc)a // TODO maybe better to work with inactive Fock to deal with this contribution
-            if ((is_cc(k) && is_cc(l) && (is_act(s) ^ is_act(t))) // c(cc)x
-            || ((is_act(k) ^ is_act(l)) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t)))) // x(cc)a
-            ||  (is_cc(k) && is_cc(l) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t))))) { // c(cc)a
-              if (s == k)
-                (*D1)(l, t, k, s)  += 2.0*d11_->element(l, t);
-              if (s == l)
-                (*D1)(l, t, k, s)  -= d11_->element(k, t);
-              if (t == l)
-                (*D1)(l, t, k, s)  += 2.0*d11_->element(k, s);
-              if (t == k)
-                (*D1)(l, t, k, s)  -= d11_->element(l, s);
+    for (int s = 0; s != nall-nclosed; ++s) // extend
+      for (int k = 0; k != nocc-ncore_; ++k)
+        for (int t = 0; t != nall-nclosed; ++t) // extend
+          for (int l = 0; l != nocc-ncore_; ++l) {
+            const int ss = s + nclosed;
+            const int tt = t + nclosed;
+            const int kk = k + ncore_;
+            const int ll = l + ncore_;
+            // ccaa, cxaa, xxaa
+            if (is_virt(tt) && is_virt(ss)) {
+              (*D1)(ll,tt,kk,ss) = dm2->element(l+n*t, k+n*s);
+              // cxaa
+              if (is_act(kk) ^ is_act(ll))
+                (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
+            // ccxa, ccxx
+            } else if (is_closed(kk) && is_closed(ll)) {
+              (*D1)(ll,tt,kk,ss) = dm2->element(l+n*t, k+n*s);
+              // ccxa
+              if (is_act(tt) ^ is_act(ss))
+                (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
+            // cxxa, xcxa
+            } else if ((is_act(kk) ^ is_act(ll)) && (is_act(tt) ^ is_act(ss))) {
+              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
+              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
+            // cxxx
+            } else if ((is_act(kk) ^ is_act(ll)) && is_act(tt) && is_act(ss)) {
+              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
+              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
+            // xxxa
+            } else if (is_act(kk) && is_act(ll) && (is_act(tt) ^ is_act(ss))) {
+              (*D1)(ll,tt,kk,ss)  = dm2->element(l+n*t, k+n*s);
+              (*D1)(ll,tt,kk,ss) += dm2->element(k+n*s, l+n*t);
             }
           }
+
+    for (int s = 0; s != nclosed; ++s)
+      for (int t = 0; t != nall; ++t)
+        for (int l = 0; l != nocc; ++l)
+          // c(cc)x, c(cc)a, x(cc)a
+          if (is_exc(t, l)) {
+            (*D1)(l, t, s, s)  += 2.0*d11_->element(l, t); // (g|lt)dlt -> (g|ss)
+            (*D1)(s, t, l, s)  -=     d11_->element(l, t); // (g|st)dlt -> (g|ls)
+            (*D1)(s, s, l, t)  += 2.0*d11_->element(l, t); // (g|ss)dlt -> (g|lt)
+            (*D1)(l, s, s, t)  -=     d11_->element(l, t); // (g|ls)dlt -> (g|st)
+          }
+
   }
   return full->apply_2rdm(*D1);
 #else
