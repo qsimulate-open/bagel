@@ -161,7 +161,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
     std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
-    std::shared_ptr<const Matrix> rdm21() const { return Den1->matrix2(); }
+    std::shared_ptr<const Tensor> rdm21() const { return Den1; }
 
     double correlated_norm() const { return correlated_norm_; }
 
