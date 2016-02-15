@@ -152,11 +152,11 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
   vector<Stevens_Operator> ESO = build_extended_stevens_operators(ranks);
 
-#if 0
-  cout << "Number of Stevens operators = " << ESO.size() << endl;
-  for (int i = 0; i != ESO.size(); ++i)
-    ESO[i].print();
-#endif
+  if (idata_->get<bool>("print_operators", false)) {
+    cout << "Number of Stevens operators = " << ESO.size() << endl;
+    for (int i = 0; i != ESO.size(); ++i)
+      ESO[i].print();
+  }
 
   compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
