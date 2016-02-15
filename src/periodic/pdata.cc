@@ -94,6 +94,15 @@ PData& PData::operator+=(const PData& o) {
 }
 #endif
 
+PData& PData::scale(const double a) {
+
+  for (int i = 0; i != nblock_; ++i)
+    pdata_[i]->scale(a);
+
+  return *this;
+}
+
+
 void PData::zero() { for (auto& block : pdata_) block->zero(); }
 
 

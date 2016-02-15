@@ -67,6 +67,7 @@ class PData {
 
     PData operator+(const PData& data) const;
     PData& operator+=(const PData& data);
+    PData& scale(const double a);
 
     void zero();
     void allreduce();
