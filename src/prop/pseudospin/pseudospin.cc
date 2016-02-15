@@ -848,10 +848,10 @@ tuple<shared_ptr<const Matrix>, double, double> Pseudospin::compute_Dtensor(cons
   cout << "      Dyy = " << setw(12) << Ddiag[bck[jmax]] << endl;
   cout << "      Dzz = " << setw(12) << Ddiag[jmax] << endl << endl;
   const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
-  const double Eval = 0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]);
+  const double Eval = std::abs(0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]));
   cout << " ** D = " << setw(12) << Dval << " E_h = " << setw(14) << Dval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E = " << setw(12) << std::abs(Eval) << " E_h = " << setw(14) << std::abs(Eval * au2wavenumber__) << " cm-1" << endl;
-  cout << " ** E / D = " << std::abs(Eval / Dval) << endl;
+  cout << " ** E = " << setw(12) << Eval << " E_h = " << setw(14) << Eval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** E / D = " << Eval / Dval << endl;
 
   cout << endl << " ** Axis of principle D-value (relative to spin quant. axes) = (" << Dtensor_diag->element(0, jmax) << ", " << Dtensor_diag->element(1, jmax) << ", " << Dtensor_diag->element(2, jmax) << ")" << endl;
 
