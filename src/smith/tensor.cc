@@ -102,21 +102,15 @@ template <typename DataType>
 shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type> Tensor_<DataType>::matrix() const {
   vector<IndexRange> o = indexrange();
   assert(o.size() == 2);
-  const int dim0 = o[0].size();
-  const int dim1 = o[1].size();
+
   const int off0 = o[0].front().offset();
   const int off1 = o[1].front().offset();
+  using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+  auto out = make_shared<MatType>(o[0].size(), o[1].size());
+  for (auto& i1 : o[1].range())
+    for (auto& i0 : o[0].range())
+      out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), get_block(i0, i1).get());
 
-  auto out = make_shared<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>(dim0, dim1);
-
-  for (auto& i1 : o[1].range()) {
-    for (auto& i0 : o[0].range()) {
-      if (get_size(i0, i1)) {
-        unique_ptr<DataType[]> target = get_block(i0, i1);
-        out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
-      }
-    }
-  }
   return out;
 }
 
@@ -141,7 +135,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          if (get_size(i0, i1, i2, i3)) {
+          if (exists(i0, i1, i2, i3)) {
             unique_ptr<DataType[]> target = get_block(i0, i1, i2, i3);
             const DataType* ptr = target.get();
             for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
@@ -160,19 +154,11 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
 template <typename DataType>
 shared_ptr<Civector<DataType>> Tensor_<DataType>::civec(shared_ptr<const Determinants> det) const {
   vector<IndexRange> o = indexrange();
-  assert(o.size() == 1);
+  assert(o.size() == 1 && o[0].size() == det->size());
 
-  int dim0 = 0;
-  for (auto& i0 : o[0].range()) dim0 += i0.size();
-
-  unique_ptr<DataType[]> civ(new DataType[dim0]);
   auto out = make_shared<Civector<DataType>>(det);
-  for (auto& i0 : o[0].range()) {
-    unique_ptr<DataType[]> target = get_block(i0);
-    copy_n(target.get(), i0.size(), civ.get()+i0.offset());
-  }
-
-  copy_n(civ.get(), dim0, out->data());
+  for (auto& i0 : o[0].range())
+    copy_n(get_block(i0).get(), i0.size(), out->data()+i0.offset());
 
   return out;
 }
