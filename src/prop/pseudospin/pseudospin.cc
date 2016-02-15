@@ -243,15 +243,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   }
 #endif
 
-  { // Compute the matrix representation of the time-reversal operator   (This matrix + complex conjugation)
-    trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
-    trev_h_->zero();
-    const int maxa = std::min(zfci.nele(), zfci.norb());
-    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
-
-    /********************/
-    // Redundant, but need this info to be available
-    vector<int> aniso_state;
+  vector<int> aniso_state;
+  { // By default, just use the ground states
     aniso_state.resize(nspin1_);
     for (int i = 0; i != nspin1_; ++i)
       aniso_state[i] = i;
@@ -268,7 +261,13 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
         if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
          throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
     }
-    /********************/
+  }
+
+  { // Compute the matrix representation of the time-reversal operator   (This matrix + complex conjugation)
+    trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
+    trev_h_->zero();
+    const int maxa = std::min(zfci.nele(), zfci.norb());
+    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
 
     vector<array<int,2>> ab = {};
     for (int j = maxa; j >= mina; --j)
@@ -370,33 +369,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     }
   }
 
-  // By default, just use the ground states
-  vector<int> aniso_state;
-  aniso_state.resize(nspin1_);
   ref_energy_.resize(nspin1_);
-  for (int i = 0; i != nspin1_; ++i)
-    aniso_state[i] = i;
-
-  // aniso_state can be used to request mapping excited states instead
-  const shared_ptr<const PTree> exstates = idata_->get_child_optional("states");
-  if (exstates) {
-    aniso_state = {};
-    for (auto& i : *exstates)
-      aniso_state.push_back(lexical_cast<int>(i->data()) - 1);
-    if (aniso_state.size() != nspin1_)
-      throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1_) + ")");
-    for (int i = 0; i != nspin1_; ++i)
-      if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
-        throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
-    cout << "    For the following states:  ";
-    for (int i = 0; i != nspin1_; ++i)
-      cout << aniso_state[i] << "  ";
-    cout << endl;
-  } else {
-    cout << "    For the ground spin-manifold" << endl;
-  }
-  cout << endl;
-
   for (int i = 0; i != nspin1_; ++i)
     ref_energy_[i] = zfci.energy()[aniso_state[i]];
 
