@@ -60,9 +60,7 @@ class Task : public std::enable_shared_from_this<Task> {
     }
 
     void delete_dep(std::shared_ptr<Task> a) {
-      auto iter = std::find(depend_.begin(), depend_.end(), a);
-      if (iter != depend_.end()) depend_.erase(iter);
-      // depend_ should not have duplicated records.
+      depend_.remove(a);
       assert(std::find(depend_.begin(), depend_.end(), a) == depend_.end());
     }
 

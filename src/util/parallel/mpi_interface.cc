@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: mpi_interface.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <iostream>
@@ -33,6 +32,9 @@
 #include <src/util/constants.h>
 #include <src/util/parallel/scalapack.h>
 #include <src/util/parallel/mpi_interface.h>
+#ifdef HAVE_GA
+#include <ga.h>
+#endif
 
 using namespace std;
 using namespace bagel;
@@ -81,6 +83,11 @@ MPI_Interface::MPI_Interface()
     assert(flag && *get_val >= 32767); // this is what the standard says
     tag_ub_ = *get_val;
   }
+
+  // start Global Arrays here
+#ifdef HAVE_GA
+  GA_Initialize();
+#endif
 #else
   rank_ = 0;
   size_ = 1;
@@ -90,7 +97,10 @@ MPI_Interface::MPI_Interface()
 
 MPI_Interface::~MPI_Interface() {
 #ifdef HAVE_MPI_H
-#ifndef SCALAPACK
+#ifdef HAVE_GA
+  GA_Terminate();
+#endif
+#ifndef HAVE_SCALAPACK
   MPI_Finalize();
 #else
   blacs_gridexit_(context_);
@@ -267,6 +277,17 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
   MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
+#endif
+}
+
+
+void MPI_Interface::allgather(const complex<double>* send, const size_t ssize, complex<double>* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE_COMPLEX, static_cast<void*>(rec), rsize, MPI_DOUBLE_COMPLEX, MPI_COMM_WORLD);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);

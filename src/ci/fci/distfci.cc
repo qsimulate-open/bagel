@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci/distfci.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <cassert>
@@ -41,8 +40,8 @@ DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 
-#ifndef HAVE_MPI_H
-  throw logic_error("DistFCI can be used only with MPI");
+#ifndef HAVE_GA
+  throw logic_error("DistFCI can be used only with GA");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;
@@ -104,13 +103,15 @@ void DistFCI::common_init() {
   det_ = space_->finddet(nelea_, neleb_);
 }
 
+
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
   multimap<double, pair<size_t, size_t>> ordered_elements;
-  const double* d = denom_->local();
-  for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia) {
-    for (size_t ib = 0; ib < det_->lenb(); ++ib) {
-      ordered_elements.emplace(*d++, make_pair(ia, ib));
-    }
+  {
+    const unique_ptr<double[]> denom = denom_->local();
+    const double* d = denom.get();
+    for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia)
+      for (size_t ib = 0; ib < det_->lenb(); ++ib)
+        ordered_elements.emplace(*d++, make_pair(ia, ib));
   }
 
   vector<double> energies;
@@ -185,14 +186,13 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
 
     auto coeffs1 = (coeffs * *hamiltonian).slice_copy(0, nstate_);
     mpi__->broadcast(coeffs1->data(), coeffs1->ndim() * coeffs1->mdim(), 0);
-    const size_t lenb = det_->lenb();
     for (int i = 0; i < nguess; ++i) {
       size_t ia = det_->lexical<0>(basis[i].first);
       if ( ia >= denom_->astart() && ia < denom_->aend() ) {
         ia -= denom_->astart();
         const size_t ib = det_->lexical<1>(basis[i].second);
         for (int j = 0; j < nstate_; ++j)
-          out[j]->local(ib + ia*lenb) = coeffs1->element(i, j);
+          out[j]->set_local(ia, ib, coeffs1->element(i, j));
       }
     }
   }
@@ -239,7 +239,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     for (auto& ad : adapt.first) {
       const int aloc = get<1>(ad) - out[oindex]->astart();
       if (aloc >= 0 && aloc < out[oindex]->asize())
-        out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
+        out[oindex]->set_local(aloc, get<0>(ad), get<2>(ad)*fac);
     }
     out[oindex]->spin_decontaminate();
 
@@ -262,7 +262,8 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
   for (int i = 0; i != ndet; ++i)
     tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
-  double* diter = denom_->local();
+  const unique_ptr<double[]> denom = denom_->local();
+  const double* diter = denom.get();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
@@ -353,7 +354,8 @@ void DistFCI::const_denom() {
 
   denom_ = make_shared<DistCivec>(det_);
 
-  double* iter = denom_->local();
+  unique_ptr<double[]> buf(new double[denom_->size()]);
+  auto iter = buf.get();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
     tasks.emplace_back(iter, denom_->det()->string_bits_a(i), det_, jop, kop, h);
@@ -361,6 +363,10 @@ void DistFCI::const_denom() {
   }
   tasks.compute();
 
+  denom_->local_accumulate(1.0, buf);
+#ifdef HAVE_GA
+  GA_Sync();
+#endif
   denom_t.tick_print("denom");
 }
 
@@ -433,14 +439,15 @@ void DistFCI::compute() {
         if (!conv[ist]) {
           shared_ptr<DistCivec> c = errvec[ist]->clone();
           const int size = c->size();
-          double* target_array = c->local();
-          double* source_array = errvec[ist]->local();
-          double* denom_array = denom_->local();
+          unique_ptr<double[]> target_array(new double[c->size()]);
+          const unique_ptr<double[]> source_array = errvec[ist]->local();
+          const unique_ptr<double[]> denom_array = denom_->local();
           const double en = energies[ist];
           // TODO this should be threaded
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
+          c->local_accumulate(1.0, target_array);
           c->spin_decontaminate();
           c->normalize();
           cc.push_back(c);

@@ -30,6 +30,9 @@
 #ifndef __SRC_SMITH_QUEUE_H
 #define __SRC_SMITH_QUEUE_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <src/smith/task.h>
 #include <cassert>
 #include <list>
@@ -46,24 +49,8 @@ class Queue {
   public:
     Queue() {}
     Queue(const std::list<std::shared_ptr<Task>>& d) : tasklist_(d) { }
-//  Queue(const std::list<std::shared_ptr<Task>>& d) : tasklist_(d) { std::random_shuffle(tasklist_.begin(), tasklist_.end()); }
 
-    // TODO parallel version to be implemented (need to WAIT!)
-    std::shared_ptr<Task> next_compute() {
-      auto i = tasklist_.begin();
-      for ( ; i != tasklist_.end(); ++i)
-        if ((*i)->ready()) break;
-
-      assert(i != tasklist_.end());
-      std::shared_ptr<Task> out = *i;
-      // execute
-      out->compute();
-      // delete dependency (to remove intermediate storages)
-      for (auto& j : tasklist_) j->delete_dep(out);
-      // delete this task from the queue
-      tasklist_.erase(i);
-      return out;
-    }
+    std::shared_ptr<Task> next_compute();
 
     void add_task(std::shared_ptr<Task> a) { tasklist_.push_back(a); }
 
@@ -82,4 +69,5 @@ class Queue {
 }
 }
 
+#endif
 #endif

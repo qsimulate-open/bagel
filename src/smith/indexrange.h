@@ -33,6 +33,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <memory>
+#include <src/util/parallel/staticdist.h>
 
 namespace bagel {
 namespace SMITH {
@@ -76,34 +78,11 @@ class IndexRange {
     int orboffset2_;
 
   public:
-    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
-      : keyoffset_(boffset), orboffset_(orboff), orboffset2_(orboff2 < 0 ? orboff : orboff2) {
-      if (size > 0) {
-        // first determine number of blocks.
-        const size_t nbl = (size-1) / maxblock + 1;
-        const size_t nblock = (size-1) / nbl + 1;
-        // we want to distribute orbitals as evenly as possible
-        const size_t rem = nbl * nblock - size;
-        std::vector<size_t> blocksizes(nbl, nblock);
-        auto iter = blocksizes.rbegin();
-        for (int k = 0; k != rem; ++iter, ++k) --*iter;
-        // push back to range_
-        size_t off = orboffset_;
-        size_t off2 = orboffset2_;
-        // key is offsetted by the input value
-        size_t cnt = boffset;
-        for (auto& i : blocksizes) {
-          Index t(off, off2, i, cnt++);
-          range_.push_back(t);
-          off += i;
-          off2 += i;
-        }
-        // set size_
-        size_ = off - orboffset_;
-      } else {
-        size_ = 0;
-      }
-    }
+    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1);
+
+    // make IndexRange based on StaticDist. The offset in StaticDist is ignored
+    IndexRange(std::shared_ptr<const StaticDist> dist, const int boffset = 0, const int orboff = 0, const int orboff2 = -1);
+
     IndexRange() {}
     ~IndexRange() {}
 
@@ -123,29 +102,12 @@ class IndexRange {
     int size() const { return size_; }
     int keyoffset() const { return keyoffset_; }
 
-    void merge(const IndexRange& o) {
-       range_.insert(range_.end(), o.range_.begin(), o.range_.end());
-       size_ += o.size_;
-    }
+    void merge(const IndexRange& o);
 
-    bool operator==(const IndexRange& o) const {
-      bool out = size_ == o.size_;
-      if (range_.size() == o.range_.size()) {
-        auto i = range_.begin();
-        for (auto j = o.range_.begin(); i != range_.end(); ++i, ++j) out &= (*i) == (*j);
-      } else {
-        out = false;
-      }
-      return out;
-    }
+    bool operator==(const IndexRange& o) const;
     bool operator!=(const IndexRange& o) const { return !(*this == o); }
 
-    std::string str() const {
-      std::stringstream ss;
-      for (auto& i : range_)
-        ss << std::setw(10) << i.offset() << std::setw(10) << i.size() << std::endl;
-      return ss.str();
-    }
+    std::string str() const;
     void print() const { std::cout << str() << std::endl; }
 };
 

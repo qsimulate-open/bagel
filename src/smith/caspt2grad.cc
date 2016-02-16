@@ -163,7 +163,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const Matrix> d1 = task_->d1();
   // first order density matrices
   shared_ptr<const Matrix> d11 = task_->d11();
-  shared_ptr<const Matrix> d2 = task_->d2();
   shared_ptr<const Civec> cider = nact ? task_->cideriv() : nullptr;
 
   shared_ptr<const Matrix> coeff = task_->coeff();
@@ -195,7 +194,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_Y(d1, d11, d2, half, halfj, halfjj);
+  tie(yrs, fulld1) = task_->compute_Y(half, halfj, halfjj);
 
   timer.tick_print("Yrs evaluation");
 
@@ -332,8 +331,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
 
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
-  CASPT2Grad::compute_Y(shared_ptr<const Matrix> dm1, shared_ptr<const Matrix> dm11, shared_ptr<const Matrix> dm2,
-                        shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
+  CASPT2Grad::compute_Y(shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -364,7 +362,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       for (int i = 0; i != nclosed; ++i)
         d0->element(i,i) = 2.0;
     }
-    *out += hmo * (*dm1 + *dm11 + *d0) * 2.0;
+    *out += hmo * (*d1_ + *d11_ + *d0) * 2.0;
   }
 
   {
@@ -376,13 +374,13 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
       dkl->scale(1.0/sqrt(2.0));
     }
     Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
-    *out += *coeff_ % fock * *coeff_ * *dm1 * 2.0;
+    *out += *coeff_ % fock * *coeff_ * *d1_ * 2.0;
   }
 
   {
     // 2 Y3 = 2 Y3_ri*dm0_ji
     // coulomb
-    auto dmrao = make_shared<Matrix>(*coeff_ * *dm1 ^ *coeff_);
+    auto dmrao = make_shared<Matrix>(*coeff_ * *d1_ ^ *coeff_);
     auto jop = geom_->df()->compute_Jop(dmrao);
     // exchange
     auto kopi = halfjj->compute_Kop_1occ(dmrao, -0.5)->transpose();
@@ -396,72 +394,12 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     out->add_block(2.0, 0, 0, nmobasis, nocc, tmp);
   }
 
-  // TODO D1 must be parallelised as it is very big.
-  // construct D1 to be used in Y4 and Y5
-  auto D1 = make_shared<btas::Tensor4<double>>(nocc,nall,nocc,nall);
-  fill(D1->begin(), D1->end(), 0.0);
-  {
-    auto is_cc = [&](const int& i) { return i < nclosed; };
-    auto is_closed = [&](const int& i) { return i < nclosed && i >= ncore_; };
-    auto is_act = [&](const int& i) { return i >= nclosed && i < nocc; };
-    auto is_virt = [&](const int& i) { return i >= nocc; };
-
-    // resizing dm2_(le,kf) to dm2_(lt,ks). no resort necessary.
-    for (int s = 0; s != nall; ++s) // extend
-      for (int k = 0; k != nocc; ++k)
-        for (int t = 0; t != nall; ++t) // extend
-          for (int l = 0; l != nocc; ++l) {
-            // TODO ugly code - there should be a smart way of doing this! just need a logic to test if it has to be symmetrized
-            if (k >=  ncore_ && l >= ncore_) {
-              // ccaa, cxaa, xxaa
-              if (is_virt(t) && is_virt(s)) {
-                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                // cxaa
-                if (is_act(k) ^ is_act(l))
-                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // ccxa, ccxx
-              } else if (t >= nclosed && s >= nclosed && is_closed(k) && is_closed(l)) {
-                (*D1)(l, t, k, s) = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                // ccxa
-                if ((t < nocc) ^ (s < nocc))
-                  (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // cxxa, xcxa
-              } else if ((is_act(k) ^ is_act(l)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // cxxx
-              } else if ((is_act(k) ^ is_act(l)) && is_act(t) && is_act(s)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              // xxxa
-              } else if (((k >= nclosed) && (l >= nclosed)) && ((t < nocc) ^ (s < nocc)) && (t >= nclosed && s >= nclosed)) {
-                (*D1)(l, t, k, s)  = dm2->element(l-ncore_+(nocc-ncore_)*(t-nclosed), k-ncore_+(nocc-ncore_)*(s-nclosed));
-                (*D1)(l, t, k, s) += dm2->element(k-ncore_+(nocc-ncore_)*(s-nclosed), l-ncore_+(nocc-ncore_)*(t-nclosed));
-              }
-            }
-
-            // c(cc)x, c(cc)a, x(cc)a // TODO maybe better to work with inactive Fock to deal with this contribution
-            if ((is_cc(k) && is_cc(l) && (is_act(s) ^ is_act(t))) // c(cc)x
-            || ((is_act(k) ^ is_act(l)) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t)))) // x(cc)a
-            ||  (is_cc(k) && is_cc(l) && ((is_cc(s) && is_virt(t)) || (is_virt(s) && is_cc(t))))) { // c(cc)a
-              if (s == k)
-                (*D1)(l, t, k, s)  += 2.0*dm11->element(l, t);
-              if (s == l)
-                (*D1)(l, t, k, s)  -= dm11->element(k, t);
-              if (t == l)
-                (*D1)(l, t, k, s)  += 2.0*dm11->element(k, s);
-              if (t == k)
-                (*D1)(l, t, k, s)  -= dm11->element(l, s);
-            }
-          }
-  }
-
   // fullks will be reused for gradient contraction
   shared_ptr<const DFFullDist> fullks;
   {
     // 2 Y4 =  2 K^{kl}_{rt} D^{lk}_{ts} = 2 (kr|lj) D0_(lj,ki) +  2 (kr|lt) D1_(lt,ks)
     // construct stepwise, D1 part
-    fullks = full->apply_2rdm(*D1);
+    fullks = contract_D1(full);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
     shared_ptr<const DFFullDist> fulld = nact ? fullo->apply_2rdm(*ref_->rdm2(target_), *ref_->rdm1(target_), nclosed, nact)

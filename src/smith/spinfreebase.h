@@ -27,6 +27,9 @@
 #ifndef __SRC_SMITH_SPINFREEBASE_H
 #define __SRC_SMITH_SPINFREEBASE_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
+
 #include <chrono>
 #include <src/ci/fci/civec.h>
 #include <src/util/vec.h>
@@ -118,11 +121,9 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor_<DataType>> init_amplitude() const;
     std::shared_ptr<Tensor_<DataType>> init_residual() const;
 
-    // diagonal part of CASPT2 (for efficiency)
-    void diagonal(std::shared_ptr<Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t) const;
-
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
+    ~SpinFreeMethod();
 
     IndexRange& virt() { return virt_; }
     IndexRange& all() { return all_; }
@@ -150,4 +151,5 @@ extern template class SpinFreeMethod<std::complex<double>>;
 }
 }
 
+#endif
 #endif

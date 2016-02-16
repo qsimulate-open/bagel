@@ -28,13 +28,10 @@
 #define __SRC_SMITH_TENSOR_H
 
 #include <stddef.h>
-#include <list>
-#include <map>
-#include <memory>
 #include <iostream>
 #include <iomanip>
-#include <cassert>
 #include <type_traits>
+#include <unordered_set>
 #include <src/ci/fci/civec.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
@@ -54,20 +51,23 @@ class Tensor_ {
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
+    std::unordered_set<size_t> sparse_;
 
-    virtual void init() const { initialized_ = true; }
     mutable bool initialized_;
 
+    bool allocated_;
+
   public:
-    Tensor_(std::vector<IndexRange> in, const bool kramers = false);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
       *data_ = *(o.data_);
+      allocated_ = true;
       return *this;
     }
 
     std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_);
+      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_, true);
     }
 
     std::shared_ptr<Tensor_<DataType>> copy() const {
@@ -76,10 +76,20 @@ class Tensor_ {
       return out;
     }
 
+    virtual void init() const { initialized_ = true; }
+
     void ax_plus_y(const DataType& a, const Tensor_<DataType>& o) { data_->ax_plus_y(a, o.data_); }
     void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
 
     void scale(const DataType& a) { data_->scale(a); }
+
+    bool allocated() const { return allocated_; }
+    void allocate();
+
+    template<typename ...args>
+    bool is_local(args&& ...p) const { return data_->is_local(std::forward<args>(p)...); }
+    template<typename ...args>
+    bool exists(args&& ...p) const { return sparse_.empty() || sparse_.count(generate_hash_key(std::forward<args>(p)...)); }
 
     DataType dot_product(const Tensor_<DataType>& o) const { return data_->dot_product(*o.data_); }
     DataType dot_product(std::shared_ptr<const Tensor_<DataType>> o) const { return dot_product(*o); }
@@ -94,13 +104,7 @@ class Tensor_ {
 
     template<typename ...args>
     std::unique_ptr<DataType[]> get_block(args&& ...p) const {
-      if (!initialized_) init();
       return data_->get_block(std::forward<args>(p)...);
-    }
-
-    template<typename ...args>
-    std::unique_ptr<DataType[]> move_block(args&& ...p) {
-      return data_->move_block(std::forward<args>(p)...);
     }
 
     template<typename ...args>
@@ -118,17 +122,8 @@ class Tensor_ {
       return data_->blocksize(std::forward<args>(p)...);
     }
 
-    template<typename ...args>
-    size_t get_size_alloc(args&& ...p) const {
-      return data_->blocksize_alloc(std::forward<args>(p)...);
-    }
-
     void zero() {
       data_->zero();
-    }
-
-    void conjugate_inplace() {
-      data_->conjugate_inplace();
     }
 
     std::vector<DataType> diag() const;
@@ -140,6 +135,7 @@ class Tensor_ {
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
+    void set_stored_sectors(const std::list<std::vector<bool>>& s) { data_->set_stored_sectors(s); }
 };
 
 extern template class Tensor_<double>;

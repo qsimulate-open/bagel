@@ -27,25 +27,34 @@
 #ifndef __SRC_SMITH_SMITH_H
 #define __SRC_SMITH_SMITH_H
 
+#include <bagel_config.h>
+#ifdef COMPILE_SMITH
 #include <src/smith/spinfreebase.h>
+#endif
 #include <stddef.h>
 #include <map>
 #include <memory>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
+#include <src/smith/tensor.h>
 
 namespace bagel {
 
 class Smith : public Method {
+  public:
+    using Tensor = SMITH::Tensor_<double>;
+
   protected:
+#ifdef COMPILE_SMITH
     std::shared_ptr<SMITH::SpinFreeMethod<double>> algo_;
+#endif
 
     // correlated density matrices
     // second order density matrix
     std::shared_ptr<const Matrix> dm1_;
     // first order density matrices
     std::shared_ptr<const Matrix> dm11_;
-    std::shared_ptr<const Matrix> dm2_;
+    std::shared_ptr<const Tensor> dm2_;
     // correction <1|1>
     double wf1norm_;
     // ci derivative
@@ -64,30 +73,40 @@ class Smith : public Method {
 
     std::shared_ptr<const Matrix> dm1() const { return dm1_; }
     std::shared_ptr<const Matrix> dm11() const { return dm11_; }
-    std::shared_ptr<const Matrix> dm2() const { return dm2_; }
+    std::shared_ptr<const Tensor> dm2() const { return dm2_; }
     double wf1norm() const { return wf1norm_; }
     std::shared_ptr<const Civec> cideriv() const { return cider_; }
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
 
+#ifdef COMPILE_SMITH
     std::shared_ptr<const SMITH::SpinFreeMethod<double>> algo() const { return algo_; }
+#endif
 
 };
 
 
 class RelSmith : public Method {
   protected:
+#ifdef COMPILE_SMITH
     std::shared_ptr<SMITH::SpinFreeMethod<std::complex<double>>> algo_;
+#endif
     std::shared_ptr<const ZMatrix> coeff_;
 
   public:
     RelSmith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void compute() override { algo_->solve(); }
+    void compute() override {
+#ifdef COMPILE_SMITH
+      algo_->solve();
+#endif
+    }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
     std::shared_ptr<const ZMatrix> coeff() const { return coeff_; }
 
+#ifdef COMPILE_SMITH
     std::shared_ptr<const SMITH::SpinFreeMethod<std::complex<double>>> algo() const { return algo_; }
+#endif
 };
 
 }

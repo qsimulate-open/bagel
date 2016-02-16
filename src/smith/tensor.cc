@@ -34,7 +34,9 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template <typename DataType>
-Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(in), rank_(in.size()), initialized_(false) {
+Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unordered_set<size_t> sparse, const bool alloc)
+  : range_(in), rank_(in.size()), sparse_(sparse), initialized_(false), allocated_(alloc) {
+
   // make block list
   if (!in.empty()) {
     LoopGenerator lg(in);
@@ -42,7 +44,6 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(i
 
     // first compute hashtags and length
     map<size_t, size_t> hashmap;
-    size_t off = 0;
     for (auto& i : index) {
       size_t size = 1lu;
       vector<size_t> h;
@@ -50,34 +51,34 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers) : range_(i
         size *= j.size();
         h.push_back(j.key());
       }
-      hashmap.emplace(generate_hash_key(h), size);
-      off += size;
+      auto key = generate_hash_key(h);
+      if (sparse.empty() || sparse.count(key))
+        hashmap.emplace(key, size);
     }
 
     if (!kramers)
-      data_ = make_shared<Storage<DataType>>(hashmap, false);
+      data_ = make_shared<Storage<DataType>>(hashmap, alloc);
     else
-      data_ = make_shared<StorageKramers<DataType>>(hashmap, false);
+      data_ = make_shared<StorageKramers<DataType>>(hashmap, alloc);
   } else {
     rank_ = 0;
     map<size_t, size_t> hashmap {{generate_hash_key(), 1lu}};
-    data_ = make_shared<Storage<DataType>>(hashmap, false);
+    data_ = make_shared<Storage<DataType>>(hashmap, alloc);
   }
 }
 
 
 template <typename DataType>
+void Tensor_<DataType>::allocate() {
+  assert(!allocated_);
+  data_->initialize();
+  allocated_ = true;
+}
+
+
+template <typename DataType>
 size_t Tensor_<DataType>::size_alloc() const {
-  size_t out = 0lu;
-  LoopGenerator lg(range_);
-  vector<vector<Index>> index = lg.block_loop();
-  for (auto& i : index) {
-    vector<size_t> h;
-    for (auto& j : i)
-      h.push_back(j.key());
-    out += data_->blocksize_alloc(h);
-  }
-  return out;
+  return data_->size_alloc();
 }
 
 
@@ -101,21 +102,15 @@ template <typename DataType>
 shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type> Tensor_<DataType>::matrix() const {
   vector<IndexRange> o = indexrange();
   assert(o.size() == 2);
-  const int dim0 = o[0].size();
-  const int dim1 = o[1].size();
+
   const int off0 = o[0].front().offset();
   const int off1 = o[1].front().offset();
+  using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+  auto out = make_shared<MatType>(o[0].size(), o[1].size());
+  for (auto& i1 : o[1].range())
+    for (auto& i0 : o[0].range())
+      out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), get_block(i0, i1).get());
 
-  auto out = make_shared<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>(dim0, dim1);
-
-  for (auto& i1 : o[1].range()) {
-    for (auto& i0 : o[0].range()) {
-      if (get_size_alloc(i0, i1)) {
-        unique_ptr<DataType[]> target = get_block(i0, i1);
-        out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), target.get());
-      }
-    }
-  }
   return out;
 }
 
@@ -140,7 +135,7 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
     for (auto& i2 : o[2].range()) {
       for (auto& i1 : o[1].range()) {
         for (auto& i0 : o[0].range()) {
-          if (get_size_alloc(i0, i1, i2, i3)) {
+          if (exists(i0, i1, i2, i3)) {
             unique_ptr<DataType[]> target = get_block(i0, i1, i2, i3);
             const DataType* ptr = target.get();
             for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
@@ -159,19 +154,11 @@ shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matri
 template <typename DataType>
 shared_ptr<Civector<DataType>> Tensor_<DataType>::civec(shared_ptr<const Determinants> det) const {
   vector<IndexRange> o = indexrange();
-  assert(o.size() == 1);
+  assert(o.size() == 1 && o[0].size() == det->size());
 
-  int dim0 = 0;
-  for (auto& i0 : o[0].range()) dim0 += i0.size();
-
-  unique_ptr<DataType[]> civ(new DataType[dim0]);
   auto out = make_shared<Civector<DataType>>(det);
-  for (auto& i0 : o[0].range()) {
-    unique_ptr<DataType[]> target = get_block(i0);
-    copy_n(target.get(), i0.size(), civ.get()+i0.offset());
-  }
-
-  copy_n(civ.get(), dim0, out->data());
+  for (auto& i0 : o[0].range())
+    copy_n(get_block(i0).get(), i0.size(), out->data()+i0.offset());
 
   return out;
 }

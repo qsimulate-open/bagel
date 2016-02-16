@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: distcivec.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,524 +8,415 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
-#include <src/ci/fci/civec.h>
-#include <src/util/math/algo.h>
+#include <src/ci/fci/distcivec.h>
 #include <src/util/parallel/distqueue.h>
 #include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
 
-namespace bagel { namespace DFCI {
-  class SpinTask {
-    protected:
-      const bitset<nbit__> abit_;
-      double* target_;
-      const DistCivector<double>* cc_;
 
-      unique_ptr<double[]> buf_;
-      vector<int> requests_;
-
-    public:
-      SpinTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c) : abit_(a), target_(t), cc_(c) {
-        shared_ptr<const Determinants> det = c->det();
-        const size_t lb = det->lenb();
-        const int norb = det->norb();
-
-        buf_ = unique_ptr<double[]>(new double[lb * abit_.count() * (norb - abit_.count() + 1)]);
-
-        for (int i = 0, k = 0; i < norb; ++i) {
-          for (int j = 0; j < norb; ++j) {
-            if ( abit_[j] ) {
-              bitset<nbit__> tarbit = abit_; tarbit.reset(j);
-              if ( !tarbit[i] ) {
-                tarbit.set(i);
-                const int l = cc_->get_bstring_buf(buf_.get() + lb*k++, det->lexical<0>(tarbit));
-                if (l >= 0) requests_.push_back(l);
-              }
-            }
-          }
-        }
-      }
-
-      bool test() {
-        bool out = true;
-        for (auto i = requests_.begin(); i != requests_.end(); ) {
-          if (mpi__->test(*i)) {
-            i = requests_.erase(i);
-          }
-          else {
-            ++i;
-            out = false;
-          }
-        }
-        return out;
-      }
-
-      void compute() {
-        shared_ptr<const Determinants> det = cc_->det();
-
-        const size_t lb = det->lenb();
-        const int norb = det->norb();
-
-        for (int i = 0, k = 0; i < norb; ++i) {
-          for (int j = 0; j < norb; ++j) {
-            if ( abit_[j] ) {
-              bitset<nbit__> tarbit = abit_; tarbit.reset(j);
-              if ( !tarbit[i] ) {
-                const double* source = buf_.get() + lb*k++;
-                const int aphase = det->sign(abit_, i, j);
-                for (auto& iter : det->phib(j, i))
-                  target_[iter.target] -= static_cast<double>(aphase * iter.sign) * source[iter.source];
-              }
-            }
-          }
-        }
-      }
-  };
-} }
-
-template <>
-shared_ptr<DistCivector<double>> DistCivector<double>::spin() const {
-  const size_t lb = det_->lenb();
-  auto out = this->clone();
-
-  this->init_mpi_recv();
-
-#ifndef USE_SERVER_THREAD
-  DistQueue<DFCI::SpinTask, const DistCivector<double>*> dq(this);
+template<typename DataType>
+void GA_Task<DataType>::wait() {
+#ifdef HAVE_GA
+  NGA_NbWait(&tag);
 #else
-  DistQueue<DFCI::SpinTask> dq;
+  assert(false);
 #endif
+}
 
-  for (size_t ia = astart_; ia < aend_; ++ia)
-    dq.emplace_and_compute(det_->string_bits_a(ia), out->local() + (ia - astart_) * lb, this);
 
-  const double sz = 0.5*static_cast<double>(det_->nspin());
-  out->ax_plus_y(sz*sz + sz + static_cast<double>(det_->neleb()), *this);
+template<typename DataType>
+bool GA_Task<DataType>::test() {
+#ifdef HAVE_GA
+  return NGA_NbTest(&tag);
+#else
+  assert(false);
+  return true;
+#endif
+}
 
-  dq.finish();
 
-  this->terminate_mpi_recv();
+template<typename DataType>
+DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()),
+                                                                           astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
+#ifdef HAVE_GA
+  // create GA
+  auto type = is_same<double,DataType>::value ? MT_C_DBL : MT_C_DCPL;
+  auto atable = dist_.atable();
+  int64_t tsize = 0;
+  for (auto& i : atable) {
+    blocks_.push_back(i.first * lenb_);
+    tsize += i.second * lenb_;
+  }
+  blocks_.push_back(tsize);
+
+  int64_t nblocks = blocks_.size() - 1;
+  assert(nblocks <= mpi__->size());
+  ga_ = NGA_Create_irreg64(type, 1, &blocks_.back(), const_cast<char*>(""), &nblocks, blocks_.data());
+
+#ifndef NDEBUG
+  int64_t offset = astart_*lenb_;
+  int64_t last   = astart_*lenb_ + size() - 1;
+  assert(NGA_Nodeid() == NGA_Locate64(ga_, &offset));
+  assert(NGA_Nodeid() == NGA_Locate64(ga_, &last));
+#endif
+#else
+  assert(false);
+#endif
+}
+
+
+template<typename DataType>
+DistCivector<DataType>& DistCivector<DataType>::operator=(const DistCivector<DataType>& o) {
+#ifdef HAVE_GA
+  GA_Copy(o.ga_, ga_);
+#endif
+  return *this;
+}
+
+
+template<typename DataType>
+shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
+  auto out = make_shared<Civector<DataType>>(det_);
+  const unique_ptr<DataType[]> loc = local();
+  copy_n(loc.get(), asize()*lenb_, out->data()+astart()*lenb_);
+  mpi__->allreduce(out->data(), out->size());
   return out;
 }
+
+
+template<typename DataType>
+unique_ptr<DataType[]> DistCivector<DataType>::local() const {
+  unique_ptr<DataType[]> out(new DataType[size()]);
+#ifdef HAVE_GA
+  int64_t start = astart_*lenb_;
+  int64_t last  = start+size()-1;
+  int64_t ld  = size();
+  assert(is_local(astart_));
+  NGA_Get64(ga_, &start, &last, out.get(), &ld);
+#endif
+  return move(out);
+}
+
+
+template<typename DataType>
+bool DistCivector<DataType>::is_local(const size_t a) const {
+#ifdef HAVE_GA
+  const size_t lo = a*lenb_;
+  int64_t nodeid = NGA_Nodeid();
+  return (nodeid+1 < blocks_.size()) && (lo >= blocks_[nodeid] && lo < blocks_[nodeid+1]);
+#else
+  return true;
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const DataType a) {
+#ifdef HAVE_GA
+  int64_t element = astart_*lenb_ + lb + la*lenb_;
+  int64_t one = 1;
+  NGA_Put64(ga_, &element, &element, const_cast<DataType*>(&a), &one);
+#endif
+}
+
+
+template<typename DataType>
+shared_ptr<GA_Task<DataType>> DistCivector<DataType>::accumulate_bstring_buf(unique_ptr<DataType[]>&& buf, const size_t a) {
+#ifdef HAVE_GA
+  int64_t offset = a*lenb_;
+  int64_t last = offset + lenb_ - 1;
+  int64_t size = lenb_;
+  DataType one = 1.0;
+  ga_nbhdl_t handle;
+  // non-blocking accumulate call
+  NGA_NbAcc64(ga_, &offset, &last, buf.get(), &size, &one, &handle);
+  return make_shared<GA_Task<DataType>>(handle, move(buf));
+#else
+  return nullptr;
+#endif
+}
+
+
+template<typename DataType>
+shared_ptr<GA_Task<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* buf, const size_t a) const {
+#ifdef HAVE_GA
+  int64_t offset = a*lenb_;
+  int64_t last = offset + lenb_ - 1;
+  int64_t size = lenb_;
+  ga_nbhdl_t handle;
+  // non-blocking get acall
+  NGA_NbGet64(ga_, &offset, &last, buf, &size, &handle);
+  return make_shared<GA_Task<DataType>>(handle);
+#else
+  return nullptr;
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::local_accumulate(const DataType a, const unique_ptr<DataType[]>& buf) {
+#ifdef HAVE_GA
+  // asusming that the size is identical to local tile
+  int64_t start = astart_ * lenb_;
+  int64_t last = start + size() - 1;
+  int64_t ld = size();
+  NGA_Acc64(ga_, &start, &last, const_cast<DataType*>(buf.get()), &ld, const_cast<DataType*>(&a));
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::zero() {
+#ifdef HAVE_GA
+  GA_Zero(ga_);
+#endif
+}
+
+
+template<>
+double DistCivector<double>::dot_product(const DistCivector<double>& o) const {
+#ifdef HAVE_GA
+  return GA_Ddot(ga_, o.ga_);
+#else
+  return 0.0;
+#endif
+}
+
+
+template<>
+complex<double> DistCivector<complex<double>>::dot_product(const DistCivector<complex<double>>& o) const {
+#ifdef HAVE_GA
+  assert(size() == o.size());
+  // GA_Zdot is zdotu, so we have to compute this manually
+  int64_t start = astart_ * lenb_;
+  int64_t ld  = size();
+  int64_t last  = start + ld - 1;
+  unique_ptr<complex<double>[]> a(new complex<double>[size()]);
+  unique_ptr<complex<double>[]> b(new complex<double>[size()]);
+  NGA_Get64(  ga_, &start, &last, a.get(), &ld);
+  NGA_Get64(o.ga_, &start, &last, b.get(), &ld);
+  complex<double> sum = blas::dot_product(a.get(), ld, b.get());
+  mpi__->allreduce(&sum, 1);
+  return sum;
+#else
+  return 0.0;
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::scale(const DataType a) {
+#ifdef HAVE_GA
+  GA_Scale(ga_, const_cast<DataType*>(&a));
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
+#ifdef HAVE_GA
+  assert(size() == o.size());
+  DataType one = 1.0;
+  GA_Add(const_cast<DataType*>(&a), o.ga_, &one, ga_, ga_);
+#endif
+}
+
+
+template<typename DataType>
+shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
+  auto out = make_shared<DistCivector<DataType>>(det_->transpose());
+#ifdef HAVE_GA
+  // send buffer
+  unique_ptr<DataType[]> send(new DataType[max(size(),out->size())]);
+  {
+    unique_ptr<DataType[]> tmp = local();
+    blas::transpose(tmp.get(), lenb_, asize(), send.get());
+  }
+  // recieve buffer
+  unique_ptr<DataType[]> recv = out->local();
+  // issue send and recv requests
+  vector<int> rqs;
+  const int tagoff = 32767 - mpi__->size()*mpi__->size();
+  if (tagoff < 0)
+    throw runtime_error("Set larger MPI tag offset in DistCivector<DataType>::transpose.");
+
+  for (int i = 0; i != mpi__->size(); ++i) {
+    const size_t soffset = out->dist_.start(i) * asize();
+    const size_t ssize   = out->dist_.size(i)  * asize();
+    const size_t roffset = dist_.start(i) * out->asize();
+    const size_t rsize   = dist_.size(i)  * out->asize();
+    if (i != mpi__->rank()) {
+      rqs.push_back(mpi__->request_send(send.get()+soffset, ssize, i, tagoff+mpi__->rank()+i*mpi__->size()));
+      rqs.push_back(mpi__->request_recv(recv.get()+roffset, rsize, i, tagoff+i+mpi__->rank()*mpi__->size()));
+    } else {
+      assert(rsize == ssize);
+      copy_n(send.get()+soffset, ssize, recv.get()+roffset);
+    }
+  }
+  for (auto& i : rqs)
+    mpi__->wait(i);
+
+  // rearrange recv buffer
+  for (int i = 0; i != mpi__->size(); ++i) {
+    const size_t roffset = dist_.start(i) * out->asize();
+    const size_t size1   = dist_.size(i);
+    for (int j = 0; j != out->asize(); ++j)
+      copy_n(recv.get()+roffset+j*size1, size1, send.get()+dist_.start(i)+j*out->lenb_);
+  }
+  if (det_->nelea()*det_->neleb() & 1)
+    out->scale(-1.0);
+  out->local_accumulate(1.0, send);
+#endif
+  return out;
+}
+
+
+template<typename DataType>
+shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
+  auto out = make_shared<DistCivector<DataType>>(*this);
+#ifdef HAVE_GA
+  // First the easy part, S_z^2 + S_z
+  const double sz = 0.5*static_cast<double>(det_->nspin());
+  out->scale(sz*sz + sz + det_->neleb());
+
+  const unique_ptr<DataType[]> source = local();
+  list<shared_ptr<GA_Task<DataType>>> acc;
+
+  const int norb = det_->norb();
+  auto intermediate = make_shared<DistCivector<DataType>>(det_);
+  for (int i = 0; i < norb; ++i) {
+    for (int j = 0; j < norb; ++j) {
+      intermediate->zero();
+      for (auto& iter : det_->phia(i,j)) {
+        if (is_local(iter.source)) {
+          unique_ptr<DataType[]> target(new DataType[lenb_]);
+          fill_n(target.get(), lenb_, 0.0);
+          blas::ax_plus_y_n(static_cast<double>(iter.sign), source.get()+(iter.source-astart_)*lenb_, lenb_, target.get());
+          acc.push_back(intermediate->accumulate_bstring_buf(move(target), iter.target));
+
+          // if done, remove the buffer
+          for (auto i = acc.begin(); i != acc.end(); )
+            i = (*i)->test() ? acc.erase(i) : ++i;
+        }
+      }
+      for (auto i = acc.begin(); i != acc.end(); ) {
+        (*i)->wait();
+        i = acc.erase(i);
+      }
+      GA_Sync();
+
+      unique_ptr<DataType[]> sbuf = intermediate->local();
+      unique_ptr<DataType[]> tbuf(new DataType[size()]);
+      fill_n(tbuf.get(), size(), 0.0);
+      for (int ia = astart_; ia < aend_; ++ia) {
+        DataType* target_base = tbuf.get() + (ia-astart_)*lenb_;
+        const DataType* source_base = sbuf.get() + (ia-astart_)*lenb_;
+        for (auto& iter : det_->phib(j,i)) {
+          target_base[iter.target] -= static_cast<double>(iter.sign) * source_base[iter.source];
+        }
+      }
+      out->local_accumulate(1.0, tbuf);
+    }
+  }
+#endif
+  return out;
+}
+
 
 template<>
 void DistCivector<double>::spin_decontaminate(const double thresh) {
   const int nspin = det_->nspin();
   const int max_spin = det_->nelea() + det_->neleb();
+  const double expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
 
-  const double pure_expectation = static_cast<double>(nspin * (nspin + 2)) * 0.25;
-
-  shared_ptr<DistCivector<double>> S2 = spin();
-  double actual_expectation = dot_product(*S2);
+  shared_ptr<DistCivec> S2 = spin();
 
   int k = nspin + 2;
-  while( fabs(actual_expectation - pure_expectation) > thresh ) {
-    if ( k > max_spin ) { this->print(0.05); throw runtime_error("Spin decontamination failed."); }
-
+  while(fabs(dot_product(*S2) - expectation) > thresh) {
+    if (k > max_spin) throw runtime_error("Spin decontamination failed.");
     const double factor = -4.0/(static_cast<double>(k*(k+2)));
     ax_plus_y(factor, *S2);
-
     const double norm = this->norm();
     const double rescale = (norm*norm > 1.0e-60) ? 1.0/norm : 0.0;
     scale(rescale);
 
     S2 = spin();
-    actual_expectation = dot_product(*S2);
-
     k += 2;
   }
 }
 
-namespace bagel { namespace DFCI {
-  class LowerTask {
-    protected:
-      const bitset<nbit__> abit_;
-      double* target_;
-      const DistCivector<double>* cc_;
-      shared_ptr<const Determinants> tdet_;
-
-      unique_ptr<double[]> buf_;
-      vector<int> requests_;
-
-    public:
-      LowerTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td) : abit_(a), target_(t), cc_(c), tdet_(td) {
-        shared_ptr<const Determinants> det = c->det();
-        const size_t lbs = det->lenb();
-        const int norb = det->norb();
-
-        buf_ = unique_ptr<double[]>(new double[lbs * (norb - abit_.count())]);
-
-        for (int i = 0, k = 0; i < norb; ++i) {
-          if (!abit_[i]) {
-            bitset<nbit__> sourcebit = abit_; sourcebit.set(i);
-            const int l = cc_->get_bstring_buf(buf_.get() + lbs*k++, det->lexical<0>(sourcebit));
-            if (l >= 0) requests_.push_back(l);
-          }
-        }
-      }
-
-      bool test() {
-        bool out = true;
-        for (auto i = requests_.begin(); i != requests_.end(); ) {
-          if (mpi__->test(*i)) {
-            i = requests_.erase(i);
-          }
-          else {
-            ++i;
-            out = false;
-          }
-        }
-        return out;
-      }
-
-      void compute() {
-        shared_ptr<const Determinants> sdet = cc_->det();
-
-        const size_t lbs = sdet->lenb();
-        const int norb = sdet->norb();
-
-        for (int i = 0, k = 0; i < norb; ++i) {
-          if (abit_[i]) continue;
-          bitset<nbit__> sabit = abit_; sabit.set(i);
-          const int aphase = sdet->sign<0>(sabit, i);
-          const double* sourcedata = buf_.get() + lbs * k++;
-          double* targetdata = target_;
-          for (auto& bbit : tdet_->string_bits_b()) {
-            if ( bbit[i] ) {
-              bitset<nbit__> sbbit = bbit; sbbit.reset(i);
-              const int bphase = -sdet->sign<1>(sbbit, i);
-              *targetdata += static_cast<double>(aphase * bphase) * sourcedata[sdet->lexical<1>(sbbit)];
-            }
-            ++targetdata;
-          }
-        }
-      }
-  };
-} }
 
 template<>
-shared_ptr<DistCivector<double>> DistCivector<double>::spin_lower(shared_ptr<const Determinants> tdet) const {
-  if (!tdet) tdet = make_shared<Determinants>(det_->norb(), det_->nelea()-1, det_->neleb()+1, det_->compress(), true);
-  assert( (tdet->nelea() == det_->nelea()-1) && (tdet->neleb() == det_->neleb()+1) );
-
-  auto out = make_shared<DistCivector<double>>(tdet);
-  this->init_mpi_recv();
-
-  const size_t tastart = out->astart();
-  const size_t taend = out->aend();
-  const size_t lbt = tdet->lenb();
-
-#ifndef USE_SERVER_THREAD
-  DistQueue<DFCI::LowerTask, const DistCivector<double>*> dq(this);
-#else
-  DistQueue<DFCI::LowerTask> dq;
-#endif
-
-  for (size_t ia = tastart; ia < taend; ++ia)
-    dq.emplace_and_compute(tdet->string_bits_a(ia), out->local() + (ia - tastart) * lbt, this, tdet);
-
-  dq.finish();
-
-  this->terminate_mpi_recv();
-  return out;
+void DistCivector<complex<double>>::spin_decontaminate(const double thresh) {
+  assert(false);
 }
 
-namespace bagel { namespace DFCI {
-  class RaiseTask {
-    protected:
-      const bitset<nbit__> abit_;
-      double* target_;
-      const DistCivector<double>* cc_;
-      shared_ptr<const Determinants> tdet_;
 
-      unique_ptr<double[]> buf_;
-      vector<int> requests_;
+template<typename DataType>
+void DistCivector<DataType>::print(const double thresh) const {
+#ifdef HAVE_GA
+  vector<DataType> data;
+  vector<size_t> abits;
+  vector<size_t> bbits;
 
-    public:
-      RaiseTask(const bitset<nbit__> a, double* t, const DistCivector<double>* c, shared_ptr<const Determinants> td) : abit_(a), target_(t), cc_(c), tdet_(td) {
-        shared_ptr<const Determinants> det = c->det();
-        const size_t lbs = det->lenb();
-        const int norb = det->norb();
+  const unique_ptr<DataType[]> loc = local();
+  DataType* d = loc.get();
 
-        buf_ = unique_ptr<double[]>(new double[lbs * abit_.count()]);
-
-        for (int i = 0, k = 0; i < norb; ++i) {
-          if ( abit_[i] ) {
-            bitset<nbit__> sourcebit = abit_; sourcebit.reset(i);
-            const int l = cc_->get_bstring_buf(buf_.get() + lbs*k++, det->lexical<0>(sourcebit));
-            if (l >= 0) requests_.push_back(l);
-          }
-        }
+  for (size_t ia = astart_; ia < aend_; ++ia)
+    for (size_t ib = 0; ib < lenb_; ++ib, ++d)
+      if (abs(*d) >= thresh) {
+        data.push_back(*d);
+        abits.push_back(ia);
+        bbits.push_back(ib);
       }
 
-      bool test() {
-        bool out = true;
-        for (auto i = requests_.begin(); i != requests_.end(); ) {
-          if (mpi__->test(*i)) {
-            i = requests_.erase(i);
-          }
-          else {
-            ++i;
-            out = false;
-          }
-        }
-        return out;
-      }
+  vector<size_t> nelements(mpi__->size(), 0);
+  const size_t nn = data.size();
+  mpi__->allgather(&nn, 1, nelements.data(), 1);
 
-      void compute() {
-        shared_ptr<const Determinants> sdet = cc_->det();
+  const size_t chunk = *max_element(nelements.begin(), nelements.end());
+  data.resize(chunk, 0);
+  abits.resize(chunk, 0);
+  bbits.resize(chunk, 0);
 
-        const size_t lbs = sdet->lenb();
-        const int norb = sdet->norb();
+  vector<DataType> alldata(chunk * mpi__->size());
+  mpi__->allgather(data.data(), chunk, alldata.data(), chunk);
+  vector<size_t> allabits(chunk * mpi__->size());
+  mpi__->allgather(abits.data(), chunk, allabits.data(), chunk);
+  vector<size_t> allbbits(chunk * mpi__->size());
+  mpi__->allgather(bbits.data(), chunk, allbbits.data(), chunk);
 
-        for (int i = 0, k = 0; i < norb; ++i) {
-          if ( !abit_[i] ) continue;
-          bitset<nbit__> sabit = abit_; sabit.reset(i);
-          const int aphase = sdet->sign<0>(sabit, i);
-          const double* sourcedata = buf_.get() + lbs * k++;
-          double* targetdata = target_;
-          for (auto& bbit : tdet_->string_bits_b()) {
-            if ( !bbit[i] ) {
-              bitset<nbit__> sbbit = bbit; sbbit.set(i);
-              const int bphase = sdet->sign<1>(sbbit, i);
-              *targetdata += static_cast<double>(aphase * bphase) * sourcedata[sdet->lexical<1>(sbbit)];
-            }
-            ++targetdata;
-          }
-        }
-      }
-  };
-} }
+  if (mpi__->rank() == 0) {
+    multimap<double, tuple<DataType, bitset<nbit__>, bitset<nbit__>>> tmp;
+    for (int i = 0; i < chunk * mpi__->size(); ++i)
+      if (alldata[i] != 0.0)
+        tmp.emplace(-abs(alldata[i]), make_tuple(alldata[i], det_->string_bits_a(allabits[i]), det_->string_bits_b(allbbits[i])));
 
-template<>
-shared_ptr<DistCivector<double>> DistCivector<double>::spin_raise(shared_ptr<const Determinants> tdet) const {
-  if (!tdet) tdet = make_shared<Determinants>(det_->norb(), det_->nelea()+1, det_->neleb()-1, det_->compress(), true);
-  assert( (tdet->nelea() == det_->nelea()+1) && (tdet->neleb() == det_->neleb()-1) );
+    for (auto& i : tmp)
+      cout << "       " << print_bit(get<1>(i.second), get<2>(i.second), det()->norb())
+                << "  " << setprecision(10) << setw(15) << get<0>(i.second) << endl;
 
-  auto out = make_shared<DistCivector<double>>(tdet);
-  this->init_mpi_recv();
-
-  const size_t tastart = out->astart();
-  const size_t taend = out->aend();
-  const size_t lbt = out->lenb();
-
-#ifndef USE_SERVER_THREAD
-  DistQueue<DFCI::RaiseTask, const DistCivector<double>*> dq(this);
-#else
-  DistQueue<DFCI::RaiseTask> dq;
+  }
 #endif
-
-  for (size_t ia = tastart; ia < taend; ++ia)
-    dq.emplace_and_compute(tdet->string_bits_a(ia), out->local() + (ia - tastart) * lbt, this, tdet);
-
-  dq.finish();
-
-  this->terminate_mpi_recv();
-  return out;
 }
 
-template<>
-shared_ptr<DistCivector<double>> DistCivector<double>::apply(const int orbital, const bool action, const bool spin) const {
-  // action: true -> create; false -> annihilate
-  // spin:   true -> alpha;  false -> beta
-  shared_ptr<const Determinants> sdet = this->det();
-
-  const size_t lbs = sdet->lenb();
-
-  shared_ptr<DistCivector<double>> out;
-
-  if (spin) {
-    shared_ptr<const Determinants> tdet = ( action ? sdet->addalpha() : sdet->remalpha() );
-    out = make_shared<DistCivector<double>>(tdet);
-    assert( lbs == tdet->lenb() );
-
-    this->init_mpi_recv();
-
-    const size_t tastart = out->astart();
-    const size_t taend = out->aend();
-    const size_t lbt = tdet->lenb();
-
-    list<tuple<int, double*, int>> requests;
-
-    for (auto& iter : ( action ? sdet->phiupa(orbital) : sdet->phidowna(orbital) )) {
-      const size_t targ = iter.target;
-      if ( tastart <= targ && taend > targ ) {
-        double* dest = out->local() + (targ - tastart) * lbt;
-        const int req = get_bstring_buf( dest, iter.source );
-        if (req >= 0) {
-          requests.emplace_back(req, dest, iter.sign);
-          //this->flush();
-        }
-        else {
-          const int sign = iter.sign;
-          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
-        }
-      }
-    }
-
-#ifndef USE_SERVER_THREAD
-    this->flush();
-#endif
-
-    bool done;
-    do {
-      done = true;
-      for (auto i = requests.begin(); i != requests.end(); ) {
-        if (mpi__->test(get<0>(*i))) {
-          double* dest = get<1>(*i);
-          const int sign = get<2>(*i);
-          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
-          i = requests.erase(i);
-        }
-        else {
-          done = false;
-          ++i;
-        }
-      }
-#ifndef USE_SERVER_THREAD
-      size_t d = done ? 0 : 1;
-      mpi__->soft_allreduce(&d, 1);
-      done = (d == 0);
-      if (!done) this->flush();
-#endif
-      if (!done) this_thread::sleep_for(sleeptime__);
-    } while ( !done );
-
-    this->terminate_mpi_recv();
-  }
-  else { // This case requires no communication
-    shared_ptr<const Determinants> tdet = ( action ? sdet->addbeta() : sdet->rembeta() );
-    out = make_shared<DistCivector<double>>(tdet);
-    assert( sdet->lena() == tdet->lena() );
-    const size_t lbt = tdet->lenb();
-
-    for (size_t ia = astart_; ia < aend_; ++ia) {
-      const double* source_base = this->local() + (ia - astart_) * lbs;
-      double* target_base = out->local() + (ia - astart_) * lbt;
-      for (auto& iter : ( action ? sdet->phiupb(orbital) : sdet->phidownb(orbital) )) {
-        const double sign = static_cast<double>(iter.sign);
-        target_base[iter.target] += sign * source_base[iter.source];
-      }
-    }
-  }
-
-  return out;
-}
-
-template<>
-shared_ptr<DistDvec> DistDvec::apply(const int orbital, const bool action, const bool spin) const {
-  // action: true -> create; false -> annihilate
-  // spin:   true -> alpha;  false -> beta
-#if 1
-  vector<CiPtr> out;
-  for (auto& i : dvec_) out.push_back(i->apply(orbital, action, spin));
-  return make_shared<DistDvec>(out);
-#else
-  shared_ptr<const Determinants> sdet = this->det();
-  const int norb = sdet->norb();
-  const int nstate = ij();
-
-  const size_t las = sdet->lena();
-  const size_t lbs = sdet->lenb();
-
-  shared_ptr<DistDvec> out;
-
-  if (spin) {
-    shared_ptr<const Determinants> tdet = ( action ? sdet->addalpha() : sdet->remalpha() );
-    out = make_shared<DistDvec>(tdet, ij());
-    assert( lbs == tdet->lenb() );
-
-    const size_t tastart = out->dvec().front()->astart();
-    const size_t taend = out->dvec().front()->aend();
-    const size_t lbt = tdet->lenb();
-
-    list<tuple<int, double*, int>> requests;
-
-    for (int ist = 0; ist < nstate; ++ist) {
-      shared_ptr<const DistCivec> cc = data(ist);
-      cc->init_mpi_recv();
-      for (auto& iter : ( action ? sdet->phiupa(orbital) : sdet->phidowna(orbital) )) {
-        const size_t targ = iter.target;
-        if ( tastart <= targ && taend > targ ) {
-          double* dest = out->data(ist)->local() + (targ - tastart) * lbt;
-          const int req = cc->get_bstring_buf( dest, iter.source );
-          if (req >= 0) {
-            requests.emplace_back(req, dest, iter.sign);
-          }
-          else {
-            const int sign = iter.sign;
-            for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
-          }
-        }
-      }
-      for (int jst = 0; jst <= ist; ++jst) data(jst)->flush();
-    }
-
-    bool done;
-    do {
-      done = true;
-      for (auto i = requests.begin(); i != requests.end(); ) {
-        if (mpi__->test(get<0>(*i))) {
-          double* dest = get<1>(*i);
-          const int sign = get<2>(*i);
-          for_each(dest, dest + lbt, [&sign] (double& t) { t *= sign; });
-          i = requests.erase(i);
-        }
-        else {
-          done = false;
-          ++i;
-        }
-      }
-#ifndef USE_SERVER_THREAD
-      size_t d = done ? 0 : 1;
-      mpi__->soft_allreduce(&d, 1);
-      done = (d == 0);
-      if (!done) { for (int ist = 0; ist < nstate; ++ist) data(ist)->flush(); }
-#endif
-      if (!done) this_thread::sleep_for(sleeptime__);
-    } while ( !done );
-
-    for (int ist = 0; ist < nstate; ++ist) data(ist)->terminate_mpi_recv();
-  }
-  else { // This case requires no communication
-    shared_ptr<const Determinants> tdet = ( action ? sdet->addbeta() : sdet->rembeta() );
-    assert( sdet->lena() == tdet->lena() );
-    out = make_shared<DistDvec>(tdet, ij());
-    const size_t lbt = tdet->lenb();
-
-    const size_t astart = out->data(0)->astart();
-    const size_t aend = out->data(0)->aend();
-
-    for (int ist = 0; ist < nstate; ++ist) {
-      for (size_t ia = astart; ia < aend; ++ia) {
-        const double* source_base = this->data(ist)->local() + (ia - astart) * lbs;
-        double* target_base = out->data(ist)->local() + (ia - astart) * lbt;
-        for (auto& iter : ( action ? sdet->phiupb(orbital) : sdet->phidownb(orbital) )) {
-          const double sign = static_cast<double>(iter.sign);
-          target_base[iter.target] += sign * source_base[iter.source];
-        }
-      }
-    }
-  }
-
-  return out;
-#endif
-}
+template class bagel::GA_Task<double>;
+template class bagel::GA_Task<complex<double>>;
+template class bagel::DistCivector<double>;
+template class bagel::DistCivector<complex<double>>;

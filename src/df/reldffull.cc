@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: reldffull.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -148,6 +147,22 @@ void RelDFFull::scale(complex<double> a) {
 }
 
 
+shared_ptr<btas::Tensor3<std::complex<double>>>
+  RelDFFull::get_block(const int ist, const int ii, const int jst, const int jj, const int kst, const int kk) const {
+
+  auto out = make_shared<btas::Tensor3<complex<double>>>(ii, jj, kk);
+
+  shared_ptr<btas::Tensor3<double>> real = get_real()->get_block(ist, ii, jst, jj, kst, kk);
+  shared_ptr<btas::Tensor3<double>> imag = get_imag()->get_block(ist, ii, jst, jj, kst, kk);
+  auto r = real->data();
+  auto i = imag->data();
+  for (auto& o : *out)
+    o = complex<double>(*r++, *i++);
+
+  return out;
+}
+
+
 list<shared_ptr<RelDFHalfB>> RelDFFull::back_transform(array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff) const {
   list<shared_ptr<RelDFHalfB>> out;
   assert(basis_.size() == 1);
@@ -221,11 +236,4 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
   i->ax_plus_y( 1.0, dffull_[0]->apply_2rdm(*irdm));
   return make_shared<RelDFFull>(array<shared_ptr<DFFullDist>,2>{{r, i}}, cartesian_, basis_);
 }
-
-
-bool RelDFFull::alpha_matches(shared_ptr<const RelDFFull> o) const {
-  assert(basis_.size() == 1);
-  return basis_[0]->alpha_comp() == o->basis()[0]->alpha_comp();
-}
-
 

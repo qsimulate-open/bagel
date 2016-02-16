@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dfblock.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/df/dfblock.h>
@@ -334,12 +333,10 @@ shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const
   if (ista < 0 || jsta < 0 || ksta < 0 || ifen > asize() || jfen > b1size() || kfen > b2size())
     throw logic_error("illegal call of DFBlock::get_block");
 
-  // TODO we need 3-index tensor class here!
   auto out = make_shared<Tensor3<double>>(i, j, k);
   for (int kk = ksta; kk != kfen; ++kk)
     for (int jj = jsta; jj != jfen; ++jj)
-      for (int ii = ista; ii != ifen; ++ii)
-        (*out)(ii-ista, jj-jsta, kk-ksta) = (*this)(ii, jj, kk);
+      copy_n(&((*this)(ista, jj, kk)), ifen-ista, &((*out)(0, jj-jsta, kk-ksta)));
 
   return out;
 }
@@ -357,8 +354,8 @@ void DFBlock::average() {
   size_t t_start, t_end;
   tie(t_start, t_end) = adist_->range(myrank);
 
-  assert(o_end - t_end >= 0);
-  assert(o_start - t_start >= 0);
+  assert(o_end >= t_end);
+  assert(o_start >= t_start);
 
   // TODO so far I am not considering the cases when data must be sent to the next neighbor; CAUTION
   const size_t asendsize = o_end - t_end;

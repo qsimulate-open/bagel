@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: ras/determinants.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -73,16 +72,16 @@ class RASDeterminants : public Determinants_base<RASString>,
     bool operator==(const RASDeterminants& o) const
       { return ( nelea() == o.nelea() && neleb() == o.neleb() && max_holes_ == o.max_holes_ && max_particles_ == o.max_particles_ && ras_ == o.ras_ ); }
 
-    const int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & (~std::bitset<nbit__>(0ull) >> (nbit__ - ras_[0]))).count(); }
-    const int nparticles(const std::bitset<nbit__> bit) const { return (bit & (~(~std::bitset<nbit__>(0ull) << ras_[2]) << ras_[0] + ras_[1])).count(); }
+    int nholes(const std::bitset<nbit__> bit) const { return ras_[0] - (bit & (~std::bitset<nbit__>(0ull) >> (nbit__ - ras_[0]))).count(); }
+    int nparticles(const std::bitset<nbit__> bit) const { return (bit & (~(~std::bitset<nbit__>(0ull) << ras_[2]) << ras_[0] + ras_[1])).count(); }
 
-    const bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
+    bool allowed(const std::bitset<nbit__> bit) const { return nholes(bit) <= max_holes_ && nparticles(bit) <= max_particles_; }
 
-    const bool allowed(const int nha, const int nhb, const int npa, const int npb) const
+    bool allowed(const int nha, const int nhb, const int npa, const int npb) const
       { return ( (nha + nhb) <= max_holes_ && (npa + npb) <= max_particles_ ); }
-    const bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
+    bool allowed(const std::bitset<nbit__> abit, const std::bitset<nbit__> bbit) const
       { return (nholes(abit) + nholes(bbit)) <= max_holes_ && (nparticles(abit) + nparticles(bbit)) <= max_particles_; }
-    const bool allowed(const std::shared_ptr<const RASString> alpha, const std::shared_ptr<const RASString> beta) const
+    bool allowed(const std::shared_ptr<const RASString> alpha, const std::shared_ptr<const RASString> beta) const
       { return (beta->nholes() + alpha->nholes()) <= max_holes_ && (beta->nparticles() + alpha->nparticles()) <= max_particles_; }
 
     template <int spin>
@@ -121,10 +120,10 @@ class RASDeterminants : public Determinants_base<RASString>,
     }
 
     const std::array<int, 3> ras() const { return ras_; }
-    const int ras(const int i) const { return ras_[i]; }
+    int ras(const int i) const { return ras_[i]; }
 
-    const int max_holes() const { return max_holes_; }
-    const int max_particles() const { return max_particles_; }
+    int max_holes() const { return max_holes_; }
+    int max_particles() const { return max_particles_; }
 
     const std::vector<DetMapBlock>& phia_ij(const size_t ij) const { return phia_ij_[ij]; }
     const std::vector<DetMapBlock>& phib_ij(const size_t ij) const { return phib_ij_[ij]; }

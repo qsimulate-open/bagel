@@ -33,12 +33,17 @@ namespace bagel {
 namespace SMITH {
 
 template<int N, typename DataType>
-static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const btas::TensorN<DataType,N>> input,
-                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
+static std::shared_ptr<Tensor_<DataType>>
+  fill_block(std::shared_ptr<const btas::TensorN<DataType,N>> input, const std::vector<int>& inpoffsets_rev, const std::vector<IndexRange>& ranges_rev) {
+
+  auto target = std::make_shared<Tensor_<DataType>>(ranges_rev);
+  target->allocate();
+
   assert(input->range().ordinal().contiguous());
   assert(target->rank() == input->range().rank() && target->rank() > 0);
   const int rank = target->rank();
   const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+  const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
@@ -46,6 +51,7 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
   std::vector<std::vector<Index>> loop = gen.block_loop();
   for (auto& indices : loop) {
     assert(indices.size() == rank);
+    if (!target->is_local(std::vector<Index>(indices.rbegin(), indices.rend()))) continue;
 
     const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
     std::unique_ptr<DataType[]> buffer(new DataType[buffersize]);
@@ -79,19 +85,37 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
 
     target->put_block(buffer, std::vector<Index>(indices.rbegin(), indices.rend()));
   }
+  mpi__->barrier();
+  return target;
 }
 
 
 template<int N, typename DataType, class T> // T is supposed to be derived from btas::Tensor
-static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_ptr<const Kramers<N,T>> input,
-                       const std::vector<int>& inpoffsets, const std::vector<IndexRange>& ranges_rev) {
-  const int rank = target->rank();
-  const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+static std::shared_ptr<Tensor_<DataType>>
+  fill_block(std::shared_ptr<const Kramers<N,T>> input, const std::vector<int>& inpoffsets_rev, const std::vector<IndexRange>& ranges_rev) {
 
-  auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
+  const int rank = N;
+  const std::vector<IndexRange> ranges(ranges_rev.rbegin(), ranges_rev.rend());
+  const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
+  const std::list<std::vector<bool>> kramers = input->listkramers();
 
   LoopGenerator gen(ranges);
   std::vector<std::vector<Index>> loop = gen.block_loop();
+
+  std::unordered_set<size_t> sparse;
+  for (auto& indices : loop) {
+    std::vector<bool> tmp;
+    for (auto i = indices.rbegin(); i != indices.rend(); ++i)
+      tmp.push_back(i->kramers());
+    if (std::find(kramers.begin(), kramers.end(), tmp) != kramers.end())
+    sparse.insert(generate_hash_key(std::vector<Index>(indices.rbegin(), indices.rend())));
+  }
+
+  auto target = std::make_shared<Tensor_<DataType>>(ranges_rev, true, sparse, true);
+  target->set_stored_sectors(kramers);
+
+  auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
+
   for (auto& indices : loop) {
     assert(indices.size() == rank);
 
@@ -100,6 +124,8 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
       bit[i] = indices[i].kramers() ? 1 : 0; // indices is reversed, so this is correct
 
     if (input->exist(bit)) {
+      if (!target->is_local(std::vector<Index>(indices.rbegin(), indices.rend()))) continue;
+
       const size_t buffersize = std::accumulate(indices.begin(), indices.end(), 1ul, prod);
       std::vector<size_t> stride;
       for (auto i = indices.begin(); i != indices.end(); ++i) {
@@ -139,6 +165,8 @@ static void fill_block(std::shared_ptr<Tensor_<DataType>> target, std::shared_pt
     }
   }
   target->set_perm(input->perm());
+  mpi__->barrier();
+  return target;
 }
 
 }

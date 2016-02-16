@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: complexeribatch.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/integral/comprys/complexeribatch.h>
@@ -78,9 +77,7 @@ std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double c
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[center1]->vector_potential(dim);
   const double Bimag = basisinfo_[center1+1]->vector_potential(dim);
-  double imag;
-  if (swap) imag = 0.5*(Bimag - Aimag);
-  else imag = 0.5*(Aimag - Bimag);
+  const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag);
   assert(exp1 != 0.0 || imag == 0.0);
   assert(exp2 != 0.0 || imag == 0.0);
   const std::complex<double> num (Areal + Breal, imag);

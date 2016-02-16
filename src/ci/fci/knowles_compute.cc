@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci_compute.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/ci/fci/knowles.h>
@@ -101,7 +100,7 @@ void FCI::sigma_2a1(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
     for (auto& iter : cc->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = target_base + iter.source*lb;
-      daxpy_(lb, sign, source_base + iter.target*lb, 1, target_array, 1);
+      blas::ax_plus_y_n(sign, source_base + iter.target*lb, lb, target_array);
     }
   }
 }
@@ -130,7 +129,7 @@ void KnowlesHandy::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, 
     const double h = jop->mo1e(ip);
     for (auto& iter : cc->det()->phia(ip)) {
       const double hc = h * iter.sign;
-      daxpy_(lb, hc, cc->element_ptr(0, iter.source), 1, sigma->element_ptr(0, iter.target), 1);
+      blas::ax_plus_y_n(hc, cc->element_ptr(0, iter.source), lb, sigma->element_ptr(0, iter.target));
     }
   }
 }
@@ -143,7 +142,7 @@ void KnowlesHandy::sigma_2c1(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) 
     for (auto& iter : e->det()->phia(ip)) {
       const double sign = static_cast<double>(iter.sign);
       double* const target_array = sigma->element_ptr(0, iter.target);
-      daxpy_(lb, sign, source_base + lb*iter.source, 1, target_array, 1);
+      blas::ax_plus_y_n(sign, source_base + lb*iter.source, lb, target_array);
     }
   }
 }
