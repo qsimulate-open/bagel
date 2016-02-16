@@ -77,6 +77,7 @@ class Pseudospin {
     std::shared_ptr<const Matrix> dtensor_;
     double Dval_;
     double Eval_;
+    std::array<double,3> gval_; // absolute value of principle g-tensor elements (sign not determined)
 
     std::shared_ptr<const PTree> idata_;
 
@@ -120,11 +121,13 @@ class Pseudospin {
     std::shared_ptr<const Matrix> dtensor() const { return dtensor_; }
     double Dval() const { return Dval_; }
     double Eval() const { return Eval_; }
+    std::array<double,3> gval() const { return gval_; }
+    double gval(const int i) const { return gval_[i]; }
 
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
     void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
-    std::shared_ptr<const Matrix> identify_magnetic_axes() const;
+    std::pair<std::shared_ptr<const Matrix>, std::array<double,3>> identify_magnetic_axes() const;
 
     // to extract D-tensor
     std::shared_ptr<const ZMatrix> compute_spin_eigenvalues() const;

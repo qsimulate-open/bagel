@@ -58,6 +58,9 @@ std::vector<double> zfs_param(std::string inp) {
           auto ps = std::make_shared<Pseudospin>(nspin, aniso_data);
           ps->compute(*zcas->fci());
           out.clear();
+          out.push_back(ps->gval(0));
+          out.push_back(ps->gval(1));
+          out.push_back(ps->gval(2));
           out.push_back(ps->Dval());
           out.push_back(ps->Eval());
         }
@@ -68,10 +71,20 @@ std::vector<double> zfs_param(std::string inp) {
   return out;
 }
 
+std::vector<double> reference_pseudospin_parameters() {
+  std::vector<double> out(5);
+  out[0] =  4.00860253;
+  out[1] =  4.00860237;
+  out[2] =  4.00442919;
+  out[3] =  0.00000164;
+  out[4] =  0.00000000;
+  return out;
+}
+
 BOOST_AUTO_TEST_SUITE(TEST_PSEUDOSPIN)
 
 BOOST_AUTO_TEST_CASE(ZFSPLITTING) {
-  BOOST_CHECK(compare(zfs_param("o2_sto3g_zcasscf_pseudospin"), {{ 0.00000164, 0.0 }}));
+  BOOST_CHECK(compare(zfs_param("o2_sto3g_zcasscf_pseudospin"), reference_pseudospin_parameters()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

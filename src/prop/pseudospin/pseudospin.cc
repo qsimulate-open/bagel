@@ -162,8 +162,9 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
     compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
 
-    shared_ptr<const Matrix> mag_axes = identify_magnetic_axes();
-    spin_axes_ = read_axes(mag_axes);
+    pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
+    spin_axes_ = read_axes(mag_info.first);
+    gval_ = mag_info.second;
 
     for (int i = 0; i != 3; ++i) {
       zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
