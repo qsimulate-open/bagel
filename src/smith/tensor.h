@@ -45,7 +45,7 @@ namespace SMITH {
 
 template <typename DataType>
 class Tensor_ {
-  protected:
+  public:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   protected:
     std::vector<IndexRange> range_;
@@ -127,9 +127,7 @@ class Tensor_ {
     }
 
     std::vector<DataType> diag() const;
-
     std::shared_ptr<MatType> matrix() const;
-    std::shared_ptr<MatType> matrix2() const;
 
     std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
 

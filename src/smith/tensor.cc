@@ -99,54 +99,17 @@ vector<DataType> Tensor_<DataType>::diag() const {
 
 
 template <typename DataType>
-shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type> Tensor_<DataType>::matrix() const {
+shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix() const {
   vector<IndexRange> o = indexrange();
   assert(o.size() == 2);
 
   const int off0 = o[0].front().offset();
   const int off1 = o[1].front().offset();
-  using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   auto out = make_shared<MatType>(o[0].size(), o[1].size());
   for (auto& i1 : o[1].range())
     for (auto& i0 : o[0].range())
       out->copy_block(i0.offset()-off0, i1.offset()-off1, i0.size(), i1.size(), get_block(i0, i1).get());
 
-  return out;
-}
-
-
-// TODO parallelization
-template <typename DataType>
-shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type> Tensor_<DataType>::matrix2() const {
-  const vector<IndexRange> o = indexrange();
-  assert(o.size() == 4);
-
-  const int dim0 = o[0].size();
-  const int dim1 = o[1].size();
-  const int dim2 = o[2].size();
-  const int dim3 = o[3].size();
-  const int off0 = o[0].front().offset();
-  const int off1 = o[1].front().offset();
-  const int off2 = o[2].front().offset();
-  const int off3 = o[3].front().offset();
-
-  auto out = make_shared<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>(dim0*dim1,dim2*dim3);
-  for (auto& i3 : o[3].range()) {
-    for (auto& i2 : o[2].range()) {
-      for (auto& i1 : o[1].range()) {
-        for (auto& i0 : o[0].range()) {
-          if (exists(i0, i1, i2, i3)) {
-            unique_ptr<DataType[]> target = get_block(i0, i1, i2, i3);
-            const DataType* ptr = target.get();
-            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ptr += i0.size())
-                  copy_n(ptr, i0.size(), out->element_ptr(i0.offset()-off0+dim0*(j1-off1), j2-off2+dim2*(j3-off3)));
-          }
-        }
-      }
-    }
-  }
   return out;
 }
 
