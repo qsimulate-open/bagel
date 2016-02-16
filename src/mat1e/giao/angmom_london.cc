@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: angmom_london.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -57,6 +56,31 @@ array<shared_ptr<ZMatrix>, 3> AngMom_London::compute() const {
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           ComplexAngMomBatch mom(input, geom_->magnetic_field(), mcoord_);
           mom.compute();
+          /**************************/
+#if 0
+          bool correct = true;
+          cout << setprecision(12) << fixed;
+          const std::complex<double>* angmomdata = mom.data();
+          std::vector<std::pair<std::vector<int>,std::complex<double>>> reference = test::get_comparison_orb_angular (input, geom_->magnetic_field(), mcoord_);
+          const size_t bagelsize = mom.size_block();
+          const size_t refsize = reference.size() / 3;
+          assert(refsize * 3 == reference.size());
+          const array<char,3> dim = {{'x', 'y', 'z'}};
+          cout << endl;
+            cout << endl;
+            for (int i = 0; i != refsize; ++i) {
+          for (int j = 0; j != 3; ++j) {
+              cout << "  " << setw(4) << i << " " << dim[j] << " Bagel " << setw(34) << angmomdata[i+j*bagelsize] << "  Test: ";
+              for (int k=0; k!=4; ++k) cout << reference[i+j*refsize].first[k] << " ";
+              cout << setw(34) << reference[i+j*refsize].second;
+              const complex<double> difference = reference[i+j*refsize].second - angmomdata[i+j*bagelsize];
+              cout << "  ...  difference = " << setw(34) << difference << endl;
+              if (std::abs(difference) > 1.0e-12) correct = false;
+            }
+          }
+          assert(correct);
+#endif
+          /*************************/
           const complex<double>* dat0 = mom.data();
           const complex<double>* dat1 = mom.data() + mom.size_block();
           const complex<double>* dat2 = mom.data() + mom.size_block()*2;
