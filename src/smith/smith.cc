@@ -46,10 +46,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
-#if 0
   } else if (method == "mrci") {
     algo_ = make_shared<MRCI::MRCI>(info);
-#endif
   } else {
 #else
   {
@@ -91,15 +89,11 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
-#if 0
   if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
   } else if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {
-#else
-  {
-#endif
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
   }

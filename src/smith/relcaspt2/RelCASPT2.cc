@@ -57,7 +57,7 @@ void RelCASPT2::RelCASPT2::solve() {
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
-    diagonal(r, t2);
+    diagonal(r, t2, true);
     r->ax_plus_y(1.0, s);
     energy_[0] += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
