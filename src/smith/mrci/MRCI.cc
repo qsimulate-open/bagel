@@ -96,6 +96,7 @@ void MRCI::MRCI::solve() {
     vector<shared_ptr<Residual<double>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
+      e0_ = e0all_[i];
       update_amplitude(t2all_[i], res[i]->tensor());
     }
   }
@@ -187,8 +188,10 @@ void MRCI::MRCI::solve() {
 
       t2all_[i]->zero();
       conv[i] = err < info_->thresh();
-      if (!conv[i])
+      if (!conv[i]) {
+        e0_ = e0all_[i];
         update_amplitude(t2all_[i], res[i]->tensor());
+      }
     }
     if (nstates_ > 1) cout << endl;
 
