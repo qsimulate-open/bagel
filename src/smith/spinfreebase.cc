@@ -107,6 +107,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
       fockact->copy_block(i0.offset()-nclosed2, i1.offset()-nclosed2, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
   fockact = fockact->get_conjg();
 
+  // set Eref
+  const int nstates = info_->ciwfn()->nstates();
+  eref_ = make_shared<Matrix>(nstates, nstates);  
+  for (int i = 0; i != nstates; ++i)
+    eref_->element(i, i) = info_->ciwfn()->energy(i);
+
   if (info_->do_xms())
     rotate_xms(fockact);
 
@@ -126,7 +132,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   // set e0
   compute_e0();
   // TODO for the time being
-  const int nstates = info_->ciwfn()->nstates();
   e0_ = accumulate(e0all_.begin(), e0all_.end(), 0)/nstates;
 
   GA_Sync();
@@ -152,24 +157,17 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<2>> rdm2;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       // then assign the dot product: fmn=fij rdm1
-cout<< "fockact " <<fockact->data() <<endl;
       fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
 
-fmn.print("fmn before diag");
-cout<<endl;
-
   // diagonalize fmn
   VectorB eig(nstates);
   fmn.diagonalize(eig);
 
-fmn.print("fmn after diag");
-
   cout << endl;
-  for (int i = 0; i != nstates; ++i)
-    cout << "    * Zeroth order energy XMS : state  " << i << setw(20) << setprecision(10) << eig(i) << endl;
+  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl; 
   cout << endl;
 
   // construct CIWfn
@@ -184,29 +182,22 @@ fmn.print("fmn after diag");
       new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
   }
 
-// test if new civecs are orthogonal:
-for (int jst =0; jst != nstates; ++jst) {
-  for (int ist =0; ist != nstates; ++ist) {
-  cout << "test old dotprod : states " << jst << " and " << ist << " " << setprecision(10) << civecs[ist]->dot_product(civecs[jst]) <<endl;
-  cout << "test new dotprod : states " << jst << " and " << ist << " " << setprecision(10) << new_civecs[ist]->dot_product(new_civecs[jst]) <<endl;
-  }
-}
-
   vector<double> energies(ciwfn->nstates());
   for (int i = 0; i != ciwfn->nstates(); ++i) 
     energies[i] = ciwfn->energy(i);
   auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
                                       energies, new_dvec, ciwfn->det());
 
-
   // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
                                         info_->nvirt(), 0.0, info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
-
   // construct SMITH_info
   info_ = make_shared<SMITH_Info<double>>(new_ref, info_); 
+
+  // update eref_
+  eref_ = make_shared<Matrix>(fmn % (*eref_) *fmn);
 
 }
 

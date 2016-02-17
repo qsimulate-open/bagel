@@ -146,7 +146,7 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
-  for (int istate = 0; istate != nstates_; ++istate)
+  for (int istate = 0; istate != nstates_; ++istate) 
     cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(istate) << endl;
 
   // MS-CASPT2
@@ -157,18 +157,18 @@ void CASPT2::CASPT2::solve() {
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
-          fmn(ist, ist) = energy_[ist]+info_->ciwfn()->energy(ist);
+          fmn(ist, ist) = energy_[ist] + (*eref_)(ist, ist);
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
           fmn(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
-                             + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])));
+                             + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
+                        + (*eref_)(jst, ist);
           fmn(ist, jst) = fmn(jst, ist);
         }
       }
     }
-
-  
+ 
     // print out the effective Hamiltonian
     cout << endl;
     cout << "    * MS-CASPT2 Heff";
@@ -189,8 +189,6 @@ void CASPT2::CASPT2::solve() {
     }
   }
 }
-
-//Where to add XMS part here?
 
 void CASPT2::CASPT2::solve_deriv() {
 
