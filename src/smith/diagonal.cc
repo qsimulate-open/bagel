@@ -35,7 +35,21 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  double sum = 0.0;
+  for (auto& i1 : active_) {
+    for (auto& i0 : active_) {
+      if (f1_->is_local(i0, i1)) {
+        assert(rdm1_->is_local(i0, i1));
+        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
+    }
+  }
+  mpi__->allreduce(&sum, 1);
+
+  const double e0loc = sum - (diag ? e0_ : 0.0);
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
@@ -46,12 +60,16 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) 
           const unique_ptr<double[]> data1 = t->get_block(i0, i3, i2, i1);
 
           sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-          size_t iall = 0;
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                  data0[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
+          if (diag) {
+            size_t iall = 0;
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    data0[iall] *= e0loc - (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
+          } else {
+            blas::scale_n(e0loc, data0.get(), i0.size()*i3.size()*i2.size()*i1.size());
+          }
           r->add_block(data0, i0, i1, i2, i3);
         }
       }
@@ -61,7 +79,20 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) 
 }
 
 
-void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  complex<double> sum = 0.0;
+  for (auto& i1 : active_) {
+    for (auto& i0 : active_) {
+      if (f1_->is_local(i0, i1)) {
+        unique_ptr<complex<double>[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<complex<double>[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
+    }
+  }
+  mpi__->allreduce(&sum, 1);
+
+  const complex<double> e0loc = sum - (diag ? e0_ : 0.0);
   for (auto& i3 : virt_) {
     for (auto& i2 : closed_) {
       for (auto& i1 : virt_) {
@@ -69,12 +100,16 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
           // if this block is not included in the current wave function, skip it
           if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
           unique_ptr<complex<double>[]> data = t->get_block(i0, i1, i2, i3);
-          size_t iall = 0;
-          for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                  data[iall] *= -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]) * 4.0;
+          if (diag) {
+            size_t iall = 0;
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    data[iall] *= (e0loc -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1])) * 4.0;
+          } else {
+            blas::scale_n(4.0*e0loc, data.get(), i0.size()*i3.size()*i2.size()*i1.size());
+          }
           r->add_block(data, i0, i1, i2, i3);
         }
       }

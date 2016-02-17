@@ -49,6 +49,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
   for (int ist = 0; ist != nst; ++ist) {
     t->fac(ist) = 0.0;
+    const double e0loc = e0all_[ist] - e0_;
     for (auto& i3 : virt_) {
       for (auto& i2 : closed_) {
         for (auto& i1 : virt_) {
@@ -70,7 +71,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                     // note that e0 is cancelled by another term
-                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
+                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
             t->at(ist)->add_block(data0, i0, i1, i2, i3);
           }
         }

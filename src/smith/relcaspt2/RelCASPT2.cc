@@ -51,16 +51,17 @@ void RelCASPT2::RelCASPT2::solve() {
     sourceq->next_compute();
   Timer mtimer;
   int iter = 0;
+  energy_.resize(1);
   for ( ; iter != info_->maxiter(); ++iter) {
-    energy_ = detail::real(dot_product_transpose(s, t2));
+    energy_[0] = detail::real(dot_product_transpose(s, t2));
     shared_ptr<Queue> queue = make_residualq();
     while (!queue->done())
       queue->next_compute();
     diagonal(r, t2);
     r->ax_plus_y(1.0, s);
-    energy_ += detail::real(dot_product_transpose(r, t2));
+    energy_[0] += detail::real(dot_product_transpose(r, t2));
     const double err = r->rms();
-    print_iteration(iter, energy_, err, mtimer.tick());
+    print_iteration(iter, energy_[0], err, mtimer.tick());
 
     update_amplitude(t2, r);
     r->zero();
@@ -68,7 +69,7 @@ void RelCASPT2::RelCASPT2::solve() {
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
-  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_+info_->ciwfn()->energy(0) << endl;
+  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_[0]+info_->ciwfn()->energy(0) << endl;
 }
 
 

@@ -45,13 +45,20 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
+
+    int nstates_;
+    std::vector<double> err_;
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
 
-    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
 
     std::shared_ptr<FutureTensor> Gamma0_();
