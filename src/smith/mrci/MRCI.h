@@ -49,7 +49,6 @@ class MRCI : public SpinFreeMethod<double> {
     std::shared_ptr<Tensor> n;
 
     int nstates_;
-    std::vector<double> energy_;
 
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;

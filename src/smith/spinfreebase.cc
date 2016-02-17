@@ -113,7 +113,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   for (int i = 0; i != nstates; ++i)
     eref_->element(i, i) = info_->ciwfn()->energy(i);
 
-  if (info_->do_xms())
+  if (nstates > 1 && info_->do_xms())
     rotate_xms(fockact);
 
   // rdms.
@@ -154,8 +154,7 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
     for (int jst = 0; jst <= ist; ++jst) {
       // first compute 1RDM
       shared_ptr<const RDM<1>> rdm1;
-      shared_ptr<const RDM<2>> rdm2;
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      tie(rdm1, ignore) = info_->rdm12(jst, ist);
       // then assign the dot product: fmn=fij rdm1
       fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
       fmn(jst, ist) = fmn(ist, jst);
@@ -204,7 +203,6 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
 
   // update eref_
   eref_ = make_shared<Matrix>(fmn % (*eref_) *fmn);
-
 }
 
 
@@ -235,7 +233,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
       shared_ptr<const RDM<3>> frdm4;
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist, true);
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 

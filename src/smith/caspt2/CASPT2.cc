@@ -150,7 +150,7 @@ void CASPT2::CASPT2::solve() {
     cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
 
   // MS-CASPT2
-  if (info_->do_ms()) {
+  if (info_->do_ms() && nstates_ > 1) {
     Matrix fmn(nstates_, nstates_);
 
     for (int ist = 0; ist != nstates_; ++ist) {
@@ -191,6 +191,8 @@ void CASPT2::CASPT2::solve() {
 }
 
 void CASPT2::CASPT2::solve_deriv() {
+  assert(nstates_ == 1);
+  t2 = t2all_[0]->at(0);
 
   Timer timer;
   shared_ptr<Queue> corrq = make_corrq();

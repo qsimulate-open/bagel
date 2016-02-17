@@ -63,7 +63,7 @@ class SpinFreeMethod {
     double e0_;
     std::vector<double> e0all_;
     double core_energy_;
-    double energy_;
+    std::vector<double> energy_;
     std::shared_ptr<Matrix> eref_;
 
     std::shared_ptr<Tensor_<DataType>> v2_;
@@ -136,7 +136,7 @@ class SpinFreeMethod {
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
-    double energy() const { return energy_; }
+    double energy(const int n = 0) const { return energy_[n]; }
 
     virtual void solve() = 0;
 
