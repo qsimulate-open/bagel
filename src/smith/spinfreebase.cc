@@ -84,7 +84,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     // canonical orbitals within closed and virtual subspaces
     coeff_ = fock.coeff();
   }
-  
+
   // v2 tensor.
   {
     IndexRange occ(closed_);  occ.merge(active_);
@@ -109,7 +109,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 
   // set Eref
   const int nstates = info_->ciwfn()->nstates();
-  eref_ = make_shared<Matrix>(nstates, nstates);  
+  eref_ = make_shared<MatType>(nstates, nstates);
   for (int i = 0; i != nstates; ++i)
     eref_->element(i, i) = info_->ciwfn()->energy(i);
 
@@ -156,7 +156,7 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<1>> rdm1;
       tie(rdm1, ignore) = info_->rdm12(jst, ist);
       // then assign the dot product: fmn=fij rdm1
-      fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
+      fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data());
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
@@ -166,7 +166,7 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
   fmn.diagonalize(eig);
 
   cout << endl;
-  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl; 
+  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl;
   cout << "      Rotation matrix:";
   for (int ist = 0; ist != nstates; ++ist) {
     cout << endl << "      ";
@@ -176,19 +176,19 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
   cout << endl << endl;
 
   // construct CIWfn
-  shared_ptr<const CIWfn> ciwfn = info_->ciwfn(); 
-  shared_ptr<const Dvec> dvec = ciwfn->civectors(); 
+  shared_ptr<const CIWfn> ciwfn = info_->ciwfn();
+  shared_ptr<const Dvec> dvec = ciwfn->civectors();
   shared_ptr<Dvec> new_dvec = dvec->clone();
   vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
   vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
-   
+
   for (int jst =0; jst != nstates; ++jst) {
     for (int ist =0; ist != nstates; ++ist)
       new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
   }
 
   vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i) 
+  for (int i = 0; i != ciwfn->nstates(); ++i)
     energies[i] = ciwfn->energy(i);
   auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
                                       energies, new_dvec, ciwfn->det());
@@ -199,7 +199,7 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
-  info_ = make_shared<SMITH_Info<double>>(new_ref, info_); 
+  info_ = make_shared<SMITH_Info<double>>(new_ref, info_);
 
   // update eref_
   eref_ = make_shared<Matrix>(fmn % (*eref_) *fmn);

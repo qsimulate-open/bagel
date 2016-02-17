@@ -64,7 +64,7 @@ class SpinFreeMethod {
     std::vector<double> e0all_;
     double core_energy_;
     std::vector<double> energy_;
-    std::shared_ptr<Matrix> eref_;
+    std::shared_ptr<MatType> eref_;
 
     std::shared_ptr<Tensor_<DataType>> v2_;
     std::shared_ptr<Tensor_<DataType>> f1_;
