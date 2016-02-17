@@ -147,7 +147,7 @@ void CASPT2::CASPT2::solve() {
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
   for (int istate = 0; istate != nstates_; ++istate) 
-    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+info_->ciwfn()->energy(istate) << endl;
+    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
 
   // MS-CASPT2
   if (info_->do_ms()) {

@@ -168,7 +168,13 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
 
   cout << endl;
   cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl; 
-  cout << endl;
+  cout << "      Rotation matrix:";
+  for (int ist = 0; ist != nstates; ++ist) {
+    cout << endl << "      ";
+    for (int jst = 0; jst != nstates; ++jst)
+      cout << setw(20) << setprecision(10) << fmn(ist, jst);
+  }
+  cout << endl << endl;
 
   // construct CIWfn
   shared_ptr<const CIWfn> ciwfn = info_->ciwfn(); 
