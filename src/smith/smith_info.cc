@@ -33,8 +33,8 @@ using namespace std;
 using namespace bagel;
 
 template<>
-tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
-  return ref_->rdm12(ist, jst);
+tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
+  return ref_->rdm12(ist, jst, recompute);
 }
 
 
@@ -52,7 +52,7 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rd
 
 template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
-  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst, const bool) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm1 = ref->rdm1(ist, jst);

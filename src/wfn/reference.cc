@@ -63,10 +63,10 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst) const {
+tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst, const bool recompute) const {
   shared_ptr<const RDM<1>> r1;
   shared_ptr<const RDM<2>> r2;
-  if (rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
+  if (!recompute && rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
     r1 = rdm1_->at(ist, jst);
     r2 = rdm2_->at(ist, jst);
   } else {
@@ -91,6 +91,7 @@ tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<3>>> Reference::rdm34f(
   fci.compute_rdm12(ist, jst); // TODO stupid code
   return fci.rdm34f(ist, jst, fock);
 }
+
 
 
 shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {

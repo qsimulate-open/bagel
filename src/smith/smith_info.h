@@ -95,7 +95,7 @@ class SMITH_Info {
 
     std::shared_ptr<const RDM<1,DataType>> rdm1_av() const;
 
-    std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst, const bool recompute = false) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<3>>>
       rdm34f(const int ist, const int jst, std::shared_ptr<const MatType> fock) const;
@@ -129,12 +129,12 @@ class SMITH_Info {
     std::shared_ptr<const MatType> coeff() const { assert(false); }
 };
 
-template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<3>>>
            SMITH_Info<double>::rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix>) const;
 template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr<const Kramers<4,ZRDM<2>>>>
-           SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
+           SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst, const bool recompute) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<6,ZRDM<3>>>>

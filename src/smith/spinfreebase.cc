@@ -152,16 +152,27 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<2>> rdm2;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       // then assign the dot product: fmn=fij rdm1
+cout<< "fockact " <<fockact->data() <<endl;
       fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data()); 
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
 
-  //diagonalize fmn
+fmn.print("fmn before diag");
+cout<<endl;
+
+  // diagonalize fmn
   VectorB eig(nstates);
   fmn.diagonalize(eig);
 
-  //construct CIWfn
+fmn.print("fmn after diag");
+
+  cout << endl;
+  for (int i = 0; i != nstates; ++i)
+    cout << "    * Zeroth order energy XMS : state  " << i << setw(20) << setprecision(10) << eig(i) << endl;
+  cout << endl;
+
+  // construct CIWfn
   shared_ptr<const CIWfn> ciwfn = info_->ciwfn(); 
   shared_ptr<const Dvec> dvec = ciwfn->civectors(); 
   shared_ptr<Dvec> new_dvec = dvec->clone();
@@ -173,19 +184,28 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
   }
 
-  vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i)
-    energies[i] = ciwfn->energy(i);
+// test if new civecs are orthogonal:
+for (int jst =0; jst != nstates; ++jst) {
+  for (int ist =0; ist != nstates; ++ist) {
+  cout << "test old dotprod : states " << jst << " and " << ist << " " << setprecision(10) << civecs[ist]->dot_product(civecs[jst]) <<endl;
+  cout << "test new dotprod : states " << jst << " and " << ist << " " << setprecision(10) << new_civecs[ist]->dot_product(new_civecs[jst]) <<endl;
+  }
+}
 
+  vector<double> energies(ciwfn->nstates());
+  for (int i = 0; i != ciwfn->nstates(); ++i) 
+    energies[i] = ciwfn->energy(i);
   auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
                                       energies, new_dvec, ciwfn->det());
 
-  //construct Reference
+
+  // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
                                         info_->nvirt(), 0.0, info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
-    
-  //construct SMITH_info
+
+
+  // construct SMITH_info
   info_ = make_shared<SMITH_Info<double>>(new_ref, info_); 
 
 }
@@ -218,7 +238,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
       shared_ptr<const RDM<3>> frdm4;
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist, true);
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
 
