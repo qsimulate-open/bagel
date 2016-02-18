@@ -45,6 +45,16 @@ std::vector<double> zfs_param(std::string inp) {
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(itree);
 
+    } else if (method == "hf") {
+      auto scf = std::make_shared<RHF>(itree, geom, ref);
+      scf->compute();
+      ref = scf->conv_to_ref();
+
+    } else if (method == "dhf") {
+      auto scf = std::make_shared<Dirac>(itree, geom, ref);
+      scf->compute();
+      ref = scf->conv_to_ref();
+
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
       if (algorithm == "bfgs") {

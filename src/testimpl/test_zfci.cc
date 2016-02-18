@@ -44,7 +44,7 @@ std::vector<double> relfci_energy(std::string inp) {
       geom = std::make_shared<Geometry>(itree);
 
     } else if (method == "dhf") {
-      auto scf = std::make_shared<Dirac>(itree, geom);
+      auto scf = std::make_shared<Dirac>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "zfci") {

@@ -61,12 +61,12 @@ double relcas_energy(std::string inp) {
       if (ref) ref = ref->project_coeff(geom);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<RHF>(itree, geom);
+      auto scf = std::make_shared<RHF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
 
     } else if (method == "dhf") {
-      auto scf = std::make_shared<Dirac>(itree, geom);
+      auto scf = std::make_shared<Dirac>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
 
