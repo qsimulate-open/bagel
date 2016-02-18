@@ -283,6 +283,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
     const double tsymm_err = quatfock->check_t_symmetry();
     if (tsymm_err > 1.0e-8)
       cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
+    assert(tsymm_err < 1.0e-6);
 #endif
   } else {
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);

@@ -182,7 +182,7 @@ void ZCASSCF::init() {
 
   // initialize coefficient to enforce kramers symmetry
   if (!kramers_coeff)
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, ref_->nclosed(), tsymm_, gaunt_, breit_);
 
   if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 

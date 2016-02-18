@@ -73,9 +73,9 @@ std::vector<double> zfs_param(std::string inp) {
 
 std::vector<double> reference_pseudospin_parameters() {
   std::vector<double> out(5);
-  out[0] =  4.00860253;
-  out[1] =  4.00860237;
-  out[2] =  4.00442919;
+  out[0] =  4.00860538;
+  out[1] =  4.00860437;
+  out[2] =  4.00442918;
   out[3] =  0.00000164;
   out[4] =  0.00000000;
   return out;
