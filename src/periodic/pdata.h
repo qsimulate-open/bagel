@@ -67,7 +67,9 @@ class PData {
 
     PData operator+(const PData& data) const;
     PData& operator+=(const PData& data);
-    PData& scale(const double a);
+    PData operator-(const PData& data) const;
+    PData& operator-=(const PData& data);
+    std::shared_ptr<const PData> scale(const double a) const;
 
     void zero();
     void allreduce();

@@ -70,14 +70,14 @@ PData::PData(const PData& o, shared_ptr<const ZMatrix> b) : blocksize_(b->ndim()
 }
 
 
-#if 1
 PData PData::operator+(const PData& o) const {
 
-  PData out(*this);
+  PData out(blocksize_, nblock_);
   assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
-
-  for (int i = 0; i != nblock_; ++i)
-    *(out[i]) += *o.pdata(i);
+  for (int i = 0; i != nblock_; ++i) {
+    copy_n(pdata_[i]->data(), blocksize_*blocksize_, out[i]->data());
+    *out[i] += *o(i);
+  }
 
   return out;
 }
@@ -86,20 +86,43 @@ PData PData::operator+(const PData& o) const {
 PData& PData::operator+=(const PData& o) {
 
   assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
-
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *o.pdata(i);
 
   return *this;
 }
-#endif
 
-PData& PData::scale(const double a) {
 
+PData PData::operator-(const PData& o) const {
+
+  PData out(blocksize_, nblock_);
+  assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
+  for (int i = 0; i != nblock_; ++i) {
+    copy_n(pdata_[i]->data(), blocksize_*blocksize_, out[i]->data());
+    *out[i] -= *o(i);
+  }
+
+  return out;
+}
+
+
+PData& PData::operator-=(const PData& o) {
+
+  assert(nblock_ == o.nblock() && blocksize_ == o.blocksize());
   for (int i = 0; i != nblock_; ++i)
-    pdata_[i]->scale(a);
+    *(pdata_[i]) -= *o.pdata(i);
 
   return *this;
+}
+
+
+shared_ptr<const PData> PData::scale(const double a) const {
+
+  PData out(*this);
+  for (int i = 0; i != nblock_; ++i)
+    out[i]->scale(a);
+
+  return make_shared<const PData>(out);
 }
 
 
