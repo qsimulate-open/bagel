@@ -125,15 +125,15 @@ void RHF::compute() {
     }
 #endif
 
-    if (!dodf_) {
-      if (!dofmm_) {
+    if (!dofmm_) {
+      if (!dodf_) {
         previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
+        mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
       } else {
-        previous_fock = make_shared<Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+        previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
-      mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      previous_fock = make_shared<Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
