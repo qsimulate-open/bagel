@@ -59,7 +59,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-  compute_Mlm_direct();
+  //compute_Mlm_direct();
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -503,13 +503,15 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
     auto cell = make_shared<const Geometry>(*scell_->geom(), mvec);
     vector<shared_ptr<const ZMatrix>> olm_ab_m = compute_multipoles(scell_->geom(), cell);
 
-    shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
-    for (int i = 0; i != osize_; ++i) {
-      complex<double> olm_m = 0.0;
-      for (int a = 0; a != nbas; ++a)
-        for (int b = 0; b != nbas; ++b)
-          olm_m += olm_ab_m[i]->element(b, a) * ffden->element(b, a);
-      olm[i] += olm_m;
+    if (density) {
+      shared_ptr<const ZMatrix> ffden = density->pdata(ivec);
+      for (int i = 0; i != osize_; ++i) {
+        complex<double> olm_m = 0.0;
+        for (int a = 0; a != nbas; ++a)
+          for (int b = 0; b != nbas; ++b)
+            olm_m += olm_ab_m[i]->element(b, a) * ffden->element(b, a);
+        olm[i] += olm_m;
+      }
     }
 
     // NAI
@@ -523,41 +525,46 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
     nai[ivec] = make_shared<const ZMatrix>(*tmpnai);
   }
 
-  // contract with Mlm
-  vector<complex<double>> slm(osize_);
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2*l; ++m) {
-      const int im1 = l * l + m;
-
-      complex<double> slmjk;
-      for (int j = 0; j <= lmax_; ++j) {
-        for (int k = 0; k <= 2*j; ++k) {
-          const int im2 = j * j + k;
-          const int im = (l+j)*(l+j) + m + k;
-          slmjk += mlm_.at(im) * olm.at(im2);
-        }
-      }
-      slm[im1] = pow(-1.0, l) * slmjk;
-    }
-  }
-
-  // translate Olm(L), contract with Slm
   vector<shared_ptr<const ZMatrix>> out(nvec);
-  for (int ivec = 0; ivec != nvec; ++ivec) { // L
-    array<int, 3> idx = vidx[ivec];
-    // re-compute multipoles (0|Olm|L)
-    array<double, 3> lvec;
-    lvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    lvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    lvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
-    auto cell = make_shared<const Geometry>(*scell_->geom(), lvec);
-    vector<shared_ptr<const ZMatrix>> olm_rs_L = compute_multipoles(scell_->geom(), cell);
+  if (density) {
+    // contract with Mlm
+    vector<complex<double>> slm(osize_);
+    for (int l = 0; l <= lmax_; ++l) {
+      for (int m = 0; m <= 2*l; ++m) {
+        const int im1 = l * l + m;
 
-    auto jrs_L = make_shared<ZMatrix>(nbas, nbas);
-    for (int i = 0; i != osize_; ++i)
-      *jrs_L += slm[i] * *olm_rs_L.at(i);
+        complex<double> slmjk;
+        for (int j = 0; j <= lmax_; ++j) {
+          for (int k = 0; k <= 2*j; ++k) {
+            const int im2 = j * j + k;
+            const int im = (l+j)*(l+j) + m + k;
+            slmjk += mlm_.at(im) * olm.at(im2);
+          }
+        }
+        slm[im1] = pow(-1.0, l) * slmjk;
+      }
+    }
 
-    out[ivec] = make_shared<const ZMatrix>(*jrs_L + *nai[ivec]);
+    // translate Olm(L), contract with Slm
+    for (int ivec = 0; ivec != nvec; ++ivec) { // L
+      array<int, 3> idx = vidx[ivec];
+      // re-compute multipoles (0|Olm|L)
+      array<double, 3> lvec;
+      lvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
+      lvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
+      lvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+      auto cell = make_shared<const Geometry>(*scell_->geom(), lvec);
+      vector<shared_ptr<const ZMatrix>> olm_rs_L = compute_multipoles(scell_->geom(), cell);
+
+      auto jrs_L = make_shared<ZMatrix>(nbas, nbas);
+      for (int i = 0; i != osize_; ++i)
+        *jrs_L += slm[i] * *olm_rs_L.at(i);
+
+      out[ivec] = make_shared<const ZMatrix>(*jrs_L + *nai[ivec]);
+    }
+  } else {
+    for (int ivec = 0; ivec != nvec; ++ivec) // L
+      out[ivec] = make_shared<const ZMatrix>(*nai[ivec]);
   }
 
   return make_shared<const PData>(out);
@@ -593,7 +600,9 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
   // get density for supergeom: ncell_ in lattice should be set to ws
   const size_t nbas = nvec * scell_->nbasis();
-  auto superden = make_shared<Matrix>(nbas, nbas);
+  shared_ptr<Matrix> superden;
+  if (density)
+    superden = make_shared<Matrix>(nbas, nbas);
   int offset = 0;
   int blk0 = -1;
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
@@ -615,12 +624,11 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
         }
     }
     assert (blk0 >=0);
-    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
-    superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
+    if (density) {
+      superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
+      superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
+    }
   }
- // density->print_real_part("Density");
- // superden->print("density", 40);
-  time.tick_print("  Construct superdensity");
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
   Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
@@ -669,6 +677,5 @@ shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) cons
   shared_ptr<const PData> nf = compute_cfmm(density);
   shared_ptr<const PData> ff = compute_far_field(density);
 
-//  return make_shared<const PData>(*nf);
   return make_shared<const PData>(*nf + *ff);
 }

@@ -27,7 +27,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <src/util/timer.h>
-//#include <src/util/math/diis.h>
+#include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
 //#include <src/periodic/pfmm.h>
@@ -104,7 +104,14 @@ void PSCF::compute() {
 
   Timer pscftime;
 
-  shared_ptr<const PData> khcore   = hcore_->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+  shared_ptr<const PData> fock_init = hcore_;
+  shared_ptr<const PData> nai;
+  if (dofmm_) {
+    nai = fmm_->pcompute_Jop()->scale(0.5);
+    fock_init = make_shared<const PData>(*hcore_ + *nai);
+  }
+
+  shared_ptr<const PData> kfock_init = fock_init->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
 
   const int nkblock = lattice_->num_lattice_kvectors();
   const int blocksize = hcore_->blocksize();
@@ -112,7 +119,7 @@ void PSCF::compute() {
   shared_ptr<const PData> coeff;
 
   if (coeff_ == nullptr) {
-    shared_ptr<const PData> kfock = khcore;
+    shared_ptr<const PData> kfock = kfock_init;
     auto intermediate = make_shared<PData>(blocksize, nkblock);
     for (int i = 0; i != nkblock; ++i) {
       const ZMatrix kblock = *((*ktildex_)(i)) % *((*kfock)(i)) * *((*ktildex_)(i));
@@ -142,28 +149,17 @@ void PSCF::compute() {
   cout << endl;
 
   cout << indent << "=== PSCF iteration (" + geom_->basisfile() + ") ===" << endl << indent << endl;
-  //DIIS<ZMatrix, ZMatrix> diis(diis_size_);
+  DIIS<ZMatrix, ZMatrix> diis(diis_size_);
 
   for (int iter = 0; iter !=  max_iter_; ++iter) {
     auto c = make_shared<PCoeff>(*coeff);
     shared_ptr<const PData> pdensity = c->form_density_rhf(nocc_);
-    shared_ptr<const PFock> fock;
+    shared_ptr<const PData> fock;
     if (!dofmm_) {
       fock = make_shared<const PFock>(lattice_, hcore_, pdensity);
     } else {
       fock = make_shared<const PFock>(lattice_, hcore_, pdensity, fmm_);
     }
-    shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
-    auto fock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
-    double error = 0;
-    for (int i =0; i != nkblock; ++i) {
-      auto error_vector = make_shared<ZMatrix>(*((*kfock)(i)) * *((*kdensity)(i)) * *((*koverlap_)(i))
-                                            - *((*koverlap_)(i)) * *((*kdensity)(i)) * *((*kfock)(i)));
-      error += error_vector->rms();
-    }
-    //auto diis_vector = make_shared<const ZMatrix>(*((*kdensity)(gamma)) - *olddensity);
-    //auto diis_vector = make_shared<ZMatrix>(*fock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
-    //                                      - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *fock0);
 
     complex<double> energy;
     double charge = 0.0;
@@ -187,7 +183,23 @@ void PSCF::compute() {
 
     cout << "   #ele = " << lattice_->nele();
     //cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
-    energy_ = energy.real() + lattice_->nuclear_repulsion() + fock->correction();
+    energy_ = energy.real() + lattice_->nuclear_repulsion();////////// + fock->correction();
+
+    if(dofmm_)
+      fock = make_shared<const PData>(*fock - *nai);
+
+    shared_ptr<const PData> kfock = fock->ft(lattice_->lattice_vectors(), lattice_->lattice_kvectors());
+    auto kfock0 = make_shared<ZMatrix>(*((*kfock)(gamma)));
+    double error = 0;
+    for (int i =0; i != nkblock; ++i) {
+      auto error_vector = make_shared<ZMatrix>(*((*kfock)(i)) * *((*kdensity)(i)) * *((*koverlap_)(i))
+                                            - *((*koverlap_)(i)) * *((*kdensity)(i)) * *((*kfock)(i)));
+      error += error_vector->rms();
+    }
+    //auto diis_vector = make_shared<const ZMatrix>(*((*kdensity)(gamma)) - *olddensity);
+    auto diis_vector = make_shared<ZMatrix>(*kfock0 * *((*kdensity)(gamma)) * *((*koverlap_)(gamma))
+                                          - *((*koverlap_)(gamma)) * *((*kdensity)(gamma)) * *kfock0);
+
     cout << indent << setw(5) << iter << setw(30) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << pscftime.tick();
     if (abs(energy.imag()) > 1e-12) {
@@ -212,13 +224,12 @@ void PSCF::compute() {
     }
 
     auto intermediate = make_shared<PData>(blocksize, nkblock);
-//    if (iter >= diis_start_)
-//      fock0 = diis.extrapolate({(*kfock)(gamma), diis_vector});
+    if (iter >= diis_start_)
+      kfock0 = diis.extrapolate({(*kfock)(gamma), diis_vector});
 
     for (int i = 0; i != nkblock; ++i) {
-      //if (iter < diis_start_) *fock0 = *(*kfock)(i);
-      *fock0 = *(*kfock)(i);
-      ZMatrix kblock = *((*ktildex_)(i)) % *fock0 * *((*ktildex_)(i));
+      if (iter < diis_start_) *kfock0 = *(*kfock)(i);
+      ZMatrix kblock = *((*ktildex_)(i)) % *kfock0 * *((*ktildex_)(i));
       //cout << i << "   " << setprecision(15) << (kblock - *(kblock.transpose_conjg())).norm()/kblock.size() << endl;
       (*intermediate)[i] = make_shared<ZMatrix>(kblock);
       (*intermediate)[i]->diagonalize(*eig_[i]);

@@ -100,7 +100,7 @@ class PFMM {
     std::vector<std::complex<double>> mlm() const { return mlm_; }
 
     bool is_in_cff(std::array<double, 3> lvector);
-    std::shared_ptr<const PData> pcompute_Jop(std::shared_ptr<const PData> density) const;
+    std::shared_ptr<const PData> pcompute_Jop(std::shared_ptr<const PData> density = nullptr) const;
 
 };
 
