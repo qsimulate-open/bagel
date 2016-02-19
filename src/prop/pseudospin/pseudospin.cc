@@ -426,8 +426,9 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
 }
 
 
-shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
+pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_axes() const {
   auto Atensor = make_shared<const Matrix>(3, 3);
+  array<double,3> gval;
   shared_ptr<Matrix> Atransform;
   VectorB Aeig(3);
   {
@@ -478,7 +479,6 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
   {
     auto gtensor = make_shared<Matrix>(3, 3);
     gtensor->zero();
-    array<double,3> gval;
     const double factor = 12.0 / (nspin_ * (0.5 * nspin_ + 1.0) * (nspin_ + 1.0)); //  6.0 / ( S * (S+1) * (2S+1) )
     if (nspin_ > 2)
       cout << "  **  Use caution:  This mapping to the pseudospin Hamiltonian is approximate.  (3rd-order and above terms in A are neglected.)" << endl;
@@ -507,7 +507,8 @@ shared_ptr<const Matrix> Pseudospin::identify_magnetic_axes() const {
     cout << endl;
   }
 
-  return Atransform;
+  pair<shared_ptr<const Matrix>, array<double,3>> out(Atransform, gval);
+  return out;
 }
 
 
