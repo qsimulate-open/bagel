@@ -110,7 +110,7 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
     for (int j = 0; j != 3; ++j)
       out->element(i, j) = factors[j] * new_axes[j][i];
 
-  out->print("New spin quantization axes");
+  //out->print("New spin quantization axes");
 #ifndef NDEBUG
   // Ensure the rotation matrix defining spin quantization axes is unitary
   auto iden = out->clone();
@@ -152,10 +152,11 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   ESO_ = build_extended_stevens_operators(ranks);
 
   if (idata_->get<bool>("print_operators", false)) {
-    cout << "Number of Stevens operators = " << ESO_.size() << endl;
+    cout << endl << "    Number of Stevens operators = " << ESO_.size() << endl;
     for (int i = 0; i != ESO_.size(); ++i)
       ESO_[i].print();
   }
+  cout << endl;
 
   if (nspin_ > 0) {
 
@@ -186,7 +187,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
       Eval_ = std::get<2>(D_params);
     }
   } else {
-    cout << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
+    cout << endl << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
   }
 }
 
@@ -316,7 +317,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
         }
       }
     }
-    trev_h_->print(" Time-reversal matrix in ZFCI states", 24);
+    //trev_h_->print(" Time-reversal matrix in ZFCI states", 24);
   }
 
   { // spin angular momentum
@@ -469,40 +470,46 @@ pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_ax
     assert(std::abs(std::sqrt(Aeig[2]) - Asqrt_avg) > std::abs(std::sqrt(Aeig[0]) - Asqrt_avg));
 #endif
 
-    Atensor->print("A tensor");
-    cout << endl;
-    for (int i = 0; i != 3; ++i)
-      cout << " *** A tensor eigenvalue " << i << " = " << Aeig[i] << endl;
-    cout << endl;
+    //Atensor->print("A tensor");
+    //cout << endl;
+    //for (int i = 0; i != 3; ++i)
+    //  cout << " *** A tensor eigenvalue " << i << " = " << Aeig[i] << endl;
+    //cout << endl;
   }
 
   {
     auto gtensor = make_shared<Matrix>(3, 3);
     gtensor->zero();
     const double factor = 12.0 / (nspin_ * (0.5 * nspin_ + 1.0) * (nspin_ + 1.0)); //  6.0 / ( S * (S+1) * (2S+1) )
-    if (nspin_ > 2)
-      cout << "  **  Use caution:  This mapping to the pseudospin Hamiltonian is approximate.  (3rd-order and above terms in A are neglected.)" << endl;
+    if (nspin_ > 2) {
+      cout << "  **  Note that there is some approximation in the determination of the g-tensor, " << endl;
+      cout << "  **  since we are not separating the first-order and higher-order contributions to the magnetic moment." << endl << endl;
+    }
     for (int i = 0; i != 3; ++i) {
       gval[i] = 2.0 * std::sqrt(factor * Aeig[i]);
       gtensor->element(i, i) = gval[i];
     }
 
     *gtensor = (*Atransform * *gtensor ^ *Atransform);
-    gtensor->print("g-tensor in the original coordinate system");
+    gtensor->print("g-tensor");
+
+    // This would have the spatial and spin axes not aligned, which is weird and there's probably no reason to do
+    //*gtensor = (*Atransform * *gtensor);
+    //gtensor->print("g-tensor (rotating only left side by A-diag form)");
 
     cout << endl;
     auto Gtensor = make_shared<Matrix>(*gtensor ^ *gtensor);
-    Gtensor->print("G-tensor in the original coordinate system");
+    Gtensor->print("G-tensor");
     cout << endl;
 
     assert((*Gtensor - 4.0 * factor * *Atensor).rms() < 1.0e-8);
 
     cout << "  Main axes of magnetic anisotropy:" << endl;
     for (int i = 0; i != 3; ++i) {
-      cout << "   " << i << " |g_" << i << "| = " << setw(12) << gval[i] << ",  axis = ( ";
-      cout << setw(12) << Atransform->element(0, i) << ", ";
-      cout << setw(12) << Atransform->element(1, i) << ", ";
-      cout << setw(12) << Atransform->element(2, i) << " )" << endl;
+      cout << "   " << i << " |g_" << i << "| = " << setprecision(5) << setw(8) << gval[i] << ",  axis = (";
+      cout << setw(8) << Atransform->element(0, i) << ", ";
+      cout << setw(8) << Atransform->element(1, i) << ", ";
+      cout << setw(8) << Atransform->element(2, i) << ")" << endl;
     }
     cout << endl;
   }
@@ -547,6 +554,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
 
   { // Adjust the phases of eigenvectors to ensure proper time-reversal symmetry (using the matrix form of the time-reversal operator)
     auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
+    //trev_s->print("Time-reversal matrix before phase adjustment");
     for (int k = 0; k <= nspin_ / 2; ++k) {
       const double target_phase = (k % 2 == 0) ? pi__ : 0.0;
       const double phase_error = std::arg(trev_s->element(k, nspin_ - k)) - target_phase;
@@ -585,13 +593,14 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
         phase_check *= 0.5;
       adjust *= std::polar(1.0, phase_check);
 
+      //cout << " *** Eigenvector " << i << " time-reversal-allowed phased adjustment = " << std::arg(adjust) << endl;
       for (int j = 0; j != nspin1_; ++j) {
         transform.element(j, i) = adjust * transform.element(j, i);
         transform.element(j, nspin_ - i) = std::conj(adjust) * transform.element(j, nspin_ - i);
       }
     }
   }
-  transform.print("Pseudospin eigenvector matrix with time-reversal symmetry fixed");
+  cout << endl;
 
   // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
   const shared_ptr<const PTree> phase_input = idata_->get_child_optional("phases");
@@ -632,9 +641,13 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   }
 #endif
 
-  cout << "    The z-axis is set to (" << spin_axes_->element(0, 2) << ", " << spin_axes_->element(1, 2) << ", " << spin_axes_->element(2, 2) << ")." << endl << endl;
+  transform.print("Transformation matrix from Relativistic Full CI eigenstates to Pseudospin eigenfunction");
+
+  cout << fixed << setprecision(5) << endl;
+  cout << "    The z-axis is set to (";
+  cout << setw(8) << spin_axes_->element(0, 2) << ", " << setw(8) << spin_axes_->element(1, 2) << ", " << setw(8) << spin_axes_->element(2, 2) << ")." << endl << endl;
   for (int i = 0; i != nspin1_; ++i)
-    cout << "    Pseudospin eigenvalue " << i+1 << " = " << setw(12) << zeig[i] << endl;
+    cout << "    " << diagset << " diagonal element " << i+1 << " = " << setw(12) << zeig[i] << endl;
 
   // We can no longer use this option, since I made this function const...
   //if (numerical_eig) {
@@ -642,6 +655,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   //  update_spin_matrices(zeig);
   //}
 
+  //spinham_h_->print("ZFCI Hamiltonian", 24);
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(transform % *spinham_h_ * transform);
   array<shared_ptr<ZMatrix>, 3> mu_s;
   array<shared_ptr<ZMatrix>, 3> spin_s;
@@ -653,8 +667,11 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     orbang_s[i] = make_shared<ZMatrix>(transform % *zfci2_orbang_[i] * transform);
   }
 
+  cout << endl;
   spinham_s->print("Pseudospin Hamiltonian", 24);
   cout << endl;
+
+/*
   trev_s->print("Time-reversal operator in pseudospin states", 24);
   cout << endl;
   for (int i = 0; i != 3; ++i) {
@@ -664,11 +681,11 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     cout << endl;
   }
   cout << endl;
+*/
 
   if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
-  cout << endl;
   for (int i = 0; i != 3; ++i) {
     assert(is_t_symmetric(*mu_s[i], /*hermitian*/true, /*time reversal*/false));
   }
@@ -732,7 +749,7 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
     }
   }
 
-  cout << endl << "    Stevens coefficients:  " << endl << endl;
+  cout << "    Stevens coefficients:  " << endl << endl;
   for (int i = 0; i != out.size(); ++i)
     cout << "    " << setw(8) << out[i].coeff_name() << " = " << setw(12) << out[i].coeff() << endl;
   cout << endl;
@@ -746,17 +763,17 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
 
     cout << "  ** Relative energies from the pseudospin Hamiltonian: " << endl;
     for (int i = nspin_; i >= 0; --i)
-      cout << "     " << i << "  " << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setw(14) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
+      cout << "     " << i << "  " << setprecision(8) << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setprecision(4) << setw(8) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
     cout << endl;
 
     cout << "  ** Relative energies from the ab initio (relativistic configuration interaction) Hamiltonian: " << endl;
     for (int i = nspin_; i >= 0; --i)
-      cout << "     " << i << "  " << setw(12) << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << setw(14) << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
+      cout << "     " << i << "  " << setprecision(8) << setw(12) << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << setprecision(4) << setw(8) << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
     cout << endl;
   } else {
     cout << "  ** Relative energies: " << endl;
     for (int i = nspin_; i >= 0; --i) {
-      cout << "     " << i << "  " << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setw(14) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
+      cout << "     " << i << "  " << setprecision(8) << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setprecision(4) << setw(8) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
       assert(std::abs(shenergies[i] - shenergies[0] - ref_energy_[i] + ref_energy_[0]) < 1.0e-7);
     }
     cout << endl;
@@ -823,14 +840,19 @@ tuple<shared_ptr<const Matrix>, double, double> Pseudospin::compute_Dtensor(cons
   cout << "      Dzz = " << setw(12) << Ddiag[jmax] << endl << endl;
   const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
   const double Eval = std::abs(0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]));
-  cout << " ** D = " << setw(12) << Dval << " E_h = " << setw(14) << Dval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E = " << setw(12) << Eval << " E_h = " << setw(14) << Eval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** D = " << setw(12) << setprecision(8) << Dval << " E_h = " << setprecision(4) << setw(8) << Dval * au2wavenumber__ << " cm-1" << endl;
+  cout << " ** E = " << setw(12) << setprecision(8) << Eval << " E_h = " << setprecision(4) << setw(8) << Eval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E / D = " << Eval / Dval << endl;
 
-  cout << endl << " ** Axis of principle D-value (relative to spin quant. axes) = (" << Dtensor_diag->element(0, jmax) << ", " << Dtensor_diag->element(1, jmax) << ", " << Dtensor_diag->element(2, jmax) << ")" << endl;
+  //Dtensor_diag->print("Transformation matrix of D-tensor");
 
   Matrix full_rotation = *spin_axes_ * *Dtensor_diag;
-  cout << endl << " ** Axis of principle D-value (relative to input geometry)  =  (" << full_rotation.element(0, jmax) << ", " << full_rotation.element(1, jmax) << ", " << full_rotation.element(2, jmax) << ")" << endl;
+  cout << fixed << setprecision(5) << endl;
+  cout << endl << " ** Axis of principle D-value (relative to spin quant. axes) = (";
+  cout << setw(8) << Dtensor_diag->element(0, jmax) << ", " << setw(8) << Dtensor_diag->element(1, jmax) << ", " << setw(8) << Dtensor_diag->element(2, jmax) << ")" << endl;
+  cout << endl << " ** Axis of principle D-value (relative to input geometry)  =  (";
+  cout << setw(8) << full_rotation.element(0, jmax) << ", " << setw(8) << full_rotation.element(1, jmax) << ", " << setw(8) << full_rotation.element(2, jmax) << ")" << endl;
+
   tuple<shared_ptr<Matrix>, double, double> results(out, Dval, Eval);
   return results;
 }
