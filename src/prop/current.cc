@@ -41,6 +41,8 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
   auto ref_nr  = dynamic_pointer_cast<const ZReference>(ref_);
   if (!ref_rel && !ref_nr)
     throw runtime_error("Charge currents are only available when using the result of a GIAO calculation.");
+  if (ref_->nact() != 0)
+    throw runtime_error("Charge currents have only been implemented for closed-shell Hartree--Fock methods.");
   assert(geom_->magnetism());
   assert(!ref_rel || !ref_nr);
   relativistic_ = ref_rel ? true : false;
