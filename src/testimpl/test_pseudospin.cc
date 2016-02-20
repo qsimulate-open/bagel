@@ -26,6 +26,9 @@
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/prop/pseudospin/pseudospin.h>
 
+// Checking g-values to the 8th decimal place is not ideal
+const double gscale = 1.0e-4;
+
 std::vector<double> zfs_param(std::string inp) {
 
   auto ofs = std::make_shared<std::ofstream>(inp + ".testout", std::ios::trunc);
@@ -67,9 +70,9 @@ std::vector<double> zfs_param(std::string inp) {
           auto ps = std::make_shared<Pseudospin>(nspin, aniso_data);
           ps->compute(*zcas->fci());
           out.clear();
-          out.push_back(ps->gval(0));
-          out.push_back(ps->gval(1));
-          out.push_back(ps->gval(2));
+          out.push_back(ps->gval(0) * gscale);
+          out.push_back(ps->gval(1) * gscale);
+          out.push_back(ps->gval(2) * gscale);
           out.push_back(ps->Dval());
           out.push_back(ps->Eval());
         }
@@ -82,9 +85,9 @@ std::vector<double> zfs_param(std::string inp) {
 
 std::vector<double> reference_pseudospin_parameters() {
   std::vector<double> out(5);
-  out[0] =  4.00860538;
-  out[1] =  4.00860437;
-  out[2] =  4.00442918;
+  out[0] =  4.00860538 * gscale;
+  out[1] =  4.00860437 * gscale;
+  out[2] =  4.00442918 * gscale;
   out[3] =  0.00000164;
   out[4] =  0.00000000;
   return out;
