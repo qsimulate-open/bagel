@@ -60,6 +60,12 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   do_contract_ = true;
 
   //compute_Mlm_direct();
+  primvecs_.resize(3);
+  for (int i = 0; i != ndim_; ++i)
+    primvecs_[i] = scell_->primitive_vectors(i);
+  for (int i = ndim_; i != 3; ++i)
+    primvecs_[i] = {{0.0, 0.0, 0.0}};
+
   compute_Mlm();
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
@@ -79,12 +85,6 @@ bool PFMM::is_in_cff(array<double, 3> L) {
 
 void PFMM::compute_Mlm_direct() {
 
-  vector<array<double, 3>> primvecs(3);
-  for (int i = 0; i != ndim_; ++i)
-    primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3; ++i)
-    primvecs[i] = {{0.0, 0.0, 0.0}};
-
   // M* = sum of M in [-1, 1]
   const int n0 = pow(3, ndim_);
   vector<array<int, 3>> vidx0 = generate_vidx(1);
@@ -96,9 +96,9 @@ void PFMM::compute_Mlm_direct() {
   for (int n = 0; n != n0; ++n) {
     array<int, 3> idx = vidx0[n];
     array<double, 3> mvec;
-    mvec[0] = -(idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0]);
-    mvec[1] = -(idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1]);
-    mvec[2] = -(idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2]);
+    mvec[0] = -(idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0]);
+    mvec[1] = -(idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1]);
+    mvec[2] = -(idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2]);
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
     if (rsq > numerical_zero__) {
     const double r = sqrt(rsq);
@@ -146,9 +146,9 @@ void PFMM::compute_Mlm_direct() {
   for (int ivec = 0; ivec != nvec; ++ivec) {
     array<int, 3> idx = vidx1[ivec];
     array<double, 3> mvec;
-    mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    mvec[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    mvec[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    mvec[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
 
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
     if (rsq > numerical_zero__) {
@@ -235,18 +235,12 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   assert(vidx.size() == nvec);
   std::sort(vidx.begin(), vidx.end(), sort_vector); // sort to sum spherically
 
-  vector<array<double, 3>> primvecs(3);
-  for (int i = 0; i != ndim_; ++i)
-    primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3; ++i)
-    primvecs[i] = {{0.0, 0.0, 0.0}};
-
   for (int ivec = 0; ivec != nvec; ++ivec) {
     const int pos = ivec * 3;
     array<int, 3> idx = vidx[ivec];
-    rvec_[pos    ] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    rvec_[pos + 1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    rvec_[pos + 2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    rvec_[pos    ] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    rvec_[pos + 1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    rvec_[pos + 2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
     Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
     T_[ivec] = Rsq_[ivec] * beta__ * beta__;
   }
@@ -313,30 +307,30 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   switch (ndim_) {
     case 1:
       {
-        const double a1sq = dot(primvecs[0], primvecs[0]);
+        const double a1sq = dot(primvecs_[0], primvecs_[0]);
         for (int i = 0; i != 3; ++i)
-          primkvecs[0][i] = primvecs[0][i] / a1sq;
+          primkvecs[0][i] = primvecs_[0][i] / a1sq;
         volume = sqrt(a1sq);
         break;
       }
     case 2:
       {
-        array<double, 3> a12 = cross(primvecs[0], primvecs[1]);
+        array<double, 3> a12 = cross(primvecs_[0], primvecs_[1]);
         const double a12sq = dot(a12, a12);
         volume = sqrt(a12sq);
         const double scale = 1.0 / a12sq;
-        primkvecs[0] = cross(primvecs[1], a12, scale);
-        primkvecs[1] = cross(a12, primvecs[0], scale);
+        primkvecs[0] = cross(primvecs_[1], a12, scale);
+        primkvecs[1] = cross(a12, primvecs_[0], scale);
         break;
       }
     case 3:
       {
-        array<double, 3> a23 = cross(primvecs[1], primvecs[2]);
-        volume = dot(primvecs[0], a23);
+        array<double, 3> a23 = cross(primvecs_[1], primvecs_[2]);
+        volume = dot(primvecs_[0], a23);
         const double scale = 1.0 / volume;
-        primkvecs[0] = cross(primvecs[1], primvecs[2], scale);
-        primkvecs[1] = cross(primvecs[2], primvecs[0], scale);
-        primkvecs[2] = cross(primvecs[0], primvecs[1], scale);
+        primkvecs[0] = cross(primvecs_[1], primvecs_[2], scale);
+        primkvecs[1] = cross(primvecs_[2], primvecs_[0], scale);
+        primkvecs[2] = cross(primvecs_[0], primvecs_[1], scale);
         break;
       }
   }
@@ -482,12 +476,6 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
   vector<array<int, 3>> vidx = generate_vidx(ws_);
   assert(vidx.size() == nvec);
 
-  vector<array<double, 3>> primvecs(3);
-  for (int i = 0; i != ndim_; ++i)
-    primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3; ++i)
-    primvecs[i] = {{0.0, 0.0, 0.0}};
-
   // compute Olm(m), contract with density D_ab(m), and sum over m
   const size_t nbas = scell_->nbasis();
   vector<complex<double>> olm(osize_);
@@ -497,9 +485,9 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
     array<int, 3> idx = vidx[ivec];
     // compute multipoles (0|Olm|m)
     array<double, 3> mvec;
-    mvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    mvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    mvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    mvec[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    mvec[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    mvec[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
     auto cell = make_shared<const Geometry>(*scell_->geom(), mvec);
     vector<shared_ptr<const ZMatrix>> olm_ab_m = compute_multipoles(scell_->geom(), cell);
 
@@ -550,9 +538,9 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
       array<int, 3> idx = vidx[ivec];
       // re-compute multipoles (0|Olm|L)
       array<double, 3> lvec;
-      lvec[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-      lvec[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-      lvec[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+      lvec[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+      lvec[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+      lvec[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
       auto cell = make_shared<const Geometry>(*scell_->geom(), lvec);
       vector<shared_ptr<const ZMatrix>> olm_rs_L = compute_multipoles(scell_->geom(), cell);
 
@@ -578,20 +566,14 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   vector<array<int, 3>> vidx = generate_vidx(ws_);
   assert(vidx.size() == nvec);
 
-  vector<array<double, 3>> primvecs(3);
-  for (int i = 0; i != ndim_; ++i)
-    primvecs[i] = scell_->primitive_vectors(i);
-  for (int i = ndim_; i != 3; ++i)
-    primvecs[i] = {{0.0, 0.0, 0.0}};
-
   // concatenate all cells within ws into one supercell
   vector<shared_ptr<const Geometry>> geoms;
   for (int ivec = 0; ivec != nvec; ++ivec) {
     array<int, 3> idx = vidx[ivec];
     array<double, 3> disp;
-    disp[0] = idx[0] * primvecs[0][0] + idx[1] * primvecs[1][0] + idx[2] * primvecs[2][0];
-    disp[1] = idx[0] * primvecs[0][1] + idx[1] * primvecs[1][1] + idx[2] * primvecs[2][1];
-    disp[2] = idx[0] * primvecs[0][2] + idx[1] * primvecs[1][2] + idx[2] * primvecs[2][2];
+    disp[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    disp[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    disp[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
     geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
   }
 

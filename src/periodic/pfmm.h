@@ -47,6 +47,7 @@ class PFMM {
     int ndim_;
     int msize_, osize_; // #multipoles in M and O
     std::vector<std::complex<double>> mlm_;
+    std::vector<std::array<double, 3>> primvecs_;
 
     // Mlm
     int max_rank_;
