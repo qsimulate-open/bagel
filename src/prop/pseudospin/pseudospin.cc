@@ -71,6 +71,83 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
+Pseudospin::Pseudospin(const int _nspin, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), idata_(_idata) {
+
+  VectorB spinvals(nspin1_);
+  for (int i = 0; i != nspin1_; ++i)
+    spinvals[i] = (nspin_ / 2.0) - i;
+  update_spin_matrices(spinvals);
+}
+
+
+void Pseudospin::compute(const ZHarrison& zfci) {
+
+  // Which ranks of extended Stevens operators to use
+  // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
+  vector<int> ranks = {};
+  for (int i = 2; i <= nspin_; i += 2)
+    ranks.push_back(i);
+  const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("ranks");
+  if (eso_ranks) {
+    ranks = {};
+    for (auto& i : *eso_ranks)
+      ranks.push_back(lexical_cast<int>(i->data()));
+  }
+
+  cout << setprecision(8);
+  cout << endl << "    ********      " << endl;
+  cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << spin_val(nspin_) << endl;
+
+  ESO_ = build_extended_stevens_operators(ranks);
+
+  if (idata_->get<bool>("print_operators", false)) {
+    cout << endl << "    Number of Stevens operators = " << ESO_.size() << endl;
+    for (int i = 0; i != ESO_.size(); ++i)
+      ESO_[i].print();
+  }
+  cout << endl;
+
+  if (nspin_ > 0) {
+
+    // Computes spin, orbital angular momentum, Hamiltonian, and time-reversal operators in the basis of ZFCI eigenstates
+    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
+
+    // Compute G and diagonalize to give main magnetic axes, but allow the user to quantify spin along some other axis
+    pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
+    spin_axes_ = read_axes(mag_info.first);
+    gval_ = mag_info.second;
+
+    // Rotate spin & related matrices to our new set of axes
+    for (int i = 0; i != 3; ++i) {
+      zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      zfci2_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      zfci2_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
+      for (int j = 0; j != 3; ++j) {
+        *zfci2_mu_[i] += spin_axes_->element(j, i) * *zfci_mu_[j];
+        *zfci2_spin_[i] += spin_axes_->element(j, i) * *zfci_spin_[j];
+        *zfci2_orbang_[i] += spin_axes_->element(j, i) * *zfci_orbang_[j];
+      }
+    }
+
+    // Diagonalize an angular momentum matrix, fix phase, and use the eigenvectors to transform Hamiltonian pseudospin basis
+    shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
+
+    if (nspin_ > 1) {
+      // Decompose the pseudospin Hamiltonian to find the coefficient B_k^q that goes with each Extended Stevens Operator
+      ESO_ = extract_hamiltonian_parameters(ESO_, spinham_s);
+
+      // Then just extract the D-tensor!
+      tuple<shared_ptr<const Matrix>, double, double> D_params = compute_Dtensor(ESO_);
+      dtensor_ = std::get<0>(D_params);
+      Dval_ = std::get<1>(D_params);
+      Eval_ = std::get<2>(D_params);
+    }
+  } else {
+    cout << endl << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
+  }
+}
+
+
 shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_axes) const {
   array<double,3> default_x, default_z;
   const array<int,3> fwd = {{ 1, 2, 0 }};
@@ -119,76 +196,6 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
 #endif
 
   return out;
-}
-
-
-Pseudospin::Pseudospin(const int _nspin, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), idata_(_idata) {
-
-  VectorB spinvals(nspin1_);
-  for (int i = 0; i != nspin1_; ++i)
-    spinvals[i] = (nspin_ / 2.0) - i;
-  update_spin_matrices(spinvals);
-}
-
-
-void Pseudospin::compute(const ZHarrison& zfci) {
-
-  // Which ranks of extended Stevens operators to use
-  // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
-  vector<int> ranks = {};
-  for (int i = 2; i <= nspin_; i += 2)
-    ranks.push_back(i);
-  const shared_ptr<const PTree> eso_ranks = idata_->get_child_optional("ranks");
-  if (eso_ranks) {
-    ranks = {};
-    for (auto& i : *eso_ranks)
-      ranks.push_back(lexical_cast<int>(i->data()));
-  }
-
-  cout << setprecision(8);
-  cout << endl << "    ********      " << endl;
-  cout << endl << "    Modeling Pseudospin Hamiltonian for S = " << spin_val(nspin_) << endl;
-
-  ESO_ = build_extended_stevens_operators(ranks);
-
-  if (idata_->get<bool>("print_operators", false)) {
-    cout << endl << "    Number of Stevens operators = " << ESO_.size() << endl;
-    for (int i = 0; i != ESO_.size(); ++i)
-      ESO_[i].print();
-  }
-  cout << endl;
-
-  if (nspin_ > 0) {
-
-    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
-
-    pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
-    spin_axes_ = read_axes(mag_info.first);
-    gval_ = mag_info.second;
-
-    for (int i = 0; i != 3; ++i) {
-      zfci2_mu_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-      zfci2_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-      zfci2_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
-      for (int j = 0; j != 3; ++j) {
-        *zfci2_mu_[i] += spin_axes_->element(j, i) * *zfci_mu_[j];
-        *zfci2_spin_[i] += spin_axes_->element(j, i) * *zfci_spin_[j];
-        *zfci2_orbang_[i] += spin_axes_->element(j, i) * *zfci_orbang_[j];
-      }
-    }
-
-    shared_ptr<const ZMatrix> spinham_s = compute_spin_eigenvalues();
-
-    if (nspin_ > 1) {
-      ESO_ = extract_hamiltonian_parameters(ESO_, spinham_s);
-      tuple<shared_ptr<const Matrix>, double, double> D_params = compute_Dtensor(ESO_);
-      dtensor_ = std::get<0>(D_params);
-      Dval_ = std::get<1>(D_params);
-      Eval_ = std::get<2>(D_params);
-    }
-  } else {
-    cout << endl << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
-  }
 }
 
 
