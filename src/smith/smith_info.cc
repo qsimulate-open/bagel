@@ -31,6 +31,39 @@
 using namespace std;
 using namespace bagel;
 
+
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : ref_(o) {
+  method_ = idata->get<std::string>("method");
+
+  const bool frozen = idata->get<bool>("frozen", true);
+  ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
+  if (ncore_)
+    std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
+  nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
+  if (nfrozenvirt_)
+    std::cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << std::endl;
+
+  maxiter_ = idata->get<int>("maxiter", 50);
+  target_  = idata->get<int>("target",   0);
+  maxtile_ = idata->get<int>("maxtile", 10);
+  grad_    = idata->get<bool>("grad", false);
+
+  do_ms_   = idata->get<bool>("ms",  true);
+  do_xms_  = idata->get<bool>("xms", false);
+
+  thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+}
+
+
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info)
+  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), maxiter_(info->maxiter_), target_(info->target_),
+    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_) {
+}
+
+
 template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
   return ref_->rdm12(ist, jst, recompute);
