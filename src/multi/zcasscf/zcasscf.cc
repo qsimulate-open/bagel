@@ -459,7 +459,8 @@ void ZCASSCF::print_natocc() const {
   assert(occup_.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  for (int i = 0; i != occup_.size()/2; ++i)
+  const int num = tsymm_ ? occup_.size() / 2 : occup_.size();
+  for (int i = 0; i != num; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
 }
