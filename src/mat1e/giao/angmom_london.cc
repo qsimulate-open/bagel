@@ -56,31 +56,6 @@ array<shared_ptr<ZMatrix>, 3> AngMom_London::compute() const {
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           ComplexAngMomBatch mom(input, geom_->magnetic_field(), mcoord_);
           mom.compute();
-          /**************************/
-#if 0
-          bool correct = true;
-          cout << setprecision(12) << fixed;
-          const std::complex<double>* angmomdata = mom.data();
-          std::vector<std::pair<std::vector<int>,std::complex<double>>> reference = test::get_comparison_orb_angular (input, geom_->magnetic_field(), mcoord_);
-          const size_t bagelsize = mom.size_block();
-          const size_t refsize = reference.size() / 3;
-          assert(refsize * 3 == reference.size());
-          const array<char,3> dim = {{'x', 'y', 'z'}};
-          cout << endl;
-            cout << endl;
-            for (int i = 0; i != refsize; ++i) {
-          for (int j = 0; j != 3; ++j) {
-              cout << "  " << setw(4) << i << " " << dim[j] << " Bagel " << setw(34) << angmomdata[i+j*bagelsize] << "  Test: ";
-              for (int k=0; k!=4; ++k) cout << reference[i+j*refsize].first[k] << " ";
-              cout << setw(34) << reference[i+j*refsize].second;
-              const complex<double> difference = reference[i+j*refsize].second - angmomdata[i+j*bagelsize];
-              cout << "  ...  difference = " << setw(34) << difference << endl;
-              if (std::abs(difference) > 1.0e-12) correct = false;
-            }
-          }
-          assert(correct);
-#endif
-          /*************************/
           const complex<double>* dat0 = mom.data();
           const complex<double>* dat1 = mom.data() + mom.size_block();
           const complex<double>* dat2 = mom.data() + mom.size_block()*2;
