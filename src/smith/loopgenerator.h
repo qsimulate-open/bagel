@@ -32,14 +32,34 @@
 namespace bagel {
 namespace SMITH {
 
-class LoopGenerator {
-  protected:
-    std::vector<IndexRange> loop_;
-  public:
-    LoopGenerator(const std::vector<IndexRange>& o) : loop_(o) {};
-    ~LoopGenerator() {}
+struct LoopGenerator {
+  static std::vector<std::vector<Index>> gen(const std::vector<IndexRange>& loop) {
+    std::vector<int> max(loop.size());
+    auto m = max.begin();
+    for (auto& i : loop)
+      *m++ = i.nblock();
 
-    std::vector<std::vector<Index>> block_loop() const;
+    std::vector<std::vector<Index>> out;
+    std::vector<int> stat(loop.size());
+
+    do {
+      std::vector<Index> tmp;
+      auto k = stat.begin();
+      for (auto& l : loop)
+        tmp.push_back(l.range(*k++));
+      out.push_back(tmp);
+
+      auto j = stat.begin();
+      auto i = max.begin();
+      while (j != stat.end() && (++*j) == *i) {
+        *j = 0;
+        ++j;
+        ++i;
+      }
+    } while (*std::max_element(stat.begin(), stat.end()) > 0);
+
+    return out;
+  }
 };
 
 }

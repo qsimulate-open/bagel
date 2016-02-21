@@ -38,8 +38,7 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unor
 
   // make block list
   if (!in.empty()) {
-    LoopGenerator lg(in);
-    vector<vector<Index>> index = lg.block_loop();
+    vector<vector<Index>> index = LoopGenerator::gen(in);
 
     // first compute hashtags and length
     map<size_t, size_t> hashmap;
@@ -82,6 +81,28 @@ size_t Tensor_<DataType>::size_alloc() const {
 
 
 template <typename DataType>
+Tensor_<DataType>& Tensor_<DataType>::operator=(const Tensor_<DataType>& o) {
+  *data_ = *(o.data_);
+  allocated_ = true;
+  return *this;
+}
+
+
+template <typename DataType>
+shared_ptr<Tensor_<DataType>> Tensor_<DataType>::clone() const {
+  return make_shared<Tensor_<DataType>>(range_, false, sparse_, true);
+}
+
+
+template <typename DataType>
+shared_ptr<Tensor_<DataType>> Tensor_<DataType>::copy() const {
+  shared_ptr<Tensor_<DataType>> out = clone();
+  *out = *this;
+  return out;
+}
+
+
+template <typename DataType>
 vector<DataType> Tensor_<DataType>::diag() const {
   if (rank_ != 2 || range_.at(0) != range_.at(1))
     throw logic_error("Tensor_<DataType>::diag can be called only with a square tensor of rank 2");
@@ -94,6 +115,16 @@ vector<DataType> Tensor_<DataType>::diag() const {
     }
   }
   return buf;
+}
+
+
+template <typename DataType>
+double Tensor_<DataType>::orthog(const list<shared_ptr<const Tensor_<DataType>>> o) {
+  for (auto& it : o)
+    ax_plus_y(-detail::conj(this->dot_product(it)), it);
+  const double n = norm();
+  scale(1.0/n);
+  return n;
 }
 
 

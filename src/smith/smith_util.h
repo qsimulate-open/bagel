@@ -46,8 +46,7 @@ static std::shared_ptr<Tensor_<DataType>>
 
   auto prod = [](const size_t n, const Index& i) { return n*i.size(); };
 
-  LoopGenerator gen(ranges);
-  std::vector<std::vector<Index>> loop = gen.block_loop();
+  std::vector<std::vector<Index>> loop = LoopGenerator::gen(ranges);
   for (auto& indices : loop) {
     assert(indices.size() == rank);
     if (!target->is_local(std::vector<Index>(indices.rbegin(), indices.rend()))) continue;
@@ -98,8 +97,7 @@ static std::shared_ptr<Tensor_<DataType>>
   const std::vector<int> inpoffsets(inpoffsets_rev.rbegin(), inpoffsets_rev.rend());
   const std::list<std::vector<bool>> kramers = input->listkramers();
 
-  LoopGenerator gen(ranges);
-  std::vector<std::vector<Index>> loop = gen.block_loop();
+  std::vector<std::vector<Index>> loop = LoopGenerator::gen(ranges);
 
   std::unordered_set<size_t> sparse;
   for (auto& indices : loop) {

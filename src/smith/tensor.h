@@ -59,21 +59,10 @@ class Tensor_ {
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
-    Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
-      *data_ = *(o.data_);
-      allocated_ = true;
-      return *this;
-    }
+    Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
-    std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_, true);
-    }
-
-    std::shared_ptr<Tensor_<DataType>> copy() const {
-      std::shared_ptr<Tensor_<DataType>> out = clone();
-      *out = *this;
-      return out;
-    }
+    std::shared_ptr<Tensor_<DataType>> clone() const;
+    std::shared_ptr<Tensor_<DataType>> copy() const;
 
     virtual void init() const { initialized_ = true; }
 
@@ -121,17 +110,9 @@ class Tensor_ {
       return data_->blocksize(std::forward<args>(p)...);
     }
 
-    void zero() {
-      data_->zero();
-    }
+    void zero() { data_->zero(); }
 
-    double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o) {
-      for (auto& it : o)
-        ax_plus_y(-detail::conj(this->dot_product(it)), it);
-      const double n = norm();
-      scale(1.0/n);
-      return n;
-    }
+    double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o);
 
     std::vector<DataType> diag() const;
     std::shared_ptr<MatType> matrix() const;
