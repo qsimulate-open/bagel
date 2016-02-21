@@ -330,6 +330,25 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
         // sort eigenvectors so that buf is close to a unit matrix
         // assumes quaternion symmetry - only the top-left quarter is checked
         // target column
+        for (int i = 0; i != tmp->ndim()/2; ++i) {
+          // first find the source column
+          tuple<int, double> max = make_tuple(-1, 0.0);
+          for (int j = 0; j != tmp->ndim()/2; ++j)
+            if (std::abs(tmp->element(i,j)) > get<1>(max))
+              max = make_tuple(j, std::abs(tmp->element(i,j)));
+
+          // register to emap
+          if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
+          assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
+          emap.emplace(get<0>(max), i);
+
+          // copy to the target
+          copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
+          copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), out->element_ptr(0,i+tmp->ndim()/2));
+          vec2[i] = vec[get<0>(max)];
+          vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
+        }
+
         // fix the phase
         for (int i = 0; i != tmp->ndim(); ++i) {
           if (real(out->element(i,i)) < 0.0)
