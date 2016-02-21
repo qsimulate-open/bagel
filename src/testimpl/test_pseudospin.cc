@@ -96,7 +96,7 @@ std::vector<double> reference_pseudospin_parameters() {
 BOOST_AUTO_TEST_SUITE(TEST_PSEUDOSPIN)
 
 BOOST_AUTO_TEST_CASE(ZFSPLITTING) {
-  BOOST_CHECK(compare(zfs_param("o2_sto3g_zcasscf_pseudospin"), reference_pseudospin_parameters()));
+  BOOST_CHECK(compare(zfs_param("o2_321g_zcasscf_pseudospin"), reference_pseudospin_parameters()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
