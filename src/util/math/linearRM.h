@@ -75,7 +75,7 @@ class LinearRM {
       // set to scr_
       vec_ = prod_->solve(mat_, size_);
 
-      auto out = std::make_shared<T>(*grad_);
+      std::shared_ptr<T> out = grad_->copy();
       int cnt = 0;
       for (auto& j : sigma_)
         out->ax_plus_y(vec_->element(cnt++, 0), j);

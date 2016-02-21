@@ -149,7 +149,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<2>> rdm2(const int ist) const { return rdm2_->at(ist); }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst, const bool recompute = false) const;
     std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> rdm34(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<3>>>
       rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;

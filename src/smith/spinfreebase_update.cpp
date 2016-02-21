@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: spinfreebase_denom.cpp
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifdef SPINFREEMETHOD_DETAIL
@@ -49,6 +48,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
   for (int ist = 0; ist != nst; ++ist) {
     t->fac(ist) = 0.0;
+    const double e0loc = e0all_[ist] - e0_;
     for (auto& i3 : virt_) {
       for (auto& i2 : closed_) {
         for (auto& i1 : virt_) {
@@ -70,7 +70,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
                     // note that e0 is cancelled by another term
-                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1];
+                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
             t->at(ist)->add_block(data0, i0, i1, i2, i3);
           }
         }

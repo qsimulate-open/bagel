@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: loopgenerator.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -33,14 +32,34 @@
 namespace bagel {
 namespace SMITH {
 
-class LoopGenerator {
-  protected:
-    std::vector<IndexRange> loop_;
-  public:
-    LoopGenerator(const std::vector<IndexRange>& o) : loop_(o) {};
-    ~LoopGenerator() {}
+struct LoopGenerator {
+  static std::vector<std::vector<Index>> gen(const std::vector<IndexRange>& loop) {
+    std::vector<int> max(loop.size());
+    auto m = max.begin();
+    for (auto& i : loop)
+      *m++ = i.nblock();
 
-    std::vector<std::vector<Index>> block_loop() const;
+    std::vector<std::vector<Index>> out;
+    std::vector<int> stat(loop.size());
+
+    do {
+      std::vector<Index> tmp;
+      auto k = stat.begin();
+      for (auto& l : loop)
+        tmp.push_back(l.range(*k++));
+      out.push_back(tmp);
+
+      auto j = stat.begin();
+      auto i = max.begin();
+      while (j != stat.end() && (++*j) == *i) {
+        *j = 0;
+        ++j;
+        ++i;
+      }
+    } while (*std::max_element(stat.begin(), stat.end()) > 0);
+
+    return out;
+  }
 };
 
 }

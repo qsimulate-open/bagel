@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: tensor.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -45,7 +44,7 @@ namespace SMITH {
 
 template <typename DataType>
 class Tensor_ {
-  protected:
+  public:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   protected:
     std::vector<IndexRange> range_;
@@ -60,21 +59,10 @@ class Tensor_ {
   public:
     Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
-    Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
-      *data_ = *(o.data_);
-      allocated_ = true;
-      return *this;
-    }
+    Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
-    std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_, false, sparse_, true);
-    }
-
-    std::shared_ptr<Tensor_<DataType>> copy() const {
-      std::shared_ptr<Tensor_<DataType>> out = clone();
-      *out = *this;
-      return out;
-    }
+    std::shared_ptr<Tensor_<DataType>> clone() const;
+    std::shared_ptr<Tensor_<DataType>> copy() const;
 
     virtual void init() const { initialized_ = true; }
 
@@ -122,14 +110,12 @@ class Tensor_ {
       return data_->blocksize(std::forward<args>(p)...);
     }
 
-    void zero() {
-      data_->zero();
-    }
+    void zero() { data_->zero(); }
+
+    double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o);
 
     std::vector<DataType> diag() const;
-
     std::shared_ptr<MatType> matrix() const;
-    std::shared_ptr<MatType> matrix2() const;
 
     std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
 

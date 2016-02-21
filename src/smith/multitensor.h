@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: multitensor.h
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -98,17 +97,32 @@ class MultiTensor_ {
     void zero() { scale(0.0); }
 
     size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); }
+    size_t size = fac_.size();
 
-    double rms() const {
+    double norm() const {
       double out = 0.0;
-      size_t size = fac_.size();
       for (auto& i : fac_)
         out += detail::real(detail::conj(i)*i);
-      for (auto& i : tensors_) {
+      for (auto& i : tensors_)
         out += std::pow(i->norm(),2);
+      return std::sqrt(out);
+    }
+
+    double rms() const {
+      size_t size = fac_.size();
+      for (auto& i : tensors_)
         size += i->size_alloc();
+      return norm() / std::sqrt(size);
+    }
+
+    DataType dot_product(const MultiTensor_<DataType>& o) const {
+      DataType out = 0.0;
+      assert(fac_.size() == o.fac_.size());
+      for (int i = 0; i != fac_.size(); ++i) {
+        out += detail::conj(fac_[i]) * o.fac_[i];
+        out += tensors_[i]->dot_product(o.tensors_[i]);
       }
-      return std::sqrt(out/size);
+      return out;
     }
 
     DataType& fac(const int i) { return fac_[i]; }

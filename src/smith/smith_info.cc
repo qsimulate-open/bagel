@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: smith_info.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -32,9 +31,42 @@
 using namespace std;
 using namespace bagel;
 
+
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata) : ref_(o) {
+  method_ = idata->get<std::string>("method");
+
+  const bool frozen = idata->get<bool>("frozen", true);
+  ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
+  if (ncore_)
+    std::cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << std::endl;
+  nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
+  if (nfrozenvirt_)
+    std::cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << std::endl;
+
+  maxiter_ = idata->get<int>("maxiter", 50);
+  target_  = idata->get<int>("target",   0);
+  maxtile_ = idata->get<int>("maxtile", 10);
+  grad_    = idata->get<bool>("grad", false);
+
+  do_ms_   = idata->get<bool>("ms",  true);
+  do_xms_  = idata->get<bool>("xms", false);
+
+  thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+}
+
+
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info)
+  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), maxiter_(info->maxiter_), target_(info->target_),
+    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_) {
+}
+
+
 template<>
-tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
-  return ref_->rdm12(ist, jst);
+tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
+  return ref_->rdm12(ist, jst, recompute);
 }
 
 
@@ -52,7 +84,7 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rd
 
 template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
-  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst, const bool) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm1 = ref->rdm1(ist, jst);
