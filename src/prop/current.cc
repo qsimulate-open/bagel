@@ -93,7 +93,7 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   // Form density matrix
   if (relativistic_)
-    density_ = ref_rel->relcoeff()->form_density_rhf(ref_rel->nclosed(), 0, 1.0);
+    density_ = ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed() + ref_rel->nact(), 0, 1.0);
   else
     density_ = ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0);
 

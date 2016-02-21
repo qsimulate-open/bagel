@@ -198,7 +198,7 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   assert(npos % 2 == 0);
   // coeff is occ, virt, nneg
   auto c = make_shared<RelCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
-  auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
+  auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_/2, nele_%2, (npos-nele_)/2, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
   VectorB eig(eig_.size());
