@@ -190,13 +190,13 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
 
       //done.push_back(open_bit);
       pair<vector<tuple<int, int, int>>, double> adapt;
-       if (spin_adapt) {
-         adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
-       } else {
-         adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
-                                                                  space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
-         adapt.second = 1.0;
-       }
+      if (spin_adapt) {
+        adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      } else {
+        adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
+                                                                 space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
+        adapt.second = 1.0;
+      }
 
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
