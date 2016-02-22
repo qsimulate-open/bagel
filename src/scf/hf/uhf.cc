@@ -76,8 +76,8 @@ void UHF::compute() {
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    std::shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
-    std::shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
+    shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
+    shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
 
     energy_ = 0.25*((*hcore_+*fockA) * *aodensityA_ + (*hcore_+*fockB) * *aodensityB_).trace() + geom_->nuclear_repulsion();
 

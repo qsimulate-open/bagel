@@ -287,7 +287,7 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     auto j = i;
     for (++j; j != nodes.end(); ++j) {
-      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
         const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
 #if 0
@@ -329,7 +329,7 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
-      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
@@ -461,3 +461,28 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
 
+
+const vector<shared_ptr<const Molecule>> Molecule::split_atoms(const int max_atoms) const {
+  vector<shared_ptr<const Molecule>> out = {};
+  const int res = natom() % max_atoms;
+  const int nfullset = natom() / max_atoms;
+  const int nset = nfullset + (res != 0 ? 1 : 0);
+  assert((nset == nfullset && res == 0) || (nset == nfullset+1 && res > 0));
+  assert(nfullset*max_atoms + res == natom());
+  out.resize(nset);
+
+  // Do not bother copying aux_atom data, since they are not needed for NAI
+  const vector<shared_ptr<const Atom>> empty_aux_atoms = {};
+
+  for (int i=0; i!=nfullset; ++i) {
+    vector<shared_ptr<const Atom>> current_atoms(&atoms_[i*max_atoms], &atoms_[(i+1)*max_atoms]);
+    auto current_mol = make_shared<const Molecule>(current_atoms, empty_aux_atoms);
+    out[i] = current_mol;
+  }
+  if (res != 0) {
+    vector<shared_ptr<const Atom>> current_atoms(&atoms_[nfullset*max_atoms], &atoms_[nfullset*max_atoms+res]);
+    auto current_mol = make_shared<const Molecule>(current_atoms, empty_aux_atoms);
+    out[nfullset] = current_mol;
+  }
+  return out;
+}

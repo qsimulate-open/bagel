@@ -36,7 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
+DistFCI::DistFCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 
@@ -218,6 +218,10 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     bitset<nbit__> alpha = it.second;
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
+
+    // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+    if (alpha.count() + beta.count() != nelea_ + neleb_)
+      throw logic_error("DistFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();

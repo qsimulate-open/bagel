@@ -116,6 +116,10 @@ void DistRASCI::generate_guess(const int nspin, const int nstate, shared_ptr<Dis
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
 
+    // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+    if (alpha.count() + beta.count() != nelea_ + neleb_)
+      throw logic_error("DistRasCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
+
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();

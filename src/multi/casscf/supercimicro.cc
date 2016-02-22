@@ -98,7 +98,7 @@ void SuperCIMicro::compute() {
 }
 
 
-std::shared_ptr<RotFile> SuperCIMicro::form_sigma(std::shared_ptr<const RotFile> cc) const {
+shared_ptr<RotFile> SuperCIMicro::form_sigma(shared_ptr<const RotFile> cc) const {
 
   auto sigma = cc->clone();
   // equation 21d

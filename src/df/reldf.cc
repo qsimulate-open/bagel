@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> cartesian, const std::vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
+RelDF::RelDF(shared_ptr<const DFDist> df, pair<int, int> cartesian, const vector<int> alpha) : RelDFBase(cartesian), alpha_(alpha), swap_(false) {
   if (!dynamic_pointer_cast<const ComplexDFDist>(df)) {
     dfdata_[0] = df;
     dfdata_[1] = nullptr;
@@ -46,7 +46,7 @@ RelDF::RelDF(const RelDF& o, bool coo) : RelDFBase(o), alpha_(o.alpha_), dfdata_
   set_basis();
   if (coo) {
     swap_ ^= true;
-    vector<std::shared_ptr<const SpinorInfo>> newbas;
+    vector<shared_ptr<const SpinorInfo>> newbas;
     for (auto& i : basis_)
       newbas.push_back(i->swap());
     basis_ = newbas;

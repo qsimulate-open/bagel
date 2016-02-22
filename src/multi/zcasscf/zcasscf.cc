@@ -36,7 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-ZCASSCF::ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref)
+ZCASSCF::ZCASSCF(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
@@ -182,7 +182,7 @@ void ZCASSCF::init() {
 
   // initialize coefficient to enforce kramers symmetry
   if (!kramers_coeff)
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
@@ -290,7 +290,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     tmp = make_shared<QuatMatrix>(*rdm1);
 #ifndef NDEBUG
     auto quatrdm = static_pointer_cast<const QuatMatrix>(tmp);
-//  assert(quatrdm->is_t_symmetric());
+    assert(quatrdm->is_t_symmetric());
 #endif
   } else {
     tmp = make_shared<ZMatrix>(*rdm1);
@@ -310,13 +310,12 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     map<int,int> emap;
     out = tmp->clone();
 
+    const bool occ_sort = idata_->get<bool>("occ_sort",false);
     if (tsymm_) {
-      // TODO Implement occ_sort for Kramers-unrestricted calculations as well.
-      const bool occ_sort = idata_->get<bool>("occ_sort",false);
       if (occ_sort) {
         // sort by natural orbital occupation numbers
         int b2n = out->ndim();
-        for (int i=0; i!=out->mdim()/2; ++i) {
+        for (int i = 0; i != out->mdim()/2; ++i) {
           copy_n(tmp->element_ptr(0, out->mdim()/2-1-i), b2n, out->element_ptr(0, i));
           copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i+b2n/2));
           vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
@@ -358,33 +357,47 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
       }
     } else {
       // assumes no particular symmetry - the full matrix is checked
-      // target column
-      for (int i = 0; i != tmp->ndim(); ++i) {
-        // first find the source column
-        tuple<int, double> max = make_tuple(-1, 0.0);
-        for (int j = 0; j != tmp->ndim(); ++j)
-          if (std::abs(tmp->element(i,j)) > get<1>(max))
-            max = make_tuple(j, std::abs(tmp->element(i,j)));
+      if (occ_sort) {
+        // sort by natural orbital occupation numbers
+        int b2n = out->ndim();
+        for (int i = 0; i != out->mdim(); ++i) {
+          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i));
+          vec2[b2n-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
+        }
+        // fix the phase
+        for (int i = 0; i != tmp->ndim(); ++i) {
+          const double phase = std::arg(out->element(i,i));
+          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
+        }
+      } else {
+        // target column
+        for (int i = 0; i != tmp->ndim(); ++i) {
+          // first find the source column
+          tuple<int, double> max = make_tuple(-1, 0.0);
+          for (int j = 0; j != tmp->ndim(); ++j)
+            if (std::abs(tmp->element(i,j)) > get<1>(max))
+              max = make_tuple(j, std::abs(tmp->element(i,j)));
 
-        // register to emap
-        if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
-        assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
-        emap.emplace(get<0>(max), i);
+          // register to emap
+          if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
+          assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
+          emap.emplace(get<0>(max), i);
 
-        // copy to the target
-        copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
-        vec2[i] = vec[get<0>(max)];
-      }
+          // copy to the target
+          copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
+          vec2[i] = vec[get<0>(max)];
+        }
 
-      // fix the phase
-      for (int i = 0; i != tmp->ndim(); ++i) {
-        const double phase = std::arg(out->element(i,i));
-        blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
+        // fix the phase
+        for (int i = 0; i != tmp->ndim(); ++i) {
+          const double phase = std::arg(out->element(i,i));
+          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
+        }
       }
     }
 
   } else { // set occupation numbers, but coefficients don't need to be updated
-    for (int i=0; i!=tmp->ndim(); ++i)
+    for (int i = 0; i != tmp->ndim(); ++i)
       vec2[i] = tmp->get_real_part()->element(i,i);
     out = tmp;
   }
@@ -465,7 +478,8 @@ void ZCASSCF::print_natocc() const {
   assert(occup_.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  for (int i=0; i!=occup_.size()/2; ++i)
+  const int num = tsymm_ ? occup_.size() / 2 : occup_.size();
+  for (int i = 0; i != num; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
 }

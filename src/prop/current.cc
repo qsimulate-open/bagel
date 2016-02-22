@@ -33,14 +33,16 @@ using namespace std;
 using namespace bagel;
 
 
-Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-                 const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
+Current::Current(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
+                 const shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Need a GIAO-based Reference object
   auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
   auto ref_nr  = dynamic_pointer_cast<const ZReference>(ref_);
   if (!ref_rel && !ref_nr)
     throw runtime_error("Charge currents are only available when using the result of a GIAO calculation.");
+  if (ref_->nact() != 0)
+    throw runtime_error("Charge currents have only been implemented for closed-shell Hartree--Fock methods.");
   assert(geom_->magnetism());
   assert(!ref_rel || !ref_nr);
   relativistic_ = ref_rel ? true : false;
@@ -91,7 +93,7 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   // Form density matrix
   if (relativistic_)
-    density_ = ref_rel->relcoeff()->form_density_rhf(ref_rel->nclosed(), 0, 1.0);
+    density_ = ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed() + ref_rel->nact(), 0, 1.0);
   else
     density_ = ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0);
 

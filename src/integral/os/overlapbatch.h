@@ -41,6 +41,7 @@ class OverlapBatch : public OSInt {
     OverlapBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)
     : OSInt(basis, stack) { common_init(); }
 
+    constexpr static int Nblocks() { return 1; }
     void compute() override;
 };
 

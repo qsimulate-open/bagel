@@ -33,7 +33,7 @@ using namespace bagel;
 array<shared_ptr<const ZMatrix>,3> RelDipole::compute_matrices() const {
   // first calculate AO integrals.
   shared_ptr<const Matrix1eArray<3>>  large = make_shared<const DipoleMatrix>(geom_);
-  shared_ptr<const Matrix1eArray<12>> small = make_shared<const Small1e<DipoleBatch>>(geom_);
+  shared_ptr<const Matrix1eArray<12>> small = make_shared<const Small1e<DipoleBatch, shared_ptr<const Molecule>>>(geom_, geom_);
 
   const int n = geom_->nbasis();
 

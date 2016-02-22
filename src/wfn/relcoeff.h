@@ -148,6 +148,8 @@ class RelCoeff_Block : public RelCoeff {
     std::shared_ptr<RelCoeff_Block> copy() const { return std::make_shared<RelCoeff_Block>(*this); }
     std::shared_ptr<RelCoeff_Block> clone() const { return std::make_shared<RelCoeff_Block>(ndim(), localized_, nclosed_, nact_, nvirt_nr_, nneg_); }
 
+    std::shared_ptr<RelCoeff_Block> closed_part() const;
+    std::shared_ptr<RelCoeff_Block> active_part() const;
     std::shared_ptr<RelCoeff_Block> electronic_part() const;
     std::shared_ptr<RelCoeff_Block> closed_act_positronic() const;
     std::shared_ptr<RelCoeff_Block> update_electronic(std::shared_ptr<const ZMatrix> newcoeff) const;

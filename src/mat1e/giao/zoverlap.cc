@@ -39,7 +39,7 @@ ZOverlap::ZOverlap(const shared_ptr<const Molecule> mol) : ZMatrix1e(mol) {
 }
 
 
-void ZOverlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>) {
+void ZOverlap::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule>) {
 
   // input = [b1, b0]
   assert(input.size() == 2);

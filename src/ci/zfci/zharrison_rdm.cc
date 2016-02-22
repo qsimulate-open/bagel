@@ -473,6 +473,20 @@ void ZHarrison::compute_rdm12() {
 }
 
 
+vector<shared_ptr<const ZMatrix>> ZHarrison::rdm1_matrix() const {
+  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
+  vector<shared_ptr<const ZMatrix>> out = {};
+  for (int i=0; i!=nstate_; ++i) {
+    shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_[i], norb_);
+    auto mat = make_shared<ZMatrix>(norb_*2, norb_*2);
+    copy_n(tmp->data(), tmp->size(), mat->data());
+    out.push_back(mat);
+  }
+  assert(out.size() == nstate_);
+  return out;
+}
+
+
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
   // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
   shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_av_, norb_);

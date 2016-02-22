@@ -28,13 +28,19 @@
 
 #include <src/util/math/zmatrix.h>
 #include <src/integral/smallints1e_london.h>
+#include <src/integral/comprys/complexnaibatch.h>
 #include <src/mat1e/matrix1earray.h>
+#include <src/util/unpack.h>
 
 namespace bagel {
 
-template <typename Batch>
+// "Args" will be saved and passed to each batch of integrals
+// If the shared_ptr<const Molecule> is needed, it can be redundantly supplied in Args or just passed directly in a specialized computebatch()
+template<typename Batch, typename ...Args>
 class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
   protected:
+    const std::tuple<Args...> args_;
+
     void init(std::shared_ptr<const Molecule> mol) override {
       std::list<std::shared_ptr<const Shell>> shells;
       for (auto& i : mol->atoms())
@@ -60,12 +66,19 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
       for (auto& i : this->matrices_) i->allreduce();
     }
 
+    // Unpack variadic template arguments here
+    template <int ...S>
+    SmallInts1e_London<Batch, Args...> get_batch(std::array<std::shared_ptr<const Shell>,2> input, seq<S...>) {
+      SmallInts1e_London<Batch, Args...> out(input, std::get<S>(args_) ...);
+      return out;
+    }
+
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) override {
       // input = [b1, b0]
       assert(input.size() == 2);
       const int dimb1 = input[0]->nbasis();
       const int dimb0 = input[1]->nbasis();
-      SmallInts1e_London<Batch, std::shared_ptr<const Molecule>> batch(input, mol);
+      SmallInts1e_London<Batch, Args...> batch = get_batch(input, typename gens<sizeof...(Args)>::type());
       batch.compute();
 
       for (int i = 0; i != this->Nblocks(); ++i)
@@ -73,7 +86,7 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
     }
 
   public:
-    Small1e_London(const std::shared_ptr<const Molecule> mol) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol) {
+    Small1e_London(const std::shared_ptr<const Molecule> mol, Args... args) : Matrix1eArray<4*Batch::Nblocks(), ZMatrix>(mol), args_(args...) {
       init(mol);
     }
 
@@ -82,6 +95,7 @@ class Small1e_London : public Matrix1eArray<4*Batch::Nblocks(), ZMatrix> {
     }
 };
 
+template<> void Small1e_London<ComplexNAIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>);
 template<> void Small1e_London<ComplexERIBatch>::computebatch(const std::array<std::shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule>);
 
 }

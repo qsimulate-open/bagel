@@ -63,7 +63,7 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst, const bool recompute) const {
+tuple<shared_ptr<const RDM<1>>,shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst, const bool recompute) const {
   shared_ptr<const RDM<1>> r1;
   shared_ptr<const RDM<2>> r2;
   if (!recompute && rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
@@ -79,14 +79,14 @@ tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(c
 }
 
 
-tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
+tuple<shared_ptr<const RDM<3>>,shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
   FCI_bare fci(ciwfn_);
   fci.compute_rdm12(ist, jst); // TODO stupid code
   return fci.rdm34(ist, jst);
 }
 
 
-tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<3>>> Reference::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+tuple<shared_ptr<const RDM<3>>,shared_ptr<const RDM<3>>> Reference::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
   FCI_bare fci(ciwfn_);
   fci.compute_rdm12(ist, jst); // TODO stupid code
   return fci.rdm34f(ist, jst, fock);
@@ -131,7 +131,7 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> Reference::rdm34deriv(const int istate,
 shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
 
   if (geomin->magnetism())
-    throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
+    throw runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
   bool moved = false;
   bool newbasis = false;

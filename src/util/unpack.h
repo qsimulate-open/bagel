@@ -23,7 +23,6 @@
 //
 
 // Small helper class which is needed to store variadic template arguments as a tuple and reuse later
-// Currently only used in <src/integral/smallints1e_london.h>
 // See http://stackoverflow.com/questions/7858817/
 
 #ifndef __SRC_UTIL_UNPACK_H

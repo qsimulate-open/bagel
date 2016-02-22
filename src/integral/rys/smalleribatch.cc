@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-SmallERIBatch::SmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
+SmallERIBatch::SmallERIBatch(array<shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
 
   assert(info[0]->dummy());

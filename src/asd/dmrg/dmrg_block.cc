@@ -164,7 +164,7 @@ shared_ptr<const BlockOperators> DMRG_Block1::compute_block_ops(shared_ptr<Dimer
   return make_shared<BlockOperators1>(shared_from_this(), jop);
 }
 
-DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
+DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
   // left block runs first in the resulting pairmap_ vectors
   for (auto& left : lb->blocks()) {
     for (auto& right : rb->blocks()) {
@@ -349,6 +349,6 @@ shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
   return out;
 }
 
-shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
+shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(shared_ptr<DimerJop> jop) const {
   return make_shared<BlockOperators2>(shared_from_this(), jop);
 }

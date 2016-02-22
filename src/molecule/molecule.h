@@ -161,6 +161,10 @@ class Molecule {
     // ninternal runs fast (and cartsize slower)
     std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
+    // Split up the atoms into several Molecule objects
+    // To limit the memory requirement of integral evaluation
+    const std::vector<std::shared_ptr<const Molecule>> split_atoms(const int max_atoms) const;
+
 };
 
 }

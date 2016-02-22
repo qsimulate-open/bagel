@@ -146,7 +146,7 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
-  for (int istate = 0; istate != nstates_; ++istate) 
+  for (int istate = 0; istate != nstates_; ++istate)
     cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
 
   // MS-CASPT2
@@ -168,7 +168,7 @@ void CASPT2::CASPT2::solve() {
         }
       }
     }
- 
+
     // print out the effective Hamiltonian
     cout << endl;
     cout << "    * MS-CASPT2 Heff";

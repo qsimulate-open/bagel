@@ -65,7 +65,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
   if (tesla)
-    for (int i=0; i!=3; ++i)
+    for (int i = 0; i != 3; ++i)
       magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
 
@@ -321,7 +321,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
     const bool tesla = geominfo->get<bool>("tesla", false);
     if (tesla)
-      for (int i=0; i!=3; ++i)
+      for (int i = 0; i != 3; ++i)
         magnetic_field_[i] /= au2tesla__;
 
     const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
@@ -673,10 +673,8 @@ void Geometry::init_magnetism() {
     cout << "  Zero magnetic field - This computation would be more efficient with a standard basis." << endl;
   }
 
-  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
-
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->apply_magnetic_field(fieldin));
+    atom.push_back(i->apply_magnetic_field(magnetic_field_, london_));
   atoms_ = atom;
 }

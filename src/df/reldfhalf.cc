@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
 : RelDFBase(*df) {
 
   basis_ = bas;
@@ -113,7 +113,7 @@ void RelDFHalf::set_sum_diff() {
 }
 
 
-void RelDFHalf::ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o) {
+void RelDFHalf::ax_plus_y(complex<double> a, shared_ptr<const RelDFHalf> o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
     dfhalf_[0]->ax_plus_y(fac, o->dfhalf_[0]);
@@ -164,11 +164,11 @@ list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
   list<shared_ptr<RelDFHalf>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
     if (i == basis().begin() && docopy) {
-      out.push_back(make_shared<RelDFHalf>(dfhalf_, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(dfhalf_, cartesian_, vector<shared_ptr<const SpinorInfo>>{*i}));
     } else {
       // TODO Any way to avoid copying?
       array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
-      out.push_back(make_shared<RelDFHalf>(d, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(d, cartesian_, vector<shared_ptr<const SpinorInfo>>{*i}));
     }
   }
   return out;

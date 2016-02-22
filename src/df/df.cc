@@ -205,14 +205,14 @@ shared_ptr<DFDist> DFHalfDist::back_transform(const MatView c) const{
 }
 
 
-void DFHalfDist::rotate_occ(const std::shared_ptr<const Matrix> d) {
+void DFHalfDist::rotate_occ(const shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
     i = i->transform_second(*d);
 }
 
 
-shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Matrix> den) const {
+shared_ptr<DFHalfDist> DFHalfDist::apply_density(const shared_ptr<const Matrix> den) const {
   assert(den->mdim() == nindex2_);
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
@@ -221,7 +221,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Mat
 }
 
 
-shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const {
+shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const shared_ptr<const Matrix> den, const double a) const {
   return apply_density(den)->form_2index(df_, a);
 }
 
@@ -245,7 +245,7 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
+void DFFullDist::rotate_occ1(const shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
     i = i->transform_second(*d);

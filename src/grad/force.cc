@@ -38,21 +38,21 @@ Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared
 void Force::compute() {
   auto input = idata_->get_child("method");
 
-  std::shared_ptr<const Reference> ref = ref_;
+  shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
   for ( ; m != --input->end(); ++m) {
     const std::string title = to_lower((*m)->get<std::string>("title", ""));
     if (title != "molecule") {
-      std::shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
-      if (!c) throw std::runtime_error("unknown method in forceimization");
+      shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
+      if (!c) throw runtime_error("unknown method in forceimization");
       c->compute();
       ref = c->conv_to_ref();
     } else {
-      geom_ = std::make_shared<const Geometry>(*geom_, *m);
+      geom_ = make_shared<const Geometry>(*geom_, *m);
       if (ref) ref = ref->project_coeff(geom_);
     }
   }
-  auto cinput = std::make_shared<PTree>(**m);
+  auto cinput = make_shared<PTree>(**m);
   cinput->put("gradient", true);
 
   const string method = to_lower(cinput->get<string>("title", ""));

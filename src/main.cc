@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
     auto idata = make_shared<const PTree>(input);
 
     shared_ptr<Method> method;
-    shared_ptr<Geometry> geom;
+    shared_ptr<const Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
     shared_ptr<MultiSite> multisite;
@@ -77,6 +77,18 @@ int main(int argc, char** argv) {
       const string title = to_lower(itree->get<string>("title", ""));
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
+#ifndef DISABLE_SERIALIZATION
+      if (itree->get<bool>("load_ref", false)) {
+        const string name = itree->get<string>("ref_in", "");
+        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
+        IArchive archive(name);
+        shared_ptr<Reference> ptr;
+        archive >> ptr;
+        ref = shared_ptr<Reference>(ptr);
+        geom = ref->geom();
+      }
+#endif
+
       if (title == "molecule") {
         geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false))
@@ -90,17 +102,6 @@ int main(int argc, char** argv) {
 
       if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
-
-#ifndef DISABLE_SERIALIZATION
-      if (itree->get<bool>("load_ref", false)) {
-        const string name = itree->get<string>("ref_in", "");
-        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
-        IArchive archive(name);
-        shared_ptr<Reference> ptr;
-        archive >> ptr;
-        ref = shared_ptr<Reference>(ptr);
-      }
-#endif
 
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
@@ -159,7 +160,7 @@ int main(int argc, char** argv) {
 
         dimer->scf(itree);
 
-        *geom = *dimer->sgeom();
+        geom = dimer->sgeom();
         ref = dimer->sref();
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
@@ -177,7 +178,7 @@ int main(int argc, char** argv) {
           ms->scf(itree);
           multisite = ms;
           ref = ms->conv_to_ref();
-          *geom = *ref->geom();
+          geom = ref->geom();
       } else if (title == "asd_dmrg") {
           if (!multisite)
             throw runtime_error("multisite must be called before asd_dmrg");

@@ -29,7 +29,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<CASDvec> ASD_CAS::form_sigma(shared_ptr<const CASDvec> ccvec, std::shared_ptr<const MOFile> jop) const {
+shared_ptr<CASDvec> ASD_CAS::form_sigma(shared_ptr<const CASDvec> ccvec, shared_ptr<const MOFile> jop) const {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();

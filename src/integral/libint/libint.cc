@@ -39,7 +39,7 @@ using namespace bagel;
 const static CarSphList carsphlist;
 const static libint2::FmEval_Chebyshev3<double> fmeval(18);
 
-Libint::Libint(const std::array<std::shared_ptr<const Shell>,4>& shells, const double dum,  std::shared_ptr<StackMem> stack)
+Libint::Libint(const array<shared_ptr<const Shell>,4>& shells, const double dum,  shared_ptr<StackMem> stack)
  : RysInt(shells, stack) {
 
   tenno_ = 0;

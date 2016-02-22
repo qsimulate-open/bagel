@@ -57,7 +57,7 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
     input_data->erase("type"); input_data->put("type", "region");
     localization = make_shared<PMLocalization>(input_data, sref_, sizes);
   }
-  else throw std::runtime_error("Unrecognized orbital localization method");
+  else throw runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
   vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
@@ -153,7 +153,7 @@ void MultiSite::localize(const shared_ptr<const PTree> idata, shared_ptr<const M
 }
 
 ///  Separate SVDs are done for each monomer
-void MultiSite::set_active(const std::shared_ptr<const PTree> idata) {
+void MultiSite::set_active(const shared_ptr<const PTree> idata) {
   // TODO needs clean up
   auto active = idata->get_child_optional("active");
   if (!active)

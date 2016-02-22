@@ -147,7 +147,7 @@ void RelDFFull::scale(complex<double> a) {
 }
 
 
-shared_ptr<btas::Tensor3<std::complex<double>>>
+shared_ptr<btas::Tensor3<complex<double>>>
   RelDFFull::get_block(const int ist, const int ii, const int jst, const int jj, const int kst, const int kk) const {
 
   auto out = make_shared<btas::Tensor3<complex<double>>>(ii, jj, kk);

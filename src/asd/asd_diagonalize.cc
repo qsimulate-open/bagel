@@ -35,7 +35,7 @@ void ASD_base::generate_initial_guess(shared_ptr<Matrix> cc, const vector<DimerS
   const int subspace_states = accumulate(subspaces.begin(), subspaces.end(), 0,
                                         [] (int x, const DimerSubspace_base& s) { return s.dimerstates()+x; });
 
-  map<double, std::vector<int>> seeds;
+  map<double, vector<int>> seeds;
   for(auto& ispace : subspaces) {
     for(int state = ispace.offset(); state < ispace.offset()+ispace.dimerstates(); ++state)
       seeds[denom_[state]].push_back(state);

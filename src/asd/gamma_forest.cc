@@ -90,7 +90,7 @@ void GammaForest<VecType,N>::compute() {
   // Add tasks
   for (auto& iforest : forests_) {
     for (auto& itreemap : iforest) {
-      std::shared_ptr<GammaTree<VecType>> itree = itreemap.second;
+      shared_ptr<GammaTree<VecType>> itree = itreemap.second;
       const int nket = itree->ket()->ij();
       for (auto& brapair : itree->base()->bras()) {
         double* target = itree->base()->gammas().at(brapair.first)->data();
@@ -102,7 +102,7 @@ void GammaForest<VecType,N>::compute() {
 
       const int norb = itree->norb();
       for (int i = 0; i < nops; ++i) {
-        std::shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
+        shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
         if (!first->active()) continue;
         for (int a = 0; a < norb; ++a) tasks.emplace_back(itree, GammaSQ(i), a);
       }

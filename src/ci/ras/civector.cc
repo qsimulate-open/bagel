@@ -109,12 +109,12 @@ shared_ptr<RASCivector<DataType>> RASCivector<DataType>::apply(const int orbital
 
 
 template<typename DataType>
-RASCivecView_<DataType>::RASCivecView_(std::shared_ptr<const RASDeterminants> det, double* const data)
+RASCivecView_<DataType>::RASCivecView_(shared_ptr<const RASDeterminants> det, double* const data)
  : RASCivector_impl<DataType>(det), data_ptr_(data), can_write_(true) {
   size_t sz = 0;
   for (auto& ipair : det->blockinfo()) {
     if (!ipair->empty()) {
-      blocks_.push_back(std::make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data+sz, sz));
+      blocks_.push_back(make_shared<RBlock>(ipair->stringsa(), ipair->stringsb(), data+sz, sz));
       sz += blocks_.back()->size();
     } else {
       blocks_.push_back(nullptr);

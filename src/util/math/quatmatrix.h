@@ -54,7 +54,7 @@ class QuatMatrix : public ZMatrix {
         eig(ndim()/2+i) = eig(i);
 #ifndef NDEBUG
         if (std::max(std::abs(eig(i)-eig2(i*2)), std::abs(eig(i)-eig2(i*2+1))) > 1.0e-6)
-          std::cout << " warning - eigenvalues:" << std::setprecision(10) << std::fixed << std::setw(20) << eig(i) << std::setw(20) << eig2(i*2) << std::setw(20) << eig2(i*2+1) << std::endl;
+          std::cout << " warning - eigenvalues between quaternion and standard diagonalization do not match:" << std::setprecision(10) << std::fixed << std::setw(20) << eig(i) << std::setw(20) << eig2(i*2) << std::setw(20) << eig2(i*2+1) << std::endl;
 #endif
       }
 

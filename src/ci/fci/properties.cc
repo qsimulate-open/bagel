@@ -58,7 +58,7 @@ void CIDipole::init(const int nstart, const int nfence) {
     compressed_dipoles_[imu] = dipole_mo_[imu]->get_submatrix(nocc_, nocc_, norb_, norb_);
 }
 
-void CIDipole::compute(std::shared_ptr<const Dvec> ccvec) {
+void CIDipole::compute(shared_ptr<const Dvec> ccvec) {
   const int nstates = ccvec->ij();
 
   shared_ptr<const Determinants> det = ccvec->det();

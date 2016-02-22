@@ -27,7 +27,31 @@
 using namespace std;
 using namespace bagel;
 
-template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
+  // input = [b1, b0]
+  assert(input.size() == 2);
+  const int dimb1 = input[0]->nbasis();
+  const int dimb0 = input[1]->nbasis();
+
+  if (mol->natom() < nucleus_blocksize__) {
+    SmallInts1e_London<ComplexNAIBatch, shared_ptr<const Molecule>> batch(input, mol);
+    batch.compute();
+    for (int i = 0; i != this->Nblocks(); ++i)
+      this->matrices_[i]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+  } else {
+    const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
+    for (auto& current_mol : atom_subsets) {
+      SmallInts1e_London<ComplexNAIBatch, shared_ptr<const Molecule>> batch(input, current_mol);
+      batch.compute();
+      for (int i = 0; i != this->Nblocks(); ++i)
+        this->matrices_[i]->add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, batch[i]);
+    }
+  }
+}
+
+
+
+template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();

@@ -25,6 +25,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
+#include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
@@ -35,7 +36,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
+ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
@@ -114,7 +115,7 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     }
 
     // then compute Kramers adapated coefficient matrices
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
     // generate modified virtual orbitals, if requested
     const bool mvo = idata_->get<bool>("generate_mvo", false);
@@ -156,16 +157,17 @@ void ZHarrison::print_header() const {
 
 
 // generate initial vectors
-void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
+void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, shared_ptr<RelZDvec> out, const int offset) {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
   int ndet = nstate*10;
   int oindex = offset;
+  const bool spin_adapt = idata_->get<bool>("spin_adapt", true);
   while (oindex < offset+nstate) {
     vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
     // Spin adapt detseeds
     oindex = offset;
-    vector<bitset<nbit__>> done;
+    vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
@@ -175,16 +177,26 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (alpha.count() + beta.count() != nele_)
         throw logic_error("ZFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
+      pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt ? make_pair(open_bit, alpha & beta) : it;
+      if (find(done.begin(), done.end(), config) != done.end()) continue;
+      done.push_back(config);
+
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
-      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+      //if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
 
-      done.push_back(open_bit);
+      //done.push_back(open_bit);
       pair<vector<tuple<int, int, int>>, double> adapt;
-      adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      if (spin_adapt) {
+        adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      } else {
+        adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
+                                                                 space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
+        adapt.second = 1.0;
+      }
 
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
@@ -374,6 +386,23 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
+
+
+  // TODO When the Property class is implemented, this should be one
+  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+  if (aniso_data) {
+    if (geom_->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+
+      assert(!idata_->get<bool>("numerical", false));  // This feature is deactivated
+
+      const int nspin = aniso_data->get<int>("nspin", states_.size()-1);
+      Pseudospin ps(nspin, aniso_data);
+      ps.compute(*this);
+
+    }
+  }
 }
 
 
@@ -392,3 +421,5 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
 }
+
+

@@ -31,8 +31,8 @@ int main() {
       const int m = mu - l;
       vector<double> lmusp;
 
-      std::array<int, 2> lm = {l, m};
-      std::shared_ptr<SphHarmonics> sphusp = std::make_shared<SphHarmonics>(lm);
+      array<int, 2> lm = {l, m};
+      shared_ptr<SphHarmonics> sphusp = make_shared<SphHarmonics>(lm);
       for (int lz = 0; lz <= l; ++lz) {
         for (int ly = 0; ly <= l - lz; ++ly) {
           const int lx = l - lz - ly;

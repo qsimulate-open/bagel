@@ -159,7 +159,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
     // D_ab = T^*(ja|ic) T(jb|ic)
     zgemm3m_("N", "C", nvirt, nvirt, nocc*nocc, 0.5, data->data(), nvirt, data->data(), nvirt, 1.0, vptr, nbasis*2);
     // D_ij = - T^*(ja|kc) T(ia|kc)
-//  std::for_each(data->data(), data->data()+data->size(), [](std::complex<double> a){ a = std::conj(a); });
+//  std::for_each(data->data(), data->data()+data->size(), [](complex<double> a){ a = std::conj(a); });
     zgemm3m_("C", "N", nocc, nocc, nvirt*nocc, -0.5, data->data(), nvirt*nocc, data->data(), nvirt*nocc, 1.0, optr, nbasis*2);
   }
 

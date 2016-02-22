@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-GSmallERIBatch::GSmallERIBatch(std::array<std::shared_ptr<const Shell>,4> info, array<int,3> atoms, const int natoms)
+GSmallERIBatch::GSmallERIBatch(array<shared_ptr<const Shell>,4> info, array<int,3> atoms, const int natoms)
  : shells_{{info[1],info[2],info[3]}}, atoms_(atoms), natoms_(natoms), stack_(resources__->get()) {
 
   // shells_[0] is aux function, shelles_[1] and [2] are basis
@@ -55,7 +55,7 @@ GSmallERIBatch::~GSmallERIBatch() {
 }
 
 
-std::shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const btas::Tensor3<double>>,6>& d) const {
+shared_ptr<GradFile> GSmallERIBatch::compute_gradient(array<shared_ptr<const btas::Tensor3<double>>,6>& d) const {
   auto out = make_shared<GradFile>(natoms_);
   static_assert(Comp::X == 0 && Comp::Y == 1 && Comp::Z == 2, "something is wrong in GSmallERIBatch::compute_gradient");
 
