@@ -25,7 +25,6 @@
 
 #include <src/mat1e/giao/angmom_london.h>
 #include <src/integral/compos/complexangmombatch.h>
-#include <src/integral/comprys/test_codes/bagel_interface.h>
 
 using namespace std;
 using namespace bagel;
@@ -33,7 +32,6 @@ using namespace bagel;
 AngMom_London::AngMom_London(shared_ptr<const Geometry> g, array<double,3> mc) : geom_(g), mcoord_(mc) {
   assert(geom_->magnetism());
 }
-
 
 array<shared_ptr<ZMatrix>, 3> AngMom_London::compute() const {
 
