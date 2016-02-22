@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 const static CarSphList carsphlist;
 
-MixedERIBatch::MixedERIBatch(std::array<std::shared_ptr<const Shell>,4> info, const double dummy)
+MixedERIBatch::MixedERIBatch(array<shared_ptr<const Shell>,4> info, const double dummy)
   : shells_{{info[1],info[2],info[3]}}, stack_(resources__->get()) {
 
   assert(info[0]->dummy());

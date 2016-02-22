@@ -74,7 +74,7 @@ void Point_ComplexOverlapBatch::compute() {
 }
 
 
-void Point_ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) {
+void Point_ComplexOverlapBatch::perform_VRR(complex<double>* intermediate) {
 
   const int ang0s = ang0_+1;
   const int worksize = (ang0_+1) * (ang1_+1);
@@ -151,14 +151,14 @@ void Point_ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) 
 }
 
 
-std::complex<double> Point_ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+complex<double> Point_ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                                        const int dim, const bool swap) {
   const double Areal = coord1*exp1;
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[0]->vector_potential(dim);
   const double Bimag = basisinfo_[1]->vector_potential(dim);
   const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag );
-  const std::complex<double> num (Areal + Breal, imag);
+  const complex<double> num (Areal + Breal, imag);
   return num * one12;
 }
 

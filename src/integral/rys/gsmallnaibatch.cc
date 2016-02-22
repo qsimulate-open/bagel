@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-GSmallNAIBatch::GSmallNAIBatch(std::array<std::shared_ptr<const Shell>,2> info, std::shared_ptr<const Molecule> mol, const std::tuple<int,int> i)
+GSmallNAIBatch::GSmallNAIBatch(array<shared_ptr<const Shell>,2> info, shared_ptr<const Molecule> mol, const tuple<int,int> i)
     : mol_(mol), shells_(info), size_block_(shells_[0]->nbasis() * shells_[1]->nbasis()), iatom_(i) {
 
   assert(shells_[0]->relativistic() && shells_[1]->relativistic());

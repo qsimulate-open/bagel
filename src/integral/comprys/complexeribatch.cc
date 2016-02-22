@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 
-ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const std::complex<double> dummy, const bool dum,
+ComplexERIBatch::ComplexERIBatch(const array<shared_ptr<const Shell>,4>& _info, const double max_density, const complex<double> dummy, const bool dum,
                    shared_ptr<StackMem> stack)  :  ERIBatch_Base(_info, 0, 0, stack) {
 
   const double integral_thresh = (max_density != 0.0) ? (PRIM_SCREEN_THRESH / max_density) : 0.0;
@@ -71,7 +71,7 @@ void ComplexERIBatch::root_weight(const int ps) {
   }
 }
 
-std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+complex<double> ComplexERIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                              const int center1, const int dim, const bool swap) {
   const double Areal = coord1*exp1;
   const double Breal = coord2*exp2;
@@ -80,7 +80,7 @@ std::complex<double> ComplexERIBatch::get_PQ(const double coord1, const double c
   const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag);
   assert(exp1 != 0.0 || imag == 0.0);
   assert(exp2 != 0.0 || imag == 0.0);
-  const std::complex<double> num (Areal + Breal, imag);
+  const complex<double> num (Areal + Breal, imag);
   return num * one12;
 }
 
