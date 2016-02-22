@@ -79,8 +79,7 @@ void AngMomBatch::perform_VRR(double* intermediate) {
   double* worksy = stack_->get<double>(worksize * worksize);
   double* worksz = stack_->get<double>(worksize * worksize);
 
-  double imag = 1.0;
-  if (swap01_) imag *= -1.0;
+  const double imag = swap01_ ? -1.0 : 1.0;
   const double Bx = basisinfo_[1]->position(0);
   const double By = basisinfo_[1]->position(1);
   const double Bz = basisinfo_[1]->position(2);

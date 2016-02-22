@@ -230,9 +230,7 @@ std::complex<double> ComplexKineticBatch::get_P(const double coord1, const doubl
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[0]->vector_potential(dim);
   const double Bimag = basisinfo_[1]->vector_potential(dim);
-  double imag;
-  if (swap) imag = 0.5*(Bimag - Aimag);
-  else imag = 0.5*(Aimag - Bimag);
+  const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag );
   const std::complex<double> num (Areal + Breal, imag);
   return num * one12;
 }
