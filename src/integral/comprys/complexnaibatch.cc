@@ -74,9 +74,8 @@ complex<double> ComplexNAIBatch::get_PQ(const double coord1, const double coord2
 }
 
 void ComplexNAIBatch::compute() {
-  const double zero = 0.0;
 
-  complex<double>* const stack_save = stack_->template get<complex<double>>(size_alloc_);
+  complex<double>* const stack_save = stack_->template get<complex<double>>(size_block_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
@@ -94,8 +93,7 @@ void ComplexNAIBatch::compute() {
   complex<double> r1z[20];
   complex<double> r2[20];
 
-  const int alc = size_alloc_;
-  fill_n(data_, alc, zero);
+  fill_n(data_, size_block_, 0.0);
 
   const CSortList sort(spherical1_);
 
@@ -105,7 +103,7 @@ void ComplexNAIBatch::compute() {
     const int iprim = i / natom_;
     const int iatom = i % natom_;
     const int offset_iprim = iprim * asize_;
-    complex<double>* current_data = &data_[offset_iprim];
+    complex<double>* current_data = data_ + offset_iprim;
 
     const complex<double>* croots = roots_ + i * rank_;
     const complex<double>* cweights = &weights_[i * rank_];
@@ -163,7 +161,7 @@ void ComplexNAIBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      copy_n(bkup_, size_alloc_, data_);
+      copy_n(bkup_, size_block_, data_);
     }
   }
 
@@ -189,5 +187,5 @@ void ComplexNAIBatch::compute() {
   stack_->release(worksize, workz);
   stack_->release(worksize, worky);
   stack_->release(worksize, workx);
-  stack_->release(size_alloc_, stack_save);
+  stack_->release(size_block_, stack_save);
 }
