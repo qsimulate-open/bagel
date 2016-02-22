@@ -475,7 +475,7 @@ shared_ptr<Matrix> ASD_base::couple_blocks(const DimerSubspace_base& AB, const D
   }
 
   shared_ptr<Matrix> out;
-  std::array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
+  array<MonomerKey,4> keys {{space1->template monomerkey<0>(), space1->template monomerkey<1>(), space2->template monomerkey<0>(), space2->template monomerkey<1>()}};
 
   switch(term_type) {
     case Coupling::none :
@@ -495,7 +495,7 @@ shared_ptr<Matrix> ASD_base::couple_blocks(const DimerSubspace_base& AB, const D
     case Coupling::bbET :
       out = compute_bbET(keys); break;
     default :
-      throw std::logic_error("Asking for a coupling type that has not been written.");
+      throw logic_error("Asking for a coupling type that has not been written.");
   }
 
   /* For the Hamiltonian with flip = true, we tranpose the output */

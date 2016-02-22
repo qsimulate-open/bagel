@@ -34,8 +34,8 @@ Shell_ECP::Shell_ECP()
    ecp_exponents_(0.0), ecp_coefficients_(0.0), ecp_r_power_(0) {}
 
 Shell_ECP::Shell_ECP(const array<double,3>& _position, const int _ang,
-                     const std::vector<double>& _ecp_expo, const std::vector<double>& _ecp_coef,
-                     const std::vector<int>& _ecp_r)
+                     const vector<double>& _ecp_expo, const vector<double>& _ecp_coef,
+                     const vector<int>& _ecp_r)
  : Shell_base(false, _position, _ang),
    ecp_exponents_(_ecp_expo), ecp_coefficients_(_ecp_coef), ecp_r_power_(_ecp_r) {}
 

@@ -290,8 +290,8 @@ double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& x
 namespace bagel {
 class FuzzyTask {
   protected:
-    std::shared_ptr<Matrix> data;
-    std::shared_ptr<const Atom> atom;
+    shared_ptr<Matrix> data;
+    shared_ptr<const Atom> atom;
     double xg;
     double yg;
     double zg;
@@ -299,7 +299,7 @@ class FuzzyTask {
     DFTGrid_base* parent;
     const int n;
   public:
-    FuzzyTask(std::shared_ptr<Matrix> d, std::shared_ptr<const Atom> a, double x, double y, double z, double c, DFTGrid_base* ptr, const int i)
+    FuzzyTask(shared_ptr<Matrix> d, shared_ptr<const Atom> a, double x, double y, double z, double c, DFTGrid_base* ptr, const int i)
      : data(d), atom(a), xg(x), yg(y), zg(z), coeff(c), parent(ptr), n(i) { }
 
     void compute() {

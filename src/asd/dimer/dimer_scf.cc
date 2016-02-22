@@ -47,7 +47,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     input_data->erase("type"); input_data->put("type", "region");
     localization = make_shared<PMLocalization>(input_data, sref_, sizes);
   } else
-    throw std::runtime_error("Unrecognized orbital localization method");
+    throw runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
   vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
@@ -152,7 +152,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
 /// localize_first flag defined as in Dimer::localize
 ///  If localize_first is set, separate SVDs are done for each monomer. Otherwise, two are done (one for
 ///  closed and one for active) on the whole dimer.
-void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool localize_first) {
+void Dimer::set_active(const shared_ptr<const PTree> idata, const bool localize_first) {
   // TODO needs clean up
   auto Asp = idata->get_child_optional("active_A");
   auto Bsp = idata->get_child_optional("active_B");

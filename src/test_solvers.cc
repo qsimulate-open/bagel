@@ -113,11 +113,11 @@ void test_solvers(shared_ptr<Geometry> geom_) {
     for (int j = 0; j != n*n; ++j) {
       if (i==j) {
         hess[j+n*n*i] = complex<double>(hess[i+n*n*j].real(), 0);
-        //std::cout << "diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << std::endl;
+        //cout << "diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << endl;
       }
       else {
         hess[j+n*n*i] = complex<double>(hess[i+n*n*j].real(), -hess[i+n*n*j].imag());
-        //std::cout << "off-diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << std::endl;
+        //cout << "off-diagonal" << i << ", " << j << setw(5) << hess[j+n*n*i] << ", " << hess[i+n*n*j] << endl;
       }
     }
     hess[i+n*n*i] += 2.0*i;
@@ -134,9 +134,9 @@ void test_solvers(shared_ptr<Geometry> geom_) {
       dia->element(i,j)=hess[i+n*n*j];
     }
   }
-  std::unique_ptr<double[]> vec(new double[n*n]);
+  unique_ptr<double[]> vec(new double[n*n]);
   dia->diagonalize(vec.get());
-  std::cout << setprecision(10) << *vec.get() << std::setw(5) << *vec.get()+1 << std::endl;
+  cout << setprecision(10) << *vec.get() << setw(5) << *vec.get()+1 << endl;
 
   // testing Davidson -- checked.
 

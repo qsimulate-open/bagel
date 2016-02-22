@@ -33,8 +33,8 @@ using namespace std;
 using namespace bagel;
 
 
-Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-                 const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
+Current::Current(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
+                 const shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Need a GIAO-based Reference object
   auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);

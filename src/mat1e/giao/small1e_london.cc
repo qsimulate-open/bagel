@@ -27,7 +27,7 @@
 using namespace std;
 using namespace bagel;
 
-template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
   // input = [b1, b0]
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
@@ -51,7 +51,7 @@ template<> void Small1e_London<ComplexNAIBatch>::computebatch(const array<shared
 
 
 
-template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, std::shared_ptr<const Molecule> mol) {
+template<> void Small1e_London<ComplexERIBatch>::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();

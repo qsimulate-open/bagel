@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 // private functions
-void ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) {
+void ComplexOverlapBatch::perform_VRR(complex<double>* intermediate) {
 
   const int worksize = amax1_;
   complex<double>* workx = stack_->get<complex<double>>(worksize);

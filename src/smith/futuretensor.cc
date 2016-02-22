@@ -33,7 +33,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template<typename DataType>
-FutureTensor_<DataType>::FutureTensor_(const Tensor_<DataType>& i,  std::shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) {
+FutureTensor_<DataType>::FutureTensor_(const Tensor_<DataType>& i, shared_ptr<Task> j) : Tensor_<DataType>(i), init_(j) {
 }
 
 template<typename DataType>
@@ -44,6 +44,6 @@ void FutureTensor_<DataType>::init() const {
 }
 
 template class FutureTensor_<double>;
-template class FutureTensor_<std::complex<double>>;
+template class FutureTensor_<complex<double>>;
 
 #endif

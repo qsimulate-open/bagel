@@ -74,8 +74,8 @@ void ASD_OrbOpt::common_init() {
   tie(maxhA, maxeA, maxhB, maxeB) = make_tuple(-1,-1,-1,-1);
   if (idata_->get_child("asd")->get<string>("method") == "ras") {
     auto restrictions = idata_->get_child("asd")->get_child("restricted");
-    auto get_restricted_data = [] (std::shared_ptr<const PTree> i) {
-      return std::make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
+    auto get_restricted_data = [] (shared_ptr<const PTree> i) {
+      return make_tuple(i->get_array<int, 3>("orbitals"), i->get<int>("max_holes"), i->get<int>("max_particles"));
     };
 
     if (restrictions->size() == 1) {

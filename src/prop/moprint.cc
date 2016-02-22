@@ -35,8 +35,8 @@ using namespace std;
 using namespace bagel;
 
 
-MOPrint::MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-                 const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
+MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
+                 const shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Assumes striped (or non-relativistic) coefficient matrix
   auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
@@ -315,7 +315,7 @@ void MOPrint::print() const {
     }
   } else {
     cout << fixed << setprecision(10);
-    std::string heading = "   x-coord        y-coord        z-coord     ";
+    string heading = "   x-coord        y-coord        z-coord     ";
     for (int i = 0; i != norb_; ++i) {
       heading += "      Orbital " + to_string(orbitals_[i]+1);
     }

@@ -28,13 +28,13 @@ using namespace std;
 using namespace bagel;
 
 template<typename VecType>
-void GammaBranch<VecType>::insert(std::shared_ptr<const VecType> bra, const size_t bra_tag, const std::list<GammaSQ>& gsq) {
+void GammaBranch<VecType>::insert(shared_ptr<const VecType> bra, const size_t bra_tag, const std::list<GammaSQ>& gsq) {
   if (gsq.empty()) {
     bras_.emplace(bra_tag, bra);
   } else {
     auto first = gsq.back();
     auto rest = gsq; rest.pop_back();
-    std::shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
+    shared_ptr<GammaBranch<VecType>> target = branches_[static_cast<int>(first)];
 
     target->activate();
     target->insert(bra, bra_tag, rest);
@@ -43,7 +43,7 @@ void GammaBranch<VecType>::insert(std::shared_ptr<const VecType> bra, const size
 
 
 template<typename VecType>
-std::shared_ptr<const Matrix> GammaBranch<VecType>::search(const size_t tag, const std::list<GammaSQ>& gsq) const {
+shared_ptr<const Matrix> GammaBranch<VecType>::search(const size_t tag, const std::list<GammaSQ>& gsq) const {
   if (gsq.empty()) {
     assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
   } else {
@@ -55,7 +55,7 @@ std::shared_ptr<const Matrix> GammaBranch<VecType>::search(const size_t tag, con
 
 
 template<typename VecType>
-std::shared_ptr<Matrix> GammaBranch<VecType>::search(const size_t tag, const std::list<GammaSQ>& gsq) {
+shared_ptr<Matrix> GammaBranch<VecType>::search(const size_t tag, const std::list<GammaSQ>& gsq) {
   if (gsq.empty()) {
     assert(gammas_.find(tag)!=gammas_.end()); return gammas_.find(tag)->second;
   } else {
@@ -115,16 +115,16 @@ bool GammaBranch<VecType>::is_distterminal() {
 }
 
 template<typename VecType>
-GammaTree<VecType>::GammaTree(std::shared_ptr<const VecType> ket) : ket_(ket) {
-  base_ = std::make_shared<GammaBranch<VecType>>();
+GammaTree<VecType>::GammaTree(shared_ptr<const VecType> ket) : ket_(ket) {
+  base_ = make_shared<GammaBranch<VecType>>();
   constexpr int nops = 4;
 
   for (int i = 0; i < nops; ++i) {
-    base_->branch(i) = std::make_shared<GammaBranch<VecType>>();
+    base_->branch(i) = make_shared<GammaBranch<VecType>>();
     for (int j = 0; j < nops; ++j) {
-      base_->branch(i)->branch(j) = std::make_shared<GammaBranch<VecType>>();
+      base_->branch(i)->branch(j) = make_shared<GammaBranch<VecType>>();
       for (int k = 0; k < nops; ++k)
-        base_->branch(i)->branch(j)->branch(k) = std::make_shared<GammaBranch<VecType>>();
+        base_->branch(i)->branch(j)->branch(k) = make_shared<GammaBranch<VecType>>();
     }
   }
 }

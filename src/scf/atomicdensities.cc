@@ -33,7 +33,7 @@ using namespace bagel;
 
 const static AtomMap atommap_;
 
-AtomicDensities::AtomicDensities(std::shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
+AtomicDensities::AtomicDensities(shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
   // first make a list of unique atoms
   const string defbasis = geom_->basisfile();
   map<pair<string,string>, shared_ptr<const Matrix>> atoms;

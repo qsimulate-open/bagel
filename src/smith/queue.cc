@@ -32,13 +32,13 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-std::shared_ptr<Task> Queue::next_compute() {
+shared_ptr<Task> Queue::next_compute() {
   auto i = tasklist_.begin();
   for ( ; i != tasklist_.end(); ++i)
     if ((*i)->ready()) break;
 
   assert(i != tasklist_.end());
-  std::shared_ptr<Task> out = *i;
+  shared_ptr<Task> out = *i;
   // execute
   out->compute();
 

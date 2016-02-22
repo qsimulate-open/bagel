@@ -60,9 +60,9 @@ void F12Mat::symmetrize(const bool braket) {
 
 }
 
-std::shared_ptr<F12Mat> F12Ten::contract(const std::shared_ptr<const F12Ten> o) const {
-  if (dim0_ != o->dim0_ || dim1_ != o->dim0_) throw std::logic_error("bug in F12Ten::contract");
-  std::unique_ptr<double[]> buf(new double[nocc_*nocc_*nocc_*nocc_]);
+shared_ptr<F12Mat> F12Ten::contract(const shared_ptr<const F12Ten> o) const {
+  if (dim0_ != o->dim0_ || dim1_ != o->dim0_) throw logic_error("bug in F12Ten::contract");
+  unique_ptr<double[]> buf(new double[nocc_*nocc_*nocc_*nocc_]);
   dgemm_("T", "N", nocc_*nocc_, nocc_*nocc_, dim0_*dim1_, 1.0, data_, dim0_*dim1_, o->data_, dim0_*dim1_, 0.0, buf, nocc_*nocc_);
-  return std::make_shared<F12Mat>(nocc_, std::move(buf));
+  return make_shared<F12Mat>(nocc_, std::move(buf));
 };

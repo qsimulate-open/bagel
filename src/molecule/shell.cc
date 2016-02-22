@@ -59,7 +59,7 @@ Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{
 }
 
 
-std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
+shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];
@@ -68,7 +68,7 @@ std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacemen
 }
 
 
-std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
+shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
   auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];

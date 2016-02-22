@@ -40,7 +40,7 @@ static string tostring(const T i) {
 
 
 template<>
-std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
+shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
 
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);

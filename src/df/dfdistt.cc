@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-DFDistT::DFDistT(std::shared_ptr<const ParallelDF> in, std::shared_ptr<const StaticDist> dist)
+DFDistT::DFDistT(shared_ptr<const ParallelDF> in, shared_ptr<const StaticDist> dist)
  : naux_(in->naux()), nindex1_(in->nindex1()), nindex2_(in->nindex2()),
    dist_(dist ? dist : make_shared<StaticDist>(nindex1_*nindex2_, mpi__->size())),
    bstart_(dist_->start(mpi__->rank())), bsize_(dist_->size(mpi__->rank())), df_(in->df()) {
@@ -114,7 +114,7 @@ vector<shared_ptr<Matrix>> DFDistT::form_aux_2index(shared_ptr<const DFDistT> o,
 }
 
 
-void DFDistT::get_paralleldf(std::shared_ptr<ParallelDF> out) const {
+void DFDistT::get_paralleldf(shared_ptr<ParallelDF> out) const {
 
   vector<int> request;
   const int myrank = mpi__->rank();
