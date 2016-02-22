@@ -43,9 +43,8 @@ PData::PData(const int bsize, const int nblock, const bool serial) : blocksize_(
 
 PData::PData(const PData& o) : blocksize_(o.blocksize()), nblock_(o.nblock()) {
 
-  pdata_.resize(nblock_);
-  for (int i = 0; i != nblock_; ++i)
-    pdata_[i] = make_shared<ZMatrix>(*o(i));
+  for (auto& i : o.pdata())
+    pdata_.push_back(i->copy());
 }
 
 
