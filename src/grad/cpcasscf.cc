@@ -52,7 +52,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
   auto denom = make_shared<Matrix>(nmobasis, nmobasis);
   shared_ptr<Matrix> fock;
   {
-    denom->fill(1.0e10);
+    denom->fill(1.0e20);
     // as in Theor Chem Acc (1997) 97:88-95
     vector<double> occup;
     if (nact) occup = ref_->rdm1_av()->diag();
@@ -63,7 +63,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
     auto finact = make_shared<Matrix>(*coeff_ % *core_fock * *coeff_);
 
     if (nact) {
-      shared_ptr<Matrix> rdm1av = make_shared<Matrix>(nact, nact);
+      auto rdm1av = make_shared<Matrix>(nact, nact);
       copy_n(ref_->rdm1_av()->data(), rdm1av->size(), rdm1av->data());
       rdm1av->sqrt();
       rdm1av->scale(1.0/sqrt(2.0));
@@ -77,11 +77,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
 
     shared_ptr<Qvec> fact = nact ? make_shared<Qvec>(nmobasis, nact, coeff_, nclosed, fci_, ref_->rdm2_av()) : nullptr;
     for (int i = 0; i != nact; ++i)
-      daxpy_(nmobasis, occup[i], finact->element_ptr(0,nclosed+i), 1, fact->data()+i*nmobasis, 1);
+      blas::ax_plus_y_n(occup[i], finact->element_ptr(0,nclosed+i), nmobasis, fact->data()+i*nmobasis);
 
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nvirt; ++j)
-        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i,i) + 2.0*occup[i]*fock->element(j+nocc, j+nocc);
+        denom->element(j+nocc,i+nclosed) = denom->element(i+nclosed,j+nocc) = -2.0*fact->element(i+nclosed,i) + 2.0*occup[i]*fock->element(j+nocc, j+nocc);
 
     for (int i = 0; i != nclosed; ++i)
       for (int j = 0; j != nvirt; ++j)
@@ -90,7 +90,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> CPCASSCF::compute_orb_denom_and_foc
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nclosed; ++j)
          denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
-                                     = (fock->element(nclosed+i,nclosed+i)*4.0-2.0*fact->element(i+nclosed,i)) - fock->element(j, j)*(4.0 - 2.0*occup[i]);
+                                     = 4.0*fock->element(nclosed+i,nclosed+i) - 2.0*fact->element(i+nclosed,i) - fock->element(j, j)*(4.0 - 2.0*occup[i]);
   }
   return make_tuple(denom, fock);
 }
@@ -125,8 +125,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     shared_ptr<Dvec> d1;
     if (nact) {
-      auto d1_tmp = make_shared<const Civec>(*fci_->denom());
-      d1 = make_shared<Dvec>(d1_tmp, ref_->nstate());
+      d1 = make_shared<Dvec>(fci_->denom(), ref_->nstate());
       const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
       for (int i = 0; i != ref_->nstate(); ++i)
         *d1->data(i) -= fci_->energy(i) - core_energy;
@@ -258,7 +257,6 @@ shared_ptr<PairFile<Matrix,Dvec>>
   auto cz0 = make_shared<Matrix>(*coeff_ * *z0);
   auto cz0cinv = make_shared<Matrix>(*coeff_ * *z0 * *cinv);
   const MatView ocz0 = cz0->slice(0, nocca);
-//assert((*cz0 - *cz0cinv * *coeff_).rms() < 1.0e-8);
 
   // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
   // (D|jx) -> (D|jS)
@@ -300,28 +298,21 @@ shared_ptr<PairFile<Matrix,Dvec>>
 
   // first form 4 index
   shared_ptr<Matrix> buf = fullz->form_4index(fullb, 1.0);
-  // TODO Awful code. To be updated. making the code that works in the quickest possible way
-  // index swap
-  unique_ptr<double[]> buf2(new double[nocca*nocca*nocca*nocca]);
-
-  // bra ket symmetrization
-  for (int i = 0; i != nocca*nocca; ++i)
-    for (int j = 0; j != nocca*nocca; ++j)
-      buf2[j+nocca*nocca*i] = buf->element(j, i) + buf->element(i, j);
+  buf->symmetrize();
+  buf->scale(2.0);
 
   auto Htilde2 = make_shared<Matrix>(nact*nact, nact*nact);
   for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii)
     for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj)
       for (int k = nclosed, kk = 0; k != nocca; ++k, ++kk)
-        for (int l = nclosed, ll = 0; l != nocca; ++l, ++ll)
-          Htilde2->element(ll+nact*kk, jj+nact*ii) = buf2[l+nocca*(k+nocca*(j+nocca*i))];
+        copy_n(buf->element_ptr(nclosed+nocca*k,j+nocca*i), nocca-nclosed, Htilde2->element_ptr(nact*kk, jj+nact*ii));
 
   auto Htilde1 = make_shared<Matrix>(nact,nact, true);
   for (int i = nclosed, ii = 0; i != nocca; ++i, ++ii) {
     for (int j = nclosed, jj = 0; j != nocca; ++j, ++jj) {
       (*Htilde1)(jj, ii) = htilde->element(j,i);
       for (int k = 0; k != nclosed; ++k)
-        (*Htilde1)(jj, ii) += 2.0*buf2[k+nocca*(k+nocca*(j+nocca*i))] - buf2[k+nocca*(i+nocca*(j+nocca*k))];
+        (*Htilde1)(jj, ii) += 2.0*buf->element(k+nocca*k, j+nocca*i) - buf->element(k+nocca*i, j+nocca*k);
     }
   }
   // factor of 2 in the equation
@@ -338,8 +329,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
 
     const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
     for (int i = 0; i != z1->ij(); ++i)
-      for (int j = 0; j != z1->data(i)->size(); ++j)
-        sigmaci->data(i)->data(j) -= (fci_->energy(i) - core_energy) * z1->data(i)->data(j);
+      blas::ax_plus_y_n(-(fci_->energy(i)-core_energy), z1->data(i)->data(), z1->data(i)->size(), sigmaci->data(i)->data());
 
     sigmaci->project_out(civector_);
   } else {
@@ -433,8 +423,8 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
   const MatView cz0 = z0->slice(0, nclosed);
   shared_ptr<const Matrix>  ccz0 = nclosed ? make_shared<Matrix>(*coeff_ * cz0) : nullptr;
 
-  shared_ptr<RDM<1>> rdm1_av = nact ? ref_->rdm1_av()->copy() : nullptr;
-  shared_ptr<RDM<2>> rdm2_av = nact ? ref_->rdm2_av()->copy() : nullptr;
+  shared_ptr<const RDM<1>> rdm1_av = nact ? ref_->rdm1_av()->copy() : nullptr;
+  shared_ptr<const RDM<2>> rdm2_av = nact ? ref_->rdm2_av()->copy() : nullptr;
 
   // TODO need cleanup once this code works
   shared_ptr<Matrix> sigmaorb, rdm1av_mat;
@@ -487,24 +477,24 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
   // two electron part. closed-closed
   // TODO halfc is redundant
   if (nclosed) {
-    shared_ptr<DFHalfDist> halfc = geom_->df()->compute_half_transform(ccoeff);
-    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(ccz0);
+    shared_ptr<const DFHalfDist> halfc = geom_->df()->compute_half_transform(ccoeff);
+    shared_ptr<const DFHalfDist> zhalf = geom_->df()->compute_half_transform(ccz0);
 
     {
-      shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
-      shared_ptr<DFFullDist> fullcj = halfc->compute_second_transform(ccoeff)->apply_JJ();
-      Matrix kmat(*zhalf->form_2index(fullcj, 1.0) + *halfc->form_2index(zfull, 1.0));
+      shared_ptr<const DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
+      shared_ptr<const DFFullDist> fullcj = halfc->compute_second_transform(ccoeff)->apply_JJ();
+      const Matrix kmat(*zhalf->form_2index(fullcj, 1.0) + *halfc->form_2index(zfull, 1.0));
 
-      Matrix jop(*geom_->df()->compute_Jop(halfc, ccz0->transpose()) * ccoeff * 4.0);
+      const Matrix jop(*geom_->df()->compute_Jop(halfc, ccz0->transpose()) * ccoeff * 4.0);
       sigmaorb->add_block(4.0, 0, 0, nmobasis, nclosed, *coeff_ % (jop - kmat));
     }
     // closed-active
     if (nact) {
-      shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(acoeff)->apply_JJ();
-      shared_ptr<DFFullDist> fullcj = halfc->compute_second_transform(acoeff)->apply_JJ();
-      Matrix kmat(*zhalf->form_2index(fullcj, 1.0) + *halfc->form_2index(zfull, 1.0));
+      shared_ptr<const DFFullDist> zfull = zhalf->compute_second_transform(acoeff)->apply_JJ();
+      shared_ptr<const DFFullDist> fullcj = halfc->compute_second_transform(acoeff)->apply_JJ();
+      const Matrix kmat(*zhalf->form_2index(fullcj, 1.0) + *halfc->form_2index(zfull, 1.0));
 
-      Matrix jop(*geom_->df()->compute_Jop(halfc, ccz0->transpose()) * acoeff * 4.0);
+      const Matrix jop(*geom_->df()->compute_Jop(halfc, ccz0->transpose()) * acoeff * 4.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % (jop - kmat) * *rdm1av_mat);
     }
   }
@@ -513,31 +503,31 @@ shared_ptr<Matrix> CPCASSCF::form_sigma_sym(shared_ptr<const PairFile<Matrix,Dve
     // closed-active
     if (nclosed) {
       shared_ptr<const Matrix> acz0 = make_shared<Matrix>(*coeff_ * az0 * *rdm1av_mat);
-      shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
-      shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
-      shared_ptr<DFFullDist> fullaj = halfa->compute_second_transform(ccoeff)->apply_JJ();
-      Matrix kmat(*zhalf->form_2index(fullaj, 1.0) + *halfa->form_2index(zfull, 1.0));
+      shared_ptr<const DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
+      shared_ptr<const DFFullDist> zfull = zhalf->compute_second_transform(ccoeff)->apply_JJ();
+      shared_ptr<const DFFullDist> fullaj = halfa->compute_second_transform(ccoeff)->apply_JJ();
+      const Matrix kmat(*zhalf->form_2index(fullaj, 1.0) + *halfa->form_2index(zfull, 1.0));
 
-      Matrix jop(*geom_->df()->compute_Jop(halfa, acz0->transpose()) * ccoeff * 4.0);
+      const Matrix jop(*geom_->df()->compute_Jop(halfa, acz0->transpose()) * ccoeff * 4.0);
       sigmaorb->add_block(2.0, 0, 0, nmobasis, nclosed, *coeff_ % (jop - kmat));
     }
     // active-active
     // coulomb term
     shared_ptr<const Matrix> acz0 = make_shared<Matrix>(*coeff_ * az0);
-    shared_ptr<DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
-    shared_ptr<DFFullDist> fulla = halfa->compute_second_transform(acoeff);
+    shared_ptr<const DFHalfDist> zhalf = geom_->df()->compute_half_transform(acz0);
+    shared_ptr<const DFFullDist> fulla = halfa->compute_second_transform(acoeff);
     {
-      shared_ptr<DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(*rdm2_av);
-      shared_ptr<Matrix> jop = zhalf->form_2index(fullaj, 1.0);
+      shared_ptr<const DFFullDist> fullaj = fulla->apply_JJ()->apply_2rdm(*rdm2_av);
+      shared_ptr<const Matrix> jop = zhalf->form_2index(fullaj, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *jop);
     }
     // exchange term
     {
-      shared_ptr<RDM<2>> rdm2_av_exch = rdm2_av->clone();
+      shared_ptr<const RDM<2>> rdm2_av_exch = rdm2_av->clone();
       shared_ptr<DFFullDist> zfull = zhalf->compute_second_transform(acoeff)->apply_JJ();
       zfull->symmetrize();
       zfull = zfull->apply_2rdm(*rdm2_av);
-      shared_ptr<Matrix> kop = halfa->form_2index(zfull, 1.0);
+      shared_ptr<const Matrix> kop = halfa->form_2index(zfull, 1.0);
       sigmaorb->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *kop);
     }
   }
