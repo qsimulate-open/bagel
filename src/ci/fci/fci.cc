@@ -244,7 +244,7 @@ shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
 
 
 void FCI::compute() {
-  Timer pdebug(2);
+  Timer pdebug(3);
 
   if (!restarted_) {
     // at the moment I only care about C1 symmetry, with dynamics in mind

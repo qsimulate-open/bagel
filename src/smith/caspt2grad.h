@@ -27,9 +27,7 @@
 #define __SRC_SMITH_CASPT2GRAD_H
 
 #include <src/wfn/reference.h>
-#include <src/wfn/method.h>
 #include <src/ci/fci/fci.h>
-#include <src/util/input/input.h>
 #include <src/smith/tensor.h>
 
 namespace bagel {
