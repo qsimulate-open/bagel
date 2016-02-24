@@ -24,9 +24,6 @@
 
 #include <bagel_config.h>
 #include <src/smith/caspt2grad.h>
-#ifdef COMPILE_SMITH
-#include <ga.h>
-#endif
 
 using namespace std;
 using namespace bagel;
@@ -71,7 +68,7 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
         input->put_block(buf, a, i, j);
       }
   }
-  GA_Sync();
+  mpi__->barrier();
 
   // next contract
   for (auto& j : ind[1])
@@ -96,7 +93,7 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
         }
         output->add_block(buf, a, i, j);
       }
-  GA_Sync();
+  mpi__->barrier();
 
   // finally fill back into output
   for (auto& a : aux) {
@@ -111,7 +108,7 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
             copy_n(buf.get()+a.size()*(ei+i.size()*ej), a.size(), optr + get<1>(loc)+asize*(i.offset()+ei+full->nocc1()*(j.offset()+ej)));
       }
   }
-  GA_Sync();
+  mpi__->barrier();
 
   // one body part
   {

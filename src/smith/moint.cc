@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <src/smith/moint.h>
 #include <src/smith/smith_util.h>
 #include <src/mat1e/rel/relhcore.h>
@@ -82,7 +81,7 @@ void K2ext<complex<double>>::init() {
   const size_t astart = info_->geom()->df()->block(0)->astart();
 
   auto compute = [&, this](const bool gaunt, const bool breit) {
-    // create a GA array
+    // create an intermediate array
     using MapType = map<int, shared_ptr<Tensor_<complex<double>>>>;
     MapType ext, ext2;
     auto alpha = gaunt ? list<int>{Comp::X, Comp::Y, Comp::Z} : list<int>{Comp::L};
@@ -125,7 +124,7 @@ void K2ext<complex<double>>::init() {
     }
     if (!breit) ext2 = ext;
     // wait for other nodes
-    GA_Sync();
+    mpi__->barrier();
 
     // form four-index integrals
     const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
@@ -158,7 +157,7 @@ void K2ext<complex<double>>::init() {
         }
       }
     }
-    GA_Sync();
+    mpi__->barrier();
   };
 
   // coulomb operator
@@ -190,7 +189,7 @@ void K2ext<double>::init() {
   // Aux index blocking
   const IndexRange aux(df->adist_now());
 
-  // create a GA array
+  // create an intermediate array
   Tensor_<double> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]});
   ext.allocate();
 
@@ -204,14 +203,13 @@ void K2ext<double>::init() {
       unique_ptr<double[]> buf(new double[bufsize]);
       copy_n(df_full->block(0)->data(), bufsize, buf.get());
 
-      // set the local copy to the GA
       for (auto& a : aux)
         if (a.offset() == df->block(0)->astart())
           ext.put_block(buf, a, i0, i1);
     }
   }
   // wait for other nodes
-  GA_Sync();
+  mpi__->barrier();
 
   // form four-index integrals
   for (auto& i0 : blocks_[0]) {
@@ -247,7 +245,7 @@ void K2ext<double>::init() {
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 

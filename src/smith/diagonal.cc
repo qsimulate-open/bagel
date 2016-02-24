@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relmrci/RelMRCI.h>
@@ -75,7 +74,7 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, 
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -115,7 +114,7 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -156,7 +155,7 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -196,7 +195,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 #endif

@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <src/smith/futuretensor.h>
 
 using namespace std;
@@ -40,7 +39,7 @@ template<typename DataType>
 void FutureTensor_<DataType>::init() const {
   init_->compute();
   initialized_ = true;
-  GA_Sync();
+  mpi__->barrier();
 }
 
 template class FutureTensor_<double>;

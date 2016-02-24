@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <numeric>
 #include <src/smith/moint.h>
 #include <src/smith/spinfreebase.h>
@@ -133,7 +132,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   // TODO for the time being
   e0_ = accumulate(e0all_.begin(), e0all_.end(), 0)/nstates;
 
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -410,7 +409,7 @@ void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
   rdm4_ = rdm4all_->at(jst, ist);
 
   // ensure that get_block calls are done after RDMs are set in every node
-  GA_Sync();
+  mpi__->barrier();
 }
 
 

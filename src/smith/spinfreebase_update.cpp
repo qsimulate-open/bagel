@@ -584,7 +584,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
     } // jst loop
   } // ist loop
 
-  GA_Sync();
+  mpi__->barrier();
 }
 
 #endif

@@ -25,8 +25,8 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <src/smith/queue.h>
+#include <src/util/parallel/mpi_interface.h>
 
 using namespace std;
 using namespace bagel;
@@ -43,7 +43,7 @@ shared_ptr<Task> Queue::next_compute() {
   out->compute();
 
   // synchronize
-  GA_Sync();
+  mpi__->barrier();
 
   // delete dependency (to remove intermediate storages)
   for (auto& j : tasklist_) j->delete_dep(out);
