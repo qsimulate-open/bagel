@@ -113,7 +113,6 @@ void CASPT2::CASPT2::solve() {
           t2 = t2all_[i]->at(ist);
           r = rall_[i]->at(jst);
 
-// add shift while computing e0?
           e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
@@ -153,13 +152,22 @@ void CASPT2::CASPT2::solve() {
     if (info_->shift() == 0)
        cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
     else {
-      set_rdm(istate, istate);
-      t2 = t2all_[istate]->at(istate);
-      shared_ptr<Queue> corrq = make_corrq();
-      const double norm = accumulate(corrq);
+      // will be used in normq
+      n = init_residual();
+      double norm = 0.0;
+      for (int i = 0; i != nstates_; ++i) { // bra
+        for (int j = 0; j != nstates_; ++j) { // ket
+          set_rdm(i, j);
+          t2 = t2all_[istate]->at(j);
+          shared_ptr<Queue> normq = make_normq();
+          while (!normq->done())
+            normq->next_compute();
+          norm += dot_product_transpose(n, t2); 
+        }
+      }
       cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
       cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate)
-                                                                                                                                      - info_->shift()*norm <<endl;
+                                                                                                                                      - info_->shift()*norm << endl;
       cout <<endl;
     }
   }
