@@ -43,6 +43,7 @@ class SMITH_Info {
     int ncore_;
     int nfrozenvirt_;
     double thresh_;
+    double shift_;
     int maxiter_;
     int target_;
     int maxtile_;
@@ -75,6 +76,7 @@ class SMITH_Info {
       rdm34f(const int ist, const int jst, std::shared_ptr<const MatType> fock) const;
 
     double thresh() const { return thresh_; }
+    double shift() const {return shift_; }
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int maxtile() const { return maxtile_; }
