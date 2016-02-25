@@ -364,14 +364,12 @@ void DistFCI::const_denom() {
   tasks.compute();
 
   denom_->local_accumulate(1.0, buf);
-#ifdef HAVE_GA
-  GA_Sync();
-#endif
+  mpi__->barrier();
   denom_t.tick_print("denom");
 }
 
 void DistFCI::compute() {
-  Timer pdebug(0);
+  Timer pdebug(3);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");

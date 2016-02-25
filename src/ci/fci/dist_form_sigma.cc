@@ -45,7 +45,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_p
     shared_ptr<DistCivec> sigma = cc->clone();
     sigma->zero();
 
-    Timer fcitime(1);
+    Timer fcitime(3);
 
     sigma_ab(cc, sigma, jop);
     fcitime.tick_print("alpha-beta");
