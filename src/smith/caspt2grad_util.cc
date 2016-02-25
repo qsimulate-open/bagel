@@ -34,7 +34,6 @@ shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nall = nocc + ref_->nvirt();
-  const int n = nocc-ncore_;
 
   shared_ptr<DFFullDist> out = full->clone();
   double* optr = out->block(0)->data();

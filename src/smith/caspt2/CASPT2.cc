@@ -77,7 +77,7 @@ void CASPT2::CASPT2::solve() {
   {
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
-      e0_ = e0all_[i];
+      e0_ = e0all_[i] - info_->shift();
       update_amplitude(t2all_[i], sall_[i]);
     }
   }
@@ -112,14 +112,15 @@ void CASPT2::CASPT2::solve() {
           set_rdm(jst, ist);
           t2 = t2all_[i]->at(ist);
           r = rall_[i]->at(jst);
-          e0_ = e0all_[i];
+
+// add shift while computing e0?
+          e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
           diagonal(r, t2, jst == ist);
         }
       }
-
       // solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
       t2all_[i] = solvers[i]->civec();
@@ -146,8 +147,22 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
-  for (int istate = 0; istate != nstates_; ++istate)
-    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
+
+
+  for (int istate = 0; istate != nstates_; ++istate) {
+    if (info_->shift() == 0)
+       cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+    else {
+      set_rdm(istate, istate);
+      t2 = t2all_[istate]->at(istate);
+      shared_ptr<Queue> corrq = make_corrq();
+      const double norm = accumulate(corrq);
+      cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+      cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate)
+                                                                                                                                      - info_->shift()*norm <<endl;
+      cout <<endl;
+    }
+  }
 
   // MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
