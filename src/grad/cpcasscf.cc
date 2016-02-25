@@ -86,12 +86,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Matrix>> CPCASSCF::compu
 
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nvirt; ++j)
-       denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*fock->element(j+nocc, j+nocc) - 4.0*fock->element(i, i);
+      denom->element(j+nocc,i) = denom->element(i,j+nocc) = 4.0*fock->element(j+nocc, j+nocc) - 4.0*fock->element(i, i);
 
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nclosed; ++j)
-       denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
-                                   = 4.0*fock->element(nclosed+i,nclosed+i) - 2.0*fact->element(i+nclosed,i) - fock->element(j, j)*(4.0 - 2.0*occup[i]);
+      denom->element(j,i+nclosed) = denom->element(i+nclosed,j)
+                                  = 4.0*fock->element(nclosed+i,nclosed+i) - 2.0*fact->element(i+nclosed,i) - fock->element(j, j)*(4.0 - 2.0*occup[i]);
 
   return make_tuple(denom, fock, finact);
 }
