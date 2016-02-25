@@ -41,6 +41,35 @@ namespace CASPT2{
 class Task350 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<4,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task350(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task350() {}
+};
+
+class Task351 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<2,1> {
       protected:
@@ -63,11 +92,11 @@ class Task350 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task350(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task350() {}
+    Task351(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task351() {}
 };
 
-class Task351 : public Task {
+class Task352 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -92,11 +121,11 @@ class Task351 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task351(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task351() {}
+    Task352(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task352() {}
 };
 
-class Task352 : public Task {
+class Task353 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -121,11 +150,11 @@ class Task352 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task352(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task352() {}
+    Task353(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task353() {}
 };
 
-class Task353 : public Task {
+class Task354 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -139,35 +168,6 @@ class Task353 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task353(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task353() {}
-};
-
-class Task354 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -215,17 +215,17 @@ class Task355 : public Task {
 class Task356 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<2,1> {
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,1>(block, in, out), range_(ran) { }
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -244,17 +244,17 @@ class Task356 : public Task {
 class Task357 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
+    std::array<std::shared_ptr<const Tensor>,1> in_;
+    class Task_local : public SubTask<2,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
+          : SubTask<2,1>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -360,64 +360,6 @@ class Task360 : public Task {
 class Task361 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<4,1> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<4,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task361(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task361() {}
-};
-
-class Task362 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<2,1> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task362(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task362() {}
-};
-
-class Task363 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
@@ -440,11 +382,40 @@ class Task363 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task363(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task363() {}
+    Task361(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task361() {}
 };
 
-class Task364 : public Task {
+class Task362 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
+    class Task_local : public SubTask<4,1> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,1>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task362(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task362() {}
+};
+
+class Task363 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -458,6 +429,35 @@ class Task364 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,1>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task363(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task363() {}
+};
+
+class Task364 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -505,17 +505,17 @@ class Task365 : public Task {
 class Task366 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
+    std::array<std::shared_ptr<const Tensor>,1> in_;
+    class Task_local : public SubTask<2,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
+          : SubTask<2,1>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -534,17 +534,17 @@ class Task366 : public Task {
 class Task367 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<2,1> {
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,1>(block, in, out), range_(ran) { }
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -621,17 +621,17 @@ class Task369 : public Task {
 class Task370 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
+    std::array<std::shared_ptr<const Tensor>,1> in_;
+    class Task_local : public SubTask<2,1> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
+          : SubTask<2,1>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -651,16 +651,16 @@ class Task371 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<4,2> {
+    class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<4,2>(block, in, out), range_(ran) { }
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -680,16 +680,16 @@ class Task372 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
+    class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
+          : SubTask<4,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -709,6 +709,35 @@ class Task373 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task373(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task373() {}
+};
+
+class Task374 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -730,11 +759,11 @@ class Task373 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task373(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task373() {}
+    Task374(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task374() {}
 };
 
-class Task374 : public Task {
+class Task375 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -748,35 +777,6 @@ class Task374 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task374(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task374() {}
-};
-
-class Task375 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -796,16 +796,16 @@ class Task376 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<4,2> {
+    class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<4,2>(block, in, out), range_(ran) { }
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -825,16 +825,16 @@ class Task377 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
+    class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
+          : SubTask<4,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -854,6 +854,35 @@ class Task378 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task378(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task378() {}
+};
+
+class Task379 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -875,11 +904,11 @@ class Task378 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task378(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task378() {}
+    Task379(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task379() {}
 };
 
-class Task379 : public Task {
+class Task380 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -893,35 +922,6 @@ class Task379 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task379(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task379() {}
-};
-
-class Task380 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -941,6 +941,35 @@ class Task381 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task381(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task381() {}
+};
+
+class Task382 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<4,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
@@ -962,11 +991,11 @@ class Task381 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task381(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task381() {}
+    Task382(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task382() {}
 };
 
-class Task382 : public Task {
+class Task383 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -991,11 +1020,11 @@ class Task382 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task382(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task382() {}
+    Task383(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task383() {}
 };
 
-class Task383 : public Task {
+class Task384 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -1020,11 +1049,11 @@ class Task383 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task383(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task383() {}
+    Task384(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task384() {}
 };
 
-class Task384 : public Task {
+class Task385 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -1049,11 +1078,11 @@ class Task384 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task384(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task384() {}
+    Task385(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task385() {}
 };
 
-class Task385 : public Task {
+class Task386 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -1067,35 +1096,6 @@ class Task385 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,2>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task385(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task385() {}
-};
-
-class Task386 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<4,2> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<4,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -1143,6 +1143,35 @@ class Task387 : public Task {
 class Task388 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<4,2> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<4,2>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task388(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task388() {}
+};
+
+class Task389 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
     class Task_local : public SubTask<2,1> {
       protected:
@@ -1165,11 +1194,11 @@ class Task388 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task388(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task388() {}
+    Task389(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task389() {}
 };
 
-class Task389 : public Task {
+class Task390 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -1194,11 +1223,11 @@ class Task389 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task389(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task389() {}
+    Task390(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task390() {}
 };
 
-class Task390 : public Task {
+class Task391 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -1223,11 +1252,11 @@ class Task390 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task390(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task390() {}
+    Task391(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task391() {}
 };
 
-class Task391 : public Task {
+class Task392 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -1252,11 +1281,11 @@ class Task391 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task391(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task391() {}
+    Task392(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task392() {}
 };
 
-class Task392 : public Task {
+class Task393 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,1> in_;
@@ -1270,35 +1299,6 @@ class Task392 : public Task {
         Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<2,1>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task392(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task392() {}
-};
-
-class Task393 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<2,2> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -1317,17 +1317,17 @@ class Task393 : public Task {
 class Task394 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<2,1> {
+    std::array<std::shared_ptr<const Tensor>,2> in_;
+    class Task_local : public SubTask<2,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,3> range_;
         const Index& b(const size_t& i) const { return this->block(i); }
         std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
       public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,1>(block, in, out), range_(ran) { }
+          : SubTask<2,2>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
@@ -1404,6 +1404,35 @@ class Task396 : public Task {
 class Task397 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
+    std::array<std::shared_ptr<const Tensor>,1> in_;
+    class Task_local : public SubTask<2,1> {
+      protected:
+        const std::array<std::shared_ptr<const IndexRange>,3> range_;
+        const Index& b(const size_t& i) const { return this->block(i); }
+        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
+        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
+      public:
+        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
+                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
+          : SubTask<2,1>(block, in, out), range_(ran) { }
+        void compute() override;
+    };
+    std::vector<std::shared_ptr<Task_local>> subtasks_;
+    void compute_() override {
+      if (!out_->allocated())
+        out_->allocate();
+      for (auto& i : in_)
+        i->init();
+      for (auto& i : subtasks_) i->compute();
+    }
+  public:
+    Task397(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task397() {}
+};
+
+class Task398 : public Task {
+  protected:
+    std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
     class Task_local : public SubTask<2,2> {
       protected:
@@ -1426,11 +1455,11 @@ class Task397 : public Task {
       for (auto& i : subtasks_) i->compute();
     }
   public:
-    Task397(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task397() {}
+    Task398(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
+    ~Task398() {}
 };
 
-class Task398 : public Task {
+class Task399 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
@@ -1444,35 +1473,6 @@ class Task398 : public Task {
         Task_local(const std::array<const Index,4>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,3>& ran)
           : SubTask<4,2>(block, in, out), range_(ran) { }
-        void compute() override;
-    };
-    std::vector<std::shared_ptr<Task_local>> subtasks_;
-    void compute_() override {
-      if (!out_->allocated())
-        out_->allocate();
-      for (auto& i : in_)
-        i->init();
-      for (auto& i : subtasks_) i->compute();
-    }
-  public:
-    Task398(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,3> range);
-    ~Task398() {}
-};
-
-class Task399 : public Task {
-  protected:
-    std::shared_ptr<Tensor> out_;
-    std::array<std::shared_ptr<const Tensor>,1> in_;
-    class Task_local : public SubTask<2,1> {
-      protected:
-        const std::array<std::shared_ptr<const IndexRange>,3> range_;
-        const Index& b(const size_t& i) const { return this->block(i); }
-        std::shared_ptr<const Tensor> in(const size_t& i) const { return this->in_tensor(i); }
-        std::shared_ptr<Tensor> out() { return this->out_tensor(); }
-      public:
-        Task_local(const std::array<const Index,2>& block, const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,3>& ran)
-          : SubTask<2,1>(block, in, out), range_(ran) { }
         void compute() override;
     };
     std::vector<std::shared_ptr<Task_local>> subtasks_;
