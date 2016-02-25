@@ -210,8 +210,11 @@ void CASPT2::CASPT2::solve_deriv() {
   t2 = t2all_[0]->at(0);
 
   Timer timer;
-  shared_ptr<Queue> corrq = make_corrq();
-  correlated_norm_ = accumulate(corrq);
+  n = init_residual();
+  shared_ptr<Queue> normq = make_normq();
+  while (!normq->done())
+    normq->next_compute();
+  correlated_norm_ = dot_product_transpose(n, t2);
   timer.tick_print("T1 norm evaluation");
 
   den2 = h1_->clone();
