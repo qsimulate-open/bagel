@@ -147,16 +147,21 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
+
+
   for (int istate = 0; istate != nstates_; ++istate) {
-    set_rdm(istate, istate);
-    shared_ptr<Queue> corrq = make_corrq();
-    correlated_norm_ = accumulate(corrq);
-    cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate)
-                                                                                                            - info_->shift()*correlated_norm_ <<endl;
-cout << "shift " <<  info_->shift() << endl;
-cout << " corr norm  " << correlated_norm_ <<endl;
-cout << " prod " << info_->shift()*correlated_norm_ << endl;
+    if (info_->shift() == 0)
+       cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+    else {
+      set_rdm(istate, istate);
+      t2 = t2all_[istate]->at(istate);
+      shared_ptr<Queue> corrq = make_corrq();
+      const double norm = accumulate(corrq);
+      cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+      cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate)
+                                                                                                                                      - info_->shift()*norm <<endl;
+      cout <<endl;
+    }
   }
 
   // MS-CASPT2
