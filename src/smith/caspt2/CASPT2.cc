@@ -157,12 +157,16 @@ void CASPT2::CASPT2::solve() {
       double norm = 0.0;
       for (int i = 0; i != nstates_; ++i) { // bra
         for (int j = 0; j != nstates_; ++j) { // ket
-          set_rdm(i, j);
-          t2 = t2all_[istate]->at(j);
-          shared_ptr<Queue> normq = make_normq();
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2); 
+            set_rdm(i, j);
+          // <proj|j> should be <proj|istate>
+          if (istate == j) {
+            t2 = t2all_[istate]->at(j);
+            shared_ptr<Queue> normq = make_normq();
+            while (!normq->done())
+              normq->next_compute();
+            norm += dot_product_transpose(n, t2);
+          }
+cout << "norm: state:  " << istate<< "  " <<setprecision(10) << norm <<endl;
         }
       }
       cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
