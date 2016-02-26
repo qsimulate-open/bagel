@@ -143,16 +143,15 @@ void CASPT2::CASPT2::solve() {
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break;
     if (nstates_ > 1) cout << endl;
   }
-  pt2energy_.resize(nstates_);
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
 
-
+  pt2energy_.resize(nstates_);
   for (int istate = 0; istate != nstates_; ++istate) {
     if (info_->shift() == 0) {
         pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
-        cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
+        cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
     } else {
       // will be used in normq
       n = init_residual();
@@ -168,8 +167,8 @@ void CASPT2::CASPT2::solve() {
         }
       }
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
-      cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate];
+      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
       cout <<endl;
     }
   }
