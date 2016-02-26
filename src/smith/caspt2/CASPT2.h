@@ -49,6 +49,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     int nstates_;
     std::vector<double> err_;
+    std::vector<double> pt2energy_;
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;

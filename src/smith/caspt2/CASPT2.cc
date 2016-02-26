@@ -143,15 +143,17 @@ void CASPT2::CASPT2::solve() {
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break;
     if (nstates_ > 1) cout << endl;
   }
+  pt2energy_.resize(nstates_);
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
 
 
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0)
-       cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-    else {
+    if (info_->shift() == 0) {
+        pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
+        cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
+    } else {
       // will be used in normq
       n = init_residual();
       double norm = 0.0;
@@ -165,9 +167,9 @@ void CASPT2::CASPT2::solve() {
           norm += dot_product_transpose(n, t2all_[istate]->at(i));
         }
       }
+      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
       cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate)
-                                                                                                                                      - info_->shift()*norm << endl;
+      cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate];
       cout <<endl;
     }
   }
@@ -180,7 +182,7 @@ void CASPT2::CASPT2::solve() {
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
-          fmn(ist, ist) = energy_[ist] + (*eref_)(ist, ist);
+          fmn(ist, ist) = pt2energy_[ist];
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
