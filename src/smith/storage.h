@@ -92,8 +92,12 @@ class StorageIncore {
 
     // this relates hash keys to lo and high of the block
     std::unordered_map<size_t, std::pair<size_t, size_t>> hashtable_;
-    // distribution information
-    std::vector<size_t> blocks_;
+    // distribution information. Relates lo and the process number
+    std::map<size_t, int> blocks_;
+
+    // local storage
+    size_t local_lo_;
+    size_t local_hi_;
 
     bool initialized_;
 

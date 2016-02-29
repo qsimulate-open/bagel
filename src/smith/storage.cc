@@ -29,6 +29,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <limits>
 #include <algorithm>
 #include <src/util/f77.h>
 #include <src/util/math/algo.h>
@@ -57,11 +58,20 @@ StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool ini
   for (auto& i : size) {
     if (i.second == 0) continue;
     if (blocks_.size()*blocksize <= tsize)
-      blocks_.push_back(tsize);
+      blocks_.emplace(tsize, blocks_.size());
     tsize += i.second;
   }
-  blocks_.push_back(totalsize_);
   assert(totalsize_ == tsize);
+
+  // set local_lo_ and hi_
+  local_lo_ = local_hi_ = numeric_limits<size_t>::max();
+  for (auto iter = blocks_.begin(); iter != blocks_.end(); ++iter)
+    if (iter->second == mpi__->rank()) {
+      local_lo_ = iter->first;
+      auto iterp = ++iter;
+      local_hi_ = iterp != blocks_.end() ? iterp->first : totalsize_;
+      break;
+    }
 
   // here we initialize the global array storage
   if (init)
@@ -330,13 +340,9 @@ tuple<size_t,size_t,size_t> StorageIncore<DataType>::locate(const size_t key) co
     throw logic_error("a key was not found in Storage::locate(const size_t key)");
   const size_t lo = iter->second.first;
   const size_t hi = iter->second.second;
-  tuple<size_t,size_t,size_t> out;
-  // TODO improve this algorithm: use std::set and lower_bound
-  for (size_t i = 0; i != mpi__->size(); ++i)
-    if (lo >= blocks_[i] && lo < blocks_[i+1])
-      return make_tuple(i, lo-blocks_[i], hi-lo);
-  assert(false);
-  return out;
+  auto b = blocks_.upper_bound(lo);
+  --b;
+  return make_tuple(b->second, lo - b->first, hi - lo);
 }
 
 
@@ -345,15 +351,14 @@ bool StorageIncore<DataType>::is_local(const size_t key) const {
   auto iter = hashtable_.find(key);
   assert(iter != hashtable_.end());
   const size_t lo = iter->second.first;
-  const size_t rank = mpi__->rank();
-  return (rank+1 < blocks_.size()) && (lo >= blocks_[rank] && lo < blocks_[rank+1]);
+  return lo >= local_lo_ && lo < local_hi_;
 }
 
 
 template<typename DataType>
 size_t StorageIncore<DataType>::localsize() const {
   const int rank = mpi__->rank();
-  return (rank+1 < blocks_.size()) ? blocks_[rank+1]-blocks_[rank] : 0lu;
+  return local_hi_ - local_lo_;
 }
 
 
