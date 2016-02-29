@@ -357,7 +357,6 @@ bool StorageIncore<DataType>::is_local(const size_t key) const {
 
 template<typename DataType>
 size_t StorageIncore<DataType>::localsize() const {
-  const int rank = mpi__->rank();
   return local_hi_ - local_lo_;
 }
 
