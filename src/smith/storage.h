@@ -30,20 +30,13 @@
 #ifndef __SRC_SMITH_STORAGE_H
 #define __SRC_SMITH_STORAGE_H
 
-#include <stddef.h>
 #include <map>
 #include <unordered_map>
-#include <memory>
-#include <tuple>
 #include <list>
-#include <vector>
 #include <cassert>
-#include <stdexcept>
-#include <fstream>
-#include <cstdio>
 #include <algorithm>
-#include <complex>
 #include <src/smith/indexrange.h>
+#include <src/util/parallel/mpi_interface.h>
 
 namespace bagel {
 namespace SMITH {
@@ -91,14 +84,16 @@ namespace {
 template<typename DataType>
 class StorageIncore {
   protected:
-    // Global Array handler:
-    int ga_;
-    int64_t totalsize_;
+    // Distributed array handle:
+    MPI_Win win_;
+    DataType* win_base_;
+
+    size_t totalsize_;
 
     // this relates hash keys to lo and high of the block
-    std::unordered_map<size_t, std::pair<int64_t, int64_t>> hashtable_;
+    std::unordered_map<size_t, std::pair<size_t, size_t>> hashtable_;
     // distribution information
-    std::vector<int64_t> blocks_;
+    std::vector<size_t> blocks_;
 
     bool initialized_;
 
@@ -171,6 +166,11 @@ class StorageIncore {
     bool is_local(args&& ...p) const { return is_local(generate_hash_key(p...)); }
     bool is_local(const size_t key) const;
 
+    size_t localsize() const;
+
+    // returns (process, offset, size)
+    std::tuple<size_t, size_t, size_t> locate(const size_t key) const;
+
     StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
     void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
     void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
@@ -180,10 +180,6 @@ class StorageIncore {
     virtual void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { }
     virtual void set_stored_sectors(const std::list<std::vector<bool>>& p) { }
 };
-
-template<> double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const;
-template<> std::complex<double> StorageIncore<std::complex<double>>::dot_product(const StorageIncore<std::complex<double>>& o) const;
-
 
 extern template class StorageIncore<double>;
 extern template class StorageIncore<std::complex<double>>;

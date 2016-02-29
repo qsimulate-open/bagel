@@ -43,16 +43,11 @@ template<typename DataType>
 StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : initialized_(false) {
   static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageIncore");
 
-  using GA_Type = typename conditional<is_same<double,DataType>::value, double, DoubleComplex>::type;
-
-  static_assert(sizeof(GA_Type) == sizeof(DataType),
-    "SMITH assumes that the GA and BAGEL data type have the same size");
-
   // first prepare some variables
   totalsize_ = 0;
   for (auto& i : size) {
     if (i.second > 0)
-      hashtable_.emplace(i.first, make_pair(totalsize_, totalsize_+i.second-1));
+      hashtable_.emplace(i.first, make_pair(totalsize_, totalsize_+i.second));
     totalsize_ += i.second;
   }
 
@@ -77,11 +72,9 @@ StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool ini
 template<typename DataType>
 void StorageIncore<DataType>::initialize() {
   assert(!initialized_);
-  // create GA
-  auto type = is_same<double,DataType>::value ? MT_C_DBL : MT_C_DCPL;
-  int64_t nblocks = blocks_.size() - 1;
-  assert(nblocks <= mpi__->size());
-  ga_ = NGA_Create_irreg64(type, 1, &totalsize_, const_cast<char*>(""), &nblocks, blocks_.data());
+  // allocate a window
+  MPI_Aint size = localsize()*sizeof(DataType);
+  MPI_Win_allocate(size, sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win_base_, &win_);
 
   initialized_ = true;
   zero();
@@ -90,21 +83,23 @@ void StorageIncore<DataType>::initialize() {
 
 template<typename DataType>
 StorageIncore<DataType>::~StorageIncore() {
-  GA_Destroy(ga_);
+  MPI_Win_fence(0, win_);
+  MPI_Win_free(&win_);
 }
 
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) const {
   assert(initialized_);
-  // first find a key
-  auto hash = hashtable_.find(key);
-  if (hash == hashtable_.end())
-    throw logic_error("a key was not found in Storage::get_block(const size_t&)");
-  auto p = hash->second;
-  int64_t size = p.second - p.first + 1;
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  size_t rank, off, size;
+  tie(rank, off, size) = locate(key);
+
   unique_ptr<DataType[]> out(new DataType[size]);
-  NGA_Get64(ga_, &p.first, &p.second, out.get(), &size);
+  if (rank != mpi__->rank())
+    MPI_Get(out.get(), size, type, rank, off, size, type, win_);
+  else
+    copy_n(win_base_+off, size, out.get());
   return move(out);
 }
 
@@ -112,25 +107,27 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
 template<typename DataType>
 void StorageIncore<DataType>::put_block_(const unique_ptr<DataType[]>& dat, const size_t& key) {
   assert(initialized_);
-  auto hash = hashtable_.find(key);
-  if (hash == hashtable_.end())
-    throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-  auto p = hash->second;
-  int64_t size = p.second - p.first + 1;
-  NGA_Put64(ga_, &p.first, &p.second, dat.get(), &size);
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  size_t rank, off, size;
+  tie(rank, off, size) = locate(key);
+  if (rank != mpi__->rank())
+    MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
+  else
+    copy_n(dat.get(), size, win_base_+off);
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, const size_t& key) {
   assert(initialized_);
-  auto hash = hashtable_.find(key);
-  if (hash == hashtable_.end())
-    throw logic_error("a key was not found in Storage::put_block(const size_t&)");
-  auto p = hash->second;
-  int64_t size = p.second - p.first + 1;
-  DataType one = 1.0;
-  NGA_Acc64(ga_, &p.first, &p.second, dat.get(), &size, &one);
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  size_t rank, off, size;
+  tie(rank, off, size) = locate(key);
+
+  if (rank != mpi__->rank())
+    MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
+  else
+    blas::ax_plus_y_n(1.0, dat.get(), size, win_base_+off);
 }
 
 
@@ -297,14 +294,20 @@ void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const
 template<typename DataType>
 void StorageIncore<DataType>::zero() {
   assert(initialized_);
-  GA_Zero(ga_);
+  const size_t loc = localsize();
+  if (loc)
+    fill_n(win_base_, loc, 0.0);
+  MPI_Win_fence(0, win_);
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::scale(const DataType& a) {
   assert(initialized_);
-  GA_Scale(ga_, const_cast<DataType*>(&a));
+  const size_t loc = localsize();
+  if (loc)
+    blas::scale_n(a, win_base_, loc);
+  MPI_Win_fence(0, win_);
 }
 
 
@@ -312,8 +315,28 @@ template<typename DataType>
 StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<DataType>& o) {
   if (!initialized_ && o.initialized_)
     initialize();
-  GA_Copy(o.ga_, ga_);
+  const size_t loc = localsize();
+  if (loc)
+    copy_n(o.win_base_, loc, win_base_);
+  MPI_Win_fence(0, win_);
   return *this;
+}
+
+
+template<typename DataType>
+tuple<size_t,size_t,size_t> StorageIncore<DataType>::locate(const size_t key) const {
+  auto iter = hashtable_.find(key);
+  if (iter == hashtable_.end())
+    throw logic_error("a key was not found in Storage::locate(const size_t key)");
+  const size_t lo = iter->second.first;
+  const size_t hi = iter->second.second;
+  tuple<size_t,size_t,size_t> out;
+  // TODO improve this algorithm: use std::set and lower_bound
+  for (size_t i = 0; i != mpi__->size(); ++i)
+    if (lo >= blocks_[i] && lo < blocks_[i+1])
+      return make_tuple(i, lo-blocks_[i], hi-lo);
+  assert(false);
+  return out;
 }
 
 
@@ -321,44 +344,39 @@ template<typename DataType>
 bool StorageIncore<DataType>::is_local(const size_t key) const {
   auto iter = hashtable_.find(key);
   assert(iter != hashtable_.end());
-  int64_t lo = iter->second.first;
-  int64_t nodeid = NGA_Nodeid();
-  return (nodeid+1 < blocks_.size()) && (lo >= blocks_[nodeid] && lo < blocks_[nodeid+1]);
+  const size_t lo = iter->second.first;
+  const size_t rank = mpi__->rank();
+  return (rank+1 < blocks_.size()) && (lo >= blocks_[rank] && lo < blocks_[rank+1]);
+}
+
+
+template<typename DataType>
+size_t StorageIncore<DataType>::localsize() const {
+  const int rank = mpi__->rank();
+  return (rank+1 < blocks_.size()) ? blocks_[rank+1]-blocks_[rank] : 0lu;
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
   assert(initialized_);
-  DataType one = 1.0;
-  GA_Add(const_cast<DataType*>(&a), o.ga_, &one, ga_, ga_);
+  const size_t loc = localsize();
+  if (loc)
+    blas::ax_plus_y_n(a, o.win_base_, loc, win_base_);
+  MPI_Win_fence(0, win_);
 }
 
 
-template<>
-double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const {
+template<typename DataType>
+DataType StorageIncore<DataType>::dot_product(const StorageIncore<DataType>& o) const {
   assert(initialized_);
-  return GA_Ddot(ga_, o.ga_);
+  MPI_Win_fence(0, win_);
+  const size_t loc = localsize();
+  DataType out = loc ? blas::dot_product(win_base_, loc, o.win_base_) : 0.0;
+  mpi__->allreduce(&out, 1);
+  return out;
 }
 
-
-template<>
-complex<double> StorageIncore<complex<double>>::dot_product(const StorageIncore<complex<double>>& o) const {
-  assert(initialized_);
-  // GA_Zdot is zdotu, so we have to compute this manually
-  complex<double> sum = 0.0;
-  for (auto& i : hashtable_) {
-    int64_t lo = i.second.first;
-    int64_t hi = i.second.second;
-    if (is_local(i.first)) {
-      unique_ptr<complex<double>[]> a = get_block_(i.first);
-      unique_ptr<complex<double>[]> b = o.get_block_(i.first);
-      sum += blas::dot_product(a.get(), hi-lo+1, b.get());
-    }
-  }
-  mpi__->allreduce(&sum, 1);
-  return sum;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
