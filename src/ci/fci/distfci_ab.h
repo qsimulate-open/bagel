@@ -44,7 +44,7 @@ class DistABTask {
 
     std::unique_ptr<double[]> buf;
 
-    std::vector<std::shared_ptr<GA_Task<double>>> requests_;
+    std::vector<std::shared_ptr<RMATask<double>>> requests_;
 
   public:
     DistABTask(const std::bitset<nbit__> ast, std::shared_ptr<const Determinants> b, std::shared_ptr<const Determinants> i, std::shared_ptr<const MOFile> j,
@@ -60,7 +60,8 @@ class DistABTask {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
           auto j = cc->get_bstring_buf(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
-          requests_.push_back(j);
+          if (j)
+            requests_.push_back(j);
         }
       }
     }
@@ -70,7 +71,7 @@ class DistABTask {
         i->wait();
     }
 
-     std::list<std::shared_ptr<GA_Task<double>>> compute() {
+     std::list<std::shared_ptr<RMATask<double>>> compute() {
       const int norb_ = base_det->norb();
       const size_t lbs = base_det->lenb();
       const size_t lbt = int_det->lenb();
@@ -108,7 +109,7 @@ class DistABTask {
       auto buf3v = btas::group(buf3, 1,3);
       btas::contract(1.0, buf2v, {0,1}, h, {1,2}, 0.0, buf3v, {0,2});
 
-      std::list<std::shared_ptr<GA_Task<double>>> acctasks;
+      std::list<std::shared_ptr<RMATask<double>>> acctasks;
       for (int i = 0, k = 0; i < norb_; ++i) {
         if (astring[i]) continue;
         std::bitset<nbit__> atarget = astring; atarget.set(i);
@@ -121,7 +122,9 @@ class DistABTask {
           for (auto& b : int_det->phiupb(j))
             bcolumn[b.target] += asign * b.sign * buf3(b.source, j, k);
         }
-        acctasks.push_back(sigma->accumulate_bstring_buf(std::move(bcolumn), base_det->lexical<0>(atarget)));
+        std::shared_ptr<RMATask<double>> acctask = sigma->accumulate_bstring_buf(std::move(bcolumn), base_det->lexical<0>(atarget));
+        if (acctask)
+          acctasks.push_back(acctask);
         ++k;
       }
       return acctasks;

@@ -107,8 +107,7 @@ void DistFCI::common_init() {
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
   multimap<double, pair<size_t, size_t>> ordered_elements;
   {
-    const unique_ptr<double[]> denom = denom_->local();
-    const double* d = denom.get();
+    const double* d = denom_->local_data();
     for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia)
       for (size_t ib = 0; ib < det_->lenb(); ++ib)
         ordered_elements.emplace(*d++, make_pair(ia, ib));
@@ -262,8 +261,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
   for (int i = 0; i != ndet; ++i)
     tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
-  const unique_ptr<double[]> denom = denom_->local();
-  const double* diter = denom.get();
+  const double* diter = denom_->local_data();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
@@ -364,7 +362,6 @@ void DistFCI::const_denom() {
   tasks.compute();
 
   denom_->local_accumulate(1.0, buf);
-  mpi__->barrier();
   denom_t.tick_print("denom");
 }
 
@@ -438,8 +435,8 @@ void DistFCI::compute() {
           shared_ptr<DistCivec> c = errvec[ist]->clone();
           const int size = c->size();
           unique_ptr<double[]> target_array(new double[c->size()]);
-          const unique_ptr<double[]> source_array = errvec[ist]->local();
-          const unique_ptr<double[]> denom_array = denom_->local();
+          const double* source_array = errvec[ist]->local_data();
+          const double* denom_array = denom_->local_data();
           const double en = energies[ist];
           // TODO this should be threaded
           for (int i = 0; i != size; ++i) {

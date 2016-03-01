@@ -27,32 +27,30 @@
 #define BAGEL_FCI_DISTCIVEC_H
 
 #include <bagel_config.h>
-#ifdef HAVE_GA
-#include <ga.h>
-#endif
 #include <src/ci/fci/civec.h>
+#include <src/util/parallel/mpi_interface.h>
 
 namespace bagel {
 
 // task class
 template<typename DataType>
-class GA_Task {
-#ifndef HAVE_GA
+class RMATask {
   public:
-    using ga_nbhdl_t = long; // jsut to compile
+#ifndef HAVE_MPI_H
+    using MPI_Request = int; // just to compile
 #endif
   protected:
-    ga_nbhdl_t tag;
+    MPI_Request tag;
     std::unique_ptr<DataType[]> buf;
   public:
-    GA_Task(ga_nbhdl_t t) : tag(t) { }
-    GA_Task(ga_nbhdl_t t, std::unique_ptr<DataType[]>&& o) : tag(t), buf(std::move(o)) { }
+    RMATask(MPI_Request&& t) : tag(std::move(t)) { }
+    RMATask(MPI_Request&& t, std::unique_ptr<DataType[]>&& o) : tag(std::move(t)), buf(std::move(o)) { }
     void wait();
     bool test();
 };
 
-extern template class GA_Task<double>;
-extern template class GA_Task<std::complex<double>>;
+extern template class RMATask<double>;
+extern template class RMATask<std::complex<double>>;
 
 
 template<typename DataType>
@@ -68,7 +66,10 @@ class DistCivector {
     size_t lenb_;
 
     // global array tag
-    int ga_;
+#ifdef HAVE_MPI_H
+    MPI_Win win_;
+#endif
+    DataType* win_base_;
 
     // table for alpha string distribution
     StaticDist dist_;
@@ -77,14 +78,13 @@ class DistCivector {
     size_t astart_;
     size_t aend_;
 
-    // distribution information
-    std::vector<int64_t> blocks_;
-
   public:
     DistCivector(std::shared_ptr<const Determinants> det);
 
     DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { *this = o; }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
+
+    ~DistCivector();
 
     DistCivector<DataType>& operator=(const DistCivector<DataType>& o);
 
@@ -108,12 +108,13 @@ class DistCivector {
 
     void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
 
+    const DataType* local_data() const { fence(); return win_base_; }
     bool is_local(const size_t a) const;
-    std::unique_ptr<DataType[]> local() const;
     void set_local(const size_t la, const size_t lb, const DataType a);
+    void fence() const;
 
-    std::shared_ptr<GA_Task<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
-    std::shared_ptr<GA_Task<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
+    std::shared_ptr<RMATask<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
+    std::shared_ptr<RMATask<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
 
     void local_accumulate(const DataType a, const std::unique_ptr<DataType[]>& buf);
 
@@ -159,8 +160,6 @@ class DistCivector {
 
 template <> void DistCivector<double>::spin_decontaminate(const double);
 template <> void DistCivector<std::complex<double>>::spin_decontaminate(const double);
-template <> double DistCivector<double>::dot_product(const DistCivector<double>&) const;
-template <> std::complex<double> DistCivector<std::complex<double>>::dot_product(const DistCivector<std::complex<double>>&) const;
 
 extern template class DistCivector<double>;
 extern template class DistCivector<std::complex<double>>;
