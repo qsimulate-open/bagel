@@ -51,8 +51,11 @@ bool RMATask<DataType>::test() {
 template<typename DataType>
 DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(det), lena_(det->lena()), lenb_(det->lenb()), dist_(lena_, mpi__->size()),
                                                                            astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
+  if (size() == 0)
+    throw runtime_error("Use either Knowles or Harrison for FCI");
 #ifdef HAVE_MPI_H
   MPI_Win_allocate(size()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win_base_, &win_);
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, win_);
 #endif
   zero();
 }
@@ -60,8 +63,8 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det) : det_(
 
 template<typename DataType>
 DistCivector<DataType>::~DistCivector() {
-  fence();
 #ifdef HAVE_MPI_H
+  MPI_Win_unlock_all(win_);
   MPI_Win_free(&win_);
 #endif
 }
@@ -70,7 +73,10 @@ DistCivector<DataType>::~DistCivector() {
 template<typename DataType>
 DistCivector<DataType>& DistCivector<DataType>::operator=(const DistCivector<DataType>& o) {
   fence();
+  o.fence();
   copy_n(o.local_data(), size(), win_base_);
+  fence_local();
+  o.fence_local();
   mpi__->barrier();
   return *this;
 }
@@ -81,6 +87,7 @@ shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   fence();
   auto out = make_shared<Civector<DataType>>(det_);
   copy_n(win_base_, asize()*lenb_, out->data()+astart()*lenb_);
+  fence_local();
   mpi__->allreduce(out->data(), out->size());
   return out;
 }
@@ -96,7 +103,9 @@ template<typename DataType>
 void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const DataType a) {
 #ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Put(&a, 1, type, mpi__->rank(), lb+la*lenb_, 1, type, win_);
+  const size_t rank = mpi__->rank();
+  MPI_Put(&a, 1, type, rank, lb+la*lenb_, 1, type, win_);
+  MPI_Win_flush_local(rank, win_);
 #endif
 }
 
@@ -104,7 +113,16 @@ void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const D
 template<typename DataType>
 void DistCivector<DataType>::fence() const {
 #ifdef HAVE_MPI_H
-  MPI_Win_fence(0, win_);
+  MPI_Win_flush_all(win_);
+  mpi__->barrier();
+#endif
+}
+
+
+template<typename DataType>
+void DistCivector<DataType>::fence_local() const {
+#ifdef HAVE_MPI_H
+  MPI_Win_sync(win_);
 #endif
 }
 
@@ -117,14 +135,9 @@ shared_ptr<RMATask<DataType>> DistCivector<DataType>::accumulate_bstring_buf(uni
   size_t rank, aoff;
   tie(rank, aoff) = dist_.locate(a);
 
-  // FIXME does not work
-#if 0
   MPI_Request req;
   MPI_Raccumulate(buf.get(), lenb_, type, rank, aoff*lenb_, lenb_, type, MPI_SUM, win_, &req);
   out = make_shared<RMATask<DataType>>(move(req), move(buf));
-#else
-  MPI_Accumulate(buf.get(), lenb_, type, rank, aoff*lenb_, lenb_, type, MPI_SUM, win_);
-#endif
 #endif
   return out;
 }
@@ -138,14 +151,9 @@ shared_ptr<RMATask<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* 
   size_t rank, aoff;
   tie(rank, aoff) = dist_.locate(a);
 
-  // FIXME does not work
-#if 0
   MPI_Request req;
   MPI_Rget(buf, lenb_, type, rank, aoff*lenb_, lenb_, type, win_, &req);
   out = make_shared<RMATask<DataType>>(move(req));
-#else
-  MPI_Get(buf, lenb_, type, rank, aoff*lenb_, lenb_, type, win_);
-#endif
 #endif
   return out;
 }
@@ -155,6 +163,7 @@ template<typename DataType>
 void DistCivector<DataType>::local_accumulate(const DataType a, const unique_ptr<DataType[]>& buf) {
   fence();
   blas::ax_plus_y_n(a, buf.get(), size(), win_base_);
+  fence_local();
   mpi__->barrier();
 }
 
@@ -163,13 +172,18 @@ template<typename DataType>
 void DistCivector<DataType>::zero() {
   fence();
   fill_n(win_base_, size(), 0.0);
+  fence_local();
   mpi__->barrier();
 }
 
 
 template<typename DataType>
 DataType DistCivector<DataType>::dot_product(const DistCivector<DataType>& o) const {
+  fence();
+  o.fence();
   DataType sum = blas::dot_product(local_data(), size(), o.local_data());
+  fence_local();
+  o.fence_local();
   mpi__->allreduce(&sum, 1);
   return sum;
 }
@@ -179,6 +193,7 @@ template<typename DataType>
 void DistCivector<DataType>::scale(const DataType a) {
   fence();
   blas::scale_n(a, win_base_, size());
+  fence_local();
   mpi__->barrier();
 }
 
@@ -186,8 +201,11 @@ void DistCivector<DataType>::scale(const DataType a) {
 template<typename DataType>
 void DistCivector<DataType>::ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
   fence();
+  o.fence();
   assert(size() == o.size());
   blas::ax_plus_y_n(a, o.local_data(), size(), win_base_);
+  fence_local();
+  o.fence_local();
   mpi__->barrier();
 }
 

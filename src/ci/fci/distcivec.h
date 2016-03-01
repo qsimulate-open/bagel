@@ -112,6 +112,7 @@ class DistCivector {
     bool is_local(const size_t a) const;
     void set_local(const size_t la, const size_t lb, const DataType a);
     void fence() const;
+    void fence_local() const;
 
     std::shared_ptr<RMATask<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
     std::shared_ptr<RMATask<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
