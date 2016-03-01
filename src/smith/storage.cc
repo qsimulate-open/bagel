@@ -84,9 +84,8 @@ void StorageIncore<DataType>::initialize() {
   // allocate a window
   MPI_Aint size = localsize()*sizeof(DataType);
   MPI_Win_allocate(size, sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win_base_, &win_);
-  // Jeff: it may be useful to replace NOCHECK with 0 for debugging, but there should be
-  //       performance advantages of NOCHECK that warrant its use by default.
-  MPI_Win_lock_all(MPI_MODE_NOCHECK,win_);
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, win_);
+
   initialized_ = true;
   zero();
 }
@@ -101,17 +100,16 @@ StorageIncore<DataType>::~StorageIncore() {
 
 template<typename DataType>
 void StorageIncore<DataType>::fence() const {
-  // Jeff: flush_all completes remotely all outstanding comms initiated by calling proc
   MPI_Win_flush_all(win_);
-  // Jeff: barrier after flush_all achieves the equivalent of Win_fence, within a passive target epoch
   mpi__->barrier();
 }
 
+
 template<typename DataType>
 void StorageIncore<DataType>::fence_local() const {
-  // Jeff: this is basically a memory barrier, to ensure local stores are visible to subsequent remote accesses
   MPI_Win_sync(win_);
 }
+
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) const {
@@ -122,8 +120,7 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
 
   unique_ptr<DataType[]> out(new DataType[size]);
   MPI_Get(out.get(), size, type, rank, off, size, type, win_);
-  // Jeff: I cannot tell if flush_local is what you want instead
-  MPI_Win_flush(rank, win_);
+  MPI_Win_flush_local(rank, win_);
   return move(out);
 }
 
@@ -135,8 +132,7 @@ void StorageIncore<DataType>::put_block_(const unique_ptr<DataType[]>& dat, cons
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
   MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
-  // Jeff: I cannot tell if flush_local is what you want instead
-  MPI_Win_flush(rank, win_);
+  MPI_Win_flush_local(rank, win_);
 }
 
 
@@ -147,8 +143,7 @@ void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, cons
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
   MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
-  // Jeff: I cannot tell if flush_local is what you want instead
-  MPI_Win_flush(rank, win_);
+  MPI_Win_flush_local(rank, win_);
 }
 
 

@@ -163,6 +163,7 @@ class StorageIncore {
 
     void initialize();
     void fence() const;
+    void fence_local() const;
 
     void zero();
     void scale(const DataType& a);
