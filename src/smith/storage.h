@@ -162,6 +162,7 @@ class StorageIncore {
     size_t size_alloc() const { return initialized_ ? size() : 0lu; }
 
     void initialize();
+    void fence() const;
 
     void zero();
     void scale(const DataType& a);

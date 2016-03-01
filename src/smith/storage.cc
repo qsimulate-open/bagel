@@ -93,8 +93,14 @@ void StorageIncore<DataType>::initialize() {
 
 template<typename DataType>
 StorageIncore<DataType>::~StorageIncore() {
-  MPI_Win_fence(0, win_);
+  fence();
   MPI_Win_free(&win_);
+}
+
+
+template<typename DataType>
+void StorageIncore<DataType>::fence() const {
+  MPI_Win_fence(0, win_);
 }
 
 
@@ -106,10 +112,7 @@ unique_ptr<DataType[]> StorageIncore<DataType>::get_block_(const size_t& key) co
   tie(rank, off, size) = locate(key);
 
   unique_ptr<DataType[]> out(new DataType[size]);
-  if (rank != mpi__->rank())
-    MPI_Get(out.get(), size, type, rank, off, size, type, win_);
-  else
-    copy_n(win_base_+off, size, out.get());
+  MPI_Get(out.get(), size, type, rank, off, size, type, win_);
   return move(out);
 }
 
@@ -120,10 +123,7 @@ void StorageIncore<DataType>::put_block_(const unique_ptr<DataType[]>& dat, cons
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
-  if (rank != mpi__->rank())
-    MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
-  else
-    copy_n(dat.get(), size, win_base_+off);
+  MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
 }
 
 
@@ -133,11 +133,7 @@ void StorageIncore<DataType>::add_block_(const unique_ptr<DataType[]>& dat, cons
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
-
-  if (rank != mpi__->rank())
-    MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
-  else
-    blas::ax_plus_y_n(1.0, dat.get(), size, win_base_+off);
+  MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
 }
 
 
@@ -304,31 +300,34 @@ void StorageIncore<DataType>::add_block(const unique_ptr<DataType[]>& dat, const
 template<typename DataType>
 void StorageIncore<DataType>::zero() {
   assert(initialized_);
+  fence();
   const size_t loc = localsize();
   if (loc)
     fill_n(win_base_, loc, 0.0);
-  MPI_Win_fence(0, win_);
+  mpi__->barrier();
 }
 
 
 template<typename DataType>
 void StorageIncore<DataType>::scale(const DataType& a) {
   assert(initialized_);
+  fence();
   const size_t loc = localsize();
   if (loc)
     blas::scale_n(a, win_base_, loc);
-  MPI_Win_fence(0, win_);
+  mpi__->barrier();
 }
 
 
 template<typename DataType>
 StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<DataType>& o) {
+  fence();
+  o.fence();
   if (!initialized_ && o.initialized_)
     initialize();
   const size_t loc = localsize();
   if (loc)
     copy_n(o.win_base_, loc, win_base_);
-  MPI_Win_fence(0, win_);
   return *this;
 }
 
@@ -364,17 +363,20 @@ size_t StorageIncore<DataType>::localsize() const {
 template<typename DataType>
 void StorageIncore<DataType>::ax_plus_y(const DataType& a, const StorageIncore<DataType>& o) {
   assert(initialized_);
+  fence();
+  o.fence();
   const size_t loc = localsize();
   if (loc)
     blas::ax_plus_y_n(a, o.win_base_, loc, win_base_);
-  MPI_Win_fence(0, win_);
+  mpi__->barrier();
 }
 
 
 template<typename DataType>
 DataType StorageIncore<DataType>::dot_product(const StorageIncore<DataType>& o) const {
   assert(initialized_);
-  MPI_Win_fence(0, win_);
+  fence();
+  o.fence();
   const size_t loc = localsize();
   DataType out = loc ? blas::dot_product(win_base_, loc, o.win_base_) : 0.0;
   mpi__->allreduce(&out, 1);
