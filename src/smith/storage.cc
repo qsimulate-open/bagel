@@ -328,6 +328,7 @@ StorageIncore<DataType>& StorageIncore<DataType>::operator=(const StorageIncore<
   const size_t loc = localsize();
   if (loc)
     copy_n(o.win_base_, loc, win_base_);
+  mpi__->barrier();
   return *this;
 }
 
