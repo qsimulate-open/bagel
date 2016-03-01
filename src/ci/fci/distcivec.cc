@@ -70,8 +70,7 @@ DistCivector<DataType>::~DistCivector() {
 template<typename DataType>
 DistCivector<DataType>& DistCivector<DataType>::operator=(const DistCivector<DataType>& o) {
   fence();
-  o.fence();
-  copy_n(o.win_base_, size(), win_base_);
+  copy_n(o.local_data(), size(), win_base_);
   mpi__->barrier();
   return *this;
 }
@@ -118,6 +117,7 @@ shared_ptr<RMATask<DataType>> DistCivector<DataType>::accumulate_bstring_buf(uni
   size_t rank, aoff;
   tie(rank, aoff) = dist_.locate(a);
 
+  // FIXME does not work
 #if 0
   MPI_Request req;
   MPI_Raccumulate(buf.get(), lenb_, type, rank, aoff*lenb_, lenb_, type, MPI_SUM, win_, &req);
@@ -138,6 +138,7 @@ shared_ptr<RMATask<DataType>> DistCivector<DataType>::get_bstring_buf(DataType* 
   size_t rank, aoff;
   tie(rank, aoff) = dist_.locate(a);
 
+  // FIXME does not work
 #if 0
   MPI_Request req;
   MPI_Rget(buf, lenb_, type, rank, aoff*lenb_, lenb_, type, win_, &req);
@@ -168,9 +169,7 @@ void DistCivector<DataType>::zero() {
 
 template<typename DataType>
 DataType DistCivector<DataType>::dot_product(const DistCivector<DataType>& o) const {
-  fence();
-  o.fence();
-  DataType sum = blas::dot_product(win_base_, size(), o.win_base_);
+  DataType sum = blas::dot_product(local_data(), size(), o.local_data());
   mpi__->allreduce(&sum, 1);
   return sum;
 }
@@ -187,9 +186,8 @@ void DistCivector<DataType>::scale(const DataType a) {
 template<typename DataType>
 void DistCivector<DataType>::ax_plus_y(const DataType a, const DistCivector<DataType>& o) {
   fence();
-  o.fence();
   assert(size() == o.size());
-  blas::ax_plus_y_n(a, o.win_base_, size(), win_base_);
+  blas::ax_plus_y_n(a, o.local_data(), size(), win_base_);
   mpi__->barrier();
 }
 
@@ -273,9 +271,8 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
         (*i)->wait();
         i = acc.erase(i);
       }
-      intermediate->fence();
 
-      const DataType* sbuf = intermediate->win_base_;
+      const DataType* sbuf = intermediate->local_data();
       unique_ptr<DataType[]> tbuf(new DataType[size()]);
       fill_n(tbuf.get(), size(), 0.0);
       for (int ia = astart_; ia < aend_; ++ia) {
@@ -324,13 +321,12 @@ void DistCivector<complex<double>>::spin_decontaminate(const double thresh) {
 
 template<typename DataType>
 void DistCivector<DataType>::print(const double thresh) const {
-  fence();
 #ifdef HAVE_MPI_H
   vector<DataType> data;
   vector<size_t> abits;
   vector<size_t> bbits;
 
-  const DataType* d = win_base_;
+  const DataType* d = local_data();
 
   for (size_t ia = astart_; ia < aend_; ++ia)
     for (size_t ib = 0; ib < lenb_; ++ib, ++d)
