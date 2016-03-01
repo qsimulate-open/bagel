@@ -704,8 +704,8 @@ ofs << "\n\
       if (torig.imag() < 0) t = conj(torig);\n\
       int itr = static_cast<int>((t.real()-(" << MINTR <<"))*" << setw(20) << setprecision(15) << fixed << 1.0/drstride << ") ;\n\
       int iti = static_cast<int>((t.imag()-(" << MINTI <<"))*" << setw(20) << setprecision(15) << fixed << 1.0/distride << ") ;\n\
-      double tr = (t.real()-itr*" << drstride << "-" << setw(20) << setprecision(15) << fixed << drstride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/drstride << " - (" << MINTR << ") ;\n\
-      double ti = (t.imag()-iti*" << distride << "-" << setw(20) << setprecision(15) << fixed << distride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/distride << " - (" << MINTI << ") ;\n\
+      double tr = (t.real()-itr*" << drstride << "-" << setw(20) << setprecision(15) << fixed << drstride/2.0 << " - " << MINTR << ") *" << setw(20) << setprecision(15) << fixed << 2.0/drstride << ";\n\
+      double ti = (t.imag()-iti*" << distride << "-" << setw(20) << setprecision(15) << fixed << distride/2.0 << " - " << MINTI << ") *" << setw(20) << setprecision(15) << fixed << 2.0/distride << ";\n\
       const double tr2 = tr * 2.0;\n\
       const double ti2 = ti * 2.0;\n";
       for (int cycle = 0; cycle != 2; cycle++) {
