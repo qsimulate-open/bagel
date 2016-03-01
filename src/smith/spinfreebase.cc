@@ -127,10 +127,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     }
   }
 
-  // set e0
+  // set e0all_
   compute_e0();
-  // TODO for the time being
-  e0_ = accumulate(e0all_.begin(), e0all_.end(), 0)/nstates;
 
   mpi__->barrier();
 }

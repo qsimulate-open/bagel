@@ -52,6 +52,7 @@ void RelCASPT2::RelCASPT2::solve() {
   Timer mtimer;
   int iter = 0;
   energy_.resize(1);
+  e0_ = e0all_[0];
   for ( ; iter != info_->maxiter(); ++iter) {
     energy_[0] = detail::real(dot_product_transpose(s, t2));
     shared_ptr<Queue> queue = make_residualq();
