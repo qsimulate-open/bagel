@@ -124,7 +124,10 @@ void K2ext<complex<double>>::init() {
     }
     if (!breit) ext2 = ext;
     // wait for other nodes
-    mpi__->barrier();
+    for (auto& i : ext)
+      i.second->fence();
+    for (auto& i : ext2)
+      i.second->fence();
 
     // form four-index integrals
     const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
@@ -157,7 +160,7 @@ void K2ext<complex<double>>::init() {
         }
       }
     }
-    mpi__->barrier();
+    data_->fence();
   };
 
   // coulomb operator
@@ -209,7 +212,7 @@ void K2ext<double>::init() {
     }
   }
   // wait for other nodes
-  mpi__->barrier();
+  ext.fence();
 
   // form four-index integrals
   for (auto& i0 : blocks_[0]) {
@@ -245,7 +248,7 @@ void K2ext<double>::init() {
       }
     }
   }
-  mpi__->barrier();
+  data_->fence();
 }
 
 

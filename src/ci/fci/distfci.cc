@@ -40,8 +40,8 @@ DistFCI::DistFCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, sha
  : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
   common_init();
 
-#ifndef HAVE_GA
-  throw logic_error("DistFCI can be used only with GA");
+#ifndef HAVE_MPI_H
+  throw logic_error("DistFCI can be used only with MPI");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;

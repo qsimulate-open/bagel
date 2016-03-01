@@ -82,6 +82,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     // canonical orbitals within closed and virtual subspaces
     coeff_ = fock.coeff();
   }
+cout << "fock  " << endl;
 
   // v2 tensor.
   {

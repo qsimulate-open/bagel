@@ -73,6 +73,7 @@ class Tensor_ {
 
     bool allocated() const { return allocated_; }
     void allocate();
+    void fence() const { data_->fence(); }
 
     template<typename ...args>
     bool is_local(args&& ...p) const { return data_->is_local(std::forward<args>(p)...); }

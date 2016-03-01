@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = subdir-objects
 lib_LTLIBRARIES = libbagel_prop.la
 libbagel_prop_la_SOURCES = multipole.cc momentum.cc momentum_london.cc momentum_point.cc current.cc overlap_point.cc moprint.cc pseudospin/stevensop.cc pseudospin/pseudospin.cc
 AM_CXXFLAGS=-I$(top_srcdir)
