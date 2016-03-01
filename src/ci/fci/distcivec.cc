@@ -219,26 +219,23 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   fence();
   blas::transpose(win_base_, lenb_, asize(), send.get());
 
+  MPI_Win win;
+  MPI_Win_create(send.get(), size()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+  MPI_Win_lock_all(MPI_MODE_NOCHECK, win);
+
   // recieve buffer
   unique_ptr<DataType[]> recv(new DataType[out->size()]);
   // issue send and recv requests
   vector<int> rqs;
 
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   for (int i = 0; i != mpi__->size(); ++i) {
-    const size_t soffset = out->dist_.start(i) * asize();
-    const size_t ssize   = out->dist_.size(i)  * asize();
     const size_t roffset = dist_.start(i) * out->asize();
     const size_t rsize   = dist_.size(i)  * out->asize();
-    if (i != mpi__->rank()) {
-      rqs.push_back(mpi__->request_send(send.get()+soffset, ssize, i, mpi__->rank()+i*mpi__->size()));
-      rqs.push_back(mpi__->request_recv(recv.get()+roffset, rsize, i, i+mpi__->rank()*mpi__->size()));
-    } else {
-      assert(rsize == ssize);
-      copy_n(send.get()+soffset, ssize, recv.get()+roffset);
-    }
+    MPI_Get(recv.get()+roffset, rsize, type, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize, type, win);
   }
-  for (auto& i : rqs)
-    mpi__->wait(i);
+  MPI_Win_unlock_all(win);
+  MPI_Win_free(&win);
 
   // rearrange recv buffer
   for (int i = 0; i != mpi__->size(); ++i) {
