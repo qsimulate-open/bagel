@@ -43,24 +43,16 @@ template<typename DataType>
 StorageIncore<DataType>::StorageIncore(const map<size_t, size_t>& size, bool init) : initialized_(false) {
   static_assert(is_same<DataType, double>::value or is_same<DataType, complex<double>>::value, "illegal Type in StorageIncore");
 
-  // first prepare some variables
+  // first prepare hashtable_, blocks_, and totalsize_
   totalsize_ = 0;
-  for (auto& i : size) {
-    if (i.second > 0)
-      hashtable_.emplace(i.first, make_pair(totalsize_, totalsize_+i.second));
-    totalsize_ += i.second;
-  }
-
-  // store block data
   const size_t blocksize = (totalsize_-1)/mpi__->size()+1;
-  size_t tsize = 0;
-  for (auto& i : size) {
-    if (i.second == 0) continue;
-    if (blocks_.size()*blocksize <= tsize)
-      blocks_.emplace(tsize, blocks_.size());
-    tsize += i.second;
-  }
-  assert(totalsize_ == tsize);
+  for (auto& i : size)
+    if (i.second > 0) {
+      hashtable_.emplace(i.first, make_pair(totalsize_, totalsize_+i.second));
+      if (blocks_.size()*blocksize <= totalsize_)
+        blocks_.emplace(totalsize_, blocks_.size());
+      totalsize_ += i.second;
+    }
 
   // set local_lo_ and hi_
   local_lo_ = local_hi_ = numeric_limits<size_t>::max();
