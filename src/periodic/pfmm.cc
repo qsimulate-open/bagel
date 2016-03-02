@@ -39,6 +39,7 @@ const static double beta__ = sqrt(pi__); // convergence parameter
 PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double thresh, shared_ptr<StackMem> stack)
   : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), thresh_(thresh) {
 
+#if 1
   if (stack == nullptr) {
     stack_ = resources__->get();
     allocated_here_ = true;
@@ -46,6 +47,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
     stack_ = stack;
     allocated_here_ = false;
   }
+#endif
 
   ndim_ = scell->ndim();
   if (ndim_ > 3 || ndim_ < 1)
@@ -59,16 +61,19 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
-  //compute_Mlm_direct();
   primvecs_.resize(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs_[i] = scell_->primitive_vectors(i);
   for (int i = ndim_; i != 3; ++i)
     primvecs_[i] = {{0.0, 0.0, 0.0}};
 
+  //compute_Mlm_slow();
+  compute_Mlm_direct();
   compute_Mlm();
+#if 1
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
+#endif
 }
 
 
@@ -118,8 +123,8 @@ void PFMM::compute_Mlm_direct() {
         }
 
         const double sign = (m - l >= 0) ? 1.0 : -1.0;
-        const double real = sign * cos(am * phi) * plm_tilde;
-        const double imag = sin(am * phi) * plm_tilde;
+        const double real = sign * cos(-am * phi) * plm_tilde;
+        const double imag = sin(-am * phi) * plm_tilde;
         mstar[imul] += complex<double>(real, imag);
       }
     }
@@ -177,9 +182,26 @@ void PFMM::compute_Mlm_direct() {
     }
   }
 
+
+#if 1
+  // DEBUG
+  cout << "LSTAR FROM DIRECT SUMMATION" << endl;
+  for (int l = 0; l < max_rank_; ++l)
+    for (int m = 0; m <= l; ++m) { // Slm = -sl-m
+      const int imul = l * l + m + l;
+      const double tmp = lstar[imul].real();
+      if (l % 2 == 0 && m % 4 == 0)
+        cout << "l = " << l << "  m = " << m << "  LSTAR = " << setw(20) << scientific << setprecision(14) << tmp << endl;
+    }
+  cout << " ******* END ******* " << endl;
+#endif
+
+
+
+
   // Mlm(n)
   mlm_ = lstar; // iter 0
-  const int max_iter = 15;
+  const int max_iter = 16;
   for (int n = 1; n <= max_iter; ++n) {
     vector<complex<double>> previous(msize_);
     for (int l = 0; l < max_rank_; ++l) {
@@ -386,8 +408,9 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   }
 #endif
 
-#if 0
+#if 1
   // DEBUG
+  cout << "RESULTS FROM EWALD SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
       const int imul = l * l + m + l;
@@ -505,11 +528,7 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
     // NAI
     auto tmpnai = make_shared<ZMatrix>(nbas, nbas);
     for (auto& atom : cell->atoms())
-      for (int j = 0; j <= lmax_; ++j)
-        for (int k = 0; k <= 2*j; ++k) {
-          const int im = j * j + k;
-          *tmpnai += -2.0 * atom->atom_charge() * mlm_.at(im) * *olm_ab_m.at(im); // 2*NAI
-        }
+      *tmpnai += -2.0 * atom->atom_charge() * mlm_.at(0) * *olm_ab_m.at(0); // 2*NAI
     nai[ivec] = make_shared<const ZMatrix>(*tmpnai);
   }
 
@@ -533,7 +552,6 @@ shared_ptr<const PData> PFMM::compute_far_field(shared_ptr<const PData> density)
       }
     }
 
-    // translate Olm(L), contract with Slm
     for (int ivec = 0; ivec != nvec; ++ivec) { // L
       array<int, 3> idx = vidx[ivec];
       // re-compute multipoles (0|Olm|L)
@@ -660,4 +678,104 @@ shared_ptr<const PData> PFMM::pcompute_Jop(shared_ptr<const PData> density) cons
   shared_ptr<const PData> ff = compute_far_field(density);
 
   return make_shared<const PData>(*nf + *ff);
+}
+
+
+double PFMM::nuclear_repulsion_ff() const {
+
+  const int nvec = pow(2*extent_sum_+1, ndim_);
+  vector<array<int, 3>> vidx = generate_vidx(extent_sum_);
+  assert(vidx.size() == nvec);
+
+  double out = 0.0;
+  vector<shared_ptr<const Atom>> atoms0 = scell_->geom()->atoms();
+  int icell0 = 0;
+  for (int i = 0; i != ndim_; ++i) icell0 += extent_sum_ * pow(2 * extent_sum_ + 1, i);
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    array<int, 3> idx = vidx[ivec];
+    array<double, 3> disp;
+    disp[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    disp[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    disp[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
+
+    auto cell = make_shared<const Geometry>(*scell_->geom(), disp);
+    vector<shared_ptr<const Atom>> atoms = cell->atoms();
+    for (auto iter0 = atoms0.begin(); iter0 != atoms0.end(); ++iter0) {
+      const double c0 = (*iter0)->atom_charge();
+      auto ia0 = distance(atoms0.begin(), iter0);
+      for (auto iter1 = atoms.begin(); iter1 != atoms.end(); ++iter1) {
+        const double c = (*iter1)->atom_charge();
+        auto ia1 = distance(atoms.begin(), iter1);
+        if (ivec == icell0 && ia0 == ia1) continue;
+        out += 0.5 * c0 * c / (*iter0)->distance(*iter1);
+      }
+    }
+  }
+
+  return out;
+}
+
+
+void PFMM::compute_Mlm_slow() {
+
+  const size_t limit = 30;
+  const int n1 = pow(2*limit+1, ndim_);
+  vector<array<int, 3>> tmp = generate_vidx(limit);
+  std::sort(tmp.begin(), tmp.end(), sort_vector);
+
+  vector<array<int, 3>> vidx;
+  for (int n = 0; n != n1; ++n) {
+    array<int, 3> idx = tmp[n];
+    if (abs(idx[0]) > ws_ || abs(idx[1]) > ws_ || abs(idx[2]) > ws_)
+      vidx.push_back(idx);
+  }
+  const int nvec = vidx.size();
+
+  vector<complex<double>> mlm(msize_, 0.0);
+
+  for (int ivec = 0; ivec != nvec; ++ivec) {
+    array<int, 3> idx = vidx[ivec];
+    array<double, 3> vec;
+    vec[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
+    vec[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
+    vec[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
+
+    const double rsq = vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
+    if (rsq > numerical_zero__) {
+      const double r = sqrt(rsq);
+      const double ctheta = vec[2]/r;
+      const double phi = atan2(vec[1], vec[0]);
+
+      for (int l = 0; l < max_rank_; ++l) {
+        for (int m = 0; m <= 2 * l; ++m) {
+          const int am = abs(m - l);
+          const int imul = l * l + m;
+
+          double plm_tilde = plm.compute(l, am, ctheta) / pow(r, l+1);
+          double ft = 1.0;
+          for (int i = 1; i <= l - am; ++i) {
+            plm_tilde *= ft;
+            ft += 1.0;
+          }
+
+          const double sign = (m - l >=0) ? 1.0 : -1.0;
+          const double real = sign * cos(am * phi) * plm_tilde;
+          const double imag = sin(am * phi) * plm_tilde;
+          mlm[imul] += complex<double>(real, imag);
+        }
+      }
+    }
+  }
+#if 1
+  // DEBUG
+  cout << "RESULTS FROM SLOW SUMMATION" << endl;
+  for (int l = 0; l < max_rank_; ++l)
+    for (int m = 0; m <= l; ++m) { // Slm = -sl-m
+      const int imul = l * l + m + l;
+      const double tmp = mlm[imul].real();
+      if (l % 2 == 0 && m % 4 == 0)
+        cout << "l = " << l << "  m = " << m << "  Mlm = " << setw(20) << scientific << setprecision(14) << tmp << endl;
+    }
+  cout << " ******* END ******* " << endl;
+#endif
 }
