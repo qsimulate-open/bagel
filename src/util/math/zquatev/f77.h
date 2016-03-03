@@ -32,6 +32,7 @@
 #ifndef __TS_ZQUATEV_F77_H
 #define __TS_ZQUATEV_F77_H
 
+#include <bagel_config.h>
 #include <complex>
 
 // blas
