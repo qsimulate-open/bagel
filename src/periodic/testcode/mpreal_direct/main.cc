@@ -84,7 +84,7 @@ int main() {
 
   // M* = sum of M in [-1, 1]
   const int a = 1;
-  const int n0 = std::pow(2*a+1, 3);
+  const int n0 = std::pow(2*a+1, ndim);
   vector<complex<mpreal>> mstar(osize);
   vector<array<int, 3>> vidx0(n0);
   int cnt = 0;
@@ -101,6 +101,7 @@ int main() {
     for (int k = -a; k <= a; ++k, ++cnt)
       vidx0[cnt] = {{k, 0, 0}};
   }
+  assert(vidx0.size() == n0);
   //  std::sort(vidx0.begin(), vidx0.end(), sort_vector);
 
   for (int n = 0; n != n0; ++n) {
@@ -150,14 +151,24 @@ int main() {
 
   // get L* = sum of L in FF'
   const int ws1 = 3 * ws + 1;
-  const int n1 = std::pow(2*ws1+1, 3);
+  const int n1 = std::pow(2*ws1+1, ndim);
 
   vector<array<int, 3>> tmp(n1);
   cnt = 0;
-  for (int i = -ws1; i <= ws1; ++i)
+  if (ndim == 3) {
+    for (int i = -ws1; i <= ws1; ++i)
+      for (int j = -ws1; j <= ws1; ++j)
+        for (int k = -ws1; k <= ws1; ++k, ++cnt)
+          tmp[cnt] = {{k, j, i}};
+  } else if (ndim == 2) {
     for (int j = -ws1; j <= ws1; ++j)
       for (int k = -ws1; k <= ws1; ++k, ++cnt)
-        tmp[cnt] = {{k, j, i}};
+        tmp[cnt] = {{k, j, 0}};
+  } else if (ndim == 1) {
+    for (int k = -ws1; k <= ws1; ++k, ++cnt)
+      tmp[cnt] = {{k, 0, 0}};
+  }
+  assert(tmp.size() == n1);
 //  std::sort(tmp.begin(), tmp.end(), sort_vector);
 
   vector<array<int, 3>> vidx1;
@@ -252,7 +263,7 @@ int main() {
     for(int m = 0; m <= l; ++m) {
       const int i = l * l + m + l;
       if (l % 2 == 0 && m % 4 == 0)
-        cout << l << "  " << m << "       " << scientific << setprecision(32) << (mlm[i].real()).toDouble() << endl;
+        cout << l << "  " << m << "       " << scientific << setprecision(32) << mlm[i].real() << " *** " << mlm[i].imag() << endl;
     }
 
   return 0;

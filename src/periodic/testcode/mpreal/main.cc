@@ -13,8 +13,10 @@
 #include "gmp_macros.h"
 #include <algorithm>
 #include <vector>
-#include <boost/math/special_functions/gamma.hpp>
-#include <src/util/math/legendre.h>
+#include <array>
+#include <complex>
+//#include <boost/math/special_functions/gamma.hpp>
+#include <boost/math/special_functions/expint.hpp>
 
 using namespace std;
 using namespace mpfr;
@@ -49,13 +51,6 @@ mpreal boys(const mpreal ta, const int nrank) {
     cout << " *** Warning: " << nrank << "   " << setprecision(16) << ta.toDouble() << " * " << boost_gamma << "  " << out << endl;
 
   return out;
-}
-
-
-static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {
-  int rad1 = v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2];
-  int rad2 = v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2];
-  return rad1 < rad2;
 }
 
 
@@ -161,7 +156,6 @@ int main() {
       vidx[cnt] = {{k, 0, 0}};
   }
   assert(cnt == nvec);
-//  std::sort(vidx.begin(), vidx.end(), sort_vector);
 
 #if 1
   for(int l = 0; l <= lmax; ++l) {
@@ -182,7 +176,6 @@ int main() {
         const mpreal b2r2 = beta * beta * rsq;
         mpreal glower = boys(b2r2, l);
 
-        const complex<mpreal> coeffl = std::pow(complex<mpreal>(zero, one), l) * mpfr::pow(pi, l-half);
         const mpreal coeff = two * mpfr::pow(beta, 2*l+1) * pow(r, l) / g;
         glower = glower * coeff;
         const mpreal gupper = 1.0/mpfr::pow(r, l+1.0) - glower;
@@ -191,14 +184,6 @@ int main() {
           const int im = l * l + m + l;
           const int am = abs(m);
           mpreal plm_tilde = plm(l, am, ctheta);
-
-#if 0
-          const static bagel::Legendre plm;
-          const double plmbagel = plm.compute(l, am, ctheta.toDouble());
-          const double err = abs(plm_tilde.toDouble() - plmbagel);
-          if (err > 1e-14)
-            cout << "*** Warning (1): " << l << ", " << am << ", " << ctheta.toDouble() << "  " << setprecision(20) << plmbagel << "  " << plm_tilde.toDouble() << endl;
-#endif
 
           mpreal ft = one;
           for (int i = 1; i <= l - am; ++i) {
@@ -269,24 +254,27 @@ int main() {
     const mpreal r = mpfr::sqrt(rsq);
     const mpreal ctheta = kvec[2]/r;
     const mpreal phi = mpfr::atan2(kvec[1], kvec[0]);
+    const mpreal x = rsq * pi;
 
     if (rsq > zero) {
+      mpreal gamma1 = 0.0;
+      if (ndim == 3) {
+        gamma1 = exp(-x);
+      } else if (ndim == 2) {
+        gamma1 = GMPPISQRT * mpfr::erfc(mpfr::sqrt(x));
+      } else {
+        gamma1 = -one * static_cast<mpreal>(boost::math::expint(-x.toDouble()));
+      }
+      const mpreal prefact = mpfr::pow(pi, one-ndim/two) * pow(r, one-ndim) * gamma1 / volume;
+
       for (int l = 0; l <= lmax; ++l) {
-        const complex<mpreal> coeffl = std::pow(complex<mpreal>(zero, one), l) * mpfr::pow(pi, l-half) / volume;
+        const complex<mpreal> coeffl = std::pow(complex<mpreal>(zero, one), l) * mpfr::pow(pi, l) * mpfr::pow(r, l) / gamma(l);
 
         for (int m = -l; m <= l; ++m) {
           const int am = abs(m);
           const int im = l * l + m + l;
 
           mpreal plm_tilde = plm(l, am, ctheta);
-#if 0
-          const static bagel::Legendre plm;
-          const double plmbagel = plm.compute(l, am, ctheta.toDouble());
-          const double err = abs(plm_tilde.toDouble() - plmbagel);
-          if (err > 1e-14)
-            cout << "*** Warning (2): " << l << ", " << am << ", " << ctheta.toDouble() << "  " << setprecision(20) << plmbagel << "  " << plm_tilde.toDouble() << endl;
-#endif
-
           mpreal ft = one;
           for (int i = 1; i <= l - am; ++i) {
             plm_tilde *= ft;
@@ -295,7 +283,7 @@ int main() {
           const mpreal sign = (m >=0) ? (mpfr::cos(am * phi)) : (-one * mpfr::cos(am * phi));
 
           // smooth term
-          const mpreal coeffm = plm_tilde * mpfr::pow(r, l-2)*  mpfr::exp(-rsq * pi) / gamma(l);
+          const mpreal coeffm = prefact * plm_tilde;
           mpreal real = coeffm * sign;
           mpreal imag = coeffm * mpfr::sin(am * phi);
           mlm[im] += coeffl * complex<mpreal>(real, imag);
@@ -309,7 +297,7 @@ int main() {
     for(int m = 0; m <= l; ++m) {
       const int i = l * l + m + l;
       if (l % 2 == 0 && m % 4 == 0)
-        cout << l << "  " << m << "       " << scientific << setprecision(32) << mlm[i].real().toDouble() << "   " << mlm[i].imag().toDouble() << endl;
+        cout << l << "  " << m << "       " << scientific << setprecision(32) << mlm[i].real() << "   " << mlm[i].imag() << endl;
     }
 
   return 0;
