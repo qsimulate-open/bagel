@@ -18,6 +18,7 @@
 using namespace std;
 using namespace mpfr;
 
+namespace test {
 mpreal plm(const int l, const int am, const mpreal x) {
 
   mpfr::mpreal::set_default_prec(GMPPREC);
@@ -61,7 +62,9 @@ static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {
   return rad1 < rad2;
 }
 
+}
 
+using namespace test;
 int main() {
   mpfr::mpreal::set_default_prec(GMPPREC);
 

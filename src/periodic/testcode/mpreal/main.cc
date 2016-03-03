@@ -21,6 +21,8 @@
 using namespace std;
 using namespace mpfr;
 
+namespace test {
+
 mpreal boys(const mpreal ta, const int nrank) {
 
   mpfr::mpreal::set_default_prec(GMPPREC);
@@ -118,7 +120,9 @@ mpreal gamma(const int l) {
   return out * mpfr::sqrt(GMPPI);
 }
 
+}
 
+using namespace test;
 int main() {
 
   mpfr::mpreal::set_default_prec(GMPPREC);
