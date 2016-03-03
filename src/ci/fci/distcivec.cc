@@ -83,11 +83,14 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   {
     RMAWindow_bare<DataType> sendwin(size());
     sendwin.accumulate_buffer(1.0, buf);
+    list<shared_ptr<RMATask<DataType>>> rqs;
     for (int i = 0; i != mpi__->size(); ++i) {
       const size_t roffset = dist_.start(i) * out->asize();
       const size_t rsize   = dist_.size(i)  * out->asize();
-      sendwin.rma_get(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize);
+      rqs.push_back(sendwin.rma_rget(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize));
     }
+    for (auto& i : rqs)
+      i->wait();
   }
 
   // rearrange recv buffer

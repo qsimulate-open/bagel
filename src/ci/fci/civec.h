@@ -197,9 +197,7 @@ class Civector {
     void print(const double thr) const;
 
     void synchronize(const int root = 0) {
-#ifdef HAVE_MPI_H
       mpi__->broadcast(cc_ptr_, size(), root);
-#endif
     }
 };
 

@@ -86,6 +86,7 @@ class RMAWindow {
 
     const DataType* local_data() const { fence(); return win_base_; }
 
+    // Blocking
     std::unique_ptr<DataType[]> rma_get(const size_t key) const;
     std::unique_ptr<DataType[]> rma_get(const size_t rank, const size_t off, const size_t size) const;
     void rma_get(DataType*, const size_t key) const;
@@ -95,8 +96,11 @@ class RMAWindow {
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t key);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size);
 
+    // Non-blocking
     std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t key) const;
+    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t rank, const size_t off, const size_t size) const;
     std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t key);
+    std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t rank, const size_t off, const size_t size);
 
     void set_element(const size_t rank, const size_t disp, const DataType a);
 

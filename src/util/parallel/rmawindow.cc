@@ -251,26 +251,37 @@ void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_
 
 template<typename DataType>
 shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rget(DataType* buf, const size_t key) const {
-  shared_ptr<RMATask<DataType>> out;
-#ifdef HAVE_MPI_H
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
+  return rma_rget(buf, rank, off, size);
+}
+
+
+template<typename DataType>
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rget(DataType* buf, const size_t rank, const size_t off, const size_t size) const {
+  shared_ptr<RMATask<DataType>> out;
+#ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   MPI_Request req;
   MPI_Rget(buf, size, type, rank, off, size, type, win_, &req);
   out = make_shared<RMATask<DataType>>(move(req));
 #endif
   return out;
-
 }
 
 
 template<typename DataType>
 shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(unique_ptr<DataType[]>&& buf, const size_t key) {
-  shared_ptr<RMATask<DataType>> out;
-#ifdef HAVE_MPI_H
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
+  return rma_radd(move(buf), rank, off, size);
+}
+
+
+template<typename DataType>
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(unique_ptr<DataType[]>&& buf, const size_t rank, const size_t off, const size_t size) {
+  shared_ptr<RMATask<DataType>> out;
+#ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   MPI_Request req;
   MPI_Raccumulate(buf.get(), size, type, rank, off, size, type, MPI_SUM, win_, &req);
