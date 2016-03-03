@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: mpi_rma.h
+// Filename: rmawindow.h
 // Copyright (C) 2016 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -22,8 +22,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_PARALLEL_RMAData_H
-#define __SRC_PARALLEL_RMAData_H
+#ifndef __SRC_PARALLEL_RMAWINDOW_H
+#define __SRC_PARALLEL_RMAWINDOW_H
 
 #include <bagel_config.h>
 #include <complex>
