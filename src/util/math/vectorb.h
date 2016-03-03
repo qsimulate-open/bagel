@@ -26,9 +26,9 @@
 #ifndef __SRC_MATH_BVECTOR_H
 #define __SRC_MATH_BVECTOR_H
 
+#include <src/util/math/algo.h>
 #include <src/util/math/btas_interface.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <complex>
 
 namespace bagel {
 
