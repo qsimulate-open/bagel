@@ -31,28 +31,28 @@ using namespace bagel;
 
 template<typename DataType>
 DistMatrix_base<DataType>::DistMatrix_base(const int n, const int m) : ndim_(n), mdim_(m), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(mpi__->numroc(ndim_, mdim_)) {
-  local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
+  local_ = unique_ptr<DataType[]>(new DataType[size()]);
   zero();
 }
 
 
 template<typename DataType>
 DistMatrix_base<DataType>::DistMatrix_base(const DistMatrix_base& o) : ndim_(o.ndim_), mdim_(o.mdim_), desc_(mpi__->descinit(ndim_, mdim_)), localsize_(o.localsize_) {
-  local_ = std::unique_ptr<DataType[]>(new DataType[size()]);
-  std::copy_n(o.local_.get(), size(), local_.get());
+  local_ = unique_ptr<DataType[]>(new DataType[size()]);
+  copy_n(o.local_.get(), size(), local_.get());
 }
 
 
 template<typename DataType>
-DistMatrix_base<DataType>::DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(std::move(o.local_)), desc_(std::move(o.desc_)), localsize_(o.localsize_) {
+DistMatrix_base<DataType>::DistMatrix_base(DistMatrix_base&& o) : ndim_(o.ndim_), mdim_(o.mdim_), local_(move(o.local_)), desc_(move(o.desc_)), localsize_(o.localsize_) {
 }
 
 
 template<typename DataType>
 void DistMatrix_base<DataType>::add_diag(const DataType& a, const size_t start, const size_t fence) {
   assert(ndim_ == mdim_ && start <= fence);
-  const int localrow = std::get<0>(localsize_);
-  const int localcol = std::get<1>(localsize_);
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
   const int nblock = localrow/blocksize__;
   const int mblock = localcol/blocksize__;
@@ -82,8 +82,8 @@ void DistMatrix_base<DataType>::add_diag(const DataType& a, const size_t start, 
 
 template<typename DataType>
 void DistMatrix_base<DataType>::scale(const double* vec) {
-  const int localrow = std::get<0>(localsize_);
-  const int localcol = std::get<1>(localsize_);
+  const int localrow = get<0>(localsize_);
+  const int localcol = get<1>(localsize_);
 
   const int nblock = localrow/blocksize__;
   const int mblock = localcol/blocksize__;
@@ -113,7 +113,7 @@ void DistMatrix_base<DataType>::scale(const double* vec) {
 
 
 template<typename DataType>
-std::pair<int, int> DistMatrix_base<DataType>::locate_row(const int i) { // Returns prow and local row offset for ith row
+pair<int, int> DistMatrix_base<DataType>::locate_row(const int i) { // Returns prow and local row offset for ith row
   const int rowstride = mpi__->nprow() * blocksize__;
   const int istride = i/rowstride;
 
@@ -125,7 +125,7 @@ std::pair<int, int> DistMatrix_base<DataType>::locate_row(const int i) { // Retu
 
 
 template<typename DataType>
-std::pair<int, int> DistMatrix_base<DataType>::locate_column(const int j) { // Returns pcol and local col offset for jth col
+pair<int, int> DistMatrix_base<DataType>::locate_column(const int j) { // Returns pcol and local col offset for jth col
   const int colstride = mpi__->npcol() * blocksize__;
   const int jstride = j/colstride;
 
