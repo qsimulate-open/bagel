@@ -5,8 +5,8 @@
 // These three lines all relate to the error function evaluation for complex numbers
 constexpr double CUTOFF  = 0.5;    // If the argument's real part is smaller than this, use the Taylor expansion around 0; otherwise use the continued fraction
 constexpr int NTAYLOR = 2000;    // Number of terms in the Taylor expansion used to represent the error function - 200 seems to be sufficient
-constexpr int NTERMS  = 140000;  // Number of terms in the continued fraction used to represent the error function - 14,000 seems to be usfficient
-constexpr int NBOYS   = 5000;    // Number of terms in the series expansion used for the Boys function at low values of T
+constexpr int NTERMS  = 140000;  // Number of terms in the continued fraction used to represent the error function - 14,000 seems to be sufficient
+constexpr int NBOYS   = 5000;    // Number of terms in the series expansion used for the Boys function at low values of T - 500 seems to be sufficient
 
 // These next five lines all relate to the random number generation algorithm
 constexpr int NTESTS  = 5000;  // This is the number of random T values we want to generate

@@ -1259,8 +1259,8 @@ void ComplexERIRootList::complex_eriroot1(const complex<double>* ta, complex<dou
       if (torig.imag() < 0) t = conj(torig);
       int itr = static_cast<int>((t.real()-(-2))*   0.500000000000000) ;
       int iti = static_cast<int>((t.imag()-(0))*   2.000000000000000) ;
-      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000) *   1.000000000000000 - (-2) ;
-      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000) *   4.000000000000000 - (0) ;
+      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000 - -2) *   1.000000000000000;
+      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000 - 0) *   4.000000000000000;
       const double tr2 = tr * 2.0;
       const double ti2 = ti * 2.0;
       if (itr < 11) {
