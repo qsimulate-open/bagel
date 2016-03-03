@@ -172,28 +172,56 @@ DataType RMAWindow<DataType>::dot_product(const RMAWindow<DataType>& o) const {
 
 
 template<typename DataType>
-unique_ptr<DataType[]> RMAWindow<DataType>::rma_get(const size_t& key) const {
+unique_ptr<DataType[]> RMAWindow<DataType>::rma_get(const size_t key) const {
   assert(initialized_);
-#ifdef HAVE_MPI_H
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
+  return rma_get(rank, off, size);
+}
+
+
+template<typename DataType>
+unique_ptr<DataType[]> RMAWindow<DataType>::rma_get(const size_t rank, const size_t off, const size_t size) const {
+  assert(initialized_);
   unique_ptr<DataType[]> out(new DataType[size]);
-  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Get(out.get(), size, type, rank, off, size, type, win_);
-  MPI_Win_flush_local(rank, win_);
+  rma_get(out.get(), rank, off, size);
   return move(out);
-#else
-  return nullptr;
+}
+
+
+template<typename DataType>
+void RMAWindow<DataType>::rma_get(DataType* data, const size_t key) const {
+  assert(initialized_);
+  size_t rank, off, size;
+  tie(rank, off, size) = locate(key);
+  rma_get(data, rank, off, size);
+}
+
+
+template<typename DataType>
+void RMAWindow<DataType>::rma_get(DataType* data, const size_t rank, const size_t off, const size_t size) const {
+  assert(initialized_);
+#ifdef HAVE_MPI_H
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  MPI_Get(data, size, type, rank, off, size, type, win_);
+  MPI_Win_flush_local(rank, win_);
 #endif
 }
 
 
 template<typename DataType>
-void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_t& key) {
+void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_t key) {
   assert(initialized_);
-#ifdef HAVE_MPI_H
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
+  return rma_put(dat, rank, off, size);
+}
+
+
+template<typename DataType>
+void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) {
+  assert(initialized_);
+#ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
   MPI_Win_flush_local(rank, win_);
@@ -202,11 +230,18 @@ void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_
 
 
 template<typename DataType>
-void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_t& key) {
+void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_t key) {
   assert(initialized_);
-#ifdef HAVE_MPI_H
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
+  rma_add(dat, rank, off, size);
+}
+
+
+template<typename DataType>
+void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) {
+  assert(initialized_);
+#ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
   MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
   MPI_Win_flush_local(rank, win_);
@@ -215,7 +250,7 @@ void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_
 
 
 template<typename DataType>
-shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rget(DataType* buf, const size_t& key) const {
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rget(DataType* buf, const size_t key) const {
   shared_ptr<RMATask<DataType>> out;
 #ifdef HAVE_MPI_H
   size_t rank, off, size;
@@ -231,7 +266,7 @@ shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rget(DataType* buf, const
 
 
 template<typename DataType>
-shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(unique_ptr<DataType[]>&& buf, const size_t& key) {
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(unique_ptr<DataType[]>&& buf, const size_t key) {
   shared_ptr<RMATask<DataType>> out;
 #ifdef HAVE_MPI_H
   size_t rank, off, size;

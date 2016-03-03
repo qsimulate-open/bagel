@@ -86,12 +86,17 @@ class RMAWindow {
 
     const DataType* local_data() const { fence(); return win_base_; }
 
-    std::unique_ptr<DataType[]> rma_get(const size_t& key) const;
-    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t& key);
-    void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t& key);
+    std::unique_ptr<DataType[]> rma_get(const size_t key) const;
+    std::unique_ptr<DataType[]> rma_get(const size_t rank, const size_t off, const size_t size) const;
+    void rma_get(DataType*, const size_t key) const;
+    void rma_get(DataType*, const size_t rank, const size_t off, const size_t size) const;
+    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key);
+    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size);
+    void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t key);
+    void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size);
 
-    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t& key) const;
-    std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t& key);
+    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t key) const;
+    std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t key);
 
     void set_element(const size_t rank, const size_t disp, const DataType a);
 
@@ -102,7 +107,19 @@ class RMAWindow {
     virtual bool is_local(const size_t key) const = 0;
     virtual std::tuple<size_t, size_t, size_t> locate(const size_t key) const = 0;
     virtual size_t localsize() const = 0;
+};
 
+
+template<typename DataType>
+class RMAWindow_bare : public RMAWindow<DataType> {
+  protected:
+    size_t localsize_;
+  public:
+    RMAWindow_bare(const size_t size) : localsize_(size) { this->initialize(); }
+
+    bool is_local(const size_t key) const { throw std::logic_error("RMAWindow_bare::is_local should not be called"); }
+    std::tuple<size_t, size_t, size_t> locate(const size_t key) const { throw std::logic_error("RMAWindow_bare::locate should not be called"); }
+    size_t localsize() const override { return localsize_; }
 };
 
 

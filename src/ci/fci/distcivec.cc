@@ -72,40 +72,34 @@ void DistCivector<DataType>::set_local(const size_t la, const size_t lb, const D
 template<typename DataType>
 shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   auto out = make_shared<DistCivector<DataType>>(det_->transpose());
-#ifdef HAVE_MPI_H
-  // send buffer
-  unique_ptr<DataType[]> send(new DataType[max(size(),out->size())]);
-  blas::transpose(local_data(), lenb_, asize(), send.get());
-
-  MPI_Win win;
-  MPI_Win_create(send.get(), size()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
-  MPI_Win_lock_all(MPI_MODE_NOCHECK, win);
 
   // recieve buffer
   unique_ptr<DataType[]> recv(new DataType[out->size()]);
-  // issue send and recv requests
-  vector<int> rqs;
 
-  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  for (int i = 0; i != mpi__->size(); ++i) {
-    const size_t roffset = dist_.start(i) * out->asize();
-    const size_t rsize   = dist_.size(i)  * out->asize();
-    MPI_Get(recv.get()+roffset, rsize, type, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize, type, win);
+  // send buffer
+  unique_ptr<DataType[]> buf(new DataType[max(size(), out->size())]);
+  blas::transpose(local_data(), lenb_, asize(), buf.get());
+
+  {
+    RMAWindow_bare<DataType> sendwin(size());
+    sendwin.accumulate_buffer(1.0, buf);
+    for (int i = 0; i != mpi__->size(); ++i) {
+      const size_t roffset = dist_.start(i) * out->asize();
+      const size_t rsize   = dist_.size(i)  * out->asize();
+      sendwin.rma_get(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize);
+    }
   }
-  MPI_Win_unlock_all(win);
-  MPI_Win_free(&win);
 
   // rearrange recv buffer
   for (int i = 0; i != mpi__->size(); ++i) {
     const size_t roffset = dist_.start(i) * out->asize();
     const size_t size1   = dist_.size(i);
     for (int j = 0; j != out->asize(); ++j)
-      copy_n(recv.get()+roffset+j*size1, size1, send.get()+dist_.start(i)+j*out->lenb_);
+      copy_n(recv.get()+roffset+j*size1, size1, buf.get()+dist_.start(i)+j*out->lenb_);
   }
-  out->accumulate_buffer(1.0, send);
+  out->accumulate_buffer(1.0, buf);
   if (det_->nelea()*det_->neleb() & 1)
     out->scale(-1.0);
-#endif
   return out;
 }
 
@@ -113,7 +107,6 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
 template<typename DataType>
 shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
   auto out = make_shared<DistCivector<DataType>>(*this);
-#ifdef HAVE_MPI_H
   // First the easy part, S_z^2 + S_z
   const double sz = 0.5*static_cast<double>(det_->nspin());
   out->scale(sz*sz + sz + det_->neleb());
@@ -158,7 +151,6 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
       out->accumulate_buffer(1.0, tbuf);
     }
   }
-#endif
   return out;
 }
 
@@ -194,7 +186,6 @@ void DistCivector<complex<double>>::spin_decontaminate(const double thresh) {
 
 template<typename DataType>
 void DistCivector<DataType>::print(const double thresh) const {
-#ifdef HAVE_MPI_H
   vector<DataType> data;
   vector<size_t> abits;
   vector<size_t> bbits;
@@ -236,7 +227,6 @@ void DistCivector<DataType>::print(const double thresh) const {
                 << "  " << setprecision(10) << setw(15) << get<0>(i.second) << endl;
 
   }
-#endif
 }
 
 template class bagel::DistCivector<double>;
