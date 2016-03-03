@@ -29,34 +29,22 @@
 #include <bagel_config.h>
 #include <src/ci/fci/civec.h>
 #include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/rmawindow.h>
 
 namespace bagel {
 
-// task class
 template<typename DataType>
-class RMATask {
+class DistCivector : public RMAWindow<DataType> {
   public:
-#ifndef HAVE_MPI_H
-    using MPI_Request = int; // just to compile
-#endif
-  protected:
-    MPI_Request tag;
-    std::unique_ptr<DataType[]> buf;
-  public:
-    RMATask(MPI_Request&& t) : tag(std::move(t)) { }
-    RMATask(MPI_Request&& t, std::unique_ptr<DataType[]>&& o) : tag(std::move(t)), buf(std::move(o)) { }
-    void wait();
-    bool test();
-};
+    using DetType = Determinants;
+    using LocalizedType = std::false_type;
 
-extern template class RMATask<double>;
-extern template class RMATask<std::complex<double>>;
-
-
-template<typename DataType>
-class DistCivector {
-  public: using DetType = Determinants;
-  public: using LocalizedType = std::false_type;
+    using RMAWindow<DataType>::scale;
+    using RMAWindow<DataType>::ax_plus_y;
+    using RMAWindow<DataType>::dot_product;
+    using RMAWindow<DataType>::fence;
+    using RMAWindow<DataType>::fence_local;
+    using RMAWindow<DataType>::local_data;
 
   protected:
     mutable std::shared_ptr<const Determinants> det_;
@@ -64,12 +52,6 @@ class DistCivector {
     // global dimension
     size_t lena_;
     size_t lenb_;
-
-    // global array tag
-#ifdef HAVE_MPI_H
-    MPI_Win win_;
-#endif
-    DataType* win_base_;
 
     // table for alpha string distribution
     StaticDist dist_;
@@ -81,12 +63,13 @@ class DistCivector {
   public:
     DistCivector(std::shared_ptr<const Determinants> det);
 
-    DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { *this = o; }
+    DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { RMAWindow<DataType>::operator=(o); }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
-    ~DistCivector();
-
-    DistCivector<DataType>& operator=(const DistCivector<DataType>& o);
+    // functions required by RMAWindow
+    bool is_local(const size_t a) const override;
+    std::tuple<size_t, size_t, size_t> locate(const size_t a) const override;
+    size_t localsize() const override { return size(); }
 
     std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
     std::shared_ptr<DistCivector<DataType>> copy() const { return std::make_shared<DistCivector<DataType>>(*this); }
@@ -100,34 +83,18 @@ class DistCivector {
     size_t aend() const { return aend_; }
     size_t asize() const { return aend_ - astart_; }
 
-    void zero();
     void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const;
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
-
-    const DataType* local_data() const { fence(); return win_base_; }
-    bool is_local(const size_t a) const;
     void set_local(const size_t la, const size_t lb, const DataType a);
-    void fence() const;
-    void fence_local() const;
-
-    std::shared_ptr<RMATask<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
-    std::shared_ptr<RMATask<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
-
-    void local_accumulate(const DataType a, const std::unique_ptr<DataType[]>& buf);
 
     // utility functions
-    DataType dot_product(const DistCivector<DataType>& o) const;
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / (lena_*lenb_); }
     double rms() const { return std::sqrt(variance()); }
-
-    void scale(const DataType a);
-    void ax_plus_y(const DataType a, const DistCivector<DataType>& o);
-    void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
     DataType spin_expectation() const {

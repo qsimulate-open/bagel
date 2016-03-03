@@ -361,7 +361,7 @@ void DistFCI::const_denom() {
   }
   tasks.compute();
 
-  denom_->local_accumulate(1.0, buf);
+  denom_->accumulate_buffer(1.0, buf);
   denom_t.tick_print("denom");
 }
 
@@ -442,7 +442,7 @@ void DistFCI::compute() {
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
-          c->local_accumulate(1.0, target_array);
+          c->accumulate_buffer(1.0, target_array);
           c->spin_decontaminate();
           c->normalize();
           cc.push_back(c);

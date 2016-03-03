@@ -181,6 +181,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   tasks.compute();
 
   blas::transpose(target.get(), la, lb, source.get());
-  sigma->local_accumulate(1.0, source);
+  sigma->accumulate_buffer(1.0, source);
 
 }

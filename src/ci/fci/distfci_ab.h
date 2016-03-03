@@ -59,9 +59,8 @@ class DistABTask {
       for (int i = 0, k = 0; i != norb_; ++i) {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
-          auto j = cc->get_bstring_buf(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
-          if (j)
-            requests_.push_back(j);
+          auto j = cc->rma_rget(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
+          requests_.push_back(j);
         }
       }
     }
@@ -122,9 +121,8 @@ class DistABTask {
           for (auto& b : int_det->phiupb(j))
             bcolumn[b.target] += asign * b.sign * buf3(b.source, j, k);
         }
-        std::shared_ptr<RMATask<double>> acctask = sigma->accumulate_bstring_buf(std::move(bcolumn), base_det->lexical<0>(atarget));
-        if (acctask)
-          acctasks.push_back(acctask);
+        std::shared_ptr<RMATask<double>> acctask = sigma->rma_radd(std::move(bcolumn), base_det->lexical<0>(atarget));
+        acctasks.push_back(acctask);
         ++k;
       }
       return acctasks;
