@@ -42,8 +42,9 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det)
 template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   auto out = make_shared<Civector<DataType>>(det_);
-  copy_n(local_data(), localsize(), out->data()+astart()*lenb_);
-  mpi__->allreduce(out->data(), out->size());
+  for (int i = 0; i != mpi__->size(); ++i)
+    this->rma_rget(out->data(), i, dist_.start(i)*lenb_, dist_.size(i)*lenb_);
+  fence();
   return out;
 }
 
@@ -83,14 +84,11 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::transpose() const {
   {
     RMAWindow_bare<DataType> sendwin(size());
     sendwin.accumulate_buffer(1.0, buf);
-    list<shared_ptr<RMATask<DataType>>> rqs;
     for (int i = 0; i != mpi__->size(); ++i) {
       const size_t roffset = dist_.start(i) * out->asize();
       const size_t rsize   = dist_.size(i)  * out->asize();
-      rqs.push_back(sendwin.rma_rget(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize));
+      sendwin.rma_rget(recv.get()+roffset, i, out->dist_.start(mpi__->rank())*dist_.size(i), rsize);
     }
-    for (auto& i : rqs)
-      i->wait();
   }
 
   // rearrange recv buffer

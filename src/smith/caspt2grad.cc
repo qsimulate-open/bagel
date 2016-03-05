@@ -88,7 +88,7 @@ void CASPT2Grad::compute() {
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
     auto d11tmp = make_shared<Matrix>(*smith->dm11());
     d11tmp->symmetrize();
-    // TODO not sure about the scale
+    // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
     d11tmp->scale(2.0);
 
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
@@ -285,33 +285,39 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   // contributions from non-separable part
   shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
 
   // separable part
+  vector<shared_ptr<const Matrix>> da;
+  vector<shared_ptr<const VectorB>> ca;
+
   auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
-    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0occ ^ ocoeff);
+    shared_ptr<const Matrix> d0mo = make_shared<Matrix>(*d0occ ^ ocoeff);
+    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0mo);
     shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff * *d1bas ^ *coeff);
     shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
     shared_ptr<const VectorB> cd1 = geom_->df()->compute_cd(d1ao);
-
-    // three-index derivatives (seperable part)...
-    vector<shared_ptr<const VectorB>> cd {cd0, cd1};
-    vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
+    ca.push_back(cd0);
+    da.push_back(d1ao);
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
     sepd->rotate_occ(d0occ);
 
-    qrs->ax_plus_y(-1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
-    qrs->add_direct_product(cd, dd, 1.0);
+    qri->ax_plus_y(-1.0, sepd);
+    qri->add_direct_product(cd1, d0mo, 1.0);
 
     *qq += (*cd0 ^ *cd1) * 2.0;
     *qq += *halfjj->form_aux_2index(sepd, -1.0);
+    return make_tuple(cd0, d1ao);
   };
 
   separable_pair(nact ? ref->rdm1_mat(task_->target()) : d0->get_submatrix(0,0,nocc,nocc), d1);
 
   if (ncore)
     separable_pair(smallz, dsa);
+
+  // back transform the rest
+  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
+  qrs->add_direct_product(ca, da, 1.0);
 
   timer.tick_print("Effective densities");
 
