@@ -56,7 +56,7 @@ class VecView_ : public btas::TensorView1<DataType> {
     VecView_() { }
     virtual ~VecView_() { }
 
-    size_t size() const { return this->storage().size(); }
+    size_t size() const { return this->extent(0); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
 
     DataType* data() { /*assert(contiguous());*/ return &*begin(); }
@@ -144,7 +144,7 @@ class Vector_ : public btas::Tensor1<DataType> {
       return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
     }
 
-    size_t size() const { return this->storage().size(); }
+    size_t size() const { return this->extent(0); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
 
     Vector_<DataType>& operator=(const Vector_<DataType>& o) { btas::Tensor1<DataType>::operator=(o);            return *this; }
