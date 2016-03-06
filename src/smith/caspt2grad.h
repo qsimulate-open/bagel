@@ -39,13 +39,14 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> coeff_;
     // second-order density matrix
     std::shared_ptr<const Matrix> d1_;
-    // first-order density matrices
+    // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
-    // TODO to replace
+    // two-body first-order density matrix
     std::shared_ptr<const Tensor> d2_;
 
+    // y from SMITH code
     std::shared_ptr<Civec> cideriv_;
-
+    // FCI utility
     std::shared_ptr<FCI> fci_;
 
     // for gradient
@@ -56,7 +57,6 @@ class CASPT2Grad : public Method {
 
     std::vector<double> ref_energy_;
 
-    // TODO to replace
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
@@ -68,9 +68,10 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Tensor> d2() const { return d2_; }
-    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
 
+    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI> fci() const { return fci_; }
+
     int target() const { return target_; }
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }

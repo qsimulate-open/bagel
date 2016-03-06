@@ -114,23 +114,30 @@ void CASPT2Grad::compute() {
     // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
     // -> y_I += [(h+g[d^(0)+d^(2)]) - (1+N)F] <I|E_ij|0>
     if (nact) {
-      const int nmobasis = coeff_->mdim();
-      auto d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
-      // TODO we should be able to avoid this Fock build
-      auto d0ao = make_shared<Matrix>(*coeff_* *d0  ^ *coeff_);
-      auto d1ao = make_shared<Matrix>((*coeff_* *d1_ ^ *coeff_) + *d0ao); // sum of d0 + d1 (to make it positive definite)
-      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao, vector<double>());
-      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao, vector<double>());
+      const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
+
+      auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff) {
+        shared_ptr<const Matrix> jop = ref_->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
+        auto out = make_shared<Matrix>(acoeff % (*ref_->hcore() + *jop) * acoeff);
+        shared_ptr<const DFFullDist> full = ref_->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+        shared_ptr<DFFullDist> full2 = full->copy();
+        full2->rotate_occ1(moden);
+        *out += *full->form_2index(full2, -0.5);
+        return out;
+      };
+
+      const int nmo = coeff_->mdim();
+      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+      auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
+      auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
       *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
 
-      auto acoeff = coeff_->slice(nclosed, nclosed+nact);
-      auto fock1mo = make_shared<Matrix>(acoeff % *fock1 * acoeff);
       shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
       assert(deriv->ij() == nact*nact);
 
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
-          cideriv_->ax_plus_y(2.0*fock1mo->element(j,i), deriv->data(j+i*nact));
+          cideriv_->ax_plus_y(2.0*fock1->element(j,i), deriv->data(j+i*nact));
     }
 
     d2_ = smith->dm2();
