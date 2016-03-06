@@ -75,8 +75,7 @@ void Smith::compute() {
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv(ref_->ciwfn()->det());
 
-    // todo check
-    coeff_ = make_shared<Coeff>(*algop->coeff());
+    coeff_ = algop->coeff();
   }
 #endif
 }

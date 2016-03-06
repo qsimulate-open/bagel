@@ -33,8 +33,8 @@ using namespace bagel;
 using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const DFHalfDist> h2, shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), half_(h), halfjj_(h2), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
@@ -115,8 +115,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   const MatView ocoeff = coeff_->slice(0, nocca);
 
   // some DF vectors
-  shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff)->apply_J();
-  shared_ptr<const DFFullDist> fullb = half->compute_second_transform(ocoeff);
+  shared_ptr<const DFFullDist> fullb = halfj_->compute_second_transform(ocoeff);
 
   // making denominator...
   shared_ptr<PairFile<Matrix, Dvec>> denom;
@@ -212,7 +211,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     solver->orthog(z);
 
     // given z, computes sigma (before anti-symmetrization)
-    shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, half, fullb, detex, cinv, /*antisym*/true);
+    shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true);
     sigma->first()->antisymmetrize();
     sigma->first()->purify_redrotation(nclosed, nact, nvirt);
     sigma->second()->project_out(civector_);
@@ -227,7 +226,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
-  shared_ptr<Matrix> xmat = form_sigma(result, half, fullb, detex, cinv, /*antisym*/false)->first();
+  shared_ptr<Matrix> xmat = form_sigma(result, fullb, detex, cinv, /*antisym*/false)->first();
 
   *xmat += *grad_->first();
   if (zcore)
@@ -239,7 +238,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
 
 shared_ptr<PairFile<Matrix,Dvec>>
-  CPCASSCF::form_sigma(shared_ptr<const PairFile<Matrix,Dvec>> z, shared_ptr<const DFHalfDist> half,
+  CPCASSCF::form_sigma(shared_ptr<const PairFile<Matrix,Dvec>> z,
                        shared_ptr<const DFFullDist> fullb, shared_ptr<const Determinants> detex, shared_ptr<const Matrix> cinv,
                        const bool antisym) const {
 
@@ -264,7 +263,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
   // [G_ij,kl (kl|D)] [(D|jS)+(D|Js)]   (capital denotes a Z transformed index)
   // (D|jx) -> (D|jS)
   {
-    shared_ptr<DFFullDist> tmp0 = half->compute_second_transform(cz0cinv);
+    shared_ptr<DFFullDist> tmp0 = halfj_->compute_second_transform(cz0cinv);
     shared_ptr<const DFHalfDist> tmp1 = geom_->df()->compute_half_transform(ocz0)->apply_J();
     tmp0->ax_plus_y(1.0, tmp1);
     shared_ptr<const DFFullDist> fulld = nact ? fullb->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact)
@@ -274,12 +273,12 @@ shared_ptr<PairFile<Matrix,Dvec>>
     sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, cbuf);
   }
   // [G_ij,kl (Kl|D)+(kL|D)] (D|sj)
-  shared_ptr<DFFullDist> fullz = half->compute_second_transform(ocz0);
+  shared_ptr<DFFullDist> fullz = halfj_->compute_second_transform(ocz0);
   fullz->symmetrize();
   {
     shared_ptr<const DFFullDist> tmp = nact ? fullz->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact)
                                             : fullz->apply_closed_2RDM();
-    shared_ptr<const Matrix> buf = half->form_2index(tmp, 2.0); // Factor of 2
+    shared_ptr<const Matrix> buf = halfj_->form_2index(tmp, 2.0); // Factor of 2
     // mo transformation of s
     sigmaorb->add_block(1.0, 0, 0, nmobasis, nocca, *coeff_ % *buf);
   }

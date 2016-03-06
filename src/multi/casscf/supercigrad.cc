@@ -95,7 +95,7 @@ shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   }
 
   // solve CP-CASSCF
-  auto cp = make_shared<CPCASSCF>(grad, civ, half, halfjj, ref_, task_->fci());
+  auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
