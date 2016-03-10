@@ -68,10 +68,14 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<const Coeff> semi_canonical_orb() const;
+    std::shared_ptr<const Matrix> spin_density() const;
 
     // energy
     std::vector<double> energy_;
     double rms_grad_;
+
+    // properties
+    bool do_hyperfine_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);

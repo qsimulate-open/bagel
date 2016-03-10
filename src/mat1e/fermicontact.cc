@@ -32,12 +32,14 @@ using namespace bagel;
 
 const static AtomMap atommap;
 
-FermiContact::FermiContact(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom) : Matrix1e(mol), position_(atom->position()) {
+FermiContact::FermiContact(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom, const int s) : Matrix1e(mol), position_(atom->position()) {
 
   init(mol);
   fill_upper();
 
-  scale(atommap.hfcc_pfac(atom->name())*4.0*pi__/3);
+  const double sfac = s ? 1.0/(s*0.5) : 0.0;
+
+  scale(atommap.hfcc_pfac(atom->name())*4.0*pi__/3 * sfac);
 }
 
 void FermiContact::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> dummy) {

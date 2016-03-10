@@ -46,7 +46,7 @@ class FermiContact : public Matrix1e {
 
   public:
     FermiContact() { }
-    FermiContact(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>);
+    FermiContact(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>, const int);
 
 };
 

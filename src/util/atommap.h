@@ -52,6 +52,8 @@ struct AtomMap {
     double radius(const std::string) const;
     double cov_radius(const std::string) const;
     double nuclear_exponent(const std::string) const;
+
+    bool hfcc_exists(const std::string) const;
     double hfcc_pfac(const std::string) const;
 
     std::tuple<int,int,int,int> num_closed(const std::string) const;

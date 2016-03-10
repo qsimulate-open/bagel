@@ -890,6 +890,11 @@ tuple<int,int,int,int> AtomMap::num_open(const string input) const {
 }
 
 
+bool AtomMap::hfcc_exists(const string input) const {
+  return hfccp.find(input) != hfccp.end();
+}
+
+
 double AtomMap::hfcc_pfac(const string input) const {
   auto miter = hfccp.find(input);
   if (miter == hfccp.end()) throw runtime_error("Unknown atom (HPCC P factor).");

@@ -32,12 +32,14 @@ using namespace bagel;
 
 const static AtomMap atommap;
 
-SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom) : Matrix1eArray<6>(mol), atom_(atom) {
+SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom, const int s) : Matrix1eArray<6>(mol), atom_(atom) {
 
   init(mol);
   fill_upper();
 
-  scale(atommap.hfcc_pfac(atom->name())/2.0);
+  const double sfac = s ? 1.0/(s*0.5) : 0.0;
+
+  scale(atommap.hfcc_pfac(atom->name())/2.0 * sfac);
 }
 
 
