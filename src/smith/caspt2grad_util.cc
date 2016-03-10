@@ -29,6 +29,67 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+shared_ptr<Matrix> CASPT2Grad::diagonal_D1() const {
+  vector<IndexRange> ind = d2_->indexrange();
+  if (!(ind[0] == ind[2] && ind[1] == ind[3])) throw logic_error("wrong");
+
+  Tensor interm(vector<IndexRange>{ind[0], ind[3]});
+  interm.allocate();
+
+  for (auto& i3 : ind[3])
+    for (auto& i1 : ind[1])
+      for (auto& i0 : ind[0]) {
+        if (!interm.is_local(i0, i3) || !d2_->exists(i0, i1, i1, i3)) continue;
+        unique_ptr<double[]> in = d2_->get_block(i0, i1, i1, i3);
+        unique_ptr<double[]> buf(new double[i0.size()*i3.size()]);
+        fill_n(buf.get(), i0.size()*i3.size(), 0.0);
+        for (int j3 = 0; j3 != i3.size(); ++j3)
+          for (int j1 = 0; j1 != i1.size(); ++j1)
+            blas::ax_plus_y_n(1.0, in.get()+i0.size()*(j1+i1.size()*(j1+i1.size()*j3)),
+                              i0.size(), buf.get()+i0.size()*j3);
+        interm.add_block(buf, i0, i3);
+      }
+  return interm.matrix();
+}
+
+
+// TODO second-order part still missing
+shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
+  const int nele_act = fci_->det()->nelea() + fci_->det()->neleb();
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
+  const int nmo = d11_->mdim();
+
+  auto out = make_shared<Matrix>(*d11_);
+  shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+  out->add_block(1.0, 0, 0, nocc, nocc, d0);
+  out->scale((4.0 - nele_act) * 0.5);
+
+  // Correcting for first order RDMs
+  // two-body part
+  out->add_block(-2.0, ncore_, nclosed, nocc-ncore_, nmo-nclosed, diagonal_D1());
+  // closed part
+  out->add_block(-4.0, ncore_, nclosed, nclosed-ncore_, nmo-nclosed, d11_->get_submatrix(ncore_, nclosed, nclosed-ncore_, nmo-nclosed));
+
+  // Correcting for zeroth order RDMs
+  // closed part
+  out->add_block(nele_act*0.5-2.0, 0, 0, nclosed, nclosed, d0->get_submatrix(0, 0, nclosed, nclosed));
+  // two-body part
+  shared_ptr<const RDM<2>> rdm2 = ref_->rdm2(target());
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j)
+      for (int k = 0; k != nact; ++k)
+        (*out)(j+nclosed,i+nclosed) -= rdm2->element(j,k,k,i);
+
+  // scale with 1/(S+1)
+  out->scale(1.0 / (fci_->det()->nspin()*0.5 + 1.0));
+  // finally symmetrize
+  out->symmetrize();
+  return out;
+}
+
+
 shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full) const {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();

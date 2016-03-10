@@ -81,6 +81,9 @@ class CASPT2Grad : public Method {
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    std::shared_ptr<Matrix> diagonal_D1() const;
+    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
 };
 
 }
