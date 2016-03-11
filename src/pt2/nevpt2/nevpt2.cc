@@ -910,7 +910,7 @@ void NEVPT2<DataType>::compute() {
     cout << "          " << setw(7) << left << i.first << right << setw(15) << setprecision(10) << energy[i.second] << endl;
   cout << endl;
 
-  energy_ += ref_->energy();
+  energy_ += ref_->energy(istate_);
   cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }

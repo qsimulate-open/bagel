@@ -320,7 +320,7 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Reference> out;
   if (nact_) {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
                                  fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
     // TODO
     // compute one-body operators
@@ -349,7 +349,7 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     out->set_erdm1(erdm);
     out->set_nstate(nstate_);
   } else {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av());
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
   }
   return out;
 }

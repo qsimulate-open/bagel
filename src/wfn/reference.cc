@@ -35,7 +35,7 @@ using namespace bagel;
 
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
-                     const double en,
+                     const vector<double> en,
                      shared_ptr<const VecRDM<1>> _rdm1, shared_ptr<const VecRDM<2>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)

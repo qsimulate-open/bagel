@@ -45,9 +45,13 @@ class ZReference : public Reference {
 
   public:
     ZReference() { }
-    ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en, const int nocc, const int nact, const int nvirt)
+    ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const std::vector<double> en, const int nocc, const int nact, const int nvirt)
      : Reference(g, nullptr, nocc, nact, nvirt, en), zcoeff_(c) {
     }
+
+    // if only given one energy
+    ZReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff> c, const double en, const int nocc, const int nact, const int nvirt) :
+      ZReference(g, c, std::vector<double>(1, en), nocc, nact, nvirt) { }
 
     std::shared_ptr<const Coeff> coeff() const override { return nullptr; }
     //std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("ZReference::coeff() should not be called"); }
