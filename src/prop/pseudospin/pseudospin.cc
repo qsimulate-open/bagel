@@ -377,9 +377,23 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     }
   }
 
+  // Load up the energies of the nspin1_ states
+  // Default is to take from ZFCI, but we allow custom input so we can use correlated energies, such as from Dirac--NEVPT2
   ref_energy_.resize(nspin1_);
-  for (int i = 0; i != nspin1_; ++i)
-    ref_energy_[i] = zfci.energy()[aniso_state[i]];
+  const shared_ptr<const PTree> input_energy = idata_->get_child_optional("energies");
+  if (input_energy) {
+    if (input_energy->size() != nspin1_)
+      throw runtime_error("Wrong number of energies given; one is needed for each of " + to_string(nspin1_) + " states.");
+    auto en = input_energy->begin();
+    for (int i = 0; i != nspin1_; ++i) {
+      ref_energy_[i] = lexical_cast<double>((*en)->data());
+      en++;
+    }
+    cout << "  *  Energies of Hamiltonian eigenstates are taken from input rather than relativistic FCI." << endl;
+  } else {
+    for (int i = 0; i != nspin1_; ++i)
+      ref_energy_[i] = zfci.energy()[aniso_state[i]];
+  }
 
   // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
   for (int i = 0; i != 3; ++i) {
@@ -662,7 +676,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   //  update_spin_matrices(zeig);
   //}
 
-  //spinham_h_->print("ZFCI Hamiltonian", 24);
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(transform % *spinham_h_ * transform);
   array<shared_ptr<ZMatrix>, 3> mu_s;
   array<shared_ptr<ZMatrix>, 3> spin_s;
