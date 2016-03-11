@@ -347,7 +347,6 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
 
     out->set_erdm1(erdm);
-    out->set_nstate(nstate_);
   } else {
     out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
   }

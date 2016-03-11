@@ -64,7 +64,9 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
     if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
     if (nact_ < 1)          throw runtime_error("no active orbitals");
-    if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
+    if (nvirt_ < 1)         throw runtime_error("no virtual orbitals");
+    if (istate_ < 0 || istate_ >= ref_->nstate())
+      throw runtime_error("invalid state requested");
   }
 
   cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;

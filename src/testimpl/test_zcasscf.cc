@@ -80,27 +80,22 @@ double relcas_energy(std::string inp) {
       }
 
     } else if (method == "zcasscf") {
-      std::vector<int> states = itree->get_vector<int>("state", 0);
-      int nstate = 0;
-      for (int i = 0; i != states.size(); ++i)
-        nstate += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
       std::string algorithm = itree->get<std::string>("algorithm", "");
-
       if (algorithm == "superci" || algorithm == "") {
         auto zcas = std::make_shared<ZSuperCI>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy(nstate-1);
+        energy = ref->energy(ref->nstate()-1);
       } else if (algorithm == "bfgs") {
         auto zcas = std::make_shared<ZCASBFGS>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy(nstate-1);
+        energy = ref->energy(ref->nstate()-1);
       } else if (algorithm == "hybrid") {
         auto zcas = std::make_shared<ZCASHybrid>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy(nstate-1);
+        energy = ref->energy(ref->nstate()-1);
       }
     }
 #ifndef DISABLE_SERIALIZATION
