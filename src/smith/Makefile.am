@@ -36,7 +36,7 @@ relmrci/RelMRCI_residualq4.cc relmrci/RelMRCI_residualq5.cc relmrci/RelMRCI_resi
 relmrci/RelMRCI_tasks1.cc relmrci/RelMRCI_tasks2.cc relmrci/RelMRCI_tasks3.cc relmrci/RelMRCI_tasks4.cc relmrci/RelMRCI_tasks5.cc \
 relmrci/RelMRCI_tasks6.cc relmrci/RelMRCI_tasks7.cc relmrci/RelMRCI_tasks8.cc relmrci/RelMRCI_tasks9.cc relmrci/RelMRCI_tasks10.cc \
 relmrci/RelMRCI_tasks11.cc relmrci/RelMRCI_tasks12.cc relmrci/RelMRCI_tasks13.cc relmrci/RelMRCI_tasks14.cc relmrci/RelMRCI_tasks15.cc \
-relmrci/RelMRCI_tasks16.cc relmrci/RelMRCI_gen1.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen3.cc relmrci/RelMRCI_gen4.cc \
+relmrci/RelMRCI_tasks16.cc relmrci/RelMRCI_gen1.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen3.cc relmrci/RelMRCI_gen4.cc \
 relmrci/RelMRCI_gen5.cc relmrci/RelMRCI_gen6.cc relmrci/RelMRCI_gen7.cc relmrci/RelMRCI_gen8.cc relmrci/RelMRCI_gen9.cc relmrci/RelMRCI_gen10.cc \
 relmrci/RelMRCI_gen11.cc relmrci/RelMRCI_gen12.cc relmrci/RelMRCI_gen13.cc relmrci/RelMRCI_gen14.cc relmrci/RelMRCI_gen15.cc relmrci/RelMRCI_gen16.cc
 
