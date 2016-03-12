@@ -137,6 +137,7 @@ void ZCASBFGS::compute() {
       shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
       // IMPROVISED LEVEL SHIFT
       const bool shift = idata_->get<bool>("shift", false);
+      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
       if (shift) {
         level_shift_ = find_level_shift(denom);
         shared_ptr<ZRotFile> diagonal_shift = denom->clone();
@@ -146,6 +147,8 @@ void ZCASBFGS::compute() {
       { // electronic rotation bfgs
         auto newdenom = copy_electronic_rotations(denom);
         ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
+        const double erad = idata_->get<double>("ele_trust_radius", trust_rad);
+        ele_srbfgs->initiate_trust_radius(erad);
       }
       { // positronic rotation bfgs
         auto newdenom = copy_positronic_rotations(denom);
@@ -155,6 +158,8 @@ void ZCASBFGS::compute() {
             newdenom->data(i) = 1.0e10;
           }
         pos_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
+        const double prad = idata_->get<double>("pos_trust_radius", trust_rad);
+        pos_srbfgs->initiate_trust_radius(prad);
       }
     }
     onebody.tick_print("One body operators");

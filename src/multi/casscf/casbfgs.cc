@@ -120,6 +120,8 @@ void CASBFGS::compute() {
       // BFGS and DIIS should start at the same time
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
+      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
+      bfgs->initiate_trust_radius(trust_rad);
     }
     onebody.tick_print("One body operators");
 
