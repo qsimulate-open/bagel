@@ -51,6 +51,7 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
       j = init_residual();
     sall_.push_back(tmp2);
     rall_.push_back(tmp2->copy());
+    lambda_.push_back(tmp2->copy());
   }
 }
 
@@ -60,18 +61,7 @@ void CASPT2::CASPT2::solve() {
   print_iteration();
 
   // <proj_jst|H|0_K> set to sall in ms-caspt2
-  for (int istate = 0; istate != nstates_; ++istate) { //K states
-    t2all_[istate]->fac(istate) = 0.0;
-    sall_[istate]->fac(istate)  = 0.0;
-
-    for (int jst=0; jst != nstates_; ++jst) { // <jst|
-      set_rdm(jst, istate);
-      s = sall_[istate]->at(jst);
-      shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
-      while(!sourceq->done())
-        sourceq->next_compute();
-    }
-  }
+  compute_source();
 
   // set t2 to zero
   {
@@ -157,14 +147,14 @@ void CASPT2::CASPT2::solve() {
       // will be used in normq
       n = init_residual();
       double norm = 0.0;
-      for (int i = 0; i != nstates_; ++i) { // bra
-        for (int j = 0; j != nstates_; ++j) { // ket
-          set_rdm(i, j);
-          t2 = t2all_[istate]->at(j);
-          shared_ptr<Queue> normq = make_normq(true, i == j);
+      for (int jst = 0; jst != nstates_; ++jst) { // bra
+        for (int ist = 0; ist != nstates_; ++ist) { // ket
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          shared_ptr<Queue> normq = make_normq(true, jst == ist);
           while (!normq->done())
             normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(i));
+          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
         }
       }
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
@@ -213,7 +203,25 @@ void CASPT2::CASPT2::solve() {
       cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
     }
   }
+
 }
+
+// source function
+void CASPT2::CASPT2::compute_source() {
+  for (int istate = 0; istate != nstates_; ++istate) { //K states
+    t2all_[istate]->fac(istate) = 0.0;
+    sall_[istate]->fac(istate)  = 0.0;
+
+    for (int jst=0; jst != nstates_; ++jst) { // <jst|
+      set_rdm(jst, istate);
+      s = sall_[istate]->at(jst);
+      shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+      while(!sourceq->done())
+        sourceq->next_compute();
+    }
+  }
+}
+
 
 void CASPT2::CASPT2::solve_deriv() {
   assert(nstates_ == 1);

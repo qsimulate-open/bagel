@@ -53,6 +53,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> lambda_;
 
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
@@ -158,6 +159,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     ~CASPT2() {}
 
     void solve();
+    void compute_source();
     void solve_deriv();
 
     std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
