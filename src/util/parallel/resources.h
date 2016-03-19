@@ -115,6 +115,7 @@ namespace bagel {
         if (!i.second.test_and_set())
           return i.first;
       }
+      // This error most often occurs if we forget to destruct one integral object before constructing another
       throw std::runtime_error("Stack Memory exhausted");
       return nullptr;
     }
