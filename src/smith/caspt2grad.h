@@ -55,6 +55,9 @@ class CASPT2Grad : public Method {
     double energy_;
     double thresh_;
 
+    // properties
+    bool do_hyperfine_;
+
     std::vector<double> ref_energy_;
 
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
@@ -76,6 +79,8 @@ class CASPT2Grad : public Method {
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }
     double thresh() const { return thresh_; }
+
+    bool do_hyperfine() const { return do_hyperfine_; }
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
