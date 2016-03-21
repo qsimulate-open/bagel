@@ -706,6 +706,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");
 
+  // Failures here can sometimes be fixed by using a tighter convergence threshold in the FCI part
   for (int i = 0; i != 3; ++i) {
     assert(is_t_symmetric(*mu_s[i], /*hermitian*/true, /*time reversal*/false));
   }
