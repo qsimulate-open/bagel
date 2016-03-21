@@ -31,6 +31,7 @@ using namespace bagel;
 using namespace btas;
 
 ZFCI_bare::ZFCI_bare(shared_ptr<const RelCIWfn> ci) {
+  assert(ci);
   print_thresh_ = 1.0e-8;
   nele_ = ci->det()->first->nele();
   ncore_ = ci->ncore();
