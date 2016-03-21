@@ -114,7 +114,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
 
-    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim()); }
+    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim(), localized()); }
     std::shared_ptr<ZMatrix> copy() const { return std::make_shared<ZMatrix>(*this); }
 
     // returns exp(*this)
