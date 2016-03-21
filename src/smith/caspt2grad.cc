@@ -32,6 +32,7 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/prop/multipole.h>
+#include <src/prop/hyperfine.h>
 
 
 using namespace std;
@@ -51,6 +52,9 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   fci_ = cas->fci();
   thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
+
+  // property calculation
+  do_hyperfine_ = inp->get<bool>("hyperfine", false);
 
   timer.tick_print("Reference calculation");
 
@@ -285,6 +289,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
       shared_ptr<const DFFullDist> qijd2 = qij->apply_closed_2RDM();
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
     }
+  }
+
+  // computing hyperfine coupling
+  if (task_->do_hyperfine()) {
+    shared_ptr<const Matrix> dhfcc = task_->spin_density_unrelaxed();
+    HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASSCF");
+    hfcc.compute();
   }
 
   // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
