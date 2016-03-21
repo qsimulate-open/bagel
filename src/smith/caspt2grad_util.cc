@@ -90,6 +90,41 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
 }
 
 
+// relaxation part of the spin density
+shared_ptr<Matrix> CASPT2Grad::spin_density_relax(shared_ptr<const RDM<1>> zrdm1, shared_ptr<const RDM<2>> zrdm2, shared_ptr<const Matrix> zmat) const {
+  // zrdm1 and 2 are defined only withtin the active space
+  const int nele_act = fci_->det()->nelea() + fci_->det()->neleb();
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
+  const int nmo  = nocc + ref_->nvirt();
+
+  shared_ptr<const RDM<1>> rdm1 = ref_->rdm1_av();
+  shared_ptr<const RDM<2>> rdm2 = ref_->rdm2_av();
+  Matrix rdmsa(nact, nact);
+
+  auto out = make_shared<Matrix>(nmo, nmo);
+
+  for (int i = 0; i != nact; ++i)
+    for (int j = 0; j != nact; ++j) {
+      (*out)(j+nclosed, i+nclosed) = (4 - nele_act) * 0.5 * zrdm1->element(j, i);
+      rdmsa(j, i) = (4 - nele_act) * 0.5 * rdm1->element(j, i);
+      for (int k = 0; k != nact; ++k) {
+        (*out)(j+nclosed, i+nclosed) -= zrdm2->element(j, k, k, i);
+        rdmsa(j, i) -= rdm2->element(j, k, k, i);
+      }
+    }
+  // add to the block
+  out->add_block(2.0, 0, nclosed, nmo, nact, (zmat->slice(nclosed, nocc) * rdmsa));
+
+  // scale with 1/(S+1) that is common in both contributions
+  out->scale(1.0 / (fci_->det()->nspin()*0.5 + 1.0));
+  // finally symmetrize
+  out->symmetrize();
+  return out;
+}
+
+
 shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full) const {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();

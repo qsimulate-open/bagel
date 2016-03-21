@@ -293,8 +293,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   // computing hyperfine coupling
   if (task_->do_hyperfine()) {
-    shared_ptr<const Matrix> dhfcc = task_->spin_density_unrelaxed();
-    HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASSCF");
+    shared_ptr<Matrix> dhfcc = task_->spin_density_unrelaxed();
+    { // for the time being, print unrelaxed HFCC
+      HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASPT2 unrelaxed");
+      hfcc.compute();
+    }
+    dhfcc->ax_plus_y(1.0, task_->spin_density_relax(zrdm1, zrdm2, zmat));
+    HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASPT2 relaxed");
     hfcc.compute();
   }
 

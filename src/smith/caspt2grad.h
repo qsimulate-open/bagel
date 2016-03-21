@@ -89,6 +89,7 @@ class CASPT2Grad : public Method {
 
     std::shared_ptr<Matrix> diagonal_D1() const;
     std::shared_ptr<Matrix> spin_density_unrelaxed() const;
+    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
 };
 
 }

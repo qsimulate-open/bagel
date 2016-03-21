@@ -40,22 +40,24 @@ HyperFine::HyperFine(shared_ptr<const Geometry> geom, shared_ptr<const Matrix> d
 
 
 void HyperFine::compute() const {
+  const string indent = "      ";
+  cout << "    * Hyperfine coupling constants (" << jobname_ << ")" << endl;
+
   vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   int cnt = 0;
   for (auto& i : atoms) {
     if (!select_.empty() && find(select_.begin(), select_.end(), cnt) == select_.end()) continue;
 
     if (atommap.hfcc_exists(i->name())) {
-      // TODO format to be updated
-      cout << "Atom: " << setw(4) << cnt << endl;
-      cout << "  spin dipole" << setprecision(10) << endl;
+      cout << indent << "Atom: " << setw(4) << cnt << endl;
+      cout << indent << "  Spin dipole" << setprecision(10) << endl;
       SpinDipole mat(geom_, i, s_);
       for (int i = 0; i != 6; ++i)
-        cout << setw(20) << mat.data(i)->dot_product(den_) << endl;
+        cout << setw(22) << mat.data(i)->dot_product(den_) << endl;
 
-      cout << "  fermi contact" << endl;
+      cout << indent << "  Fermi contact" << endl;
       FermiContact mat2(geom_, i, s_);
-      cout << setw(20) << mat2.dot_product(den_) << endl;
+      cout << setw(22) << mat2.dot_product(den_) << endl << endl;
     }
 
     ++cnt;
