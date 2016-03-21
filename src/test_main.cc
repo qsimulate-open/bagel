@@ -31,6 +31,7 @@
 #include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <bagel_config.h>
 #include <boost/test/unit_test.hpp>
 #include <src/util/parallel/resources.h>
 #include <src/util/parallel/mpi_interface.h>
