@@ -53,7 +53,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;
-    std::vector<std::shared_ptr<MultiTensor>> lambda_;
+    std::vector<std::shared_ptr<MultiTensor>> lall_;
 
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
@@ -154,12 +154,14 @@ class CASPT2 : public SpinFreeMethod<double> {
     void make_deciq2(std::shared_ptr<Queue>, std::shared_ptr<Task>, std::shared_ptr<Task>, const bool, std::shared_ptr<Tensor>);
     void make_deciq3(std::shared_ptr<Queue>, std::shared_ptr<Task>, std::shared_ptr<Task>, const bool, std::shared_ptr<Tensor>);
 
+    std::vector<std::shared_ptr<MultiTensor_<double>>>
+      solve_linear(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
+
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     ~CASPT2() {}
 
     void solve();
-    void compute_source();
     void solve_deriv();
 
     std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
