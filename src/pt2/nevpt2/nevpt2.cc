@@ -907,13 +907,15 @@ void NEVPT2<DataType>::compute() {
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+
+  const string stateid = ref_->nstate() > 1 ? (" state " + to_string(istate_)) : "";
+  cout << "      NEVPT2" << stateid << " correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
   for (auto& i : sect)
     cout << "          " << setw(7) << left << i.first << right << setw(15) << setprecision(10) << energy[i.second] << endl;
   cout << endl;
 
   energy_ += ref_->energy(istate_);
-  cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+  cout << "      NEVPT2" << stateid << " total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
 
