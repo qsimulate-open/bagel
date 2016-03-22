@@ -38,9 +38,12 @@
 
 namespace bagel {
 namespace SMITH {
+namespace SPCASPT2 { class SPCASPT2; }
+
 namespace CASPT2{
 
 class CASPT2 : public SpinFreeMethod<double> {
+  friend class SPCASPT2::SPCASPT2;
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;

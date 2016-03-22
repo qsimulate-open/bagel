@@ -74,6 +74,7 @@ void CASPT2Grad::compute() {
     // construct SMITH here
     shared_ptr<PTree> smithinput = idata_->get_child("smith");
     smithinput->put<bool>("grad", true);
+    smithinput->put<bool>("hyperfine", do_hyperfine_);
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 

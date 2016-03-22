@@ -30,6 +30,7 @@
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/relmrci/RelMRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/caspt2/SPCASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
 using namespace bagel::SMITH;
 #endif
@@ -76,6 +77,12 @@ void Smith::compute() {
     cider_ = algop->ci_deriv(ref_->ciwfn()->det());
 
     coeff_ = algop->coeff();
+
+    // if spin-density is requested...
+    if (idata_->get<bool>("hyperfine")) {
+      auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
+      sp->solve();
+    }
   }
 #endif
 }
