@@ -779,6 +779,9 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
   VectorB shenergies(nspin1_);
   checkham->diagonalize(shenergies);
 
+  vector<double> ord_energy = ref_energy_;
+  std::sort(ord_energy.begin(), ord_energy.end());
+
   if (checkham_error > 1.0e-8) {
     cout << "  **** CAUTION ****  The pseudospin Hamiltonian does not fully reproduce the ab initio Hamiltonian.  RMS error = " << checkham_error << endl;
 
@@ -787,15 +790,16 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
       cout << "     " << i << "  " << setprecision(8) << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setprecision(4) << setw(8) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
     cout << endl;
 
-    cout << "  ** Relative energies from the ab initio (relativistic configuration interaction) Hamiltonian: " << endl;
+    cout << "  ** Relative energies from the ab initio Hamiltonian: " << endl;
     for (int i = nspin_; i >= 0; --i)
-      cout << "     " << i << "  " << setprecision(8) << setw(12) << ref_energy_[i] - ref_energy_[0] << " E_h  =  " << setprecision(4) << setw(8) << (ref_energy_[i] - ref_energy_[0])*au2wavenumber__ << " cm-1" << endl;
+      cout << "     " << i << "  " << setprecision(8) << setw(12) << ord_energy[i] - ord_energy[0] << " E_h  =  " << setprecision(4) << setw(8) << (ord_energy[i] - ord_energy[0])*au2wavenumber__ << " cm-1" << endl;
     cout << endl;
   } else {
+
     cout << "  ** Relative energies: " << endl;
     for (int i = nspin_; i >= 0; --i) {
       cout << "     " << i << "  " << setprecision(8) << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setprecision(4) << setw(8) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
-      assert(std::abs(shenergies[i] - shenergies[0] - ref_energy_[i] + ref_energy_[0]) < 1.0e-7);
+      assert(std::abs(shenergies[i] - shenergies[0] - ord_energy[i] + ord_energy[0]) < 1.0e-7);
     }
     cout << endl;
   }
