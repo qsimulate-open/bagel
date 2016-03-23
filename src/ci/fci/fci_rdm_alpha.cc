@@ -40,20 +40,18 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, co
   shared_ptr<Civec> cbra = cc_->data(ist);
   shared_ptr<Civec> cket = cc_->data(jst);
 
-  // iaja applied to bra
+  // ij applied to bra
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
-  // kl applied to ket
+  // kala applied to ket
   auto dket = make_shared<Dvec>(cket->det(), norb_*norb_);
   sigma_2a1(cket, dket);
 
   shared_ptr<RDM<1>> rdm1;
-  shared_ptr<RDM<2>> rdm2, rdm2t;
-  tie(rdm1,rdm2t) = compute_rdm12_last_step(dbra, dket, cbra);
-  rdm2 = rdm2t->clone();
-  blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data());
+  shared_ptr<RDM<2>> rdm2;
+  tie(rdm1,rdm2) = compute_rdm12_last_step(dbra, dket, cbra);
 
   cc_->set_det(det_);
   return tie(rdm1, rdm2);
@@ -62,10 +60,8 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, co
 
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, const int jst) {
   shared_ptr<const RDM<1>> rdm1;
-  shared_ptr<const RDM<2>> rdm2t;
-  tie(rdm1, rdm2t) = rdm12_alpha(ist, jst);
-  auto rdm2 = rdm2t->clone();
-  blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data()); // stupidity
+  shared_ptr<const RDM<2>> rdm2;
+  tie(rdm1, rdm2) = rdm12_alpha(ist, jst);
 
   auto rdm3 = make_shared<RDM<3>>(norb_);
   auto rdm4 = make_shared<RDM<4>>(norb_);
@@ -160,11 +156,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, co
     }
   }
 
-  auto rdm3o = rdm3->clone();
-  auto rdm4o = rdm4->clone();
-  blas::transpose(rdm3->data(), norb_*norb_*norb_*norb_, norb_*norb_, rdm3o->data());
-  blas::transpose(rdm4->data(), norb_*norb_*norb_*norb_*norb_*norb_, norb_*norb_, rdm4o->data());
-
   cc_->set_det(det_);
-  return make_tuple(rdm3o, rdm4o);
+  return make_tuple(rdm3, rdm4);
 }

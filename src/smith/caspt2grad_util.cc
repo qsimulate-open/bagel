@@ -104,7 +104,7 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
   sd11_->print("one - from SMITH", 15);
 #endif
 
-  auto out = make_shared<Matrix>(*out0 + *out1 + *out2);
+  auto out = make_shared<Matrix>(*coeff_ * (*out0 + *out1 + *out2) ^ *coeff_);
   return out;
 }
 
@@ -140,7 +140,7 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_relax(shared_ptr<const RDM<1>> zrdm1
   out->scale(1.0 / (fci_->det()->nspin()*0.5 + 1.0));
   // finally symmetrize
   out->symmetrize();
-  return out;
+  return make_shared<Matrix>(*coeff_ * *out ^ *coeff_);
 }
 
 
