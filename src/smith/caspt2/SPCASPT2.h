@@ -111,6 +111,8 @@ class SPCASPT2 {
 
     void solve();
 
+    std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
+    std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
 };
 
 }

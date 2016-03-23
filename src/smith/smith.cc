@@ -82,6 +82,8 @@ void Smith::compute() {
     if (idata_->get<bool>("hyperfine")) {
       auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
       sp->solve();
+      sdm1_ = sp->rdm12();
+      sdm11_ = sp->rdm11();
     }
   }
 #endif
