@@ -276,94 +276,121 @@ shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma65_() {
   return make_shared<FutureTensor>(*Gamma65, task26);
 }
 
+shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma67_() {
+  vector<IndexRange> Gamma67_index = {active_, active_};
+  auto Gamma67 = make_shared<Tensor>(Gamma67_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor27 = vector<shared_ptr<Tensor>>{Gamma67, rdm1_};
+  auto task27 = make_shared<Task27>(tensor27, pindex);
+  return make_shared<FutureTensor>(*Gamma67, task27);
+}
+
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma14_() {
   vector<IndexRange> Gamma14_index = {active_, active_, active_, active_};
   auto Gamma14 = make_shared<Tensor>(Gamma14_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor27 = vector<shared_ptr<Tensor>>{Gamma14, ardm1_, ardm2_, rdm0_};
-  auto task27 = make_shared<Task27>(tensor27, pindex);
-  return make_shared<FutureTensor>(*Gamma14, task27);
+  auto tensor28 = vector<shared_ptr<Tensor>>{Gamma14, ardm1_, ardm2_, rdm0_};
+  auto task28 = make_shared<Task28>(tensor28, pindex);
+  return make_shared<FutureTensor>(*Gamma14, task28);
+}
+
+shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma81_() {
+  vector<IndexRange> Gamma81_index = {active_, active_, active_, active_};
+  auto Gamma81 = make_shared<Tensor>(Gamma81_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma81, ardm2_};
+  auto task29 = make_shared<Task29>(tensor29, pindex);
+  return make_shared<FutureTensor>(*Gamma81, task29);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma16_() {
   vector<IndexRange> Gamma16_index = {active_, active_};
   auto Gamma16 = make_shared<Tensor>(Gamma16_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor28 = vector<shared_ptr<Tensor>>{Gamma16, rdm0_, rdm1_};
-  auto task28 = make_shared<Task28>(tensor28, pindex);
-  return make_shared<FutureTensor>(*Gamma16, task28);
+  auto tensor30 = vector<shared_ptr<Tensor>>{Gamma16, rdm0_, rdm1_};
+  auto task30 = make_shared<Task30>(tensor30, pindex);
+  return make_shared<FutureTensor>(*Gamma16, task30);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma17_() {
   vector<IndexRange> Gamma17_index = {active_, active_};
   auto Gamma17 = make_shared<Tensor>(Gamma17_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma17, ardm1_, rdm0_};
-  auto task29 = make_shared<Task29>(tensor29, pindex);
-  return make_shared<FutureTensor>(*Gamma17, task29);
+  auto tensor31 = vector<shared_ptr<Tensor>>{Gamma17, ardm1_, rdm0_};
+  auto task31 = make_shared<Task31>(tensor31, pindex);
+  return make_shared<FutureTensor>(*Gamma17, task31);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma22_() {
   vector<IndexRange> Gamma22_index = {active_, active_, active_, active_};
   auto Gamma22 = make_shared<Tensor>(Gamma22_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor30 = vector<shared_ptr<Tensor>>{Gamma22, ardm1_, ardm2_};
-  auto task30 = make_shared<Task30>(tensor30, pindex);
-  return make_shared<FutureTensor>(*Gamma22, task30);
+  auto tensor32 = vector<shared_ptr<Tensor>>{Gamma22, ardm1_, ardm2_};
+  auto task32 = make_shared<Task32>(tensor32, pindex);
+  return make_shared<FutureTensor>(*Gamma22, task32);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma28_() {
   vector<IndexRange> Gamma28_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma28 = make_shared<Tensor>(Gamma28_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor31 = vector<shared_ptr<Tensor>>{Gamma28, ardm1_, ardm2_, ardm3_};
-  auto task31 = make_shared<Task31>(tensor31, pindex);
-  return make_shared<FutureTensor>(*Gamma28, task31);
+  auto tensor33 = vector<shared_ptr<Tensor>>{Gamma28, ardm1_, ardm2_, ardm3_};
+  auto task33 = make_shared<Task33>(tensor33, pindex);
+  return make_shared<FutureTensor>(*Gamma28, task33);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma29_() {
   vector<IndexRange> Gamma29_index = {active_, active_, active_, active_};
   auto Gamma29 = make_shared<Tensor>(Gamma29_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor32 = vector<shared_ptr<Tensor>>{Gamma29, ardm1_, ardm2_};
-  auto task32 = make_shared<Task32>(tensor32, pindex);
-  return make_shared<FutureTensor>(*Gamma29, task32);
+  auto tensor34 = vector<shared_ptr<Tensor>>{Gamma29, ardm1_, ardm2_};
+  auto task34 = make_shared<Task34>(tensor34, pindex);
+  return make_shared<FutureTensor>(*Gamma29, task34);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma33_() {
   vector<IndexRange> Gamma33_index = {active_, active_, active_, active_};
   auto Gamma33 = make_shared<Tensor>(Gamma33_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor33 = vector<shared_ptr<Tensor>>{Gamma33, ardm1_, ardm2_};
-  auto task33 = make_shared<Task33>(tensor33, pindex);
-  return make_shared<FutureTensor>(*Gamma33, task33);
+  auto tensor35 = vector<shared_ptr<Tensor>>{Gamma33, ardm1_, ardm2_};
+  auto task35 = make_shared<Task35>(tensor35, pindex);
+  return make_shared<FutureTensor>(*Gamma33, task35);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma90_() {
   vector<IndexRange> Gamma90_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma90 = make_shared<Tensor>(Gamma90_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor34 = vector<shared_ptr<Tensor>>{Gamma90, ardm2_, ardm3_};
-  auto task34 = make_shared<Task34>(tensor34, pindex);
-  return make_shared<FutureTensor>(*Gamma90, task34);
+  auto tensor36 = vector<shared_ptr<Tensor>>{Gamma90, ardm2_, ardm3_};
+  auto task36 = make_shared<Task36>(tensor36, pindex);
+  return make_shared<FutureTensor>(*Gamma90, task36);
+}
+
+shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma49_() {
+  vector<IndexRange> Gamma49_index = {active_, active_, active_, active_};
+  auto Gamma49 = make_shared<Tensor>(Gamma49_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor37 = vector<shared_ptr<Tensor>>{Gamma49, rdm1_, rdm2_};
+  auto task37 = make_shared<Task37>(tensor37, pindex);
+  return make_shared<FutureTensor>(*Gamma49, task37);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma51_() {
   vector<IndexRange> Gamma51_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma51 = make_shared<Tensor>(Gamma51_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor35 = vector<shared_ptr<Tensor>>{Gamma51, ardm2_, ardm3_};
-  auto task35 = make_shared<Task35>(tensor35, pindex);
-  return make_shared<FutureTensor>(*Gamma51, task35);
+  auto tensor38 = vector<shared_ptr<Tensor>>{Gamma51, ardm2_, ardm3_};
+  auto task38 = make_shared<Task38>(tensor38, pindex);
+  return make_shared<FutureTensor>(*Gamma51, task38);
 }
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma59_() {
   vector<IndexRange> Gamma59_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma59 = make_shared<Tensor>(Gamma59_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor36 = vector<shared_ptr<Tensor>>{Gamma59, ardm2_, ardm3_};
-  auto task36 = make_shared<Task36>(tensor36, pindex);
-  return make_shared<FutureTensor>(*Gamma59, task36);
+  auto tensor39 = vector<shared_ptr<Tensor>>{Gamma59, ardm2_, ardm3_};
+  auto task39 = make_shared<Task39>(tensor39, pindex);
+  return make_shared<FutureTensor>(*Gamma59, task39);
 }
 
 #endif

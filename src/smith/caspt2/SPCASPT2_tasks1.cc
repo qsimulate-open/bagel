@@ -43,7 +43,7 @@ void Task0::Task_local::compute() {
   std::unique_ptr<double[]> odata(new double[out()->get_size(x0, x5, x1, x4, x3, x2)]);
   std::fill_n(odata.get(), out()->get_size(x0, x5, x1, x4, x3, x2), 0.0);
   {
-    if (x0 == x4 && x1 == x5) {
+    if (x1 == x5 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x2);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -74,7 +74,7 @@ void Task0::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x0 == x2 && x3 == x5 && x1 == x4) {
+    if (x1 == x4 && x3 == x5 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(3)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -102,7 +102,7 @@ void Task0::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x4 && x0 == x2 && x1 == x5) {
+    if (x3 == x4 && x1 == x5 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(3)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -114,7 +114,7 @@ void Task0::Task_local::compute() {
     }
   }
   {
-    if (x0 == x2 && x1 == x5) {
+    if (x1 == x5 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x4);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -177,7 +177,7 @@ void Task0::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x5 && x0 == x4 && x1 == x2) {
+    if (x3 == x5 && x1 == x2 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(3)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -189,7 +189,7 @@ void Task0::Task_local::compute() {
     }
   }
   {
-    if (x0 == x4 && x1 == x2) {
+    if (x1 == x2 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x5);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -640,7 +640,7 @@ void Task4::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(x0, x3, x1, x2), 0.0);
   {
     // rdm0 non-merged case
-    if (x0 == x2 && x1 == x3) {
+    if (x1 == x3 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(2)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -2646,6 +2646,19 @@ void Task26::Task_local::compute() {
 }
 
 void Task27::Task_local::compute() {
+  const Index x1 = b(0);
+  const Index x0 = b(1);
+  // tensor label: Gamma67
+  std::unique_ptr<double[]> odata(new double[out()->get_size(x1, x0)]);
+  std::fill_n(odata.get(), out()->get_size(x1, x0), 0.0);
+  {
+    std::unique_ptr<double[]> i0data = in(0)->get_block(x1, x0);
+    sort_indices<0,1,1,1,1,1>(i0data, odata, x1.size(), x0.size());
+  }
+  out()->add_block(odata, x1, x0);
+}
+
+void Task28::Task_local::compute() {
   const Index x0 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -2710,7 +2723,22 @@ void Task27::Task_local::compute() {
   out()->add_block(odata, x0, x3, x2, x1);
 }
 
-void Task28::Task_local::compute() {
+void Task29::Task_local::compute() {
+  const Index x3 = b(0);
+  const Index x0 = b(1);
+  const Index x2 = b(2);
+  const Index x1 = b(3);
+  // tensor label: Gamma81
+  std::unique_ptr<double[]> odata(new double[out()->get_size(x3, x0, x2, x1)]);
+  std::fill_n(odata.get(), out()->get_size(x3, x0, x2, x1), 0.0);
+  {
+    std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0, x2, x1);
+    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x0.size(), x2.size(), x1.size());
+  }
+  out()->add_block(odata, x3, x0, x2, x1);
+}
+
+void Task30::Task_local::compute() {
   const Index x0 = b(0);
   const Index x1 = b(1);
   // tensor label: Gamma16
@@ -2732,7 +2760,7 @@ void Task28::Task_local::compute() {
   out()->add_block(odata, x0, x1);
 }
 
-void Task29::Task_local::compute() {
+void Task31::Task_local::compute() {
   const Index x0 = b(0);
   const Index x1 = b(1);
   // tensor label: Gamma17
@@ -2754,7 +2782,7 @@ void Task29::Task_local::compute() {
   out()->add_block(odata, x0, x1);
 }
 
-void Task30::Task_local::compute() {
+void Task32::Task_local::compute() {
   const Index x0 = b(0);
   const Index x2 = b(1);
   const Index x3 = b(2);
@@ -2795,7 +2823,7 @@ void Task30::Task_local::compute() {
   out()->add_block(odata, x0, x2, x3, x1);
 }
 
-void Task31::Task_local::compute() {
+void Task33::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -2910,7 +2938,7 @@ void Task31::Task_local::compute() {
   out()->add_block(odata, x5, x4, x1, x3, x2, x0);
 }
 
-void Task32::Task_local::compute() {
+void Task34::Task_local::compute() {
   const Index x1 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -2951,7 +2979,7 @@ void Task32::Task_local::compute() {
   out()->add_block(odata, x1, x3, x2, x0);
 }
 
-void Task33::Task_local::compute() {
+void Task35::Task_local::compute() {
   const Index x1 = b(0);
   const Index x2 = b(1);
   const Index x3 = b(2);
@@ -2979,7 +3007,7 @@ void Task33::Task_local::compute() {
   out()->add_block(odata, x1, x2, x3, x0);
 }
 
-void Task34::Task_local::compute() {
+void Task36::Task_local::compute() {
   const Index x5 = b(0);
   const Index x0 = b(1);
   const Index x4 = b(2);
@@ -3013,7 +3041,35 @@ void Task34::Task_local::compute() {
   out()->add_block(odata, x5, x0, x4, x3, x2, x1);
 }
 
-void Task35::Task_local::compute() {
+void Task37::Task_local::compute() {
+  const Index x3 = b(0);
+  const Index x2 = b(1);
+  const Index x1 = b(2);
+  const Index x0 = b(3);
+  // tensor label: Gamma49
+  std::unique_ptr<double[]> odata(new double[out()->get_size(x3, x2, x1, x0)]);
+  std::fill_n(odata.get(), out()->get_size(x3, x2, x1, x0), 0.0);
+  {
+    if (x1 == x2) {
+      std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0);
+      for (int i0 = 0; i0 != x0.size(); ++i0) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i3 = 0; i3 != x3.size(); ++i3) {
+            odata[i3+x3.size()*(i2+x2.size()*(i2+x1.size()*(i0)))]
+              += (1.0) * i0data[i3+x3.size()*(i0)];
+          }
+        }
+      }
+    }
+  }
+  {
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2, x1, x0);
+    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x2.size(), x1.size(), x0.size());
+  }
+  out()->add_block(odata, x3, x2, x1, x0);
+}
+
+void Task38::Task_local::compute() {
   const Index x4 = b(0);
   const Index x3 = b(1);
   const Index x1 = b(2);
@@ -3064,7 +3120,7 @@ void Task35::Task_local::compute() {
   out()->add_block(odata, x4, x3, x1, x0, x5, x2);
 }
 
-void Task36::Task_local::compute() {
+void Task39::Task_local::compute() {
   const Index x4 = b(0);
   const Index x3 = b(1);
   const Index x2 = b(2);
@@ -3098,7 +3154,7 @@ void Task36::Task_local::compute() {
   out()->add_block(odata, x4, x3, x2, x1, x5, x0);
 }
 
-void Task38::Task_local::compute() {
+void Task41::Task_local::compute() {
   const Index x2 = b(0);
   const Index x3 = b(1);
   // tensor label: r
@@ -3112,7 +3168,7 @@ void Task38::Task_local::compute() {
   out()->add_block(odata, x2, x3);
 }
 
-void Task39::Task_local::compute() {
+void Task42::Task_local::compute() {
   const Index x3 = b(0);
   const Index x2 = b(1);
   // tensor label: I0
@@ -3143,7 +3199,7 @@ void Task39::Task_local::compute() {
   out()->add_block(odata, x3, x2);
 }
 
-void Task40::Task_local::compute() {
+void Task43::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -3172,7 +3228,7 @@ void Task40::Task_local::compute() {
   out()->add_block(odata, x5, x4, x1, x0);
 }
 
-void Task41::Task_local::compute() {
+void Task44::Task_local::compute() {
   const Index x3 = b(0);
   const Index x2 = b(1);
   // tensor label: I0
@@ -3203,7 +3259,7 @@ void Task41::Task_local::compute() {
   out()->add_block(odata, x3, x2);
 }
 
-void Task42::Task_local::compute() {
+void Task45::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -3232,7 +3288,7 @@ void Task42::Task_local::compute() {
   out()->add_block(odata, x5, x4, x1, x0);
 }
 
-void Task43::Task_local::compute() {
+void Task46::Task_local::compute() {
   const Index x3 = b(0);
   const Index x2 = b(1);
   // tensor label: I0
@@ -3263,7 +3319,7 @@ void Task43::Task_local::compute() {
   out()->add_block(odata, x3, x2);
 }
 
-void Task44::Task_local::compute() {
+void Task47::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -3292,7 +3348,7 @@ void Task44::Task_local::compute() {
   out()->add_block(odata, x5, x4, x1, x0);
 }
 
-void Task45::Task_local::compute() {
+void Task48::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -3321,7 +3377,7 @@ void Task45::Task_local::compute() {
   out()->add_block(odata, x5, x4, x1, x0);
 }
 
-void Task46::Task_local::compute() {
+void Task49::Task_local::compute() {
   const Index x5 = b(0);
   const Index a2 = b(1);
   const Index c1 = b(2);
@@ -3340,80 +3396,6 @@ void Task46::Task_local::compute() {
     sort_indices<2,1,0,3,1,1,2,1>(i1data, odata, c1.size(), a2.size(), x5.size(), x4.size());
   }
   out()->add_block(odata, x5, a2, c1, x4);
-}
-
-void Task47::Task_local::compute() {
-  const Index x3 = b(0);
-  const Index x2 = b(1);
-  // tensor label: I0
-  std::unique_ptr<double[]> odata(new double[out()->get_size(x3, x2)]);
-  std::fill_n(odata.get(), out()->get_size(x3, x2), 0.0);
-  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x3, x2)]);
-  std::fill_n(odata_sorted.get(), out()->get_size(x3, x2), 0.0);
-  for (auto& x5 : *range_[1]) {
-    for (auto& x0 : *range_[1]) {
-      for (auto& x4 : *range_[1]) {
-        for (auto& x1 : *range_[1]) {
-          // tensor label: Gamma92
-          std::unique_ptr<double[]> i0data = in(0)->get_block(x5, x0, x4, x1, x3, x2);
-          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x5, x0, x4, x1, x3, x2)]);
-          sort_indices<0,1,2,3,4,5,0,1,1,1>(i0data, i0data_sorted, x5.size(), x0.size(), x4.size(), x1.size(), x3.size(), x2.size());
-          // tensor label: I285
-          std::unique_ptr<double[]> i1data = in(1)->get_block(x5, x4, x1, x0);
-          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x5, x4, x1, x0)]);
-          sort_indices<0,3,1,2,0,1,1,1>(i1data, i1data_sorted, x5.size(), x4.size(), x1.size(), x0.size());
-          dgemm_("T", "N", x3.size()*x2.size(), 1, x5.size()*x4.size()*x1.size()*x0.size(),
-                 1.0, i0data_sorted, x5.size()*x4.size()*x1.size()*x0.size(), i1data_sorted, x5.size()*x4.size()*x1.size()*x0.size(),
-                 1.0, odata_sorted, x3.size()*x2.size());
-        }
-      }
-    }
-  }
-  sort_indices<0,1,1,1,1,1>(odata_sorted, odata, x3.size(), x2.size());
-  out()->add_block(odata, x3, x2);
-}
-
-void Task48::Task_local::compute() {
-  const Index x5 = b(0);
-  const Index x4 = b(1);
-  const Index x1 = b(2);
-  const Index x0 = b(3);
-  // tensor label: I285
-  std::unique_ptr<double[]> odata(new double[out()->get_size(x5, x4, x1, x0)]);
-  std::fill_n(odata.get(), out()->get_size(x5, x4, x1, x0), 0.0);
-  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(x5, x4, x1, x0)]);
-  std::fill_n(odata_sorted.get(), out()->get_size(x5, x4, x1, x0), 0.0);
-  for (auto& a2 : *range_[2]) {
-    for (auto& a1 : *range_[2]) {
-      // tensor label: t2
-      std::unique_ptr<double[]> i0data = in(0)->get_block(x0, a1, x1, a2);
-      std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(x0, a1, x1, a2)]);
-      sort_indices<3,1,0,2,0,1,1,1>(i0data, i0data_sorted, x0.size(), a1.size(), x1.size(), a2.size());
-      // tensor label: t2
-      std::unique_ptr<double[]> i1data = in(0)->get_block(x5, a1, x4, a2);
-      std::unique_ptr<double[]> i1data_sorted(new double[in(0)->get_size(x5, a1, x4, a2)]);
-      sort_indices<3,1,0,2,0,1,2,1>(i1data, i1data_sorted, x5.size(), a1.size(), x4.size(), a2.size());
-      dgemm_("T", "N", x1.size()*x0.size(), x5.size()*x4.size(), a1.size()*a2.size(),
-             1.0, i0data_sorted, a1.size()*a2.size(), i1data_sorted, a1.size()*a2.size(),
-             1.0, odata_sorted, x1.size()*x0.size());
-    }
-  }
-  sort_indices<2,3,1,0,1,1,1,1>(odata_sorted, odata, x0.size(), x1.size(), x5.size(), x4.size());
-  out()->add_block(odata, x5, x4, x1, x0);
-}
-
-void Task49::Task_local::compute() {
-  const Index c3 = b(0);
-  const Index c2 = b(1);
-  // tensor label: r
-  std::unique_ptr<double[]> odata(new double[out()->get_size(c3, c2)]);
-  std::fill_n(odata.get(), out()->get_size(c3, c2), 0.0);
-  {
-    // tensor label: I3
-    std::unique_ptr<double[]> i0data = in(0)->get_block(c2, c3);
-    sort_indices<1,0,1,1,1,1>(i0data, odata, c2.size(), c3.size());
-  }
-  out()->add_block(odata, c3, c2);
 }
 
 #endif

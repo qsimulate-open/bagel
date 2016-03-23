@@ -35,16 +35,17 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 // TODO assuming a single-state calculation
+#define LOCAL_DEBUG
 
 SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
-#if 1
+#ifdef LOCAL_DEBUG
   // TODO debug print
   auto tmp = cas.den2->matrix();
   tmp->scale(0.5);
-  tmp->print("second");
+  tmp->print("second", 20);
   tmp = cas.den1->matrix();
   tmp->scale(0.5);
-  tmp->print("first");
+  tmp->print("first", 20);
 #endif
   virt_    = cas.virt_;
   active_  = cas.active_;
@@ -65,10 +66,10 @@ SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
 
   info_ = cas.info_;
   FCI_bare fci(info_->ciwfn());
-  shared_ptr<RDM<1>> ardm1;
-  shared_ptr<RDM<2>> ardm2;
-  shared_ptr<RDM<3>> ardm3;
-  shared_ptr<RDM<4>> ardm4;
+  shared_ptr<const RDM<1>> ardm1;
+  shared_ptr<const RDM<2>> ardm2;
+  shared_ptr<const RDM<3>> ardm3;
+  shared_ptr<const RDM<4>> ardm4;
   tie(ardm1, ardm2) = fci.rdm12_alpha(0,0);
   tie(ardm3, ardm4) = fci.rdm34_alpha(0,0);
 
@@ -85,13 +86,14 @@ void SPCASPT2::SPCASPT2::solve() {
   while (!dens2->done())
     dens2->next_compute();
 
-  den2->matrix()->print("second-order");
-
   shared_ptr<Queue> dens1 = make_density1q();
   while (!dens1->done())
     dens1->next_compute();
 
-  den1->matrix()->print("first-order");
+#ifdef LOCAL_DEBUG
+  den2->matrix()->print("second-order", 20);
+  den1->matrix()->print("first-order", 20);
+#endif
 }
 
 

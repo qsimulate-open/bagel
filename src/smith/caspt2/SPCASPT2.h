@@ -89,7 +89,9 @@ class SPCASPT2 {
     std::shared_ptr<FutureTensor> Gamma12_();
     std::shared_ptr<FutureTensor> Gamma13_();
     std::shared_ptr<FutureTensor> Gamma65_();
+    std::shared_ptr<FutureTensor> Gamma67_();
     std::shared_ptr<FutureTensor> Gamma14_();
+    std::shared_ptr<FutureTensor> Gamma81_();
     std::shared_ptr<FutureTensor> Gamma16_();
     std::shared_ptr<FutureTensor> Gamma17_();
     std::shared_ptr<FutureTensor> Gamma22_();
@@ -97,6 +99,7 @@ class SPCASPT2 {
     std::shared_ptr<FutureTensor> Gamma29_();
     std::shared_ptr<FutureTensor> Gamma33_();
     std::shared_ptr<FutureTensor> Gamma90_();
+    std::shared_ptr<FutureTensor> Gamma49_();
     std::shared_ptr<FutureTensor> Gamma51_();
     std::shared_ptr<FutureTensor> Gamma59_();
     std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);

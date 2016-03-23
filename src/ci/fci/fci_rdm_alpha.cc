@@ -42,13 +42,11 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, co
 
   // iaja applied to bra
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
   // kl applied to ket
   auto dket = make_shared<Dvec>(cket->det(), norb_*norb_);
-  dket->zero();
   sigma_2a1(cket, dket);
 
   shared_ptr<RDM<1>> rdm1;
@@ -67,7 +65,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, co
   shared_ptr<const RDM<2>> rdm2t;
   tie(rdm1, rdm2t) = rdm12_alpha(ist, jst);
   auto rdm2 = rdm2t->clone();
-  blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data());
+  blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data()); // stupidity
 
   auto rdm3 = make_shared<RDM<3>>(norb_);
   auto rdm4 = make_shared<RDM<4>>(norb_);
