@@ -43,6 +43,13 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d11_;
     // two-body first-order density matrix
     std::shared_ptr<const Tensor> d2_;
+    // norm of the first-order wave function
+    double wf1norm_;
+
+    // second-order spin density matrix
+    std::shared_ptr<const Matrix> sd1_;
+    // first-order spin density matrix
+    std::shared_ptr<const Matrix> sd11_;
 
     // y from SMITH code
     std::shared_ptr<Civec> cideriv_;

@@ -86,6 +86,7 @@ void CASPT2Grad::compute() {
     }
     target_ = smith->algo()->info()->target();
     ncore_  = smith->algo()->info()->ncore();
+    wf1norm_ = smith->wf1norm();
 
     Timer timer;
 
@@ -98,21 +99,31 @@ void CASPT2Grad::compute() {
 
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
-      const double wf1norm = smith->wf1norm();
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm * d0->element(j, i);
+          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_ * d0->element(j, i);
     }
-    if (!ncore_) {
-      d1_ = d1tmp;
-      d11_ = d11tmp;
-    } else {
-      auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
-      d1_ = d1tmp2->copy();
-      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d11tmp);
-      d11_ = d1tmp2;
+
+    auto d1set = [this](shared_ptr<const Matrix> d1t) {
+      if (!ncore_) {
+        return d1t->copy();
+      } else {
+        auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+        out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
+        return out;
+      }
+    };
+    d1_ = d1set(d1tmp);
+    d11_ = d1set(d11tmp);
+
+    // spin density matrices
+    if (do_hyperfine_) {
+      auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
+      sd11tmp->symmetrize();
+      sd11tmp->scale(2.0);
+      sd1_ = d1set(smith->sdm1());
+      sd11_ = d1set(sd11tmp);
     }
 
     // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]

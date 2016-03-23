@@ -61,31 +61,50 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
   const int nocc = ref_->nocc();
   const int nmo = d11_->mdim();
 
-  auto out = make_shared<Matrix>(*d11_);
+  const double sp1 = fci_->det()->nspin()*0.5 + 1.0;
+
+  auto out1 = make_shared<Matrix>(*d11_);
+  auto out0 = out1->clone();
   shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
-  out->add_block(1.0, 0, 0, nocc, nocc, d0);
-  out->scale((4.0 - nele_act) * 0.5);
+  out0->add_block(1.0, 0, 0, nocc, nocc, d0);
+  out0->scale((4.0 - nele_act) * 0.5);
+  out1->scale((4.0 - nele_act) * 0.5);
 
   // Correcting for first order RDMs
   // two-body part
-  out->add_block(-2.0, ncore_, nclosed, nocc-ncore_, nmo-nclosed, diagonal_D1());
+  out1->add_block(-2.0, ncore_, nclosed, nocc-ncore_, nmo-nclosed, diagonal_D1());
   // closed part
-  out->add_block(-4.0, ncore_, nclosed, nclosed-ncore_, nmo-nclosed, d11_->get_submatrix(ncore_, nclosed, nclosed-ncore_, nmo-nclosed));
+  out1->add_block(-4.0, ncore_, nclosed, nclosed-ncore_, nmo-nclosed, d11_->get_submatrix(ncore_, nclosed, nclosed-ncore_, nmo-nclosed));
 
   // Correcting for zeroth order RDMs
   // closed part
-  out->add_block(nele_act*0.5-2.0, 0, 0, nclosed, nclosed, d0->get_submatrix(0, 0, nclosed, nclosed));
+  out0->add_block(nele_act*0.5-2.0, 0, 0, nclosed, nclosed, d0->get_submatrix(0, 0, nclosed, nclosed));
   // two-body part
   shared_ptr<const RDM<2>> rdm2 = ref_->rdm2(target());
   for (int i = 0; i != nact; ++i)
     for (int j = 0; j != nact; ++j)
       for (int k = 0; k != nact; ++k)
-        (*out)(j+nclosed,i+nclosed) -= rdm2->element(j,k,k,i);
+        (*out0)(j+nclosed,i+nclosed) -= rdm2->element(j,k,k,i);
 
   // scale with 1/(S+1)
-  out->scale(1.0 / (fci_->det()->nspin()*0.5 + 1.0));
+  out0->scale(1.0 / sp1);
+  out1->scale(1.0 / sp1);
   // finally symmetrize
-  out->symmetrize();
+  out0->symmetrize();
+  out1->symmetrize();
+
+  // add second-order contribution
+  auto out2 = make_shared<Matrix>(*sd1_ - *out0 * wf1norm_);
+
+#if 1
+  out0->print("zero", 15);
+  out1->print("one", 15);
+  out2->print("two", 15);
+
+  sd11_->print("one - from SMITH", 15);
+#endif
+
+  auto out = make_shared<Matrix>(*out0 + *out1 + *out2);
   return out;
 }
 
