@@ -57,12 +57,116 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, co
   rdm2 = rdm2t->clone();
   blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data());
 
+  cc_->set_det(det_);
   return tie(rdm1, rdm2);
 }
 
 
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, const int jst) {
-  shared_ptr<RDM<3>> rdm3;
-  shared_ptr<RDM<4>> rdm4;
-  return tie(rdm3, rdm4);
+  shared_ptr<const RDM<1>> rdm1;
+  shared_ptr<const RDM<2>> rdm2t;
+  tie(rdm1, rdm2t) = rdm12_alpha(ist, jst);
+  auto rdm2 = rdm2t->clone();
+  blas::transpose(rdm2t->data(), norb_*norb_, norb_*norb_, rdm2->data());
+
+  auto rdm3 = make_shared<RDM<3>>(norb_);
+  auto rdm4 = make_shared<RDM<4>>(norb_);
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+
+  shared_ptr<Civec> cbra = cc_->data(ist);
+  shared_ptr<Civec> cket = cc_->data(jst);
+
+  // first make <I|E_ij|0>
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  // dket is alpha
+  auto dket = dbra->clone();
+  sigma_2a1(cket, dket);
+//sigma_2a2(cket, dket); ... KET side has iaja
+
+  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
+  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<Dvec> tmp) {
+    int ijkl = 0;
+    int ij = 0;
+    for (auto iter = d->dvec().begin(); iter != d->dvec().end(); ++iter, ++ij) {
+      const int j = ij/norb_;
+      const int i = ij-j*norb_;
+      tmp->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      int kl = 0;
+      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+        *e->data(ijkl) = **t;
+        const int l = kl/norb_;
+        const int k = kl-l*norb_;
+        if (l == i) *e->data(ijkl) -= *d->data(k+j*norb_);
+      }
+    }
+  };
+  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
+  auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  make_evec(dbra, ebra, tmp);
+
+  // last two indices of eket is alpha
+  auto eket = ebra->clone();
+  make_evec(dket, eket, tmp);
+
+  // size of the RI space
+  const size_t nri = ebra->lena() * ebra->lenb();
+  assert(nri == dbra->lena()*dbra->lenb());
+
+  // first form <0|E_mn|I><I|E_ij,kl|0>
+  {
+    auto tmp3 = make_shared<RDM<3>>(norb_);
+    auto tmp3v = group(group(*tmp3,2,6),0,2);
+    contract(1.0, group(*dbra,0,2), {0,1}, group(*eket,0,2), {0,2}, 0.0, tmp3v, {1,2});
+    sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
+
+    // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
+    for (int i0 = 0; i0 != norb_; ++i0)
+      for (int i1 = 0; i1 != norb_; ++i1)
+        for (int i2 = 0; i2 != norb_; ++i2)
+          for (int i3 = 0; i3 != norb_; ++i3) {
+            blas::ax_plus_y_n(-1.0, rdm2->element_ptr(0, i2, i1, i0), norb_, rdm3->element_ptr(0, i3, i3, i2, i1, i0));
+            for (int i4 = 0; i4 != norb_; ++i4)
+              rdm3->element(i4, i1, i3, i2, i1, i0) -= rdm2->element(i3, i2, i4, i0);
+          }
+  }
+
+  // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
+  {
+    {
+      auto tmp4 = make_shared<RDM<4>>(norb_);
+      dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
+      sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
+      for (int l = 0; l != norb_; ++l)
+        for (int k = 0; k != norb_; ++k)
+          for (int j = 0; j != norb_; ++j)
+            for (int b = 0; b != norb_; ++b) {
+              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
+              for (int i = 0; i != norb_; ++i) {
+                blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,b,k,i,l), norb_*norb_, rdm4->element_ptr(0,0,i,j,b,k,j,l));
+                blas::ax_plus_y_n(-1.0, rdm2->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
+                for (int d = 0; d != norb_; ++d) {
+                  rdm4->element(d,i,b,j,j,k,i,l) -= rdm2->element(b,k,d,l);
+                  blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
+                  for (int a = 0; a != norb_; ++a)
+                    rdm4->element(a,i,b,j,d,k,i,l) -= rdm3->element(b,j,d,k,a,l);
+                }
+              }
+            }
+    }
+  }
+
+  auto rdm3o = rdm3->clone();
+  auto rdm4o = rdm4->clone();
+  blas::transpose(rdm3->data(), norb_*norb_*norb_*norb_, norb_*norb_, rdm3o->data());
+  blas::transpose(rdm4->data(), norb_*norb_*norb_*norb_*norb_*norb_, norb_*norb_, rdm4o->data());
+
+  cc_->set_det(det_);
+  return make_tuple(rdm3o, rdm4o);
 }

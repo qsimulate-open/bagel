@@ -27,6 +27,7 @@
 
 
 #include <src/ci/fci/fci.h>
+#include <src/smith/smith_util.h>
 #include <src/smith/caspt2/SPCASPT2.h>
 
 using namespace std;
@@ -36,6 +37,15 @@ using namespace bagel::SMITH;
 // TODO assuming a single-state calculation
 
 SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
+#if 1
+  // TODO debug print
+  auto tmp = cas.den2->matrix();
+  tmp->scale(0.5);
+  tmp->print("second");
+  tmp = cas.den1->matrix();
+  tmp->scale(0.5);
+  tmp->print("first");
+#endif
   virt_    = cas.virt_;
   active_  = cas.active_;
   closed_  = cas.closed_;
@@ -46,13 +56,13 @@ SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
   t2 = cas.t2all_[0]->at(0);
   den1  = cas.den1->clone();
   den2  = cas.den2->clone();
+
   rdm0_ = cas.rdm0all_->at(0);
   rdm1_ = cas.rdm1all_->at(0);
   rdm2_ = cas.rdm2all_->at(0);
   rdm3_ = cas.rdm3all_->at(0);
   rdm4_ = cas.rdm4all_->at(0);
 
-#if 1
   info_ = cas.info_;
   FCI_bare fci(info_->ciwfn());
   shared_ptr<RDM<1>> ardm1;
@@ -61,12 +71,12 @@ SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
   shared_ptr<RDM<4>> ardm4;
   tie(ardm1, ardm2) = fci.rdm12_alpha(0,0);
   tie(ardm3, ardm4) = fci.rdm34_alpha(0,0);
-#else
-  ardm1_ = rdm1_;
-  ardm2_ = rdm2_;
-  ardm3_ = rdm3_;
-  ardm4_ = rdm4_;
-#endif
+
+  const int nclo = info_->nclosed();
+  ardm1_ = fill_block<2,double>(ardm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
+  ardm2_ = fill_block<4,double>(ardm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
+  ardm3_ = fill_block<6,double>(ardm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
+  ardm4_ = fill_block<8,double>(ardm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
 }
 
 
