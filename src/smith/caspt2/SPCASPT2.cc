@@ -52,10 +52,15 @@ SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
   rdm3_ = cas.rdm3all_->at(0);
   rdm4_ = cas.rdm4all_->at(0);
 
-  // TODO compute and fill in ardms here
-#if 0
+#if 1
   info_ = cas.info_;
   FCI_bare fci(info_->ciwfn());
+  shared_ptr<RDM<1>> ardm1;
+  shared_ptr<RDM<2>> ardm2;
+  shared_ptr<RDM<3>> ardm3;
+  shared_ptr<RDM<4>> ardm4;
+  tie(ardm1, ardm2) = fci.rdm12_alpha(0,0);
+  tie(ardm3, ardm4) = fci.rdm34_alpha(0,0);
 #else
   ardm1_ = rdm1_;
   ardm2_ = rdm2_;

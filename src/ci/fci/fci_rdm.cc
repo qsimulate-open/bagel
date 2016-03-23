@@ -102,7 +102,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
       copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
-      blas::transpose(buf.get(), norb_, norb_, &rdm2->element(0,0,k,i));
+      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
     }
   }
 
