@@ -28,7 +28,7 @@ using namespace std;
 using namespace bagel;
 
 // This file is devoted for computing the so-called "alpha" density matrices
-// <iaja>, <iaja,kl>, <iaja,kl,mn>, <iaja,kl,mn,op>
+// <iaja>, <kl,iaja>, <kl,mn,iaja>, <kl,mn,op,iaja>
 // the formulas are more or less the same.
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, const int jst) {
