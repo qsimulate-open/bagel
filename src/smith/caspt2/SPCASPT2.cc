@@ -35,18 +35,8 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 // TODO assuming a single-state calculation
-#define LOCAL_DEBUG
 
 SPCASPT2::SPCASPT2::SPCASPT2(const CASPT2::CASPT2& cas) {
-#ifdef LOCAL_DEBUG
-  // TODO debug print
-  auto tmp = cas.den2->matrix();
-  tmp->scale(0.5);
-  tmp->print("second", 20);
-  tmp = cas.den1->matrix();
-  tmp->scale(0.5);
-  tmp->print("first", 20);
-#endif
   virt_    = cas.virt_;
   active_  = cas.active_;
   closed_  = cas.closed_;
@@ -89,12 +79,6 @@ void SPCASPT2::SPCASPT2::solve() {
   shared_ptr<Queue> dens1 = make_density1q();
   while (!dens1->done())
     dens1->next_compute();
-
-#ifdef LOCAL_DEBUG
-  den2->matrix()->print("second-order", 20);
-  den1->matrix()->print("first-order", 20);
-#endif
 }
-
 
 #endif

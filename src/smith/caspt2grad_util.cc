@@ -96,13 +96,8 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
   // add second-order contribution
   auto out2 = make_shared<Matrix>(*sd1_ - *out0 * wf1norm_);
 
-#if 1
-  out0->print("zero", 15);
-  out1->print("one", 15);
-  out2->print("two", 15);
-
-  sd11_->print("one - from SMITH", 15);
-#endif
+  if ((*out1 - *sd11_).rms() > 1.0e-8)
+    cout << "  **** warning **** First order CASPT2 spin-density matrix has inconsistency..." << endl;
 
   auto out = make_shared<Matrix>(*coeff_ * (*out0 + *out1 + *out2) ^ *coeff_);
   return out;
