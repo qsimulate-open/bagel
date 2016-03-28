@@ -44,6 +44,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
     fmm_lmax_   = idata->get<int>("l_max", 10);
     fmm_ws_     = idata->get<int>("ws", 2);
     fmm_extent_ = idata->get<int>("extent", 10);
+    fmm_beta_   = idata->get<double>("beta", 1.0);
     lattice_ = make_shared<const Lattice>(geom, fmm_ws_);
   } else {
     lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
@@ -61,7 +62,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   hcore_ = make_shared<const PHcore>(lattice_);
   pscf.tick_print("Periodic hcore matrix");
   if (dofmm_)
-    fmm_ = lattice_->form_pfmm(dodf_, fmm_lmax_, fmm_ws_, fmm_extent_);
+    fmm_ = lattice_->form_pfmm(dodf_, fmm_lmax_, fmm_ws_, fmm_extent_, fmm_beta_);
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);

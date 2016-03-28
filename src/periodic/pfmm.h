@@ -43,6 +43,7 @@ class PFMM {
     const bool dodf_;
     int lmax_, ws_;
     int extent_sum_;
+    double beta_;
     double thresh_;
     int ndim_;
     int msize_, osize_; // #multipoles in M and O
@@ -76,6 +77,7 @@ class PFMM {
     std::vector<std::array<int, 3>> generate_vidx(const int n) const;
     void compute_Mlm();
     void compute_Mlm_direct();
+    void compute_Mlm_slow();
     void root_weight(const int l, const int size);
     void allocate_arrays(const size_t ps);
     std::shared_ptr<const PData> compute_far_field(std::shared_ptr<const PData> density) const;
@@ -84,7 +86,7 @@ class PFMM {
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
-         const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
+         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 
     static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {

@@ -36,8 +36,8 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double thresh, shared_ptr<StackMem> stack)
-  : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), thresh_(thresh) {
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double sbeta, const double thresh, shared_ptr<StackMem> stack)
+  : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), beta_(beta__ * sbeta), thresh_(thresh) {
 
 #if 1
   if (stack == nullptr) {
@@ -250,8 +250,9 @@ void PFMM::compute_Mlm() { // rectangular scell for now
   assert(lmax_ <= 25); // ERIRootList
   mlm_.clear();
   mlm_.resize(msize_);
-  const double pibeta = pi__ * pi__ / (beta__ * beta__);
+  const double pibeta = pi__ * pi__ / (beta_ * beta_);
   const int nvec = pow(2*extent_sum_+1, ndim_);
+//  allocate_arrays(10);
   allocate_arrays(nvec);
   vector<array<int, 3>> vidx = generate_vidx(extent_sum_);
   assert(vidx.size() == nvec);
@@ -264,7 +265,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     rvec_[pos + 1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
     rvec_[pos + 2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
     Rsq_[ivec] = rvec_[pos]*rvec_[pos] + rvec_[pos+1]*rvec_[pos+1] + rvec_[pos+2]*rvec_[pos+2];
-    T_[ivec] = Rsq_[ivec] * beta__ * beta__;
+    T_[ivec] = Rsq_[ivec] * beta_ * beta_;
   }
 
   for (int l = 0; l < max_rank_; ++l) {
@@ -291,7 +292,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
             glower += cweights[i] * pow(croots[i], l);
         }
 
-        glower *= 2.0 * pow(beta__, 2*l+1) * sgamma(l, r);
+        glower *= 2.0 * pow(beta_, 2*l+1) * sgamma(l, r);
         const double gupper = 1.0 / pow(r, l+1.0) - glower;
 
         for (int mm = 0; mm <= 2 * l; ++mm) {
