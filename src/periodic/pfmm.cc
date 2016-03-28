@@ -39,7 +39,7 @@ const static double beta__ = sqrt(pi__); // convergence parameter
 PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double sbeta, const double thresh, shared_ptr<StackMem> stack)
   : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), beta_(beta__ * sbeta), thresh_(thresh) {
 
-#if 1
+#if 0
   if (stack == nullptr) {
     stack_ = resources__->get();
     allocated_here_ = true;
@@ -69,8 +69,8 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
 
   //compute_Mlm_slow();
   compute_Mlm_direct();
-  compute_Mlm();
-#if 1
+  //compute_Mlm();
+#if 0
   stack_->release(size_allocated_, buff_);
   resources__->release(stack_);
 #endif
@@ -183,22 +183,6 @@ void PFMM::compute_Mlm_direct() {
   }
 
 
-#if 1
-  // DEBUG
-  cout << "LSTAR FROM DIRECT SUMMATION" << endl;
-  for (int l = 0; l < max_rank_; ++l)
-    for (int m = 0; m <= l; ++m) { // Slm = -sl-m
-      const int imul = l * l + m + l;
-      const double tmp = lstar[imul].real();
-      if (l % 2 == 0 && m % 4 == 0)
-        cout << "l = " << l << "  m = " << m << "  LSTAR = " << setw(20) << scientific << setprecision(14) << tmp << endl;
-    }
-  cout << " ******* END ******* " << endl;
-#endif
-
-
-
-
   // Mlm(n)
   mlm_ = lstar; // iter 0
   const int max_iter = 16;
@@ -229,7 +213,7 @@ void PFMM::compute_Mlm_direct() {
     mlm_[0] = 0.0;
   }
 
-#if 1
+#if 0
   // DEBUG
   cout << "RESULTS FROM DIRECT SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
@@ -325,7 +309,6 @@ void PFMM::compute_Mlm() { // rectangular scell for now
     }
   }
 
-#if 1
   double volume = 0.0;
   vector<array<double, 3>> primkvecs(3);
   switch (ndim_) {
@@ -408,9 +391,8 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       }
     }
   }
-#endif
 
-#if 1
+#if 0
   // DEBUG
   cout << "RESULTS FROM EWALD SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
@@ -768,7 +750,7 @@ void PFMM::compute_Mlm_slow() {
       }
     }
   }
-#if 1
+#if 0
   // DEBUG
   cout << "RESULTS FROM SLOW SUMMATION" << endl;
   for (int l = 0; l < max_rank_; ++l)
