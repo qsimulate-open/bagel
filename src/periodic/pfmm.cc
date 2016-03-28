@@ -106,28 +106,28 @@ void PFMM::compute_Mlm_direct() {
     mvec[2] = -(idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2]);
     const double rsq = mvec[0] * mvec[0] + mvec[1] * mvec[1] + mvec[2] * mvec[2];
     if (rsq > numerical_zero__) {
-    const double r = sqrt(rsq);
-    const double ctheta = mvec[2]/r;
-    const double phi = atan2(mvec[1], mvec[0]);
+      const double r = sqrt(rsq);
+      const double ctheta = mvec[2]/r;
+      const double phi = atan2(mvec[1], mvec[0]);
 
-    for (int l = 0; l <= lmax_; ++l) {
-      for (int m = 0; m <= 2 * l; ++m) {
-        const int am = abs(m - l);
-        const int imul = l * l + m;
+      for (int l = 0; l <= lmax_; ++l) {
+        for (int m = 0; m <= 2 * l; ++m) {
+          const int am = abs(m - l);
+          const int imul = l * l + m;
 
-        double plm_tilde = plm.compute(l, am, ctheta) * pow(r, l);
-        double ft = 1.0;
-        for (int i = 1; i <= l + am; ++i) {
-          plm_tilde /= ft;
-          ft += 1.0;
+          double plm_tilde = plm.compute(l, am, ctheta) * pow(r, l);
+          double ft = 1.0;
+          for (int i = 1; i <= l + am; ++i) {
+            plm_tilde /= ft;
+            ft += 1.0;
+          }
+
+          const double sign = (m - l >= 0) ? 1.0 : -1.0;
+          const double real = sign * cos(-am * phi) * plm_tilde;
+          const double imag = sin(-am * phi) * plm_tilde;
+          mstar[imul] += complex<double>(real, imag);
         }
-
-        const double sign = (m - l >= 0) ? 1.0 : -1.0;
-        const double real = sign * cos(-am * phi) * plm_tilde;
-        const double imag = sin(-am * phi) * plm_tilde;
-        mstar[imul] += complex<double>(real, imag);
       }
-    }
     }
   }
 
@@ -226,6 +226,7 @@ void PFMM::compute_Mlm_direct() {
         mlm_[im0] += lstar[im0];
       }
     }
+    mlm_[0] = 0.0;
   }
 
 #if 1
@@ -418,7 +419,7 @@ void PFMM::compute_Mlm() { // rectangular scell for now
       const double mlm = mlm_[imul].real();
       //if (abs(mlm) > 1e-8)
       if (l % 2 == 0 && m % 4 == 0)
-        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(25) << scientific << setprecision(20) << mlm << endl;
+        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(25) << scientific << setprecision(14) << mlm << endl;
     }
   // END DEBUG
 #endif

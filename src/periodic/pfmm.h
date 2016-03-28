@@ -104,6 +104,7 @@ class PFMM {
 
     bool is_in_cff(std::array<double, 3> lvector);
     std::shared_ptr<const PData> pcompute_Jop(std::shared_ptr<const PData> density = nullptr) const;
+    double nuclear_repulsion_ff() const;
 
 };
 
