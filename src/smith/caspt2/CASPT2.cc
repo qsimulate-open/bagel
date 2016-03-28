@@ -106,6 +106,7 @@ void CASPT2::CASPT2::solve() {
           norm += dot_product_transpose(n, t2all_[istate]->at(jst));
         }
       }
+
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
       cout << "    * Energy without level shift correction : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
       cout << "    * CASPT2 energy                         : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate];
