@@ -66,13 +66,6 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   ractive_ = make_shared<const IndexRange>(active_);
   rvirt_   = make_shared<const IndexRange>(virt_);
 
-  if (info_->ciwfn() && info_->grad()) {
-    // length of the ci expansion
-    const size_t ci_size = info_->ref()->civectors()->data(info_->target())->size();
-    ci_ = IndexRange(ci_size, max);
-    rci_ = make_shared<const IndexRange>(ci_);
-  }
-
   // f1 tensor.
   {
     MOFock<DataType> fock(info_, {all_, all_});
@@ -103,7 +96,7 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   for (auto& i1 : active_)
     for (auto& i0 : active_)
       fockact->copy_block(i0.offset()-nclosed2, i1.offset()-nclosed2, i0.size(), i1.size(), f1_->get_block(i0, i1).get());
-  fockact = fockact->get_conjg();
+  fockact_ = fockact->get_conjg();
 
   // set Eref
   const int nstates = info_->ciwfn()->nstates();
@@ -112,19 +105,12 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
     eref_->element(i, i) = info_->ciwfn()->energy(i);
 
   if (nstates > 1 && info_->do_xms())
-    rotate_xms(fockact);
+    rotate_xms();
 
   // rdms.
   if (info_->ciwfn()) {
-
-    feed_rdm_denom(fockact);
+    feed_rdm_denom();
     timer.tick_print("RDM + denominator evaluation");
-
-    // rdm ci derivatives. Only for gradient computations
-    if (info_->grad()) {
-      feed_rdm_deriv(fockact);
-      timer.tick_print("RDM derivative evaluation");
-    }
   }
 
   // set e0all_
@@ -134,13 +120,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
 }
 
 
-template<typename DataType>
-SpinFreeMethod<DataType>::~SpinFreeMethod() {
-}
-
-
 template<>
-void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
+void SpinFreeMethod<double>::rotate_xms() {
+  assert(fockact_);
   const int nstates = info_->ciwfn()->nstates();
 
   // TODO XMS thing
@@ -152,7 +134,7 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<1>> rdm1;
       tie(rdm1, ignore) = info_->rdm12(jst, ist);
       // then assign the dot product: fmn=fij rdm1
-      fmn(ist, jst) = blas::dot_product(fockact->data(), fockact->size(), rdm1->data());
+      fmn(ist, jst) = blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data());
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
@@ -203,13 +185,13 @@ void SpinFreeMethod<double>::rotate_xms(shared_ptr<const Matrix> fockact) {
 
 
 template<>
-void SpinFreeMethod<complex<double>>::rotate_xms(shared_ptr<const ZMatrix> fockact) {
+void SpinFreeMethod<complex<double>>::rotate_xms() {
   assert(false);
 }
 
 
 template<>
-void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
+void SpinFreeMethod<double>::feed_rdm_denom() {
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
   rdm0all_ = make_shared<Vec<Tensor_<double>>>();
@@ -218,7 +200,8 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
   rdm3all_ = make_shared<Vec<Tensor_<double>>>();
   rdm4all_ = make_shared<Vec<Tensor_<double>>>();
 
-  auto denom = make_shared<Denom<double>>(fockact, nstates, /*thresh*/1.0e-9);
+  assert(fockact_);
+  auto denom = make_shared<Denom<double>>(fockact_, nstates, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -231,7 +214,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
       shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
       tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
-      tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact);
+      tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact_);
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
@@ -259,7 +242,7 @@ void SpinFreeMethod<double>::feed_rdm_denom(shared_ptr<const Matrix> fockact) {
 
 
 template<>
-void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> fockact) {
+void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   const int nclo = info_->nclosed();
   const int nstates = info_->ciwfn()->nstates();
   rdm0all_ = make_shared<Vec<Tensor_<complex<double>>>>();
@@ -268,7 +251,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
   rdm3all_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
 
-  auto denom = make_shared<Denom<complex<double>>>(fockact, nstates, /*thresh*/1.0e-9);
+  assert(fockact_);
+  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, /*thresh*/1.0e-9);
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -350,15 +334,37 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom(shared_ptr<const ZMatrix> f
 
 
 template<>
-void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
+void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size) {
   using DataType = double;
-  shared_ptr<Dvec> rdm0d = make_shared<Dvec>(info_->ref()->civectors()->data(info_->target()), 1);
-  shared_ptr<Dvec> rdm1d = info_->ref()->rdm1deriv(info_->target());
-  shared_ptr<Dvec> rdm2d = info_->ref()->rdm2deriv(info_->target());
-  shared_ptr<Dvec> rdm3d, rdm4d;
+
+  ci_ = IndexRange(size, info_->maxtile());
+  rci_ = make_shared<const IndexRange>(ci_);
+
+  const int nact = info_->nact();
+  auto rdm0d = make_shared<VectorB>(size);
+  copy_n(info_->ref()->civectors()->data(info_->target())->data() + offset, size, rdm0d->data());
+
+  // TODO can improve...
+  auto rdm1d = make_shared<Matrix>(size, nact*nact);
+  auto rdm2d = make_shared<Matrix>(size, nact*nact*nact*nact);
+  shared_ptr<Dvec> rdm1a = info_->ref()->rdm1deriv(info_->target());
+  shared_ptr<Dvec> rdm2a = info_->ref()->rdm2deriv(info_->target());
+  auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
+    assert(out->mdim() == in->ij());
+    for (int i = 0; i != in->ij(); ++i)
+      copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
+  };
+  fill2(rdm1a, rdm1d);
+  fill2(rdm2a, rdm2d);
+
+  // TODO to be updated
+  shared_ptr<Dvec> rdm3a, rdm4a;
   // RDM4 is contracted a priori by the Fock operator
-  tie(rdm3d, rdm4d) = info_->ref()->rdm34deriv(info_->target(), fockact);
-  assert(rdm3d->ij() == rdm4d->ij());
+  tie(rdm3a, rdm4a) = info_->ref()->rdm34deriv(info_->target(), fockact_);
+  auto rdm3d = make_shared<Matrix>(size, nact*nact*nact*nact*nact*nact);
+  auto rdm4d = make_shared<Matrix>(size, nact*nact*nact*nact*nact*nact);
+  fill2(rdm3a, rdm3d);
+  fill2(rdm4a, rdm4d);
 
   vector<IndexRange> o1 = {ci_};
   vector<IndexRange> o3 = {ci_, active_, active_};
@@ -371,17 +377,16 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
   const vector<int> inpoff5{0,nclo,nclo,nclo,nclo};
   const vector<int> inpoff7{0,nclo,nclo,nclo,nclo,nclo,nclo};
 
-  const int nact = info_->nact();
-  const btas::CRange<1> range1(rdm1d->extent(0)*rdm1d->extent(1));
-  const btas::CRange<3> range3(rdm1d->extent(0)*rdm1d->extent(1), nact, nact);
-  const btas::CRange<5> range5(rdm2d->extent(0)*rdm2d->extent(1), nact, nact, nact, nact);
-  const btas::CRange<7> range7(rdm3d->extent(0)*rdm3d->extent(1), nact, nact, nact, nact, nact, nact);
+  const btas::CRange<1> range1(rdm1d->extent(0));
+  const btas::CRange<3> range3(rdm1d->extent(0), nact, nact);
+  const btas::CRange<5> range5(rdm2d->extent(0), nact, nact, nact, nact);
+  const btas::CRange<7> range7(rdm3d->extent(0), nact, nact, nact, nact, nact, nact);
 
-  rdm0d->resize(range1);
-  rdm1d->resize(range3);
-  rdm2d->resize(range5);
-  rdm3d->resize(range7);
-  rdm4d->resize(range7);
+  static_pointer_cast<btas::Tensor1<double>>(rdm0d)->resize(range1);
+  static_pointer_cast<btas::Tensor2<double>>(rdm1d)->resize(range3);
+  static_pointer_cast<btas::Tensor2<double>>(rdm2d)->resize(range5);
+  static_pointer_cast<btas::Tensor2<double>>(rdm3d)->resize(range7);
+  static_pointer_cast<btas::Tensor2<double>>(rdm4d)->resize(range7);
   rdm0deriv_ = fill_block<1,DataType>(rdm0d, inpoff1, o1);
   rdm1deriv_ = fill_block<3,DataType>(rdm1d, inpoff3, o3);
   rdm2deriv_ = fill_block<5,DataType>(rdm2d, inpoff5, o5);
@@ -391,7 +396,7 @@ void SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
 
 
 template<>
-void SpinFreeMethod<complex<double>>::feed_rdm_deriv(shared_ptr<const MatType> fockact) {
+void SpinFreeMethod<complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size) {
   throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
 }
 

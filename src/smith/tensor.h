@@ -31,7 +31,6 @@
 #include <iomanip>
 #include <type_traits>
 #include <unordered_set>
-#include <src/ci/fci/civec.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
 #include <src/util/prim_op.h>
@@ -46,6 +45,7 @@ template <typename DataType>
 class Tensor_ {
   public:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
   protected:
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
@@ -117,8 +117,7 @@ class Tensor_ {
 
     std::vector<DataType> diag() const;
     std::shared_ptr<MatType> matrix() const;
-
-    std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
+    std::shared_ptr<VecType> vectorb() const;
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }

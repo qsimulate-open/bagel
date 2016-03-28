@@ -62,6 +62,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<Tensor> Den1;
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
+    std::shared_ptr<Civec> ci_deriv_;
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
@@ -169,7 +170,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     double correlated_norm() const { return correlated_norm_; }
 
-    std::shared_ptr<const Civec> ci_deriv(std::shared_ptr<const Determinants> det) const { return deci->civec(det); }
+    std::shared_ptr<const Civec> ci_deriv() const { return ci_deriv_; }
 
 };
 

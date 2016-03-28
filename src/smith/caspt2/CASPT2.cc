@@ -219,37 +219,66 @@ void CASPT2::CASPT2::solve_deriv() {
   t2 = t2all_[0]->at(0);
 
   Timer timer;
-  n = init_residual();
-  shared_ptr<Queue> normq = make_normq();
-  while (!normq->done())
-    normq->next_compute();
-  correlated_norm_ = dot_product_transpose(n, t2);
+  {
+    n = init_residual();
+    shared_ptr<Queue> normq = make_normq();
+    while (!normq->done())
+      normq->next_compute();
+    correlated_norm_ = dot_product_transpose(n, t2);
+  }
   timer.tick_print("T1 norm evaluation");
 
-  den2 = h1_->clone();
-  shared_ptr<Queue> dens2 = make_densityq();
-  while (!dens2->done())
-    dens2->next_compute();
+  {
+    den2 = h1_->clone();
+    shared_ptr<Queue> dens2 = make_densityq();
+    while (!dens2->done())
+      dens2->next_compute();
+  }
 
-  den1 = h1_->clone();
-  shared_ptr<Queue> dens1 = make_density1q();
-  while (!dens1->done())
-    dens1->next_compute();
+  {
+    den1 = h1_->clone();
+    shared_ptr<Queue> dens1 = make_density1q();
+    while (!dens1->done())
+      dens1->next_compute();
+  }
 
-  Den1 = init_residual();
-  shared_ptr<Queue> Dens1 = make_density2q();
-  while (!Dens1->done())
-    Dens1->next_compute();
+  {
+    Den1 = init_residual();
+    shared_ptr<Queue> Dens1 = make_density2q();
+    while (!Dens1->done())
+      Dens1->next_compute();
+  }
   timer.tick_print("Correlated density matrix evaluation");
 
-  deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-  deci->allocate();
-  shared_ptr<Queue> dec = make_deciq();
-  while (!dec->done())
-    dec->next_compute();
-  timer.tick_print("CI derivative evaluation");
-  cout << endl;
- }
+  // rdm ci derivatives. Only for gradient computations
+  // TODO this is only valid for single-state CASPT2
+  {
+    // first make ci_deriv_
+    ci_deriv_ = make_shared<Civec>(info_->ref()->ciwfn()->det());
+    const size_t cisize = ci_deriv_->size();
 
+    // TODO to be updated
+    const size_t cimax = cisize;
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
+
+      feed_rdm_deriv(offset, size); // this set ci_
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+      shared_ptr<Queue> dec = make_deciq();
+      while (!dec->done())
+        dec->next_compute();
+      copy_n(deci->vectorb()->data(), size, ci_deriv_->data()+offset);
+
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
+      timer.tick_print(ss.str());
+    }
+    cout << endl;
+  }
+}
 
 #endif

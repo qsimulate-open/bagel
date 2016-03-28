@@ -145,11 +145,11 @@ shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix() cons
 
 
 template <typename DataType>
-shared_ptr<Civector<DataType>> Tensor_<DataType>::civec(shared_ptr<const Determinants> det) const {
+shared_ptr<typename Tensor_<DataType>::VecType> Tensor_<DataType>::vectorb() const {
   vector<IndexRange> o = indexrange();
-  assert(o.size() == 1 && o[0].size() == det->size());
+  assert(o.size() == 1);
 
-  auto out = make_shared<Civector<DataType>>(det);
+  auto out = make_shared<VecType>(o[0].size());
   for (auto& i0 : o[0].range())
     copy_n(get_block(i0).get(), i0.size(), out->data()+i0.offset());
 
