@@ -344,27 +344,23 @@ void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t si
   auto rdm0d = make_shared<VectorB>(size);
   copy_n(info_->ref()->civectors()->data(info_->target())->data() + offset, size, rdm0d->data());
 
-  // TODO can improve...
   auto rdm1d = make_shared<Matrix>(size, nact*nact);
   auto rdm2d = make_shared<Matrix>(size, nact*nact*nact*nact);
-  shared_ptr<Dvec> rdm1a = info_->ref()->rdm1deriv(info_->target());
-  shared_ptr<Dvec> rdm2a = info_->ref()->rdm2deriv(info_->target());
-  auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
-    assert(out->mdim() == in->ij());
-    for (int i = 0; i != in->ij(); ++i)
-      copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
-  };
-  fill2(rdm1a, rdm1d);
-  fill2(rdm2a, rdm2d);
+  {
+    shared_ptr<Dvec> rdm1a = info_->ref()->rdm1deriv(info_->target());
+    shared_ptr<Dvec> rdm2a = info_->ref()->rdm2deriv(info_->target());
+    auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
+      assert(out->mdim() == in->ij());
+      for (int i = 0; i != in->ij(); ++i)
+        copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
+    };
+    fill2(rdm1a, rdm1d);
+    fill2(rdm2a, rdm2d);
+  }
 
-  // TODO to be updated
-  shared_ptr<Dvec> rdm3a, rdm4a;
   // RDM4 is contracted a priori by the Fock operator
-  tie(rdm3a, rdm4a) = info_->ref()->rdm34deriv(info_->target(), fockact_);
-  auto rdm3d = make_shared<Matrix>(size, nact*nact*nact*nact*nact*nact);
-  auto rdm4d = make_shared<Matrix>(size, nact*nact*nact*nact*nact*nact);
-  fill2(rdm3a, rdm3d);
-  fill2(rdm4a, rdm4d);
+  shared_ptr<Matrix> rdm3d, rdm4d;
+  tie(rdm3d, rdm4d) = info_->ref()->rdm34deriv(info_->target(), fockact_, offset, size);
 
   vector<IndexRange> o1 = {ci_};
   vector<IndexRange> o3 = {ci_, active_, active_};

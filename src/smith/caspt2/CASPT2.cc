@@ -257,8 +257,7 @@ void CASPT2::CASPT2::solve_deriv() {
     ci_deriv_ = make_shared<Civec>(info_->ref()->ciwfn()->det());
     const size_t cisize = ci_deriv_->size();
 
-    // TODO to be updated
-    const size_t cimax = cisize;
+    const size_t cimax = 1000; // TODO interface to the input
     const size_t npass = (cisize-1)/cimax+1;
     const size_t chunk = (cisize-1)/npass+1;
 
