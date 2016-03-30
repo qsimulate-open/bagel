@@ -565,6 +565,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                       for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                         const double eri = *eridata;
                         out->element(j2, j3) += density_data[j0n + j1] * eri;
+                        out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
                       }
                     }
                   }
@@ -609,6 +610,26 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
     shared_ptr<const DFDist> df = form_fit(nbas, naux, close_atoms, aux_atoms);
     shared_ptr<const Matrix> o = df->compute_Jop(make_shared<const Matrix>(subden));
 
+    // exchange
+    shared_ptr<Matrix> coeff = subden.copy();
+    *coeff *= -1.0;
+    int nocc = 0;
+    {
+      VectorB vec(subden.ndim());
+      coeff->diagonalize(vec);
+      for (int i = 0; i != subden.ndim(); ++i) {
+        if (vec[i] < -1.0e-8) {
+          ++nocc;
+          const double fac = std::sqrt(-vec(i));
+          for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](double& i) { i *= fac; });
+        } else { break; }
+      }
+    }
+    if (nocc == 0) return out;
+    shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
+    shared_ptr<DFHalfDist> half = halfbj->apply_J();
+    Matrix ex = *half->form_2index(half, -0.5);
+
     o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
@@ -625,7 +646,10 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             ++ish1;
 
             auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
-            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp);
+            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp); // J
+
+            auto tmpex = ex.get_submatrix(o1, o0, b1size, b0size);
+            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmpex); // K
 
             o1 += b1size;
           }
