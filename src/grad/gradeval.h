@@ -53,12 +53,12 @@ class GradEval : public GradEval_base {
 
   public:
     // Constructor performs energy calculation
-    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) : GradEval_base(geom) {
+    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int istate) : GradEval_base(geom) {
       if (geom->external()) throw std::logic_error("Gradients with external fields have not been implemented.");
       task_ = std::make_shared<T>(idata, geom, ref);
       task_->compute();
       ref_  = task_->conv_to_ref();
-      energy_ = ref_->energy();
+      energy_ = ref_->energy(istate);
       geom_ = ref_->geom();
     }
 

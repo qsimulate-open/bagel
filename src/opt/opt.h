@@ -48,6 +48,7 @@ class Opt {
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
     std::shared_ptr<const Reference> prev_ref_;
+    int target_state_;
 
     int iter_;
 
@@ -78,6 +79,7 @@ class Opt {
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
       : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
 
+      target_state_ = idat->get<int>("target", 0);
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
       maxstep_ = idat->get<double>("maxstep", 0.1);
@@ -212,9 +214,10 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
     cinput = std::make_shared<PTree>(**input_->rbegin());
   }
   cinput->put("gradient", true);
+  cinput->put("target", target_state_);
 
   // then calculate gradients
-  GradEval<T> eval(cinput, current_, ref);
+  GradEval<T> eval(cinput, current_, ref, target_state_);
   if (iter_ == 0) {
     print_header();
     mute_stdcout();

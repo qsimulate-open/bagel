@@ -37,6 +37,7 @@ Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared
 
 void Force::compute() {
   auto input = idata_->get_child("method");
+  const int target = idata_->get<int>("target", 0);
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -59,37 +60,37 @@ void Force::compute() {
 
   if (method == "uhf") {
 
-    auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "rohf") {
 
-    auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "hf") {
 
-    auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "ks") {
 
-    auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "dhf") {
 
-    auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "mp2") {
 
-    auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "dmp2") {
 
-    auto force = make_shared<GradEval<DMP2Grad>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<DMP2Grad>>(cinput, geom_, ref_, target);
     force->compute();
 
   } else if (method == "casscf") {
@@ -97,7 +98,7 @@ void Force::compute() {
     // in case of SS-CASSCF
     if (cinput->get<int>("nstate", 1) == 1) {
       if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCI>>(cinput, geom_, ref_);
+        auto force = make_shared<GradEval<SuperCI>>(cinput, geom_, ref_, target);
         force->compute();
       } else {
         throw runtime_error("unknown CASSCF algorithm specified.");
@@ -105,7 +106,7 @@ void Force::compute() {
     // in case of SA-CASSCF
     } else {
       if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCIGrad>>(cinput, geom_, ref_);
+        auto force = make_shared<GradEval<SuperCIGrad>>(cinput, geom_, ref_, target);
         force->compute();
       } else {
         throw runtime_error("unknown CASSCF algorithm specified.");
@@ -113,7 +114,7 @@ void Force::compute() {
     }
   } else if (method == "caspt2") {
 
-    auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
+    auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
     force->compute();
 
   }
