@@ -37,54 +37,54 @@ shared_ptr<Queue> CASPT2::CASPT2::make_density1q(const bool reset, const bool di
 
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto density1q = make_shared<Queue>();
-  auto tensor507 = vector<shared_ptr<Tensor>>{den1};
-  auto task507 = make_shared<Task507>(tensor507, reset);
-  density1q->add_task(task507);
-
-  vector<IndexRange> I664_index = {closed_, active_};
-  auto I664 = make_shared<Tensor>(I664_index);
-  auto tensor508 = vector<shared_ptr<Tensor>>{den1, I664};
-  auto task508 = make_shared<Task508>(tensor508, pindex);
-  task508->add_dep(task507);
+  auto tensor508 = vector<shared_ptr<Tensor>>{den1};
+  auto task508 = make_shared<Task508>(tensor508, reset);
   density1q->add_task(task508);
 
-  auto tensor509 = vector<shared_ptr<Tensor>>{I664, Gamma12_(), t2};
+  vector<IndexRange> I650_index = {closed_, active_};
+  auto I650 = make_shared<Tensor>(I650_index);
+  auto tensor509 = vector<shared_ptr<Tensor>>{den1, I650};
   auto task509 = make_shared<Task509>(tensor509, pindex);
-  task508->add_dep(task509);
-  task509->add_dep(task507);
+  task509->add_dep(task508);
   density1q->add_task(task509);
 
-  vector<IndexRange> I666_index = {virt_, closed_};
-  auto I666 = make_shared<Tensor>(I666_index);
-  auto tensor510 = vector<shared_ptr<Tensor>>{den1, I666};
+  auto tensor510 = vector<shared_ptr<Tensor>>{I650, Gamma12_(), t2};
   auto task510 = make_shared<Task510>(tensor510, pindex);
-  task510->add_dep(task507);
+  task509->add_dep(task510);
+  task510->add_dep(task508);
   density1q->add_task(task510);
 
-  auto tensor511 = vector<shared_ptr<Tensor>>{I666, t2, Gamma38_()};
+  vector<IndexRange> I652_index = {virt_, closed_};
+  auto I652 = make_shared<Tensor>(I652_index);
+  auto tensor511 = vector<shared_ptr<Tensor>>{den1, I652};
   auto task511 = make_shared<Task511>(tensor511, pindex);
-  task510->add_dep(task511);
-  task511->add_dep(task507);
+  task511->add_dep(task508);
   density1q->add_task(task511);
 
-  auto tensor512 = vector<shared_ptr<Tensor>>{I666, t2, Gamma38_()};
+  auto tensor512 = vector<shared_ptr<Tensor>>{I652, t2, Gamma38_()};
   auto task512 = make_shared<Task512>(tensor512, pindex);
-  task510->add_dep(task512);
-  task512->add_dep(task507);
+  task511->add_dep(task512);
+  task512->add_dep(task508);
   density1q->add_task(task512);
 
-  vector<IndexRange> I670_index = {active_, virt_};
-  auto I670 = make_shared<Tensor>(I670_index);
-  auto tensor513 = vector<shared_ptr<Tensor>>{den1, I670};
+  auto tensor513 = vector<shared_ptr<Tensor>>{I652, t2, Gamma38_()};
   auto task513 = make_shared<Task513>(tensor513, pindex);
-  task513->add_dep(task507);
+  task511->add_dep(task513);
+  task513->add_dep(task508);
   density1q->add_task(task513);
 
-  auto tensor514 = vector<shared_ptr<Tensor>>{I670, t2, Gamma60_()};
+  vector<IndexRange> I656_index = {active_, virt_};
+  auto I656 = make_shared<Tensor>(I656_index);
+  auto tensor514 = vector<shared_ptr<Tensor>>{den1, I656};
   auto task514 = make_shared<Task514>(tensor514, pindex);
-  task513->add_dep(task514);
-  task514->add_dep(task507);
+  task514->add_dep(task508);
   density1q->add_task(task514);
+
+  auto tensor515 = vector<shared_ptr<Tensor>>{I656, t2, Gamma60_()};
+  auto task515 = make_shared<Task515>(tensor515, pindex);
+  task514->add_dep(task515);
+  task515->add_dep(task508);
+  density1q->add_task(task515);
 
   return density1q;
 }

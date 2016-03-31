@@ -54,6 +54,7 @@ extern template class FutureTensor_<double>;
 extern template class FutureTensor_<std::complex<double>>;
 
 namespace CASPT2 { using FutureTensor = FutureTensor_<double>; }
+namespace SPCASPT2 { using FutureTensor = FutureTensor_<double>; }
 namespace MRCI   { using FutureTensor = FutureTensor_<double>; }
 namespace RelCASPT2 { using FutureTensor = FutureTensor_<std::complex<double>>; }
 namespace RelMRCI   { using FutureTensor = FutureTensor_<std::complex<double>>; }

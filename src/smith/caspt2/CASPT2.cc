@@ -77,7 +77,7 @@ void CASPT2::CASPT2::solve() {
   {
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
-      e0_ = e0all_[i];
+      e0_ = e0all_[i] - info_->shift();
       update_amplitude(t2all_[i], sall_[i]);
     }
   }
@@ -112,14 +112,14 @@ void CASPT2::CASPT2::solve() {
           set_rdm(jst, ist);
           t2 = t2all_[i]->at(ist);
           r = rall_[i]->at(jst);
-          e0_ = e0all_[i];
+
+          e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
           diagonal(r, t2, jst == ist);
         }
       }
-
       // solve using subspace updates
       rall_[i] = solvers[i]->compute_residual(t2all_[i], rall_[i]);
       t2all_[i] = solvers[i]->civec();
@@ -146,8 +146,32 @@ void CASPT2::CASPT2::solve() {
   print_iteration(iter == info_->maxiter());
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
-  for (int istate = 0; istate != nstates_; ++istate)
-    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
+
+  pt2energy_.resize(nstates_);
+  for (int istate = 0; istate != nstates_; ++istate) {
+    if (info_->shift() == 0) {
+        pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
+        cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+    } else {
+      // will be used in normq
+      n = init_residual();
+      double norm = 0.0;
+      for (int i = 0; i != nstates_; ++i) { // bra
+        for (int j = 0; j != nstates_; ++j) { // ket
+          set_rdm(i, j);
+          t2 = t2all_[istate]->at(j);
+          shared_ptr<Queue> normq = make_normq(true, i == j);
+          while (!normq->done())
+            normq->next_compute();
+          norm += dot_product_transpose(n, t2all_[istate]->at(i));
+        }
+      }
+      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
+      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+      cout <<endl;
+    }
+  }
 
   // MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
@@ -157,7 +181,7 @@ void CASPT2::CASPT2::solve() {
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
-          fmn(ist, ist) = energy_[ist] + (*eref_)(ist, ist);
+          fmn(ist, ist) = pt2energy_[ist];
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
@@ -195,34 +219,65 @@ void CASPT2::CASPT2::solve_deriv() {
   t2 = t2all_[0]->at(0);
 
   Timer timer;
-  shared_ptr<Queue> corrq = make_corrq();
-  correlated_norm_ = accumulate(corrq);
+  {
+    n = init_residual();
+    shared_ptr<Queue> normq = make_normq();
+    while (!normq->done())
+      normq->next_compute();
+    correlated_norm_ = dot_product_transpose(n, t2);
+  }
   timer.tick_print("T1 norm evaluation");
 
-  den2 = h1_->clone();
-  shared_ptr<Queue> dens2 = make_densityq();
-  while (!dens2->done())
-    dens2->next_compute();
+  {
+    den2 = h1_->clone();
+    shared_ptr<Queue> dens2 = make_densityq();
+    while (!dens2->done())
+      dens2->next_compute();
+  }
 
-  den1 = h1_->clone();
-  shared_ptr<Queue> dens1 = make_density1q();
-  while (!dens1->done())
-    dens1->next_compute();
+  {
+    den1 = h1_->clone();
+    shared_ptr<Queue> dens1 = make_density1q();
+    while (!dens1->done())
+      dens1->next_compute();
+  }
 
-  Den1 = init_residual();
-  shared_ptr<Queue> Dens1 = make_density2q();
-  while (!Dens1->done())
-    Dens1->next_compute();
+  {
+    Den1 = init_residual();
+    shared_ptr<Queue> Dens1 = make_density2q();
+    while (!Dens1->done())
+      Dens1->next_compute();
+  }
   timer.tick_print("Correlated density matrix evaluation");
 
-  deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-  deci->allocate();
-  shared_ptr<Queue> dec = make_deciq();
-  while (!dec->done())
-    dec->next_compute();
-  timer.tick_print("CI derivative evaluation");
-  cout << endl;
- }
+  // rdm ci derivatives. Only for gradient computations
+  // TODO this is only valid for single-state CASPT2
+  {
+    // first make ci_deriv_
+    ci_deriv_ = make_shared<Civec>(info_->ref()->ciwfn()->det());
+    const size_t cisize = ci_deriv_->size();
 
+    const size_t cimax = 1000; // TODO interface to the input
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
+
+      feed_rdm_deriv(offset, size); // this set ci_
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+      shared_ptr<Queue> dec = make_deciq();
+      while (!dec->done())
+        dec->next_compute();
+      copy_n(deci->vectorb()->data(), size, ci_deriv_->data()+offset);
+
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
+      timer.tick_print(ss.str());
+    }
+    cout << endl;
+  }
+}
 
 #endif

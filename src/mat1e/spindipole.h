@@ -33,6 +33,7 @@ namespace bagel {
 class SpinDipole : public Matrix1eArray<6> {
   protected:
     std::shared_ptr<const Atom> atom_;
+    int s_;
 
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
 
@@ -46,7 +47,7 @@ class SpinDipole : public Matrix1eArray<6> {
 
   public:
     SpinDipole() { }
-    SpinDipole(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>);
+    SpinDipole(std::shared_ptr<const Molecule>, std::shared_ptr<const Atom>, const int s);
 
     void print(const std::string name, const int len = 10) const override { Matrix1eArray<6>::print(name.empty() ? "Spin-Dipole" : name, len); }
 

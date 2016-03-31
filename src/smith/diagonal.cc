@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-#include <ga.h>
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relmrci/RelMRCI.h>
@@ -75,7 +74,7 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, 
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -115,7 +114,7 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -156,7 +155,7 @@ void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) cons
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 
@@ -179,14 +178,14 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
               for (auto& i1t : virt_) {
                 unique_ptr<complex<double>[]> data0 = t->get_block(i0, i1t, i2, i3t);
                 unique_ptr<complex<double>[]> data1(new complex<double>[t->get_size(i0, i1t, i2, i3t)]);
-                sort_indices<0,2,1,3,0,1,4,1>(data0, data1, i0.size(), i1t.size(), i2.size(), i3t.size());
+                sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1t.size(), i2.size(), i3t.size());
 
                 unique_ptr<complex<double>[]> data2 = v2_->get_block(i1t, i1, i3t, i3);
                 unique_ptr<complex<double>[]> data3(new complex<double>[v2_->get_size(i1t, i1, i3t, i3)]);
                 sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
 
                 zgemm3m_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
-                         1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
+                         4.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
               }
             }
             sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
@@ -196,7 +195,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
       }
     }
   }
-  GA_Sync();
+  mpi__->barrier();
 }
 
 #endif

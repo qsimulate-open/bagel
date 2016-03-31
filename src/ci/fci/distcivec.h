@@ -27,38 +27,24 @@
 #define BAGEL_FCI_DISTCIVEC_H
 
 #include <bagel_config.h>
-#ifdef HAVE_GA
-#include <ga.h>
-#endif
 #include <src/ci/fci/civec.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/rmawindow.h>
 
 namespace bagel {
 
-// task class
 template<typename DataType>
-class GA_Task {
-#ifndef HAVE_GA
+class DistCivector : public RMAWindow<DataType> {
   public:
-    using ga_nbhdl_t = long; // jsut to compile
-#endif
-  protected:
-    ga_nbhdl_t tag;
-    std::unique_ptr<DataType[]> buf;
-  public:
-    GA_Task(ga_nbhdl_t t) : tag(t) { }
-    GA_Task(ga_nbhdl_t t, std::unique_ptr<DataType[]>&& o) : tag(t), buf(std::move(o)) { }
-    void wait();
-    bool test();
-};
+    using DetType = Determinants;
+    using LocalizedType = std::false_type;
 
-extern template class GA_Task<double>;
-extern template class GA_Task<std::complex<double>>;
-
-
-template<typename DataType>
-class DistCivector {
-  public: using DetType = Determinants;
-  public: using LocalizedType = std::false_type;
+    using RMAWindow<DataType>::scale;
+    using RMAWindow<DataType>::ax_plus_y;
+    using RMAWindow<DataType>::dot_product;
+    using RMAWindow<DataType>::fence;
+    using RMAWindow<DataType>::fence_local;
+    using RMAWindow<DataType>::local_data;
 
   protected:
     mutable std::shared_ptr<const Determinants> det_;
@@ -67,9 +53,6 @@ class DistCivector {
     size_t lena_;
     size_t lenb_;
 
-    // global array tag
-    int ga_;
-
     // table for alpha string distribution
     StaticDist dist_;
 
@@ -77,16 +60,16 @@ class DistCivector {
     size_t astart_;
     size_t aend_;
 
-    // distribution information
-    std::vector<int64_t> blocks_;
-
   public:
     DistCivector(std::shared_ptr<const Determinants> det);
 
-    DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { *this = o; }
+    DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { RMAWindow<DataType>::operator=(o); }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}
 
-    DistCivector<DataType>& operator=(const DistCivector<DataType>& o);
+    // functions required by RMAWindow
+    bool is_local(const size_t a) const override;
+    std::tuple<size_t, size_t, size_t> locate(const size_t a) const override;
+    size_t localsize() const override { return size(); }
 
     std::shared_ptr<DistCivector<DataType>> clone() const { return std::make_shared<DistCivector<DataType>>(det_); }
     std::shared_ptr<DistCivector<DataType>> copy() const { return std::make_shared<DistCivector<DataType>>(*this); }
@@ -100,32 +83,18 @@ class DistCivector {
     size_t aend() const { return aend_; }
     size_t asize() const { return aend_ - astart_; }
 
-    void zero();
     void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const;
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     void set_det(std::shared_ptr<const Determinants> d) { det_ = d; }
-
-    bool is_local(const size_t a) const;
-    std::unique_ptr<DataType[]> local() const;
     void set_local(const size_t la, const size_t lb, const DataType a);
 
-    std::shared_ptr<GA_Task<DataType>> accumulate_bstring_buf(std::unique_ptr<DataType[]>&& buf, const size_t a);
-    std::shared_ptr<GA_Task<DataType>> get_bstring_buf(DataType* buf, const size_t a) const;
-
-    void local_accumulate(const DataType a, const std::unique_ptr<DataType[]>& buf);
-
     // utility functions
-    DataType dot_product(const DistCivector<DataType>& o) const;
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
     double variance() const { return detail::real(dot_product(*this)) / (lena_*lenb_); }
     double rms() const { return std::sqrt(variance()); }
-
-    void scale(const DataType a);
-    void ax_plus_y(const DataType a, const DistCivector<DataType>& o);
-    void ax_plus_y(const DataType a, std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(a, *o); }
     void project_out(std::shared_ptr<const DistCivector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
     DataType spin_expectation() const {
@@ -159,8 +128,6 @@ class DistCivector {
 
 template <> void DistCivector<double>::spin_decontaminate(const double);
 template <> void DistCivector<std::complex<double>>::spin_decontaminate(const double);
-template <> double DistCivector<double>::dot_product(const DistCivector<double>&) const;
-template <> std::complex<double> DistCivector<std::complex<double>>::dot_product(const DistCivector<std::complex<double>>&) const;
 
 extern template class DistCivector<double>;
 extern template class DistCivector<std::complex<double>>;

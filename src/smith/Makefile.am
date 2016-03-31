@@ -3,7 +3,7 @@ lib_LTLIBRARIES = libbagel_smith.la
 libbagel_smith_la_SOURCES = smith_info.cc indexrange.cc storage.cc storagekramers.cc denom.cc tensor.cc futuretensor.cc \
 spinfreebase.cc subtask.cc smith.cc caspt2grad.cc caspt2grad_util.cc moint.cc diagonal.cc queue.cc \
 \
-caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_corrq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
+caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_normq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
 caspt2/CASPT2_deciq1.cc caspt2/CASPT2_deciq2.cc caspt2/CASPT2_deciq3.cc caspt2/CASPT2_residualq1.cc caspt2/CASPT2_residualq2.cc caspt2/CASPT2_residualq3.cc \
 caspt2/CASPT2_densityq1.cc caspt2/CASPT2_densityq2.cc caspt2/CASPT2_densityq3.cc \
 caspt2/CASPT2_tasks1.cc caspt2/CASPT2_tasks2.cc caspt2/CASPT2_tasks3.cc caspt2/CASPT2_tasks4.cc caspt2/CASPT2_tasks5.cc \
@@ -13,6 +13,11 @@ caspt2/CASPT2_tasks16.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc caspt2/CASP
 caspt2/CASPT2_gen5.cc caspt2/CASPT2_gen6.cc caspt2/CASPT2_gen7.cc caspt2/CASPT2_gen8.cc \
 caspt2/CASPT2_gen9.cc caspt2/CASPT2_gen10.cc caspt2/CASPT2_gen11.cc caspt2/CASPT2_gen12.cc \
 caspt2/CASPT2_gen13.cc caspt2/CASPT2_gen14.cc caspt2/CASPT2_gen15.cc caspt2/CASPT2_gen16.cc \
+\
+caspt2/SPCASPT2.cc caspt2/SPCASPT2_gamma.cc caspt2/SPCASPT2_densityq.cc caspt2/SPCASPT2_density1q.cc caspt2/SPCASPT2_gen1.cc \
+caspt2/SPCASPT2_gen2.cc caspt2/SPCASPT2_gen3.cc caspt2/SPCASPT2_gen4.cc caspt2/SPCASPT2_gen5.cc caspt2/SPCASPT2_gen6.cc \
+caspt2/SPCASPT2_tasks1.cc caspt2/SPCASPT2_tasks2.cc caspt2/SPCASPT2_tasks3.cc caspt2/SPCASPT2_tasks4.cc caspt2/SPCASPT2_tasks5.cc \
+caspt2/SPCASPT2_tasks6.cc \
 \
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_normq.cc \
 mrci/MRCI_residualq1.cc mrci/MRCI_residualq2.cc mrci/MRCI_residualq3.cc mrci/MRCI_residualq4.cc mrci/MRCI_residualq5.cc \
@@ -36,7 +41,7 @@ relmrci/RelMRCI_residualq4.cc relmrci/RelMRCI_residualq5.cc relmrci/RelMRCI_resi
 relmrci/RelMRCI_tasks1.cc relmrci/RelMRCI_tasks2.cc relmrci/RelMRCI_tasks3.cc relmrci/RelMRCI_tasks4.cc relmrci/RelMRCI_tasks5.cc \
 relmrci/RelMRCI_tasks6.cc relmrci/RelMRCI_tasks7.cc relmrci/RelMRCI_tasks8.cc relmrci/RelMRCI_tasks9.cc relmrci/RelMRCI_tasks10.cc \
 relmrci/RelMRCI_tasks11.cc relmrci/RelMRCI_tasks12.cc relmrci/RelMRCI_tasks13.cc relmrci/RelMRCI_tasks14.cc relmrci/RelMRCI_tasks15.cc \
-relmrci/RelMRCI_tasks16.cc relmrci/RelMRCI_gen1.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen3.cc relmrci/RelMRCI_gen4.cc \
+relmrci/RelMRCI_tasks16.cc relmrci/RelMRCI_gen1.cc relmrci/RelMRCI_gen2.cc relmrci/RelMRCI_gen3.cc relmrci/RelMRCI_gen4.cc \
 relmrci/RelMRCI_gen5.cc relmrci/RelMRCI_gen6.cc relmrci/RelMRCI_gen7.cc relmrci/RelMRCI_gen8.cc relmrci/RelMRCI_gen9.cc relmrci/RelMRCI_gen10.cc \
 relmrci/RelMRCI_gen11.cc relmrci/RelMRCI_gen12.cc relmrci/RelMRCI_gen13.cc relmrci/RelMRCI_gen14.cc relmrci/RelMRCI_gen15.cc relmrci/RelMRCI_gen16.cc
 

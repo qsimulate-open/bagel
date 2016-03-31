@@ -27,9 +27,7 @@
 #define __SRC_SMITH_CASPT2GRAD_H
 
 #include <src/wfn/reference.h>
-#include <src/wfn/method.h>
 #include <src/ci/fci/fci.h>
-#include <src/util/input/input.h>
 #include <src/smith/tensor.h>
 
 namespace bagel {
@@ -41,13 +39,21 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> coeff_;
     // second-order density matrix
     std::shared_ptr<const Matrix> d1_;
-    // first-order density matrices
+    // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
-    // TODO to replace
+    // two-body first-order density matrix
     std::shared_ptr<const Tensor> d2_;
+    // norm of the first-order wave function
+    double wf1norm_;
 
+    // second-order spin density matrix
+    std::shared_ptr<const Matrix> sd1_;
+    // first-order spin density matrix
+    std::shared_ptr<const Matrix> sd11_;
+
+    // y from SMITH code
     std::shared_ptr<Civec> cideriv_;
-
+    // FCI utility
     std::shared_ptr<FCI> fci_;
 
     // for gradient
@@ -56,9 +62,11 @@ class CASPT2Grad : public Method {
     double energy_;
     double thresh_;
 
+    // properties
+    bool do_hyperfine_;
+
     std::vector<double> ref_energy_;
 
-    // TODO to replace
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
@@ -70,18 +78,25 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Tensor> d2() const { return d2_; }
-    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
 
+    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI> fci() const { return fci_; }
+
     int target() const { return target_; }
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }
     double thresh() const { return thresh_; }
 
+    bool do_hyperfine() const { return do_hyperfine_; }
+
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    std::shared_ptr<Matrix> diagonal_D1() const;
+    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
+    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
 };
 
 }

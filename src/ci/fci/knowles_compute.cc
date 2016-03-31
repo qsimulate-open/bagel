@@ -48,7 +48,7 @@ shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_p
 
 
   for (int istate = 0; istate != nstate; ++istate) {
-    Timer pdebug(2);
+    Timer pdebug(3);
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);
     shared_ptr<Civec> sigma = sigmavec->data(istate);

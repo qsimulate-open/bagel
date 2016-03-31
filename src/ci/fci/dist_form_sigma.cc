@@ -45,7 +45,7 @@ vector<shared_ptr<DistCivec>> FormSigmaDistFCI::operator()(const vector<shared_p
     shared_ptr<DistCivec> sigma = cc->clone();
     sigma->zero();
 
-    Timer fcitime(1);
+    Timer fcitime(3);
 
     sigma_ab(cc, sigma, jop);
     fcitime.tick_print("alpha-beta");
@@ -92,7 +92,7 @@ void FormSigmaDistFCI::sigma_ab(shared_ptr<const DistCivec> cc, shared_ptr<DistC
     tasks.push_back(make_shared<DistABTask>(astring, base_det, int_det, jop, cc, sigma));
   }
 
-  list<shared_ptr<GA_Task<double>>> acctasks;
+  list<shared_ptr<RMATask<double>>> acctasks;
   for (auto i = tasks.begin(); i != tasks.end(); ) {
     (*i)->wait();
     auto t = (*i)->compute();
@@ -135,8 +135,9 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
 
   // (astart:aend, b)
   unique_ptr<double[]> source(new double[la*lb]);
-  unique_ptr<double[]> target = cc->local();
-  blas::transpose(target.get(), lb, la, source.get());
+  blas::transpose(cc->local_data(), lb, la, source.get());
+
+  unique_ptr<double[]> target(new double[la*lb]);
   fill_n(target.get(), la*lb, 0.0);
 
   // preparing Hamiltonian
@@ -180,6 +181,6 @@ void FormSigmaDistFCI::sigma_bb(shared_ptr<const DistCivec> cc, shared_ptr<DistC
   tasks.compute();
 
   blas::transpose(target.get(), la, lb, source.get());
-  sigma->local_accumulate(1.0, source);
+  sigma->accumulate_buffer(1.0, source);
 
 }

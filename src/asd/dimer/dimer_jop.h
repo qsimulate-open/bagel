@@ -111,6 +111,7 @@ std::shared_ptr<const Matrix> DimerJop::coulomb_matrix() {
       }
     }
 
+    out->localize();
     matrices_[cindex] = out;
     return out;
   }

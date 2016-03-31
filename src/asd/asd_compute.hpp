@@ -59,8 +59,7 @@ void ASD<VecType>::compute() {
                      std::make_shared<GammaTensor>(asd::Wrap<GammaForest<VecType,2>,1>(gammaforest), subspaces_) };
 
     std::cout << "  o Computing Gamma trees - " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
-  }
-  else {
+  } else {
     std::cout << "  o Monomer CI coefficients are fixed. Gamma trees from previous calculation will be used." << std::endl;
   }
 
@@ -74,7 +73,7 @@ void ASD<VecType>::compute() {
     if (store_matrix_)
       hamiltonian_->add_block(1.0, subspace.offset(), subspace.offset(), block->ndim(), block->mdim(), block);
     const int n = block->ndim();
-    for ( int i = 0; i < n; ++i ) denom_[subspace.offset() + i] = block->element(i,i);
+    for (int i = 0; i < n; ++i) denom_[subspace.offset() + i] = block->element(i,i);
   }
   std::cout << "  o Computing diagonal blocks and building denominator - time " << std::setw(9) << std::fixed << std::setprecision(2) << asdtime.tick() << std::endl;
 

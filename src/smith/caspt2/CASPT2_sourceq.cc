@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: CASPT2_sourceqq.cc
+// Filename: CASPT2_sourceq.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -130,7 +130,7 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
   task243->add_dep(task229);
   sourceq->add_task(task243);
 
-  auto tensor244 = vector<shared_ptr<Tensor>>{I298, h1_, Gamma38_()};
+  auto tensor244 = vector<shared_ptr<Tensor>>{I298, Gamma38_(), h1_};
   auto task244 = make_shared<Task244>(tensor244, pindex);
   task239->add_dep(task244);
   task244->add_dep(task229);
@@ -143,21 +143,19 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
   task245->add_dep(task229);
   sourceq->add_task(task245);
 
-  vector<IndexRange> I307_index = {closed_, virt_, active_, active_};
-  auto I307 = make_shared<Tensor>(I307_index);
-  auto tensor246 = vector<shared_ptr<Tensor>>{I306, Gamma35_(), I307};
+  auto tensor246 = vector<shared_ptr<Tensor>>{I306, Gamma35_(), v2_};
   auto task246 = make_shared<Task246>(tensor246, pindex);
   task245->add_dep(task246);
   task246->add_dep(task229);
   sourceq->add_task(task246);
 
-  auto tensor247 = vector<shared_ptr<Tensor>>{I307, v2_};
+  auto tensor247 = vector<shared_ptr<Tensor>>{I306, v2_, Gamma7_()};
   auto task247 = make_shared<Task247>(tensor247, pindex);
-  task246->add_dep(task247);
+  task245->add_dep(task247);
   task247->add_dep(task229);
   sourceq->add_task(task247);
 
-  auto tensor248 = vector<shared_ptr<Tensor>>{I306, v2_, Gamma7_()};
+  auto tensor248 = vector<shared_ptr<Tensor>>{I306, v2_, Gamma35_()};
   auto task248 = make_shared<Task248>(tensor248, pindex);
   task245->add_dep(task248);
   task248->add_dep(task229);
@@ -222,35 +220,33 @@ shared_ptr<Queue> CASPT2::CASPT2::make_sourceq(const bool reset, const bool diag
     sourceq->add_task(task256);
   }
 
-  vector<IndexRange> I320_index = {virt_, closed_, virt_, active_};
+  vector<IndexRange> I320_index = {active_, virt_, closed_, virt_};
   auto I320 = make_shared<Tensor>(I320_index);
   auto tensor257 = vector<shared_ptr<Tensor>>{s, I320};
   auto task257 = make_shared<Task257>(tensor257, pindex);
   task257->add_dep(task229);
   sourceq->add_task(task257);
 
-  vector<IndexRange> I321_index = {active_, virt_, closed_, virt_};
-  auto I321 = make_shared<Tensor>(I321_index);
-  auto tensor258 = vector<shared_ptr<Tensor>>{I320, Gamma38_(), I321};
+  auto tensor258 = vector<shared_ptr<Tensor>>{I320, v2_, Gamma38_()};
   auto task258 = make_shared<Task258>(tensor258, pindex);
   task257->add_dep(task258);
   task258->add_dep(task229);
   sourceq->add_task(task258);
 
-  auto tensor259 = vector<shared_ptr<Tensor>>{I321, v2_};
+  auto tensor259 = vector<shared_ptr<Tensor>>{I320, Gamma38_(), v2_};
   auto task259 = make_shared<Task259>(tensor259, pindex);
-  task258->add_dep(task259);
+  task257->add_dep(task259);
   task259->add_dep(task229);
   sourceq->add_task(task259);
 
-  vector<IndexRange> I324_index = {active_, active_, virt_, virt_};
+  vector<IndexRange> I324_index = {virt_, virt_, active_, active_};
   auto I324 = make_shared<Tensor>(I324_index);
   auto tensor260 = vector<shared_ptr<Tensor>>{s, I324};
   auto task260 = make_shared<Task260>(tensor260, pindex);
   task260->add_dep(task229);
   sourceq->add_task(task260);
 
-  auto tensor261 = vector<shared_ptr<Tensor>>{I324, v2_, Gamma60_()};
+  auto tensor261 = vector<shared_ptr<Tensor>>{I324, Gamma60_(), v2_};
   auto task261 = make_shared<Task261>(tensor261, pindex);
   task260->add_dep(task261);
   task261->add_dep(task229);

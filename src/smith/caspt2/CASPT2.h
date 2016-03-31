@@ -38,16 +38,21 @@
 
 namespace bagel {
 namespace SMITH {
+namespace SPCASPT2 { class SPCASPT2; }
+
 namespace CASPT2{
 
 class CASPT2 : public SpinFreeMethod<double> {
+  friend class SPCASPT2::SPCASPT2;
   protected:
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
+    std::shared_ptr<Tensor> n;
 
     int nstates_;
     std::vector<double> err_;
+    std::vector<double> pt2energy_;
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;
@@ -57,6 +62,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<Tensor> Den1;
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
+    std::shared_ptr<Civec> ci_deriv_;
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
@@ -137,7 +143,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     void make_residualq3(std::shared_ptr<Queue>, std::shared_ptr<Task>, const bool);
 
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> make_corrq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
 
@@ -158,21 +164,13 @@ class CASPT2 : public SpinFreeMethod<double> {
     void solve();
     void solve_deriv();
 
-    double accumulate(std::shared_ptr<Queue> queue) {
-      double sum = 0.0;
-      while (!queue->done())
-        sum += queue->next_compute()->target();
-      mpi__->allreduce(&sum, 1);
-      return sum;
-    }
-
     std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
     std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
     std::shared_ptr<const Tensor> rdm21() const { return Den1; }
 
     double correlated_norm() const { return correlated_norm_; }
 
-    std::shared_ptr<const Civec> ci_deriv(std::shared_ptr<const Determinants> det) const { return deci->civec(det); }
+    std::shared_ptr<const Civec> ci_deriv() const { return ci_deriv_; }
 
 };
 

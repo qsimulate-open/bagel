@@ -102,11 +102,10 @@ shared_ptr<DFBlock> DFBlock::copy() const {
 }
 
 
-void DFBlock::add_direct_product(const shared_ptr<const VectorB> a, const shared_ptr<const Matrix> b, const double fac) {
-  assert(asize() == a->size() && b1size()*b2size() == b->size());
-  dger_(asize(), b1size()*b2size(), fac, a->data(), 1, b->data(), 1, data(), asize());
+void DFBlock::add_direct_product(const VecView a, const MatView b, const double fac) {
+  assert(asize() == a.size() && b1size()*b2size() == b.size());
+  dger_(asize(), b1size()*b2size(), fac, a.data(), 1, b.data(), 1, data(), asize());
 }
-
 
 
 shared_ptr<DFBlock> DFBlock::swap() const {
@@ -182,14 +181,14 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
   // exchange contribution
   for (int i = 0; i != nclosed; ++i)
     for (int j = 0; j != nclosed; ++j)
-      daxpy_(asize(), -2.0, data()+asize()*(j+b1size()*i), 1, out->data()+asize()*(j+b1size()*i), 1);
+      blas::ax_plus_y_n(-2.0, data()+asize()*(j+b1size()*i), asize(), out->data()+asize()*(j+b1size()*i));
   // coulomb contribution
   unique_ptr<double[]> diagsum(new double[asize()]);
   fill_n(diagsum.get(), asize(), 0.0);
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize(), 1.0, data()+asize()*(i+b1size()*i), 1, diagsum.get(), 1);
+    blas::ax_plus_y_n(1.0, data()+asize()*(i+b1size()*i), asize(), diagsum.get());
   for (int i = 0; i != nclosed; ++i)
-    daxpy_(asize(), 4.0, diagsum.get(), 1, out->data()+asize()*(i+b1size()*i), 1);
+    blas::ax_plus_y_n(4.0, diagsum.get(), asize(), out->data()+asize()*(i+b1size()*i));
 
   // act-act part
   // compress
@@ -212,11 +211,11 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
   // ASSUMING natural orbitals
   if (natural) {
     for (int i = 0; i != nact; ++i)
-      daxpy_(asize(), 2.0*rdm1(i, i), diagsum.get(), 1, out->data()+asize()*(i+nclosed+b1size()*(i+nclosed)), 1);
+      blas::ax_plus_y_n(2.0*rdm1(i, i), diagsum.get(), asize(), out->data()+asize()*(i+nclosed+b1size()*(i+nclosed)));
   } else {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
-        daxpy_(asize(), 2.0*rdm1(j, i), diagsum.get(), 1, out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)), 1);
+        blas::ax_plus_y_n(2.0*rdm1(j, i), diagsum.get(), asize(), out->data()+asize()*(j+nclosed+b1size()*(i+nclosed)));
   }
   VectorB diagsum2(asize());
   contract(1.0, group(buf,1,3), {0,1}, group(rdm1,0,2), {1}, 0.0, diagsum2, {0});
@@ -227,15 +226,15 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
   if (natural) {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nclosed; ++j) {
-        daxpy_(asize(), -rdm1(i, i), data()+asize()*(j+b1size()*(i+nclosed)), 1, out->data()+asize()*(j+b1size()*(i+nclosed)), 1);
-        daxpy_(asize(), -rdm1(i, i), data()+asize()*(i+nclosed+b1size()*j), 1, out->data()+asize()*(i+nclosed+b1size()*j), 1);
+        blas::ax_plus_y_n(-rdm1(i, i), data()+asize()*(j+b1size()*(i+nclosed)), asize(), out->data()+asize()*(j+b1size()*(i+nclosed)));
+        blas::ax_plus_y_n(-rdm1(i, i), data()+asize()*(i+nclosed+b1size()*j), asize(), out->data()+asize()*(i+nclosed+b1size()*j));
       }
   } else {
     for (int i0 = 0; i0 != nact; ++i0)
       for (int i1 = 0; i1 != nact; ++i1)
         for (int j = 0; j != nclosed; ++j) { // TODO be careful when rdm1 is not symmetric (e.g., transition density matrices)
-          daxpy_(asize(), -rdm1(i1, i0), data()+asize()*(j+b1size()*(i0+nclosed)), 1, out->data()+asize()*(j+b1size()*(i1+nclosed)), 1);
-          daxpy_(asize(), -rdm1(i1, i0), data()+asize()*(i0+nclosed+b1size()*j), 1, out->data()+asize()*(i1+nclosed+b1size()*j), 1);
+          blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(j+b1size()*(i0+nclosed)), asize(), out->data()+asize()*(j+b1size()*(i1+nclosed)));
+          blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(i0+nclosed+b1size()*j), asize(), out->data()+asize()*(i1+nclosed+b1size()*j));
         }
   }
   return out;

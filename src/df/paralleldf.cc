@@ -71,6 +71,19 @@ shared_ptr<Matrix> ParallelDF::form_aux_2index(shared_ptr<const ParallelDF> o, c
 }
 
 
+void ParallelDF::add_direct_product(const vector<shared_ptr<const VectorB>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  if (cd.size() != dd.size()) throw logic_error("Illegal call of ParallelDF::DFDist");
+
+  auto d = dd.begin();
+  for (auto& c : cd) {
+    const VecView aslice = c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize());
+    block_[0]->add_direct_product(aslice, **d++, a);
+  }
+  assert(d == dd.end());
+}
+
+
 void ParallelDF::ax_plus_y(const double a, const shared_ptr<const ParallelDF> o) {
   assert(block_.size() == o->block_.size());
   auto j = o->block_.begin();

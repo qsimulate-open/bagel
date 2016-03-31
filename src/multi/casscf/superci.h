@@ -59,7 +59,6 @@ class SuperCI : public CASSCF {
       : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override;
-
 };
 
 }

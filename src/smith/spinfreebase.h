@@ -59,6 +59,7 @@ class SpinFreeMethod {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
 
     std::shared_ptr<const MatType> coeff_;
+    std::shared_ptr<const MatType> fockact_;
     double e0_;
     std::vector<double> e0all_;
     double core_energy_;
@@ -98,9 +99,9 @@ class SpinFreeMethod {
     std::vector<double> eig_;
 
     // init functions
-    void rotate_xms(std::shared_ptr<const MatType> fockact);
-    void feed_rdm_denom(std::shared_ptr<const MatType> fockact);
-    void feed_rdm_deriv(std::shared_ptr<const MatType> fockact);
+    void rotate_xms();
+    void feed_rdm_denom();
+    void feed_rdm_deriv(const size_t offset, const size_t size);
 
     // printing functions called from the solve function of a derived class
     static void print_iteration();
@@ -125,7 +126,6 @@ class SpinFreeMethod {
 
   public:
     SpinFreeMethod(std::shared_ptr<const SMITH_Info<DataType>> r);
-    ~SpinFreeMethod();
 
     IndexRange& virt() { return virt_; }
     IndexRange& all() { return all_; }
@@ -143,12 +143,12 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 };
 
-template<> void SpinFreeMethod<double>::rotate_xms(std::shared_ptr<const Matrix>);
-template<> void SpinFreeMethod<double>::feed_rdm_denom(std::shared_ptr<const Matrix>);
-template<> void SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const Matrix>);
-template<> void SpinFreeMethod<std::complex<double>>::rotate_xms(std::shared_ptr<const ZMatrix>);
-template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom(std::shared_ptr<const ZMatrix>);
-template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const ZMatrix>);
+template<> void SpinFreeMethod<double>::rotate_xms();
+template<> void SpinFreeMethod<double>::feed_rdm_denom();
+template<> void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size);
+template<> void SpinFreeMethod<std::complex<double>>::rotate_xms();
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom();
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size);
 extern template class SpinFreeMethod<double>;
 extern template class SpinFreeMethod<std::complex<double>>;
 

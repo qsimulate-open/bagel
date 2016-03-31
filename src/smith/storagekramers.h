@@ -65,7 +65,7 @@ class StorageKramers : public StorageIncore<DataType> {
       // if this block is stored return immediately
       auto iter = std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers);
       if (iter != stored_sectors_.end())
-        return StorageIncore<DataType>::get_block_(generate_hash_key(key...));
+        return RMAWindow<DataType>::rma_get(generate_hash_key(key...));
 
       // if not, first find the right permutation
       const KTag<N> tag(kramers);
@@ -85,7 +85,7 @@ class StorageKramers : public StorageIncore<DataType> {
           std::stringstream ss; ss << "incosistent : " << buffersize << " " << this->blocksize(dindices);
           throw std::logic_error(ss.str());
         }
-        const std::unique_ptr<DataType[]> data = StorageIncore<DataType>::get_block_(generate_hash_key(dindices));
+        const std::unique_ptr<DataType[]> data = RMAWindow<DataType>::rma_get(generate_hash_key(dindices));
 
         // finally sort the date to the final format
         std::array<int,N> info, dim;
@@ -115,7 +115,7 @@ class StorageKramers : public StorageIncore<DataType> {
       if (std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers) == stored_sectors_.end())
         throw std::logic_error("Kramers::put_block should only be called for existing blocks");
 #endif
-      StorageIncore<DataType>::put_block_(dat, generate_hash_key(indices));
+      RMAWindow<DataType>::rma_put(dat, generate_hash_key(indices));
     }
 
     template<typename... args>
@@ -131,7 +131,7 @@ class StorageKramers : public StorageIncore<DataType> {
       if (std::find(stored_sectors_.begin(), stored_sectors_.end(), kramers) == stored_sectors_.end())
         throw std::logic_error("Kramers::add_block should only be called for existing blocks");
 #endif
-      StorageIncore<DataType>::add_block_(dat, generate_hash_key(indices));
+      RMAWindow<DataType>::rma_add(dat, generate_hash_key(indices));
     }
 
   public:

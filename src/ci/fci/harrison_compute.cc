@@ -54,7 +54,7 @@ shared_ptr<Dvec> HarrisonZarrabian::form_sigma(shared_ptr<const Dvec> ccvec, sha
   auto e = make_shared<Dvec>(int_det, ij);
 
   for (int istate = 0; istate != nstate_; ++istate) {
-    Timer pdebug(2);
+    Timer pdebug(3);
     if (conv[istate]) continue;
     shared_ptr<const Civec> cc = ccvec->data(istate);
     shared_ptr<Civec> sigma = sigmavec->data(istate);

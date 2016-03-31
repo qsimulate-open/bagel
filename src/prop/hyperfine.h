@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: f12int.h
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: hyperfine.h
+// Copyright (C) 2016 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,40 +23,28 @@
 //
 
 
-#ifndef __SRC_MP2_F12INT_H
-#define __SRC_MP2_F12INT_H
+#ifndef __SRC_PROP_HYPERFINE_H
+#define __SRC_PROP_HYPERFINE_H
 
-#include <memory>
-#include <map>
-#include <src/pt2/mp2/f12mat.h>
 #include <src/wfn/geometry.h>
-#include <src/wfn/reference.h>
 
 namespace bagel {
 
-class F12Int {
+class HyperFine {
   protected:
-
-    const std::multimap<std::string, std::string> idata_;
     const std::shared_ptr<const Geometry> geom_;
-    const std::shared_ptr<const Reference> ref_;
-    double gamma_;
-
-    std::shared_ptr<F12Mat> bmat_;
-    std::shared_ptr<F12Mat> xmat_;
-    std::shared_ptr<F12Mat> vmat_;
+    const std::shared_ptr<const Matrix> den_;
+    const std::string jobname_;
+    const std::vector<int> select_;
+    const int s_;
 
   public:
-    F12Int(const std::multimap<std::string, std::string>, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref,
-           const double, const int);
-    ~F12Int() {};
+    HyperFine(std::shared_ptr<const Geometry> geom, std::shared_ptr<const Matrix> den, const int s,
+              const std::string jobname = "", std::vector<int> select = {});
 
-    std::shared_ptr<F12Mat> robust_fitting(std::shared_ptr<const DFFullDist> doo, std::shared_ptr<const DFFullDist> yoo);
-
+    void compute() const;
 };
 
 }
 
-
 #endif
-

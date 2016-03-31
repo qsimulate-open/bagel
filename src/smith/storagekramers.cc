@@ -33,7 +33,7 @@ using namespace std;
 
 template<typename DataType>
 unique_ptr<DataType[]> StorageKramers<DataType>::get_block() const {
-  return StorageIncore<DataType>::get_block_(generate_hash_key());
+  return RMAWindow<DataType>::rma_get(generate_hash_key());
 }
 
 template<typename DataType>

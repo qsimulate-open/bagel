@@ -30,20 +30,14 @@
 #ifndef __SRC_SMITH_STORAGE_H
 #define __SRC_SMITH_STORAGE_H
 
-#include <stddef.h>
 #include <map>
 #include <unordered_map>
-#include <memory>
-#include <tuple>
 #include <list>
-#include <vector>
 #include <cassert>
-#include <stdexcept>
-#include <fstream>
-#include <cstdio>
 #include <algorithm>
-#include <complex>
 #include <src/smith/indexrange.h>
+#include <src/util/parallel/mpi_interface.h>
+#include <src/util/parallel/rmawindow.h>
 
 namespace bagel {
 namespace SMITH {
@@ -89,26 +83,33 @@ namespace {
 
 
 template<typename DataType>
-class StorageIncore {
+class StorageIncore : public RMAWindow<DataType> {
+  public:
+    using RMAWindow<DataType>::initialize;
+    using RMAWindow<DataType>::initialized;
+    using RMAWindow<DataType>::rma_get;
+    using RMAWindow<DataType>::rma_put;
+    using RMAWindow<DataType>::rma_add;
+
   protected:
-    // Global Array handler:
-    int ga_;
-    int64_t totalsize_;
+    size_t totalsize_;
 
     // this relates hash keys to lo and high of the block
-    std::unordered_map<size_t, std::pair<int64_t, int64_t>> hashtable_;
-    // distribution information
-    std::vector<int64_t> blocks_;
+    std::unordered_map<size_t, std::pair<size_t, size_t>> hashtable_;
+    // distribution information. Relates lo and the process number
+    std::map<size_t, int> blocks_;
 
-    bool initialized_;
-
-    std::unique_ptr<DataType[]> get_block_(const size_t& key) const;
-    void put_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
-    void add_block_(const std::unique_ptr<DataType[]>& dat, const size_t& key);
+    // local storage
+    size_t local_lo_;
+    size_t local_hi_;
 
   public:
     StorageIncore(const std::map<size_t, size_t>& size, bool init);
-    ~StorageIncore();
+
+    // required functions by RMAWindow
+    bool is_local(const size_t key) const override;
+    size_t localsize() const override;
+    std::tuple<size_t, size_t, size_t> locate(const size_t key) const override; // returns (process, offset, size)
 
     virtual std::unique_ptr<DataType[]> get_block() const;
     virtual std::unique_ptr<DataType[]> get_block(const Index& i0) const;
@@ -160,30 +161,15 @@ class StorageIncore {
     size_t blocksize(const std::vector<Index>& p) const { return std::accumulate(p.begin(), p.end(), 1lu, [](size_t a, const Index& b){ return a*b.size(); }); }
 
     size_t size() const { return totalsize_; }
-    size_t size_alloc() const { return initialized_ ? size() : 0lu; }
-
-    void initialize();
-
-    void zero();
-    void scale(const DataType& a);
+    size_t size_alloc() const { return initialized() ? size() : 0lu; }
 
     template<typename ...args>
     bool is_local(args&& ...p) const { return is_local(generate_hash_key(p...)); }
-    bool is_local(const size_t key) const;
-
-    StorageIncore<DataType>& operator=(const StorageIncore<DataType>& o);
-    void ax_plus_y(const DataType& a, const StorageIncore<DataType>& o);
-    void ax_plus_y(const DataType& a, const std::shared_ptr<StorageIncore<DataType>> o) { ax_plus_y(a, *o); };
-    DataType dot_product(const StorageIncore<DataType>& o) const;
 
     // for Kramers storage
     virtual void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { }
     virtual void set_stored_sectors(const std::list<std::vector<bool>>& p) { }
 };
-
-template<> double StorageIncore<double>::dot_product(const StorageIncore<double>& o) const;
-template<> std::complex<double> StorageIncore<std::complex<double>>::dot_product(const StorageIncore<std::complex<double>>& o) const;
-
 
 extern template class StorageIncore<double>;
 extern template class StorageIncore<std::complex<double>>;

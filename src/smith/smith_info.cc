@@ -53,13 +53,14 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   do_xms_  = idata->get<bool>("xms", false);
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+  shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
 }
 
 
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
-  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), maxiter_(info->maxiter_), target_(info->target_),
+  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_), maxiter_(info->maxiter_), target_(info->target_),
     maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_) {
 }
 

@@ -66,19 +66,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
 
-    ZMatView slice(const int mstart, const int mend) {
-      assert(mstart >= 0 && mend <= mdim());
-      auto low = {0, mstart};
-      auto up  = {ndim(), mend};
-      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
-    }
-
-    const ZMatView slice(const int mstart, const int mend) const {
-      assert(mstart >= 0 && mend <= mdim());
-      auto low = {0, mstart};
-      auto up  = {ndim(), mend};
-      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
-    }
+    ZMatView slice(const int mstart, const int mend);
+    const ZMatView slice(const int mstart, const int mend) const;
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(VecView vec);
