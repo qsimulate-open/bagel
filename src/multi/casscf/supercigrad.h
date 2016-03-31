@@ -55,7 +55,7 @@ class SuperCIGrad : public SuperCI {
       if (natocc_) print_natocc();
     }
 
-    int target_state() const override { return target_state_; }
+    int target_state() const { return target_state_; }
 
 };
 
