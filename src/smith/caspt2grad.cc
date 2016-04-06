@@ -53,7 +53,8 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
 
-  // property calculation
+  // gradient/property calculation
+  target_ = inp->get<int>("_target");
   do_hyperfine_ = inp->get<bool>("hyperfine", false);
 
   timer.tick_print("Reference calculation");
@@ -73,8 +74,9 @@ void CASPT2Grad::compute() {
   {
     // construct SMITH here
     shared_ptr<PTree> smithinput = idata_->get_child("smith");
-    smithinput->put<bool>("grad", true);
-    smithinput->put<bool>("hyperfine", do_hyperfine_);
+    smithinput->put("_grad", true);
+    smithinput->put("_target", target_);
+    smithinput->put("_hyperfine", do_hyperfine_);
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 
@@ -84,7 +86,6 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->info()->target();
     ncore_  = smith->algo()->info()->ncore();
     wf1norm_ = smith->wf1norm();
 
@@ -169,6 +170,7 @@ void CASPT2Grad::compute() {
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 #ifdef COMPILE_SMITH
+  assert(task_->target() == target_state_);
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();

@@ -214,7 +214,6 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
     cinput = std::make_shared<PTree>(**input_->rbegin());
   }
   cinput->put("gradient", true);
-  cinput->put("target", target_state_);
 
   // then calculate gradients
   GradEval<T> eval(cinput, current_, ref, target_state_);

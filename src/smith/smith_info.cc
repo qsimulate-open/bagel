@@ -45,9 +45,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << endl;
 
   maxiter_ = idata->get<int>("maxiter", 50);
-  target_  = idata->get<int>("target",   0);
   maxtile_ = idata->get<int>("maxtile", 10);
-  grad_    = idata->get<bool>("grad", false);
 
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
@@ -55,6 +53,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+
+  // These are not input parameters (set automatically)
+  target_  = idata->get<int>("_target", -1);
+  grad_    = idata->get<bool>("_grad", false);
+  assert(!(grad_ && target_ < 0));
 }
 
 
