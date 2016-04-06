@@ -50,6 +50,7 @@ class GradEval : public GradEval_base {
     std::shared_ptr<T> task_;
 
     double energy_;
+    int target_state_;
 
   public:
     // Constructor performs energy calculation
@@ -59,6 +60,7 @@ class GradEval : public GradEval_base {
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy(target);
+      target_state_ = target;
       geom_ = ref_->geom();
     }
 
