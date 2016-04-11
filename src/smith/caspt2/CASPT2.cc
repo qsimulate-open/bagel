@@ -164,7 +164,6 @@ void CASPT2::CASPT2::solve() {
     for (int istate = 0; istate != nstates_; ++istate) //K states
       rall_[0]->ax_plus_y(fmn(istate, target), sall_[istate]);
 
-    Matrix tmn(nstates_,target);
     for (int istate = 0; istate != nstates_; ++istate) { //K states
       if (info_->shift() != 0) {
         sall_[istate]->zero();

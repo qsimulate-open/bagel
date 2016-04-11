@@ -141,7 +141,6 @@ class SpinFreeMethod {
 
     DataType dot_product_transpose(std::shared_ptr<const Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t2) const;
     DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
-    DataType dot_product_transpose(std::shared_ptr<const Tensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 };
 
 template<> void SpinFreeMethod<double>::rotate_xms();
