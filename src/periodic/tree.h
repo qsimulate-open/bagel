@@ -72,7 +72,7 @@ class Tree {
          const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
     ~Tree() { }
 
-    std::shared_ptr<const ZMatrix> fmm(const int lmax, std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const std::string auxfile = " ") const;
+    std::shared_ptr<const ZMatrix> fmm(const int lmax, std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const std::string auxfile = " ", const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0) const;
 
     void print_tree_xyz() const;
 };

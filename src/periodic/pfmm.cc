@@ -582,6 +582,15 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   auto supergeom = make_shared<const Geometry>(geoms, true/*nodf*/);
   time.tick_print("  Construct a supercell for crystal near-field");
 
+  // Schwarz screening
+  const double schwarz_thresh = scell_->geom()->schwarz_thresh();
+  vector<double> schwarz;
+  if (!dodf_) {
+    schwarz = supergeom->schwarz();
+    cout << schwarz.size() << endl;
+    time.tick_print("  Schwarz matrix");
+  }
+
   // get density for supergeom: ncell_ in lattice should be set to ws
   const size_t nbas = nvec * scell_->nbasis();
   shared_ptr<Matrix> superden;
@@ -618,7 +627,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
-  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, auxfile);
+  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, auxfile, schwarz, schwarz_thresh);
   time.tick_print("  Compute Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);

@@ -400,7 +400,7 @@ shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile, const vector<double> schwarz, const double schwarz_thresh) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
@@ -465,11 +465,17 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
   assert(iself_ >= 0);
   int ibas = -1;
+  int ishell = -1;
   vector<shared_ptr<const Atom>> close_atoms;
+  vector<int> shells;
   int nbas = 0;
+  int nsh = 0;
   int inode = 0;
   for (auto& close_node : neighbour_) {
-    if (inode == iself_) ibas = nbas;
+    if (inode == iself_) {
+      ibas = nbas;
+      ishell = nsh;
+    }
     nbas += close_node->nbasis();
     for (auto& close_body : close_node->bodies()) {
       size_t iat = 0;
@@ -478,17 +484,21 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
         vector<int> tmpoff;
-        for (int ish = 0; ish != close_atom->shells().size(); ++ish)
+        for (int ish = 0; ish != close_atom->shells().size(); ++ish) {
           tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
+          shells.insert(shells.end(), close_body->ishell(iat) + ish);
+        }
 
         new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+        nsh += close_atom->nshell();
         ++iat;
       }
     }
     ++inode;
   }
-  assert (ibas >= 0);
+  assert(ibas >= 0 && ishell >= 0);
   const size_t size = basis.size();
+  assert(ishell < size);
 
   // NAI for close-range
   auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
@@ -529,6 +539,31 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   if (!dodf && density) {
     const double* density_data = density->data();
 
+    vector<double> max_density(size * size);
+    vector<double> subschwarz(size * size);
+    for (int i = 0; i != size; ++i) {
+      const int ioffset = new_offset[i];
+      const int isize = basis[i]->nbasis();
+      for (int j = i; j != size; ++j) {
+        const int joffset = new_offset[j];
+        const int jsize = basis[j]->nbasis();
+
+        const int ij = i * size + j;
+        const int ji = j * size + i;
+
+        double denmax = 0.0;
+        for (int ii = ioffset; ii != ioffset + isize; ++ii) {
+          const int iin = ii * density->ndim();
+          for (int jj = joffset; jj != joffset + jsize; ++jj)
+            denmax = max(denmax, fabs(density_data[iin + jj]));
+        }
+        max_density[ij] = denmax;
+        max_density[ji] = denmax;
+        subschwarz[ij] = schwarz[shells[i]*size+shells[j]];
+        subschwarz[ji] = schwarz[shells[j]*size+shells[i]];
+      }
+    }
+
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
@@ -539,11 +574,18 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         const int b1offset = new_offset[i1];
         const int b1size = b1->nbasis();
 
+        const int i01 = i0 * size + i1;
+        const double density_01 = max_density[i01] * 4.0;
+
         for (int i2 = 0; i2 != size; ++i2) {
           const shared_ptr<const Shell>  b2 = basis[i2];
           const int b2offset = new_offset[i2];
           const int b2size = b2->nbasis();
 
+          const double density_02 = max_density[i0 * size + i2];
+          const double density_12 = max_density[i1 * size + i2];
+
+          int i3 = ishell;
           for (auto& a3 : bodies_) {
             size_t iat3 = 0;
             for (auto& atom3 : a3->atoms()) {
@@ -552,6 +594,20 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 const int b3size = b3->nbasis();
                 const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
                 ++ish3;
+
+                const int i23 = i2 * size + i3;
+                const double density_23 = max_density[i23] * 4.0;
+                const double density_03 = max_density[i0 * size + i3];
+                const double density_13 = max_density[i1 * size + i3];
+                ++i3;
+
+                const double mulfactor = max(max(max(density_01, density_02),
+                                                 max(density_12, density_23)),
+                                                 max(density_03, density_13));
+                const double integral_bound = mulfactor * subschwarz[i01] * subschwarz[i23];
+                const bool skip_schwarz = integral_bound < schwarz_thresh;
+                if (skip_schwarz) continue;
+
 
                 array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
                 ERIBatch eribatch(input, 0.0);
