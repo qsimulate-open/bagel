@@ -42,7 +42,7 @@ shared_ptr<Task> Queue::next_compute() {
   // execute
   out->compute();
 
-  // synchronize
+  // synchronize. This only works because add_block is local...
   mpi__->barrier();
 
   // delete dependency (to remove intermediate storages)

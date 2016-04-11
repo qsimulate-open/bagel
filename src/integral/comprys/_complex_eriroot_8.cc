@@ -17327,7 +17327,7 @@ void ComplexERIRootList::complex_eriroot8(const complex<double>* ta, complex<dou
       fill_n(rr+offset, 8, 0.5);
       fill_n(ww+offset, 8, 0.0);
     } else if (t.real() < -2) {
-      throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength");
+      throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.");
     } else if (t.real() >= 76) {
       t = 1.0/sqrt(t);
       for (int r = 0; r != 8; ++r) {
@@ -17341,8 +17341,8 @@ void ComplexERIRootList::complex_eriroot8(const complex<double>* ta, complex<dou
       if (torig.imag() < 0) t = conj(torig);
       int itr = static_cast<int>((t.real()-(-2))*   0.500000000000000) ;
       int iti = static_cast<int>((t.imag()-(0))*   2.000000000000000) ;
-      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000) *   1.000000000000000 - (-2) ;
-      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000) *   4.000000000000000 - (0) ;
+      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000 - -2) *   1.000000000000000;
+      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000 - 0) *   4.000000000000000;
       const double tr2 = tr * 2.0;
       const double ti2 = ti * 2.0;
       if (itr < 11) {

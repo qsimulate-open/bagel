@@ -48,10 +48,11 @@ void NAI::computebatch(const array<shared_ptr<const Shell>,2>& input, const int 
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  NAIBatch nai(input, mol);
-  nai.compute();
-
-  copy_block(offsetb1, offsetb0, dimb1, dimb0, nai.data());
+  {
+    NAIBatch nai(input, mol);
+    nai.compute();
+    copy_block(offsetb1, offsetb0, dimb1, dimb0, nai.data());
+  }
 
   if (mol->has_finite_nucleus()) {
     auto dummy = make_shared<const Shell>(input[0]->spherical());

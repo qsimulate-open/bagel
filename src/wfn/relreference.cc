@@ -120,24 +120,28 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
 
 shared_ptr<const Kramers<2,ZRDM<1>>> RelReference::rdm1(const int ist, const int jst) const {
+  assert(ciwfn_);
   ZFCI_bare fci(ciwfn_);
   return fci.rdm1(ist, jst);
 }
 
 
 shared_ptr<const Kramers<4,ZRDM<2>>> RelReference::rdm2(const int ist, const int jst) const {
+  assert(ciwfn_);
   ZFCI_bare fci(ciwfn_);
   return fci.rdm2(ist, jst);
 }
 
 
 shared_ptr<const Kramers<6,ZRDM<3>>> RelReference::rdm3(const int ist, const int jst) const {
+  assert(ciwfn_);
   ZFCI_bare fci(ciwfn_);
   return fci.rdm3(ist, jst);
 }
 
 
 shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int jst) const {
+  assert(ciwfn_);
   ZFCI_bare fci(ciwfn_);
   return fci.rdm4(ist, jst);
 }

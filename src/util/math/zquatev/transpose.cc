@@ -30,6 +30,7 @@
 //
 
 #include <complex>
+#include <bagel_config.h>
 
 using namespace std;
 

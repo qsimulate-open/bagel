@@ -83,9 +83,8 @@ class SRBFGS {
     double level_shift() const { return level_shift_; }
     double prev_level_shift() const { return prev_level_shift_; }
 
-    // sets initial trust radius ; presently not used
-    void initiate_trust_radius() {
-      trust_radius_ = 0.4;
+    void initiate_trust_radius(const double rad = 0.4) {
+      trust_radius_ = rad;
     }
 
 

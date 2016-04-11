@@ -49,12 +49,12 @@ class RelReference : public Reference {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & kramers_;
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & kramers_ & rdm1_av_ & rdm2_av_ & ciwfn_;
     }
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en,
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const std::vector<double> en,
                  const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
 //               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
 //               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
@@ -64,6 +64,14 @@ class RelReference : public Reference {
      : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c), kramers_(kram),
                                                      rdm1_av_(rdm1_av), rdm2_av_(rdm2_av), ciwfn_(ci) {
     }
+
+    // if only given one energy
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en, const int nneg,
+                 const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
+                 std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
+                 std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
+                 std::shared_ptr<const RelCIWfn> ci = nullptr)
+     : RelReference(g, c, std::vector<double>(1, en), nneg, nocc, nact, nvirt, ga, br, kram, rdm1_av, rdm2_av, ci) { }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
     std::shared_ptr<const RelCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }

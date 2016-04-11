@@ -54,28 +54,32 @@ class Smith : public Method {
     // first order density matrices
     std::shared_ptr<const Matrix> dm11_;
     std::shared_ptr<const Tensor> dm2_;
+    // second order spin density matrix
+    std::shared_ptr<const Matrix> sdm1_;
+    // first order spin density matrix
+    std::shared_ptr<const Matrix> sdm11_;
     // correction <1|1>
     double wf1norm_;
     // ci derivative
     std::shared_ptr<const Civec> cider_;
 
-    std::shared_ptr<const Coeff> coeff_;
-
-
+    std::shared_ptr<const Matrix> coeff_;
 
   public:
     Smith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return std::shared_ptr<const Reference>(); }
+    std::shared_ptr<const Reference> conv_to_ref() const override { assert(false); return nullptr; }
 
     std::shared_ptr<const Matrix> dm1() const { return dm1_; }
     std::shared_ptr<const Matrix> dm11() const { return dm11_; }
     std::shared_ptr<const Tensor> dm2() const { return dm2_; }
+    std::shared_ptr<const Matrix> sdm1() const { return sdm1_; }
+    std::shared_ptr<const Matrix> sdm11() const { return sdm11_; }
     double wf1norm() const { return wf1norm_; }
     std::shared_ptr<const Civec> cideriv() const { return cider_; }
-    std::shared_ptr<const Coeff> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 
 #ifdef COMPILE_SMITH
     std::shared_ptr<const SMITH::SpinFreeMethod<double>> algo() const { return algo_; }

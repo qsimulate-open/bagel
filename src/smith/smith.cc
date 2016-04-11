@@ -30,6 +30,7 @@
 #include <src/smith/mrci/MRCI.h>
 #include <src/smith/relmrci/RelMRCI.h>
 #include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/caspt2/SPCASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
 using namespace bagel::SMITH;
 #endif
@@ -71,12 +72,17 @@ void Smith::compute() {
 
     // compute <1|1>
     wf1norm_ = algop->correlated_norm();
-
     // convert ci derivative tensor to civec
-    cider_ = algop->ci_deriv(ref_->ciwfn()->det());
+    cider_ = algop->ci_deriv();
+    coeff_ = algop->coeff();
 
-    // todo check
-    coeff_ = make_shared<Coeff>(*algop->coeff());
+    // if spin-density is requested...
+    if (idata_->get<bool>("_hyperfine")) {
+      auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
+      sp->solve();
+      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_);
+      sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
+    }
   }
 #endif
 }

@@ -34,6 +34,7 @@
 #include <src/util/math/davidson.h>
 #include <src/util/math/bfgs.h>
 #include <src/util/math/hpw_diis.h>
+#include <src/prop/hyperfine.h>
 
 using namespace std;
 using namespace bagel;
@@ -157,6 +158,12 @@ void SuperCI::compute() {
   fci_->update(coeff_);
   fci_->compute();
   fci_->compute_rdm12();
+
+  // calculate the HFCCs
+  if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+    HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
+    hfcc.compute();
+  }
 }
 
 

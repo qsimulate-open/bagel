@@ -25,15 +25,21 @@
 
 #include <src/mat1e/spindipole.h>
 #include <src/integral/rys/spindipolebatch.h>
+#include <src/util/atommap.h>
 
 using namespace std;
 using namespace bagel;
 
-SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom) : Matrix1eArray<6>(mol), atom_(atom) {
+const static AtomMap atommap;
+
+SpinDipole::SpinDipole(shared_ptr<const Molecule> mol, shared_ptr<const Atom> atom, const int s) : Matrix1eArray<6>(mol), atom_(atom) {
 
   init(mol);
   fill_upper();
 
+  const double sfac = s ? 1.0/(s*0.5) : 0.0;
+
+  scale(atommap.hfcc_pfac(atom->name())/2.0 * sfac);
 }
 
 

@@ -93,7 +93,7 @@ void CASSCF::common_init() {
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
   // option for printing natural orbitals
-  natocc_ = idata_->get<bool>("natocc",false);
+  natocc_ = idata_->get<bool>("natocc", false);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
@@ -132,6 +132,7 @@ void CASSCF::common_init() {
   }
   resume_stdcout();
 
+  do_hyperfine_ = idata_->get<bool>("hyperfine", false);
 
   cout <<  "  === CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
@@ -317,10 +318,28 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
 }
 
 
+shared_ptr<const Matrix> CASSCF::spin_density() const {
+  Matrix den(nact_, nact_);
+  shared_ptr<const RDM<1>> rdm1 = fci_->rdm1(0);
+  copy_n(rdm1->data(), nact_*nact_, den.data());
+  den.scale((4.0 - fci_->det()->nelea() - fci_->det()->neleb()) * 0.5);
+
+  shared_ptr<RDM<2>> rdm2 = fci_->rdm2(0);
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nact_; ++j)
+      for (int k = 0; k != nact_; ++k)
+        den(j,i) -= rdm2->element(j,k,k,i);
+
+  den.scale(1.0 / (fci_->det()->nspin()*0.5 + 1.0));
+  auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
+  return make_shared<Matrix>(acoeff * den ^ acoeff);
+}
+
+
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   shared_ptr<Reference> out;
   if (nact_) {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av(),
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
                                  fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
     // TODO
     // compute one-body operators
@@ -347,9 +366,8 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
     auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
 
     out->set_erdm1(erdm);
-    out->set_nstate(nstate_);
   } else {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_av());
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
   }
   return out;
 }

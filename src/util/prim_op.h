@@ -537,6 +537,15 @@ void sort_indices<0,2,1,3,1,1,-1,1>(const double* unsorted, double* sorted,
       for (int k = 0; k != c; ++k)
         blas::ax_plus_y_n(-1.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(j+b*(k+c*i)));
 }
+template<>
+void sort_indices<0,3,2,1,8,1,-4,1>(const double* unsorted, double* sorted,
+                                    const int d, const int c, const int b, const int a) {
+  blas::scale_n(8.0, sorted, static_cast<size_t>(d)*c*b*a);
+  for (int j = 0; j != b; ++j)
+    for (int i = 0; i != a; ++i)
+      for (int k = 0; k != c; ++k)
+        blas::ax_plus_y_n(-4.0, unsorted + d*(k+c*(j+b*i)), d, sorted + d*(i+a*(j+b*k)));
+}
 
 template<>
 void sort_indices<0,1,2,3,0,1,1,1>(const std::complex<double>* unsorted, std::complex<double>* sorted,

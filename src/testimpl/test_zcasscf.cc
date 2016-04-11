@@ -85,17 +85,17 @@ double relcas_energy(std::string inp) {
         auto zcas = std::make_shared<ZSuperCI>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(ref->nstate()-1);
       } else if (algorithm == "bfgs") {
         auto zcas = std::make_shared<ZCASBFGS>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(ref->nstate()-1);
       } else if (algorithm == "hybrid") {
         auto zcas = std::make_shared<ZCASHybrid>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(ref->nstate()-1);
       }
     }
 #ifndef DISABLE_SERIALIZATION

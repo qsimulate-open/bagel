@@ -167,9 +167,14 @@ class FCI : public Method {
     void compute_rdm12(); // compute all states at once + averaged rdm
     void compute_rdm12(const int ist) { compute_rdm12(ist, ist); }
     void compute_rdm12(const int ist, const int jst);
-
+    // compute 3 and 4 RDMs
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
+
+    // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst);
+    // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst);
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
@@ -195,7 +200,8 @@ class FCI : public Method {
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
     // 4RDM derivative is precontracted by an Fock operator
-    std::tuple<std::shared_ptr<Dvec>,std::shared_ptr<Dvec>> rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();

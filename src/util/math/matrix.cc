@@ -63,6 +63,22 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()), s
 #endif
 
 
+MatView Matrix::slice(const int mstart, const int mend) {
+  assert(mstart >= 0 && mend <= mdim());
+  auto low = {0, mstart};
+  auto up  = {ndim(), mend};
+  return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+}
+
+
+const MatView Matrix::slice(const int mstart, const int mend) const {
+  assert(mstart >= 0 && mend <= mdim());
+  auto low = {0, mstart};
+  auto up  = {ndim(), mend};
+  return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+}
+
+
 Matrix Matrix::operator/(const Matrix& o) const {
   Matrix out(*this);
   out /= o;

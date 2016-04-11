@@ -102,7 +102,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   for (int i = 0; i != norb_; ++i) {
     for (int k = 0; k != norb_; ++k) {
       copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
-      blas::transpose(buf.get(), norb_, norb_, &rdm2->element(0,0,k,i));
+      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
     }
   }
 
@@ -122,7 +122,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 
   // since we consider here number conserving operators...
   auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  dbra->zero();
   sigma_2a1(cbra, dbra);
   sigma_2a2(cbra, dbra);
 
@@ -130,7 +129,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   // if bra and ket vectors are different, we need to form Sigma for ket as well.
   if (cbra != cket) {
     dket = make_shared<Dvec>(cket->det(), norb_*norb_);
-    dket->zero();
     sigma_2a1(cket, dket);
     sigma_2a2(cket, dket);
   } else {
@@ -151,8 +149,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 
   auto rdm1 = make_shared<RDM<1>>(norb_);
   auto rdm2 = make_shared<RDM<2>>(norb_);
-  rdm1->zero();
-  rdm2->zero();
 
   assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
 

@@ -64,7 +64,9 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
     if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
     if (nact_ < 1)          throw runtime_error("no active orbitals");
-    if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
+    if (nvirt_ < 1)         throw runtime_error("no virtual orbitals");
+    if (istate_ < 0 || istate_ >= ref_->nstate())
+      throw runtime_error("invalid state requested");
   }
 
   cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
@@ -73,9 +75,11 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
 template<>
 void NEVPT2<double>::init_reference() {
-  auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
-  casscf->compute();
-  ref_ = casscf->conv_to_ref();
+  if (!ref_ || ref_->nact() == 0) {
+    auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
+    casscf->compute();
+    ref_ = casscf->conv_to_ref();
+  }
 
   gaunt_ = false;
   breit_ = false;
@@ -84,9 +88,11 @@ void NEVPT2<double>::init_reference() {
 
 template<>
 void NEVPT2<complex<double>>::init_reference() {
-  auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
-  casscf->compute();
-  ref_ = casscf->conv_to_ref();
+  if (!dynamic_pointer_cast<const RelReference>(ref_) || ref_->nact() == 0) {
+    auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
+    casscf->compute();
+    ref_ = casscf->conv_to_ref();
+  }
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   gaunt_ = ref->gaunt();
@@ -901,13 +907,15 @@ void NEVPT2<DataType>::compute() {
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+
+  const string stateid = ref_->nstate() > 1 ? (" state " + to_string(istate_)) : "";
+  cout << "      NEVPT2" << stateid << " correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
   for (auto& i : sect)
     cout << "          " << setw(7) << left << i.first << right << setw(15) << setprecision(10) << energy[i.second] << endl;
   cout << endl;
 
-  energy_ += ref_->energy();
-  cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+  energy_ += ref_->energy(istate_);
+  cout << "      NEVPT2" << stateid << " total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
 

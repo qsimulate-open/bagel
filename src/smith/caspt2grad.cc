@@ -32,6 +32,7 @@
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/prop/multipole.h>
+#include <src/prop/hyperfine.h>
 
 
 using namespace std;
@@ -52,6 +53,10 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
 
+  // gradient/property calculation
+  target_ = inp->get<int>("_target");
+  do_hyperfine_ = inp->get<bool>("hyperfine", false);
+
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
@@ -69,7 +74,9 @@ void CASPT2Grad::compute() {
   {
     // construct SMITH here
     shared_ptr<PTree> smithinput = idata_->get_child("smith");
-    smithinput->put<bool>("grad", true);
+    smithinput->put("_grad", true);
+    smithinput->put("_target", target_);
+    smithinput->put("_hyperfine", do_hyperfine_);
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 
@@ -79,8 +86,8 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->info()->target();
     ncore_  = smith->algo()->info()->ncore();
+    wf1norm_ = smith->wf1norm();
 
     Timer timer;
 
@@ -88,49 +95,66 @@ void CASPT2Grad::compute() {
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
     auto d11tmp = make_shared<Matrix>(*smith->dm11());
     d11tmp->symmetrize();
-    // TODO not sure about the scale
+    // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
     d11tmp->scale(2.0);
 
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
-      const double wf1norm = smith->wf1norm();
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm * d0->element(j, i);
+          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_ * d0->element(j, i);
     }
-    if (!ncore_) {
-      d1_ = d1tmp;
-      d11_ = d11tmp;
-    } else {
-      auto d1tmp2 = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1tmp);
-      d1_ = d1tmp2->copy();
-      d1tmp2->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d11tmp);
-      d11_ = d1tmp2;
+
+    auto d1set = [this](shared_ptr<const Matrix> d1t) {
+      if (!ncore_) {
+        return d1t->copy();
+      } else {
+        auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+        out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
+        return out;
+      }
+    };
+    d1_ = d1set(d1tmp);
+    d11_ = d1set(d11tmp);
+
+    // spin density matrices
+    if (do_hyperfine_) {
+      auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
+      sd11tmp->symmetrize();
+      sd11tmp->scale(2.0);
+      sd1_ = d1set(smith->sdm1());
+      sd11_ = d1set(sd11tmp);
     }
 
     // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
     // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
     // -> y_I += [(h+g[d^(0)+d^(2)]) - (1+N)F] <I|E_ij|0>
     if (nact) {
-      const int nmobasis = coeff_->mdim();
-      auto d0 = ref_->rdm1_mat(target_)->resize(nmobasis,nmobasis);
-      // TODO we should be able to avoid this Fock build
-      auto d0ao = make_shared<Matrix>(*coeff_* *d0  ^ *coeff_);
-      auto d1ao = make_shared<Matrix>((*coeff_* *d1_ ^ *coeff_) + *d0ao); // sum of d0 + d1 (to make it positive definite)
-      auto fock  = make_shared<Fock<1>>(geom_, ref_->hcore(), d0ao, vector<double>());
-      auto fock1 = make_shared<Fock<1>>(geom_, ref_->hcore(), d1ao, vector<double>());
+      const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
+
+      auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff) {
+        shared_ptr<const Matrix> jop = ref_->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
+        auto out = make_shared<Matrix>(acoeff % (*ref_->hcore() + *jop) * acoeff);
+        shared_ptr<const DFFullDist> full = ref_->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+        shared_ptr<DFFullDist> full2 = full->copy();
+        full2->rotate_occ1(moden);
+        *out += *full->form_2index(full2, -0.5);
+        return out;
+      };
+
+      const int nmo = coeff_->mdim();
+      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+      auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
+      auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
       *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
 
-      auto acoeff = coeff_->slice(nclosed, nclosed+nact);
-      auto fock1mo = make_shared<Matrix>(acoeff % *fock1 * acoeff);
       shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
       assert(deriv->ij() == nact*nact);
 
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
-          cideriv_->ax_plus_y(2.0*fock1mo->element(j,i), deriv->data(j+i*nact));
+          cideriv_->ax_plus_y(2.0*fock1->element(j,i), deriv->data(j+i*nact));
     }
 
     d2_ = smith->dm2();
@@ -146,6 +170,7 @@ void CASPT2Grad::compute() {
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 #ifdef COMPILE_SMITH
+  assert(task_->target() == target_state_);
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
@@ -211,7 +236,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
     civec->data(0)->element(0,0) = 1.0;
     civector = civec;
   }
-  auto cp = make_shared<CPCASSCF>(grad, civector, half, halfjj, ref, fci, ncore, coeff);
+  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
@@ -280,38 +305,56 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
     }
   }
 
+  // computing hyperfine coupling
+  if (task_->do_hyperfine()) {
+    shared_ptr<Matrix> dhfcc = task_->spin_density_unrelaxed();
+    { // for the time being, print unrelaxed HFCC
+      HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASPT2 unrelaxed");
+      hfcc.compute();
+    }
+    dhfcc->ax_plus_y(1.0, task_->spin_density_relax(zrdm1, zrdm2, zmat));
+    HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASPT2 relaxed");
+    hfcc.compute();
+  }
+
   // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
   qri->ax_plus_y(2.0, fulld1->apply_J()->back_transform(coeff));
 
   // contributions from non-separable part
   shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
 
   // separable part
+  vector<shared_ptr<const Matrix>> da;
+  vector<shared_ptr<const VectorB>> ca;
+
   auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
-    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0occ ^ ocoeff);
+    shared_ptr<const Matrix> d0mo = make_shared<Matrix>(*d0occ ^ ocoeff);
+    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0mo);
     shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff * *d1bas ^ *coeff);
     shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
     shared_ptr<const VectorB> cd1 = geom_->df()->compute_cd(d1ao);
-
-    // three-index derivatives (seperable part)...
-    vector<shared_ptr<const VectorB>> cd {cd0, cd1};
-    vector<shared_ptr<const Matrix>> dd {d1ao, d0ao};
+    ca.push_back(cd0);
+    da.push_back(d1ao);
 
     shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
     sepd->rotate_occ(d0occ);
 
-    qrs->ax_plus_y(-1.0, sepd->back_transform(ocoeff)); // TODO this back transformation can be done together
-    qrs->add_direct_product(cd, dd, 1.0);
+    qri->ax_plus_y(-1.0, sepd);
+    qri->add_direct_product(cd1, d0mo, 1.0);
 
     *qq += (*cd0 ^ *cd1) * 2.0;
     *qq += *halfjj->form_aux_2index(sepd, -1.0);
+    return make_tuple(cd0, d1ao);
   };
 
   separable_pair(nact ? ref->rdm1_mat(task_->target()) : d0->get_submatrix(0,0,nocc,nocc), d1);
 
   if (ncore)
     separable_pair(smallz, dsa);
+
+  // back transform the rest
+  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
+  qrs->add_direct_product(ca, da, 1.0);
 
   timer.tick_print("Effective densities");
 

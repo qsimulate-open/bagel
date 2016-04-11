@@ -84,7 +84,7 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
-tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
   assert(fock->ndim() == norb_ && fock->mdim() == norb_);
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
@@ -102,7 +102,10 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, share
   auto ebra = rdm2deriv(target);
 
   // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
-  auto fbra = make_shared<Dvec>(cbra->det(), norb6);
+  // K is reduced to (offset, offset+size)
+  auto fbra = make_shared<Matrix>(size, norb6);
+  // [L|k+i+jl|0]
+  auto fock_fbra = make_shared<Dvec>(cbra->det(), norb4);
   {
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
     int ijkl = 0;
@@ -115,19 +118,20 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, share
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
       for (int m = 0; m != norb_; ++m) {
-        for (int n = 0; n != norb_; ++n)
-          *fbra->data(ijkl+norb4*m+norb5*n) += *tmp->data(m+norb_*n);
-        *fbra->data(ijkl+norb4*m+norb5*k) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
-        *fbra->data(ijkl+norb4*m+norb5*i) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
+        for (int n = 0; n != norb_; ++n) {
+          blas::ax_plus_y_n(1.0, tmp->data(m+norb_*n)->data() + offset, size, fbra->element_ptr(0, ijkl+norb4*m+norb5*n));
+          fock_fbra->data(ijkl)->ax_plus_y(fock->element(m,n), tmp->data(m+norb_*n));
+        }
+        blas::ax_plus_y_n(-1.0, ebra->data(m+norb_*(l+norb_*(i+norb_*j)))->data() + offset, size, fbra->element_ptr(0, ijkl+norb4*m+norb5*k));
+        blas::ax_plus_y_n(-1.0, ebra->data(k+norb_*(l+norb_*(m+norb_*j)))->data() + offset, size, fbra->element_ptr(0, ijkl+norb4*m+norb5*i));
+
+        fock_fbra->data(ijkl)->ax_plus_y(- fock->element(m,k), ebra->data(m+norb_*(l+norb_*(i+norb_*j))));
+        fock_fbra->data(ijkl)->ax_plus_y(- fock->element(m,i), ebra->data(k+norb_*(l+norb_*(m+norb_*j))));
       }
     }
   }
 
   // now make target:  f_mn <L|E_op,mn,kl,ij|0> = [L|E_kl,ij,op|0]  =  <L|o+p|K>[K|E_kl,ij|0] - f_np<L|E_kl,ij,on|0> - delta_pk[L|E_ij,ol|0] - delta_pi[L|E_kl,oj|0]
-  // calculate [K|k+i+jl|0]
-  auto fock_fbra = ebra->clone();
-  dgemv_("N", fbra->size()/norb2, norb2, 1.0, fbra->data(), fbra->size()/norb2, fock->data(), 1, 0.0, fock_fbra->data(), 1);
-
   auto gbra = fbra->clone();
   {
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
@@ -142,9 +146,9 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, share
       sigma_2a2(*iter, tmp);
       for (int o = 0; o != norb_; ++o) {
         for (int p = 0; p != norb_; ++p)
-          *gbra->data(ijkl+norb4*o+norb5*p) += *tmp->data(o+norb_*p);
-        *gbra->data(ijkl+norb4*o+norb5*k) -= *fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)));
-        *gbra->data(ijkl+norb4*o+norb5*i) -= *fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)));
+          blas::ax_plus_y_n(1.0, tmp->data(o+norb_*p)->data() + offset, size, gbra->element_ptr(0, ijkl+norb4*o+norb5*p));
+        blas::ax_plus_y_n(-1.0, fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)))->data() + offset, size, gbra->element_ptr(0, ijkl+norb4*o+norb5*k));
+        blas::ax_plus_y_n(-1.0, fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)))->data() + offset, size, gbra->element_ptr(0, ijkl+norb4*o+norb5*i));
       }
     }
     dgemm_("N", "N", fbra->size()/norb_, norb_, norb_, -1.0, fbra->data(), fbra->size()/norb_, fock->data(), norb_, 1.0, gbra->data(), fbra->size()/norb_);

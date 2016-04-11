@@ -73,6 +73,10 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     std::shared_ptr<Matrix> form_4index(std::shared_ptr<const ParallelDF> o, const double a, const bool swap = false) const;
     std::shared_ptr<Matrix> form_aux_2index(std::shared_ptr<const ParallelDF> o, const double a) const;
 
+    void add_direct_product(std::shared_ptr<const VectorB> a, std::shared_ptr<const Matrix> b, const double fac)
+       { add_direct_product(std::vector<std::shared_ptr<const VectorB>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
+    void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
+
     void ax_plus_y(const double a, const std::shared_ptr<const ParallelDF> o);
     void scale(const double a);
     void symmetrize();

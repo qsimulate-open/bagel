@@ -119,7 +119,7 @@ void DimerJop::common_init(const int norbA, const int norbB) {
   * Package cross_mo1e integrals into a matrix                *
   ************************************************************/
 
-  auto cross_mo1e = make_shared<Matrix>(norbA, norbB);
+  auto cross_mo1e = make_shared<Matrix>(norbA, norbB, true);
 
   {
     double* modata = cross_mo1e->data();

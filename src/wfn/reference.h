@@ -51,7 +51,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Coeff> coeffB_;
     int noccA_, noccB_;
 
-    double energy_;
+    std::vector<double> energy_;
 
     std::shared_ptr<const Hcore> hcore_;
     VectorB eig_;
@@ -85,12 +85,22 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference() { }
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
-              const double en = 0.0,
+              const std::vector<double> en,
               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
               std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
               std::shared_ptr<const RDM<2>> rdm2_av = nullptr,
               std::shared_ptr<const CIWfn> ci = nullptr);
+
+    // if only given one energy
+    Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
+              const int nclo, const int nact, const int nvirt, const double en = 0.0,
+              std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
+              std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
+              std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
+              std::shared_ptr<const RDM<2>> rdm2_av = nullptr,
+              std::shared_ptr<const CIWfn> ci = nullptr) :
+      Reference(g, c, nclo, nact, nvirt, std::vector<double>(1, en), rdm1, rdm2, rdm1_av, rdm2_av, ci) { }
 
     // copy construct with optionally updating coeff
     Reference(const Reference& o, std::shared_ptr<const Coeff> c = nullptr) :
@@ -123,15 +133,15 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Reference> set_ractive(std::set<int> ras1, std::set<int> ras2, std::set<int> ras3) const;
 
     // used in SA-CASSCF
-    void set_nstate(const int i) { nstate_ = i; }
-    int nstate() const { return nstate_; }
+    int nstate() const { return energy_.size(); }
 
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
     std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
     std::shared_ptr<const Coeff> coeffB() const { return coeffB_; }
 
-    double energy() const { return energy_; }
+    double energy() const { return blas::average(energy_); }
+    double energy(const int i) const { return energy_[i]; }
 
     std::shared_ptr<const CIWfn> ciwfn() const { return ciwfn_; }
 
@@ -159,7 +169,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
     // 4RDM derivative is precontracted by the Fock matrix
-    std::tuple<std::shared_ptr<Dvec>,std::shared_ptr<Dvec>> rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
 
     // basis-set projection based on SVD
     virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>, const bool check_geom_change = true) const;

@@ -103,7 +103,6 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   if (coeff_zcas) {
     coeff = coeff_zcas;
   } else {
-    auto scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
 
     shared_ptr<const ZMatrix> hcore, overlap;
     if (!geom_->magnetism()) {
@@ -114,8 +113,14 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
       hcore = make_shared<RelHcore_London>(geom_);
     }
 
-    // then compute Kramers adapated coefficient matrices
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
+    shared_ptr<const RelCoeff_Striped> scoeff;
+    if (rr->kramers()) {
+      scoeff = rr->relcoeff_full();
+    } else {
+      // then compute Kramers adapated coefficient matrices
+      scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
+      scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
+    }
 
     // generate modified virtual orbitals, if requested
     const bool mvo = idata_->get<bool>("generate_mvo", false);

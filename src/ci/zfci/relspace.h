@@ -40,6 +40,7 @@ class RelSpace : public Space_base {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Space_base>(*this);
+      ar & nele_;
     }
 
   public:

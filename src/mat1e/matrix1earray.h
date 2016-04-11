@@ -66,8 +66,10 @@ class Matrix1eArray {
 
     constexpr static int Nblocks() { return N; }
 
-    void fill_upper() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper(); }
-    void fill_upper_conjg() { for (int i = 0 ; i < N; ++i) matrices_[i]->fill_upper_conjg(); }
+    void fill_upper()       { for (auto& i : matrices_) i->fill_upper(); }
+    void fill_upper_conjg() { for (auto& i : matrices_) i->fill_upper_conjg(); }
+    template<typename DataType>
+    void scale(const DataType a) { for (auto& i : matrices_) i->scale(a); }
 
     virtual void print(const std::string name = "", const int len = 10) const;
 

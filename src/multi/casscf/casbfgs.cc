@@ -29,6 +29,7 @@
 #include <src/util/math/davidson.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/util/math/hpw_diis.h>
+#include <src/prop/hyperfine.h>
 
 using namespace std;
 using namespace bagel;
@@ -120,6 +121,8 @@ void CASBFGS::compute() {
       // BFGS and DIIS should start at the same time
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
+      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
+      bfgs->initiate_trust_radius(trust_rad);
     }
     onebody.tick_print("One body operators");
 
@@ -197,6 +200,12 @@ void CASBFGS::compute() {
     fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
+  }
+
+  // calculate the HFCCs
+  if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+    HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
+    hfcc.compute();
   }
 }
 
