@@ -154,24 +154,60 @@ void CASPT2::CASPT2::solve() {
     }
     cout <<endl <<endl;
 
-    // lamda eqn (no shift):   T_M <omega' | H | M' > T_M' + <omega' | f - E0_M | Omega> lamdba = 0
-    // compute first term: (store as s2all_[i])
+    // lamda eqn :   T_M <omega' | H | M' > T_M' + <omega' | f - E0_M + Eshift | Omega> lamdba  - E_shift * (T_M)^2 * <proj|Psi_M>= 0
+    // compute first term and shift term (if used)
     print_iteration();
 
     // rall_[0] stores the result of summation over M'
-    // TODO target has to be read from the input
     const int target = info_->target();
     rall_[0]->zero();
     for (int istate = 0; istate != nstates_; ++istate) //K states
       rall_[0]->ax_plus_y(fmn(istate, target), sall_[istate]);
 
+    Matrix tmn(nstates_,target);
     for (int istate = 0; istate != nstates_; ++istate) { //K states
-      sall_[istate]->zero();
-      sall_[istate]->ax_plus_y(fmn(istate, target), rall_[0]);
-    }
+      if (info_->shift() != 0) {
+        sall_[istate]->zero();
+        sall_[istate]->ax_plus_y(fmn(istate, target), rall_[0]);
+      } else {
+        sall_[istate]->zero();
+        sall_[istate]->ax_plus_y(fmn(istate, target), rall_[0]);
 
-    // solve linear equation and store lambda in lall
-    lall_ = solve_linear(sall_, lall_);
+        // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
+        // n is a sharted pt Tensor
+        n = init_residual();
+        for (int jst = 0; jst != nstates_; ++jst) { // bra
+          for (int ist = 0; ist != nstates_; ++ist) { // ket
+            set_rdm(jst, ist);
+            t2 = t2all_[istate]->at(ist);
+            shared_ptr<Queue> normq = make_normq(true, jst == ist);
+            while (!normq->done())
+              normq->next_compute();
+
+            sall_[istate]->at(jst)->ax_plus_y(-2.0*info_->shift()*pow(fmn(istate,target),2.0), n);
+          }
+        }
+      }
+
+      // solve linear equation and store lambda in lall
+      lall_ = solve_linear(sall_, lall_);
+
+//debug norm for lambda
+n = init_residual();
+double norm3 = 0.0;
+for (int jst = 0; jst != nstates_; ++jst) { // bra
+  for (int ist = 0; ist != nstates_; ++ist) { // ket
+    set_rdm(jst, ist);
+    t2 = lall_[istate]->at(ist);
+    shared_ptr<Queue> normq = make_normq(true, jst == ist);
+    while (!normq->done())
+      normq->next_compute();
+    norm3 += dot_product_transpose(n, lall_[istate]->at(jst));
+  }
+}
+cout<<"norm in lambda lall: state: " << istate << "  " << setprecision(10) <<norm3 <<endl;
+
+    }
 
   }
 }
