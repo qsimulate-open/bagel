@@ -538,9 +538,9 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
   if (!dodf && density) {
     const double* density_data = density->data();
+    const int nshell = sqrt(schwarz.size());
 
     vector<double> max_density(size * size);
-    vector<double> subschwarz(size * size);
     for (int i = 0; i != size; ++i) {
       const int ioffset = new_offset[i];
       const int isize = basis[i]->nbasis();
@@ -559,8 +559,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
         max_density[ij] = denmax;
         max_density[ji] = denmax;
-        subschwarz[ij] = schwarz[shells[i]*size+shells[j]];
-        subschwarz[ji] = schwarz[shells[j]*size+shells[i]];
       }
     }
 
@@ -576,6 +574,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
         const int i01 = i0 * size + i1;
         const double density_01 = max_density[i01] * 4.0;
+        const double schwarz_i01 = schwarz[shells[i0]*nshell + shells[i1]];
 
         for (int i2 = 0; i2 != size; ++i2) {
           const shared_ptr<const Shell>  b2 = basis[i2];
@@ -599,12 +598,13 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 const double density_23 = max_density[i23] * 4.0;
                 const double density_03 = max_density[i0 * size + i3];
                 const double density_13 = max_density[i1 * size + i3];
+                const double schwarz_i23 = schwarz[shells[i2]*nshell + shells[i3]];
                 ++i3;
 
                 const double mulfactor = max(max(max(density_01, density_02),
                                                  max(density_12, density_23)),
                                                  max(density_03, density_13));
-                const double integral_bound = mulfactor * subschwarz[i01] * subschwarz[i23];
+                const double integral_bound = mulfactor * schwarz_i01 * schwarz_i23;
                 const bool skip_schwarz = integral_bound < schwarz_thresh;
                 if (skip_schwarz) continue;
 
