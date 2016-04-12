@@ -45,7 +45,8 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
     for (auto& j : *tmp)
       j = init_amplitude();
     t2all_.push_back(tmp);
-    lall_.push_back(tmp);
+    // TODO to be allocated in the gradient code
+    lall_.push_back(tmp->copy());
 
     auto tmp2 = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp2)
@@ -53,6 +54,8 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
     sall_.push_back(tmp2);
     rall_.push_back(tmp2->copy());
   }
+  energy_.resize(nstates_);
+  pt2energy_.resize(nstates_);
 }
 
 
@@ -71,15 +74,6 @@ void CASPT2::CASPT2::solve() {
       shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
       while(!sourceq->done())
         sourceq->next_compute();
-    }
-  }
-
-  // set t2 to zero
-  {
-    for (int i = 0; i != nstates_; ++i) {
-      t2all_[i]->zero();
-      e0_ = e0all_[i] - info_->shift();
-      update_amplitude(t2all_[i], sall_[i]);
     }
   }
 
@@ -115,21 +109,24 @@ void CASPT2::CASPT2::solve() {
   }
 
   // MS-CASPT2
+// TODO move heff_ to the header ////////
+shared_ptr<Matrix> heff_;
+/////////////////////////////////////////
   if (info_->do_ms() && nstates_ > 1) {
-    Matrix fmn(nstates_, nstates_);
+    heff_ = make_shared<Matrix>(nstates_, nstates_);
 
     for (int ist = 0; ist != nstates_; ++ist) {
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
-          fmn(ist, ist) = pt2energy_[ist];
+          (*heff_)(ist, ist) = pt2energy_[ist];
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
-          fmn(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
-                             + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
-                        + (*eref_)(jst, ist);
-          fmn(ist, jst) = fmn(jst, ist);
+          (*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
+                                  + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
+                             + (*eref_)(jst, ist);
+          (*heff_)(ist, jst) = (*heff_)(jst, ist);
         }
       }
     }
@@ -140,40 +137,51 @@ void CASPT2::CASPT2::solve() {
     for (int ist = 0; ist != nstates_; ++ist) {
       cout << endl << "      ";
       for (int jst = 0; jst != nstates_; ++jst)
-        cout << setw(20) << setprecision(10) << fmn(ist, jst);
+        cout << setw(20) << setprecision(10) << (*heff_)(ist, jst);
     }
     cout << endl << endl;
 
     VectorB eig(nstates_);
-    fmn.diagonalize(eig);
+    heff_->diagonalize(eig);
+
+    // print out the eigen vector
+    cout << endl;
+    cout << "    * MS-CASPT2 rotation matrix";
+    for (int ist = 0; ist != nstates_; ++ist) {
+      cout << endl << "      ";
+      for (int jst = 0; jst != nstates_; ++jst)
+        cout << setw(20) << setprecision(10) << (*heff_)(ist, jst);
+    }
+    cout << endl << endl;
 
     // energy printout
     for (int istate = 0; istate != nstates_; ++istate) {
       energy_[istate] = eig[istate];
       cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
     }
-    cout <<endl <<endl;
+    cout << endl << endl;
+  }
 
+  // TODO
+  // TODO move to the gradient code
+  if (info_->do_ms() && nstates_ > 1) {
     // lamda eqn :   T_M <omega' | H | M' > T_M' + <omega' | f - E0_M + Eshift | Omega> lamdba  - E_shift * (T_M)^2 * <proj|Psi_M>= 0
     // compute first term and shift term (if used)
     print_iteration();
 
     // rall_[0] stores the result of summation over M'
-    const int target = info_->target();
+// TODO
+const int target = 0;
+//  const int target = info_->target();
     rall_[0]->zero();
     for (int istate = 0; istate != nstates_; ++istate) //K states
-      rall_[0]->ax_plus_y(fmn(istate, target), sall_[istate]);
+      rall_[0]->ax_plus_y((*heff_)(istate, target), sall_[istate]);
 
     for (int istate = 0; istate != nstates_; ++istate) { //K states
-      if (info_->shift() != 0) {
-        sall_[istate]->zero();
-        sall_[istate]->ax_plus_y(fmn(istate, target), rall_[0]);
-      } else {
-        sall_[istate]->zero();
-        sall_[istate]->ax_plus_y(fmn(istate, target), rall_[0]);
-
+      sall_[istate]->zero();
+      sall_[istate]->ax_plus_y((*heff_)(istate, target), rall_[0]);
+      if (info_->shift() != 0.0) {
         // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
-        // n is a sharted pt Tensor
         n = init_residual();
         for (int jst = 0; jst != nstates_; ++jst) { // bra
           for (int ist = 0; ist != nstates_; ++ist) { // ket
@@ -183,31 +191,14 @@ void CASPT2::CASPT2::solve() {
             while (!normq->done())
               normq->next_compute();
 
-            sall_[istate]->at(jst)->ax_plus_y(-2.0*info_->shift()*pow(fmn(istate,target),2.0), n);
+            sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * pow((*heff_)(istate, target), 2.0), n);
           }
         }
       }
-
-      // solve linear equation and store lambda in lall
-      lall_ = solve_linear(sall_, lall_);
-
-//debug norm for lambda
-n = init_residual();
-double norm3 = 0.0;
-for (int jst = 0; jst != nstates_; ++jst) { // bra
-  for (int ist = 0; ist != nstates_; ++ist) { // ket
-    set_rdm(jst, ist);
-    t2 = lall_[istate]->at(ist);
-    shared_ptr<Queue> normq = make_normq(true, jst == ist);
-    while (!normq->done())
-      normq->next_compute();
-    norm3 += dot_product_transpose(n, lall_[istate]->at(jst));
-  }
-}
-cout<<"norm in lambda lall: state: " << istate << "  " << setprecision(10) <<norm3 <<endl;
-
     }
 
+    // solve linear equation and store lambda in lall
+    lall_ = solve_linear(sall_, lall_);
   }
 }
 
@@ -218,7 +209,13 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   for (int i = 0; i != nstates_; ++i)
     solvers[i] = make_shared<LinearRM<MultiTensor>>(30, s[i]);
 
-  energy_.resize(nstates_);
+  // set t2 to guess vectors
+  for (int i = 0; i != nstates_; ++i) {
+    t[i]->zero();
+    e0_ = e0all_[i] - info_->shift();
+    update_amplitude(t[i], s[i]);
+  }
+
   vector<double> error(nstates_);
   Timer mtimer;
   int iter = 0;
@@ -276,7 +273,6 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break;
     if (nstates_ > 1) cout << endl;
   }
-  pt2energy_.resize(nstates_);
   print_iteration(iter == info_->maxiter());
   return t;
 }
