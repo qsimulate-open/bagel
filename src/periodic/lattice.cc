@@ -382,7 +382,7 @@ shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all bl
 
 
 
-shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const int ws, const int extent, const double beta, const int height, const bool doewald) const {
+shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, tuple<int, int, double, int, bool, int> fmmp) const {
 
   // rectangular cells for now
   cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
@@ -408,9 +408,9 @@ shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const
 
   shared_ptr<const PFMM> out;
 
-  auto scell = make_shared<const SimulationCell>(primitive_cell_, lmax);
+  auto scell = make_shared<const SimulationCell>(primitive_cell_, get<0>(fmmp));
   time.tick_print("  Construct a supercell for crystal near-field");
-  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, beta, thresh_, height, doewald);
+  out = make_shared<const PFMM>(scell, fmmp, dodf);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 
   return out;

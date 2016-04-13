@@ -84,7 +84,7 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   auto scell = make_shared<const SimulationCell>(newgeom, primvecs);
   cout << "*** Simulation Cell ***" << endl;
   scell->print();
-  PFMM test(scell, true, fmm_lmax_, fmm_ws_, fmm_extent_, fmm_beta_);
+  PFMM test(scell, fmm_param_, true);
 #if 0
   for (int l = 0; l < test.max_rank(); ++l) {
     for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m

@@ -88,8 +88,7 @@ class PFMM {
     std::vector<std::shared_ptr<const ZMatrix>> compute_multipoles(std::shared_ptr<const Geometry>, std::shared_ptr<const Geometry>) const;
 
   public:
-    PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
-         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, const int height = 21, const bool doewald = false, std::shared_ptr<StackMem> stack = nullptr);
+    PFMM(std::shared_ptr<const SimulationCell>, const std::tuple<int, int, double, int, bool, int> fmm_param, const bool dodf = true, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 
     static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {
