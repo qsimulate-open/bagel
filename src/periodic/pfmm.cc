@@ -36,8 +36,9 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double sbeta, const double thresh, shared_ptr<StackMem> stack)
-  : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), beta_(beta__ * sbeta), thresh_(thresh) {
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double sbeta, const double thresh,
+           const int h, shared_ptr<StackMem> stack)
+  : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), beta_(beta__ * sbeta), thresh_(thresh), height_(h) {
 
 #if 0
   if (stack == nullptr) {
@@ -58,7 +59,6 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   max_rank_ = (lmax_ * 2) + 1;
 
   // should be provided from input
-  max_height_ = 21; // tree construction 21 is absolute max
   do_contract_ = true;
 
   primvecs_.resize(3);
@@ -624,7 +624,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   }
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
-  Tree fmm_tree(supergeom, max_height_, do_contract_, thresh_);
+  Tree fmm_tree(supergeom, height_, do_contract_, thresh_);
   time.tick_print("  Construct tree");
   const string auxfile = scell_->geom()->auxfile();
   shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, auxfile, schwarz, schwarz_thresh);

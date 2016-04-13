@@ -38,7 +38,7 @@ class PSCF_base : public Method {
   protected:
     bool dodf_;
     bool dofmm_;
-    int fmm_lmax_, fmm_ws_, fmm_extent_;
+    int fmm_lmax_, fmm_ws_, fmm_extent_, fmm_height_;
     double fmm_beta_;
 
     std::shared_ptr<const Lattice> lattice_;

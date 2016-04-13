@@ -45,6 +45,7 @@ class PFMM {
     int extent_sum_;
     double beta_;
     double thresh_;
+    int height_;
     int ndim_;
     int msize_, osize_; // #multipoles in M and O
     std::vector<std::complex<double>> mlm_;
@@ -86,7 +87,7 @@ class PFMM {
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
-         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, std::shared_ptr<StackMem> stack = nullptr);
+         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, const int height = 21, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 
     static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {

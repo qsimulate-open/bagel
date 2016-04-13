@@ -37,6 +37,7 @@ class Lattice {
     std::shared_ptr<const Geometry> primitive_cell_;
     int ndim_;
     int extent_;
+    int fmm_height_;
     int num_lattice_vectors_;
     int num_lattice_pts_;
     // real lattice vectors g
@@ -76,7 +77,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0);
+    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0, const int height = 21);
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }

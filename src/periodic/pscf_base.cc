@@ -45,7 +45,8 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
     fmm_ws_     = idata->get<int>("ws", 2);
     fmm_extent_ = idata->get<int>("extent", 10);
     fmm_beta_   = idata->get<double>("beta", 1.0);
-    lattice_ = make_shared<const Lattice>(geom, fmm_ws_);
+    fmm_height_ = idata->get<int>("height", 21);
+    lattice_ = make_shared<const Lattice>(geom, fmm_ws_, fmm_height_);
   } else {
     lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
   }

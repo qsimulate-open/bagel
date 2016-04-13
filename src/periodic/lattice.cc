@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), extent_(n) {
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n, const int h) : primitive_cell_(g), extent_(n), fmm_height_(h) {
   init();
 
 #if 0
@@ -410,7 +410,7 @@ shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const
 
   auto scell = make_shared<const SimulationCell>(primitive_cell_, lmax);
   time.tick_print("  Construct a supercell for crystal near-field");
-  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, beta, thresh_);
+  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, beta, thresh_, fmm_height_);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 
   return out;
