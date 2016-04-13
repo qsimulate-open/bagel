@@ -180,10 +180,10 @@ void PSCF::compute() {
       for (int j = 0; j != blocksize; ++j)
         for (int k = 0; k != blocksize; ++k)
           charge += ((*koverlap_)(i)->element(j, k) * (*kdensity)(i)->element(j, k)).real();
-      cout << "SP = " << setprecision(1) << charge << endl;
+//      cout << "SP = " << setprecision(1) << charge << endl;
     }
 
-    cout << "   #ele = " << lattice_->nele();
+//    cout << "   #ele = " << lattice_->nele();
     //cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
     energy_ = energy.real() + lattice_->nuclear_repulsion();////////// + fock->correction();
 
