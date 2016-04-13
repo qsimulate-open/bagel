@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int n, const int h) : primitive_cell_(g), extent_(n), fmm_height_(h) {
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), extent_(n) {
   init();
 
 #if 0
@@ -382,7 +382,7 @@ shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all bl
 
 
 
-shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const int ws, const int extent, const double beta) const {
+shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const int ws, const int extent, const double beta, const int height, const bool doewald) const {
 
   // rectangular cells for now
   cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
@@ -410,7 +410,7 @@ shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, const int lmax, const
 
   auto scell = make_shared<const SimulationCell>(primitive_cell_, lmax);
   time.tick_print("  Construct a supercell for crystal near-field");
-  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, beta, thresh_, fmm_height_);
+  out = make_shared<const PFMM>(scell, dodf, lmax, ws, extent, beta, thresh_, height, doewald);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 
   return out;

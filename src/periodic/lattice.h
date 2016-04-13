@@ -37,7 +37,6 @@ class Lattice {
     std::shared_ptr<const Geometry> primitive_cell_;
     int ndim_;
     int extent_;
-    int fmm_height_;
     int num_lattice_vectors_;
     int num_lattice_pts_;
     // real lattice vectors g
@@ -77,7 +76,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0, const int height = 21);
+    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0);
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }
@@ -115,7 +114,7 @@ class Lattice {
     // density fitting
     std::shared_ptr<const PDFDist> form_df() const;
     // PFMM
-    std::shared_ptr<const PFMM> form_pfmm(const bool dodf, const int lmax, const int ws, const int extent, const double beta) const;
+    std::shared_ptr<const PFMM> form_pfmm(const bool dodf, const int lmax, const int ws, const int extent, const double beta, const int height, const bool doewald) const;
 };
 
 }

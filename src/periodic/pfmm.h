@@ -45,7 +45,6 @@ class PFMM {
     int extent_sum_;
     double beta_;
     double thresh_;
-    int height_;
     int ndim_;
     int msize_, osize_; // #multipoles in M and O
     std::vector<std::complex<double>> mlm_;
@@ -59,8 +58,11 @@ class PFMM {
     double *roots_, *weights_;
 
     // near-field FMM
-    int max_height_;
+    int height_;
     bool do_contract_;
+
+    // far-field FMM
+    bool doewald_;
 
     double dot(std::array<double, 3> b, std::array<double, 3> c) { return b[0]*c[0]+b[1]*c[1]+b[2]*c[2]; }
     std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0) {
@@ -87,7 +89,7 @@ class PFMM {
 
   public:
     PFMM(std::shared_ptr<const SimulationCell>, const bool dodf = true, const int lmax = 10, const int ws = 2, const int extent = 10,
-         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, const int height = 21, std::shared_ptr<StackMem> stack = nullptr);
+         const double beta = 1.0, const double thresh = PRIM_SCREEN_THRESH, const int height = 21, const bool doewald = false, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 
     static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {

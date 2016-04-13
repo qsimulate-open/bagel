@@ -40,6 +40,7 @@ class PSCF_base : public Method {
     bool dofmm_;
     int fmm_lmax_, fmm_ws_, fmm_extent_, fmm_height_;
     double fmm_beta_;
+    bool doewald_;
 
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> ktildex_;

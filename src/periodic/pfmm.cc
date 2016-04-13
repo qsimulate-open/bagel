@@ -37,18 +37,18 @@ const static Gamma_scaled sgamma;
 const static double beta__ = sqrt(pi__); // convergence parameter
 
 PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lmax, const int ws, const int extent, const double sbeta, const double thresh,
-           const int h, shared_ptr<StackMem> stack)
+           const int h, const bool ewald, shared_ptr<StackMem> stack)
   : scell_(scell), dodf_(dodf), lmax_(lmax), ws_(ws), extent_sum_(extent), beta_(beta__ * sbeta), thresh_(thresh), height_(h) {
 
-#if 0
-  if (stack == nullptr) {
-    stack_ = resources__->get();
-    allocated_here_ = true;
-  } else {
-    stack_ = stack;
-    allocated_here_ = false;
+  if (ewald) {
+    if (stack == nullptr) {
+      stack_ = resources__->get();
+      allocated_here_ = true;
+    } else {
+      stack_ = stack;
+      allocated_here_ = false;
+    }
   }
-#endif
 
   ndim_ = scell->ndim();
   if (ndim_ > 3 || ndim_ < 1)
@@ -67,13 +67,14 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const bool dodf, const int lm
   for (int i = ndim_; i != 3; ++i)
     primvecs_[i] = {{0.0, 0.0, 0.0}};
 
-  //compute_Mlm_slow();
-  compute_Mlm_direct();
-  //compute_Mlm();
-#if 0
-  stack_->release(size_allocated_, buff_);
-  resources__->release(stack_);
-#endif
+  if (ewald) {
+    compute_Mlm();
+    stack_->release(size_allocated_, buff_);
+    resources__->release(stack_);
+  } else {
+    compute_Mlm_direct();
+    //compute_Mlm_slow();
+  }
 }
 
 
