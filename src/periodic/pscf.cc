@@ -164,27 +164,20 @@ void PSCF::compute() {
     }
 
     complex<double> energy;
-    double charge = 0.0;
     for (int i = 0; i != lattice_->num_lattice_vectors(); ++i) {
       energy += 0.5 * ((*((*fock)(i)) + *((*hcore_)(i))) * *((*pdensity)(i))).trace();
       //assert(energy.imag() < 1e-8);
       if (energy.imag() >= 1e-8)
         cout << "*** Warning: energy.imag() >= 1e-8 " << setprecision(9) << energy.imag() << endl;
-      for (int j = 0; j != blocksize; ++j)
-        for (int k = 0; k != blocksize; ++k)
-          charge += ((*overlap_)(lattice_->num_lattice_vectors() - i - 1)->element(j, k) * (*pdensity)(i)->element(j, k)).real();
     }
-    cout << "*** sr = " << setprecision(1) << charge << endl;
     for (int i = 0; i != nkblock; ++i) {
       double charge = 0.0;
       for (int j = 0; j != blocksize; ++j)
         for (int k = 0; k != blocksize; ++k)
           charge += ((*koverlap_)(i)->element(j, k) * (*kdensity)(i)->element(j, k)).real();
-//      cout << "SP = " << setprecision(1) << charge << endl;
+      if (abs(charge - geom_->nele()) > 10e-10)
+        cout << "*** Warning: charge conservation violated: kblock " << i << "  " << setprecision(16) << abs(charge - geom_->nele()) << endl;
     }
-
-//    cout << "   #ele = " << lattice_->nele();
-    //cout << "SP = " << setprecision(1) << charge << "       #ele = " << lattice_->nele();
     energy_ = energy.real() + lattice_->nuclear_repulsion();////////// + fock->correction();
 
     if(dofmm_)

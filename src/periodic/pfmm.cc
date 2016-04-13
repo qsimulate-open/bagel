@@ -587,7 +587,6 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   vector<double> schwarz;
   if (!dodf_) {
     schwarz = supergeom->schwarz();
-    cout << schwarz.size() << endl;
     time.tick_print("  Schwarz matrix");
   }
 
