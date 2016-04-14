@@ -120,8 +120,6 @@ void Node::compute_extent(const double thresh) {
     for (auto& atom : body->atoms())
       shells.insert(shells.end(), atom->shells().begin(), atom->shells().end());
 
-  const array<double, 3> centre = position_; // use charge centre for now
-
   extent_ = 0.0;
   for (auto& ish : shells)
     for (auto& jsh : shells) {
@@ -134,16 +132,17 @@ void Node::compute_extent(const double thresh) {
       const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
       const double lnthresh = log(thresh);
 
+      array<double, 3> rvec = compute_centre(array<shared_ptr<const Shell>, 2>{{ish, jsh}});;
       for (auto& expi0 : exp0) {
         for (auto& expi1 : exp1) {
           const double cxp_inv = 1.0 / (expi0 + expi1);
           const double expi01 = expi0 * expi1;
-          const double lda_kl = sqrt((- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
+          const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
 
           array<double, 3> tmp;
-          tmp[0] = (ish->position(0) * expi0 + jsh->position(0) * expi1) * cxp_inv - centre[0];
-          tmp[1] = (ish->position(1) * expi0 + jsh->position(1) * expi1) * cxp_inv - centre[1];
-          tmp[2] = (ish->position(2) * expi0 + jsh->position(2) * expi1) * cxp_inv - centre[2];
+          tmp[0] = (ish->position(0) * expi0 + jsh->position(0) * expi1) * cxp_inv - rvec[0];
+          tmp[1] = (ish->position(1) * expi0 + jsh->position(1) * expi1) * cxp_inv - rvec[1];
+          tmp[2] = (ish->position(2) * expi0 + jsh->position(2) * expi1) * cxp_inv - rvec[2];
 
           const double extent0 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
           if (extent0 > extent_) extent_ = extent0;
