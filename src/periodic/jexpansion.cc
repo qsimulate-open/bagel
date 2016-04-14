@@ -161,11 +161,7 @@ shared_ptr<const ZMatrix> JExpansion::compute(shared_ptr<const Matrix> density) 
   ZMatrix out(dimb1, dimb0);
   map_lm_index();
   for (int i = 0; i != num_multipoles_; ++i) {
-    complex<double> contract = 0.0;
-    for (int j = 0; j != dimb2; ++j)
-      for (int k = 0; k != dimb3; ++k)
-        contract += lmoments[i]->element(k, j) * density->element(k, j);
-
+    const double contract = lmoments[i]->get_real_part()->dot_product(density);
     out += pow(-1.0, lm_map_[i].first) * contract * *multipoles0[i];
   }
   out.print("Multipole expansion approximation");

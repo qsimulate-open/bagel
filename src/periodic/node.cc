@@ -364,11 +364,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       }
 
       for (int i = 0; i != nmultipole; ++i) {
-        complex<double> contract = 0.0;
-        for (int j = 0; j != dimb; ++j)
-          for (int k = 0; k != dimb; ++k)
-            contract += lmoments[i]->element(k, j) * subden.element(k, j);
-
+        const double contract = lmoments[i]->get_real_part()->dot_product(subden);
         *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
       }
     }

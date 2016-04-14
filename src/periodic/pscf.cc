@@ -171,12 +171,10 @@ void PSCF::compute() {
         cout << "*** Warning: energy.imag() >= 1e-8 " << setprecision(9) << energy.imag() << endl;
     }
     for (int i = 0; i != nkblock; ++i) {
-      double charge = 0.0;
-      for (int j = 0; j != blocksize; ++j)
-        for (int k = 0; k != blocksize; ++k)
-          charge += ((*koverlap_)(i)->element(j, k) * (*kdensity)(i)->element(j, k)).real();
-      if (abs(charge - geom_->nele()) > 10e-10)
-        cout << "*** Warning: charge conservation violated: kblock " << i << "  " << setprecision(16) << abs(charge - geom_->nele()) << endl;
+      const complex<double> charge = (*koverlap_)(i)->dot_product(*(*kdensity)(i));
+      const double err = abs(charge.real() - geom_->nele());
+      if (err > 10e-10)
+        cout << "*** Warning: charge conservation violated: kblock " << i << "  " << scientific << setprecision(16) << err << endl;
     }
     energy_ = energy.real() + lattice_->nuclear_repulsion();////////// + fock->correction();
 
