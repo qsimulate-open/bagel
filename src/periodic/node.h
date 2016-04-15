@@ -69,6 +69,7 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> multipoles_;
     std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;
+    std::shared_ptr<const ZMatrix> exchange_;
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);

@@ -24,6 +24,7 @@
 //
 
 
+#include <src/util/f77.h>
 #include <src/periodic/node.h>
 #include <src/periodic/multipolebatch.h>
 #include <src/integral/os/overlapbatch.h>
@@ -314,7 +315,8 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
       l_map[cnt] = l;
 
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto lrs = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto lrt = make_shared<ZMatrix>(nbasis_, nbasis_);
 
   if (density) {
     for (auto& distant_node : interaction_list_) { // M2L
@@ -325,10 +327,10 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       LocalExpansion lx(r12, distant_node->multipoles(), lmax);
       vector<shared_ptr<const ZMatrix>> lmoments = lx.compute_local_moments();
 
-      // need to get a sub-density matrix corresponding to distant_node
+      // get sub-density matrix D_tu (tu=far)
       const int dimb = distant_node->nbasis();
-      Matrix subden(dimb, dimb);
-      subden.zero();
+      Matrix den_tu(dimb, dimb);
+      den_tu.zero();
       size_t ob0 = 0;
       for (auto& body0 : distant_node->bodies()) {
         size_t iat0 = 0;
@@ -350,7 +352,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
                   ++ish1;
 
                   shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-                  subden.copy_block(ob1, ob0, size1, size0, tmp);
+                  den_tu.copy_block(ob1, ob0, size1, size0, tmp);
                   ob1 += size1;
                 }
                 ++iat1;
@@ -363,14 +365,62 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       }
 
       for (int i = 0; i != nmultipole; ++i) {
-        const double contract = lmoments[i]->get_real_part()->dot_product(subden);
-        *out += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
+        const double contract = lmoments[i]->get_real_part()->dot_product(den_tu);
+        *lrs += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
       }
+
+      // get sub-density matrix D_su (s=this u=far)
+      const int dim0 = nbasis_;
+      Matrix den_su(dim0, dimb);
+      ob0 = 0;
+      for (auto& body0 : distant_node->bodies()) {
+        size_t iat0 = 0;
+        for (auto& atom0 : body0->atoms()) {
+          size_t ish0 = 0;
+          for (auto& b0 : atom0->shells()) {
+            const int offset0 = offsets[body0->ishell(iat0) + ish0];
+            const size_t size0 = b0->nbasis();
+            ++ish0;
+
+            size_t ob1 = 0;
+            for (auto& body1 : bodies_) {
+              size_t iat1 = 0;
+              for (auto& atom1 : body1->atoms()) {
+                size_t ish1 = 0;
+                for (auto& b1 : atom1->shells()) {
+                  const int offset1 = offsets[body1->ishell(iat1) + ish1];
+                  const size_t size1 = b1->nbasis();
+                  ++ish1;
+
+                  shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
+                  den_su.copy_block(ob1, ob0, size1, size0, tmp);
+                  ob1 += size1;
+                }
+                ++iat1;
+              }
+            }
+            ob0 += size0;
+          }
+          ++iat0;
+        }
+      }
+
+      auto zden_su = make_shared<const ZMatrix>(*den_su, 1.0);
+      auto tmp_ts = make_shared<const ZMatrix>(nbasis_, dimb);
+      auto tmp_rt = make_shared<const ZMatrix>(nbasis_, dimb);
+      for (int i = 0; i != nmultipole; ++i) {
+        zgemm3m_("N", "N", dim0, dimb, dimb, 1.0, zden_su->data(), dim0, lmoments[i]->data(), dimb, 0.0, tmp_ts->data(), dim0);
+        zgemm3m_("N", "N", dim0, dimb, dim0, 1.0, multipoles_[i]->data(), dim0, tmp_ts->data(), dim0, 0.0, tmp_rt->data(), dim0);
+        const int sign = pow(-1.0, l_map[i]);
+        blas::ax_plus_y_n(sign, tmp_rt->data(), lrt->size(), lrt->data());
+      }
+
     }
   }
 
   shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax);
-  local_expansion_ = make_shared<const ZMatrix>(*out + *nai);
+  local_expansion_ = make_shared<const ZMatrix>(*lrs + *nai);
+  exchange_ = make_shared<const ZMatrix>(*lrt);
 }
 
 
