@@ -260,8 +260,9 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
       if (u++ % mpi__->size() == mpi__->rank()) {
         tasks.emplace_back(
           [this, i, &out, &density, lmax, offsets, schwarz, schwarz_thresh] () {
-            nodes_[i]->compute_local_expansions(density, lmax, offsets);
+//            nodes_[i]->compute_local_expansions(density, lmax, offsets);
             if (nodes_[i]->is_leaf()) {
+              nodes_[i]->compute_local_expansions(density, lmax, offsets); //////// TMP
               shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, "", schwarz, schwarz_thresh);
               *out += *tmp;
             }
@@ -273,8 +274,9 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   } else {
     for (int i = 1; i != nnode_; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
-        nodes_[i]->compute_local_expansions(density, lmax, offsets);
+//        nodes_[i]->compute_local_expansions(density, lmax, offsets);
         if (nodes_[i]->is_leaf()) {
+          nodes_[i]->compute_local_expansions(density, lmax, offsets);   ///////// TMP
           shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true, auxfile);
           *out += *tmp;
         }
