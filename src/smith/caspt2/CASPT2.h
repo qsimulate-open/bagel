@@ -38,17 +38,24 @@
 
 namespace bagel {
 namespace SMITH {
+
 namespace SPCASPT2 { class SPCASPT2; }
+namespace MSCASPT2 { class MSCASPT2; }
 
 namespace CASPT2{
 
 class CASPT2 : public SpinFreeMethod<double> {
   friend class SPCASPT2::SPCASPT2;
+  friend class MSCASPT2::MSCASPT2;
   protected:
+    // these are tensors that are used internally
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
     std::shared_ptr<Tensor> n;
+    std::shared_ptr<Tensor> den1;
+    std::shared_ptr<Tensor> den2;
+    std::shared_ptr<Tensor> Den1;
 
     int nstates_;
     std::vector<double> err_;
@@ -60,9 +67,10 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
-    std::shared_ptr<Tensor> den1;
-    std::shared_ptr<Tensor> den2;
-    std::shared_ptr<Tensor> Den1;
+    std::shared_ptr<const Matrix> den1_;
+    std::shared_ptr<const Matrix> den2_;
+    std::shared_ptr<const Tensor> Den1_;
+
     double correlated_norm_;
     std::shared_ptr<Tensor> deci;
     std::shared_ptr<Civec> ci_deriv_;
@@ -170,9 +178,9 @@ class CASPT2 : public SpinFreeMethod<double> {
     void solve();
     void solve_deriv();
 
-    std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
-    std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
-    std::shared_ptr<const Tensor> rdm21() const { return Den1; }
+    std::shared_ptr<const Matrix> rdm11() const { return den1_; }
+    std::shared_ptr<const Matrix> rdm12() const { return den2_; }
+    std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
 
     double correlated_norm() const { return correlated_norm_; }
 

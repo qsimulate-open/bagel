@@ -30,6 +30,7 @@
 #include <iomanip>
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/util/math/linearRM.h>
+#include <src/smith/caspt2/MSCASPT2.h>
 
 using namespace std;
 using namespace bagel;
@@ -81,7 +82,7 @@ void CASPT2::CASPT2::solve() {
   cout << endl;
 
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0) {
+    if (info_->shift() == 0.0) {
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
       cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
     } else {
@@ -273,40 +274,50 @@ void CASPT2::CASPT2::solve_deriv() {
     lall_ = solve_linear(sall_, lall_);
   }
 
-  assert(nstates_ == 1);
-  t2 = t2all_[0]->at(0);
-
   Timer timer;
-  {
+  if (lall_.empty()) {
+    t2 = t2all_[0]->at(0);
+    {
+      den2 = h1_->clone();
+      shared_ptr<Queue> dens2 = make_densityq();
+      while (!dens2->done())
+        dens2->next_compute();
+      den2_ = den2->matrix();
+      den2.reset();
+    } {
+      den1 = h1_->clone();
+      shared_ptr<Queue> dens1 = make_density1q();
+      while (!dens1->done())
+        dens1->next_compute();
+      den1_ = den1->matrix();
+      den1.reset();
+    } {
+      Den1 = init_residual();
+      shared_ptr<Queue> Dens1 = make_density2q();
+      while (!Dens1->done())
+        Dens1->next_compute();
+      Den1_ = Den1;
+    }
+  } else {
+    // in case when CASPT2 is variational...
+    MSCASPT2::MSCASPT2 ms(*this);
+    ms.solve_deriv();
+    den1_ = ms.rdm11();
+    den2_ = ms.rdm12();
+    Den1_ = ms.rdm21();
+  }
+  timer.tick_print("Correlated density matrix evaluation");
+
+  if (nstates_ == 1) {
     n = init_residual();
     shared_ptr<Queue> normq = make_normq();
     while (!normq->done())
       normq->next_compute();
     correlated_norm_ = dot_product_transpose(n, t2);
+  } else {
+    assert(false);
   }
   timer.tick_print("T1 norm evaluation");
-
-  {
-    den2 = h1_->clone();
-    shared_ptr<Queue> dens2 = make_densityq();
-    while (!dens2->done())
-      dens2->next_compute();
-  }
-
-  {
-    den1 = h1_->clone();
-    shared_ptr<Queue> dens1 = make_density1q();
-    while (!dens1->done())
-      dens1->next_compute();
-  }
-
-  {
-    Den1 = init_residual();
-    shared_ptr<Queue> Dens1 = make_density2q();
-    while (!Dens1->done())
-      Dens1->next_compute();
-  }
-  timer.tick_print("Correlated density matrix evaluation");
 
   // rdm ci derivatives. Only for gradient computations
   // TODO this is only valid for single-state CASPT2

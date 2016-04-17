@@ -19,6 +19,11 @@ caspt2/SPCASPT2_gen2.cc caspt2/SPCASPT2_gen3.cc caspt2/SPCASPT2_gen4.cc caspt2/S
 caspt2/SPCASPT2_tasks1.cc caspt2/SPCASPT2_tasks2.cc caspt2/SPCASPT2_tasks3.cc caspt2/SPCASPT2_tasks4.cc caspt2/SPCASPT2_tasks5.cc \
 caspt2/SPCASPT2_tasks6.cc \
 \
+caspt2/MSCASPT2.cc caspt2/MSCASPT2_gamma.cc caspt2/MSCASPT2_densityq.cc caspt2/MSCASPT2_density1q.cc caspt2/MSCASPT2_density2q.cc caspt2/MSCASPT2_gen1.cc \
+caspt2/MSCASPT2_gen2.cc caspt2/MSCASPT2_gen3.cc caspt2/MSCASPT2_gen4.cc caspt2/MSCASPT2_gen5.cc caspt2/MSCASPT2_gen6.cc \
+caspt2/MSCASPT2_tasks1.cc caspt2/MSCASPT2_tasks2.cc caspt2/MSCASPT2_tasks3.cc caspt2/MSCASPT2_tasks4.cc caspt2/MSCASPT2_tasks5.cc \
+caspt2/MSCASPT2_tasks6.cc \
+\
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_normq.cc \
 mrci/MRCI_residualq1.cc mrci/MRCI_residualq2.cc mrci/MRCI_residualq3.cc mrci/MRCI_residualq4.cc mrci/MRCI_residualq5.cc \
 mrci/MRCI_residualq6.cc mrci/MRCI_residualq7.cc mrci/MRCI_residualq8.cc mrci/MRCI_residualq9.cc \
