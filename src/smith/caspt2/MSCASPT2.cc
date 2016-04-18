@@ -41,6 +41,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rvirt_   = cas.rvirt_;
   ractive_ = cas.ractive_;
   rclosed_ = cas.rclosed_;
+  heff_    = cas.heff_;
 
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
@@ -57,7 +58,75 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
 
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
-  // TODO implement this!
+  // first-order energy from the energy expression
+  // TODO these can be computed more efficiently using mixed states
+  const int nstates = info_->ciwfn()->nstates();
+  const int target = info_->target();
+  {
+    shared_ptr<Tensor> result = den1->clone();
+    shared_ptr<Tensor> result2 = Den1->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheff = (*heff_)(jst, target);
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          l2 = t2all_[istate]->at(ist); // careful
+          shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+          result->ax_plus_y((*heff_)(istate, target)*jheff, den1);
+
+          shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
+          while (!queue2->done())
+            queue2->next_compute();
+          result2->ax_plus_y((*heff_)(istate, target)*jheff, Den1);
+        }
+      }
+    }
+    den1_ = result->matrix();
+    Den1_ = result2;
+  }
+  // den1_->print(); // looks correct to me
+  // second order contribution
+  {
+    shared_ptr<Tensor> result = den2->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          l2 = lall_[istate]->at(ist);
+          t2 = t2all_[istate]->at(jst);
+          shared_ptr<Queue> queue = make_densityq(true, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+          result->ax_plus_y(1.0, den2);
+        }
+      }
+    }
+    den2_ = result->matrix();
+  }
+  {
+    shared_ptr<Tensor> result = den1->clone();
+    shared_ptr<Tensor> result2 = Den1->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+
+        l2 = lall_[jst]->at(ist);
+        shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+        while (!queue->done())
+          queue->next_compute();
+        result->ax_plus_y(1.0, den1);
+
+        shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
+        while (!queue2->done())
+          queue2->next_compute();
+        result2->ax_plus_y(1.0, Den1);
+      }
+    }
+    den1_->ax_plus_y(1.0, result->matrix());
+    Den1_->ax_plus_y(1.0, result2);
+  }
 }
 
 #endif

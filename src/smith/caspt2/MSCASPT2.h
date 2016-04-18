@@ -43,6 +43,8 @@ class MSCASPT2 {
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
 
+    std::shared_ptr<Matrix> heff_;
+
     // tensors used by SMITH internally
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> l2;
@@ -55,6 +57,11 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+
+    // storage for output
+    std::shared_ptr<Matrix> den1_;
+    std::shared_ptr<Matrix> den2_;
+    std::shared_ptr<Tensor> Den1_;
 
     // passed from CASPT2
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
@@ -116,9 +123,9 @@ class MSCASPT2 {
 
     void solve_deriv();
 
-    std::shared_ptr<const Matrix> rdm11() const { return den1->matrix(); }
-    std::shared_ptr<const Matrix> rdm12() const { return den2->matrix(); }
-    std::shared_ptr<const Tensor> rdm21() const { return Den1; }
+    std::shared_ptr<const Matrix> rdm11() const { return den1_; }
+    std::shared_ptr<const Matrix> rdm12() const { return den2_; }
+    std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
 };
 
 }
