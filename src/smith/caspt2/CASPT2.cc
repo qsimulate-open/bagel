@@ -241,6 +241,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 
 
 void CASPT2::CASPT2::solve_deriv() {
+  Timer timer;
   // First solve lambda equation if this is MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
     // allocate lall_
@@ -276,9 +277,9 @@ void CASPT2::CASPT2::solve_deriv() {
     }
     // solve linear equation and store lambda in lall
     lall_ = solve_linear(sall_, lall_);
+    timer.tick_print("CASPT2 lambda equation");
   }
 
-  Timer timer;
   if (lall_.empty()) {
     t2 = t2all_[0]->at(0);
     {
