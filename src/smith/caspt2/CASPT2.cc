@@ -1,4 +1,4 @@
-////
+//
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: CASPT2.cc
 // Copyright (C) 2014 Toru Shiozaki
@@ -168,16 +168,20 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
     solvers[i] = make_shared<LinearRM<MultiTensor>>(30, s[i]);
 
   // set t2 to guess vectors
+  vector<bool> conv(nstates_, false);
   for (int i = 0; i != nstates_; ++i) {
-    t[i]->zero();
     e0_ = e0all_[i] - info_->shift();
-    update_amplitude(t[i], s[i]);
+    energy_[i] = 0.0;
+    t[i]->zero();
+    if (s[i]->rms() < 1.0e-15)
+      conv[i] = true;
+    else
+      update_amplitude(t[i], s[i]);
   }
 
   vector<double> error(nstates_);
   Timer mtimer;
   int iter = 0;
-  vector<bool> conv(nstates_, false);
   for ( ; iter != info_->maxiter(); ++iter) {
     // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
     // loop over state of interest

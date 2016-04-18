@@ -57,7 +57,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
 
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
-  cout << "aaaa" << endl;
+  // TODO implement this!
 }
 
 #endif
