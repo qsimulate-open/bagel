@@ -58,10 +58,11 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
 
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
-  // first-order energy from the energy expression
-  // TODO these can be computed more efficiently using mixed states
   const int nstates = info_->ciwfn()->nstates();
   const int target = info_->target();
+
+  // first-order energy from the energy expression
+  // TODO these can be computed more efficiently using mixed states
   {
     shared_ptr<Tensor> result = den1->clone();
     shared_ptr<Tensor> result2 = Den1->clone();
@@ -86,8 +87,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     den1_ = result->matrix();
     Den1_ = result2;
   }
-  // den1_->print(); // looks correct to me
-  // second order contribution
+  // second-order contribution from the lambda terms
   {
     shared_ptr<Tensor> result = den2->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
@@ -105,6 +105,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     }
     den2_ = result->matrix();
   }
+  // first-order contribution from the lambda terms
   {
     shared_ptr<Tensor> result = den1->clone();
     shared_ptr<Tensor> result2 = Den1->clone();
