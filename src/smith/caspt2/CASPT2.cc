@@ -288,14 +288,12 @@ void CASPT2::CASPT2::solve_deriv() {
       while (!dens2->done())
         dens2->next_compute();
       den2_ = den2->matrix();
-      den2.reset();
     } {
       den1 = h1_->clone();
       shared_ptr<Queue> dens1 = make_density1q();
       while (!dens1->done())
         dens1->next_compute();
       den1_ = den1->matrix();
-      den1.reset();
     } {
       Den1 = init_residual();
       shared_ptr<Queue> Dens1 = make_density2q();
