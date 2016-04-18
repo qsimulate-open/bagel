@@ -100,10 +100,12 @@ void CASPT2Grad::compute() {
 
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
-      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[/*TODO WRONG */0] * d0->element(j, i);
+      assert(wf1norm_.size() == smith->algo()->info()->ciwfn()->nstates());
+      for (int ist = 0; ist != wf1norm_.size(); ++ist) {
+        for (int i = nclosed; i != nclosed+nact; ++i)
+          for (int j = nclosed; j != nclosed+nact; ++j)
+            d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[ist] * ref_->rdm1(ist)->element(j-nclosed, i-nclosed);
+      }
     }
 
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
