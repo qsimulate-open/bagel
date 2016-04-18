@@ -58,8 +58,8 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> sdm1_;
     // first order spin density matrix
     std::shared_ptr<const Matrix> sdm11_;
-    // correction <1|1>
-    double wf1norm_;
+    // norm of the first-order wave function <1|1>
+    std::vector<double> wf1norm_;
     // ci derivative
     std::shared_ptr<const Civec> cider_;
 
@@ -77,7 +77,7 @@ class Smith : public Method {
     std::shared_ptr<const Tensor> dm2() const { return dm2_; }
     std::shared_ptr<const Matrix> sdm1() const { return sdm1_; }
     std::shared_ptr<const Matrix> sdm11() const { return sdm11_; }
-    double wf1norm() const { return wf1norm_; }
+    std::vector<double> wf1norm() const { return wf1norm_; }
     std::shared_ptr<const Civec> cideriv() const { return cider_; }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 

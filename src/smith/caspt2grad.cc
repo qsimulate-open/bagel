@@ -103,7 +103,7 @@ void CASPT2Grad::compute() {
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_ * d0->element(j, i);
+          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[/*TODO WRONG */0] * d0->element(j, i);
     }
 
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
@@ -147,7 +147,7 @@ void CASPT2Grad::compute() {
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
       auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
-      *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
+      *fock1 -= *fock * (1.0+wf1norm_[/*TODO WRONG*/0]); // g[d^(2)]
 
       shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
       assert(deriv->ij() == nact*nact);

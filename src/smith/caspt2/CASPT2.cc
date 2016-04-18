@@ -313,29 +313,30 @@ void CASPT2::CASPT2::solve_deriv() {
   }
   timer.tick_print("Correlated density matrix evaluation");
 
+  correlated_norm_.resize(nstates_);
   if (nstates_ == 1) {
     n = init_residual();
     shared_ptr<Queue> normq = make_normq();
     while (!normq->done())
       normq->next_compute();
-    correlated_norm_ = dot_product_transpose(n, t2);
+    correlated_norm_[0] = dot_product_transpose(n, t2);
   } else {
     n = init_residual();
-    correlated_norm_ = 0.0;
-    for (int jst = 0; jst != nstates_; ++jst) { // bra
-      for (int ist = 0; ist != nstates_; ++ist) { // ket
-        set_rdm(jst, ist);
-        for (int istate = 0; istate != nstates_; ++istate) {
-          t2 = t2all_[istate]->at(jst);
+    for (int istate = 0; istate != nstates_; ++istate) {
+      double tmp = 0.0;
+      for (int jst = 0; jst != nstates_; ++jst) { // bra
+        for (int ist = 0; ist != nstates_; ++ist) { // ket
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
           shared_ptr<Queue> normq = make_normq(true, jst == ist);
           while (!normq->done())
             normq->next_compute();
-          correlated_norm_ += dot_product_transpose(n, lall_[istate]->at(ist));
+          tmp += dot_product_transpose(n, lall_[istate]->at(jst));
         }
       }
+      correlated_norm_[istate] = tmp;
     }
   }
-cout << setprecision(10) << correlated_norm_ << endl;
   timer.tick_print("T1 norm evaluation");
 
   // rdm ci derivatives. Only for gradient computations
