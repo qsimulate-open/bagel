@@ -405,9 +405,9 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         }
       }
 
-      auto zden_su = make_shared<const ZMatrix>(*den_su, 1.0);
-      auto tmp_ts = make_shared<const ZMatrix>(nbasis_, dimb);
-      auto tmp_rt = make_shared<const ZMatrix>(nbasis_, dimb);
+      auto zden_su = make_shared<ZMatrix>(den_su, 1.0);
+      auto tmp_ts = make_shared<ZMatrix>(nbasis_, dimb);
+      auto tmp_rt = make_shared<ZMatrix>(nbasis_, dimb);
       for (int i = 0; i != nmultipole; ++i) {
         zgemm3m_("N", "N", dim0, dimb, dimb, 1.0, zden_su->data(), dim0, lmoments[i]->data(), dimb, 0.0, tmp_ts->data(), dim0);
         zgemm3m_("N", "N", dim0, dimb, dim0, 1.0, multipoles_[i]->data(), dim0, tmp_ts->data(), dim0, 0.0, tmp_rt->data(), dim0);
@@ -496,11 +496,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       for (auto& atom : body->atoms()) {
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
-        vector<int> tmpoff;
         for (int ish = 0; ish != atom->shells().size(); ++ish)
-          tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-
-        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+          new_offset.insert(new_offset.end(), offsets[body->ishell(iat) + ish]);
         ++iat;
       }
     }
@@ -512,7 +509,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   int ibas = -1;
   int ishell = -1;
   vector<shared_ptr<const Atom>> close_atoms;
-  vector<int> shells;
+  vector<int> shell_id;
   int nbas = 0;
   int nsh = 0;
   int inode = 0;
@@ -528,13 +525,11 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         close_atoms.push_back(close_atom);
         const vector<shared_ptr<const Shell>> tmp = close_atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
-        vector<int> tmpoff;
-        for (int ish = 0; ish != close_atom->shells().size(); ++ish) {
-          tmpoff.insert(tmpoff.end(), offsets[close_body->ishell(iat) + ish]);
-          shells.insert(shells.end(), close_body->ishell(iat) + ish);
+        for (int ish = 0; ish != tmp.size(); ++ish) {
+          new_offset.insert(new_offset.end(), offsets[close_body->ishell(iat) + ish]);
+          shell_id.insert(shell_id.end(), close_body->ishell(iat) + ish);
         }
 
-        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
         nsh += close_atom->nshell();
         ++iat;
       }
@@ -544,6 +539,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   assert(ibas >= 0 && ishell >= 0);
   const size_t size = basis.size();
   assert(ishell < size);
+  assert(shell_id.size() == size);
 
   // NAI for close-range
   auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
@@ -619,7 +615,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
         const int i01 = i0 * size + i1;
         const double density_01 = max_density[i01] * 4.0;
-        const double schwarz_i01 = schwarz[shells[i0]*nshell + shells[i1]];
+        const double schwarz_i01 = schwarz[shell_id[i0]*nshell + shell_id[i1]];
 
         for (int i2 = 0; i2 != size; ++i2) {
           const shared_ptr<const Shell>  b2 = basis[i2];
@@ -643,7 +639,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 const double density_23 = max_density[i23] * 4.0;
                 const double density_03 = max_density[i0 * size + i3];
                 const double density_13 = max_density[i1 * size + i3];
-                const double schwarz_i23 = schwarz[shells[i2]*nshell + shells[i3]];
+                const double schwarz_i23 = schwarz[shell_id[i2]*nshell + shell_id[i3]];
                 ++i3;
 
                 const double mulfactor = max(max(max(density_01, density_02),
@@ -655,7 +651,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
 
                 array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-                ERIBatch eribatch(input, 0.0);
+                ERIBatch eribatch(input, mulfactor);
                 eribatch.compute();
                 const double* eridata = eribatch.data();
 
@@ -779,11 +775,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
       for (auto& atom : body->atoms()) {
         const vector<shared_ptr<const Shell>> tmp = atom->shells();
         basis.insert(basis.end(), tmp.begin(), tmp.end());
-        vector<int> tmpoff;
         for (int ish = 0; ish != atom->shells().size(); ++ish)
-          tmpoff.insert(tmpoff.end(), offsets[body->ishell(iat) + ish]);
-
-        new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+          new_offset.insert(new_offset.end(), offsets[body->ishell(iat) + ish]);
         ++iat;
       }
     }
@@ -793,11 +786,8 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
         for (auto& distant_atom : distant_body->atoms()) {
           const vector<shared_ptr<const Shell>> tmp = distant_atom->shells();
           basis.insert(basis.end(), tmp.begin(), tmp.end());
-          vector<int> tmpoff;
           for (int ish = 0; ish != distant_atom->shells().size(); ++ish)
-            tmpoff.insert(tmpoff.end(), offsets[distant_body->ishell(iat) + ish]);
-
-          new_offset.insert(new_offset.end(), tmpoff.begin(), tmpoff.end());
+            new_offset.insert(new_offset.end(), offsets[distant_body->ishell(iat) + ish]);
           ++iat;
         }
       }
