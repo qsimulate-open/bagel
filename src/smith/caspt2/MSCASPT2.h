@@ -39,19 +39,26 @@ class MSCASPT2 {
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
+    IndexRange ci_;
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
+    std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<Matrix> heff_;
+    std::vector<double> e0all_;
 
     // tensors used by SMITH internally
+    double e0_;
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> l2;
-    std::shared_ptr<Tensor> n;
+    std::shared_ptr<Tensor> h1_;
+    std::shared_ptr<Tensor> f1_;
+    std::shared_ptr<Tensor> v2_;
     std::shared_ptr<Tensor> den1;
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;
+    std::shared_ptr<Tensor> deci;
     std::shared_ptr<Tensor> rdm0_;
     std::shared_ptr<Tensor> rdm1_;
     std::shared_ptr<Tensor> rdm2_;
@@ -71,6 +78,11 @@ class MSCASPT2 {
     std::shared_ptr<Vec<Tensor>> rdm2all_;
     std::shared_ptr<Vec<Tensor>> rdm3all_;
     std::shared_ptr<Vec<Tensor>> rdm4all_;
+    std::shared_ptr<Tensor> rdm0deriv_;
+    std::shared_ptr<Tensor> rdm1deriv_;
+    std::shared_ptr<Tensor> rdm2deriv_;
+    std::shared_ptr<Tensor> rdm3deriv_;
+    std::shared_ptr<Tensor> rdm4deriv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
@@ -100,12 +112,44 @@ class MSCASPT2 {
     std::shared_ptr<FutureTensor> Gamma28_();
     std::shared_ptr<FutureTensor> Gamma29_();
     std::shared_ptr<FutureTensor> Gamma51_();
-    std::shared_ptr<FutureTensor> Gamma98_();
-    std::shared_ptr<FutureTensor> Gamma100_();
-    std::shared_ptr<FutureTensor> Gamma104_();
+    std::shared_ptr<FutureTensor> Gamma110_();
+    std::shared_ptr<FutureTensor> Gamma111_();
+    std::shared_ptr<FutureTensor> Gamma112_();
+    std::shared_ptr<FutureTensor> Gamma113_();
+    std::shared_ptr<FutureTensor> Gamma114_();
+    std::shared_ptr<FutureTensor> Gamma115_();
+    std::shared_ptr<FutureTensor> Gamma116_();
+    std::shared_ptr<FutureTensor> Gamma117_();
+    std::shared_ptr<FutureTensor> Gamma119_();
+    std::shared_ptr<FutureTensor> Gamma122_();
+    std::shared_ptr<FutureTensor> Gamma124_();
+    std::shared_ptr<FutureTensor> Gamma126_();
+    std::shared_ptr<FutureTensor> Gamma132_();
+    std::shared_ptr<FutureTensor> Gamma138_();
+    std::shared_ptr<FutureTensor> Gamma139_();
+    std::shared_ptr<FutureTensor> Gamma141_();
+    std::shared_ptr<FutureTensor> Gamma142_();
+    std::shared_ptr<FutureTensor> Gamma144_();
+    std::shared_ptr<FutureTensor> Gamma145_();
+    std::shared_ptr<FutureTensor> Gamma147_();
+    std::shared_ptr<FutureTensor> Gamma148_();
+    std::shared_ptr<FutureTensor> Gamma161_();
+    std::shared_ptr<FutureTensor> Gamma166_();
+    std::shared_ptr<FutureTensor> Gamma167_();
+    std::shared_ptr<FutureTensor> Gamma168_();
+    std::shared_ptr<FutureTensor> Gamma169_();
+    std::shared_ptr<FutureTensor> Gamma170_();
+    std::shared_ptr<FutureTensor> Gamma179_();
+    std::shared_ptr<FutureTensor> Gamma191_();
+    std::shared_ptr<FutureTensor> Gamma202_();
+    std::shared_ptr<FutureTensor> Gamma323_();
+    std::shared_ptr<FutureTensor> Gamma341_();
+
     std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {

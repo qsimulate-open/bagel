@@ -34,6 +34,15 @@
 #include <src/smith/caspt2/MSCASPT2_tasks4.h>
 #include <src/smith/caspt2/MSCASPT2_tasks5.h>
 #include <src/smith/caspt2/MSCASPT2_tasks6.h>
+#include <src/smith/caspt2/MSCASPT2_tasks7.h>
+#include <src/smith/caspt2/MSCASPT2_tasks8.h>
+#include <src/smith/caspt2/MSCASPT2_tasks9.h>
+#include <src/smith/caspt2/MSCASPT2_tasks10.h>
+#include <src/smith/caspt2/MSCASPT2_tasks11.h>
+#include <src/smith/caspt2/MSCASPT2_tasks12.h>
+#include <src/smith/caspt2/MSCASPT2_tasks13.h>
+#include <src/smith/caspt2/MSCASPT2_tasks14.h>
+#include <src/smith/caspt2/MSCASPT2_tasks15.h>
 
 #endif
 #endif

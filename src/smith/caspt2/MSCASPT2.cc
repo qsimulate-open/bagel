@@ -35,16 +35,22 @@ using namespace bagel::SMITH;
 
 MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   info_    = cas.info_;
+  ci_      = cas.ci_;
   virt_    = cas.virt_;
   active_  = cas.active_;
   closed_  = cas.closed_;
+  rci_     = cas.rci_;
   rvirt_   = cas.rvirt_;
   ractive_ = cas.ractive_;
   rclosed_ = cas.rclosed_;
   heff_    = cas.heff_;
+  e0all_   = cas.e0all_;
 
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
+  h1_ = cas.h1_;
+  f1_ = cas.f1_;
+  v2_ = cas.v2_;
   den1 = cas.h1_->clone();
   den2 = cas.h1_->clone();
   Den1 = cas.init_residual();
