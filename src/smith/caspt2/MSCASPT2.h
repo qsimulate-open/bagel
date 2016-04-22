@@ -144,14 +144,15 @@ class MSCASPT2 {
     std::shared_ptr<FutureTensor> Gamma179_();
     std::shared_ptr<FutureTensor> Gamma191_();
     std::shared_ptr<FutureTensor> Gamma202_();
-    std::shared_ptr<FutureTensor> Gamma323_();
-    std::shared_ptr<FutureTensor> Gamma341_();
+    std::shared_ptr<FutureTensor> Gamma217_();
+    std::shared_ptr<FutureTensor> Gamma239_();
 
     std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {

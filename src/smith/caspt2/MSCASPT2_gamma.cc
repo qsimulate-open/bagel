@@ -555,22 +555,22 @@ shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma202_() {
   return make_shared<FutureTensor>(*Gamma202, task57);
 }
 
-shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma323_() {
-  vector<IndexRange> Gamma323_index = {ci_, active_, active_, active_, active_, active_, active_};
-  auto Gamma323 = make_shared<Tensor>(Gamma323_index);
+shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma217_() {
+  vector<IndexRange> Gamma217_index = {ci_, active_, active_, active_, active_, active_, active_};
+  auto Gamma217 = make_shared<Tensor>(Gamma217_index);
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
-  auto tensor58 = vector<shared_ptr<Tensor>>{Gamma323, rdm1deriv_, rdm2deriv_, rdm3deriv_};
+  auto tensor58 = vector<shared_ptr<Tensor>>{Gamma217, rdm1deriv_, rdm2deriv_, rdm3deriv_};
   auto task58 = make_shared<Task58>(tensor58, cindex);
-  return make_shared<FutureTensor>(*Gamma323, task58);
+  return make_shared<FutureTensor>(*Gamma217, task58);
 }
 
-shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma341_() {
-  vector<IndexRange> Gamma341_index = {ci_, active_, active_, active_, active_, active_, active_};
-  auto Gamma341 = make_shared<Tensor>(Gamma341_index);
+shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma239_() {
+  vector<IndexRange> Gamma239_index = {ci_, active_, active_, active_, active_, active_, active_};
+  auto Gamma239 = make_shared<Tensor>(Gamma239_index);
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
-  auto tensor59 = vector<shared_ptr<Tensor>>{Gamma341, rdm1deriv_, rdm2deriv_, rdm3deriv_};
+  auto tensor59 = vector<shared_ptr<Tensor>>{Gamma239, rdm1deriv_, rdm2deriv_, rdm3deriv_};
   auto task59 = make_shared<Task59>(tensor59, cindex);
-  return make_shared<FutureTensor>(*Gamma341, task59);
+  return make_shared<FutureTensor>(*Gamma239, task59);
 }
 
 #endif
