@@ -53,7 +53,8 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   thresh_ = cas->thresh();
   ref_energy_ = cas->energy();
 
-  // property calculation
+  // gradient/property calculation
+  target_ = inp->get<int>("_target");
   do_hyperfine_ = inp->get<bool>("hyperfine", false);
 
   timer.tick_print("Reference calculation");
@@ -73,8 +74,9 @@ void CASPT2Grad::compute() {
   {
     // construct SMITH here
     shared_ptr<PTree> smithinput = idata_->get_child("smith");
-    smithinput->put<bool>("grad", true);
-    smithinput->put<bool>("hyperfine", do_hyperfine_);
+    smithinput->put("_grad", true);
+    smithinput->put("_target", target_);
+    smithinput->put("_hyperfine", do_hyperfine_);
     auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
     smith->compute();
 
@@ -84,7 +86,6 @@ void CASPT2Grad::compute() {
     if (nact) {
       cideriv_ = smith->cideriv()->copy();
     }
-    target_ = smith->algo()->info()->target();
     ncore_  = smith->algo()->info()->ncore();
     wf1norm_ = smith->wf1norm();
 
@@ -99,10 +100,12 @@ void CASPT2Grad::compute() {
 
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     if (nact) {
-      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j)
-          d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_ * d0->element(j, i);
+      assert(wf1norm_.size() == smith->algo()->info()->ciwfn()->nstates());
+      for (int ist = 0; ist != wf1norm_.size(); ++ist) {
+        for (int i = nclosed; i != nclosed+nact; ++i)
+          for (int j = nclosed; j != nclosed+nact; ++j)
+            d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[ist] * ref_->rdm1(ist)->element(j-nclosed, i-nclosed);
+      }
     }
 
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
@@ -146,7 +149,7 @@ void CASPT2Grad::compute() {
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
       auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
-      *fock1 -= *fock * (1.0+smith->wf1norm()); // g[d^(2)]
+      *fock1 -= *fock * (1.0+wf1norm_[/*TODO WRONG*/0]); // g[d^(2)]
 
       shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
       assert(deriv->ij() == nact*nact);
@@ -169,6 +172,7 @@ void CASPT2Grad::compute() {
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 #ifdef COMPILE_SMITH
+  assert(task_->target() == target_state_);
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();

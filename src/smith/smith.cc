@@ -77,7 +77,7 @@ void Smith::compute() {
     coeff_ = algop->coeff();
 
     // if spin-density is requested...
-    if (idata_->get<bool>("hyperfine")) {
+    if (idata_->get<bool>("_hyperfine")) {
       auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
       sp->solve();
       sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_);

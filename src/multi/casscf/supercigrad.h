@@ -31,13 +31,9 @@
 namespace bagel {
 
 class SuperCIGrad : public SuperCI {
-
-  protected:
-     int target_state_;
-
   public:
     SuperCIGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-      : SuperCI(idat, geom, ref),  target_state_(idat->get<int>("target", 0)) { }
+      : SuperCI(idat, geom, ref) { }
 
     void compute() {
       // compute CASSCF fist
@@ -54,8 +50,6 @@ class SuperCIGrad : public SuperCI {
       occup_ = natorb.second;
       if (natocc_) print_natocc();
     }
-
-    int target_state() const { return target_state_; }
 
 };
 
