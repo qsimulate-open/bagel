@@ -35,15 +35,14 @@ using namespace bagel::SMITH;
 
 MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   info_    = cas.info_;
-  ci_      = cas.ci_;
   virt_    = cas.virt_;
   active_  = cas.active_;
   closed_  = cas.closed_;
-  rci_     = cas.rci_;
   rvirt_   = cas.rvirt_;
   ractive_ = cas.ractive_;
   rclosed_ = cas.rclosed_;
   heff_    = cas.heff_;
+  fockact_ = cas.fockact_;
   e0all_   = cas.e0all_;
 
   t2all_ = cas.t2all_;
@@ -133,6 +132,17 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     }
     den1_->ax_plus_y(1.0, result->matrix());
     Den1_->ax_plus_y(1.0, result2);
+  }
+
+  // CI derivative..
+  {
+    ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
+    for (int ist = 0; ist != nstates; ++ist) {
+      const size_t cisize = ci_deriv_->data(ist)->size();
+
+      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, ist, 0, cisize);
+    }
   }
 }
 
