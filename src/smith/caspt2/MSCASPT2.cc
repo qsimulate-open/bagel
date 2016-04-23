@@ -155,6 +155,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
 
       // output area
       deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
 
       shared_ptr<Queue> dec;
 
