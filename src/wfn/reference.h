@@ -137,6 +137,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     virtual std::shared_ptr<Reference> extract_state(const int istate) const {
       throw std::runtime_error("Reference::extract_state(int istate) has only been implemented for relativistic wavefunctions.");
+      return nullptr;
     }
 
     // used in UHF

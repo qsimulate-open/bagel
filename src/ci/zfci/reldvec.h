@@ -81,8 +81,6 @@ class RelDvector {
       std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> newdvec;
       for (auto& i : dvecs_)
         newdvec.emplace(i.first, i.second->extract_state(istate));
-      //newdvec.emplace(i.first, std::make_shared<Dvector>(i.second->data(istate), 1));
-
       return std::make_shared<RelDvector<DataType>>(newdvec, space_);
     }
 

@@ -50,13 +50,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
 
-  bool ms_input = ref_->nstate() != 1;
-  if (ms_input && !do_ms_ && !do_xms_) {
+  if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
     const int istate = idata->get<int>("istate", 0);
     const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
     cout << "  Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl; 
-    shared_ptr<const Reference> ssref = ref_->extract_state(istate);
-    ref_ = ssref;
+    ref_ = ref_->extract_state(istate);
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);

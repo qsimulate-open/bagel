@@ -159,8 +159,7 @@ shared_ptr<Reference> RelReference::extract_state(const int istate) const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, energy_, ciwfn_->civectors()->extract_state(istate),
                                         make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
-  auto out = make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_, 
-                                       kramers_, rdm1, rdm2, newciwfn);
-  return out;
-} 
+  return make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                   kramers_, rdm1, rdm2, newciwfn);
+}
 
