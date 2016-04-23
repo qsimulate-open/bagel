@@ -99,7 +99,8 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
   out1->symmetrize();
 
   // add second-order contribution
-  auto out2 = make_shared<Matrix>(*sd1_ - *out0 * wf1norm_);
+  assert(target() == 0); // this is assumed in CASPT2 when computing the norm
+  auto out2 = make_shared<Matrix>(*sd1_ - *out0 * wf1norm_[target()]);
 
   if (out2->trace() > 1.0e-8)
     cout << "  **** warning **** Trace of the second-order CASPT2 spin-density matrix is nonzero: "

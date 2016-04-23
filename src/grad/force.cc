@@ -45,7 +45,7 @@ void Force::compute() {
     const std::string title = to_lower((*m)->get<std::string>("title", ""));
     if (title != "molecule") {
       shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
-      if (!c) throw runtime_error("unknown method in forceimization");
+      if (!c) throw runtime_error("unknown method in force");
       c->compute();
       ref = c->conv_to_ref();
     } else {

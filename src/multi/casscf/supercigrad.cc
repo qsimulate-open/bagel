@@ -45,7 +45,6 @@ shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);
 
-  const int target = task_->target_state();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
@@ -70,12 +69,12 @@ shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
   auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * ocoeff);
-  shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target);
+  shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target_state_);
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
   // 2) two-electron contribution
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(target), *ref_->rdm1(target), nclosed, nact);
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(target_state_), *ref_->rdm1(target_state_), nclosed, nact);
   shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
 
@@ -88,7 +87,7 @@ shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   // compute unrelaxed dipole...
-  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target)->resize(nmobasis, nmobasis);
+  shared_ptr<Matrix> dtot = ref_->rdm1_mat(target_state_)->resize(nmobasis, nmobasis);
   {
     Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), "Unrelaxed");
     dipole.compute();
@@ -135,8 +134,8 @@ shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
   {
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * zmat->slice(0,nocc));
     {
-      RDM<2> D(*ref_->rdm2(target)+*zrdm2);
-      RDM<1> dd(*ref_->rdm1(target)+*zrdm1);
+      RDM<2> D(*ref_->rdm2(target_state_)+*zrdm2);
+      RDM<1> dd(*ref_->rdm1(target_state_)+*zrdm1);
       // symetrize dd (zrdm1 needs symmetrization)
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
