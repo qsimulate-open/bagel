@@ -145,3 +145,22 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
   ZFCI_bare fci(ciwfn_);
   return fci.rdm4(ist, jst);
 }
+
+
+shared_ptr<Reference> RelReference::extract_state(const int istate) const {
+  ZFCI_bare fci(ciwfn_);
+  auto rdm1 = make_shared<ZMatrix>(2*fci.norb(), 2*fci.norb());
+  auto rdm2 = make_shared<ZMatrix>(4*fci.norb()*fci.norb(), 4*fci.norb()*fci.norb());
+  shared_ptr<const ZRDM<1>> tmp1 = expand_kramers<1,complex<double>>(fci.rdm1(istate, istate), fci.norb());
+  shared_ptr<const ZRDM<2>> tmp2 = expand_kramers<2,complex<double>>(fci.rdm2(istate, istate), fci.norb());
+  copy_n(tmp1->data(), tmp1->size(), rdm1->data());
+  copy_n(tmp2->data(), tmp2->size(), rdm2->data());
+
+  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
+  auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, energy_, ciwfn_->civectors()->extract_state(istate),
+                                        make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
+  auto out = make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_, 
+                                       kramers_, rdm1, rdm2, newciwfn);
+  return out;
+} 
+

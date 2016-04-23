@@ -122,6 +122,11 @@ class Dvector : public btas::Tensor3<DataType> {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
 
+    std::shared_ptr<Dvector> extract_state(const int istate) const {
+      auto out = std::make_shared<Dvector>(dvec_[istate], 1);
+      return out;
+    }
+
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
     void zero() { std::fill(begin(), end(), 0.0); }

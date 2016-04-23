@@ -135,6 +135,10 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // used in SA-CASSCF
     int nstate() const { return energy_.size(); }
 
+    virtual std::shared_ptr<Reference> extract_state(const int istate) const {
+      throw std::runtime_error("Reference::extract_state(int istate) has only been implemented for relativistic wavefunctions.");
+    }
+
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
     std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
