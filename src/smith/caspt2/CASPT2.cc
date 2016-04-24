@@ -156,6 +156,9 @@ void CASPT2::CASPT2::solve() {
       cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
     }
     cout << endl << endl;
+  } else {
+    heff_ = make_shared<Matrix>(1,1);
+    heff_->element(0,0) = 1.0;
   }
 
 }

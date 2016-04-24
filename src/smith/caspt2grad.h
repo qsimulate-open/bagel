@@ -41,8 +41,10 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d1_;
     // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
-    // two-body first-order density matrix
     std::shared_ptr<const Tensor> d2_;
+    // zeroth-order density matrix (mixed state)
+    std::shared_ptr<RDM<1>> d10ms_;
+    std::shared_ptr<RDM<2>> d20ms_;
     // norm of the first-order wave function
     std::vector<double> wf1norm_;
 
@@ -50,6 +52,8 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> sd1_;
     // first-order spin density matrix
     std::shared_ptr<const Matrix> sd11_;
+    // rotation matrix in MS-CASPT2
+    std::shared_ptr<const Matrix> msrot_;
 
     // y from SMITH code
     std::shared_ptr<Dvec> cideriv_;
@@ -57,6 +61,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<FCI> fci_;
 
     // for gradient
+    int nstates_;
     int target_;
     int ncore_;
     double energy_;
@@ -74,14 +79,18 @@ class CASPT2Grad : public Method {
 
     void compute() override;
 
+    const double& msrot(int i, int j) const { return msrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Tensor> d2() const { return d2_; }
+    std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
+    std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI> fci() const { return fci_; }
 
+    int nstates() const { return nstates_; }
     int target() const { return target_; }
     int ncore() const { return ncore_; }
     double energy() const { return energy_; }

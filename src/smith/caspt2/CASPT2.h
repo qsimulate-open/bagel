@@ -178,6 +178,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     void solve();
     void solve_deriv();
 
+    std::shared_ptr<const Matrix> msrot() const { return heff_; }
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
