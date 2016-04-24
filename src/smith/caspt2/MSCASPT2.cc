@@ -63,6 +63,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
 
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
+  Timer timer;
   const int nstates = info_->ciwfn()->nstates();
   const int target = info_->target();
 
@@ -135,6 +136,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     den1_->ax_plus_y(1.0, result->matrix());
     Den1_->ax_plus_y(1.0, result2);
   }
+  timer.tick_print("Correlated density matrix evaluation");
 
   // CI derivative..
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
@@ -206,6 +208,9 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
         }
         blas::ax_plus_y_n(1.0, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
       }
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass
+                          << "   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
+      timer.tick_print(ss.str());
     }
   }
 }

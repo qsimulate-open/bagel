@@ -83,9 +83,8 @@ void CASPT2Grad::compute() {
     // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
     coeff_ = smith->coeff();
 
-    if (nact) {
+    if (nact)
       cideriv_ = smith->cideriv()->copy();
-    }
     ncore_  = smith->algo()->info()->ncore();
     wf1norm_ = smith->wf1norm();
 
@@ -149,14 +148,17 @@ void CASPT2Grad::compute() {
       shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
       auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
       auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
-      *fock1 -= *fock * (1.0+wf1norm_[/*TODO WRONG*/0]); // g[d^(2)]
 
-      shared_ptr<const Dvec> deriv = ref_->rdm1deriv(target_);
-      assert(deriv->ij() == nact*nact);
+      for (int ist = 0; ist != wf1norm_.size(); ++ist) {
+        auto fock2 = make_shared<Matrix>(*fock1 - *fock * (1.0+wf1norm_[ist])); // g[d^(2)]
 
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          cideriv_->ax_plus_y(2.0*fock1->element(j,i), deriv->data(j+i*nact));
+        shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
+        assert(deriv->ij() == nact*nact);
+
+        for (int i = 0; i != nact; ++i)
+          for (int j = 0; j != nact; ++j)
+            cideriv_->data(ist)->ax_plus_y(2.0*fock2->element(j,i), deriv->data(j+i*nact));
+      }
     }
 
     d2_ = smith->dm2();
@@ -189,7 +191,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   shared_ptr<const Matrix> d1 = task_->d1();
   // first order density matrices
   shared_ptr<const Matrix> d11 = task_->d11();
-  shared_ptr<const Civec> cider = nact ? task_->cideriv() : nullptr;
+  shared_ptr<const Dvec> cider = nact ? task_->cideriv() : nullptr;
 
   shared_ptr<const Matrix> coeff = task_->coeff();
 
@@ -225,9 +227,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   timer.tick_print("Yrs evaluation");
 
   // solve CPCASSCF
-  auto g0 = yrs;
-  auto g1 = nact ? make_shared<Dvec>(cider, ref->nstate())
-                 : make_shared<Dvec>(make_shared<Determinants>(), 1); // FIXME this is wrong for nstate > 1 in CASSCF
+  shared_ptr<Matrix> g0 = yrs;
+  shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   shared_ptr<const Dvec> civector;

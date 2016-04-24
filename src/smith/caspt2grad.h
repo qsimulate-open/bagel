@@ -52,7 +52,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> sd11_;
 
     // y from SMITH code
-    std::shared_ptr<Civec> cideriv_;
+    std::shared_ptr<Dvec> cideriv_;
     // FCI utility
     std::shared_ptr<FCI> fci_;
 
@@ -79,7 +79,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Tensor> d2() const { return d2_; }
 
-    std::shared_ptr<const Civec> cideriv() const { return cideriv_; }
+    std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI> fci() const { return fci_; }
 
     int target() const { return target_; }

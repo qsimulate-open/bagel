@@ -173,6 +173,7 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
+    std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
 };
 
 }
