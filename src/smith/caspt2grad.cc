@@ -145,12 +145,13 @@ void CASPT2Grad::compute() {
       };
 
       const int nmo = coeff_->mdim();
-      shared_ptr<const Matrix> d0 = ref_->rdm1_mat(target_);
+      shared_ptr<const Matrix> d0 = ref_->rdm1_mat();
       auto fock  = focksub(d0, coeff_->slice(0, ref_->nocc()));
       auto fock1 = focksub(make_shared<Matrix>(*d1_ + *d0->resize(nmo,nmo)), *coeff_);
+      *fock1 -= *fock; // fock1 is g(d2)
 
       for (int ist = 0; ist != wf1norm_.size(); ++ist) {
-        auto fock2 = make_shared<Matrix>(*fock1 - *fock * (1.0+wf1norm_[ist])); // g[d^(2)]
+        auto fock2 = make_shared<Matrix>(*fock1 * (1.0/wf1norm_.size()) - *fock * wf1norm_[ist]);
 
         shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
         assert(deriv->ij() == nact*nact);

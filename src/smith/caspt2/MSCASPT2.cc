@@ -77,16 +77,17 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
+          const double isheff = (*heff_)(istate, target);
           l2 = t2all_[istate]->at(ist); // careful
           shared_ptr<Queue> queue = make_density1q(true, ist == jst);
           while (!queue->done())
             queue->next_compute();
-          result->ax_plus_y((*heff_)(istate, target)*jheff, den1);
+          result->ax_plus_y(isheff*jheff, den1);
 
           shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
           while (!queue2->done())
             queue2->next_compute();
-          result2->ax_plus_y((*heff_)(istate, target)*jheff, Den1);
+          result2->ax_plus_y(isheff*jheff, Den1);
         }
       }
     }
@@ -136,6 +137,9 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     den1_->ax_plus_y(1.0, result->matrix());
     Den1_->ax_plus_y(1.0, result2);
   }
+  // because of the convention...
+  den1_->scale(0.5);
+  Den1_->scale(0.5);
   timer.tick_print("Correlated density matrix evaluation");
 
   // CI derivative..
@@ -153,7 +157,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       const size_t size = min(chunk, cisize-offset);
 
       tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, 0, /*TODO*/cisize);
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
 
       // output area
       deci = make_shared<Tensor>(vector<IndexRange>{ci_});
