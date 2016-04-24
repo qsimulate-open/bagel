@@ -93,6 +93,7 @@ void CASPT2Grad::compute() {
     // save correlated density matrices d(1), d(2), and ci derivatives
     auto d1tmp = make_shared<Matrix>(*smith->dm1());
     auto d11tmp = make_shared<Matrix>(*smith->dm11());
+    d1tmp->symmetrize();
     d11tmp->symmetrize();
     // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
     d11tmp->scale(2.0);
@@ -415,7 +416,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
     shared_ptr<Matrix> dkl;
     if (nact) {
-      dkl = ref_->rdm1_mat(target_);
+      dkl = ref_->rdm1_mat(); // D0SA
       dkl->sqrt();
       dkl->scale(1.0/sqrt(2.0));
     }
@@ -433,7 +434,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 
     auto tmp = make_shared<Matrix>(*coeff_ % (*jop * ocoeff + *kopi));
     if (nact) {
-      *tmp *= *ref_->rdm1_mat(target_);
+      *tmp *= *ref_->rdm1_mat(); // D0SA
     } else {
       *tmp *= 2.0;
     }
