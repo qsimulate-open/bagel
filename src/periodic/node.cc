@@ -315,10 +315,15 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
       l_map[cnt] = l;
 
+  int nfbas = 0;
+  for (auto& distant_node : interaction_list_)
+    nfbas += distant_node->nbasis();
+
   auto lrs = make_shared<ZMatrix>(nbasis_, nbasis_);
-  auto lrt = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto lrt = make_shared<ZMatrix>(nbasis_, nfbas);
 
   if (density) {
+    size_t ob = 0;
     for (auto& distant_node : interaction_list_) { // M2L
       array<double, 3> r12;
       r12[0] = position_[0] - distant_node->position(0);
@@ -370,8 +375,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
       }
 
       // get sub-density matrix D_su (s=this u=far)
-      const int dim0 = nbasis_;
-      Matrix den_su(dim0, dimb);
+      auto den_su = make_shared<Matrix>(nbasis_, dimb);
       ob0 = 0;
       for (auto& body0 : distant_node->bodies()) {
         size_t iat0 = 0;
@@ -393,7 +397,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
                   ++ish1;
 
                   shared_ptr<const Matrix> tmp = density->get_submatrix(offset1, offset0, size1, size0);
-                  den_su.copy_block(ob1, ob0, size1, size0, tmp);
+                  den_su->copy_block(ob1, ob0, size1, size0, tmp);
                   ob1 += size1;
                 }
                 ++iat1;
@@ -405,16 +409,17 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         }
       }
 
-      auto zden_su = make_shared<ZMatrix>(den_su, 1.0);
+      auto zden_su = make_shared<ZMatrix>(*den_su, 1.0);
       auto tmp_ts = make_shared<ZMatrix>(nbasis_, dimb);
       auto tmp_rt = make_shared<ZMatrix>(nbasis_, dimb);
       for (int i = 0; i != nmultipole; ++i) {
-        zgemm3m_("N", "N", dim0, dimb, dimb, 1.0, zden_su->data(), dim0, lmoments[i]->data(), dimb, 0.0, tmp_ts->data(), dim0);
-        zgemm3m_("N", "N", dim0, dimb, dim0, 1.0, multipoles_[i]->data(), dim0, tmp_ts->data(), dim0, 0.0, tmp_rt->data(), dim0);
+        zgemm3m_("N", "N", nbasis_, dimb, dimb, 1.0, zden_su->data(), nbasis_, lmoments[i]->data(), dimb, 0.0, tmp_ts->data(), nbasis_);
+        zgemm3m_("N", "N", nbasis_, dimb, nbasis_, 1.0, multipoles_[i]->data(), nbasis_, tmp_ts->data(), nbasis_, 0.0, tmp_rt->data(), nbasis_);
         const int sign = pow(-1.0, l_map[i]);
-        blas::ax_plus_y_n(sign, tmp_rt->data(), lrt->size(), lrt->data());
+        lrt->add_block(sign, 0, ob, nbasis_, dimb, tmp_rt);
       }
 
+      ob += distant_node->nbasis();
     }
   }
 
@@ -479,6 +484,30 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             ++iat1;
           }
         }
+
+
+#if 1
+        size_t ob = 0;
+        for (auto& distant_node : interaction_list_) {
+          for (auto& body1 : distant_node->bodies()) {
+            size_t iat1 = 0;
+            for (auto& atom1 : body1->atoms()) {
+              size_t ish1 = 0;
+              for (auto& b1 : atom1->shells()) {
+                const int offset1 = offsets[body1->ishell(iat1) + ish1];
+                const size_t size1 = b1->nbasis();
+                ++ish1;
+
+                ZMatrix sublocal = *(exchange_->get_submatrix(ob0, ob, size0, size1));
+                out->copy_block(offset0, offset1, size0, size1, sublocal.data());
+                ob += size1;
+              }
+              ++iat1;
+            }
+          }
+        }
+#endif
+
         ob0 += size0;
       }
       ++iat0;
