@@ -48,7 +48,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   // FMM
   dofmm_   = idata_->get<bool>("cfmm", false);
   if (dofmm_) {
-    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"));
+    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true));
     fmm_lmax_ = idata_->get<int>("l_max", 21);
   }
 

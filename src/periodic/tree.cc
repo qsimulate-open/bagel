@@ -152,9 +152,9 @@ void Tree::contract_vertex() {
     coordinates_[i][0] = atomgroup_[i]->position(0) - position_[0];
     coordinates_[i][1] = atomgroup_[i]->position(1) - position_[1];
     coordinates_[i][2] = atomgroup_[i]->position(2) - position_[2];
-    //for (int iat = 0; iat != atom_group_[i]->atoms().size(); ++iat)
-    //  cout << atom->name() << atomgroup_[i]->order_in_geom(iat) << " ";
-    //cout << endl;
+//    for (int iat = 0; iat != atomgroup_[i]->atoms().size(); ++iat)
+//      cout << atomgroup_[i]->atoms(iat)->name() << atomgroup_[i]->order_in_geom(iat) << " ";
+//    cout << endl;
   }
 }
 

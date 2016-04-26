@@ -46,7 +46,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
     const double beta   = idata->get<double>("beta", 1.0);
     const int height = idata->get<int>("height", 21);
     const bool doewald    = idata->get<bool>("ewald", false);
-    fmm_param_ = make_tuple(lmax, ws, beta, height, doewald, idata->get<int>("extent", 10));
+    fmm_param_ = make_tuple(lmax, ws, beta, height, doewald, idata->get<int>("contract", true), idata->get<int>("extent", 10));
     lattice_ = make_shared<const Lattice>(geom, ws);
   } else {
     lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));

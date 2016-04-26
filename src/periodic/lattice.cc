@@ -382,7 +382,7 @@ shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all bl
 
 
 
-shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, tuple<int, int, double, int, bool, int> fmmp) const {
+shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, tuple<int, int, double, int, bool, bool, int> fmmp) const {
 
   // rectangular cells for now
   cout << "  PFMM option is specified: simulation cell will be constructed." << endl;

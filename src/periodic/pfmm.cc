@@ -36,9 +36,10 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double, int, bool, int> fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
+PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double, int, bool, bool, int> fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
   : scell_(scell), dodf_(dodf), lmax_(get<0>(fmmp)), ws_(get<1>(fmmp)), beta_(get<2>(fmmp) * beta__), height_(get<3>(fmmp)) {
 
+  do_contract_ = get<5>(fmmp);
   const bool ewald = get<4>(fmmp);
   if (ewald) {
     if (stack == nullptr) {
@@ -59,9 +60,6 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double,
   max_rank_ = (lmax_ * 2) + 1;
   thresh_ = scell->geom()->overlap_thresh();
 
-  // should be provided from input
-  do_contract_ = true;
-
   primvecs_.resize(3);
   for (int i = 0; i != ndim_; ++i)
     primvecs_[i] = scell_->primitive_vectors(i);
@@ -69,7 +67,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double,
     primvecs_[i] = {{0.0, 0.0, 0.0}};
 
   if (ewald) {
-    extent_sum_ = get<5>(fmmp);
+    extent_sum_ = get<6>(fmmp);
     compute_Mlm();
     stack_->release(size_allocated_, buff_);
     resources__->release(stack_);

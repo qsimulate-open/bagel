@@ -38,7 +38,7 @@ class PSCF_base : public Method {
   protected:
     bool dodf_;
     bool dofmm_;
-    std::tuple<int, int, double, int, bool, int> fmm_param_;
+    std::tuple<int, int, double, int, bool, bool, int> fmm_param_;
 
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> ktildex_;
