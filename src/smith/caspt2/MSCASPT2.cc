@@ -184,6 +184,15 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           while (!dec->done())
             dec->next_compute();
           blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+
+          // -2Es <N|T_LN T_LM|I>
+          e0_ = 2.0*info_->shift();
+          l2 = t2all_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deci2q(/*zero*/true);
+          while (!dec->done())
+            dec->next_compute();
+          blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
         }
       }
 
