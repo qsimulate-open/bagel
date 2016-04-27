@@ -153,6 +153,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
