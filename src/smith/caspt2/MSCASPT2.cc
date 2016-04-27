@@ -171,41 +171,44 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
         for (int mst = 0; mst != nstates; ++mst) {
           const double mheff = (*heff_)(mst, target);
 
-          l2 = t2all_[lst]->at(mst);
+          // <N|T_LN H|I>
+          l2 = t2all_[lst]->at(nst);
           dec = make_deci2q(/*zero*/true);
           while (!dec->done())
             dec->next_compute();
-          blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
 
-          l2 = t2all_[lst]->at(nst);
+          // <I|T_LM H|N>
+          l2 = t2all_[lst]->at(mst);
           dec = make_deci3q(/*zero*/true);
           while (!dec->done())
             dec->next_compute();
-          blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
         }
       }
 
       // derivative with respect to M
       for (int mst = 0; mst != nstates; ++mst) {
-        l2 = lall_[nst]->at(mst);
+        l2 = lall_[mst]->at(nst);
         dec = make_deci2q(/*zero*/true);
         while (!dec->done())
           dec->next_compute();
-        l2 = lall_[mst]->at(nst);
+
+        l2 = lall_[nst]->at(mst);
         dec = make_deci3q(false);
         while (!dec->done())
           dec->next_compute();
 
         for (int lst = 0; lst != nstates; ++lst) {
           e0_ = e0all_[lst];
-          l2 = lall_[lst]->at(mst);
-          t2 = t2all_[lst]->at(nst);
+          l2 = lall_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
           dec = make_deciq(false);
           while (!dec->done())
             dec->next_compute();
 
-          l2 = t2all_[lst]->at(mst);
-          t2 = lall_[lst]->at(nst);
+          l2 = t2all_[lst]->at(nst);
+          t2 = lall_[lst]->at(mst);
           dec = make_deciq(false);
           while (!dec->done())
             dec->next_compute();
