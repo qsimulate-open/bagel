@@ -149,14 +149,12 @@ void CASPT2Grad::compute() {
 
       const int nmo = coeff_->mdim();
       shared_ptr<const Matrix> d0sa = ref_->rdm1_mat();
-      auto fock  = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
+      auto fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
       auto gd2 = focksub(d1_, *coeff_, false); // g(d2)
 
       for (int ist = 0; ist != nstates_; ++ist) {
         const Matrix op(*gd2 * (1.0/nstates_) - *fock * wf1norm_[ist]);
-
         shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
-        auto tmp = cideriv_->data(ist)->clone();
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             cideriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
