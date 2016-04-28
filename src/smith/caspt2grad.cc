@@ -302,18 +302,18 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   {
     shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * zmat->slice(0,nocc));
     if (nact) {
-      RDM<2> D(*ref->rdm2(task_->target())+*zrdm2);
-      RDM<1> dd(*ref->rdm1(task_->target())+*zrdm1);
+      RDM<2> D(*task_->d20ms()+*zrdm2);
+      RDM<1> dd(*task_->d10ms()+*zrdm1);
       // symetrize dd (zrdm1 needs symmetrization)
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
       shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
 
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*task_->d20ms(), *task_->d10ms(), nclosed, nact));
+      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact));
       qri = qijd->back_transform(ocoeff);
 
-      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*task_->d20ms(), *task_->d10ms(), nclosed, nact);
+      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact);
       qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
 
     } else {
