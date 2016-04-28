@@ -45,18 +45,6 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   do_grad_ = idata_->get<bool>("gradient", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
-  // FMM
-  dofmm_   = idata_->get<bool>("cfmm", false);
-  if (dofmm_) {
-    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true));
-    fmm_lmax_ = idata_->get<int>("l_max", 21);
-  }
-
-  Timer scfb;
-  overlap_ = make_shared<const OvlType>(geom);
-  scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom, dofmm_);
-  scfb.tick_print("Hcore matrix");
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
@@ -67,7 +55,19 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
   string dd = idata_->get<string>("diis", "gradient");
 
+  // FMM
+  dofmm_   = idata_->get<bool>("cfmm", false);
+  if (dofmm_) {
+    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true), thresh_overlap_, idata_->get<int>("ws", 2));
+    fmm_lmax_ = idata_->get<int>("l_max", 21);
+  }
   multipole_print_ = idata_->get<int>("multipole", 1);
+
+  Timer scfb;
+  overlap_ = make_shared<const OvlType>(geom);
+  scfb.tick_print("Overlap matrix");
+  hcore_ = make_shared<const HcType>(geom, dofmm_);
+  scfb.tick_print("Hcore matrix");
 
   const int ncharge = idata_->get<int>("charge", 0);
   const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
