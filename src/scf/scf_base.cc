@@ -58,7 +58,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   // FMM
   dofmm_   = idata_->get<bool>("cfmm", false);
   if (dofmm_) {
-    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true), thresh_overlap_, idata_->get<int>("ws", 2));
+    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
     fmm_lmax_ = idata_->get<int>("l_max", 21);
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
