@@ -135,7 +135,8 @@ class SpinFreeMethod {
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
 
     double e0() const { return e0_; }
-    double energy(const int n = 0) const { return energy_[n]; }
+    double energy() const { return energy(info_->target()); }
+    double energy(int n) const { return energy_[n]; }
 
     virtual void solve() = 0;
 

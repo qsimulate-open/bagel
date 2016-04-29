@@ -27,7 +27,8 @@
 
 
 #include <src/smith/caspt2/MSCASPT2.h>
-#include <src/smith/caspt2/MSCASPT2_tasks.h>
+#include <src/smith/caspt2/MSCASPT2_tasks11.h>
+#include <src/smith/caspt2/MSCASPT2_tasks12.h>
 
 using namespace std;
 using namespace bagel;
@@ -38,244 +39,290 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deci3q(const bool reset, const bool d
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
 
   auto deci3q = make_shared<Queue>();
-  auto tensor538 = vector<shared_ptr<Tensor>>{deci};
-  auto task538 = make_shared<Task538>(tensor538, reset);
+  auto tensor528 = vector<shared_ptr<Tensor>>{deci};
+  auto task528 = make_shared<Task528>(tensor528, reset);
+  deci3q->add_task(task528);
+
+  vector<IndexRange> I744_index = {ci_};
+  auto I744 = make_shared<Tensor>(I744_index);
+  auto tensor529 = vector<shared_ptr<Tensor>>{deci, I744};
+  auto task529 = make_shared<Task529>(tensor529, cindex);
+  task529->add_dep(task528);
+  deci3q->add_task(task529);
+
+  vector<IndexRange> I745_index = {active_, active_, active_, active_};
+  auto I745 = make_shared<Tensor>(I745_index);
+  auto tensor530 = vector<shared_ptr<Tensor>>{I744, Gamma111_(), I745};
+  auto task530 = make_shared<Task530>(tensor530, cindex);
+  task529->add_dep(task530);
+  task530->add_dep(task528);
+  deci3q->add_task(task530);
+
+  auto tensor531 = vector<shared_ptr<Tensor>>{I745, v2_, l2};
+  auto task531 = make_shared<Task531>(tensor531, cindex);
+  task530->add_dep(task531);
+  task531->add_dep(task528);
+  deci3q->add_task(task531);
+
+  vector<IndexRange> I748_index = {active_, active_, active_, active_, active_, active_};
+  auto I748 = make_shared<Tensor>(I748_index);
+  auto tensor532 = vector<shared_ptr<Tensor>>{I744, Gamma217_(), I748};
+  auto task532 = make_shared<Task532>(tensor532, cindex);
+  task529->add_dep(task532);
+  task532->add_dep(task528);
+  deci3q->add_task(task532);
+
+  auto tensor533 = vector<shared_ptr<Tensor>>{I748, v2_, l2};
+  auto task533 = make_shared<Task533>(tensor533, cindex);
+  task532->add_dep(task533);
+  task533->add_dep(task528);
+  deci3q->add_task(task533);
+
+  vector<IndexRange> I751_index = {active_, active_, active_, active_, active_, active_};
+  auto I751 = make_shared<Tensor>(I751_index);
+  auto tensor534 = vector<shared_ptr<Tensor>>{I744, Gamma116_(), I751};
+  auto task534 = make_shared<Task534>(tensor534, cindex);
+  task529->add_dep(task534);
+  task534->add_dep(task528);
+  deci3q->add_task(task534);
+
+  auto tensor535 = vector<shared_ptr<Tensor>>{I751, v2_, l2};
+  auto task535 = make_shared<Task535>(tensor535, cindex);
+  task534->add_dep(task535);
+  task535->add_dep(task528);
+  deci3q->add_task(task535);
+
+  vector<IndexRange> I754_index = {active_, active_};
+  auto I754 = make_shared<Tensor>(I754_index);
+  auto tensor536 = vector<shared_ptr<Tensor>>{I744, Gamma126_(), I754};
+  auto task536 = make_shared<Task536>(tensor536, cindex);
+  task529->add_dep(task536);
+  task536->add_dep(task528);
+  deci3q->add_task(task536);
+
+  auto tensor537 = vector<shared_ptr<Tensor>>{I754, v2_, l2};
+  auto task537 = make_shared<Task537>(tensor537, cindex);
+  task536->add_dep(task537);
+  task537->add_dep(task528);
+  deci3q->add_task(task537);
+
+  auto tensor538 = vector<shared_ptr<Tensor>>{I754, v2_, l2};
+  auto task538 = make_shared<Task538>(tensor538, cindex);
+  task536->add_dep(task538);
+  task538->add_dep(task528);
   deci3q->add_task(task538);
 
-  vector<IndexRange> I788_index = {ci_};
-  auto I788 = make_shared<Tensor>(I788_index);
-  auto tensor539 = vector<shared_ptr<Tensor>>{deci, I788};
+  vector<IndexRange> I760_index = {active_, active_, active_, active_};
+  auto I760 = make_shared<Tensor>(I760_index);
+  auto tensor539 = vector<shared_ptr<Tensor>>{I744, Gamma145_(), I760};
   auto task539 = make_shared<Task539>(tensor539, cindex);
-  task539->add_dep(task538);
+  task529->add_dep(task539);
+  task539->add_dep(task528);
   deci3q->add_task(task539);
 
-  vector<IndexRange> I789_index = {active_, active_, active_, active_};
-  auto I789 = make_shared<Tensor>(I789_index);
-  auto tensor540 = vector<shared_ptr<Tensor>>{I788, Gamma111_(), I789};
+  auto tensor540 = vector<shared_ptr<Tensor>>{I760, v2_, l2};
   auto task540 = make_shared<Task540>(tensor540, cindex);
   task539->add_dep(task540);
-  task540->add_dep(task538);
+  task540->add_dep(task528);
   deci3q->add_task(task540);
 
-  auto tensor541 = vector<shared_ptr<Tensor>>{I789, v2_, l2};
+  auto tensor541 = vector<shared_ptr<Tensor>>{I760, v2_, l2};
   auto task541 = make_shared<Task541>(tensor541, cindex);
-  task540->add_dep(task541);
-  task541->add_dep(task538);
+  task539->add_dep(task541);
+  task541->add_dep(task528);
   deci3q->add_task(task541);
 
-  vector<IndexRange> I792_index = {active_, active_, active_, active_, active_, active_};
-  auto I792 = make_shared<Tensor>(I792_index);
-  auto tensor542 = vector<shared_ptr<Tensor>>{I788, Gamma239_(), I792};
+  auto tensor542 = vector<shared_ptr<Tensor>>{I760, v2_, l2};
   auto task542 = make_shared<Task542>(tensor542, cindex);
   task539->add_dep(task542);
-  task542->add_dep(task538);
+  task542->add_dep(task528);
   deci3q->add_task(task542);
 
-  auto tensor543 = vector<shared_ptr<Tensor>>{I792, v2_, l2};
+  auto tensor543 = vector<shared_ptr<Tensor>>{I760, v2_, l2};
   auto task543 = make_shared<Task543>(tensor543, cindex);
-  task542->add_dep(task543);
-  task543->add_dep(task538);
+  task539->add_dep(task543);
+  task543->add_dep(task528);
   deci3q->add_task(task543);
 
-  vector<IndexRange> I795_index = {active_, active_, active_, active_, active_, active_};
-  auto I795 = make_shared<Tensor>(I795_index);
-  auto tensor544 = vector<shared_ptr<Tensor>>{I788, Gamma116_(), I795};
+  auto tensor544 = vector<shared_ptr<Tensor>>{I760, v2_, l2};
   auto task544 = make_shared<Task544>(tensor544, cindex);
   task539->add_dep(task544);
-  task544->add_dep(task538);
+  task544->add_dep(task528);
   deci3q->add_task(task544);
 
-  auto tensor545 = vector<shared_ptr<Tensor>>{I795, v2_, l2};
+  vector<IndexRange> I763_index = {active_, active_, active_, active_};
+  auto I763 = make_shared<Tensor>(I763_index);
+  auto tensor545 = vector<shared_ptr<Tensor>>{I744, Gamma139_(), I763};
   auto task545 = make_shared<Task545>(tensor545, cindex);
-  task544->add_dep(task545);
-  task545->add_dep(task538);
+  task529->add_dep(task545);
+  task545->add_dep(task528);
   deci3q->add_task(task545);
 
-  vector<IndexRange> I798_index = {active_, active_};
-  auto I798 = make_shared<Tensor>(I798_index);
-  auto tensor546 = vector<shared_ptr<Tensor>>{I788, Gamma126_(), I798};
+  auto tensor546 = vector<shared_ptr<Tensor>>{I763, v2_, l2};
   auto task546 = make_shared<Task546>(tensor546, cindex);
-  task539->add_dep(task546);
-  task546->add_dep(task538);
+  task545->add_dep(task546);
+  task546->add_dep(task528);
   deci3q->add_task(task546);
 
-  auto tensor547 = vector<shared_ptr<Tensor>>{I798, v2_, l2};
+  vector<IndexRange> I766_index = {active_, active_, active_, active_};
+  auto I766 = make_shared<Tensor>(I766_index);
+  auto tensor547 = vector<shared_ptr<Tensor>>{I744, Gamma142_(), I766};
   auto task547 = make_shared<Task547>(tensor547, cindex);
-  task546->add_dep(task547);
-  task547->add_dep(task538);
+  task529->add_dep(task547);
+  task547->add_dep(task528);
   deci3q->add_task(task547);
 
-  auto tensor548 = vector<shared_ptr<Tensor>>{I798, v2_, l2};
+  auto tensor548 = vector<shared_ptr<Tensor>>{I766, v2_, l2};
   auto task548 = make_shared<Task548>(tensor548, cindex);
-  task546->add_dep(task548);
-  task548->add_dep(task538);
+  task547->add_dep(task548);
+  task548->add_dep(task528);
   deci3q->add_task(task548);
 
-  vector<IndexRange> I804_index = {active_, active_, active_, active_};
-  auto I804 = make_shared<Tensor>(I804_index);
-  auto tensor549 = vector<shared_ptr<Tensor>>{I788, Gamma145_(), I804};
+  vector<IndexRange> I775_index = {active_, active_, active_, active_};
+  auto I775 = make_shared<Tensor>(I775_index);
+  auto tensor549 = vector<shared_ptr<Tensor>>{I744, Gamma117_(), I775};
   auto task549 = make_shared<Task549>(tensor549, cindex);
-  task539->add_dep(task549);
-  task549->add_dep(task538);
+  task529->add_dep(task549);
+  task549->add_dep(task528);
   deci3q->add_task(task549);
 
-  auto tensor550 = vector<shared_ptr<Tensor>>{I804, v2_, l2};
+  auto tensor550 = vector<shared_ptr<Tensor>>{I775, v2_, l2};
   auto task550 = make_shared<Task550>(tensor550, cindex);
   task549->add_dep(task550);
-  task550->add_dep(task538);
+  task550->add_dep(task528);
   deci3q->add_task(task550);
 
-  auto tensor551 = vector<shared_ptr<Tensor>>{I804, v2_, l2};
+  auto tensor551 = vector<shared_ptr<Tensor>>{I775, h1_, l2};
   auto task551 = make_shared<Task551>(tensor551, cindex);
   task549->add_dep(task551);
-  task551->add_dep(task538);
+  task551->add_dep(task528);
   deci3q->add_task(task551);
 
-  auto tensor552 = vector<shared_ptr<Tensor>>{I804, v2_, l2};
+  vector<IndexRange> I784_index = {active_, active_, active_, active_, active_, active_};
+  auto I784 = make_shared<Tensor>(I784_index);
+  auto tensor552 = vector<shared_ptr<Tensor>>{I744, Gamma169_(), I784};
   auto task552 = make_shared<Task552>(tensor552, cindex);
-  task549->add_dep(task552);
-  task552->add_dep(task538);
+  task529->add_dep(task552);
+  task552->add_dep(task528);
   deci3q->add_task(task552);
 
-  auto tensor553 = vector<shared_ptr<Tensor>>{I804, v2_, l2};
+  auto tensor553 = vector<shared_ptr<Tensor>>{I784, v2_, l2};
   auto task553 = make_shared<Task553>(tensor553, cindex);
-  task549->add_dep(task553);
-  task553->add_dep(task538);
+  task552->add_dep(task553);
+  task553->add_dep(task528);
   deci3q->add_task(task553);
 
-  auto tensor554 = vector<shared_ptr<Tensor>>{I804, v2_, l2};
+  vector<IndexRange> I787_index = {active_, active_, active_, active_, active_, active_};
+  auto I787 = make_shared<Tensor>(I787_index);
+  auto tensor554 = vector<shared_ptr<Tensor>>{I744, Gamma167_(), I787};
   auto task554 = make_shared<Task554>(tensor554, cindex);
-  task549->add_dep(task554);
-  task554->add_dep(task538);
+  task529->add_dep(task554);
+  task554->add_dep(task528);
   deci3q->add_task(task554);
 
-  vector<IndexRange> I807_index = {active_, active_, active_, active_};
-  auto I807 = make_shared<Tensor>(I807_index);
-  auto tensor555 = vector<shared_ptr<Tensor>>{I788, Gamma132_(), I807};
+  auto tensor555 = vector<shared_ptr<Tensor>>{I787, v2_, l2};
   auto task555 = make_shared<Task555>(tensor555, cindex);
-  task539->add_dep(task555);
-  task555->add_dep(task538);
+  task554->add_dep(task555);
+  task555->add_dep(task528);
   deci3q->add_task(task555);
 
-  auto tensor556 = vector<shared_ptr<Tensor>>{I807, v2_, l2};
-  auto task556 = make_shared<Task556>(tensor556, cindex);
-  task555->add_dep(task556);
-  task556->add_dep(task538);
-  deci3q->add_task(task556);
+  shared_ptr<Tensor> I790;
+  if (diagonal) {
+    vector<IndexRange> I790_index;
+    I790 = make_shared<Tensor>(I790_index);
+  }
+  shared_ptr<Task556> task556;
+  if (diagonal) {
+    auto tensor556 = vector<shared_ptr<Tensor>>{I744, rdm0deriv_, I790};
+    task556 = make_shared<Task556>(tensor556, cindex);
+    task529->add_dep(task556);
+    task556->add_dep(task528);
+    deci3q->add_task(task556);
+  }
 
-  vector<IndexRange> I810_index = {active_, active_, active_, active_};
-  auto I810 = make_shared<Tensor>(I810_index);
-  auto tensor557 = vector<shared_ptr<Tensor>>{I788, Gamma142_(), I810};
-  auto task557 = make_shared<Task557>(tensor557, cindex);
-  task539->add_dep(task557);
-  task557->add_dep(task538);
-  deci3q->add_task(task557);
+  shared_ptr<Task557> task557;
+  if (diagonal) {
+    auto tensor557 = vector<shared_ptr<Tensor>>{I790, v2_, l2};
+    task557 = make_shared<Task557>(tensor557, cindex);
+    task556->add_dep(task557);
+    task557->add_dep(task528);
+    deci3q->add_task(task557);
+  }
 
-  auto tensor558 = vector<shared_ptr<Tensor>>{I810, v2_, l2};
-  auto task558 = make_shared<Task558>(tensor558, cindex);
-  task557->add_dep(task558);
-  task558->add_dep(task538);
-  deci3q->add_task(task558);
+  shared_ptr<Tensor> I793;
+  if (diagonal) {
+    vector<IndexRange> I793_index;
+    I793 = make_shared<Tensor>(I793_index);
+  }
+  shared_ptr<Task558> task558;
+  if (diagonal) {
+    auto tensor558 = vector<shared_ptr<Tensor>>{I744, rdm0deriv_, I793};
+    task558 = make_shared<Task558>(tensor558, cindex);
+    task529->add_dep(task558);
+    task558->add_dep(task528);
+    deci3q->add_task(task558);
+  }
 
-  vector<IndexRange> I819_index = {active_, active_, active_, active_};
-  auto I819 = make_shared<Tensor>(I819_index);
-  auto tensor559 = vector<shared_ptr<Tensor>>{I788, Gamma122_(), I819};
-  auto task559 = make_shared<Task559>(tensor559, cindex);
-  task539->add_dep(task559);
-  task559->add_dep(task538);
-  deci3q->add_task(task559);
+  shared_ptr<Task559> task559;
+  if (diagonal) {
+    auto tensor559 = vector<shared_ptr<Tensor>>{I793, v2_, l2};
+    task559 = make_shared<Task559>(tensor559, cindex);
+    task558->add_dep(task559);
+    task559->add_dep(task528);
+    deci3q->add_task(task559);
+  }
 
-  auto tensor560 = vector<shared_ptr<Tensor>>{I819, v2_, l2};
+  vector<IndexRange> I796_index = {active_, active_};
+  auto I796 = make_shared<Tensor>(I796_index);
+  auto tensor560 = vector<shared_ptr<Tensor>>{I744, Gamma148_(), I796};
   auto task560 = make_shared<Task560>(tensor560, cindex);
-  task559->add_dep(task560);
-  task560->add_dep(task538);
+  task529->add_dep(task560);
+  task560->add_dep(task528);
   deci3q->add_task(task560);
 
-  auto tensor561 = vector<shared_ptr<Tensor>>{I819, h1_, l2};
+  auto tensor561 = vector<shared_ptr<Tensor>>{I796, v2_, l2};
   auto task561 = make_shared<Task561>(tensor561, cindex);
-  task559->add_dep(task561);
-  task561->add_dep(task538);
+  task560->add_dep(task561);
+  task561->add_dep(task528);
   deci3q->add_task(task561);
 
-  vector<IndexRange> I828_index = {active_, active_, active_, active_, active_, active_};
-  auto I828 = make_shared<Tensor>(I828_index);
-  auto tensor562 = vector<shared_ptr<Tensor>>{I788, Gamma169_(), I828};
+  auto tensor562 = vector<shared_ptr<Tensor>>{I796, v2_, l2};
   auto task562 = make_shared<Task562>(tensor562, cindex);
-  task539->add_dep(task562);
-  task562->add_dep(task538);
+  task560->add_dep(task562);
+  task562->add_dep(task528);
   deci3q->add_task(task562);
 
-  auto tensor563 = vector<shared_ptr<Tensor>>{I828, v2_, l2};
+  auto tensor563 = vector<shared_ptr<Tensor>>{I796, h1_, l2};
   auto task563 = make_shared<Task563>(tensor563, cindex);
-  task562->add_dep(task563);
-  task563->add_dep(task538);
+  task560->add_dep(task563);
+  task563->add_dep(task528);
   deci3q->add_task(task563);
 
-  vector<IndexRange> I831_index = {active_, active_, active_, active_, active_, active_};
-  auto I831 = make_shared<Tensor>(I831_index);
-  auto tensor564 = vector<shared_ptr<Tensor>>{I788, Gamma161_(), I831};
+  auto tensor564 = vector<shared_ptr<Tensor>>{I796, h1_, l2};
   auto task564 = make_shared<Task564>(tensor564, cindex);
-  task539->add_dep(task564);
-  task564->add_dep(task538);
+  task560->add_dep(task564);
+  task564->add_dep(task528);
   deci3q->add_task(task564);
 
-  auto tensor565 = vector<shared_ptr<Tensor>>{I831, v2_, l2};
+  vector<IndexRange> I802_index = {active_, active_, active_, active_};
+  auto I802 = make_shared<Tensor>(I802_index);
+  auto tensor565 = vector<shared_ptr<Tensor>>{I744, Gamma170_(), I802};
   auto task565 = make_shared<Task565>(tensor565, cindex);
-  task564->add_dep(task565);
-  task565->add_dep(task538);
+  task529->add_dep(task565);
+  task565->add_dep(task528);
   deci3q->add_task(task565);
 
-  vector<IndexRange> I834_index = {active_, active_};
-  auto I834 = make_shared<Tensor>(I834_index);
-  auto tensor566 = vector<shared_ptr<Tensor>>{I788, Gamma148_(), I834};
+  auto tensor566 = vector<shared_ptr<Tensor>>{I802, v2_, l2};
   auto task566 = make_shared<Task566>(tensor566, cindex);
-  task539->add_dep(task566);
-  task566->add_dep(task538);
+  task565->add_dep(task566);
+  task566->add_dep(task528);
   deci3q->add_task(task566);
 
-  auto tensor567 = vector<shared_ptr<Tensor>>{I834, v2_, l2};
+  auto tensor567 = vector<shared_ptr<Tensor>>{I802, h1_, l2};
   auto task567 = make_shared<Task567>(tensor567, cindex);
-  task566->add_dep(task567);
-  task567->add_dep(task538);
+  task565->add_dep(task567);
+  task567->add_dep(task528);
   deci3q->add_task(task567);
-
-  auto tensor568 = vector<shared_ptr<Tensor>>{I834, v2_, l2};
-  auto task568 = make_shared<Task568>(tensor568, cindex);
-  task566->add_dep(task568);
-  task568->add_dep(task538);
-  deci3q->add_task(task568);
-
-  auto tensor569 = vector<shared_ptr<Tensor>>{I834, h1_, l2};
-  auto task569 = make_shared<Task569>(tensor569, cindex);
-  task566->add_dep(task569);
-  task569->add_dep(task538);
-  deci3q->add_task(task569);
-
-  auto tensor570 = vector<shared_ptr<Tensor>>{I834, h1_, l2};
-  auto task570 = make_shared<Task570>(tensor570, cindex);
-  task566->add_dep(task570);
-  task570->add_dep(task538);
-  deci3q->add_task(task570);
-
-  vector<IndexRange> I840_index = {active_, active_, active_, active_};
-  auto I840 = make_shared<Tensor>(I840_index);
-  auto tensor571 = vector<shared_ptr<Tensor>>{I788, Gamma170_(), I840};
-  auto task571 = make_shared<Task571>(tensor571, cindex);
-  task539->add_dep(task571);
-  task571->add_dep(task538);
-  deci3q->add_task(task571);
-
-  auto tensor572 = vector<shared_ptr<Tensor>>{I840, v2_, l2};
-  auto task572 = make_shared<Task572>(tensor572, cindex);
-  task571->add_dep(task572);
-  task572->add_dep(task538);
-  deci3q->add_task(task572);
-
-  auto tensor573 = vector<shared_ptr<Tensor>>{I840, h1_, l2};
-  auto task573 = make_shared<Task573>(tensor573, cindex);
-  task571->add_dep(task573);
-  task573->add_dep(task538);
-  deci3q->add_task(task573);
 
   return deci3q;
 }

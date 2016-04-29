@@ -139,6 +139,7 @@ void CASPT2::CASPT2::solve() {
 
     VectorB eig(nstates_);
     heff_->diagonalize(eig);
+    copy_n(eig.data(), nstates_, pt2energy_.data());
 
     // print out the eigen vector
     cout << endl;
@@ -151,13 +152,14 @@ void CASPT2::CASPT2::solve() {
     cout << endl << endl;
 
     // energy printout
-    for (int istate = 0; istate != nstates_; ++istate) {
-      energy_[istate] = eig[istate];
-      cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
-    }
+    for (int istate = 0; istate != nstates_; ++istate)
+      cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
     cout << endl << endl;
+  } else {
+    heff_ = make_shared<Matrix>(1,1);
+    heff_->element(0,0) = 1.0;
   }
-
+  energy_ = pt2energy_;
 }
 
 
@@ -301,15 +303,42 @@ void CASPT2::CASPT2::solve_deriv() {
         Dens1->next_compute();
       Den1_ = Den1;
     }
+    timer.tick_print("Correlated density matrix evaluation");
+
+    // first make ci_deriv_
+    ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
+    const size_t cisize = ci_deriv_->data(0)->size();
+
+    const size_t cimax = 1000; // TODO interface to the input
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
+
+      feed_rdm_deriv(offset, size); // this set ci_
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+      shared_ptr<Queue> dec = make_deciq();
+      while (!dec->done())
+        dec->next_compute();
+      copy_n(deci->vectorb()->data(), size, ci_deriv_->data(0)->data()+offset);
+
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
+      timer.tick_print(ss.str());
+    }
+    cout << endl;
   } else {
-    // in case when CASPT2 is variational...
+    // in case when CASPT2 is not variational...
     MSCASPT2::MSCASPT2 ms(*this);
     ms.solve_deriv();
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
+    ci_deriv_ = ms.ci_deriv();
+    timer.tick();
   }
-  timer.tick_print("Correlated density matrix evaluation");
 
   correlated_norm_.resize(nstates_);
   if (nstates_ == 1) {
@@ -336,35 +365,8 @@ void CASPT2::CASPT2::solve_deriv() {
     }
   }
   timer.tick_print("T1 norm evaluation");
-
-  // rdm ci derivatives. Only for gradient computations
-  // TODO this is only valid for single-state CASPT2
-  {
-    // first make ci_deriv_
-    ci_deriv_ = make_shared<Civec>(info_->ref()->ciwfn()->det());
-    const size_t cisize = ci_deriv_->size();
-
-    const size_t cimax = 1000; // TODO interface to the input
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
-
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
-
-      feed_rdm_deriv(offset, size); // this set ci_
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-      shared_ptr<Queue> dec = make_deciq();
-      while (!dec->done())
-        dec->next_compute();
-      copy_n(deci->vectorb()->data(), size, ci_deriv_->data()+offset);
-
-      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
-      timer.tick_print(ss.str());
-    }
-    cout << endl;
-  }
+  // restore original energy
+  energy_ = pt2energy_;
 }
 
 #endif

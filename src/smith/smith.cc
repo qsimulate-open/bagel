@@ -74,6 +74,7 @@ void Smith::compute() {
     wf1norm_ = algop->correlated_norm();
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
+    msrot_ = algop->msrot();
     coeff_ = algop->coeff();
 
     // if spin-density is requested...

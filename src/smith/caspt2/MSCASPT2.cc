@@ -63,6 +63,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
 
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
+  Timer timer;
   const int nstates = info_->ciwfn()->nstates();
   const int target = info_->target();
 
@@ -76,16 +77,17 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
+          const double isheff = (*heff_)(istate, target);
           l2 = t2all_[istate]->at(ist); // careful
           shared_ptr<Queue> queue = make_density1q(true, ist == jst);
           while (!queue->done())
             queue->next_compute();
-          result->ax_plus_y((*heff_)(istate, target)*jheff, den1);
+          result->ax_plus_y(isheff*jheff, den1);
 
           shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
           while (!queue2->done())
             queue2->next_compute();
-          result2->ax_plus_y((*heff_)(istate, target)*jheff, Den1);
+          result2->ax_plus_y(isheff*jheff, Den1);
         }
       }
     }
@@ -94,6 +96,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
   }
   // second-order contribution from the lambda terms
   {
+    // TODO probably not necessary
     shared_ptr<Tensor> result = den2->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
@@ -112,6 +115,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
   }
   // first-order contribution from the lambda terms
   {
+    // TODO probably not necessary
     shared_ptr<Tensor> result = den1->clone();
     shared_ptr<Tensor> result2 = Den1->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
@@ -133,15 +137,102 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     den1_->ax_plus_y(1.0, result->matrix());
     Den1_->ax_plus_y(1.0, result2);
   }
+  // because of the convention...
+  den1_->scale(0.5);
+  Den1_->scale(0.5);
+  timer.tick_print("Correlated density matrix evaluation");
 
   // CI derivative..
-  {
-    ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-    for (int ist = 0; ist != nstates; ++ist) {
-      const size_t cisize = ci_deriv_->data(ist)->size();
+  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
+  // outer most look over RDM derivatives
+  for (int nst = 0; nst != nstates; ++nst) {
+    const size_t cisize = ci_deriv_->data(nst)->size();
+    const size_t cimax = 1000; // TODO interface to the input
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+    const double nheff = (*heff_)(nst, target);
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
 
       tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, ist, 0, cisize);
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
+
+      // output area
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+
+      shared_ptr<Queue> dec;
+
+      for (int lst = 0; lst != nstates; ++lst) {
+        const double lheff = (*heff_)(lst, target);
+        // derivative with respect to M
+        for (int mst = 0; mst != nstates; ++mst) {
+          const double mheff = (*heff_)(mst, target);
+
+          // <N|T_LN H|I>
+          l2 = t2all_[lst]->at(nst);
+          dec = make_deci3q(/*zero*/true);
+          while (!dec->done())
+            dec->next_compute();
+          blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+
+          // <I|T_LM H|N>
+          l2 = t2all_[lst]->at(mst);
+          dec = make_deci4q(/*zero*/true);
+          while (!dec->done())
+            dec->next_compute();
+          blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+
+          // -2Es <N|T_LN T_LM|I>
+          e0_ = 2.0*info_->shift();
+          l2 = t2all_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deci2q(/*zero*/true);
+          while (!dec->done())
+            dec->next_compute();
+          blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+        }
+      }
+
+      // derivative with respect to M
+      for (int mst = 0; mst != nstates; ++mst) {
+        l2 = lall_[mst]->at(nst);
+        dec = make_deci3q(/*zero*/true);
+        while (!dec->done())
+          dec->next_compute();
+
+        l2 = lall_[nst]->at(mst);
+        dec = make_deci4q(false);
+        while (!dec->done())
+          dec->next_compute();
+
+        for (int lst = 0; lst != nstates; ++lst) {
+          e0_ = e0all_[lst] - info_->shift();
+          l2 = lall_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+
+          l2 = t2all_[lst]->at(nst);
+          t2 = lall_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+        }
+        blas::ax_plus_y_n(1.0, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+      }
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass
+                          << "   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
+      timer.tick_print(ss.str());
     }
   }
 }

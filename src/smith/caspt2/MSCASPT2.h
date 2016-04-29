@@ -153,6 +153,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deciq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
@@ -173,6 +174,7 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
+    std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
 };
 
 }
