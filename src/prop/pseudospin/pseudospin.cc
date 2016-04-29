@@ -867,7 +867,7 @@ tuple<shared_ptr<const Matrix>, double, double> Pseudospin::compute_Dtensor(cons
   const double Eval = std::abs(0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]));
   cout << " ** D = " << setw(12) << setprecision(8) << Dval << " E_h = " << setprecision(4) << setw(8) << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << setw(12) << setprecision(8) << Eval << " E_h = " << setprecision(4) << setw(8) << Eval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** E / D = " << Eval / Dval << endl;
+  cout << " ** |E / D| = " << std::abs(Eval / Dval) << endl;
 
   //Dtensor_diag->print("Transformation matrix of D-tensor");
 
