@@ -139,6 +139,7 @@ void CASPT2::CASPT2::solve() {
 
     VectorB eig(nstates_);
     heff_->diagonalize(eig);
+    copy_n(eig.data(), nstates_, pt2energy_.data()); 
 
     // print out the eigen vector
     cout << endl;
@@ -151,16 +152,14 @@ void CASPT2::CASPT2::solve() {
     cout << endl << endl;
 
     // energy printout
-    for (int istate = 0; istate != nstates_; ++istate) {
-      energy_[istate] = eig[istate];
-      cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << eig[istate] << endl;
-    }
+    for (int istate = 0; istate != nstates_; ++istate)
+      cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
     cout << endl << endl;
   } else {
     heff_ = make_shared<Matrix>(1,1);
     heff_->element(0,0) = 1.0;
   }
-
+  energy_ = pt2energy_;
 }
 
 
@@ -366,6 +365,8 @@ void CASPT2::CASPT2::solve_deriv() {
     }
   }
   timer.tick_print("T1 norm evaluation");
+  // restore original energy
+  energy_ = pt2energy_;
 }
 
 #endif

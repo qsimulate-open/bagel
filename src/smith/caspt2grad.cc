@@ -51,7 +51,6 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   ref_ = cas->conv_to_ref();
   fci_ = cas->fci();
   thresh_ = cas->thresh();
-  ref_energy_ = cas->energy();
 
   // gradient/property calculation
   target_ = inp->get<int>("_target");
@@ -186,7 +185,7 @@ void CASPT2Grad::compute() {
     }
 
     d2_ = smith->dm2();
-    energy_ = smith->algo()->energy() + ref_energy_[target_];
+    energy_ = smith->algo()->energy();
 
     timer.tick_print("Postprocessing SMITH");
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;

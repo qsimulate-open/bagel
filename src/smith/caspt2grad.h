@@ -70,8 +70,6 @@ class CASPT2Grad : public Method {
     // properties
     bool do_hyperfine_;
 
-    std::vector<double> ref_energy_;
-
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
