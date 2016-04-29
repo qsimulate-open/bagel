@@ -85,6 +85,8 @@ void Smith::compute() {
       sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
     }
   }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
 #endif
 }
 
@@ -103,5 +105,7 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
   }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
 #endif
 }
