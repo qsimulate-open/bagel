@@ -80,6 +80,7 @@ class Node {
     std::shared_ptr<const DFDist_ints<ERIBatch>> form_fit(const int nbas, const int naux, std::vector<std::shared_ptr<const Atom>> atoms, std::vector<std::shared_ptr<const Atom>> aux_atoms) const {
       return std::make_shared<const DFDist_ints<ERIBatch>>(nbas, naux, atoms, aux_atoms, thresh_, true /*J^-1/2*/, 0.0/*dum*/, false /*average*/, nullptr /*data2*/, true /*serial*/);
     }
+    void sort_neighbours(std::vector<std::shared_ptr<const Node>> neighbours);
 
   public:
     Node(const std::bitset<nbit__> key = 0, const int depth = 0,

@@ -168,6 +168,7 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
         if (r < numerical_zero__)
           iself_ = nneighbour_;
         ++nneighbour_;
+        sort_neighbours(neighbour_);
       } else {
         interaction_list_.resize(ninter_ + 1);
         interaction_list_[ninter_] = neigh;
@@ -875,6 +876,26 @@ shared_ptr<const ZMatrix> Node::compute_exact_Coulomb_FF(shared_ptr<const Matrix
   }
 
   return out;
+}
+
+
+void Node::sort_neighbours(vector<shared_ptr<const Node>> neighbours) {
+
+  const size_t nneigh = neighbours.size();
+  const size_t nbit = neighbours[0]->key().size();
+  vector<shared_ptr<const Node>>::iterator it = neighbours.begin();
+  for (int i = 0; i != nneigh - 1; ++i) {
+    bool swap = false;
+    for (int j = nbit-1; j >= 0; j--)
+      if (neighbours[i]->key()[j] ^ neighbours[nneigh-1]->key()[j])
+        swap = neighbours[nneigh-1]->key()[j];
+    if (swap) {
+      neighbours.insert(it, neighbours[nneigh-1]);
+      neighbours.resize(nneigh);
+      break;
+    }
+    ++it;
+  }
 }
 
 
