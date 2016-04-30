@@ -233,18 +233,26 @@ void Tree::build_tree() {
 }
 
 
-shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile, const vector<double> schwarz, const double schwarz_thresh) const {
-
+void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const {
   if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
   // Downward pass
-  for (int i = nnode_ - 1; i > 0; --i)
+  for (int i = nnode_ - 1; i > 0; --i) {
     nodes_[i]->compute_multipoles(lmax);
+    if (dodf && nodes_[i]->is_leaf())
+      nodes_[i]->form_df(auxfile);
+  }
 
   fmmtime.tick_print("    Downward pass");
 
+}
+
+
+shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile, const vector<double> schwarz, const double schwarz_thresh) const {
+
+  Timer fmmtime;
   // Upward pass
   vector<int> offsets;
   for (int n = 0; n != geom_->natom(); ++n) {

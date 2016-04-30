@@ -53,6 +53,7 @@ class Node {
     std::vector<std::shared_ptr<const Node>> interaction_list_;
     std::vector<std::shared_ptr<const Node>> neighbour_;
     const double thresh_;
+    std::shared_ptr<const DFDist> df_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
     void insert_child(std::shared_ptr<const Node> = NULL);
@@ -61,6 +62,7 @@ class Node {
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
     void make_interaction_list(const int ws);
+    void form_df(const std::string auxfile);
 
     int nbasis_;
     bool is_same_as_parent_;

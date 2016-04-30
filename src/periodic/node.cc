@@ -706,15 +706,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       }
     }
   } else if (dodf && density) {
-    vector<shared_ptr<const Atom>> aux_atoms;
-    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
-    int naux =  0;
-    for (auto& a : close_atoms) {
-       auto aux_atom = make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr);
-       aux_atoms.push_back(aux_atom);
-       naux += aux_atom->nbasis();
-    }
-
     Matrix subden(nbas, nbas);
     int o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {
@@ -734,8 +725,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       o0 += b0size;
     }
 
-    shared_ptr<const DFDist> df = form_fit(nbas, naux, close_atoms, aux_atoms);
-    shared_ptr<const Matrix> o = df->compute_Jop(make_shared<const Matrix>(subden));
+    shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
 
     // exchange
     shared_ptr<Matrix> coeff = subden.copy();
@@ -753,7 +743,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       }
     }
     if (nocc == 0) return out;
-    shared_ptr<DFHalfDist> halfbj = df->compute_half_transform(coeff->slice(0,nocc));
+    shared_ptr<DFHalfDist> halfbj = df_->compute_half_transform(coeff->slice(0,nocc));
     shared_ptr<DFHalfDist> half = halfbj->apply_J();
     Matrix ex = *half->form_2index(half, -0.5);
 
@@ -896,6 +886,29 @@ void Node::sort_neighbours(vector<shared_ptr<const Node>> neighbours) {
     }
     ++it;
   }
+}
+
+
+void Node::form_df(const string auxfile) {
+
+  vector<shared_ptr<const Atom>> close_atoms;
+  int nbas = 0;
+  for (auto& close_node : neighbour_) {
+    nbas += close_node->nbasis();
+    for (auto& close_body : close_node->bodies())
+      for (auto& close_atom : close_body->atoms())
+      close_atoms.insert(close_atoms.end(), close_atom);
+  }
+
+  vector<shared_ptr<const Atom>> aux_atoms;
+  shared_ptr<const PTree> bdata = PTree::read_basis(auxfile);
+  int naux =  0;
+  for (auto& a : close_atoms) {
+     auto aux_atom = make_shared<const Atom>(*a, a->spherical(), auxfile, make_pair(auxfile, bdata), nullptr);
+     aux_atoms.push_back(aux_atom);
+     naux += aux_atom->nbasis();
+  }
+  df_ = form_fit(nbas, naux, close_atoms, aux_atoms);
 }
 
 
