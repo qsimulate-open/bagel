@@ -42,6 +42,8 @@ class CASPT2Grad : public Method {
     // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
     std::shared_ptr<const Tensor> d2_;
+    // XMS density if available
+    std::shared_ptr<const Matrix> dcheck_;
     // zeroth-order density matrix (mixed state)
     std::shared_ptr<RDM<1>> d10ms_;
     std::shared_ptr<RDM<2>> d20ms_;
@@ -82,6 +84,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> d11() const { return d11_; }
     std::shared_ptr<const Tensor> d2() const { return d2_; }
+    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
 

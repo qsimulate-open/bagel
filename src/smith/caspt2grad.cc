@@ -70,6 +70,7 @@ void CASPT2Grad::compute() {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
+  const int nocc = ref_->nocc();
   {
     // construct SMITH here
     shared_ptr<PTree> smithinput = idata_->get_child("smith");
@@ -122,6 +123,15 @@ void CASPT2Grad::compute() {
     d1_ = d1set(d1tmp);
     d11_ = d1set(d11tmp);
 
+    // XMS density matrix
+    if (smith->dcheck()) {
+      shared_ptr<const Matrix> dc = smith->dcheck();
+      assert(dc->ndim() == nact && dc->mdim() == nact);
+      auto tmp = make_shared<Matrix>(nocc, nocc);
+      tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
+      dcheck_ = tmp;
+    }
+
     // spin density matrices
     if (do_hyperfine_) {
       auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
@@ -148,23 +158,34 @@ void CASPT2Grad::compute() {
 
       const int nmo = coeff_->mdim();
       shared_ptr<const Matrix> d0sa = ref_->rdm1_mat();
-      auto fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
-      auto gd2 = focksub(d1_, *coeff_, false); // g(d2)
+      shared_ptr<const Matrix> fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
 
+      shared_ptr<Matrix> d2tmp = d1_->copy(); 
+      // adding XMS contribution to d2
+      if (dcheck_)
+        d2tmp->add_block(1.0, 0, 0, nocc, nocc, dcheck_);
+      shared_ptr<const Matrix> gd2 = focksub(d2tmp, *coeff_, false); // g(d2)
+
+      shared_ptr<const Matrix> uwu = smith->uwumat();
+      assert(!(uwu ^ dcheck_));
       for (int ist = 0; ist != nstates_; ++ist) {
         const Matrix op(*gd2 * (1.0/nstates_) - *fock * wf1norm_[ist]);
         shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             cideriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+        // adding XMS contribution to y
+        if (uwu)
+          for (int jst = 0; jst != nstates_; ++jst)
+            for (int i = 0; i != nact; ++i)
+              for (int j = 0; j != nact; ++j)
+                cideriv_->data(jst)->ax_plus_y(2.0*(*fock)(j,i)*(*uwu)(ist,jst), deriv->data(j+i*nact));
       }
       // y_I += <I|H|0> (for mixed states)
-#if 1
       shared_ptr<const Dvec> sigma = fci_->form_sigma(ref_->ciwfn()->civectors(), fci_->jop(), vector<int>(nstates_,0));
       for (int ist = 0; ist != nstates_; ++ist)
         for (int jst = 0; jst != nstates_; ++jst)
           cideriv_->data(jst)->ax_plus_y(2.0*msrot(ist, target())*msrot(jst, target()), sigma->data(ist));
-#endif
     }
 
     // zeroth order RDM
@@ -259,7 +280,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 

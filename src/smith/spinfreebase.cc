@@ -124,8 +124,6 @@ template<>
 void SpinFreeMethod<double>::rotate_xms() {
   assert(fockact_);
   const int nstates = info_->ciwfn()->nstates();
-
-  // TODO XMS thing
   Matrix fmn(nstates, nstates);
 
   for (int ist = 0; ist != nstates; ++ist) {
@@ -181,6 +179,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // update eref_
   eref_ = make_shared<Matrix>(fmn % (*eref_) *fmn);
+  xmsmat_ = make_shared<Matrix>(move(fmn));
 }
 
 

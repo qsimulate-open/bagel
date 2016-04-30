@@ -337,6 +337,8 @@ void CASPT2::CASPT2::solve_deriv() {
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
     ci_deriv_ = ms.ci_deriv();
+    dcheck_ = ms.dcheck();
+    uwumat_ = ms.uwumat();
     timer.tick();
   }
 

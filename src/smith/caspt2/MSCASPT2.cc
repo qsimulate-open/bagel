@@ -44,6 +44,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   heff_    = cas.heff_;
   fockact_ = cas.fockact_;
   e0all_   = cas.e0all_;
+  xmsmat_  = cas.xmsmat_;
 
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
@@ -235,6 +236,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       timer.tick_print(ss.str());
     }
   }
+  // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and uwumat
 }
 
 #endif

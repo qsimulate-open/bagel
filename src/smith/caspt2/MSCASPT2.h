@@ -47,6 +47,7 @@ class MSCASPT2 {
 
     std::shared_ptr<const Matrix> heff_;
     std::shared_ptr<const Matrix> fockact_;
+    std::shared_ptr<const Matrix> xmsmat_;
     std::vector<double> e0all_;
 
     // tensors used by SMITH internally
@@ -71,6 +72,8 @@ class MSCASPT2 {
     std::shared_ptr<Matrix> den2_;
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
+    std::shared_ptr<Matrix> dcheck_;
+    std::shared_ptr<Matrix> uwumat_;
 
     // passed from CASPT2
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
@@ -175,6 +178,8 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
+    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
+    std::shared_ptr<const Matrix> uwumat() const { return uwumat_; }
 };
 
 }
