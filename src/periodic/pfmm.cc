@@ -626,9 +626,9 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
   Tree fmm_tree(supergeom, height_, do_contract_, thresh_);
-  time.tick_print("  Construct tree");
-  const string auxfile = scell_->geom()->auxfile();
-  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, auxfile, schwarz, schwarz_thresh);
+  fmm_tree.init_fmm(lmax_, dodf_, scell_->geom()->auxfile());
+  time.tick_print("  Construct tree and compute integrals");
+  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, schwarz, schwarz_thresh);
   time.tick_print("  Compute Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);
