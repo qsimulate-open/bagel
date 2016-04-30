@@ -133,7 +133,7 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aodensity, dodf_, geom_->auxfile(), schwarz_)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aodensity, dodf_, schwarz_)->get_real_part();
       previous_fock = make_shared<const Matrix>(*hcore_ + *tmp);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();

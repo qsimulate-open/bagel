@@ -451,7 +451,7 @@ shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const string auxfile, const vector<double> schwarz, const double schwarz_thresh) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(nbasis, nbasis);

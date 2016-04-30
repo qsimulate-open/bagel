@@ -250,9 +250,8 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 }
 
 
-shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const string auxfile, const vector<double> schwarz, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) const {
 
-  Timer fmmtime;
   // Upward pass
   vector<int> offsets;
   for (int n = 0; n != geom_->natom(); ++n) {
@@ -271,7 +270,7 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 //            nodes_[i]->compute_local_expansions(density, lmax, offsets);
             if (nodes_[i]->is_leaf()) {
               nodes_[i]->compute_local_expansions(density, lmax, offsets); //////// TMP
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, "", schwarz, schwarz_thresh);
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, schwarz, schwarz_thresh);
               *out += *tmp;
             }
           }
@@ -285,15 +284,12 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 //        nodes_[i]->compute_local_expansions(density, lmax, offsets);
         if (nodes_[i]->is_leaf()) {
           nodes_[i]->compute_local_expansions(density, lmax, offsets);   ///////// TMP
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true, auxfile);
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true);
           *out += *tmp;
         }
       }
     }
   }
-
-  fmmtime.tick_print("    Upward pass");
-  cout << endl;
 
   // return the Coulomb matrix
   out->allreduce();
