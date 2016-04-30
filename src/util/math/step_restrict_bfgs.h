@@ -232,6 +232,7 @@ class SRBFGS {
 
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
+     bool converged = false;
 
      double shift = 1e-12;
      auto shift_vec = grad->clone();
@@ -243,6 +244,7 @@ class SRBFGS {
        if (dl_norm <= trust_radius_ && k != 0) {
          std::cout << " Hebden algorithm converged in " << k << " iterations. " << std::endl;
          std::cout << " Level Shift = " << shift << std::endl;
+         converged = true;
          break;
        }
        auto dl2 = level_shift_inverse_hessian(dl, shift_vec);   // Hn^-2 * gn
@@ -254,10 +256,14 @@ class SRBFGS {
        shift_vec->fill(shift);
        if (k == hebden_iter_ - 1) {
          std::cout << " Hebden algorithm did not converge to appropriate level shift within " << k << " iterations " << std::endl;
-         std::cout << " step norm with shift   = " << dl_norm << std::endl;
+         std::cout << " step norm with shift   = " << dl_norm << " ...  level shift will be discarded." << std::endl;
+         converged = false;
        }
      }
-     level_shift_ = shift;
+     if (converged)
+       level_shift_ = shift;
+     else
+       shift = 1e-12;
      return shift;
    }
 

@@ -94,6 +94,8 @@ class RelReference : public Reference {
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
 
+    std::shared_ptr<Reference> extract_state(const int istate) const override; 
+
 };
 
 }

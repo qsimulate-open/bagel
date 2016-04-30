@@ -139,7 +139,7 @@ void CASPT2::CASPT2::solve() {
 
     VectorB eig(nstates_);
     heff_->diagonalize(eig);
-    copy_n(eig.data(), nstates_, pt2energy_.data()); 
+    copy_n(eig.data(), nstates_, pt2energy_.data());
 
     // print out the eigen vector
     cout << endl;
