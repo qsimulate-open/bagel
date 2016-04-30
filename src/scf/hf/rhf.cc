@@ -133,7 +133,11 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      previous_fock = make_shared<Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+      if (!dodf_) {
+        previous_fock = make_shared<Fock<0>>(geom_, hcore_, aodensity, schwarz_);
+      } else {
+        previous_fock = make_shared<Fock<1>>(geom_, hcore_, aodensity, schwarz_);
+      }
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
