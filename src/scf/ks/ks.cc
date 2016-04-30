@@ -98,7 +98,7 @@ void KS::compute() {
 
 
 shared_ptr<const Reference> KS::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff()->mdim()-nocc(), energy());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff()->mdim()-nocc(), vector<double>{energy_});
   out->set_eig(eig_);
   return out;
 }

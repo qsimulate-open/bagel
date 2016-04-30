@@ -35,7 +35,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template<typename DataType>
-SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
+SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf), info_orig_(info_) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
@@ -171,7 +171,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
-                                        info_->nvirt(), 0.0, info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->nvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
@@ -212,7 +212,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
       shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
-      tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
+      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
       tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact_);
 
       unique_ptr<double[]> data0(new double[1]);

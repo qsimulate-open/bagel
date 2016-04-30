@@ -167,7 +167,7 @@ shared_ptr<GradFile> GradEval<DMP2Grad>::compute() {
   cout << endl;
   cout << "      DMP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
-  energy_ += ref_->energy();
+  energy_ += ref_->energy(0);
   cout << "      DMP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
   {

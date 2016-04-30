@@ -349,7 +349,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   cout << endl;
 
   // set proper energy_
-  energy_ = ref_->energy() + ecorr;
+  energy_ = ref_->energy(0) + ecorr;
 
   gradf->print();
   return gradf;

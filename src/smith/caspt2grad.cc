@@ -102,15 +102,6 @@ void CASPT2Grad::compute() {
     // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
     d11tmp->scale(2.0);
 
-    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
-    if (nact) {
-      for (int ist = 0; ist != nstates_; ++ist) {
-        for (int i = nclosed; i != nclosed+nact; ++i)
-          for (int j = nclosed; j != nclosed+nact; ++j)
-            d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[ist] * ref_->rdm1(ist)->element(j-nclosed, i-nclosed);
-      }
-    }
-
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
       if (!ncore_) {
         return d1t->copy();
@@ -139,53 +130,6 @@ void CASPT2Grad::compute() {
       sd11tmp->scale(2.0);
       sd1_ = d1set(smith->sdm1());
       sd11_ = d1set(sd11tmp);
-    }
-
-    // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
-    if (nact) {
-      // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
-      const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
-
-      auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
-        shared_ptr<const Matrix> jop = ref_->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
-        auto out = make_shared<Matrix>(acoeff % (add ? (*ref_->hcore() + *jop) : *jop) * acoeff);
-        shared_ptr<const DFFullDist> full = ref_->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
-        shared_ptr<DFFullDist> full2 = full->copy();
-        full2->rotate_occ1(moden);
-        *out += *full->form_2index(full2, -0.5);
-        return out;
-      };
-
-      const int nmo = coeff_->mdim();
-      shared_ptr<const Matrix> d0sa = ref_->rdm1_mat();
-      shared_ptr<const Matrix> fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
-
-      shared_ptr<Matrix> d2tmp = d1_->copy(); 
-      // adding XMS contribution to d2
-      if (dcheck_)
-        d2tmp->add_block(1.0, 0, 0, nocc, nocc, dcheck_);
-      shared_ptr<const Matrix> gd2 = focksub(d2tmp, *coeff_, false); // g(d2)
-
-      shared_ptr<const Matrix> uwu = smith->uwumat();
-      assert(!(uwu ^ dcheck_));
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const Matrix op(*gd2 * (1.0/nstates_) - *fock * wf1norm_[ist]);
-        shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
-        for (int i = 0; i != nact; ++i)
-          for (int j = 0; j != nact; ++j)
-            cideriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
-        // adding XMS contribution to y
-        if (uwu)
-          for (int jst = 0; jst != nstates_; ++jst)
-            for (int i = 0; i != nact; ++i)
-              for (int j = 0; j != nact; ++j)
-                cideriv_->data(jst)->ax_plus_y(2.0*(*fock)(j,i)*(*uwu)(ist,jst), deriv->data(j+i*nact));
-      }
-      // y_I += <I|H|0> (for mixed states)
-      shared_ptr<const Dvec> sigma = fci_->form_sigma(ref_->ciwfn()->civectors(), fci_->jop(), vector<int>(nstates_,0));
-      for (int ist = 0; ist != nstates_; ++ist)
-        for (int jst = 0; jst != nstates_; ++jst)
-          cideriv_->data(jst)->ax_plus_y(2.0*msrot(ist, target())*msrot(jst, target()), sigma->data(ist));
     }
 
     // zeroth order RDM

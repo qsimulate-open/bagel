@@ -236,7 +236,6 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       timer.tick_print(ss.str());
     }
   }
-  // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and uwumat
 }
 
 #endif

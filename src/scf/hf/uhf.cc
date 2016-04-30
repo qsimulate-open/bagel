@@ -175,7 +175,7 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   int nocc;
   shared_ptr<VecRDM<1>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, energy(), rdm1);
+  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, vector<double>{energy_}, rdm1);
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);

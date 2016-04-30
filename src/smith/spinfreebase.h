@@ -57,6 +57,7 @@ class SpinFreeMethod {
     std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<const SMITH_Info<DataType>> info_;
+    std::shared_ptr<const SMITH_Info<DataType>> info_orig_;
 
     std::shared_ptr<const MatType> coeff_;
     std::shared_ptr<const MatType> fockact_;
