@@ -260,10 +260,10 @@ class SRBFGS {
          converged = false;
        }
      }
-     if (converged)
-       level_shift_ = shift;
-     else
+     if (!converged)
        shift = 1e-12;
+
+     level_shift_ = shift;
      return shift;
    }
 
