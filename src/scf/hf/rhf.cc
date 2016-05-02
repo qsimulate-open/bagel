@@ -118,12 +118,8 @@ void RHF::compute() {
     coeff = coeff_->distmatrix();
   }
 
-  if (!dodf_) {
-    aodensity_ = coeff_->form_density_rhf(nocc_);
-    aodensity = aodensity_->distmatrix();
-  } else {
-    aodensity = coeff->form_density_rhf(nocc_);
-  }
+  aodensity_ = coeff_->form_density_rhf(nocc_);
+  aodensity = aodensity_->distmatrix();
 
   // starting SCF iteration
   shared_ptr<const Matrix> densitychange = aodensity_;
