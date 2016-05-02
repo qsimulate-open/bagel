@@ -1,0 +1,26 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "tzvpp-jkfit",
+  "cfmm" : "true",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "He",  "xyz" : [ -0.000000,     -0.000000,     -25.000000]},
+    { "atom" : "He",  "xyz" : [ -0.000000,     -0.000000,     -20.000000]},
+    { "atom" : "He",  "xyz" : [ -0.000000,     -0.000000,      20.000000]},
+    { "atom" : "He",  "xyz" : [ -0.000000,     -0.000000,      25.000000]}
+  ]
+},
+
+{
+  "height" : "21",
+  "l_max" : "10",
+  "ws" : "2",
+  "title" : "hf",
+  "thresh" : 1.0e-10
+}
+
+]}
