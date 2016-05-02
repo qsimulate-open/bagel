@@ -70,9 +70,14 @@ void RHF::compute() {
   if (!restarted_) {
     if (coeff_ == nullptr) {
       shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
-      if (dodf_ && geom_->spherical() && !dofmm_) {
+      if (geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
-        auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        shared_ptr<const Matrix> focka;
+        if (dodf_) {
+          focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        } else {
+          focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
+        }
         fock = focka->distmatrix();
       }
       DistMatrix intermediate = *tildex % *fock * *tildex;
