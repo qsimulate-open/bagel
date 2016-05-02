@@ -70,7 +70,6 @@ void Smith::compute() {
     dm11_ = algop->rdm11();
     dm2_ = algop->rdm21();
     dcheck_ = algop->dcheck();
-    uwumat_ = algop->uwumat();
 
     // compute <1|1>
     wf1norm_ = algop->correlated_norm();

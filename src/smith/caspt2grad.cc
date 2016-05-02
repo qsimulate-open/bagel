@@ -71,90 +71,86 @@ void CASPT2Grad::compute() {
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  {
-    // construct SMITH here
-    shared_ptr<PTree> smithinput = idata_->get_child("smith");
-    smithinput->put("_grad", true);
-    smithinput->put("_target", target_);
-    smithinput->put("_hyperfine", do_hyperfine_);
-    auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
-    smith->compute();
 
-    // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
-    coeff_ = smith->coeff();
+  // construct SMITH here
+  shared_ptr<PTree> smithinput = idata_->get_child("smith");
+  smithinput->put("_grad", true);
+  smithinput->put("_target", target_);
+  smithinput->put("_hyperfine", do_hyperfine_);
+  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+  smith->compute();
 
-    if (nact)
-      cideriv_ = smith->cideriv()->copy();
-    ncore_   = smith->algo()->info()->ncore();
-    wf1norm_ = smith->wf1norm();
-    msrot_   = smith->msrot();
-    nstates_ = wf1norm_.size();
-    assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-    assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
+  // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
+  coeff_ = smith->coeff();
 
-    Timer timer;
+  if (nact)
+    cideriv_ = smith->cideriv()->copy();
+  ncore_   = smith->algo()->info()->ncore();
+  wf1norm_ = smith->wf1norm();
+  msrot_   = smith->msrot();
+  nstates_ = wf1norm_.size();
+  assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
+  assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
 
-    // save correlated density matrices d(1), d(2), and ci derivatives
-    auto d1tmp = make_shared<Matrix>(*smith->dm1());
-    auto d11tmp = make_shared<Matrix>(*smith->dm11());
-    d1tmp->symmetrize();
-    d11tmp->symmetrize();
-    // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
-    d11tmp->scale(2.0);
+  Timer timer;
 
-    auto d1set = [this](shared_ptr<const Matrix> d1t) {
-      if (!ncore_) {
-        return d1t->copy();
-      } else {
-        auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-        out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
-        return out;
-      }
-    };
-    d1_ = d1set(d1tmp);
-    d11_ = d1set(d11tmp);
+  // save correlated density matrices d(1), d(2), and ci derivatives
+  auto d1tmp = make_shared<Matrix>(*smith->dm1());
+  auto d11tmp = make_shared<Matrix>(*smith->dm11());
+  d1tmp->symmetrize();
+  d11tmp->symmetrize();
+  // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
+  d11tmp->scale(2.0);
 
-    // XMS density matrix
-    if (smith->dcheck()) {
-      shared_ptr<const Matrix> dc = smith->dcheck();
-      assert(dc->ndim() == nact && dc->mdim() == nact);
-      auto tmp = make_shared<Matrix>(nocc, nocc);
-      tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
-      dcheck_ = tmp;
+  auto d1set = [this](shared_ptr<const Matrix> d1t) {
+    if (!ncore_) {
+      return d1t->copy();
+    } else {
+      auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+      out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
+      return out;
     }
+  };
+  d1_ = d1set(d1tmp);
+  d11_ = d1set(d11tmp);
 
-    // spin density matrices
-    if (do_hyperfine_) {
-      auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
-      sd11tmp->symmetrize();
-      sd11tmp->scale(2.0);
-      sd1_ = d1set(smith->sdm1());
-      sd11_ = d1set(sd11tmp);
-    }
-
-    // zeroth order RDM
-    if (nact) {
-      d10ms_ = make_shared<RDM<1>>(nact);
-      d20ms_ = make_shared<RDM<2>>(nact);
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const double ims = msrot(ist, target());
-        for (int jst = 0; jst != nstates_; ++jst) {
-          const double jms = msrot(jst, target());
-          shared_ptr<const RDM<1>> rdm1t;
-          shared_ptr<const RDM<2>> rdm2t;
-          tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
-          d10ms_->ax_plus_y(ims*jms, *rdm1t);
-          d20ms_->ax_plus_y(ims*jms, *rdm2t);
-        }
-      }
-    }
-
-    d2_ = smith->dm2();
-    energy_ = smith->algo()->energy();
-
-    timer.tick_print("Postprocessing SMITH");
-    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
+  // XMS density matrix
+  if (smith->dcheck()) {
+    shared_ptr<const Matrix> dc = smith->dcheck();
+    assert(dc->ndim() == nact && dc->mdim() == nact);
+    auto tmp = make_shared<Matrix>(nocc, nocc);
+    tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
+    dcheck_ = tmp;
   }
+
+  // spin density matrices
+  if (do_hyperfine_) {
+    auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
+    sd11tmp->symmetrize();
+    sd11tmp->scale(2.0);
+    sd1_ = d1set(smith->sdm1());
+    sd11_ = d1set(sd11tmp);
+  }
+
+  // zeroth order RDM
+  if (nact) {
+    d10ms_ = make_shared<RDM<1>>(nact);
+    d20ms_ = make_shared<RDM<2>>(nact);
+    for (int ist = 0; ist != nstates_; ++ist) {
+      const double ims = msrot(ist, target());
+      for (int jst = 0; jst != nstates_; ++jst) {
+        const double jms = msrot(jst, target());
+        shared_ptr<const RDM<1>> rdm1t;
+        shared_ptr<const RDM<2>> rdm2t;
+        tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
+        d10ms_->ax_plus_y(ims*jms, *rdm1t);
+        d20ms_->ax_plus_y(ims*jms, *rdm2t);
+      }
+    }
+  }
+  d2_ = smith->dm2();
+  energy_ = smith->algo()->energy();
+  cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
 #endif
 }
 

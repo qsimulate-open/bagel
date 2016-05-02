@@ -56,7 +56,6 @@ class Smith : public Method {
     std::shared_ptr<const Tensor> dm2_;
     // XMS density matrix
     std::shared_ptr<const Matrix> dcheck_;
-    std::shared_ptr<const Matrix> uwumat_;
     // second order spin density matrix
     std::shared_ptr<const Matrix> sdm1_;
     // first order spin density matrix
@@ -81,7 +80,6 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> dm11() const { return dm11_; }
     std::shared_ptr<const Tensor> dm2() const { return dm2_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
-    std::shared_ptr<const Matrix> uwumat() const { return uwumat_; }
     std::shared_ptr<const Matrix> sdm1() const { return sdm1_; }
     std::shared_ptr<const Matrix> sdm11() const { return sdm11_; }
     std::vector<double> wf1norm() const { return wf1norm_; }

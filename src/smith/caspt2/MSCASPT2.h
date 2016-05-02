@@ -73,11 +73,11 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<Matrix> dcheck_;
-    std::shared_ptr<Matrix> uwumat_;
 
     // passed from CASPT2
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::shared_ptr<Vec<Tensor>> rdm0all_;
     std::shared_ptr<Vec<Tensor>> rdm1all_;
     std::shared_ptr<Vec<Tensor>> rdm2all_;
@@ -179,7 +179,6 @@ class MSCASPT2 {
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
-    std::shared_ptr<const Matrix> uwumat() const { return uwumat_; }
 };
 
 }

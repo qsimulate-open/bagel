@@ -75,7 +75,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<Tensor> deci;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<const Matrix> dcheck_;
-    std::shared_ptr<const Matrix> uwumat_;
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
@@ -189,7 +188,6 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::shared_ptr<const Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
-    std::shared_ptr<const Matrix> uwumat() const { return uwumat_; }
 
 };
 

@@ -338,7 +338,6 @@ void CASPT2::CASPT2::solve_deriv() {
     Den1_ = ms.rdm21();
     ci_deriv_ = ms.ci_deriv();
     dcheck_ = ms.dcheck();
-    uwumat_ = ms.uwumat();
     timer.tick();
   }
 
@@ -420,7 +419,7 @@ void CASPT2::CASPT2::solve_deriv() {
         ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,tst)*(*heff_)(jst,tst)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
   }
 
-  // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and uwumat
+  // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and contribution to y
   if (xmsmat_) {
     Matrix wmn(nstates_, nstates_);
     shared_ptr<Tensor> dc = rdm1_->clone(); 
@@ -455,6 +454,7 @@ void CASPT2::CASPT2::solve_deriv() {
 
   // restore original energy
   energy_ = pt2energy_;
+  timer.tick_print("Postprocessing SMITH");
 }
 
 #endif
