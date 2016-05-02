@@ -75,9 +75,9 @@ class Node {
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion_;
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
-    std::shared_ptr<const ZMatrix> compute_NAI_far_field(const int lmax);
-    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(const int nbasis, std::shared_ptr<const Matrix> density, std::vector<int> offsets, const bool dodf = false, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0);
+    std::shared_ptr<const ZMatrix> compute_NAI_far_field(const int lmax, const double scale);
+    void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax, const std::vector<int> offsets, const double scale);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(const int nbasis, std::shared_ptr<const Matrix> density, std::vector<int> offsets, const bool dodf = false, const double scale = 1.0, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0);
     std::shared_ptr<const ZMatrix> compute_exact_Coulomb_FF(std::shared_ptr<const Matrix> density, std::vector<int> offsets);
     std::shared_ptr<const DFDist_ints<ERIBatch>> form_fit(const int nbas, const int naux, std::vector<std::shared_ptr<const Atom>> atoms, std::vector<std::shared_ptr<const Atom>> aux_atoms) const {
       return std::make_shared<const DFDist_ints<ERIBatch>>(nbas, naux, atoms, aux_atoms, thresh_, true /*J^-1/2*/, 0.0/*dum*/, false /*average*/, nullptr /*data2*/, true /*serial*/);

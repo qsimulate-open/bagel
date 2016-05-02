@@ -250,7 +250,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 }
 
 
-shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
 
   // Upward pass
   vector<int> offsets;
@@ -266,11 +266,11 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
     for (int i = 1; i != nnode_; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
         tasks.emplace_back(
-          [this, i, &out, &density, lmax, offsets, schwarz, schwarz_thresh] () {
-//            nodes_[i]->compute_local_expansions(density, lmax, offsets);
+          [this, i, &out, &density, lmax, offsets, scale, schwarz, schwarz_thresh] () {
+//            nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
             if (nodes_[i]->is_leaf()) {
-              nodes_[i]->compute_local_expansions(density, lmax, offsets); //////// TMP
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, schwarz, schwarz_thresh);
+              nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
+              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, scale, schwarz, schwarz_thresh);
               *out += *tmp;
             }
           }
@@ -281,10 +281,10 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   } else {
     for (int i = 1; i != nnode_; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
-//        nodes_[i]->compute_local_expansions(density, lmax, offsets);
+//        nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
         if (nodes_[i]->is_leaf()) {
-          nodes_[i]->compute_local_expansions(density, lmax, offsets);   ///////// TMP
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true);
+          nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);   ///////// TMP
+          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true, scale);
           *out += *tmp;
         }
       }

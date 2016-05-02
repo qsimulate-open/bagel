@@ -306,7 +306,7 @@ void Node::compute_multipoles(const int lmax) {
 }
 
 
-void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, const vector<int> offsets) {
+void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax, const vector<int> offsets, const double scale) {
 
   const int nmultipole = (lmax + 1) * (lmax + 1);
 
@@ -424,13 +424,13 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
     }
   }
 
-  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax);
+  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax, scale);
   local_expansion_ = make_shared<const ZMatrix>(*lrs + *nai);
   exchange_ = make_shared<const ZMatrix>(*lrt);
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
+shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax, const double scale) {
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
 
@@ -444,14 +444,14 @@ shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax) {
 
     for (auto& body : distant_node->bodies())
       for (auto& atom : body->atoms())
-        *out += -2.0 * atom->atom_charge() * *lmoments[0];
+        *out += -scale * atom->atom_charge() * *lmoments[0];
   }
 
   return out;
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
@@ -586,14 +586,14 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
           const int b2offset = new_offset[i2];
           const int b2size = b2->nbasis();
           {
-            array<shared_ptr<const Shell>,2> shells = {{b3, b2}};
+            array<shared_ptr<const Shell>,2> shells = {{b2, b3}};
             NAIBatch naibatch(shells, mol);
             naibatch.compute();
             const double* naidata = naibatch.data();
-            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++naidata) {
+            for (int j3 = b3offset; j3 != b3offset + b3size; ++j3) {
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2, ++naidata) {
                 const double nai = *naidata;
-                out->element(j2, j3) += 2.0 * nai;
+                out->element(j3, j2) += scale * nai;
               }
             }
           }
@@ -760,11 +760,11 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             const int b1size = b1->nbasis();
             ++ish1;
 
-            auto tmp = o->get_submatrix(o1, o0, b1size, b0size);
-            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmp); // J
+            auto tmp = o->get_submatrix(o0, o1, b0size, b1size);
+            out->add_real_block(1.0, b0offset, b1offset, b0size, b1size, *tmp); // J
 
-            auto tmpex = ex.get_submatrix(o1, o0, b1size, b0size);
-            out->add_real_block(1.0, b1offset, b0offset, b1size, b0size, *tmpex); // K
+            auto tmpex = ex.get_submatrix(o0, o1, b0size, b1size);
+            out->add_real_block(1.0, b0offset, b1offset, b0size, b1size, *tmpex); // K
 
             o1 += b1size;
           }
