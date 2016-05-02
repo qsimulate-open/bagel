@@ -381,6 +381,7 @@ void CASPT2::CASPT2::solve_deriv() {
         for (int j = nclosed; j != nclosed+nact; ++j)
           dtmp->element(j, i) -=  correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
     }
+    dtmp->symmetrize();
     den2_ = dtmp;
   }
 
@@ -401,7 +402,6 @@ void CASPT2::CASPT2::solve_deriv() {
   {
     // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
     // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
-    // Note that we have to use rotated RDMs and RDM derivatives.
     shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
 
     for (int ist = 0; ist != nstates_; ++ist) {
