@@ -76,6 +76,9 @@ class Molecule {
     // external magnetic field
     std::array<double,3> magnetic_field_;
 
+    // FMM
+    bool dofmm_;
+
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
 
@@ -118,6 +121,7 @@ class Molecule {
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
     double gamma() const {return gamma_; }
     int nirrep() const { return nirrep_; }
+    bool dofmm() const { return dofmm_; }
 
     // The position of the specific function in the basis set.
     const std::vector<std::vector<int>>& offsets() const { return offsets_; }

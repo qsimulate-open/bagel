@@ -74,7 +74,12 @@ void RHF::compute() {
         auto aden = make_shared<const AtomicDensities>(geom_);
         shared_ptr<const Matrix> focka;
         if (dodf_) {
-          focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+          if (!dofmm_) {
+            focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+          } else {
+            shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aden, dodf_, schwarz_)->get_real_part();
+            focka = make_shared<const Matrix>(*hcore_ + *tmp);
+          }
         } else {
           focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
         }

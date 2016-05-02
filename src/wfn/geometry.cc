@@ -47,6 +47,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   // members of Molecule
   spherical_ = true;
   lmax_ = 0;
+  dofmm_   = geominfo->get<bool>("cfmm", false);
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -150,7 +151,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && !nodf && !do_periodic_df()) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df() && !dofmm_) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
@@ -191,6 +192,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -290,6 +292,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -323,6 +326,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_atoms_ = o.aux_atoms_;
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -330,6 +334,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
+  dofmm_ = geominfo->get<bool>("cfmm", false);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
@@ -412,6 +417,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   symmetry_ = nmer.front()->symmetry_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
+  dofmm_ = nmer.front()->dofmm_;
 
   /************************************************************
   * Going down the list of protected variables, merge the     *
@@ -483,6 +489,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   spherical_ = true;
   lmax_ = 0;
+  dofmm_ = false;
 
   atoms_ = atoms;
 
