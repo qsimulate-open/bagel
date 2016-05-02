@@ -60,7 +60,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   if (dofmm_) {
     fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height"), idata_->get<int>("contract", true), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
     fmm_lmax_ = idata_->get<int>("l_max", 21);
-    fmmtree_->init_fmm(fmm_lmax_, idata_->get<int>("df", true), geom_->auxfile());
+    fmmtree_->init_fmm(fmm_lmax_, idata_->get<bool>("df", true), geom_->auxfile());
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
 

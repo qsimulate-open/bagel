@@ -53,12 +53,6 @@ void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
-  shared_ptr<const Matrix> nai;
-  if (dofmm_) {
-    nai = fmmtree_->fmm(fmm_lmax_)->get_real_part();
-    previous_fock = make_shared<const Matrix>(*hcore_ + 0.5 * *nai);
-  }
-
   shared_ptr<const Matrix> aodensity_;
 
   shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
@@ -73,15 +67,15 @@ void RHF::compute() {
       if (geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
         shared_ptr<const Matrix> focka;
-        if (dodf_) {
-          if (!dofmm_) {
+        if (!dofmm_) {
+          if (dodf_) {
             focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
           } else {
-            shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aden, dodf_, schwarz_)->get_real_part();
-            focka = make_shared<const Matrix>(*hcore_ + *tmp);
+            focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
+          shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aden, dodf_, schwarz_)->get_real_part();
+          focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
         fock = focka->distmatrix();
       }
@@ -143,7 +137,7 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aodensity, dodf_, schwarz_)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aodensity_, dodf_, schwarz_)->get_real_part();
       previous_fock = make_shared<const Matrix>(*hcore_ + *tmp);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
@@ -188,10 +182,10 @@ void RHF::compute() {
       shared_ptr<const Matrix> new_density = coeff_->form_density_rhf(nocc_);
       densitychange = make_shared<Matrix>(*new_density - *aodensity_);
       aodensity_ = new_density;
-      aodensity = aodensity_->distmatrix();
     } else {
-      aodensity = coeff->form_density_rhf(nocc_);
+      aodensity_ = coeff_->form_density_rhf(nocc_);
     }
+    aodensity = aodensity_->distmatrix();
     pdebug.tick_print("Post process");
   }
   // by default we compute dipoles

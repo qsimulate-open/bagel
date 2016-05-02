@@ -245,7 +245,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
       nodes_[i]->form_df(auxfile);
   }
 
-  fmmtime.tick_print("    Downward pass");
+  fmmtime.tick_print("Downward pass");
 
 }
 

@@ -487,7 +487,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
 
 
-#if 1
         size_t ob = 0;
         for (auto& distant_node : interaction_list_) {
           for (auto& body1 : distant_node->bodies()) {
@@ -507,7 +506,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             }
           }
         }
-#endif
 
         ob0 += size0;
       }
