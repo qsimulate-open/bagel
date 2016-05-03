@@ -360,7 +360,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
   const int nmobasis = coeff_->mdim();
-  assert(nall == nmobasis);
 
   const MatView ocmat = coeff_->slice(0, nocc);
 
