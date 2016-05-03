@@ -74,7 +74,8 @@ class Smith : public Method {
 
     void compute() override;
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { assert(false); return nullptr; }
+    // just return the reference used in SMITH code
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::shared_ptr<const Matrix> dm1() const { return dm1_; }
     std::shared_ptr<const Matrix> dm11() const { return dm11_; }
