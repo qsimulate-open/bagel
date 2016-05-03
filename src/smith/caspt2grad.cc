@@ -398,10 +398,8 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  const int nvirt = ref_->nvirt();
-  const int nall = nocc + nvirt;
   const int nmobasis = coeff_->mdim();
-  assert(nall == nmobasis);
+  assert(nocc + ref_->nvirt() == nmobasis);
 
   const MatView ocmat = coeff_->slice(0, nocc);
 
