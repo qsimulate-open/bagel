@@ -165,37 +165,29 @@ void CASPT2::CASPT2::solve() {
 
 // function to solve linear equation
 vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
-  vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
-  for (int i = 0; i != nstates_; ++i)
-    solvers[i] = make_shared<LinearRM<MultiTensor>>(30, s[i]);
-
-  // set t2 to guess vectors
-  vector<bool> conv(nstates_, false);
-  for (int i = 0; i != nstates_; ++i) {
+  Timer mtimer;
+  // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+  // loop over state of interest
+  bool converged = true;
+  for (int i = 0; i != nstates_; ++i) {  // K states
+    bool conv = false;
+    double error = 0.0;
     e0_ = e0all_[i] - info_->shift();
     energy_[i] = 0.0;
+    // set guess vector
     t[i]->zero();
-    if (s[i]->rms() < 1.0e-15)
-      conv[i] = true;
-    else
+    if (s[i]->rms() < 1.0e-15) {
+      print_iteration(0, 0.0, 0.0, mtimer.tick());
+      if (i+1 != nstates_) cout << endl;
+      continue;
+    } else {
       update_amplitude(t[i], s[i]);
-  }
+    }
 
-  vector<double> error(nstates_);
-  Timer mtimer;
-  int iter = 0;
-  for ( ; iter != info_->maxiter(); ++iter) {
-    // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
-    // loop over state of interest
-
-    for (int i = 0; i != nstates_; ++i) {  // K states
-      if (conv[i]) {
-        print_iteration(iter, energy_[i], error[i], 0.0);
-        solvers[i].reset();
-        continue;
-      } else {
-        rall_[i]->zero();
-      }
+    auto solver = make_shared<LinearRM<MultiTensor>>(30, s[i]);
+    int iter = 0;
+    for ( ; iter != info_->maxiter(); ++iter) {
+      rall_[i]->zero();
 
       const double norm = t[i]->norm();
       t[i]->scale(1.0/norm);
@@ -216,28 +208,29 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
         }
       }
       // solve using subspace updates
-      rall_[i] = solvers[i]->compute_residual(t[i], rall_[i]);
-      t[i] = solvers[i]->civec();
+      rall_[i] = solver->compute_residual(t[i], rall_[i]);
+      t[i] = solver->civec();
 
       // energy is now the Hylleraas energy
       energy_[i] = detail::real(dot_product_transpose(s[i], t[i]));
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t[i]));
 
       // compute rms for state i
-      error[i] = rall_[i]->rms();
-      print_iteration(iter, energy_[i], error[i], mtimer.tick());
-      conv[i] = error[i] < info_->thresh();
+      error = rall_[i]->rms();
+      print_iteration(iter, energy_[i], error, mtimer.tick());
+      conv = error < info_->thresh();
 
       // compute delta t2 and update amplitude
-      if (!conv[i]) {
+      if (!conv) {
         t[i]->zero();
         update_amplitude(t[i], rall_[i]);
       }
+      if (conv) break;
     }
-    if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break;
-    if (nstates_ > 1) cout << endl;
+    if (i+1 != nstates_) cout << endl;
+    converged &= conv;
   }
-  print_iteration(iter == info_->maxiter());
+  print_iteration(!converged);
   return t;
 }
 
