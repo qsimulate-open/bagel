@@ -50,12 +50,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
 
-  if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
-    const int istate = idata->get<int>("istate", 0);
-    const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-    cout << "  Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl; 
-    ref_ = ref_->extract_state(istate);
-  }
+  ref_ = extract_ref();
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
@@ -172,6 +167,26 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
   assert(false);
   return nullptr;
 }
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref() const {
+  return ref_;
+}
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref() const {
+  shared_ptr<const Reference> out = ref_;
+  if (!do_ms_ && !do_xms_ && in->nstate() != 1) {
+    const int istate = idata->get<int>("istate", 0);
+    const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
+    cout << "  Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
+    out = ref_->extract_state(istate);
+  }
+  return out;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
