@@ -97,7 +97,10 @@ void PTree::print() const {
 
 
 shared_ptr<const PTree> PTree::read_basis(string name) {
-  name = to_lower(name);
+  // convert name to lowercase so things like cc-pVDZ are read
+  const int split = name.find_last_of("/");
+  name = name.substr(0, split+1) + to_lower(name.substr(split+1));
+
   shared_ptr<const PTree> out;
   // first try the absolute path (or current directory)
   try {
