@@ -200,7 +200,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   rdm4all_ = make_shared<Vec<Tensor_<double>>>();
 
   assert(fockact_);
-  auto denom = make_shared<Denom<double>>(fockact_, nstates, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<double>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -251,7 +251,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
 
   assert(fockact_);
-  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {

@@ -54,6 +54,8 @@ class SMITH_Info {
     bool do_ms_;
     bool do_xms_;
 
+    double thresh_overlap_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);
@@ -83,6 +85,7 @@ class SMITH_Info {
     bool grad() const { return grad_; }
     bool do_ms() const { return do_ms_; }
     bool do_xms() const { return do_xms_; }
+    double thresh_overlap() const { return thresh_overlap_; }
 
     template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
     bool gaunt() const { return relref()->gaunt(); }
