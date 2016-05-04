@@ -111,10 +111,10 @@ shared_ptr<const PTree> PTree::read_basis(string name) {
     } catch (...) {
       // last, the debug location
       const string filename = "../../src/basis/" + name + ".json";
-      out = make_shared<const PTree>(filename);
       try {
+        out = make_shared<const PTree>(filename);
       } catch (...) {
-        throw runtime_error(name + " cannot be opened. Please see if the file is in ${prefix}/share.\n "
+        throw runtime_error(name + " cannot be opened. Please see if the file is in " + string(BASIS_DIR) + ".\n "
                                  + " You can also specify the full path to the basis file.");
       }
     }
