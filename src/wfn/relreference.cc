@@ -147,20 +147,88 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
 }
 
 
-shared_ptr<Reference> RelReference::extract_state(const int istate) const {
+shared_ptr<Reference> RelReference::extract_state(const int istate, const vector<int> input) const {
   ZFCI_bare fci(ciwfn_);
-  auto rdm1 = make_shared<ZMatrix>(2*fci.norb(), 2*fci.norb());
-  auto rdm2 = make_shared<ZMatrix>(4*fci.norb()*fci.norb(), 4*fci.norb()*fci.norb());
-  shared_ptr<const ZRDM<1>> tmp1 = expand_kramers<1,complex<double>>(fci.rdm1(istate, istate), fci.norb());
-  shared_ptr<const ZRDM<2>> tmp2 = expand_kramers<2,complex<double>>(fci.rdm2(istate, istate), fci.norb());
-  copy_n(tmp1->data(), tmp1->size(), rdm1->data());
-  copy_n(tmp2->data(), tmp2->size(), rdm2->data());
-
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
+  const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
+
+  // Construct a RelCIWfn with only CI coefficients for the desired state
   auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
                                         ciwfn_->civectors()->extract_state(istate),
                                         make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
+
+  // Use extract_average_rdm(...) to get desired RDMs and prepare output
+  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(rdm_state));
   return make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdm1, rdm2, newciwfn);
+                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
 }
+
+
+// TODO Cleanup or remove?  Body is mostly the same as ZHarrison::rdm12()
+shared_ptr<Reference> RelReference::extract_average_rdm(const vector<int> rdm_state) const {
+  ZFCI_bare fci(ciwfn_);
+  if (rdm_state.size() == 0 || rdm_state.size() > nstate())
+    throw runtime_error("Trying to obtain a state-averaged RDM over some invalid number of states.");
+
+  // for one-body RDM
+  vector<shared_ptr<Kramers<2,ZRDM<1>>>> rdm1;
+  vector<shared_ptr<Kramers<4,ZRDM<2>>>> rdm2;
+  rdm1.resize(rdm_state.size());
+  rdm2.resize(rdm_state.size());
+
+  shared_ptr<Kramers<2,ZRDM<1>>> rdm1_av;
+  shared_ptr<Kramers<4,ZRDM<2>>> rdm2_av;
+
+  for (int index = 0; index != rdm_state.size(); ++index) {
+    const int istate = rdm_state[index];
+
+    // one body RDM
+    rdm1[istate] = fci.rdm1(istate, istate);
+
+    // if off-diagonals are zero, generate a blank RDM for completeness
+    if (!rdm1[istate]->exist({1,0}))
+      rdm1[istate]->add({1,0}, rdm1[istate]->at({0,0})->clone());
+
+    // two body RDM
+    rdm2[istate] = fci.rdm2(istate, istate);
+
+    // append permutation information
+    rdm2[istate]->emplace_perm({{0,3,2,1}},-1);
+    rdm2[istate]->emplace_perm({{2,3,0,1}}, 1);
+    rdm2[istate]->emplace_perm({{2,1,0,3}},-1);
+  }
+
+  if (rdm_state.size() > 1) {
+    rdm1_av = make_shared<Kramers<2,ZRDM<1>>>();
+    rdm2_av = make_shared<Kramers<4,ZRDM<2>>>();
+    for (int index = 0; index != rdm_state.size(); ++index) {
+      const int istate = rdm_state[index];
+      for (auto& i : *rdm1[istate])
+        rdm1_av->add(i.first, i.second);
+      for (auto& i : *rdm2[istate])
+        rdm2_av->add(i.first, i.second);
+    }
+    for (auto& i : *rdm1_av) i.second->scale(1.0/rdm_state.size());
+    for (auto& i : *rdm2_av) i.second->scale(1.0/rdm_state.size());
+    rdm2_av->emplace_perm({{0,3,2,1}},-1);
+    rdm2_av->emplace_perm({{2,3,0,1}}, 1);
+    rdm2_av->emplace_perm({{2,1,0,3}},-1);
+  } else {
+    rdm1_av = rdm1.front();
+    rdm2_av = rdm2.front();
+  }
+
+
+  auto rdm1_out = make_shared<ZMatrix>(2*fci.norb(), 2*fci.norb());
+  auto rdm2_out = make_shared<ZMatrix>(4*fci.norb()*fci.norb(), 4*fci.norb()*fci.norb());
+  shared_ptr<const ZRDM<1>> tmp1 = expand_kramers<1,complex<double>>(rdm1_av, fci.norb());
+  shared_ptr<const ZRDM<2>> tmp2 = expand_kramers<2,complex<double>>(rdm2_av, fci.norb());
+  copy_n(tmp1->data(), tmp1->size(), rdm1_out->data());
+  copy_n(tmp2->data(), tmp2->size(), rdm2_out->data());
+
+  return make_shared<RelReference>(geom_, relcoeff_, energy_, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                   kramers_, rdm1_out, rdm2_out, ciwfn_);
+}
+
+
 
