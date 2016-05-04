@@ -295,6 +295,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 }
 
 
+#if 0
 // computes 3 and 4RDM
 // TODO duplicate code to be cleaned up
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
@@ -423,6 +424,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
 
   return make_tuple(rdm3, frdm4);
 }
+#endif
 
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).

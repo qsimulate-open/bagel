@@ -210,10 +210,12 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
-      tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact_);
+      shared_ptr<RDM<3>> frdm4 = rdm3->clone();
+      auto rdm4v = group(group(*rdm4, 6,8), 0,6);
+      auto frdm4v = group(*frdm4, 0, 6);
+      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, frdm4v, {0}); 
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
