@@ -146,7 +146,6 @@ void CASPT2Grad::compute() {
         return out;
       };
 
-      const int nmo = coeff_->mdim();
       shared_ptr<const Matrix> d0sa = ref_->rdm1_mat();
       auto fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
       auto gd2 = focksub(d1_, *coeff_, false); // g(d2)
