@@ -62,7 +62,7 @@ void PFock::form_pfock() {
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*jop)(i));
 
-  time.tick_print("Coulomb build in PFock with P-DF");
+  time.tick_print("  Coulomb build in PFock with P-DF");
 }
 
 
@@ -80,5 +80,5 @@ void PFock::form_pfock_fmm(shared_ptr<const PFMM> fmm) {
   for (int i = 0; i != nblock_; ++i)
     *(pdata_[i]) += *((*jop)(i));
 
-  time.tick_print("Coulomb build in PFock P-FMM");
+  time.tick_print("  Coulomb build in PFock P-FMM");
 }

@@ -47,7 +47,7 @@ class PSCF_base : public Method {
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;
 
-    void form_pfmm(const bool dodf, std::tuple<int, int, double, bool, int> fmm_param);
+    void form_pfmm(std::tuple<int, int, double, bool, int> fmm_param);
     std::shared_ptr<const PFMM> fmm_;
 
     int max_iter_;

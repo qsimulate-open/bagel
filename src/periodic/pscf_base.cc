@@ -38,22 +38,21 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(PSCF_base)
 
 PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
- : Method(idata, geom, re), dodf_(idata->get<bool>("df", true)), dofmm_(idata->get<bool>("cfmm", false)) {
+ : Method(idata, geom, re), dodf_(idata->get<bool>("df", true)) {
 
   Timer pscf;
 
-  if (dofmm_) {
+  if (geom->dofmm()) {
     const int lmax   = idata->get<int>("l_max", 10);
     const int ws     = idata->get<int>("ws", 2);
     const double beta   = idata->get<double>("beta", 1.0);
     const int height = idata->get<int>("height", 21);
     lattice_ = make_shared<const Lattice>(geom, ws, true, make_tuple(height, lmax, idata->get<bool>("contract", true), dodf_, idata->get<double>("thresh_fmm", PRIM_SCREEN_THRESH)));
     const bool doewald    = idata->get<bool>("ewald", false);
-    form_pfmm(dodf_, make_tuple(lmax, ws, beta, doewald, idata->get<int>("extent", 10)));
+    form_pfmm(make_tuple(lmax, ws, beta, doewald, idata->get<int>("extent", 10)));
   } else {
     lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
   }
-  lattice_->print_atoms();
 
   eig_.resize(lattice_->num_lattice_kvectors());
   for (auto& eigblock : eig_) eigblock = make_shared<VectorB>(geom->nbasis());
@@ -89,7 +88,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
 }
 
 
-void PSCF_base::form_pfmm(const bool dodf, tuple<int, int, double, bool, int> fmmp) {
+void PSCF_base::form_pfmm(tuple<int, int, double, bool, int> fmmp) {
 
   // rectangular cells for now
   cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
@@ -116,6 +115,6 @@ void PSCF_base::form_pfmm(const bool dodf, tuple<int, int, double, bool, int> fm
     throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
   }
 
-  fmm_ = make_shared<const PFMM>(lattice_, fmmp, dodf);
+  fmm_ = make_shared<const PFMM>(lattice_, fmmp, dodf_);
   cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 }

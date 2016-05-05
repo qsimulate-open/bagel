@@ -179,6 +179,21 @@ void Lattice::init() {
 }
 
 
+int Lattice::central_cell() const {
+
+  int pos = -1;
+  for (auto vec : lattice_map_) {
+    array<int, 3> idx = vec.second;
+    if (idx[0] == 0 && idx[1] == 0 && idx[2] == 0) {
+      pos = vec.first;
+      break;
+    }
+  }
+  assert(pos >= 0);
+  return pos;
+}
+
+
 int Lattice::find_lattice_vector(const int i, const int j) const {
 
   map<int, array<int, 3>>::const_iterator iter1 = lattice_map_.find(i);

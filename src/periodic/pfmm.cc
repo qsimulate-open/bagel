@@ -66,13 +66,12 @@ PFMM::PFMM(shared_ptr<const Lattice> lattice, const tuple<int, int, double, bool
   for (int i = ndim_; i != 3; ++i)
     primvecs_[i] = {{0.0, 0.0, 0.0}};
 
+  extent_sum_ = ewald ? get<4>(fmmp) : 0;
   if (ewald) {
-    extent_sum_ = get<4>(fmmp);
     compute_Mlm();
     stack_->release(size_allocated_, buff_);
     resources__->release(stack_);
   } else {
-    extent_sum_ = 0;
     compute_Mlm_direct();
     //compute_Mlm_slow();
   }
@@ -573,33 +572,15 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   if (density)
     superden = make_shared<Matrix>(nbas, nbas);
   int offset = 0;
-  int blk0 = -1;
+  const int blk0 = lattice_->central_cell();
   for (int i = 0; i != nvec; ++i, offset += scell_->nbasis()) {
-    switch(ndim_) {
-      case 1 :
-        {
-          blk0  = ws_;
-          break;
-        }
-      case 2 :
-        {
-          blk0  = ws_ + (2*ws_+1) * ws_;
-          break;
-        }
-      case 3 :
-        {
-          blk0  = ws_ + (2*ws_+1) * (ws_ + (2*ws_+1) * ws_);
-          break;
-        }
-    }
-    assert (blk0 >=0);
     if (density) {
       superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
       superden->copy_block(offset, offset, scell_->nbasis(), scell_->nbasis(), *density->pdata(i)->get_real_part());
     }
   }
 
-  // construct a tree from the super-geometry, ws for FMM is 2 by default
+  // compute Coulomb from lattice tree
   shared_ptr<const ZMatrix> coulomb = lattice_->fmmtree()->fmm(lmax_, superden, dodf_, 2.0/*nai*/, lattice_->schwarz(), lattice_->schwarz_thresh());
   time.tick_print("  Compute NF Coulomb matrix");
 

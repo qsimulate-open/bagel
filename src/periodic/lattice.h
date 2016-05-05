@@ -103,6 +103,7 @@ class Lattice {
     std::array<double, 3> lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
     void generate_kpoints();
     int gamma_point() const { return gamma_point_; }
+    int central_cell() const;
 
     int find_lattice_vector(const int i, const int j) const;
     void print_primitive_vectors() const;
