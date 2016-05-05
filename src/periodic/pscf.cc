@@ -30,7 +30,7 @@
 #include <src/util/math/diis.h>
 #include <src/periodic/pscf.h>
 #include <src/periodic/poverlap.h>
-//#include <src/periodic/pfmm.h>
+#include <src/scf/atomicdensities.h>
 
 using namespace std;
 using namespace bagel;
@@ -71,35 +71,6 @@ PSCF::PSCF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry>
   ft2_overlap->print("I(IFT)-Overlap", 100);
 #endif
 /**********************************************************************/
-#if 0
-  cout << "DO FMM = " << dofmm_ << endl;
-
-  vector<array<double, 3>> primvecs(3);
-  primvecs[0] = {{1.0, 0.0, 0.0}};
-  primvecs[1] = {{0.0, 1.0, 0.0}};
-  primvecs[2] = {{0.0, 0.0, 1.0}};
-
-  vector<shared_ptr<const Atom>> atoms = geom->atoms();
-  shared_ptr<const Geometry> newgeom = geom->periodic(atoms);
-  auto scell = make_shared<const SimulationCell>(newgeom, primvecs);
-  cout << "*** Simulation Cell ***" << endl;
-  scell->print();
-  PFMM test(scell, fmm_param_, true);
-#if 0
-  for (int l = 0; l < test.max_rank(); ++l) {
-    for (int m = 0; m <= l; ++m) { // Mlm = -Ml-m
-      const int imul = l * l + m + l;
-      const double mlm = (test.mlm(imul)).real();
-//      if (abs(mlm) > 1e-8)
-//        cout << "l = " << l << "  m = " << m << "  mlm = " << setw(20) << setprecision(14) << mlm << endl;
-      if (l % 2 == 0 && m % 4 == 0)
-        cout << l << "   " << m << "  " << setw(20) << setprecision(14) << mlm << endl;
-    }
-  }
-#endif
-#endif
-
-
 }
 
 void PSCF::compute() {

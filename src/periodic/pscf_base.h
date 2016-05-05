@@ -31,6 +31,7 @@
 #include <src/periodic/phcore.h>
 #include <src/periodic/poverlap.h>
 #include <src/periodic/pcoeff.h>
+#include <src/periodic/pfmm.h>
 
 namespace bagel {
 
@@ -38,7 +39,6 @@ class PSCF_base : public Method {
   protected:
     bool dodf_;
     bool dofmm_;
-    std::tuple<int, int, double, int, bool, bool, int> fmm_param_;
 
     std::shared_ptr<const Lattice> lattice_;
     std::shared_ptr<const PData> ktildex_;
@@ -46,6 +46,8 @@ class PSCF_base : public Method {
     std::shared_ptr<const PData> koverlap_;
     std::shared_ptr<const PHcore> hcore_;
     std::shared_ptr<const PCoeff> coeff_;
+
+    void form_pfmm(const bool dodf, std::tuple<int, int, double, bool, int> fmm_param);
     std::shared_ptr<const PFMM> fmm_;
 
     int max_iter_;

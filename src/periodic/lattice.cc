@@ -31,8 +31,11 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int n) : primitive_cell_(g), extent_(n) {
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int n, const bool dofmm, const tuple<int, int, bool, bool, double> fmmp)
+ : primitive_cell_(g), extent_(n) {
   init();
+  if (dofmm)
+    build_tree(fmmp);
 
 #if 0
   cout << "Check orthogonalization of primitive lattice vectors and k-vectors +++" << endl;
@@ -73,6 +76,7 @@ double Lattice::compute_nuclear_repulsion() const {
 
 void Lattice::init() {
 
+  Timer time;
   ndim_ = primitive_cell_->primitive_vectors().size();
   if (ndim_ > 3)
     throw runtime_error("  *** Warning: Dimension in P-SCF is greater than 3!");
@@ -163,7 +167,17 @@ void Lattice::init() {
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   generate_kpoints();
+  time.tick_print("  Initialisation");
+
+  // concatenate all cells within ws into one supercell
+  vector<shared_ptr<const Geometry>> geoms;
+  for (auto& disp : lattice_vectors_)
+    geoms.push_back(make_shared<const Geometry>(*primitive_cell_, disp));
+
+  supergeom_ = make_shared<const Geometry>(geoms, true/*nodf*/);
+  time.tick_print("  Construct a supercell for crystal near-field");
 }
+
 
 int Lattice::find_lattice_vector(const int i, const int j) const {
 
@@ -381,37 +395,20 @@ shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all bl
 }
 
 
+void Lattice::build_tree(tuple<int, int, bool, bool, double> fmmp) {
 
-shared_ptr<const PFMM> Lattice::form_pfmm(const bool dodf, tuple<int, int, double, int, bool, bool, int> fmmp) const {
-
-  // rectangular cells for now
-  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
   Timer time;
-  bool is_rec = true;
-  for (int i = 0; i != ndim_; ++i)
-    for (int j = 0; j != ndim_; ++j) {
-      if (i != j) {
-        const double dp = dot(primitive_cell_->primitive_vectors(i), primitive_cell_->primitive_vectors(j));
-        if (dp > numerical_zero__) {
-          is_rec = false;
-          break;
-        }
-      }
-    }
-
-  if (is_rec) {
-    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
-  } else {
-    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
-    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  // Schwarz screening
+  const double schwarz_thresh = primitive_cell_->schwarz_thresh();
+  vector<double> schwarz;
+  const bool dodf = get<3>(fmmp);
+  if (!dodf) {
+    schwarz_ = supergeom_->schwarz();
+    time.tick_print("  Schwarz matrix");
   }
 
-  shared_ptr<const PFMM> out;
-
-  auto scell = make_shared<const SimulationCell>(primitive_cell_, get<0>(fmmp));
-  time.tick_print("  Construct a supercell for crystal near-field");
-  out = make_shared<const PFMM>(scell, fmmp, dodf);
-  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
-
-  return out;
+  // build tree
+  fmmtree_ = make_shared<const Tree>(supergeom_, get<0>(fmmp)/*height*/, get<2>(fmmp)/*contract*/, get<4>(fmmp)/*thresh*/);
+  fmmtree_->init_fmm(get<1>(fmmp)/*lmax*/, dodf, primitive_cell_->auxfile());
+  time.tick_print("  Construct tree and compute integrals");
 }

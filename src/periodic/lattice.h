@@ -27,8 +27,8 @@
 #ifndef __BAGEL_SRC_PERIODIC_LATTICE_H
 #define __BAGEL_SRC_PERIODIC_LATTICE_H
 
-#include <src/periodic/pfmm.h>
 #include <src/periodic/pdfdist.h>
+#include <src/periodic/tree.h>
 
 namespace bagel {
 
@@ -64,6 +64,10 @@ class Lattice {
     int nele_;
 
     void init();
+    std::shared_ptr<const Tree> fmmtree_;
+    std::shared_ptr<const Geometry> supergeom_;
+    std::vector<double> schwarz_;
+    double schwarz_thresh_;
 
   private:
     // serialization
@@ -76,7 +80,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0);
+    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0, const bool dofmm = false, std::tuple<int, int, bool, bool, double> fmmp = std::tuple<int, int, bool, bool, double>());
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }
@@ -110,11 +114,16 @@ class Lattice {
     std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
     double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
     std::array<double, 3> cell_centre(const int icell) const;
+    std::shared_ptr<const Geometry> supergeom() const { return supergeom_; }
+    double thresh() const { return thresh_; }
 
     // density fitting
     std::shared_ptr<const PDFDist> form_df() const;
     // PFMM
-    std::shared_ptr<const PFMM> form_pfmm(const bool dodf, std::tuple<int, int, double, int, bool, bool, int> fmm_param) const;
+    std::shared_ptr<const Tree> fmmtree() const { return fmmtree_; }
+    std::vector<double> schwarz() const { return schwarz_; }
+    double schwarz_thresh() const { return schwarz_thresh_; }
+    void build_tree(std::tuple<int, int, bool, bool, double> fmm_param);
 };
 
 }

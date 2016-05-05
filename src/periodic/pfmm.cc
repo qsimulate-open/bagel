@@ -36,11 +36,11 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double, int, bool, bool, int> fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
-  : scell_(scell), dodf_(dodf), lmax_(get<0>(fmmp)), ws_(get<1>(fmmp)), beta_(get<2>(fmmp) * beta__), height_(get<3>(fmmp)) {
+PFMM::PFMM(shared_ptr<const Lattice> lattice, const tuple<int, int, double, bool, int> fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
+  : lattice_(lattice), dodf_(dodf), lmax_(get<0>(fmmp)), ws_(get<1>(fmmp)), beta_(get<2>(fmmp) * beta__) {
 
-  do_contract_ = get<5>(fmmp);
-  const bool ewald = get<4>(fmmp);
+  scell_ = make_shared<const SimulationCell>(lattice->primitive_cell(), get<0>(fmmp));
+  const bool ewald = get<3>(fmmp);
   if (ewald) {
     if (stack == nullptr) {
       stack_ = resources__->get();
@@ -51,14 +51,14 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double,
     }
   }
 
-  ndim_ = scell->ndim();
+  ndim_ = scell_->ndim();
   if (ndim_ > 3 || ndim_ < 1)
     throw runtime_error("System must be periodic in 1-, 2-, or 3-D");
 
   msize_ = (2*lmax_ + 1) * (2*lmax_ + 1);
   osize_ = (lmax_ + 1) * (lmax_ + 1);
   max_rank_ = (lmax_ * 2) + 1;
-  thresh_ = scell->geom()->overlap_thresh();
+  thresh_ = lattice->thresh();
 
   primvecs_.resize(3);
   for (int i = 0; i != ndim_; ++i)
@@ -67,7 +67,7 @@ PFMM::PFMM(shared_ptr<const SimulationCell> scell, const tuple<int, int, double,
     primvecs_[i] = {{0.0, 0.0, 0.0}};
 
   if (ewald) {
-    extent_sum_ = get<6>(fmmp);
+    extent_sum_ = get<4>(fmmp);
     compute_Mlm();
     stack_->release(size_allocated_, buff_);
     resources__->release(stack_);
@@ -567,32 +567,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
 
   Timer time;
   const int nvec = pow(2*ws_+1, ndim_);
-  vector<array<int, 3>> vidx = generate_vidx(ws_);
-  assert(vidx.size() == nvec);
-
-  // concatenate all cells within ws into one supercell
-  vector<shared_ptr<const Geometry>> geoms;
-  for (int ivec = 0; ivec != nvec; ++ivec) {
-    array<int, 3> idx = vidx[ivec];
-    array<double, 3> disp;
-    disp[0] = idx[0] * primvecs_[0][0] + idx[1] * primvecs_[1][0] + idx[2] * primvecs_[2][0];
-    disp[1] = idx[0] * primvecs_[0][1] + idx[1] * primvecs_[1][1] + idx[2] * primvecs_[2][1];
-    disp[2] = idx[0] * primvecs_[0][2] + idx[1] * primvecs_[1][2] + idx[2] * primvecs_[2][2];
-    geoms.push_back(make_shared<const Geometry>(*scell_->geom(), disp));
-  }
-
-  auto supergeom = make_shared<const Geometry>(geoms, true/*nodf*/);
-  time.tick_print("  Construct a supercell for crystal near-field");
-
-  // Schwarz screening
-  const double schwarz_thresh = scell_->geom()->schwarz_thresh();
-  vector<double> schwarz;
-  if (!dodf_) {
-    schwarz = supergeom->schwarz();
-    time.tick_print("  Schwarz matrix");
-  }
-
-  // get density for supergeom: ncell_ in lattice should be set to ws
+  // get density for supergeom = lattice: (ws = ncell in lattice)
   const size_t nbas = nvec * scell_->nbasis();
   shared_ptr<Matrix> superden;
   if (density)
@@ -625,11 +600,8 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   }
 
   // construct a tree from the super-geometry, ws for FMM is 2 by default
-  Tree fmm_tree(supergeom, height_, do_contract_, thresh_);
-  fmm_tree.init_fmm(lmax_, dodf_, scell_->geom()->auxfile());
-  time.tick_print("  Construct tree and compute integrals");
-  shared_ptr<const ZMatrix> coulomb = fmm_tree.fmm(lmax_, superden, dodf_, 2.0, schwarz, schwarz_thresh);
-  time.tick_print("  Compute Coulomb matrix");
+  shared_ptr<const ZMatrix> coulomb = lattice_->fmmtree()->fmm(lmax_, superden, dodf_, 2.0/*nai*/, lattice_->schwarz(), lattice_->schwarz_thresh());
+  time.tick_print("  Compute NF Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);
   offset = 0;

@@ -40,19 +40,20 @@ BOOST_CLASS_EXPORT_IMPLEMENT(PSCF_base)
 PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
  : Method(idata, geom, re), dodf_(idata->get<bool>("df", true)), dofmm_(idata->get<bool>("cfmm", false)) {
 
+  Timer pscf;
+
   if (dofmm_) {
     const int lmax   = idata->get<int>("l_max", 10);
     const int ws     = idata->get<int>("ws", 2);
     const double beta   = idata->get<double>("beta", 1.0);
     const int height = idata->get<int>("height", 21);
+    lattice_ = make_shared<const Lattice>(geom, ws, true, make_tuple(height, lmax, idata->get<bool>("contract", true), dodf_, idata->get<double>("thresh_fmm", PRIM_SCREEN_THRESH)));
     const bool doewald    = idata->get<bool>("ewald", false);
-    fmm_param_ = make_tuple(lmax, ws, beta, height, doewald, idata->get<int>("contract", true), idata->get<int>("extent", 10));
-    lattice_ = make_shared<const Lattice>(geom, ws);
+    form_pfmm(dodf_, make_tuple(lmax, ws, beta, doewald, idata->get<int>("extent", 10)));
   } else {
     lattice_ = make_shared<const Lattice>(geom, idata->get<int>("extent", 0));
   }
-
-  Timer pscf;
+  lattice_->print_atoms();
 
   eig_.resize(lattice_->num_lattice_kvectors());
   for (auto& eigblock : eig_) eigblock = make_shared<VectorB>(geom->nbasis());
@@ -63,8 +64,6 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   pscf.tick_print("Periodic overlap matrix");
   hcore_ = make_shared<const PHcore>(lattice_);
   pscf.tick_print("Periodic hcore matrix");
-  if (dofmm_)
-    fmm_ = lattice_->form_pfmm(dodf_, fmm_param_);
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
@@ -87,4 +86,36 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
   pscf.tick_print("Periodic overlap orthogonalization");
 
   cout << endl;
+}
+
+
+void PSCF_base::form_pfmm(const bool dodf, tuple<int, int, double, bool, int> fmmp) {
+
+  // rectangular cells for now
+  cout << "  PFMM option is specified: simulation cell will be constructed." << endl;
+  Timer time;
+  const int ndim = lattice_->ndim();
+  bool is_rec = true;
+  for (int i = 0; i != ndim; ++i)
+    for (int j = 0; j != ndim; ++j) {
+      if (i != j) {
+        double dp = 0.0;
+        for (int k = 0; k != 3; ++k)
+          dp += lattice_->primitive_cell()->primitive_vectors(i)[k] * lattice_->primitive_cell()->primitive_vectors(j)[k];
+        if (dp > numerical_zero__) {
+          is_rec = false;
+          break;
+        }
+      }
+    }
+
+  if (is_rec) {
+    cout << "  Unit cell is rectangular, simulation cell is the same as primitive cell." << endl;
+  } else {
+    cout << "  Unit cell is non-rectangular, simulation cell is the smallest cubic cell that encloses the unit cell." << endl;
+    throw runtime_error("  ***  Non-cubic cell under contruction... Oops sorry!");
+  }
+
+  fmm_ = make_shared<const PFMM>(lattice_, fmmp, dodf);
+  cout << "        elapsed time:  " << setw(10) << setprecision(2) << time.tick() << " sec." << endl << endl;
 }
