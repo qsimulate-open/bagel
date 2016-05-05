@@ -36,6 +36,7 @@ class Lattice {
   protected:
     std::shared_ptr<const Geometry> primitive_cell_;
     int ndim_;
+    int k_parameter_;
     int extent_;
     int num_lattice_vectors_;
     int num_lattice_pts_;
@@ -53,8 +54,6 @@ class Lattice {
     std::vector<std::array<double, 3>> primitive_kvectors_;
     // recriprocal lattice vectors k
     std::vector<std::array<double, 3>> lattice_kvectors_;
-    // parameter to determine the number of k points
-    int k_parameter_;
     int num_lattice_kvectors_;
     int gamma_point_;
 
@@ -80,7 +79,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int extent = 0, const bool dofmm = false, std::tuple<int, int, bool, bool, double> fmmp = std::tuple<int, int, bool, bool, double>());
+    Lattice(const std::shared_ptr<const Geometry> g, const int k_parameter, const int extent = 0, const bool dofmm = false, std::tuple<int, int, bool, bool, double> fmmp = std::tuple<int, int, bool, bool, double>());
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }

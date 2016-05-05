@@ -31,8 +31,10 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int n, const bool dofmm, const tuple<int, int, bool, bool, double> fmmp)
- : primitive_cell_(g), extent_(n) {
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int k, const int n, const bool dofmm, const tuple<int, int, bool, bool, double> fmmp)
+ : primitive_cell_(g), k_parameter_(k), extent_(n) {
+  assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
+  cout << "  Using Gamma-point-centred Monkhorst-Pack grids..." << endl;;
   init();
   if (dofmm)
     build_tree(fmmp);
@@ -81,10 +83,6 @@ void Lattice::init() {
   if (ndim_ > 3)
     throw runtime_error("  *** Warning: Dimension in P-SCF is greater than 3!");
   primitive_kvectors_.resize(ndim_);
-
-  /* TODO: temp parameters */
-  k_parameter_ = 15;
-  assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
 
   thresh_ = primitive_cell_->overlap_thresh();
 
