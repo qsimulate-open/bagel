@@ -56,7 +56,7 @@ double rel_energy(std::string filename) {
       rel->compute();
       ref_ = rel->conv_to_ref();
       std::cout.rdbuf(backup_stream);
-      return ref_->energy();
+      return ref_->energy(0);
     }
   }
   assert(false);

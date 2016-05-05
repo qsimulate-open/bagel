@@ -50,21 +50,21 @@ double cas_energy(std::string filename) {
         std::shared_ptr<const Reference> ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
-        return ref->energy();
+        return ref->energy(0);
       } else if (algorithm == "hybrid") {
         auto cas = std::make_shared<CASHybrid>(itree, geom);
         cas->compute();
         std::shared_ptr<const Reference> ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
-        return ref->energy();
+        return ref->energy(0);
       } else if (algorithm == "bfgs") {
         auto cas = std::make_shared<CASBFGS>(itree, geom);
         cas->compute();
         std::shared_ptr<const Reference> ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
-        return ref->energy();
+        return ref->energy(0);
       }
     }
   }

@@ -76,7 +76,7 @@ double relcas_energy(std::string inp) {
         auto cas = std::make_shared<SuperCI>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(0);
       }
 
     } else if (method == "zcasscf") {
