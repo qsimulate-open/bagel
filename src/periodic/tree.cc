@@ -263,22 +263,16 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   int u = 0;
-  TaskQueue<function<void(void)>> tasks(nnode_);
   for (int i = 1; i != nnode_; ++i) {
-    if (nodes_[i]->is_leaf()) {
-      if (u++ % mpi__->size() == mpi__->rank()) {
-        tasks.emplace_back(
-          [this, i, &out, &density, lmax, offsets, dodf, scale, schwarz, schwarz_thresh] () {
-//          nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
-            nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
-            shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz, schwarz_thresh);
-            *out += *tmp;
-          }
-        );
+    if (u++ % mpi__->size() == mpi__->rank()) {
+//    nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
+      if (nodes_[i]->is_leaf()) {
+        nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
+        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz, schwarz_thresh);
+        *out += *tmp;
       }
     }
   }
-  tasks.compute();
 
   // return the Coulomb matrix
   out->allreduce();
