@@ -37,6 +37,7 @@ Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contr
  : geom_(geom), max_height_(maxht), do_contraction_(do_contract), thresh_(thresh), ws_(ws) {
 
   init();
+  print_leaves();
 }
 
 
@@ -435,4 +436,20 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
       }
     }
   }
+}
+
+
+void Tree::print_leaves() const {
+
+  const std::string space = "       ";
+  int nleaf = 0;
+  cout << "   i      Rank   Nbody   Ninter    Nneigh   Extent " << endl;
+  for (int i = 0; i != nnode_; ++i) {
+    if (nodes_[i]->is_leaf()) {
+      cout << "  " << i << space << nodes_[i]->rank() << space << nodes_[i]->nbody() << space
+           << nodes_[i]->interaction_list().size() << space << nodes_[i]->nneighbour() << space << nodes_[i]->extent() << endl;
+      ++nleaf;
+    }
+  }
+  cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf << endl;
 }
