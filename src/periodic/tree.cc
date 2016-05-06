@@ -239,14 +239,16 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 
   Timer fmmtime;
   // Downward pass
+  int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
-    nodes_[i]->compute_multipoles(lmax);
-    if (dodf && nodes_[i]->is_leaf())
-      nodes_[i]->form_df(auxfile);
+    if (u++ % mpi__->size() == mpi__->rank()) {
+      nodes_[i]->compute_multipoles(lmax);
+      if (dodf && nodes_[i]->is_leaf())
+        nodes_[i]->form_df(auxfile);
+    }
   }
 
   fmmtime.tick_print("Downward pass");
-
 }
 
 
@@ -261,35 +263,22 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   int u = 0;
-  if (!dodf) {
-    TaskQueue<function<void(void)>> tasks(nnode_);
-    for (int i = 1; i != nnode_; ++i) {
+  TaskQueue<function<void(void)>> tasks(nnode_);
+  for (int i = 1; i != nnode_; ++i) {
+    if (nodes_[i]->is_leaf()) {
       if (u++ % mpi__->size() == mpi__->rank()) {
         tasks.emplace_back(
-          [this, i, &out, &density, lmax, offsets, scale, schwarz, schwarz_thresh] () {
-//            nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
-            if (nodes_[i]->is_leaf()) {
-              nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
-              shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, false, scale, schwarz, schwarz_thresh);
-              *out += *tmp;
-            }
+          [this, i, &out, &density, lmax, offsets, dodf, scale, schwarz, schwarz_thresh] () {
+//          nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
+            nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
+            shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz, schwarz_thresh);
+            *out += *tmp;
           }
         );
       }
     }
-    tasks.compute();
-  } else {
-    for (int i = 1; i != nnode_; ++i) {
-      if (u++ % mpi__->size() == mpi__->rank()) {
-//        nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
-        if (nodes_[i]->is_leaf()) {
-          nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);   ///////// TMP
-          shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, true, scale);
-          *out += *tmp;
-        }
-      }
-    }
   }
+  tasks.compute();
 
   // return the Coulomb matrix
   out->allreduce();
