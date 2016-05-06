@@ -281,9 +281,10 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
 #ifndef NDEBUG
     auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
     const double tsymm_err = quatfock->check_t_symmetry();
-    if (tsymm_err > 1.0e-8)
-      cout << "   ** Caution:  poor Kramers symmetry in fock_tilde (ZCASSCF initialization) - error = " << scientific << setprecision(4) << tsymm_err << endl;
-    assert(tsymm_err < 1.0e-6);
+    if (tsymm_err > 1.0e-8) {
+      cout << "   ** Caution:  poor Kramers symmetry in Fock matrix used to symmetrize orbitals:  error = " << scientific << setprecision(4) << tsymm_err << endl;
+      cout << "   ** This may result in poor quality orbitals for ZFCI or the ZCASSCF initial guess." << endl;
+    }
 #endif
   } else {
     fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
