@@ -78,7 +78,7 @@ double scf_energy(std::string filename, std::string extension = ".json") {
     }
   }
   std::cout.rdbuf(backup_stream);
-  return ref->energy();
+  return ref->energy(0);
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_SCF)

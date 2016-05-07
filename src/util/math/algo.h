@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include <algorithm>
+#include <numeric>
 #include <cassert>
 #include <src/util/f77.h>
 #include <src/util/math/zquatev/zquatev.h>

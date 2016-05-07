@@ -81,7 +81,7 @@ class Denom {
                                          std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
   public:
-    Denom(std::shared_ptr<const MatType> fock, const int nstates, const double th = 1.0e-8);
+    Denom(std::shared_ptr<const MatType> fock, const int nstates, const double thresh_overlap);
 
     // add RDMs (using fock-multiplied 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,

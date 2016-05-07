@@ -52,12 +52,12 @@ double london_energy(std::string filename) {
       auto scf = std::make_shared<RHF_London>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
-      energy = ref->energy();
+      energy = ref->energy(0);
     } else if (method == "dhf") {
       auto rel = std::make_shared<Dirac>(itree, geom, ref);
       rel->compute();
       ref = rel->conv_to_ref();
-      energy = ref->energy();
+      energy = ref->energy(0);
     }
   }
   std::cout.rdbuf(backup_stream);

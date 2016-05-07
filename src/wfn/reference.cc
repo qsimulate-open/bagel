@@ -86,14 +86,6 @@ tuple<shared_ptr<const RDM<3>>,shared_ptr<const RDM<4>>> Reference::rdm34(const 
 }
 
 
-tuple<shared_ptr<const RDM<3>>,shared_ptr<const RDM<3>>> Reference::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
-  FCI_bare fci(ciwfn_);
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34f(ist, jst, fock);
-}
-
-
-
 shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   if (nact_)
     return active->rdm1_mat(nclosed_);

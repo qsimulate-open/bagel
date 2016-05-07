@@ -165,37 +165,29 @@ void CASPT2::CASPT2::solve() {
 
 // function to solve linear equation
 vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
-  vector<shared_ptr<LinearRM<MultiTensor>>> solvers(nstates_);
-  for (int i = 0; i != nstates_; ++i)
-    solvers[i] = make_shared<LinearRM<MultiTensor>>(30, s[i]);
-
-  // set t2 to guess vectors
-  vector<bool> conv(nstates_, false);
-  for (int i = 0; i != nstates_; ++i) {
+  Timer mtimer;
+  // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+  // loop over state of interest
+  bool converged = true;
+  for (int i = 0; i != nstates_; ++i) {  // K states
+    bool conv = false;
+    double error = 0.0;
     e0_ = e0all_[i] - info_->shift();
     energy_[i] = 0.0;
+    // set guess vector
     t[i]->zero();
-    if (s[i]->rms() < 1.0e-15)
-      conv[i] = true;
-    else
+    if (s[i]->rms() < 1.0e-15) {
+      print_iteration(0, 0.0, 0.0, mtimer.tick());
+      if (i+1 != nstates_) cout << endl;
+      continue;
+    } else {
       update_amplitude(t[i], s[i]);
-  }
+    }
 
-  vector<double> error(nstates_);
-  Timer mtimer;
-  int iter = 0;
-  for ( ; iter != info_->maxiter(); ++iter) {
-    // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
-    // loop over state of interest
-
-    for (int i = 0; i != nstates_; ++i) {  // K states
-      if (conv[i]) {
-        print_iteration(iter, energy_[i], error[i], 0.0);
-        solvers[i].reset();
-        continue;
-      } else {
-        rall_[i]->zero();
-      }
+    auto solver = make_shared<LinearRM<MultiTensor>>(30, s[i]);
+    int iter = 0;
+    for ( ; iter != info_->maxiter(); ++iter) {
+      rall_[i]->zero();
 
       const double norm = t[i]->norm();
       t[i]->scale(1.0/norm);
@@ -216,28 +208,29 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
         }
       }
       // solve using subspace updates
-      rall_[i] = solvers[i]->compute_residual(t[i], rall_[i]);
-      t[i] = solvers[i]->civec();
+      rall_[i] = solver->compute_residual(t[i], rall_[i]);
+      t[i] = solver->civec();
 
       // energy is now the Hylleraas energy
       energy_[i] = detail::real(dot_product_transpose(s[i], t[i]));
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t[i]));
 
       // compute rms for state i
-      error[i] = rall_[i]->rms();
-      print_iteration(iter, energy_[i], error[i], mtimer.tick());
-      conv[i] = error[i] < info_->thresh();
+      error = rall_[i]->rms();
+      print_iteration(iter, energy_[i], error, mtimer.tick());
+      conv = error < info_->thresh();
 
       // compute delta t2 and update amplitude
-      if (!conv[i]) {
+      if (!conv) {
         t[i]->zero();
         update_amplitude(t[i], rall_[i]);
       }
+      if (conv) break;
     }
-    if (all_of(conv.begin(), conv.end(), [](bool i){ return i; })) break;
-    if (nstates_ > 1) cout << endl;
+    if (i+1 != nstates_) cout << endl;
+    converged &= conv;
   }
-  print_iteration(iter == info_->maxiter());
+  print_iteration(!converged);
   return t;
 }
 
@@ -337,6 +330,7 @@ void CASPT2::CASPT2::solve_deriv() {
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
     ci_deriv_ = ms.ci_deriv();
+    dcheck_ = ms.dcheck();
     timer.tick();
   }
 
@@ -365,8 +359,95 @@ void CASPT2::CASPT2::solve_deriv() {
     }
   }
   timer.tick_print("T1 norm evaluation");
+
+  // some additional terms to be added
+  const int ncore = info_->ncore();
+  const int nclosed = info_->nclosed()-info_->ncore();
+  const int nact = info_->nact();
+  {
+    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
+    auto dtmp = den2_->copy();
+    for (int ist = 0; ist != nstates_; ++ist) {
+      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j)
+          dtmp->element(j, i) -=  correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
+    }
+    dtmp->symmetrize();
+    den2_ = dtmp;
+  }
+
+  shared_ptr<const Reference> ref = info_->ref();
+  const MatView acoeff = coeff_->slice(nclosed+ncore, nclosed+ncore+nact);
+
+  // code to calculate h+g(d). When add is false, h is not added
+  auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
+    shared_ptr<const Matrix> jop = ref->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
+    auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
+    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+    shared_ptr<DFFullDist> full2 = full->copy();
+    full2->rotate_occ1(moden);
+    *out += *full->form_2index(full2, -0.5);
+    return out;
+  };
+  shared_ptr<const Matrix> fock = focksub(ref->rdm1_mat(), coeff_->slice(0, ref->nocc()), true); // f
+  {
+    // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
+    // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
+    shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
+
+    for (int ist = 0; ist != nstates_; ++ist) {
+      const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_[ist]);
+      shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
+      for (int i = 0; i != nact; ++i)
+        for (int j = 0; j != nact; ++j)
+          ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+    }
+
+    // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
+    const int tst = info_->target();
+    const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
+    for (int ist = 0; ist != nstates_; ++ist)
+      for (int jst = 0; jst != nstates_; ++jst)
+        ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,tst)*(*heff_)(jst,tst)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
+  }
+
+  // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and contribution to y
+  if (xmsmat_) {
+    Matrix wmn(nstates_, nstates_);
+    shared_ptr<Tensor> dc = rdm1_->clone();
+    for (int i = 0; i != nstates_; ++i)
+      for (int j = 0; j != i; ++j) {
+        const double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
+                        - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
+        wmn(j,i) = fabs(e0all_[j]-e0all_[i]) > 1.0e-12 ? -0.5 * cy / (e0all_[j]-e0all_[i]) : 0.0;
+        wmn(i,j) = wmn(j,i);
+        dc->ax_plus_y(wmn(j,i), rdm1all_->at(j, i));
+        dc->ax_plus_y(wmn(i,j), rdm1all_->at(i, j));
+      }
+    dcheck_ = dc->matrix();
+
+    // fill this into CI derivative. (Y contribution is done inside Z-CASSCF together with frozen core)
+    shared_ptr<const Matrix> gdc = focksub(dcheck_, acoeff, false);
+    for (int ist = 0; ist != nstates_; ++ist) {
+      shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
+      for (int jst = 0; jst != nstates_; ++jst) {
+        Matrix op(*fock * wmn(jst, ist));
+        if (ist == jst)
+          op += *gdc * (1.0/nstates_);
+        for (int i = 0; i != nact; ++i)
+          for (int j = 0; j != nact; ++j)
+            ci_deriv_->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+      }
+    }
+
+    // also rotate cideriv back to the MS states
+    btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3});
+  }
+
   // restore original energy
   energy_ = pt2energy_;
+  timer.tick_print("Postprocessing SMITH");
 }
 
 #endif

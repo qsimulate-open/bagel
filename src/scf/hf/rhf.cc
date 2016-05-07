@@ -182,7 +182,7 @@ void RHF::compute() {
 
 
 shared_ptr<const Reference> RHF::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), vector<double>{energy_});
   out->set_eig(eig_);
   return out;
 }

@@ -66,7 +66,7 @@ class CPCASSCF {
 
     // tuple of Z, z, and X.
     std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>
-      solve(const double thresh, const int maxiter = 100);
+      solve(const double thresh, const int maxiter = 100, std::shared_ptr<const Matrix> den = nullptr);
 
 };
 

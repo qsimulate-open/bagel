@@ -54,6 +54,8 @@ class SMITH_Info {
     bool do_ms_;
     bool do_xms_;
 
+    double thresh_overlap_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);
@@ -72,8 +74,6 @@ class SMITH_Info {
 
     std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst, const bool recompute = false) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
-    std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<3>>>
-      rdm34f(const int ist, const int jst, std::shared_ptr<const MatType> fock) const;
 
     double thresh() const { return thresh_; }
     double shift() const {return shift_; }
@@ -83,6 +83,7 @@ class SMITH_Info {
     bool grad() const { return grad_; }
     bool do_ms() const { return do_ms_; }
     bool do_xms() const { return do_xms_; }
+    double thresh_overlap() const { return thresh_overlap_; }
 
     template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
     bool gaunt() const { return relref()->gaunt(); }
@@ -110,14 +111,10 @@ class SMITH_Info {
 
 template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
-template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<3>>>
-           SMITH_Info<double>::rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix>) const;
 template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr<const Kramers<4,ZRDM<2>>>>
            SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst, const bool recompute) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
-template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<6,ZRDM<3>>>>
-           SMITH_Info<std::complex<double>>::rdm34f(const int ist, const int jst, std::shared_ptr<const ZMatrix>) const;
 
 template<> std::shared_ptr<const CIWfn>   SMITH_Info<double>::ciwfn() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;

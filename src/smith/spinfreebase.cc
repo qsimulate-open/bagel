@@ -35,7 +35,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template<typename DataType>
-SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf) {
+SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> inf) : info_(inf), info_orig_(info_) {
   static_assert(is_same<DataType,double>::value or is_same<DataType,complex<double>>::value,
                 "illegal DataType for SpinFreeMethod");
 
@@ -124,8 +124,6 @@ template<>
 void SpinFreeMethod<double>::rotate_xms() {
   assert(fockact_);
   const int nstates = info_->ciwfn()->nstates();
-
-  // TODO XMS thing
   Matrix fmn(nstates, nstates);
 
   for (int ist = 0; ist != nstates; ++ist) {
@@ -173,7 +171,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
-                                        info_->nvirt(), 0.0, info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->nvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
@@ -181,6 +179,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // update eref_
   eref_ = make_shared<Matrix>(fmn % (*eref_) *fmn);
+  xmsmat_ = make_shared<Matrix>(move(fmn));
 }
 
 
@@ -201,7 +200,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   rdm4all_ = make_shared<Vec<Tensor_<double>>>();
 
   assert(fockact_);
-  auto denom = make_shared<Denom<double>>(fockact_, nstates, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<double>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {
@@ -211,10 +210,12 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      shared_ptr<const RDM<3>> frdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
-      tie(rdm3, rdm4)  = info_->rdm34(jst, ist);
-      tie(ignore, frdm4) = info_->rdm34f(jst, ist, fockact_);
+      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+      shared_ptr<RDM<3>> frdm4 = rdm3->clone();
+      auto rdm4v = group(group(*rdm4, 6,8), 0,6);
+      auto frdm4v = group(*frdm4, 0, 6);
+      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, frdm4v, {0});
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
@@ -252,7 +253,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
 
   assert(fockact_);
-  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, /*thresh*/1.0e-9);
+  auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
 
   // TODO this can be reduced to half by bra-ket symmetry
   for (int ist = 0; ist != nstates; ++ist) {

@@ -98,7 +98,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Matrix>> CPCASSCF::compu
 
 
 tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>, shared_ptr<const Matrix>>
-  CPCASSCF::solve(const double zthresh, const int zmaxiter) {
+  CPCASSCF::solve(const double zthresh, const int zmaxiter, shared_ptr<const Matrix> additional_den) {
 
   const size_t nocca = ref_->nocc();
   const int nmobasis = coeff_->mdim();
@@ -140,7 +140,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // frozen core contributions
   shared_ptr<Matrix> zcore, gzcore;
-  if (ncore_) {
+  if (ncore_ || additional_den) {
     assert(ncore_ < nclosed);
     zcore = make_shared<Matrix>(nocca, nocca);
     for (int i = 0; i != ncore_; ++i)
@@ -149,6 +149,8 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
         assert(abs(fock_->element(i, j)) < 1.0e-8);
       }
     zcore->symmetrize();
+    if (additional_den)
+      *zcore += *additional_den;
     shared_ptr<Matrix> rot;
     if (nact) {
       rot = make_shared<Matrix>(*zcore + *ref_->rdm1_mat()); // trick to make it positive definite

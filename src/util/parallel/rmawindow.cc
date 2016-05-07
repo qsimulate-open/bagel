@@ -203,8 +203,9 @@ void RMAWindow<DataType>::rma_get(DataType* data, const size_t rank, const size_
   assert(initialized_);
 #ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Get(data, size, type, rank, off, size, type, win_);
-  MPI_Win_flush_local(rank, win_);
+  MPI_Request req;
+  MPI_Rget(data, size, type, rank, off, size, type, win_, &req);
+  MPI_Wait(&req, MPI_STATUS_IGNORE);
 #endif
 }
 
@@ -219,12 +220,13 @@ void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_
 
 
 template<typename DataType>
-void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) {
+void RMAWindow<DataType>::rma_put(const DataType* dat, const size_t rank, const size_t off, const size_t size) {
   assert(initialized_);
 #ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Put(dat.get(), size, type, rank, off, size, type, win_);
-  MPI_Win_flush_local(rank, win_);
+  MPI_Request req;
+  MPI_Rput(dat, size, type, rank, off, size, type, win_, &req);
+  MPI_Wait(&req, MPI_STATUS_IGNORE);
 #endif
 }
 
@@ -239,12 +241,13 @@ void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_
 
 
 template<typename DataType>
-void RMAWindow<DataType>::rma_add(const unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) {
+void RMAWindow<DataType>::rma_add(const DataType* dat, const size_t rank, const size_t off, const size_t size) {
   assert(initialized_);
 #ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Accumulate(dat.get(), size, type, rank, off, size, type, MPI_SUM, win_);
-  MPI_Win_flush_local(rank, win_);
+  MPI_Request req;
+  MPI_Raccumulate(dat, size, type, rank, off, size, type, MPI_SUM, win_, &req);
+  MPI_Wait(&req, MPI_STATUS_IGNORE);
 #endif
 }
 
@@ -292,11 +295,38 @@ shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(unique_ptr<DataType[
 
 
 template<typename DataType>
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_rput(const DataType* buf, const size_t rank, const size_t off, const size_t size) {
+  shared_ptr<RMATask<DataType>> out;
+#ifdef HAVE_MPI_H
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  MPI_Request req;
+  MPI_Rput(buf, size, type, rank, off, size, type, win_, &req);
+  out = make_shared<RMATask<DataType>>(move(req));
+#endif
+  return out;
+}
+
+
+template<typename DataType>
+shared_ptr<RMATask<DataType>> RMAWindow<DataType>::rma_radd(const DataType* buf, const size_t rank, const size_t off, const size_t size) {
+  shared_ptr<RMATask<DataType>> out;
+#ifdef HAVE_MPI_H
+  auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
+  MPI_Request req;
+  MPI_Raccumulate(buf, size, type, rank, off, size, type, MPI_SUM, win_, &req);
+  out = make_shared<RMATask<DataType>>(move(req));
+#endif
+  return out;
+}
+
+
+template<typename DataType>
 void RMAWindow<DataType>::set_element(const size_t rank, const size_t disp, const DataType a) {
 #ifdef HAVE_MPI_H
   auto type = is_same<double,DataType>::value ? MPI_DOUBLE : MPI_CXX_DOUBLE_COMPLEX;
-  MPI_Put(&a, 1, type, rank, disp, 1, type, win_);
-  MPI_Win_flush_local(rank, win_);
+  MPI_Request req;
+  MPI_Rput(&a, 1, type, rank, disp, 1, type, win_, &req);
+  MPI_Wait(&req, MPI_STATUS_IGNORE);
 #endif
 }
 

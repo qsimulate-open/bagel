@@ -51,7 +51,7 @@ double ks_energy(std::string filename) {
       std::shared_ptr<const Reference> ref = scf->conv_to_ref();
 
       std::cout.rdbuf(backup_stream);
-      return ref->energy();
+      return ref->energy(0);
     }
   }
   assert(false);

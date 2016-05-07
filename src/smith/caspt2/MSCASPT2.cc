@@ -44,9 +44,11 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   heff_    = cas.heff_;
   fockact_ = cas.fockact_;
   e0all_   = cas.e0all_;
+  xmsmat_  = cas.xmsmat_;
 
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
+  rall_  = cas.rall_;
   h1_ = cas.h1_;
   f1_ = cas.f1_;
   v2_ = cas.v2_;
@@ -96,46 +98,41 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
   }
   // second-order contribution from the lambda terms
   {
-    // TODO probably not necessary
-    shared_ptr<Tensor> result = den2->clone();
+    den2->zero();
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           l2 = lall_[istate]->at(ist);
           t2 = t2all_[istate]->at(jst);
-          shared_ptr<Queue> queue = make_densityq(true, ist == jst);
+          shared_ptr<Queue> queue = make_densityq(false, ist == jst);
           while (!queue->done())
             queue->next_compute();
-          result->ax_plus_y(1.0, den2);
         }
       }
     }
-    den2_ = result->matrix();
+    den2_ = den2->matrix();
   }
   // first-order contribution from the lambda terms
   {
-    // TODO probably not necessary
-    shared_ptr<Tensor> result = den1->clone();
-    shared_ptr<Tensor> result2 = Den1->clone();
+    den1->zero();
+    Den1->zero();
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
 
         l2 = lall_[jst]->at(ist);
-        shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
         while (!queue->done())
           queue->next_compute();
-        result->ax_plus_y(1.0, den1);
 
-        shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
+        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
         while (!queue2->done())
           queue2->next_compute();
-        result2->ax_plus_y(1.0, Den1);
       }
     }
-    den1_->ax_plus_y(1.0, result->matrix());
-    Den1_->ax_plus_y(1.0, result2);
+    den1_->ax_plus_y(1.0, den1->matrix());
+    Den1_->ax_plus_y(1.0, Den1);
   }
   // because of the convention...
   den1_->scale(0.5);

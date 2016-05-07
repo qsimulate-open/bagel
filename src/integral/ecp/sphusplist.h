@@ -27,6 +27,7 @@
 #define __SRC_INTEGRAL_ECP_SPHUSPLIST_H
 
 #include <src/util/constants.h>
+#include <vector>
 #include <functional>
 
 namespace bagel {

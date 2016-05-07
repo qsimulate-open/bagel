@@ -214,43 +214,47 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   }
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
-  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Dvec> e, shared_ptr<Dvec> tmp) {
+  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, shared_ptr<Dvec> tmp) {
     int ijkl = 0;
     int ij = 0;
     for (auto iter = d->dvec().begin(); iter != d->dvec().end(); ++iter, ++ij) {
-      const int j = ij/norb_;
-      const int i = ij-j*norb_;
-      tmp->zero();
-      sigma_2a1(*iter, tmp);
-      sigma_2a2(*iter, tmp);
-      int kl = 0;
-      for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-        *e->data(ijkl) = **t;
-        const int l = kl/norb_;
-        const int k = kl-l*norb_;
-        if (l == i) *e->data(ijkl) -= *d->data(k+j*norb_);
+      if (ij % mpi__->size() == mpi__->rank()) {
+        const int j = ij/norb_;
+        const int i = ij-j*norb_;
+        tmp->zero();
+        sigma_2a1(*iter, tmp);
+        sigma_2a2(*iter, tmp);
+        int kl = 0;
+        for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
+          copy_n((*t)->data(), e->ndim(), e->element_ptr(0,ijkl));
+          const int l = kl/norb_;
+          const int k = kl-l*norb_;
+          if (l == i)
+            blas::ax_plus_y_n(-1.0, d->data(k+j*norb_)->data(), e->ndim(), e->element_ptr(0,ijkl));
+        }
+      } else {
+        ijkl += tmp->dvec().size();
       }
     }
+    e->allreduce();
   };
-  auto ebra = make_shared<Dvec>(cbra->det(), norb_*norb_*norb_*norb_);
+  auto ebra = make_shared<Matrix>(cbra->det()->size(), norb_*norb_*norb_*norb_);
   auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
   make_evec(dbra, ebra, tmp);
 
-  shared_ptr<Dvec> eket = ebra;
+  shared_ptr<Matrix> eket = ebra;
   if (cbra != cket) {
     eket = ebra->clone();
     make_evec(dket, eket, tmp);
   }
 
   // size of the RI space
-  const size_t nri = ebra->lena() * ebra->lenb();
-  assert(nri == dbra->lena()*dbra->lenb());
+  auto dbram = make_shared<Matrix>(dbra->det()->size(), norb_*norb_);
+  copy_n(dbra->data(0)->data(), dbram->size(), dbram->data());
 
   // first form <0|E_mn|I><I|E_ij,kl|0>
   {
-    auto tmp3 = make_shared<RDM<3>>(norb_);
-    auto tmp3v = group(group(*tmp3,2,6),0,2);
-    contract(1.0, group(*dbra,0,2), {0,1}, group(*eket,0,2), {0,2}, 0.0, tmp3v, {1,2});
+    auto tmp3 = make_shared<Matrix>(*dbram % *eket);
     sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
 
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
@@ -266,26 +270,23 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 
   // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
   {
-    {
-      auto tmp4 = make_shared<RDM<4>>(norb_);
-      dgemm_("T", "N", ebra->ij(), eket->ij(), nri, 1.0, ebra->data(), nri, eket->data(), nri, 0.0, tmp4->data(), ebra->ij());
-      sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
-      for (int l = 0; l != norb_; ++l)
-        for (int k = 0; k != norb_; ++k)
-          for (int j = 0; j != norb_; ++j)
-            for (int b = 0; b != norb_; ++b) {
-              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
-              blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
-              for (int i = 0; i != norb_; ++i) {
-                blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
-                blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
-                for (int d = 0; d != norb_; ++d) {
-                  blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
-                  blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,l,b,j,d,k), norb_, rdm4->element_ptr(0,i,b,j,d,k,i,l));
-                }
+    auto tmp4 = make_shared<Matrix>(*ebra % *eket);
+    sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
+    for (int l = 0; l != norb_; ++l)
+      for (int k = 0; k != norb_; ++k)
+        for (int j = 0; j != norb_; ++j)
+          for (int b = 0; b != norb_; ++b) {
+            blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,k,b,l), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,j,k,b,l));
+            blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,0,0,l,b,k), norb_*norb_*norb_, rdm4->element_ptr(0,0,0,j,b,k,j,l));
+            for (int i = 0; i != norb_; ++i) {
+              blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,k,b,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,j,l));
+              blas::ax_plus_y_n(-1.0, rdm2_->at(ist, jst)->element_ptr(0,l,b,k), norb_, rdm4->element_ptr(0,i,b,j,j,k,i,l));
+              for (int d = 0; d != norb_; ++d) {
+                blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,k,b,j,d,l), norb_, rdm4->element_ptr(0,i,b,j,i,k,d,l));
+                blas::ax_plus_y_n(-1.0, rdm3->element_ptr(0,l,b,j,d,k), norb_, rdm4->element_ptr(0,i,b,j,d,k,i,l));
               }
             }
-    }
+          }
   }
 
   cc_->set_det(det_);
@@ -294,6 +295,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 }
 
 
+#if 0
 // computes 3 and 4RDM
 // TODO duplicate code to be cleaned up
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
@@ -422,6 +424,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
 
   return make_tuple(rdm3, frdm4);
 }
+#endif
 
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).

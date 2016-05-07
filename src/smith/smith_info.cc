@@ -56,6 +56,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
   // These are not input parameters (set automatically)
   target_  = idata->get<int>("_target", -1);
@@ -67,7 +68,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_), maxiter_(info->maxiter_), target_(info->target_),
-    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_) {
+    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_), thresh_overlap_(info->thresh_overlap_) {
 }
 
 
@@ -80,12 +81,6 @@ tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rd
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
   return ref_->rdm34(ist, jst);
-}
-
-
-template<>
-tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
-  return ref_->rdm34f(ist, jst, fock);
 }
 
 
@@ -108,14 +103,6 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   auto rdm3 = ref->rdm3(ist, jst);
   auto rdm4 = ref->rdm4(ist, jst);
   return make_tuple(rdm3, rdm4);
-}
-
-
-template<>
-tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<6,ZRDM<3>>>>
-  SMITH_Info<complex<double>>::rdm34f(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
-  assert(false); // TODO not implemented yet
-  return tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<6,ZRDM<3>>>>();
 }
 
 

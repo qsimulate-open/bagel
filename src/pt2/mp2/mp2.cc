@@ -157,7 +157,7 @@ void MP2::compute() {
   cout << "    * assembly done" << endl << endl;
   cout << "      MP2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
 
-  energy_ += ref_->energy();
+  energy_ += ref_->energy(0);
   cout << "      MP2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 }
 

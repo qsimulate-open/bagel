@@ -70,125 +70,87 @@ void CASPT2Grad::compute() {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
-  {
-    // construct SMITH here
-    shared_ptr<PTree> smithinput = idata_->get_child("smith");
-    smithinput->put("_grad", true);
-    smithinput->put("_target", target_);
-    smithinput->put("_hyperfine", do_hyperfine_);
-    auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
-    smith->compute();
+  const int nocc = ref_->nocc();
 
-    // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
-    coeff_ = smith->coeff();
+  // construct SMITH here
+  shared_ptr<PTree> smithinput = idata_->get_child("smith");
+  smithinput->put("_grad", true);
+  smithinput->put("_target", target_);
+  smithinput->put("_hyperfine", do_hyperfine_);
+  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+  smith->compute();
 
-    if (nact)
-      cideriv_ = smith->cideriv()->copy();
-    ncore_   = smith->algo()->info()->ncore();
-    wf1norm_ = smith->wf1norm();
-    msrot_   = smith->msrot();
-    nstates_ = wf1norm_.size();
-    assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-    assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
+  // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
+  coeff_ = smith->coeff();
 
-    Timer timer;
+  if (nact)
+    cideriv_ = smith->cideriv()->copy();
+  ncore_   = smith->algo()->info()->ncore();
+  wf1norm_ = smith->wf1norm();
+  msrot_   = smith->msrot();
+  nstates_ = wf1norm_.size();
+  assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
+  assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
 
-    // save correlated density matrices d(1), d(2), and ci derivatives
-    auto d1tmp = make_shared<Matrix>(*smith->dm1());
-    auto d11tmp = make_shared<Matrix>(*smith->dm11());
-    d1tmp->symmetrize();
-    d11tmp->symmetrize();
-    // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
-    d11tmp->scale(2.0);
+  Timer timer;
 
-    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
-    if (nact) {
-      for (int ist = 0; ist != nstates_; ++ist) {
-        for (int i = nclosed; i != nclosed+nact; ++i)
-          for (int j = nclosed; j != nclosed+nact; ++j)
-            d1tmp->element(j-ncore_, i-ncore_) -=  wf1norm_[ist] * ref_->rdm1(ist)->element(j-nclosed, i-nclosed);
-      }
+  // save correlated density matrices d(1), d(2), and ci derivatives
+  auto d1tmp = make_shared<Matrix>(*smith->dm1());
+  auto d11tmp = make_shared<Matrix>(*smith->dm11());
+  d1tmp->symmetrize();
+  d11tmp->symmetrize();
+  // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
+  d11tmp->scale(2.0);
+
+  auto d1set = [this](shared_ptr<const Matrix> d1t) {
+    if (!ncore_) {
+      return d1t->copy();
+    } else {
+      auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
+      out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
+      return out;
     }
+  };
+  d1_ = d1set(d1tmp);
+  d11_ = d1set(d11tmp);
 
-    auto d1set = [this](shared_ptr<const Matrix> d1t) {
-      if (!ncore_) {
-        return d1t->copy();
-      } else {
-        auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-        out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
-        return out;
-      }
-    };
-    d1_ = d1set(d1tmp);
-    d11_ = d1set(d11tmp);
-
-    // spin density matrices
-    if (do_hyperfine_) {
-      auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
-      sd11tmp->symmetrize();
-      sd11tmp->scale(2.0);
-      sd1_ = d1set(smith->sdm1());
-      sd11_ = d1set(sd11tmp);
-    }
-
-    // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
-    if (nact) {
-      // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
-      const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
-
-      auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
-        shared_ptr<const Matrix> jop = ref_->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
-        auto out = make_shared<Matrix>(acoeff % (add ? (*ref_->hcore() + *jop) : *jop) * acoeff);
-        shared_ptr<const DFFullDist> full = ref_->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
-        shared_ptr<DFFullDist> full2 = full->copy();
-        full2->rotate_occ1(moden);
-        *out += *full->form_2index(full2, -0.5);
-        return out;
-      };
-
-      shared_ptr<const Matrix> d0sa = ref_->rdm1_mat();
-      auto fock = focksub(d0sa, coeff_->slice(0, ref_->nocc()), true); // f
-      auto gd2 = focksub(d1_, *coeff_, false); // g(d2)
-
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const Matrix op(*gd2 * (1.0/nstates_) - *fock * wf1norm_[ist]);
-        shared_ptr<const Dvec> deriv = ref_->rdm1deriv(ist);
-        for (int i = 0; i != nact; ++i)
-          for (int j = 0; j != nact; ++j)
-            cideriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
-      }
-      // y_I += <I|H|0> (for mixed states)
-#if 1
-      shared_ptr<const Dvec> sigma = fci_->form_sigma(ref_->ciwfn()->civectors(), fci_->jop(), vector<int>(nstates_,0));
-      for (int ist = 0; ist != nstates_; ++ist)
-        for (int jst = 0; jst != nstates_; ++jst)
-          cideriv_->data(jst)->ax_plus_y(2.0*msrot(ist, target())*msrot(jst, target()), sigma->data(ist));
-#endif
-    }
-
-    // zeroth order RDM
-    if (nact) {
-      d10ms_ = make_shared<RDM<1>>(nact);
-      d20ms_ = make_shared<RDM<2>>(nact);
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const double ims = msrot(ist, target());
-        for (int jst = 0; jst != nstates_; ++jst) {
-          const double jms = msrot(jst, target());
-          shared_ptr<const RDM<1>> rdm1t;
-          shared_ptr<const RDM<2>> rdm2t;
-          tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
-          d10ms_->ax_plus_y(ims*jms, *rdm1t);
-          d20ms_->ax_plus_y(ims*jms, *rdm2t);
-        }
-      }
-    }
-
-    d2_ = smith->dm2();
-    energy_ = smith->algo()->energy();
-
-    timer.tick_print("Postprocessing SMITH");
-    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
+  // XMS density matrix
+  if (smith->dcheck()) {
+    shared_ptr<const Matrix> dc = smith->dcheck();
+    assert(dc->ndim() == nact && dc->mdim() == nact);
+    auto tmp = make_shared<Matrix>(nocc, nocc);
+    tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
+    dcheck_ = tmp;
   }
+
+  // spin density matrices
+  if (do_hyperfine_) {
+    auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
+    sd11tmp->symmetrize();
+    sd11tmp->scale(2.0);
+    sd1_ = d1set(smith->sdm1());
+    sd11_ = d1set(sd11tmp);
+  }
+
+  // zeroth order RDM
+  if (nact) {
+    d10ms_ = make_shared<RDM<1>>(nact);
+    d20ms_ = make_shared<RDM<2>>(nact);
+    for (int ist = 0; ist != nstates_; ++ist) {
+      const double ims = msrot(ist, target());
+      for (int jst = 0; jst != nstates_; ++jst) {
+        const double jms = msrot(jst, target());
+        shared_ptr<const RDM<1>> rdm1t;
+        shared_ptr<const RDM<2>> rdm2t;
+        tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
+        d10ms_->ax_plus_y(ims*jms, *rdm1t);
+        d20ms_->ax_plus_y(ims*jms, *rdm2t);
+      }
+    }
+  }
+  d2_ = smith->dm2();
+  energy_ = smith->algo()->energy();
+  cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
 #endif
 }
 
@@ -258,7 +220,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 
@@ -398,7 +360,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
   const int nmobasis = coeff_->mdim();
-  assert(nocc + ref_->nvirt() == nmobasis);
 
   const MatView ocmat = coeff_->slice(0, nocc);
 

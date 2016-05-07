@@ -54,6 +54,8 @@ class Smith : public Method {
     // first order density matrices
     std::shared_ptr<const Matrix> dm11_;
     std::shared_ptr<const Tensor> dm2_;
+    // XMS density matrix
+    std::shared_ptr<const Matrix> dcheck_;
     // second order spin density matrix
     std::shared_ptr<const Matrix> sdm1_;
     // first order spin density matrix
@@ -72,11 +74,13 @@ class Smith : public Method {
 
     void compute() override;
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { assert(false); return nullptr; }
+    // just return the reference used in SMITH code
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     std::shared_ptr<const Matrix> dm1() const { return dm1_; }
     std::shared_ptr<const Matrix> dm11() const { return dm11_; }
     std::shared_ptr<const Tensor> dm2() const { return dm2_; }
+    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     std::shared_ptr<const Matrix> sdm1() const { return sdm1_; }
     std::shared_ptr<const Matrix> sdm11() const { return sdm11_; }
     std::vector<double> wf1norm() const { return wf1norm_; }

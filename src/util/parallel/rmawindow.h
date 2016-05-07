@@ -92,15 +92,20 @@ class RMAWindow {
     void rma_get(DataType*, const size_t key) const;
     void rma_get(DataType*, const size_t rank, const size_t off, const size_t size) const;
     void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key);
-    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size);
+    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_put(dat.get(), rank, off, size); }
+    void rma_put(const DataType* dat, const size_t rank, const size_t off, const size_t size);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t key);
-    void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size);
+    void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_add(dat.get(), rank, off, size); }
+    void rma_add(const DataType* dat, const size_t rank, const size_t off, const size_t size);
 
-    // Non-blocking
-    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t key) const;
-    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t rank, const size_t off, const size_t size) const;
+    // Non-blocking: The buffer is pushed to the RMATask
     std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t key);
     std::shared_ptr<RMATask<DataType>> rma_radd(std::unique_ptr<DataType[]>&& dat, const size_t rank, const size_t off, const size_t size);
+    // Non-blocking: User needs to manage memory
+    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t key) const;
+    std::shared_ptr<RMATask<DataType>> rma_rget(DataType* dat, const size_t rank, const size_t off, const size_t size) const;
+    std::shared_ptr<RMATask<DataType>> rma_rput(const DataType* dat, const size_t rank, const size_t off, const size_t size);
+    std::shared_ptr<RMATask<DataType>> rma_radd(const DataType* dat, const size_t rank, const size_t off, const size_t size);
 
     void set_element(const size_t rank, const size_t disp, const DataType a);
 
