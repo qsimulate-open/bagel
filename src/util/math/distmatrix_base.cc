@@ -70,13 +70,13 @@ void DistMatrix_base<DataType>::add_diag(const DataType& a, const size_t start, 
           if (m == n && start <= n && n < fence)
             local_[j*blocksize__+jd+localrow*(i*blocksize__+id)] += a;
         }
-    for (int id = 0; id != localcol % blocksize__; ++id)
-      for (int jd = 0; jd != localrow % blocksize__; ++jd) {
-        const size_t m = mblock*blocksize__+id;
-        const size_t n = nblock*blocksize__+jd;
-        if (m == n && start <= n && n < fence)
-          local_[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] += a;
-      }
+  for (int id = 0; id != localcol % blocksize__; ++id)
+    for (int jd = 0; jd != localrow % blocksize__; ++jd) {
+      const size_t m = mblock*blocksize__+id;
+      const size_t n = nblock*blocksize__+jd;
+      if (m == n && start <= n && n < fence)
+        local_[nblock*blocksize__+jd+localrow*(mblock*blocksize__+id)] += a;
+    }
 }
 
 

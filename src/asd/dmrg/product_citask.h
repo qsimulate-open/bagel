@@ -66,7 +66,8 @@ class ProductCIHamTask : public ProductCITask<ProductCIHamTask> {
     const int rnorb_;
 
     double mo2e(int i, int j, int k, int l) {
-      if (i>j) std::swap(i,j); if(k>l) std::swap(k,l);
+      if (i > j) std::swap(i,j);
+      if (k > l) std::swap(k,l);
       return jop_->mo2e(i,j,k,l);
     }
 
