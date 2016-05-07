@@ -35,6 +35,7 @@
 #include <list>
 #include <cassert>
 #include <algorithm>
+#include <numeric>
 #include <src/smith/indexrange.h>
 #include <src/util/parallel/mpi_interface.h>
 #include <src/util/parallel/rmawindow.h>
