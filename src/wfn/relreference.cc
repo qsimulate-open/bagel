@@ -151,12 +151,7 @@ shared_ptr<Reference> RelReference::extract_state(const int istate, const vector
   ZFCI_bare fci(ciwfn_);
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
-
-  cout << " * Extracting CI coefficients from RelReference object for state " << istate << ", RDMs will relate to ";
-  cout << (rdm_state.size() > 1 ? "the average of the following states: " : "the following state: ");
-  for (int i = 0; i != rdm_state.size(); ++i)
-    cout << rdm_state[i] << " ";
-  cout << endl;
+  cout << " * Extracting CI coefficients from RelReference object for state " << istate << "." << endl;
 
   // Construct a RelCIWfn with only CI coefficients for the desired state
   auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
@@ -175,6 +170,12 @@ shared_ptr<Reference> RelReference::extract_average_rdm(const vector<int> rdm_st
   ZFCI_bare fci(ciwfn_);
   if (rdm_state.size() == 0 || rdm_state.size() > nstate())
     throw runtime_error("Trying to obtain a state-averaged RDM over some invalid number of states.");
+
+  cout << " * Extracting RDMs for ";
+  cout << (rdm_state.size() > 1 ? "the average of the following states: " : "the following state: ");
+  for (int i = 0; i != rdm_state.size(); ++i)
+    cout << rdm_state[i] << " ";
+  cout << endl;
 
   // for one-body RDM
   vector<shared_ptr<Kramers<2,ZRDM<1>>>> rdm1;
