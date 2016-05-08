@@ -96,7 +96,7 @@ class SRBFGS {
 
         alglib::minlbfgscreate(1, x, state_); 
         alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
-        alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.1);
+        alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.0);
         alglib::minlbfgssetprecdiag(state_, denom_);
 
         flag_ = false;
