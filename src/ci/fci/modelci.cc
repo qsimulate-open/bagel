@@ -39,7 +39,8 @@ class CIHamTask : public CITask<CIHamTask> {
     shared_ptr<const CSymMatrix> mo1e_;
 
     double mo2e(int i, int j, int k, int l) {
-      if (i>j) swap(i,j); if(k>l) swap(k,l);
+      if (i > j) swap(i,j);
+      if (k > l) swap(k,l);
       return jop_->mo2e(i,j,k,l);
     }
 

@@ -28,8 +28,7 @@ using namespace std;
 using namespace bagel;
 
 PhiIJKLists::PhiIJKLists(shared_ptr<const CIStringSet<RASString>> source_stringspace,
-            shared_ptr<const CIStringSet<RASString>> target_stringspace, const bool conjugate)
-{
+            shared_ptr<const CIStringSet<RASString>> target_stringspace, const bool conjugate) {
   data_.reserve(target_stringspace->size());
   const size_t tlen = target_stringspace->size();
   const int norb = source_stringspace->norb();
@@ -58,8 +57,7 @@ PhiIJKLists::PhiIJKLists(shared_ptr<const CIStringSet<RASString>> source_strings
       }
       data_.emplace_back(move(phi));
     }
-  }
-  else {
+  } else {
     for (size_t it = 0; it < tlen; ++it) {
       vector<PhiIJK> phi;
       const bitset<nbit__> tbit = target_stringspace->strings(it);
