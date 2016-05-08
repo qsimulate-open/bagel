@@ -36524,7 +36524,6 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
     double v;
     double vv;
     ae_int_t n;
-    ae_int_t nr;
     ae_int_t idx0;
     ae_int_t idx1;
     ae_int_t ncandbnd;
@@ -36536,7 +36535,6 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
     ae_int_t actidx;
     double dtol;
     ae_bool kickneeded;
-    ae_bool terminationneeded;
     double kicklength;
     double lambdav;
     double maxdiag;
@@ -36546,7 +36544,6 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
 
 
     n = nsample;
-    nr = nvars;
     
     /*
      * Allocate arrays, prepare data
@@ -36591,7 +36588,6 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
     dtol = 1.0E5*ae_machineepsilon;
     kicklength = ae_machineepsilon;
     lambdav = 1.0E5*ae_machineepsilon;
-    terminationneeded = ae_false;
     termcnt = 0;
     for(;;)
     {

@@ -139,11 +139,11 @@ __declspec(align(AE_LOCK_ALIGNMENT)) volatile ae_int64_t _ae_dbg_lock_yields = 0
  *
  * you can remove them, if you want - they are not used anywhere.
  *
- */
 static char     _ae_bool_must_be_8_bits_wide[1-2*((int)(sizeof(ae_bool))-1)*((int)(sizeof(ae_bool))-1)];
 static char _ae_int32_t_must_be_32_bits_wide[1-2*((int)(sizeof(ae_int32_t))-4)*((int)(sizeof(ae_int32_t))-4)];
 static char _ae_int64_t_must_be_64_bits_wide[1-2*((int)(sizeof(ae_int64_t))-8)*((int)(sizeof(ae_int64_t))-8)];
 static char _ae_int_t_must_be_pointer_sized [1-2*((int)(sizeof(ae_int_t))-(int)sizeof(void*))*((int)(sizeof(ae_int_t))-(int)(sizeof(void*)))];  
+ */
 
 /*
  * This variable is used to prevent some tricky optimizations which may degrade multithreaded performance.
@@ -5168,7 +5168,7 @@ std::string alglib::complex::tostring(int _dps) const
     return std::string("0");
 }
 
-const bool alglib::operator==(const alglib::complex& lhs, const alglib::complex& rhs)
+bool alglib::operator==(const alglib::complex& lhs, const alglib::complex& rhs)
 {
     volatile double x1 = lhs.x;
     volatile double x2 = rhs.x;
@@ -5177,7 +5177,7 @@ const bool alglib::operator==(const alglib::complex& lhs, const alglib::complex&
     return x1==x2 && y1==y2;
 }
 
-const bool alglib::operator!=(const alglib::complex& lhs, const alglib::complex& rhs)
+bool alglib::operator!=(const alglib::complex& lhs, const alglib::complex& rhs)
 { return !(lhs==rhs); }
 
 const alglib::complex alglib::operator+(const alglib::complex& lhs)
@@ -6295,7 +6295,7 @@ alglib::boolean_1d_array::boolean_1d_array(const char *s)
     create(s, alglib_impl::DT_BOOL);
 }
 
-alglib::boolean_1d_array::boolean_1d_array(const alglib::boolean_1d_array &rhs)
+alglib::boolean_1d_array::boolean_1d_array(const alglib::boolean_1d_array &rhs) : ae_vector_wrapper()
 {
     create(rhs);
 }
@@ -6377,7 +6377,7 @@ alglib::integer_1d_array::integer_1d_array(const char *s)
     create(s, alglib_impl::DT_INT);
 }
 
-alglib::integer_1d_array::integer_1d_array(const alglib::integer_1d_array &rhs)
+alglib::integer_1d_array::integer_1d_array(const alglib::integer_1d_array &rhs) : ae_vector_wrapper()
 {
     create(rhs);
 }
@@ -6453,7 +6453,7 @@ alglib::real_1d_array::real_1d_array(const char *s)
     create(s, alglib_impl::DT_REAL);
 }
 
-alglib::real_1d_array::real_1d_array(const alglib::real_1d_array &rhs)
+alglib::real_1d_array::real_1d_array(const alglib::real_1d_array &rhs) : ae_vector_wrapper()
 {
     create(rhs);
 }
@@ -6529,7 +6529,7 @@ alglib::complex_1d_array::complex_1d_array(const char *s)
     create(s, alglib_impl::DT_COMPLEX);
 }
 
-alglib::complex_1d_array::complex_1d_array(const alglib::complex_1d_array &rhs)
+alglib::complex_1d_array::complex_1d_array(const alglib::complex_1d_array &rhs) : ae_vector_wrapper()
 {
     create(rhs);
 }
@@ -6764,7 +6764,7 @@ alglib::boolean_2d_array::boolean_2d_array()
     allocate_own(0, 0, alglib_impl::DT_BOOL);
 }
 
-alglib::boolean_2d_array::boolean_2d_array(const alglib::boolean_2d_array &rhs)
+alglib::boolean_2d_array::boolean_2d_array(const alglib::boolean_2d_array &rhs) : ae_matrix_wrapper()
 {
     create(rhs);
 }
@@ -6835,7 +6835,7 @@ alglib::integer_2d_array::integer_2d_array()
     allocate_own(0, 0, alglib_impl::DT_INT);
 }
 
-alglib::integer_2d_array::integer_2d_array(const alglib::integer_2d_array &rhs)
+alglib::integer_2d_array::integer_2d_array(const alglib::integer_2d_array &rhs) : ae_matrix_wrapper()
 {
     create(rhs);
 }
@@ -6906,7 +6906,7 @@ alglib::real_2d_array::real_2d_array()
     allocate_own(0, 0, alglib_impl::DT_REAL);
 }
 
-alglib::real_2d_array::real_2d_array(const alglib::real_2d_array &rhs)
+alglib::real_2d_array::real_2d_array(const alglib::real_2d_array &rhs) : ae_matrix_wrapper()
 {
     create(rhs);
 }
@@ -6977,7 +6977,7 @@ alglib::complex_2d_array::complex_2d_array()
     allocate_own(0, 0, alglib_impl::DT_COMPLEX);
 }
 
-alglib::complex_2d_array::complex_2d_array(const alglib::complex_2d_array &rhs)
+alglib::complex_2d_array::complex_2d_array(const alglib::complex_2d_array &rhs) : ae_matrix_wrapper()
 {
     create(rhs);
 }

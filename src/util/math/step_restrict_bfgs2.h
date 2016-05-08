@@ -46,8 +46,10 @@ class SRBFGS {
     std::shared_ptr<T> current_;
     std::shared_ptr<const T> gradient_;
     double energy_;
+    bool converged_;
 
     void evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr) {
+      if (converged_) return;
       // set new x to the member 
       for (int i = 0; i != current_->size(); ++i)
         *(current_->data()+i) = x[i];
@@ -71,17 +73,19 @@ class SRBFGS {
     using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom, const bool dummy = false) : current_(denom->clone()) {
+    SRBFGS(std::shared_ptr<const T> denom) : current_(denom->clone()), converged_(false) {
       denom_.setcontent(denom->size(), denom->data());
     }
 
     ~SRBFGS() {
-      
+      alglib::minlbfgsrequesttermination(state_);
+      converged_ = true;
+      flag_ = false;
+      server_->join();
     }
 
     // _value is supposed to be identical to cunrret_
     std::shared_ptr<T> extrapolate(std::shared_ptr<const T> _grad, std::shared_ptr<const T> _value, const double en) {
-    std::cout << "extrapolate is called" << std::endl;
       // start the server thread in the first iteration
       if (!server_) {
         alglib::real_1d_array x;
@@ -91,8 +95,8 @@ class SRBFGS {
         alglib::minlbfgsreport rep;
 
         alglib::minlbfgscreate(1, x, state_); 
-        alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-15, 0.0, 0.0, /*essentially infty*/1000);
-        alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.0);
+        alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
+        alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.1);
         alglib::minlbfgssetprecdiag(state_, denom_);
 
         flag_ = false;
