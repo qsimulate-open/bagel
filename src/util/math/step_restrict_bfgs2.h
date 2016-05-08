@@ -3,7 +3,7 @@
 // Filename: step_restrict_bfgs.h
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Jefferson E Bates <jefferson.bates@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
