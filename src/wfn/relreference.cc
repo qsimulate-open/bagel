@@ -152,6 +152,12 @@ shared_ptr<Reference> RelReference::extract_state(const int istate, const vector
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
 
+  cout << " * Extracting CI coefficients from RelReference object for state " << istate << ", RDMs will relate to ";
+  cout << (rdm_state.size() > 1 ? "the average of the following states: " : "the following state: ");
+  for (int i = 0; i != rdm_state.size(); ++i)
+    cout << rdm_state[i] << " ";
+  cout << endl;
+
   // Construct a RelCIWfn with only CI coefficients for the desired state
   auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
                                         ciwfn_->civectors()->extract_state(istate),
@@ -183,29 +189,28 @@ shared_ptr<Reference> RelReference::extract_average_rdm(const vector<int> rdm_st
     const int istate = rdm_state[index];
 
     // one body RDM
-    rdm1[istate] = fci.rdm1(istate, istate);
+    rdm1[index] = fci.rdm1(istate, istate);
 
     // if off-diagonals are zero, generate a blank RDM for completeness
-    if (!rdm1[istate]->exist({1,0}))
-      rdm1[istate]->add({1,0}, rdm1[istate]->at({0,0})->clone());
+    if (!rdm1[index]->exist({1,0}))
+      rdm1[index]->add({1,0}, rdm1[index]->at({0,0})->clone());
 
     // two body RDM
-    rdm2[istate] = fci.rdm2(istate, istate);
+    rdm2[index] = fci.rdm2(istate, istate);
 
     // append permutation information
-    rdm2[istate]->emplace_perm({{0,3,2,1}},-1);
-    rdm2[istate]->emplace_perm({{2,3,0,1}}, 1);
-    rdm2[istate]->emplace_perm({{2,1,0,3}},-1);
+    rdm2[index]->emplace_perm({{0,3,2,1}},-1);
+    rdm2[index]->emplace_perm({{2,3,0,1}}, 1);
+    rdm2[index]->emplace_perm({{2,1,0,3}},-1);
   }
 
   if (rdm_state.size() > 1) {
     rdm1_av = make_shared<Kramers<2,ZRDM<1>>>();
     rdm2_av = make_shared<Kramers<4,ZRDM<2>>>();
     for (int index = 0; index != rdm_state.size(); ++index) {
-      const int istate = rdm_state[index];
-      for (auto& i : *rdm1[istate])
+      for (auto& i : *rdm1[index])
         rdm1_av->add(i.first, i.second);
-      for (auto& i : *rdm2[istate])
+      for (auto& i : *rdm2[index])
         rdm2_av->add(i.first, i.second);
     }
     for (auto& i : *rdm1_av) i.second->scale(1.0/rdm_state.size());
