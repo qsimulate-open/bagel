@@ -27,7 +27,7 @@
 #include <src/multi/casscf/qvec.h>
 #include <src/scf/hf/fock.h>
 #include <src/util/math/davidson.h>
-#include <src/util/math/step_restrict_bfgs.h>
+#include <src/util/math/step_restrict_bfgs2.h>
 #include <src/util/math/hpw_diis.h>
 #include <src/prop/hyperfine.h>
 
@@ -39,23 +39,16 @@ void CASBFGS::compute() {
   // equation numbers refer to Chaban, Schmidt and Gordon 1997 TCA 97, 88.
 
   shared_ptr<SRBFGS<RotFile>> bfgs;
+  shared_ptr<const Matrix> coeff_orig = coeff_->copy();
+  auto arot = make_shared<RotFile>(nclosed_, nact_, nvirt_);
 
   // ============================
   // macro iteration from here
   // ============================
   Timer timer;
 
-  auto x = make_shared<Matrix>(nbasis_, nbasis_);
-  x->unit();
-  shared_ptr<const Matrix> xstart;
-  vector<double> evals;
-  const int limited_memory = idata_->get<int>("limited_memory", 0);
-
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
-
-    const shared_ptr<const Coeff> cold = coeff_;
-    const shared_ptr<const Matrix> xold = x->copy();
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
@@ -64,21 +57,12 @@ void CASBFGS::compute() {
       fci_->compute();
       fci_->compute_rdm12();
       fci_time.tick_print("FCI and RDMs");
-    }
-
-    shared_ptr<Matrix> natorb_mat = x->clone();
-    natorb_mat->unit();
-    if (nact_) {
-      // here make a natural orbitals and update coeff_. Closed and virtual orbitals remain canonical. Also, FCI::rdms are updated
-      const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
-      coeff_ = update_coeff(coeff_, natorb.first);
-      occup_ = natorb.second;
-      if (natocc_) print_natocc();
-      natorb_mat->copy_block(nclosed_, nclosed_, nact_, nact_, natorb.first);
+      occup_ = VectorB(nact_);
+      for (int i = 0; i != nact_; ++i)
+        occup_[i] = fci_->rdm1_av()->element(i,i);
     }
 
     auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-    sigma->zero();
 
     // compute one-body operators
     Timer onebody;
@@ -91,9 +75,11 @@ void CASBFGS::compute() {
     // first make a weighted coefficient
     shared_ptr<Matrix> acoeff;
     if (nact_) {
-      acoeff = coeff_->slice_copy(nclosed_, nocc_);
-      for (int i = 0; i != nact_; ++i)
-        blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
+      Matrix rdm1av(nact_, nact_);
+      copy_n(fci_->rdm1_av()->data(), nact_*nact_, rdm1av.data());
+      rdm1av.sqrt();
+      rdm1av.scale(sqrt(1.0/2.0));
+      acoeff = make_shared<Matrix>(coeff_->slice(nclosed_, nocc_) * rdm1av); 
     }
     // then make a AO density matrix
     shared_ptr<const Matrix> afock;
@@ -105,9 +91,8 @@ void CASBFGS::compute() {
     }
     // * Q_xr = 2(xs|tu)P_rs,tu (x=general, mo)
     shared_ptr<const Qvec> qxr;
-    if (nact_) {
+    if (nact_)
       qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
-    }
 
     // grad(a/i) (eq.4.3a): 4(cfock_ai+afock_ai)
     grad_vc(cfock, afock, sigma);
@@ -118,55 +103,32 @@ void CASBFGS::compute() {
 
     // if this is the first time, set up the BFGS solver
     if (iter == 0) {
-      // BFGS and DIIS should start at the same time
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
       bfgs = make_shared<SRBFGS<RotFile>>(denom);
-      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
-      bfgs->initiate_trust_radius(trust_rad);
     }
     onebody.tick_print("One body operators");
 
     // get energy
-    if (nact_) {
+    if (nact_)
       energy_ = fci_->energy();
-      // use state averaged energy to update trust radius
-      const double sa_en = blas::average(energy_);
-      evals.push_back(sa_en);
-    } else {
-      const double en = (ccoeff % (*cfockao + *hcore_) * ccoeff).trace() + geom_->nuclear_repulsion();
-      energy_ = {en};
-      evals.push_back(en);
-    }
+    else
+      energy_ =  {(ccoeff % (*cfockao + *hcore_) * ccoeff).trace() + geom_->nuclear_repulsion()};
 
     // extrapolation using BFGS
-    Timer extrap(0);
-    cout << " " << endl;
-    cout << " -------  Step Restricted BFGS Extrapolation  ------- " << endl;
-    *x *= *natorb_mat;
-    auto xcopy = x->log(8);
-    auto xlog  = make_shared<RotFile>(xcopy, nclosed_, nact_, nvirt_);
-    bfgs->check_step(evals, sigma, xlog, /*tight*/false, limited_memory);
-    shared_ptr<RotFile> a = bfgs->more_sorensen_extrapolate(sigma, xlog);
-    cout << " ---------------------------------------------------- " << endl;
-    extrap.tick_print("More-Sorensen/Hebden extrapolation");
-    cout << " " << endl;
+    arot = bfgs->extrapolate(sigma, arot, blas::average(energy_));
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = arot->unpack<Matrix>();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 
     // updating coefficients
-    coeff_ = make_shared<const Coeff>(*coeff_**expa);
-    // for next BFGS extrapolation
-    *x *= *expa;
-
+    coeff_ = make_shared<const Coeff>(*coeff_orig * *expa);
     // synchronization
-    mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
+    const_pointer_cast<Coeff>(coeff_)->synchronize();
 
     // setting error of macro iteration
     const double gradient = sigma->rms();
-
     resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
@@ -270,10 +232,12 @@ void CASBFGS::grad_vc(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> a
 // gamma is assumed to be diagonal
 void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nvirt_ || !nact_) return;
+  shared_ptr<const RDM<1>> rdm1 = fci_->rdm1_av();
   double* target = sigma->ptr_va();
   for (int i = 0; i != nact_; ++i, target += nvirt_) {
-    daxpy_(nvirt_, 2.0*occup_[i], cfock->element_ptr(nocc_, i+nclosed_), 1, target, 1);
     daxpy_(nvirt_, 2.0, qxr->element_ptr(nocc_, i), 1, target, 1);
+    for (int j = 0; j != nact_; ++j)
+      daxpy_(nvirt_, 2.0*rdm1->element(j,i), cfock->element_ptr(nocc_, nclosed_+j), 1, target, 1);
   }
 }
 
@@ -281,12 +245,15 @@ void CASBFGS::grad_va(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> q
 // grad(r/i) (eq.4.3c): 4(cfock_ri+afock_ri) - 2cfock_iu gamma_ur - qxr_ir
 void CASBFGS::grad_ca(shared_ptr<const Matrix> cfock, shared_ptr<const Matrix> afock, shared_ptr<const Matrix> qxr, shared_ptr<RotFile> sigma) const {
   if (!nclosed_ || !nact_) return;
+  shared_ptr<const RDM<1>> rdm1 = fci_->rdm1_av();
   {
     double* target = sigma->ptr_ca();
     for (int i = 0; i != nact_; ++i, target += nclosed_) {
-      daxpy_(nclosed_, 4.0-2.0*occup_[i], cfock->element_ptr(0,nclosed_+i), 1, target, 1);
+      daxpy_(nclosed_, 4.0, cfock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, 4.0, afock->element_ptr(0,nclosed_+i), 1, target, 1);
       daxpy_(nclosed_, -2.0, qxr->element_ptr(0, i), 1, target, 1);
+      for (int j = 0; j != nact_; ++j)
+        daxpy_(nclosed_, -2.0*rdm1->element(j,i), cfock->element_ptr(0,nclosed_+j), 1, target, 1);
     }
   }
 }
