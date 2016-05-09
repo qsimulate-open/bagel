@@ -28,6 +28,7 @@
 #include <functional>
 #include <complex>
 #include <src/util/constants.h>
+#include <vector>
 
 namespace bagel {
 

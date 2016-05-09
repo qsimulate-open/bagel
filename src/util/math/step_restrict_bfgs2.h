@@ -41,12 +41,14 @@ class SRBFGS {
   protected:
     std::atomic_bool flag_;
     alglib::minlbfgsstate state_;
+    alglib::mincgstate cstate_;
     alglib::real_1d_array denom_;
 
     std::shared_ptr<T> current_;
     std::shared_ptr<const T> gradient_;
     double energy_;
     bool converged_;
+    bool cg_;
 
     void evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr) {
       if (converged_) return;
@@ -73,12 +75,15 @@ class SRBFGS {
     using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom) : current_(denom->clone()), converged_(false) {
+    SRBFGS(std::shared_ptr<const T> denom, const bool cg = false) : current_(denom->clone()), converged_(false), cg_(cg) {
       denom_.setcontent(denom->size(), denom->data());
     }
 
     ~SRBFGS() {
-      alglib::minlbfgsrequesttermination(state_);
+      if (!cg_)
+        alglib::minlbfgsrequesttermination(state_);
+      else
+        alglib::mincgrequesttermination(cstate_);
       converged_ = true;
       flag_ = false;
       server_->join();
@@ -92,15 +97,25 @@ class SRBFGS {
         x.setcontent(_value->size(), _value->data()); 
         eval_type eval = std::bind(&SRBFGS<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
-        alglib::minlbfgsreport rep;
+        if (!cg_) {
+          alglib::minlbfgsreport rep;
+          alglib::minlbfgscreate(1, x, state_); 
+          alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
+          alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.0);
+          alglib::minlbfgssetprecdiag(state_, denom_);
 
-        alglib::minlbfgscreate(1, x, state_); 
-        alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
-        alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.0);
-        alglib::minlbfgssetprecdiag(state_, denom_);
+          flag_ = false;
+          server_ = std::make_shared<std::thread>([&eval,this](){ alglib::minlbfgsoptimize(state_, eval); });
+        } else {
+          alglib::mincgreport rep;
+          alglib::mincgcreate(x, cstate_); 
+          alglib::mincgsetcond(cstate_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
+          alglib::mincgsetstpmax(cstate_, /*maxstep*/ 0.0);
+          alglib::mincgsetprecdiag(cstate_, denom_);
 
-        flag_ = false;
-        server_ = std::make_shared<std::thread>([&eval,this](){ alglib::minlbfgsoptimize(state_, eval); });
+          flag_ = false;
+          server_ = std::make_shared<std::thread>([&eval,this](){ alglib::mincgoptimize(cstate_, eval); });
+        }
         // wait till the server thread lock the mutex_
         while (true) {
           if (!flag_) {
