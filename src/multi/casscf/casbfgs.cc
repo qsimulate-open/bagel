@@ -30,8 +30,11 @@ using namespace bagel;
 
 
 void CASBFGS::compute() {
+  const string algo = idata_->get<string>("bfgstype", "bagel");
+  if (algo != "bagel" && algo != "alglib")
+    throw runtime_error("unknown BFGS type specified");
   // first do BFGS2 (alglib version)
-  {
+  if (algo != "bagel") {
     auto bfgs = make_shared<CASBFGS2>(idata_, geom_, ref_);
     bfgs->compute();
     refout_ = bfgs->conv_to_ref();
