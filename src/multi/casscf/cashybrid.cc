@@ -35,7 +35,7 @@ void CASHybrid::compute() {
 
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // construct and compute SuperCI
-  {
+  if (maxiter_switch_ != 0) {
     auto idata = make_shared<PTree>(*idata_);
     if (maxiter_switch_ != -1) {
       idata->erase("maxiter");
