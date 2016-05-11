@@ -412,7 +412,6 @@ void Lattice::build_tree(tuple<int, int, bool, bool, double> fmmp) {
 
   Timer time;
   // Schwarz screening
-  const double schwarz_thresh = primitive_cell_->schwarz_thresh();
   vector<double> schwarz;
   const bool dodf = get<3>(fmmp);
   if (!dodf) {
