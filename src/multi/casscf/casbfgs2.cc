@@ -45,6 +45,7 @@ void CASBFGS2::compute() {
   // ============================
   Timer timer;
   double oldenergy = 0.0;
+  double oldgrad   = 1.0;
 
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -137,7 +138,7 @@ void CASBFGS2::compute() {
       cout << "    * quasi-Newton optimization converged. *" << endl << endl;
       mute_stdcout();
       break;
-    } else if (gradient < thresh_*1.0e3 && fabs(blas::average(energy_)-oldenergy) < 1.0e-12) {
+    } else if (fabs(oldgrad - gradient) < thresh_ && fabs(blas::average(energy_)-oldenergy) < 1.0e-12) {
       rms_grad_ = gradient;
       only_energy_converged_ = true;
       cout << " " << endl;
@@ -146,6 +147,7 @@ void CASBFGS2::compute() {
       break;
     }
     oldenergy = blas::average(energy_);
+    oldgrad = gradient;
 
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;
