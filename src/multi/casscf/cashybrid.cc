@@ -50,7 +50,7 @@ void CASHybrid::compute() {
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << "      * CASSCF converged *    " << endl;
       fci_ = active_method->fci();
@@ -67,7 +67,7 @@ void CASHybrid::compute() {
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;
