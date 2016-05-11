@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_UTIL_SRBFGS_H
-#define __SRC_UTIL_SRBFGS_H
+#ifndef __SRC_UTIL_SRBFGS2_H
+#define __SRC_UTIL_SRBFGS2_H
 
 // Wrapper to Alglib
 
@@ -37,7 +37,7 @@
 namespace bagel {
 
 template<typename T>
-class SRBFGS {
+class SRBFGS2 {
   protected:
     std::atomic_bool flag_;
     alglib::minlbfgsstate state_;
@@ -75,11 +75,11 @@ class SRBFGS {
     using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom, const bool cg = false) : current_(denom->clone()), converged_(false), cg_(cg) {
+    SRBFGS2(std::shared_ptr<const T> denom, const bool cg = false) : current_(denom->clone()), converged_(false), cg_(cg) {
       denom_.setcontent(denom->size(), denom->data());
     }
 
-    ~SRBFGS() {
+    ~SRBFGS2() {
       if (!cg_)
         alglib::minlbfgsrequesttermination(state_);
       else
@@ -95,7 +95,7 @@ class SRBFGS {
       if (!server_) {
         alglib::real_1d_array x;
         x.setcontent(_value->size(), _value->data()); 
-        eval_type eval = std::bind(&SRBFGS<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+        eval_type eval = std::bind(&SRBFGS2<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
         if (!cg_) {
           alglib::minlbfgsreport rep;

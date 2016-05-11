@@ -30,7 +30,30 @@
 
 namespace bagel {
 
-class CASBFGS : public CASSCF {
+// BFGS driver
+class CASBFGS : public Method {
+  protected:
+    std::vector<double> energy_;
+
+    std::shared_ptr<const Reference> refout_;
+    std::shared_ptr<FCI> fci_;
+    double rms_grad_;
+
+  public:
+    CASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+     : Method(idat, geom, ref) { }
+
+    void compute() override;
+    std::shared_ptr<const Reference> conv_to_ref() const override { assert(refout_); return refout_; }
+
+    double energy(const int i) const { return energy_[i]; }
+    const std::vector<double>& energy() const { return energy_; }
+
+    std::shared_ptr<FCI> fci() { return fci_; }
+    double rms_grad() const { return rms_grad_; }
+};
+
+class CASBFGS_base : public CASSCF {
 
   protected:
     void common_init() {
@@ -45,12 +68,32 @@ class CASBFGS : public CASSCF {
     // compute diagonal denominators
     std::shared_ptr<const RotFile> compute_denom(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
 
-  public:
-    CASBFGS(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+    CASBFGS_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
       : CASSCF(idat, geom, ref) { common_init(); }
 
-    void compute() override;
+    virtual void compute() override = 0;
+};
 
+
+// uses BAGEL's native BFGS
+class CASBFGS1 : public CASBFGS_base { 
+  public:
+    CASBFGS1(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+     : CASBFGS_base(idat, geom, ref) { }
+    void compute() override;
+};
+
+
+// uses alglib's BFGS
+class CASBFGS2 : public CASBFGS_base { 
+  protected:
+    bool only_energy_converged_;
+  public:
+    CASBFGS2(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+     : CASBFGS_base(idat, geom, ref), only_energy_converged_(false) { }
+
+    void compute() override;
+    bool only_energy_converged() const { return only_energy_converged_; }
 };
 
 }
