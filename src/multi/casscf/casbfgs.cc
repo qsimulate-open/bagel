@@ -45,6 +45,8 @@ void CASBFGS::compute() {
       rms_grad_ = bfgs->rms_grad();
       return;
     }
+  } else {
+    refout_ = ref_;
   }
   // second do BAGEL's native BFGS
   {
