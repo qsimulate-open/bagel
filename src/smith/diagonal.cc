@@ -39,7 +39,6 @@ void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, 
   for (auto& i1 : active_) {
     for (auto& i0 : active_) {
       if (f1_->is_local(i0, i1)) {
-        assert(rdm1_->is_local(i0, i1));
         unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
         unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
         sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
