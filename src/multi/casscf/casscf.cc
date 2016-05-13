@@ -35,6 +35,10 @@ using namespace bagel;
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
+  // drop the reference if restart is requested
+  if (idata_->get<bool>("restart", false))
+    ref_ = nullptr;
+
   if (!ref_) {
     auto scf = make_shared<RHF>(idat, geom);
     scf->compute();

@@ -63,6 +63,7 @@ void CASHybrid::compute() {
   {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
+    idata->erase("restart");
     auto active_method = make_shared<CASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();

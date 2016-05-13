@@ -50,7 +50,10 @@ void CASBFGS::compute() {
   }
   // second do BAGEL's native BFGS
   {
-    auto bfgs = make_shared<CASBFGS1>(idata_, geom_, refout_);
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("active");
+    idata->erase("restart");
+    auto bfgs = make_shared<CASBFGS1>(idata, geom_, refout_);
     bfgs->compute();
     refout_ = bfgs->conv_to_ref();
 
