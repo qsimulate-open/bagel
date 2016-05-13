@@ -68,6 +68,8 @@ void CASPT2::CASPT2::solve() {
     sall_[istate]->fac(istate)  = 0.0;
 
     for (int jst=0; jst != nstates_; ++jst) { // <jst|
+      if (info_->sssr() && jst != istate)
+        continue;
       set_rdm(jst, istate);
       s = sall_[istate]->at(jst);
       shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
@@ -91,6 +93,8 @@ void CASPT2::CASPT2::solve() {
       double norm = 0.0;
       for (int jst = 0; jst != nstates_; ++jst) { // bra
         for (int ist = 0; ist != nstates_; ++ist) { // ket
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
           set_rdm(jst, ist);
           t2 = t2all_[istate]->at(ist);
           shared_ptr<Queue> normq = make_normq(true, jst == ist);
@@ -193,8 +197,10 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       t[i]->scale(1.0/norm);
 
       // compute residuals named r for each K
-      for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
-        for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+      for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+        for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
+          if (info_->sssr() && (jst != i || ist != i))
+            continue;
           // first term <proj_jst| H0 - E0_K |1_ist>
           set_rdm(jst, ist);
           t2 = t[i]->at(ist);
@@ -260,6 +266,8 @@ void CASPT2::CASPT2::solve_deriv() {
         n = init_residual();
         for (int jst = 0; jst != nstates_; ++jst) { // bra
           for (int ist = 0; ist != nstates_; ++ist) { // ket
+            if (info_->sssr() && (jst != istate || ist != istate))
+              continue;
             set_rdm(jst, ist);
             t2 = t2all_[istate]->at(ist);
             shared_ptr<Queue> normq = make_normq(true, jst == ist);
@@ -347,6 +355,8 @@ void CASPT2::CASPT2::solve_deriv() {
       double tmp = 0.0;
       for (int jst = 0; jst != nstates_; ++jst) { // bra
         for (int ist = 0; ist != nstates_; ++ist) { // ket
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
           set_rdm(jst, ist);
           t2 = t2all_[istate]->at(ist);
           shared_ptr<Queue> normq = make_normq(true, jst == ist);

@@ -79,6 +79,8 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && ist != istate)
+            continue;
           const double isheff = (*heff_)(istate, target);
           l2 = t2all_[istate]->at(ist); // careful
           shared_ptr<Queue> queue = make_density1q(true, ist == jst);
@@ -103,6 +105,8 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
       for (int ist = 0; ist != nstates; ++ist) { // ket
         set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
           l2 = lall_[istate]->at(ist);
           t2 = t2all_[istate]->at(jst);
           shared_ptr<Queue> queue = make_densityq(false, ist == jst);
@@ -119,6 +123,8 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
     Den1->zero();
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
+        if (info_->sssr() && jst != ist)
+          continue;
         set_rdm(jst, ist);
 
         l2 = lall_[jst]->at(ist);
@@ -169,32 +175,41 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           const double mheff = (*heff_)(mst, target);
 
           // <N|T_LN H|I>
-          l2 = t2all_[lst]->at(nst);
-          dec = make_deci3q(/*zero*/true);
-          while (!dec->done())
-            dec->next_compute();
-          blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          if (!info_->sssr() || nst == lst) {
+            l2 = t2all_[lst]->at(nst);
+            dec = make_deci3q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
 
           // <I|T_LM H|N>
-          l2 = t2all_[lst]->at(mst);
-          dec = make_deci4q(/*zero*/true);
-          while (!dec->done())
-            dec->next_compute();
-          blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          if (!info_->sssr() || mst == lst) {
+            l2 = t2all_[lst]->at(mst);
+            dec = make_deci4q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
 
           // -2Es <N|T_LN T_LM|I>
-          e0_ = 2.0*info_->shift();
-          l2 = t2all_[lst]->at(nst);
-          t2 = t2all_[lst]->at(mst);
-          dec = make_deci2q(/*zero*/true);
-          while (!dec->done())
-            dec->next_compute();
-          blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          if (!info_->sssr() || (mst == lst && nst == lst)) {
+            e0_ = 2.0*info_->shift();
+            l2 = t2all_[lst]->at(nst);
+            t2 = t2all_[lst]->at(mst);
+            dec = make_deci2q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
         }
       }
 
       // derivative with respect to M
       for (int mst = 0; mst != nstates; ++mst) {
+        if (info_->sssr() && nst != mst)
+          continue;
+
         l2 = lall_[mst]->at(nst);
         dec = make_deci3q(/*zero*/true);
         while (!dec->done())
@@ -206,6 +221,9 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           dec->next_compute();
 
         for (int lst = 0; lst != nstates; ++lst) {
+          if (info_->sssr() && (nst != lst || mst != lst))
+            continue;
+
           e0_ = e0all_[lst] - info_->shift();
           l2 = lall_[lst]->at(nst);
           t2 = t2all_[lst]->at(mst);
