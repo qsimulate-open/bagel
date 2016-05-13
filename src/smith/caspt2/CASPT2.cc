@@ -260,7 +260,9 @@ void CASPT2::CASPT2::solve_deriv() {
 
     for (int istate = 0; istate != nstates_; ++istate) { //K states
       sall_[istate]->zero();
-      sall_[istate]->ax_plus_y((*heff_)(istate, target), rall_[0]);
+      for (int jst = 0; jst != nstates_; ++jst)
+        if (!info_->sssr() || istate == jst)
+          sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), rall_[0]->at(jst));
       if (info_->shift() != 0.0) {
         // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
         n = init_residual();
