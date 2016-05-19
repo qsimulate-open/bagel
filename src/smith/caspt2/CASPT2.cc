@@ -112,6 +112,17 @@ void CASPT2::CASPT2::solve() {
   }
 
   // MS-CASPT2
+  if (info_->do_ms() && info_->sssr())
+    for (int istate = 0; istate != nstates_; ++istate) //K states
+      for (int jst=0; jst != nstates_; ++jst) // <jst|
+        if (info_->sssr() && jst != istate) {
+          set_rdm(jst, istate);
+          s = sall_[istate]->at(jst);
+          shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+          while(!sourceq->done())
+            sourceq->next_compute();
+        }
+
   if (info_->do_ms() && nstates_ > 1) {
     heff_ = make_shared<Matrix>(nstates_, nstates_);
 
