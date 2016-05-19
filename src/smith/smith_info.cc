@@ -50,18 +50,20 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
   sssr_    = idata->get<bool>("sssr", false);
+  if (ciwfn()->nstates() > 1)
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
 
   if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
     const int istate = idata->get<int>("istate", 0);
     const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-    cout << "  Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl; 
+    cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
     ref_ = ref_->extract_state(istate);
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
-  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9); 
+  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
   // These are not input parameters (set automatically)
   target_  = idata->get<int>("_target", -1);
