@@ -1,4 +1,5 @@
 /*************************************************************************
+ALGLIB 3.10.0 (source code generated 2015-08-19)
 Copyright (c) Sergey Bochkanov (ALGLIB project).
 
 >>> SOURCE LICENSE >>>
@@ -32,7 +33,6 @@ typedef struct
 {
     ae_int_t s1;
     ae_int_t s2;
-    double v;
     ae_int_t magicv;
 } hqrndstate;
 typedef struct
@@ -61,6 +61,12 @@ typedef struct
     double curdist;
     ae_int_t debugcounter;
 } kdtree;
+typedef struct
+{
+    ae_int_t i;
+    ae_complex c;
+    ae_vector a;
+} xdebugrecord1;
 
 }
 
@@ -130,6 +136,34 @@ public:
 };
 
 /*************************************************************************
+
+*************************************************************************/
+class _xdebugrecord1_owner
+{
+public:
+    _xdebugrecord1_owner();
+    _xdebugrecord1_owner(const _xdebugrecord1_owner &rhs);
+    _xdebugrecord1_owner& operator=(const _xdebugrecord1_owner &rhs);
+    virtual ~_xdebugrecord1_owner();
+    alglib_impl::xdebugrecord1* c_ptr();
+    alglib_impl::xdebugrecord1* c_ptr() const;
+protected:
+    alglib_impl::xdebugrecord1 *p_struct;
+};
+class xdebugrecord1 : public _xdebugrecord1_owner
+{
+public:
+    xdebugrecord1();
+    xdebugrecord1(const xdebugrecord1 &rhs);
+    xdebugrecord1& operator=(const xdebugrecord1 &rhs);
+    virtual ~xdebugrecord1();
+    ae_int_t &i;
+    alglib::complex &c;
+    real_1d_array a;
+
+};
+
+/*************************************************************************
 HQRNDState  initialization  with  random  values  which come from standard
 RNG.
 
@@ -163,8 +197,11 @@ double hqrnduniformr(const hqrndstate &state);
 /*************************************************************************
 This function generates random integer number in [0, N)
 
-1. N must be less than HQRNDMax-1.
-2. State structure must be initialized with HQRNDRandomize() or HQRNDSeed()
+1. State structure must be initialized with HQRNDRandomize() or HQRNDSeed()
+2. N can be any positive number except for very large numbers:
+   * close to 2^31 on 32-bit systems
+   * close to 2^62 on 64-bit systems
+   An exception will be generated if N is too large.
 
   -- ALGLIB --
      Copyright 02.12.2009 by Bochkanov Sergey
@@ -269,17 +306,17 @@ Important properties of s_out:
 * it contains alphanumeric characters, dots, underscores, minus signs
 * these symbols are grouped into words, which are separated by spaces
   and Windows-style (CR+LF) newlines
-* although  serializer  uses  spaces and CR+LF as separators, you can 
+* although  serializer  uses  spaces and CR+LF as separators, you can
   replace any separator character by arbitrary combination of spaces,
   tabs, Windows or Unix newlines. It allows flexible reformatting  of
-  the  string  in  case you want to include it into text or XML file. 
+  the  string  in  case you want to include it into text or XML file.
   But you should not insert separators into the middle of the "words"
   nor you should change case of letters.
 * s_out can be freely moved between 32-bit and 64-bit systems, little
   and big endian machines, and so on. You can serialize structure  on
   32-bit machine and unserialize it on 64-bit one (or vice versa), or
-  serialize  it  on  SPARC  and  unserialize  on  x86.  You  can also 
-  serialize  it  in  C++ version of ALGLIB and unserialize in C# one, 
+  serialize  it  on  SPARC  and  unserialize  on  x86.  You  can also
+  serialize  it  in  C++ version of ALGLIB and unserialize in C# one,
   and vice versa.
 *************************************************************************/
 void kdtreeserialize(kdtree &obj, std::string &s_out);
@@ -662,6 +699,445 @@ when you call it from command line.
      Copyright 28.02.2010 by Bochkanov Sergey
 *************************************************************************/
 void kdtreequeryresultsdistancesi(const kdtree &kdt, real_1d_array &r);
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Creates and returns XDebugRecord1 structure:
+* integer and complex fields of Rec1 are set to 1 and 1+i correspondingly
+* array field of Rec1 is set to [2,3]
+
+  -- ALGLIB --
+     Copyright 27.05.2014 by Bochkanov Sergey
+*************************************************************************/
+void xdebuginitrecord1(xdebugrecord1 &rec1);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Counts number of True values in the boolean 1D array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t xdebugb1count(const boolean_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by NOT(a[i]).
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb1not(const boolean_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Appends copy of array to itself.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb1appendcopy(boolean_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate N-element array with even-numbered elements set to True.
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb1outeven(const ae_int_t n, boolean_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t xdebugi1sum(const integer_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -A[I]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi1neg(const integer_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Appends copy of array to itself.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi1appendcopy(integer_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate N-element array with even-numbered A[I] set to I, and odd-numbered
+ones set to 0.
+
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi1outeven(const ae_int_t n, integer_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+double xdebugr1sum(const real_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -A[I]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr1neg(const real_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Appends copy of array to itself.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr1appendcopy(real_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate N-element array with even-numbered A[I] set to I*0.25,
+and odd-numbered ones are set to 0.
+
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr1outeven(const ae_int_t n, real_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+alglib::complex xdebugc1sum(const complex_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -A[I]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc1neg(const complex_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Appends copy of array to itself.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc1appendcopy(complex_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate N-element array with even-numbered A[K] set to (x,y) = (K*0.25, K*0.125)
+and odd-numbered ones are set to 0.
+
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc1outeven(const ae_int_t n, complex_1d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Counts number of True values in the boolean 2D array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t xdebugb2count(const boolean_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by NOT(a[i]).
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb2not(const boolean_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Transposes array.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb2transpose(boolean_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate MxN matrix with elements set to "Sin(3*I+5*J)>0"
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugb2outsin(const ae_int_t m, const ae_int_t n, boolean_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t xdebugi2sum(const integer_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -a[i,j]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi2neg(const integer_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Transposes array.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi2transpose(integer_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate MxN matrix with elements set to "Sign(Sin(3*I+5*J))"
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugi2outsin(const ae_int_t m, const ae_int_t n, integer_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+double xdebugr2sum(const real_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -a[i,j]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr2neg(const real_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Transposes array.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr2transpose(real_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate MxN matrix with elements set to "Sin(3*I+5*J)"
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugr2outsin(const ae_int_t m, const ae_int_t n, real_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of elements in the array.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+alglib::complex xdebugc2sum(const complex_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Replace all values in array by -a[i,j]
+Array is passed using "shared" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc2neg(const complex_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Transposes array.
+Array is passed using "var" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc2transpose(complex_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Generate MxN matrix with elements set to "Sin(3*I+5*J),Cos(3*I+5*J)"
+Array is passed using "out" convention.
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+void xdebugc2outsincos(const ae_int_t m, const ae_int_t n, complex_2d_array &a);
+
+
+/*************************************************************************
+This is debug function intended for testing ALGLIB interface generator.
+Never use it in any real life project.
+
+Returns sum of a[i,j]*(1+b[i,j]) such that c[i,j] is True
+
+  -- ALGLIB --
+     Copyright 11.10.2013 by Bochkanov Sergey
+*************************************************************************/
+double xdebugmaskedbiasedproductsum(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const real_2d_array &b, const boolean_2d_array &c);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -695,8 +1171,8 @@ double hqrndcontinuous(hqrndstate* state,
      /* Real    */ ae_vector* x,
      ae_int_t n,
      ae_state *_state);
-ae_bool _hqrndstate_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _hqrndstate_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
+void _hqrndstate_init(void* _p, ae_state *_state);
+void _hqrndstate_init_copy(void* _dst, void* _src, ae_state *_state);
 void _hqrndstate_clear(void* _p);
 void _hqrndstate_destroy(void* _p);
 void kdtreebuild(/* Real    */ ae_matrix* xy,
@@ -757,10 +1233,73 @@ void kdtreequeryresultsdistancesi(kdtree* kdt,
 void kdtreealloc(ae_serializer* s, kdtree* tree, ae_state *_state);
 void kdtreeserialize(ae_serializer* s, kdtree* tree, ae_state *_state);
 void kdtreeunserialize(ae_serializer* s, kdtree* tree, ae_state *_state);
-ae_bool _kdtree_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _kdtree_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
+void _kdtree_init(void* _p, ae_state *_state);
+void _kdtree_init_copy(void* _dst, void* _src, ae_state *_state);
 void _kdtree_clear(void* _p);
 void _kdtree_destroy(void* _p);
+void xdebuginitrecord1(xdebugrecord1* rec1, ae_state *_state);
+ae_int_t xdebugb1count(/* Boolean */ ae_vector* a, ae_state *_state);
+void xdebugb1not(/* Boolean */ ae_vector* a, ae_state *_state);
+void xdebugb1appendcopy(/* Boolean */ ae_vector* a, ae_state *_state);
+void xdebugb1outeven(ae_int_t n,
+     /* Boolean */ ae_vector* a,
+     ae_state *_state);
+ae_int_t xdebugi1sum(/* Integer */ ae_vector* a, ae_state *_state);
+void xdebugi1neg(/* Integer */ ae_vector* a, ae_state *_state);
+void xdebugi1appendcopy(/* Integer */ ae_vector* a, ae_state *_state);
+void xdebugi1outeven(ae_int_t n,
+     /* Integer */ ae_vector* a,
+     ae_state *_state);
+double xdebugr1sum(/* Real    */ ae_vector* a, ae_state *_state);
+void xdebugr1neg(/* Real    */ ae_vector* a, ae_state *_state);
+void xdebugr1appendcopy(/* Real    */ ae_vector* a, ae_state *_state);
+void xdebugr1outeven(ae_int_t n,
+     /* Real    */ ae_vector* a,
+     ae_state *_state);
+ae_complex xdebugc1sum(/* Complex */ ae_vector* a, ae_state *_state);
+void xdebugc1neg(/* Complex */ ae_vector* a, ae_state *_state);
+void xdebugc1appendcopy(/* Complex */ ae_vector* a, ae_state *_state);
+void xdebugc1outeven(ae_int_t n,
+     /* Complex */ ae_vector* a,
+     ae_state *_state);
+ae_int_t xdebugb2count(/* Boolean */ ae_matrix* a, ae_state *_state);
+void xdebugb2not(/* Boolean */ ae_matrix* a, ae_state *_state);
+void xdebugb2transpose(/* Boolean */ ae_matrix* a, ae_state *_state);
+void xdebugb2outsin(ae_int_t m,
+     ae_int_t n,
+     /* Boolean */ ae_matrix* a,
+     ae_state *_state);
+ae_int_t xdebugi2sum(/* Integer */ ae_matrix* a, ae_state *_state);
+void xdebugi2neg(/* Integer */ ae_matrix* a, ae_state *_state);
+void xdebugi2transpose(/* Integer */ ae_matrix* a, ae_state *_state);
+void xdebugi2outsin(ae_int_t m,
+     ae_int_t n,
+     /* Integer */ ae_matrix* a,
+     ae_state *_state);
+double xdebugr2sum(/* Real    */ ae_matrix* a, ae_state *_state);
+void xdebugr2neg(/* Real    */ ae_matrix* a, ae_state *_state);
+void xdebugr2transpose(/* Real    */ ae_matrix* a, ae_state *_state);
+void xdebugr2outsin(ae_int_t m,
+     ae_int_t n,
+     /* Real    */ ae_matrix* a,
+     ae_state *_state);
+ae_complex xdebugc2sum(/* Complex */ ae_matrix* a, ae_state *_state);
+void xdebugc2neg(/* Complex */ ae_matrix* a, ae_state *_state);
+void xdebugc2transpose(/* Complex */ ae_matrix* a, ae_state *_state);
+void xdebugc2outsincos(ae_int_t m,
+     ae_int_t n,
+     /* Complex */ ae_matrix* a,
+     ae_state *_state);
+double xdebugmaskedbiasedproductsum(ae_int_t m,
+     ae_int_t n,
+     /* Real    */ ae_matrix* a,
+     /* Real    */ ae_matrix* b,
+     /* Boolean */ ae_matrix* c,
+     ae_state *_state);
+void _xdebugrecord1_init(void* _p, ae_state *_state);
+void _xdebugrecord1_init_copy(void* _dst, void* _src, ae_state *_state);
+void _xdebugrecord1_clear(void* _p);
+void _xdebugrecord1_destroy(void* _p);
 
 }
 #endif

@@ -49,6 +49,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
+  sssr_    = idata->get<bool>("sssr", false);
+  if (ciwfn()->nstates() > 1)
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
 
   if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
     vector<int> rdm_states;
@@ -72,7 +75,8 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_), maxiter_(info->maxiter_), target_(info->target_),
-    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_), thresh_overlap_(info->thresh_overlap_) {
+    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
+    thresh_overlap_(info->thresh_overlap_) {
 }
 
 
@@ -171,7 +175,7 @@ template<>
 shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {
   shared_ptr<const Reference> out = ref_;
   const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-  cout << "  Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
+  cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
   out = ref_->extract_state(istate, rdm_states);
   return out;
 }

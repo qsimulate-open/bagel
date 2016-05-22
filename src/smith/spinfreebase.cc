@@ -234,7 +234,8 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4all_->emplace(jst, ist, rdm4t);
 
-      denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+      if (!info_->sssr() || jst == ist)
+        denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
     }
   }
   denom->compute();

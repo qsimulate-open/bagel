@@ -1,4 +1,5 @@
 /*************************************************************************
+ALGLIB 3.10.0 (source code generated 2015-08-19)
 Copyright (c) Sergey Bochkanov (ALGLIB project).
 
 >>> SOURCE LICENSE >>>
@@ -31,11 +32,6 @@ namespace alglib_impl
 {
 typedef struct
 {
-    double r1;
-    double rinf;
-} matinvreport;
-typedef struct
-{
     ae_vector vals;
     ae_vector idx;
     ae_vector ridx;
@@ -46,7 +42,19 @@ typedef struct
     ae_int_t n;
     ae_int_t nfree;
     ae_int_t ninitialized;
+    ae_int_t tablesize;
 } sparsematrix;
+typedef struct
+{
+    ae_vector d;
+    ae_vector u;
+    sparsematrix s;
+} sparsebuffers;
+typedef struct
+{
+    double r1;
+    double rinf;
+} matinvreport;
 typedef struct
 {
     double e1;
@@ -108,6 +116,95 @@ namespace alglib
 
 
 
+/*************************************************************************
+Sparse matrix structure.
+
+You should use ALGLIB functions to work with sparse matrix. Never  try  to
+access its fields directly!
+
+NOTES ON THE SPARSE STORAGE FORMATS
+
+Sparse matrices can be stored using several formats:
+* Hash-Table representation
+* Compressed Row Storage (CRS)
+* Skyline matrix storage (SKS)
+
+Each of the formats has benefits and drawbacks:
+* Hash-table is good for dynamic operations (insertion of new elements),
+  but does not support linear algebra operations
+* CRS is good for operations like matrix-vector or matrix-matrix products,
+  but its initialization is less convenient - you have to tell row   sizes
+  at the initialization, and you have to fill  matrix  only  row  by  row,
+  from left to right.
+* SKS is a special format which is used to store triangular  factors  from
+  Cholesky factorization. It does not support  dynamic  modification,  and
+  support for linear algebra operations is very limited.
+
+Tables below outline information about these two formats:
+
+    OPERATIONS WITH MATRIX      HASH        CRS         SKS
+    creation                    +           +           +
+    SparseGet                   +           +           +
+    SparseRewriteExisting       +           +           +
+    SparseSet                   +
+    SparseAdd                   +
+    SparseGetRow                            +           +
+    SparseGetCompressedRow                  +           +
+    sparse-dense linear algebra             +           +
+*************************************************************************/
+class _sparsematrix_owner
+{
+public:
+    _sparsematrix_owner();
+    _sparsematrix_owner(const _sparsematrix_owner &rhs);
+    _sparsematrix_owner& operator=(const _sparsematrix_owner &rhs);
+    virtual ~_sparsematrix_owner();
+    alglib_impl::sparsematrix* c_ptr();
+    alglib_impl::sparsematrix* c_ptr() const;
+protected:
+    alglib_impl::sparsematrix *p_struct;
+};
+class sparsematrix : public _sparsematrix_owner
+{
+public:
+    sparsematrix();
+    sparsematrix(const sparsematrix &rhs);
+    sparsematrix& operator=(const sparsematrix &rhs);
+    virtual ~sparsematrix();
+
+};
+
+
+/*************************************************************************
+Temporary buffers for sparse matrix operations.
+
+You should pass an instance of this structure to factorization  functions.
+It allows to reuse memory during repeated sparse  factorizations.  You  do
+not have to call some initialization function - simply passing an instance
+to factorization function is enough.
+*************************************************************************/
+class _sparsebuffers_owner
+{
+public:
+    _sparsebuffers_owner();
+    _sparsebuffers_owner(const _sparsebuffers_owner &rhs);
+    _sparsebuffers_owner& operator=(const _sparsebuffers_owner &rhs);
+    virtual ~_sparsebuffers_owner();
+    alglib_impl::sparsebuffers* c_ptr();
+    alglib_impl::sparsebuffers* c_ptr() const;
+protected:
+    alglib_impl::sparsebuffers *p_struct;
+};
+class sparsebuffers : public _sparsebuffers_owner
+{
+public:
+    sparsebuffers();
+    sparsebuffers(const sparsebuffers &rhs);
+    sparsebuffers& operator=(const sparsebuffers &rhs);
+    virtual ~sparsebuffers();
+
+};
+
 
 
 
@@ -138,34 +235,6 @@ public:
     virtual ~matinvreport();
     double &r1;
     double &rinf;
-
-};
-
-/*************************************************************************
-Sparse matrix
-
-You should use ALGLIB functions to work with sparse matrix.
-Never try to access its fields directly!
-*************************************************************************/
-class _sparsematrix_owner
-{
-public:
-    _sparsematrix_owner();
-    _sparsematrix_owner(const _sparsematrix_owner &rhs);
-    _sparsematrix_owner& operator=(const _sparsematrix_owner &rhs);
-    virtual ~_sparsematrix_owner();
-    alglib_impl::sparsematrix* c_ptr();
-    alglib_impl::sparsematrix* c_ptr() const;
-protected:
-    alglib_impl::sparsematrix *p_struct;
-};
-class sparsematrix : public _sparsematrix_owner
-{
-public:
-    sparsematrix();
-    sparsematrix(const sparsematrix &rhs);
-    sparsematrix& operator=(const sparsematrix &rhs);
-    virtual ~sparsematrix();
 
 };
 
@@ -227,7 +296,20 @@ Input parameters:
     IB  -   submatrix offset (row index)
     JB  -   submatrix offset (column index)
 *************************************************************************/
-void rmatrixtranspose(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, real_2d_array &b, const ae_int_t ib, const ae_int_t jb);
+void rmatrixtranspose(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const real_2d_array &b, const ae_int_t ib, const ae_int_t jb);
+
+
+/*************************************************************************
+This code enforces symmetricy of the matrix by copying Upper part to lower
+one (or vice versa).
+
+INPUT PARAMETERS:
+    A   -   matrix
+    N   -   number of rows/columns
+    IsUpper - whether we want to copy upper triangle to lower one (True)
+            or vice versa (False).
+*************************************************************************/
+void rmatrixenforcesymmetricity(const real_2d_array &a, const ae_int_t n, const bool isupper);
 
 
 /*************************************************************************
@@ -372,6 +454,38 @@ This subroutine calculates X*op(A^-1) where:
 Multiplication result replaces X.
 Cache-oblivious algorithm is used.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 INPUT PARAMETERS
     N   -   matrix size, N>=0
     M   -   matrix size, N>=0
@@ -392,7 +506,8 @@ INPUT PARAMETERS
      15.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void cmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void cmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void smp_cmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
 
 
 /*************************************************************************
@@ -404,6 +519,38 @@ This subroutine calculates op(A^-1)*X where:
 Multiplication result replaces X.
 Cache-oblivious algorithm is used.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 INPUT PARAMETERS
     N   -   matrix size, N>=0
     M   -   matrix size, N>=0
@@ -424,7 +571,8 @@ INPUT PARAMETERS
      15.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void cmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void cmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void smp_cmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const complex_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const complex_2d_array &x, const ae_int_t i2, const ae_int_t j2);
 
 
 /*************************************************************************
@@ -435,6 +583,38 @@ This subroutine calculates X*op(A^-1) where:
 
 Multiplication result replaces X.
 Cache-oblivious algorithm is used.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS
     N   -   matrix size, N>=0
@@ -455,7 +635,8 @@ INPUT PARAMETERS
      15.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void rmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void rmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void smp_rmatrixrighttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
 
 
 /*************************************************************************
@@ -466,6 +647,38 @@ This subroutine calculates op(A^-1)*X where:
 
 Multiplication result replaces X.
 Cache-oblivious algorithm is used.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS
     N   -   matrix size, N>=0
@@ -486,7 +699,8 @@ INPUT PARAMETERS
      15.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void rmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void rmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
+void smp_rmatrixlefttrsm(const ae_int_t m, const ae_int_t n, const real_2d_array &a, const ae_int_t i1, const ae_int_t j1, const bool isupper, const bool isunit, const ae_int_t optype, const real_2d_array &x, const ae_int_t i2, const ae_int_t j2);
 
 
 /*************************************************************************
@@ -502,27 +716,62 @@ Additional info:
 * if Alpha=0, A is not used (not multiplied by zero - just not referenced)
 * if both Beta and Alpha are zero, C is filled by zeros.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 INPUT PARAMETERS
     N       -   matrix size, N>=0
     K       -   matrix size, K>=0
     Alpha   -   coefficient
     A       -   matrix
-    IA      -   submatrix offset
-    JA      -   submatrix offset
+    IA      -   submatrix offset (row index)
+    JA      -   submatrix offset (column index)
     OpTypeA -   multiplication type:
                 * 0 - A*A^H is calculated
                 * 2 - A^H*A is calculated
     Beta    -   coefficient
-    C       -   matrix
-    IC      -   submatrix offset
-    JC      -   submatrix offset
-    IsUpper -   whether C is upper triangular or lower triangular
+    C       -   preallocated input/output matrix
+    IC      -   submatrix offset (row index)
+    JC      -   submatrix offset (column index)
+    IsUpper -   whether upper or lower triangle of C is updated;
+                this function updates only one half of C, leaving
+                other half unchanged (not referenced at all).
 
   -- ALGLIB routine --
      16.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void cmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, complex_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+void cmatrixherk(const ae_int_t n, const ae_int_t k, const double alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+void smp_cmatrixherk(const ae_int_t n, const ae_int_t k, const double alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
 
 
 /*************************************************************************
@@ -538,27 +787,60 @@ Additional info:
 * if Alpha=0, A is not used (not multiplied by zero - just not referenced)
 * if both Beta and Alpha are zero, C is filled by zeros.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 INPUT PARAMETERS
     N       -   matrix size, N>=0
     K       -   matrix size, K>=0
     Alpha   -   coefficient
     A       -   matrix
-    IA      -   submatrix offset
-    JA      -   submatrix offset
+    IA      -   submatrix offset (row index)
+    JA      -   submatrix offset (column index)
     OpTypeA -   multiplication type:
                 * 0 - A*A^T is calculated
                 * 2 - A^T*A is calculated
     Beta    -   coefficient
-    C       -   matrix
-    IC      -   submatrix offset
-    JC      -   submatrix offset
+    C       -   preallocated input/output matrix
+    IC      -   submatrix offset (row index)
+    JC      -   submatrix offset (column index)
     IsUpper -   whether C is upper triangular or lower triangular
 
   -- ALGLIB routine --
      16.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void rmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, real_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+void rmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const real_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+void smp_rmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const real_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
 
 
 /*************************************************************************
@@ -574,6 +856,44 @@ Additional info:
   calculations (not multiplied by zero - just not referenced)
 * if Alpha=0, A is not used (not multiplied by zero - just not referenced)
 * if both Beta and Alpha are zero, C is filled by zeros.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
+IMPORTANT:
+
+This function does NOT preallocate output matrix C, it MUST be preallocated
+by caller prior to calling this function. In case C does not have  enough
+space to store result, exception will be generated.
 
 INPUT PARAMETERS
     M       -   matrix size, M>0
@@ -595,7 +915,7 @@ INPUT PARAMETERS
                 * 1 - transposition
                 * 2 - conjugate transposition
     Beta    -   coefficient
-    C       -   matrix
+    C       -   matrix (PREALLOCATED, large enough to store result)
     IC      -   submatrix offset
     JC      -   submatrix offset
 
@@ -603,17 +923,142 @@ INPUT PARAMETERS
      16.12.2009
      Bochkanov Sergey
 *************************************************************************/
-void cmatrixgemm(const ae_int_t m, const ae_int_t n, const ae_int_t k, const alglib::complex alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const complex_2d_array &b, const ae_int_t ib, const ae_int_t jb, const ae_int_t optypeb, const alglib::complex beta, complex_2d_array &c, const ae_int_t ic, const ae_int_t jc);
+void cmatrixgemm(const ae_int_t m, const ae_int_t n, const ae_int_t k, const alglib::complex alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const complex_2d_array &b, const ae_int_t ib, const ae_int_t jb, const ae_int_t optypeb, const alglib::complex beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc);
+void smp_cmatrixgemm(const ae_int_t m, const ae_int_t n, const ae_int_t k, const alglib::complex alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const complex_2d_array &b, const ae_int_t ib, const ae_int_t jb, const ae_int_t optypeb, const alglib::complex beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc);
 
 
 /*************************************************************************
+This subroutine calculates C = alpha*op1(A)*op2(B) +beta*C where:
+* C is MxN general matrix
+* op1(A) is MxK matrix
+* op2(B) is KxN matrix
+* "op" may be identity transformation, transposition
 
+Additional info:
+* cache-oblivious algorithm is used.
+* multiplication result replaces C. If Beta=0, C elements are not used in
+  calculations (not multiplied by zero - just not referenced)
+* if Alpha=0, A is not used (not multiplied by zero - just not referenced)
+* if both Beta and Alpha are zero, C is filled by zeros.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  Because  starting/stopping  worker  thread always
+  ! involves some overhead, parallelism starts to be  profitable  for  N's
+  ! larger than 128.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
+IMPORTANT:
+
+This function does NOT preallocate output matrix C, it MUST be preallocated
+by caller prior to calling this function. In case C does not have  enough
+space to store result, exception will be generated.
+
+INPUT PARAMETERS
+    M       -   matrix size, M>0
+    N       -   matrix size, N>0
+    K       -   matrix size, K>0
+    Alpha   -   coefficient
+    A       -   matrix
+    IA      -   submatrix offset
+    JA      -   submatrix offset
+    OpTypeA -   transformation type:
+                * 0 - no transformation
+                * 1 - transposition
+    B       -   matrix
+    IB      -   submatrix offset
+    JB      -   submatrix offset
+    OpTypeB -   transformation type:
+                * 0 - no transformation
+                * 1 - transposition
+    Beta    -   coefficient
+    C       -   PREALLOCATED output matrix, large enough to store result
+    IC      -   submatrix offset
+    JC      -   submatrix offset
+
+  -- ALGLIB routine --
+     2009-2013
+     Bochkanov Sergey
 *************************************************************************/
 void rmatrixgemm(const ae_int_t m, const ae_int_t n, const ae_int_t k, const double alpha, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const real_2d_array &b, const ae_int_t ib, const ae_int_t jb, const ae_int_t optypeb, const double beta, const real_2d_array &c, const ae_int_t ic, const ae_int_t jc);
 void smp_rmatrixgemm(const ae_int_t m, const ae_int_t n, const ae_int_t k, const double alpha, const real_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const real_2d_array &b, const ae_int_t ib, const ae_int_t jb, const ae_int_t optypeb, const double beta, const real_2d_array &c, const ae_int_t ic, const ae_int_t jc);
 
+
+/*************************************************************************
+This subroutine is an older version of CMatrixHERK(), one with wrong  name
+(it is HErmitian update, not SYmmetric). It  is  left  here  for  backward
+compatibility.
+
+  -- ALGLIB routine --
+     16.12.2009
+     Bochkanov Sergey
+*************************************************************************/
+void cmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+void smp_cmatrixsyrk(const ae_int_t n, const ae_int_t k, const double alpha, const complex_2d_array &a, const ae_int_t ia, const ae_int_t ja, const ae_int_t optypea, const double beta, const complex_2d_array &c, const ae_int_t ic, const ae_int_t jc, const bool isupper);
+
 /*************************************************************************
 QR decomposition of a rectangular matrix of size MxN
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A   -   matrix A whose indexes range within [0..M-1, 0..N-1].
@@ -648,10 +1093,47 @@ so that v(0:i-1) = 0, v(i) = 1, v(i+1:m-1) stored in A(i+1:m-1,i).
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixqr(real_2d_array &a, const ae_int_t m, const ae_int_t n, real_1d_array &tau);
+void smp_rmatrixqr(real_2d_array &a, const ae_int_t m, const ae_int_t n, real_1d_array &tau);
 
 
 /*************************************************************************
 LQ decomposition of a rectangular matrix of size MxN
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A   -   matrix A whose indexes range within [0..M-1, 0..N-1].
@@ -686,10 +1168,47 @@ v(i) = 1, v(i+1:n-1) stored in A(i,i+1:n-1).
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixlq(real_2d_array &a, const ae_int_t m, const ae_int_t n, real_1d_array &tau);
+void smp_rmatrixlq(real_2d_array &a, const ae_int_t m, const ae_int_t n, real_1d_array &tau);
 
 
 /*************************************************************************
 QR decomposition of a rectangular complex matrix of size MxN
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A   -   matrix A whose indexes range within [0..M-1, 0..N-1]
@@ -710,10 +1229,47 @@ MxM, R - upper triangular (or upper trapezoid) matrix of size MxN.
      September 30, 1994
 *************************************************************************/
 void cmatrixqr(complex_2d_array &a, const ae_int_t m, const ae_int_t n, complex_1d_array &tau);
+void smp_cmatrixqr(complex_2d_array &a, const ae_int_t m, const ae_int_t n, complex_1d_array &tau);
 
 
 /*************************************************************************
 LQ decomposition of a rectangular complex matrix of size MxN
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A   -   matrix A whose indexes range within [0..M-1, 0..N-1]
@@ -734,10 +1290,47 @@ MxM, L - lower triangular (or lower trapezoid) matrix of size MxN.
      September 30, 1994
 *************************************************************************/
 void cmatrixlq(complex_2d_array &a, const ae_int_t m, const ae_int_t n, complex_1d_array &tau);
+void smp_cmatrixlq(complex_2d_array &a, const ae_int_t m, const ae_int_t n, complex_1d_array &tau);
 
 
 /*************************************************************************
 Partial unpacking of matrix Q from the QR decomposition of a matrix A
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrices Q and R in compact form.
@@ -758,6 +1351,7 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixqrunpackq(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const real_1d_array &tau, const ae_int_t qcolumns, real_2d_array &q);
+void smp_rmatrixqrunpackq(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const real_1d_array &tau, const ae_int_t qcolumns, real_2d_array &q);
 
 
 /*************************************************************************
@@ -782,6 +1376,42 @@ void rmatrixqrunpackr(const real_2d_array &a, const ae_int_t m, const ae_int_t n
 /*************************************************************************
 Partial unpacking of matrix Q from the LQ decomposition of a matrix A
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A       -   matrices L and Q in compact form.
                 Output of RMatrixLQ subroutine.
@@ -801,6 +1431,7 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixlqunpackq(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const real_1d_array &tau, const ae_int_t qrows, real_2d_array &q);
+void smp_rmatrixlqunpackq(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const real_1d_array &tau, const ae_int_t qrows, real_2d_array &q);
 
 
 /*************************************************************************
@@ -825,6 +1456,42 @@ void rmatrixlqunpackl(const real_2d_array &a, const ae_int_t m, const ae_int_t n
 /*************************************************************************
 Partial unpacking of matrix Q from QR decomposition of a complex matrix A.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A           -   matrices Q and R in compact form.
                     Output of CMatrixQR subroutine .
@@ -844,6 +1511,7 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void cmatrixqrunpackq(const complex_2d_array &a, const ae_int_t m, const ae_int_t n, const complex_1d_array &tau, const ae_int_t qcolumns, complex_2d_array &q);
+void smp_cmatrixqrunpackq(const complex_2d_array &a, const ae_int_t m, const ae_int_t n, const complex_1d_array &tau, const ae_int_t qcolumns, complex_2d_array &q);
 
 
 /*************************************************************************
@@ -868,6 +1536,42 @@ void cmatrixqrunpackr(const complex_2d_array &a, const ae_int_t m, const ae_int_
 /*************************************************************************
 Partial unpacking of matrix Q from LQ decomposition of a complex matrix A.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that QP decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=512,   achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A           -   matrices Q and R in compact form.
                     Output of CMatrixLQ subroutine .
@@ -887,6 +1591,7 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void cmatrixlqunpackq(const complex_2d_array &a, const ae_int_t m, const ae_int_t n, const complex_1d_array &tau, const ae_int_t qrows, complex_2d_array &q);
+void smp_cmatrixlqunpackq(const complex_2d_array &a, const ae_int_t m, const ae_int_t n, const complex_1d_array &tau, const ae_int_t qrows, complex_2d_array &q);
 
 
 /*************************************************************************
@@ -912,7 +1617,25 @@ void cmatrixlqunpackl(const complex_2d_array &a, const ae_int_t m, const ae_int_
 Reduction of a rectangular matrix to  bidiagonal form
 
 The algorithm reduces the rectangular matrix A to  bidiagonal form by
-orthogonal transformations P and Q: A = Q*B*P.
+orthogonal transformations P and Q: A = Q*B*(P^T).
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Multithreaded acceleration is NOT supported for this function  because
+  ! bidiagonal decompostion is inherently sequential in nature.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   source matrix. array[0..M-1, 0..N-1]
@@ -971,6 +1694,23 @@ void rmatrixbd(real_2d_array &a, const ae_int_t m, const ae_int_t n, real_1d_arr
 /*************************************************************************
 Unpacking matrix Q which reduces a matrix to bidiagonal form.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     QP          -   matrices Q and P in compact form.
                     Output of ToBidiagonal subroutine.
@@ -997,6 +1737,23 @@ void rmatrixbdunpackq(const real_2d_array &qp, const ae_int_t m, const ae_int_t 
 Multiplication by matrix Q which reduces matrix A to  bidiagonal form.
 
 The algorithm allows pre- or post-multiply by Q or Q'.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     QP          -   matrices Q and P in compact form.
@@ -1114,6 +1871,26 @@ void rmatrixbdunpackdiagonals(const real_2d_array &b, const ae_int_t m, const ae
 Reduction of a square matrix to  upper Hessenberg form: Q'*A*Q = H,
 where Q is an orthogonal matrix, H - Hessenberg matrix.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A       -   matrix A with elements [0..N-1, 0..N-1]
     N       -   size of matrix A.
@@ -1149,6 +1926,26 @@ void rmatrixhessenberg(real_2d_array &a, const ae_int_t n, real_1d_array &tau);
 
 /*************************************************************************
 Unpacking matrix Q which reduces matrix A to upper Hessenberg form
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A   -   output of RMatrixHessenberg subroutine.
@@ -1188,6 +1985,26 @@ void rmatrixhessenbergunpackh(const real_2d_array &a, const ae_int_t n, real_2d_
 Reduction of a symmetric matrix which is given by its higher or lower
 triangular part to a tridiagonal matrix using orthogonal similarity
 transformation: Q'*A*Q=T.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix to be transformed
@@ -1260,6 +2077,27 @@ void smatrixtd(real_2d_array &a, const ae_int_t n, const bool isupper, real_1d_a
 Unpacking matrix Q which reduces symmetric matrix to a tridiagonal
 form.
 
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A       -   the result of a SMatrixTD subroutine
     N       -   size of matrix A.
@@ -1280,6 +2118,27 @@ void smatrixtdunpackq(const real_2d_array &a, const ae_int_t n, const bool isupp
 Reduction of a Hermitian matrix which is given  by  its  higher  or  lower
 triangular part to a real  tridiagonal  matrix  using  unitary  similarity
 transformation: Q'*A*Q = T.
+
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix to be transformed
@@ -1352,6 +2211,27 @@ void hmatrixtd(complex_2d_array &a, const ae_int_t n, const bool isupper, comple
 Unpacking matrix Q which reduces a Hermitian matrix to a real  tridiagonal
 form.
 
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 Input parameters:
     A       -   the result of a HMatrixTD subroutine
     N       -   size of matrix A.
@@ -1369,6 +2249,26 @@ void hmatrixtdunpackq(const complex_2d_array &a, const ae_int_t n, const bool is
 
 /*************************************************************************
 Singular value decomposition of a bidiagonal matrix (extended algorithm)
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 The algorithm performs the singular value decomposition  of  a  bidiagonal
 matrix B (upper or lower) representing it as B = Q*S*P^T, where Q and  P -
@@ -1428,6 +2328,10 @@ Result:
     True, if the algorithm has converged.
     False, if the algorithm hasn't converged (rare case).
 
+NOTE: multiplication U*Q is performed by means of transposition to internal
+      buffer, multiplication and backward transposition. It helps to avoid
+      costly columnwise operations and speed-up algorithm.
+
 Additional information:
     The type of convergence is controlled by the internal  parameter  TOL.
     If the parameter is greater than 0, the singular values will have
@@ -1437,6 +2341,7 @@ Additional information:
     where Epsilon is the machine precision. It is not  recommended  to  use
     TOL less than 10*Epsilon since this will  considerably  slow  down  the
     algorithm and may not lead to error decreasing.
+
 History:
     * 31 March, 2007.
         changed MAXITR from 6 to 12.
@@ -1450,6 +2355,27 @@ bool rmatrixbdsvd(real_1d_array &d, const real_1d_array &e, const ae_int_t n, co
 
 /*************************************************************************
 Singular value decomposition of a rectangular matrix.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is only partially supported (some parts are
+  ! optimized, but most - are not).
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 The algorithm calculates the singular value decomposition of a matrix of
 size MxN: A = U * S * V^T
@@ -1501,12 +2427,33 @@ Output parameters:
      Copyright 2005 by Bochkanov Sergey
 *************************************************************************/
 bool rmatrixsvd(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const ae_int_t uneeded, const ae_int_t vtneeded, const ae_int_t additionalmemory, real_1d_array &w, real_2d_array &u, real_2d_array &vt);
+bool smp_rmatrixsvd(const real_2d_array &a, const ae_int_t m, const ae_int_t n, const ae_int_t uneeded, const ae_int_t vtneeded, const ae_int_t additionalmemory, real_1d_array &w, real_2d_array &u, real_2d_array &vt);
 
 /*************************************************************************
 Finding the eigenvalues and eigenvectors of a symmetric matrix
 
 The algorithm finds eigen pairs of a symmetric matrix by reducing it to
 tridiagonal form and using the QL/QR algorithm.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   symmetric matrix which is given by its upper or lower
@@ -1626,6 +2573,26 @@ Finding the eigenvalues and eigenvectors of a Hermitian matrix
 
 The algorithm finds eigen pairs of a Hermitian matrix by  reducing  it  to
 real tridiagonal form and using the QL/QR algorithm.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   Hermitian matrix which is given  by  its  upper  or  lower
@@ -1760,6 +2727,26 @@ Finding the eigenvalues and eigenvectors of a tridiagonal symmetric matrix
 
 The algorithm finds the eigen pairs of a tridiagonal symmetric matrix by
 using an QL/QR algorithm with implicit shifts.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Generally, commercial ALGLIB is several times faster than  open-source
+  ! generic C edition, and many times faster than open-source C# edition.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     D       -   the main diagonal of a tridiagonal matrix.
@@ -1920,7 +2907,31 @@ bool smatrixtdevdi(real_1d_array &d, const real_1d_array &e, const ae_int_t n, c
 
 
 /*************************************************************************
-Finding eigenvalues and eigenvectors of a general matrix
+Finding eigenvalues and eigenvectors of a general (unsymmetric) matrix
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison. Speed-up provided by MKL for this particular problem (EVD)
+  ! is really high, because  MKL  uses combination of (a) better low-level
+  ! optimizations, and (b) better EVD algorithms.
+  !
+  ! On one particular SSE-capable  machine  for  N=1024,  commercial  MKL-
+  ! -capable ALGLIB was:
+  ! * 7-10 times faster than open source "generic C" version
+  ! * 15-18 times faster than "pure C#" version
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 The algorithm finds eigenvalues and eigenvectors of a general matrix by
 using the QR algorithm with multiple shifts. The algorithm can find
@@ -1997,6 +3008,17 @@ INPUT PARAMETERS:
 OUTPUT PARAMETERS:
     A   -   orthogonal NxN matrix, array[0..N-1,0..N-1]
 
+NOTE: this function uses algorithm  described  in  Stewart, G. W.  (1980),
+      "The Efficient Generation of  Random  Orthogonal  Matrices  with  an
+      Application to Condition Estimators".
+
+      Speaking short, to generate an (N+1)x(N+1) orthogonal matrix, it:
+      * takes an NxN one
+      * takes uniformly distributed unit vector of dimension N+1.
+      * constructs a Householder reflection from the vector, then applies
+        it to the smaller matrix (embedded in the larger size with a 1 at
+        the bottom right corner).
+
   -- ALGLIB routine --
      04.12.2009
      Bochkanov Sergey
@@ -2029,6 +3051,17 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     A   -   orthogonal NxN matrix, array[0..N-1,0..N-1]
+
+NOTE: this function uses algorithm  described  in  Stewart, G. W.  (1980),
+      "The Efficient Generation of  Random  Orthogonal  Matrices  with  an
+      Application to Condition Estimators".
+
+      Speaking short, to generate an (N+1)x(N+1) orthogonal matrix, it:
+      * takes an NxN one
+      * takes uniformly distributed unit vector of dimension N+1.
+      * constructs a Householder reflection from the vector, then applies
+        it to the smaller matrix (embedded in the larger size with a 1 at
+        the bottom right corner).
 
   -- ALGLIB routine --
      04.12.2009
@@ -2233,6 +3266,1306 @@ OUTPUT PARAMETERS:
 void hmatrixrndmultiply(complex_2d_array &a, const ae_int_t n);
 
 /*************************************************************************
+This function creates sparse matrix in a Hash-Table format.
+
+This function creates Hast-Table matrix, which can be  converted  to  CRS
+format after its initialization is over. Typical  usage  scenario  for  a
+sparse matrix is:
+1. creation in a Hash-Table format
+2. insertion of the matrix elements
+3. conversion to the CRS representation
+4. matrix is passed to some linear algebra algorithm
+
+Some  information  about  different matrix formats can be found below, in
+the "NOTES" section.
+
+INPUT PARAMETERS
+    M           -   number of rows in a matrix, M>=1
+    N           -   number of columns in a matrix, N>=1
+    K           -   K>=0, expected number of non-zero elements in a matrix.
+                    K can be inexact approximation, can be less than actual
+                    number  of  elements  (table will grow when needed) or
+                    even zero).
+                    It is important to understand that although hash-table
+                    may grow automatically, it is better to  provide  good
+                    estimate of data size.
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table representation.
+                    All elements of the matrix are zero.
+
+NOTE 1
+
+Hash-tables use memory inefficiently, and they have to keep  some  amount
+of the "spare memory" in order to have good performance. Hash  table  for
+matrix with K non-zero elements will  need  C*K*(8+2*sizeof(int))  bytes,
+where C is a small constant, about 1.5-2 in magnitude.
+
+CRS storage, from the other side, is  more  memory-efficient,  and  needs
+just K*(8+sizeof(int))+M*sizeof(int) bytes, where M is a number  of  rows
+in a matrix.
+
+When you convert from the Hash-Table to CRS  representation, all unneeded
+memory will be freed.
+
+NOTE 2
+
+Comments of SparseMatrix structure outline  information  about  different
+sparse storage formats. We recommend you to read them before starting  to
+use ALGLIB sparse matrices.
+
+NOTE 3
+
+This function completely  overwrites S with new sparse matrix. Previously
+allocated storage is NOT reused. If you  want  to reuse already allocated
+memory, call SparseCreateBuf function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreate(const ae_int_t m, const ae_int_t n, const ae_int_t k, sparsematrix &s);
+void sparsecreate(const ae_int_t m, const ae_int_t n, sparsematrix &s);
+
+
+/*************************************************************************
+This version of SparseCreate function creates sparse matrix in Hash-Table
+format, reusing previously allocated storage as much  as  possible.  Read
+comments for SparseCreate() for more information.
+
+INPUT PARAMETERS
+    M           -   number of rows in a matrix, M>=1
+    N           -   number of columns in a matrix, N>=1
+    K           -   K>=0, expected number of non-zero elements in a matrix.
+                    K can be inexact approximation, can be less than actual
+                    number  of  elements  (table will grow when needed) or
+                    even zero).
+                    It is important to understand that although hash-table
+                    may grow automatically, it is better to  provide  good
+                    estimate of data size.
+    S           -   SparseMatrix structure which MAY contain some  already
+                    allocated storage.
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table representation.
+                    All elements of the matrix are zero.
+                    Previously allocated storage is reused, if  its  size
+                    is compatible with expected number of non-zeros K.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreatebuf(const ae_int_t m, const ae_int_t n, const ae_int_t k, const sparsematrix &s);
+void sparsecreatebuf(const ae_int_t m, const ae_int_t n, const sparsematrix &s);
+
+
+/*************************************************************************
+This function creates sparse matrix in a CRS format (expert function for
+situations when you are running out of memory).
+
+This function creates CRS matrix. Typical usage scenario for a CRS matrix
+is:
+1. creation (you have to tell number of non-zero elements at each row  at
+   this moment)
+2. insertion of the matrix elements (row by row, from left to right)
+3. matrix is passed to some linear algebra algorithm
+
+This function is a memory-efficient alternative to SparseCreate(), but it
+is more complex because it requires you to know in advance how large your
+matrix is. Some  information about  different matrix formats can be found
+in comments on SparseMatrix structure.  We recommend  you  to  read  them
+before starting to use ALGLIB sparse matrices..
+
+INPUT PARAMETERS
+    M           -   number of rows in a matrix, M>=1
+    N           -   number of columns in a matrix, N>=1
+    NER         -   number of elements at each row, array[M], NER[I]>=0
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS representation.
+                    You have to fill ALL non-zero elements by calling
+                    SparseSet() BEFORE you try to use this matrix.
+
+NOTE: this function completely  overwrites  S  with  new  sparse  matrix.
+      Previously allocated storage is NOT reused. If you  want  to  reuse
+      already allocated memory, call SparseCreateCRSBuf function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreatecrs(const ae_int_t m, const ae_int_t n, const integer_1d_array &ner, sparsematrix &s);
+
+
+/*************************************************************************
+This function creates sparse matrix in a CRS format (expert function  for
+situations when you are running out  of  memory).  This  version  of  CRS
+matrix creation function may reuse memory already allocated in S.
+
+This function creates CRS matrix. Typical usage scenario for a CRS matrix
+is:
+1. creation (you have to tell number of non-zero elements at each row  at
+   this moment)
+2. insertion of the matrix elements (row by row, from left to right)
+3. matrix is passed to some linear algebra algorithm
+
+This function is a memory-efficient alternative to SparseCreate(), but it
+is more complex because it requires you to know in advance how large your
+matrix is. Some  information about  different matrix formats can be found
+in comments on SparseMatrix structure.  We recommend  you  to  read  them
+before starting to use ALGLIB sparse matrices..
+
+INPUT PARAMETERS
+    M           -   number of rows in a matrix, M>=1
+    N           -   number of columns in a matrix, N>=1
+    NER         -   number of elements at each row, array[M], NER[I]>=0
+    S           -   sparse matrix structure with possibly preallocated
+                    memory.
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS representation.
+                    You have to fill ALL non-zero elements by calling
+                    SparseSet() BEFORE you try to use this matrix.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreatecrsbuf(const ae_int_t m, const ae_int_t n, const integer_1d_array &ner, const sparsematrix &s);
+
+
+/*************************************************************************
+This function creates sparse matrix in  a  SKS  format  (skyline  storage
+format). In most cases you do not need this function - CRS format  better
+suits most use cases.
+
+INPUT PARAMETERS
+    M, N        -   number of rows(M) and columns (N) in a matrix:
+                    * M=N (as for now, ALGLIB supports only square SKS)
+                    * N>=1
+                    * M>=1
+    D           -   "bottom" bandwidths, array[M], D[I]>=0.
+                    I-th element stores number of non-zeros at I-th  row,
+                    below the diagonal (diagonal itself is not  included)
+    U           -   "top" bandwidths, array[N], U[I]>=0.
+                    I-th element stores number of non-zeros  at I-th row,
+                    above the diagonal (diagonal itself  is not included)
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in SKS representation.
+                    All elements are filled by zeros.
+                    You may use SparseRewriteExisting() to  change  their
+                    values.
+
+NOTE: this function completely  overwrites  S  with  new  sparse  matrix.
+      Previously allocated storage is NOT reused. If you  want  to  reuse
+      already allocated memory, call SparseCreateSKSBuf function.
+
+  -- ALGLIB PROJECT --
+     Copyright 13.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreatesks(const ae_int_t m, const ae_int_t n, const integer_1d_array &d, const integer_1d_array &u, sparsematrix &s);
+
+
+/*************************************************************************
+This is "buffered"  version  of  SparseCreateSKS()  which  reuses  memory
+previously allocated in S (of course, memory is reallocated if needed).
+
+This function creates sparse matrix in  a  SKS  format  (skyline  storage
+format). In most cases you do not need this function - CRS format  better
+suits most use cases.
+
+INPUT PARAMETERS
+    M, N        -   number of rows(M) and columns (N) in a matrix:
+                    * M=N (as for now, ALGLIB supports only square SKS)
+                    * N>=1
+                    * M>=1
+    D           -   "bottom" bandwidths, array[M], 0<=D[I]<=I.
+                    I-th element stores number of non-zeros at I-th row,
+                    below the diagonal (diagonal itself is not included)
+    U           -   "top" bandwidths, array[N], 0<=U[I]<=I.
+                    I-th element stores number of non-zeros at I-th row,
+                    above the diagonal (diagonal itself is not included)
+
+OUTPUT PARAMETERS
+    S           -   sparse M*N matrix in SKS representation.
+                    All elements are filled by zeros.
+                    You may use SparseSet()/SparseAdd() to change their
+                    values.
+
+  -- ALGLIB PROJECT --
+     Copyright 13.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsecreatesksbuf(const ae_int_t m, const ae_int_t n, const integer_1d_array &d, const integer_1d_array &u, const sparsematrix &s);
+
+
+/*************************************************************************
+This function copies S0 to S1.
+This function completely deallocates memory owned by S1 before creating a
+copy of S0. If you want to reuse memory, use SparseCopyBuf.
+
+NOTE:  this  function  does  not verify its arguments, it just copies all
+fields of the structure.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopy(const sparsematrix &s0, sparsematrix &s1);
+
+
+/*************************************************************************
+This function copies S0 to S1.
+Memory already allocated in S1 is reused as much as possible.
+
+NOTE:  this  function  does  not verify its arguments, it just copies all
+fields of the structure.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopybuf(const sparsematrix &s0, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function efficiently swaps contents of S0 and S1.
+
+  -- ALGLIB PROJECT --
+     Copyright 16.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparseswap(const sparsematrix &s0, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function adds value to S[i,j] - element of the sparse matrix. Matrix
+must be in a Hash-Table mode.
+
+In case S[i,j] already exists in the table, V i added to  its  value.  In
+case  S[i,j]  is  non-existent,  it  is  inserted  in  the  table.  Table
+automatically grows when necessary.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table representation.
+                    Exception will be thrown for CRS matrix.
+    I           -   row index of the element to modify, 0<=I<M
+    J           -   column index of the element to modify, 0<=J<N
+    V           -   value to add, must be finite number
+
+OUTPUT PARAMETERS
+    S           -   modified matrix
+
+NOTE 1:  when  S[i,j]  is exactly zero after modification, it is  deleted
+from the table.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparseadd(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
+
+
+/*************************************************************************
+This function modifies S[i,j] - element of the sparse matrix.
+
+For Hash-based storage format:
+* this function can be called at any moment - during matrix initialization
+  or later
+* new value can be zero or non-zero.  In case new value of S[i,j] is zero,
+  this element is deleted from the table.
+* this  function  has  no  effect when called with zero V for non-existent
+  element.
+
+For CRS-bases storage format:
+* this function can be called ONLY DURING MATRIX INITIALIZATION
+* new value MUST be non-zero. Exception will be thrown for zero V.
+* elements must be initialized in correct order -  from top row to bottom,
+  within row - from left to right.
+
+For SKS storage: NOT SUPPORTED! Use SparseRewriteExisting() to  work  with
+SKS matrices.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table or CRS representation.
+    I           -   row index of the element to modify, 0<=I<M
+    J           -   column index of the element to modify, 0<=J<N
+    V           -   value to set, must be finite number, can be zero
+
+OUTPUT PARAMETERS
+    S           -   modified matrix
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparseset(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
+
+
+/*************************************************************************
+This function returns S[i,j] - element of the sparse matrix.  Matrix  can
+be in any mode (Hash-Table, CRS, SKS), but this function is less efficient
+for CRS matrices. Hash-Table and SKS matrices can find  element  in  O(1)
+time, while  CRS  matrices need O(log(RS)) time, where RS is an number of
+non-zero elements in a row.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table representation.
+                    Exception will be thrown for CRS matrix.
+    I           -   row index of the element to modify, 0<=I<M
+    J           -   column index of the element to modify, 0<=J<N
+
+RESULT
+    value of S[I,J] or zero (in case no element with such index is found)
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+double sparseget(const sparsematrix &s, const ae_int_t i, const ae_int_t j);
+
+
+/*************************************************************************
+This function returns I-th diagonal element of the sparse matrix.
+
+Matrix can be in any mode (Hash-Table or CRS storage), but this  function
+is most efficient for CRS matrices - it requires less than 50 CPU  cycles
+to extract diagonal element. For Hash-Table matrices we still  have  O(1)
+query time, but function is many times slower.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table representation.
+                    Exception will be thrown for CRS matrix.
+    I           -   index of the element to modify, 0<=I<min(M,N)
+
+RESULT
+    value of S[I,I] or zero (in case no element with such index is found)
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+double sparsegetdiagonal(const sparsematrix &s, const ae_int_t i);
+
+
+/*************************************************************************
+This function calculates matrix-vector product  S*x.  Matrix  S  must  be
+stored in CRS or SKS format (exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS or SKS format.
+    X           -   array[N], input vector. For  performance  reasons  we
+                    make only quick checks - we check that array size  is
+                    at least N, but we do not check for NAN's or INF's.
+    Y           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    Y           -   array[M], S*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemv(const sparsematrix &s, const real_1d_array &x, real_1d_array &y);
+
+
+/*************************************************************************
+This function calculates matrix-vector product  S^T*x. Matrix S  must  be
+stored in CRS or SKS format (exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS or SKS format.
+    X           -   array[M], input vector. For  performance  reasons  we
+                    make only quick checks - we check that array size  is
+                    at least M, but we do not check for NAN's or INF's.
+    Y           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    Y           -   array[N], S^T*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemtv(const sparsematrix &s, const real_1d_array &x, real_1d_array &y);
+
+
+/*************************************************************************
+This function simultaneously calculates two matrix-vector products:
+    S*x and S^T*x.
+S must be square (non-rectangular) matrix stored in  CRS  or  SKS  format
+(exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse N*N matrix in CRS or SKS format.
+    X           -   array[N], input vector. For  performance  reasons  we
+                    make only quick checks - we check that array size  is
+                    at least N, but we do not check for NAN's or INF's.
+    Y0          -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+    Y1          -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    Y0          -   array[N], S*x
+    Y1          -   array[N], S^T*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemv2(const sparsematrix &s, const real_1d_array &x, real_1d_array &y0, real_1d_array &y1);
+
+
+/*************************************************************************
+This function calculates matrix-vector product  S*x, when S is  symmetric
+matrix. Matrix S  must be stored in CRS or SKS format  (exception will be
+thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*M matrix in CRS or SKS format.
+    IsUpper     -   whether upper or lower triangle of S is given:
+                    * if upper triangle is given,  only   S[i,j] for j>=i
+                      are used, and lower triangle is ignored (it can  be
+                      empty - these elements are not referenced at all).
+                    * if lower triangle is given,  only   S[i,j] for j<=i
+                      are used, and upper triangle is ignored.
+    X           -   array[N], input vector. For  performance  reasons  we
+                    make only quick checks - we check that array size  is
+                    at least N, but we do not check for NAN's or INF's.
+    Y           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    Y           -   array[M], S*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsesmv(const sparsematrix &s, const bool isupper, const real_1d_array &x, real_1d_array &y);
+
+
+/*************************************************************************
+This function calculates vector-matrix-vector product x'*S*x, where  S is
+symmetric matrix. Matrix S must be stored in CRS or SKS format (exception
+will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*M matrix in CRS or SKS format.
+    IsUpper     -   whether upper or lower triangle of S is given:
+                    * if upper triangle is given,  only   S[i,j] for j>=i
+                      are used, and lower triangle is ignored (it can  be
+                      empty - these elements are not referenced at all).
+                    * if lower triangle is given,  only   S[i,j] for j<=i
+                      are used, and upper triangle is ignored.
+    X           -   array[N], input vector. For  performance  reasons  we
+                    make only quick checks - we check that array size  is
+                    at least N, but we do not check for NAN's or INF's.
+
+RESULT
+    x'*S*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 27.01.2014 by Bochkanov Sergey
+*************************************************************************/
+double sparsevsmv(const sparsematrix &s, const bool isupper, const real_1d_array &x);
+
+
+/*************************************************************************
+This function calculates matrix-matrix product  S*A.  Matrix  S  must  be
+stored in CRS or SKS format (exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS or SKS format.
+    A           -   array[N][K], input dense matrix. For  performance reasons
+                    we make only quick checks - we check that array size
+                    is at least N, but we do not check for NAN's or INF's.
+    K           -   number of columns of matrix (A).
+    B           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    B           -   array[M][K], S*A
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemm(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
+
+
+/*************************************************************************
+This function calculates matrix-matrix product  S^T*A. Matrix S  must  be
+stored in CRS or SKS format (exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in CRS or SKS format.
+    A           -   array[M][K], input dense matrix. For performance reasons
+                    we make only quick checks - we check that array size  is
+                    at least M, but we do not check for NAN's or INF's.
+    K           -   number of columns of matrix (A).
+    B           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    B           -   array[N][K], S^T*A
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemtm(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
+
+
+/*************************************************************************
+This function simultaneously calculates two matrix-matrix products:
+    S*A and S^T*A.
+S  must  be  square (non-rectangular) matrix stored in CRS or  SKS  format
+(exception will be thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse N*N matrix in CRS or SKS format.
+    A           -   array[N][K], input dense matrix. For performance reasons
+                    we make only quick checks - we check that array size  is
+                    at least N, but we do not check for NAN's or INF's.
+    K           -   number of columns of matrix (A).
+    B0          -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+    B1          -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    B0          -   array[N][K], S*A
+    B1          -   array[N][K], S^T*A
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsemm2(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b0, real_2d_array &b1);
+
+
+/*************************************************************************
+This function calculates matrix-matrix product  S*A, when S  is  symmetric
+matrix. Matrix S must be stored in CRS or SKS format  (exception  will  be
+thrown otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse M*M matrix in CRS or SKS format.
+    IsUpper     -   whether upper or lower triangle of S is given:
+                    * if upper triangle is given,  only   S[i,j] for j>=i
+                      are used, and lower triangle is ignored (it can  be
+                      empty - these elements are not referenced at all).
+                    * if lower triangle is given,  only   S[i,j] for j<=i
+                      are used, and upper triangle is ignored.
+    A           -   array[N][K], input dense matrix. For performance reasons
+                    we make only quick checks - we check that array size is
+                    at least N, but we do not check for NAN's or INF's.
+    K           -   number of columns of matrix (A).
+    B           -   output buffer, possibly preallocated. In case  buffer
+                    size is too small to store  result,  this  buffer  is
+                    automatically resized.
+
+OUTPUT PARAMETERS
+    B           -   array[M][K], S*A
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparsesmm(const sparsematrix &s, const bool isupper, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
+
+
+/*************************************************************************
+This function calculates matrix-vector product op(S)*x, when x is  vector,
+S is symmetric triangular matrix, op(S) is transposition or no  operation.
+Matrix S must be stored in CRS or SKS format  (exception  will  be  thrown
+otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse square matrix in CRS or SKS format.
+    IsUpper     -   whether upper or lower triangle of S is used:
+                    * if upper triangle is given,  only   S[i,j] for  j>=i
+                      are used, and lower triangle is  ignored (it can  be
+                      empty - these elements are not referenced at all).
+                    * if lower triangle is given,  only   S[i,j] for  j<=i
+                      are used, and upper triangle is ignored.
+    IsUnit      -   unit or non-unit diagonal:
+                    * if True, diagonal elements of triangular matrix  are
+                      considered equal to 1.0. Actual elements  stored  in
+                      S are not referenced at all.
+                    * if False, diagonal stored in S is used
+    OpType      -   operation type:
+                    * if 0, S*x is calculated
+                    * if 1, (S^T)*x is calculated (transposition)
+    X           -   array[N] which stores input  vector.  For  performance
+                    reasons we make only quick  checks  -  we  check  that
+                    array  size  is  at  least  N, but we do not check for
+                    NAN's or INF's.
+    Y           -   possibly  preallocated  input   buffer.  Automatically
+                    resized if its size is too small.
+
+OUTPUT PARAMETERS
+    Y           -   array[N], op(S)*x
+
+NOTE: this function throws exception when called for non-CRS/SKS  matrix.
+You must convert your matrix with SparseConvertToCRS/SKS()  before  using
+this function.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsetrmv(const sparsematrix &s, const bool isupper, const bool isunit, const ae_int_t optype, const real_1d_array &x, real_1d_array &y);
+
+
+/*************************************************************************
+This function solves linear system op(S)*y=x  where  x  is  vector,  S  is
+symmetric  triangular  matrix,  op(S)  is  transposition  or no operation.
+Matrix S must be stored in CRS or SKS format  (exception  will  be  thrown
+otherwise).
+
+INPUT PARAMETERS
+    S           -   sparse square matrix in CRS or SKS format.
+    IsUpper     -   whether upper or lower triangle of S is used:
+                    * if upper triangle is given,  only   S[i,j] for  j>=i
+                      are used, and lower triangle is  ignored (it can  be
+                      empty - these elements are not referenced at all).
+                    * if lower triangle is given,  only   S[i,j] for  j<=i
+                      are used, and upper triangle is ignored.
+    IsUnit      -   unit or non-unit diagonal:
+                    * if True, diagonal elements of triangular matrix  are
+                      considered equal to 1.0. Actual elements  stored  in
+                      S are not referenced at all.
+                    * if False, diagonal stored in S is used. It  is  your
+                      responsibility  to  make  sure  that   diagonal   is
+                      non-zero.
+    OpType      -   operation type:
+                    * if 0, S*x is calculated
+                    * if 1, (S^T)*x is calculated (transposition)
+    X           -   array[N] which stores input  vector.  For  performance
+                    reasons we make only quick  checks  -  we  check  that
+                    array  size  is  at  least  N, but we do not check for
+                    NAN's or INF's.
+
+OUTPUT PARAMETERS
+    X           -   array[N], inv(op(S))*x
+
+NOTE: this function throws exception when called for  non-CRS/SKS  matrix.
+      You must convert your matrix  with  SparseConvertToCRS/SKS()  before
+      using this function.
+
+NOTE: no assertion or tests are done during algorithm  operation.   It  is
+      your responsibility to provide invertible matrix to algorithm.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsetrsv(const sparsematrix &s, const bool isupper, const bool isunit, const ae_int_t optype, const real_1d_array &x);
+
+
+/*************************************************************************
+This procedure resizes Hash-Table matrix. It can be called when you  have
+deleted too many elements from the matrix, and you want to  free unneeded
+memory.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparseresizematrix(const sparsematrix &s);
+
+
+/*************************************************************************
+This  function  is  used  to enumerate all elements of the sparse matrix.
+Before  first  call  user  initializes  T0 and T1 counters by zero. These
+counters are used to remember current position in a  matrix;  after  each
+call they are updated by the function.
+
+Subsequent calls to this function return non-zero elements of the  sparse
+matrix, one by one. If you enumerate CRS matrix, matrix is traversed from
+left to right, from top to bottom. In case you enumerate matrix stored as
+Hash table, elements are returned in random order.
+
+EXAMPLE
+    > T0=0
+    > T1=0
+    > while SparseEnumerate(S,T0,T1,I,J,V) do
+    >     ....do something with I,J,V
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in Hash-Table or CRS representation.
+    T0          -   internal counter
+    T1          -   internal counter
+
+OUTPUT PARAMETERS
+    T0          -   new value of the internal counter
+    T1          -   new value of the internal counter
+    I           -   row index of non-zero element, 0<=I<M.
+    J           -   column index of non-zero element, 0<=J<N
+    V           -   value of the T-th element
+
+RESULT
+    True in case of success (next non-zero element was retrieved)
+    False in case all non-zero elements were enumerated
+
+NOTE: you may call SparseRewriteExisting() during enumeration, but it  is
+      THE  ONLY  matrix  modification  function  you  can  call!!!  Other
+      matrix modification functions should not be called during enumeration!
+
+  -- ALGLIB PROJECT --
+     Copyright 14.03.2012 by Bochkanov Sergey
+*************************************************************************/
+bool sparseenumerate(const sparsematrix &s, ae_int_t &t0, ae_int_t &t1, ae_int_t &i, ae_int_t &j, double &v);
+
+
+/*************************************************************************
+This function rewrites existing (non-zero) element. It  returns  True   if
+element  exists  or  False,  when  it  is  called for non-existing  (zero)
+element.
+
+This function works with any kind of the matrix.
+
+The purpose of this function is to provide convenient thread-safe  way  to
+modify  sparse  matrix.  Such  modification  (already  existing element is
+rewritten) is guaranteed to be thread-safe without any synchronization, as
+long as different threads modify different elements.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in any kind of representation
+                    (Hash, SKS, CRS).
+    I           -   row index of non-zero element to modify, 0<=I<M
+    J           -   column index of non-zero element to modify, 0<=J<N
+    V           -   value to rewrite, must be finite number
+
+OUTPUT PARAMETERS
+    S           -   modified matrix
+RESULT
+    True in case when element exists
+    False in case when element doesn't exist or it is zero
+
+  -- ALGLIB PROJECT --
+     Copyright 14.03.2012 by Bochkanov Sergey
+*************************************************************************/
+bool sparserewriteexisting(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
+
+
+/*************************************************************************
+This function returns I-th row of the sparse matrix. Matrix must be stored
+in CRS or SKS format.
+
+INPUT PARAMETERS:
+    S           -   sparse M*N matrix in CRS format
+    I           -   row index, 0<=I<M
+    IRow        -   output buffer, can be  preallocated.  In  case  buffer
+                    size  is  too  small  to  store  I-th   row,   it   is
+                    automatically reallocated.
+
+OUTPUT PARAMETERS:
+    IRow        -   array[M], I-th row.
+
+NOTE: this function has O(N) running time, where N is a  column  count. It
+      allocates and fills N-element  array,  even  although  most  of  its
+      elemets are zero.
+
+NOTE: If you have O(non-zeros-per-row) time and memory  requirements,  use
+      SparseGetCompressedRow() function. It  returns  data  in  compressed
+      format.
+
+NOTE: when  incorrect  I  (outside  of  [0,M-1]) or  matrix (non  CRS/SKS)
+      is passed, this function throws exception.
+
+  -- ALGLIB PROJECT --
+     Copyright 10.12.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsegetrow(const sparsematrix &s, const ae_int_t i, real_1d_array &irow);
+
+
+/*************************************************************************
+This function returns I-th row of the sparse matrix IN COMPRESSED FORMAT -
+only non-zero elements are returned (with their indexes). Matrix  must  be
+stored in CRS or SKS format.
+
+INPUT PARAMETERS:
+    S           -   sparse M*N matrix in CRS format
+    I           -   row index, 0<=I<M
+    ColIdx      -   output buffer for column indexes, can be preallocated.
+                    In case buffer size is too small to store I-th row, it
+                    is automatically reallocated.
+    Vals        -   output buffer for values, can be preallocated. In case
+                    buffer size is too small to  store  I-th  row,  it  is
+                    automatically reallocated.
+
+OUTPUT PARAMETERS:
+    ColIdx      -   column   indexes   of  non-zero  elements,  sorted  by
+                    ascending. Symbolically non-zero elements are  counted
+                    (i.e. if you allocated place for element, but  it  has
+                    zero numerical value - it is counted).
+    Vals        -   values. Vals[K] stores value of  matrix  element  with
+                    indexes (I,ColIdx[K]). Symbolically non-zero  elements
+                    are counted (i.e. if you allocated place for  element,
+                    but it has zero numerical value - it is counted).
+    NZCnt       -   number of symbolically non-zero elements per row.
+
+NOTE: when  incorrect  I  (outside  of  [0,M-1]) or  matrix (non  CRS/SKS)
+      is passed, this function throws exception.
+
+NOTE: this function may allocate additional, unnecessary place for  ColIdx
+      and Vals arrays. It is dictated by  performance  reasons  -  on  SKS
+      matrices it is faster  to  allocate  space  at  the  beginning  with
+      some "extra"-space, than performing two passes over matrix  -  first
+      time to calculate exact space required for data, second  time  -  to
+      store data itself.
+
+  -- ALGLIB PROJECT --
+     Copyright 10.12.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsegetcompressedrow(const sparsematrix &s, const ae_int_t i, integer_1d_array &colidx, real_1d_array &vals, ae_int_t &nzcnt);
+
+
+/*************************************************************************
+This function performs efficient in-place  transpose  of  SKS  matrix.  No
+additional memory is allocated during transposition.
+
+This function supports only skyline storage format (SKS).
+
+INPUT PARAMETERS
+    S       -   sparse matrix in SKS format.
+
+OUTPUT PARAMETERS
+    S           -   sparse matrix, transposed.
+
+  -- ALGLIB PROJECT --
+     Copyright 16.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsetransposesks(const sparsematrix &s);
+
+
+/*************************************************************************
+This  function  performs  in-place  conversion  to  desired sparse storage
+format.
+
+INPUT PARAMETERS
+    S0      -   sparse matrix in any format.
+    Fmt     -   desired storage format  of  the  output,  as  returned  by
+                SparseGetMatrixType() function:
+                * 0 for hash-based storage
+                * 1 for CRS
+                * 2 for SKS
+
+OUTPUT PARAMETERS
+    S0          -   sparse matrix in requested format.
+
+NOTE: in-place conversion wastes a lot of memory which is  used  to  store
+      temporaries.  If  you  perform  a  lot  of  repeated conversions, we
+      recommend to use out-of-place buffered  conversion  functions,  like
+      SparseCopyToBuf(), which can reuse already allocated memory.
+
+  -- ALGLIB PROJECT --
+     Copyright 16.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparseconvertto(const sparsematrix &s0, const ae_int_t fmt);
+
+
+/*************************************************************************
+This  function  performs out-of-place conversion to desired sparse storage
+format. S0 is copied to S1 and converted on-the-fly. Memory  allocated  in
+S1 is reused to maximum extent possible.
+
+INPUT PARAMETERS
+    S0      -   sparse matrix in any format.
+    Fmt     -   desired storage format  of  the  output,  as  returned  by
+                SparseGetMatrixType() function:
+                * 0 for hash-based storage
+                * 1 for CRS
+                * 2 for SKS
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in requested format.
+
+  -- ALGLIB PROJECT --
+     Copyright 16.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytobuf(const sparsematrix &s0, const ae_int_t fmt, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function performs in-place conversion to Hash table storage.
+
+INPUT PARAMETERS
+    S           -   sparse matrix in CRS format.
+
+OUTPUT PARAMETERS
+    S           -   sparse matrix in Hash table format.
+
+NOTE: this  function  has   no  effect  when  called with matrix which  is
+      already in Hash table mode.
+
+NOTE: in-place conversion involves allocation of temporary arrays. If  you
+      perform a lot of repeated in- place  conversions,  it  may  lead  to
+      memory fragmentation. Consider using out-of-place SparseCopyToHashBuf()
+      function in this case.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparseconverttohash(const sparsematrix &s);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to  Hash table storage
+format. S0 is copied to S1 and converted on-the-fly.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in Hash table format.
+
+NOTE: if S0 is stored as Hash-table, it is just copied without conversion.
+
+NOTE: this function de-allocates memory  occupied  by  S1 before  starting
+      conversion. If you perform a  lot  of  repeated  conversions, it may
+      lead to memory fragmentation. In this case we recommend you  to  use
+      SparseCopyToHashBuf() function which re-uses memory in S1 as much as
+      possible.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytohash(const sparsematrix &s0, sparsematrix &s1);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to  Hash table storage
+format. S0 is copied to S1 and converted on-the-fly. Memory  allocated  in
+S1 is reused to maximum extent possible.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in Hash table format.
+
+NOTE: if S0 is stored as Hash-table, it is just copied without conversion.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytohashbuf(const sparsematrix &s0, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function converts matrix to CRS format.
+
+Some  algorithms  (linear  algebra ones, for example) require matrices in
+CRS format. This function allows to perform in-place conversion.
+
+INPUT PARAMETERS
+    S           -   sparse M*N matrix in any format
+
+OUTPUT PARAMETERS
+    S           -   matrix in CRS format
+
+NOTE: this   function  has  no  effect  when  called with matrix which is
+      already in CRS mode.
+
+NOTE: this function allocates temporary memory to store a   copy  of  the
+      matrix. If you perform a lot of repeated conversions, we  recommend
+      you  to  use  SparseCopyToCRSBuf()  function,   which   can   reuse
+      previously allocated memory.
+
+  -- ALGLIB PROJECT --
+     Copyright 14.10.2011 by Bochkanov Sergey
+*************************************************************************/
+void sparseconverttocrs(const sparsematrix &s);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to  CRS format.  S0 is
+copied to S1 and converted on-the-fly.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in CRS format.
+
+NOTE: if S0 is stored as CRS, it is just copied without conversion.
+
+NOTE: this function de-allocates memory occupied by S1 before starting CRS
+      conversion. If you perform a lot of repeated CRS conversions, it may
+      lead to memory fragmentation. In this case we recommend you  to  use
+      SparseCopyToCRSBuf() function which re-uses memory in S1 as much  as
+      possible.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytocrs(const sparsematrix &s0, sparsematrix &s1);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to  CRS format.  S0 is
+copied to S1 and converted on-the-fly. Memory allocated in S1 is reused to
+maximum extent possible.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+    S1          -   matrix which may contain some pre-allocated memory, or
+                    can be just uninitialized structure.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in CRS format.
+
+NOTE: if S0 is stored as CRS, it is just copied without conversion.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytocrsbuf(const sparsematrix &s0, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function performs in-place conversion to SKS format.
+
+INPUT PARAMETERS
+    S           -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S           -   sparse matrix in SKS format.
+
+NOTE: this  function  has   no  effect  when  called with matrix which  is
+      already in SKS mode.
+
+NOTE: in-place conversion involves allocation of temporary arrays. If  you
+      perform a lot of repeated in- place  conversions,  it  may  lead  to
+      memory fragmentation. Consider using out-of-place SparseCopyToSKSBuf()
+      function in this case.
+
+  -- ALGLIB PROJECT --
+     Copyright 15.01.2014 by Bochkanov Sergey
+*************************************************************************/
+void sparseconverttosks(const sparsematrix &s);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to SKS storage format.
+S0 is copied to S1 and converted on-the-fly.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in SKS format.
+
+NOTE: if S0 is stored as SKS, it is just copied without conversion.
+
+NOTE: this function de-allocates memory  occupied  by  S1 before  starting
+      conversion. If you perform a  lot  of  repeated  conversions, it may
+      lead to memory fragmentation. In this case we recommend you  to  use
+      SparseCopyToSKSBuf() function which re-uses memory in S1 as much  as
+      possible.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytosks(const sparsematrix &s0, sparsematrix &s1);
+
+
+/*************************************************************************
+This  function  performs  out-of-place  conversion  to SKS format.  S0  is
+copied to S1 and converted on-the-fly. Memory  allocated  in S1 is  reused
+to maximum extent possible.
+
+INPUT PARAMETERS
+    S0          -   sparse matrix in any format.
+
+OUTPUT PARAMETERS
+    S1          -   sparse matrix in SKS format.
+
+NOTE: if S0 is stored as SKS, it is just copied without conversion.
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsecopytosksbuf(const sparsematrix &s0, const sparsematrix &s1);
+
+
+/*************************************************************************
+This function returns type of the matrix storage format.
+
+INPUT PARAMETERS:
+    S           -   sparse matrix.
+
+RESULT:
+    sparse storage format used by matrix:
+        0   -   Hash-table
+        1   -   CRS (compressed row storage)
+        2   -   SKS (skyline)
+
+NOTE: future  versions  of  ALGLIB  may  include additional sparse storage
+      formats.
+
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t sparsegetmatrixtype(const sparsematrix &s);
+
+
+/*************************************************************************
+This function checks matrix storage format and returns True when matrix is
+stored using Hash table representation.
+
+INPUT PARAMETERS:
+    S   -   sparse matrix.
+
+RESULT:
+    True if matrix type is Hash table
+    False if matrix type is not Hash table
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+bool sparseishash(const sparsematrix &s);
+
+
+/*************************************************************************
+This function checks matrix storage format and returns True when matrix is
+stored using CRS representation.
+
+INPUT PARAMETERS:
+    S   -   sparse matrix.
+
+RESULT:
+    True if matrix type is CRS
+    False if matrix type is not CRS
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+bool sparseiscrs(const sparsematrix &s);
+
+
+/*************************************************************************
+This function checks matrix storage format and returns True when matrix is
+stored using SKS representation.
+
+INPUT PARAMETERS:
+    S   -   sparse matrix.
+
+RESULT:
+    True if matrix type is SKS
+    False if matrix type is not SKS
+
+  -- ALGLIB PROJECT --
+     Copyright 20.07.2012 by Bochkanov Sergey
+*************************************************************************/
+bool sparseissks(const sparsematrix &s);
+
+
+/*************************************************************************
+The function frees all memory occupied by  sparse  matrix.  Sparse  matrix
+structure becomes unusable after this call.
+
+OUTPUT PARAMETERS
+    S   -   sparse matrix to delete
+
+  -- ALGLIB PROJECT --
+     Copyright 24.07.2012 by Bochkanov Sergey
+*************************************************************************/
+void sparsefree(sparsematrix &s);
+
+
+/*************************************************************************
+The function returns number of rows of a sparse matrix.
+
+RESULT: number of rows of a sparse matrix.
+
+  -- ALGLIB PROJECT --
+     Copyright 23.08.2012 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t sparsegetnrows(const sparsematrix &s);
+
+
+/*************************************************************************
+The function returns number of columns of a sparse matrix.
+
+RESULT: number of columns of a sparse matrix.
+
+  -- ALGLIB PROJECT --
+     Copyright 23.08.2012 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t sparsegetncols(const sparsematrix &s);
+
+
+/*************************************************************************
+The function returns number of strictly upper triangular non-zero elements
+in  the  matrix.  It  counts  SYMBOLICALLY non-zero elements, i.e. entries
+in the sparse matrix data structure. If some element  has  zero  numerical
+value, it is still counted.
+
+This function has different cost for different types of matrices:
+* for hash-based matrices it involves complete pass over entire hash-table
+  with O(NNZ) cost, where NNZ is number of non-zero elements
+* for CRS and SKS matrix types cost of counting is O(N) (N - matrix size).
+
+RESULT: number of non-zero elements strictly above main diagonal
+
+  -- ALGLIB PROJECT --
+     Copyright 12.02.2014 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t sparsegetuppercount(const sparsematrix &s);
+
+
+/*************************************************************************
+The function returns number of strictly lower triangular non-zero elements
+in  the  matrix.  It  counts  SYMBOLICALLY non-zero elements, i.e. entries
+in the sparse matrix data structure. If some element  has  zero  numerical
+value, it is still counted.
+
+This function has different cost for different types of matrices:
+* for hash-based matrices it involves complete pass over entire hash-table
+  with O(NNZ) cost, where NNZ is number of non-zero elements
+* for CRS and SKS matrix types cost of counting is O(N) (N - matrix size).
+
+RESULT: number of non-zero elements strictly below main diagonal
+
+  -- ALGLIB PROJECT --
+     Copyright 12.02.2014 by Bochkanov Sergey
+*************************************************************************/
+ae_int_t sparsegetlowercount(const sparsematrix &s);
+
+/*************************************************************************
 LU decomposition of a general real matrix with row pivoting
 
 A is represented as A = P*L*U, where:
@@ -2245,6 +4578,42 @@ This is cache-oblivous implementation of LU decomposition.
 It is optimized for square matrices. As for rectangular matrices:
 * best case - M>>N
 * worst case - N>>M, small M, large N, matrix does not fit in CPU cache
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that LU decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS:
     A       -   array[0..M-1, 0..N-1].
@@ -2264,6 +4633,7 @@ OUTPUT PARAMETERS:
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixlu(real_2d_array &a, const ae_int_t m, const ae_int_t n, integer_1d_array &pivots);
+void smp_rmatrixlu(real_2d_array &a, const ae_int_t m, const ae_int_t n, integer_1d_array &pivots);
 
 
 /*************************************************************************
@@ -2279,6 +4649,42 @@ This is cache-oblivous implementation of LU decomposition. It is optimized
 for square matrices. As for rectangular matrices:
 * best case - M>>N
 * worst case - N>>M, small M, large N, matrix does not fit in CPU cache
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that LU decomposition  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS:
     A       -   array[0..M-1, 0..N-1].
@@ -2298,6 +4704,7 @@ OUTPUT PARAMETERS:
      Bochkanov Sergey
 *************************************************************************/
 void cmatrixlu(complex_2d_array &a, const ae_int_t m, const ae_int_t n, integer_1d_array &pivots);
+void smp_cmatrixlu(complex_2d_array &a, const ae_int_t m, const ae_int_t n, integer_1d_array &pivots);
 
 
 /*************************************************************************
@@ -2306,6 +4713,41 @@ Cache-oblivious Cholesky decomposition
 The algorithm computes Cholesky decomposition  of  a  Hermitian  positive-
 definite matrix. The result of an algorithm is a representation  of  A  as
 A=U'*U  or A=L*L' (here X' detones conj(X^T)).
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that Cholesky decomposition is harder
+  ! to parallelize than, say, matrix-matrix product - this  algorithm  has
+  ! several synchronization points which  can  not  be  avoided.  However,
+  ! parallelism starts to be profitable starting from N=500.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS:
     A       -   upper or lower triangle of a factorized matrix.
@@ -2330,6 +4772,7 @@ RESULT:
      Bochkanov Sergey
 *************************************************************************/
 bool hpdmatrixcholesky(complex_2d_array &a, const ae_int_t n, const bool isupper);
+bool smp_hpdmatrixcholesky(complex_2d_array &a, const ae_int_t n, const bool isupper);
 
 
 /*************************************************************************
@@ -2338,6 +4781,41 @@ Cache-oblivious Cholesky decomposition
 The algorithm computes Cholesky decomposition  of  a  symmetric  positive-
 definite matrix. The result of an algorithm is a representation  of  A  as
 A=U^T*U  or A=L*L^T
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that Cholesky decomposition is harder
+  ! to parallelize than, say, matrix-matrix product - this  algorithm  has
+  ! several synchronization points which  can  not  be  avoided.  However,
+  ! parallelism starts to be profitable starting from N=500.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS:
     A       -   upper or lower triangle of a factorized matrix.
@@ -2362,6 +4840,219 @@ RESULT:
      Bochkanov Sergey
 *************************************************************************/
 bool spdmatrixcholesky(real_2d_array &a, const ae_int_t n, const bool isupper);
+bool smp_spdmatrixcholesky(real_2d_array &a, const ae_int_t n, const bool isupper);
+
+
+/*************************************************************************
+Update of Cholesky decomposition: rank-1 update to original A.  "Buffered"
+version which uses preallocated buffer which is saved  between  subsequent
+function calls.
+
+This function uses internally allocated buffer which is not saved  between
+subsequent  calls.  So,  if  you  perform  a lot  of  subsequent  updates,
+we  recommend   you   to   use   "buffered"   version   of  this function:
+SPDMatrixCholeskyUpdateAdd1Buf().
+
+INPUT PARAMETERS:
+    A       -   upper or lower Cholesky factor.
+                array with elements [0..N-1, 0..N-1].
+                Exception is thrown if array size is too small.
+    N       -   size of matrix A, N>0
+    IsUpper -   if IsUpper=True, then A contains  upper  Cholesky  factor;
+                otherwise A contains a lower one.
+    U       -   array[N], rank-1 update to A: A_mod = A + u*u'
+                Exception is thrown if array size is too small.
+    BufR    -   possibly preallocated  buffer;  automatically  resized  if
+                needed. It is recommended to  reuse  this  buffer  if  you
+                perform a lot of subsequent decompositions.
+
+OUTPUT PARAMETERS:
+    A       -   updated factorization.  If  IsUpper=True,  then  the  upper
+                triangle contains matrix U, and the elements below the main
+                diagonal are not modified. Similarly, if IsUpper = False.
+
+NOTE: this function always succeeds, so it does not return completion code
+
+NOTE: this function checks sizes of input arrays, but it does  NOT  checks
+      for presence of infinities or NAN's.
+
+  -- ALGLIB --
+     03.02.2014
+     Sergey Bochkanov
+*************************************************************************/
+void spdmatrixcholeskyupdateadd1(const real_2d_array &a, const ae_int_t n, const bool isupper, const real_1d_array &u);
+
+
+/*************************************************************************
+Update of Cholesky decomposition: "fixing" some variables.
+
+This function uses internally allocated buffer which is not saved  between
+subsequent  calls.  So,  if  you  perform  a lot  of  subsequent  updates,
+we  recommend   you   to   use   "buffered"   version   of  this function:
+SPDMatrixCholeskyUpdateFixBuf().
+
+"FIXING" EXPLAINED:
+
+    Suppose we have N*N positive definite matrix A. "Fixing" some variable
+    means filling corresponding row/column of  A  by  zeros,  and  setting
+    diagonal element to 1.
+
+    For example, if we fix 2nd variable in 4*4 matrix A, it becomes Af:
+
+        ( A00  A01  A02  A03 )      ( Af00  0   Af02 Af03 )
+        ( A10  A11  A12  A13 )      (  0    1    0    0   )
+        ( A20  A21  A22  A23 )  =>  ( Af20  0   Af22 Af23 )
+        ( A30  A31  A32  A33 )      ( Af30  0   Af32 Af33 )
+
+    If we have Cholesky decomposition of A, it must be recalculated  after
+    variables were  fixed.  However,  it  is  possible  to  use  efficient
+    algorithm, which needs O(K*N^2)  time  to  "fix"  K  variables,  given
+    Cholesky decomposition of original, "unfixed" A.
+
+INPUT PARAMETERS:
+    A       -   upper or lower Cholesky factor.
+                array with elements [0..N-1, 0..N-1].
+                Exception is thrown if array size is too small.
+    N       -   size of matrix A, N>0
+    IsUpper -   if IsUpper=True, then A contains  upper  Cholesky  factor;
+                otherwise A contains a lower one.
+    Fix     -   array[N], I-th element is True if I-th  variable  must  be
+                fixed. Exception is thrown if array size is too small.
+    BufR    -   possibly preallocated  buffer;  automatically  resized  if
+                needed. It is recommended to  reuse  this  buffer  if  you
+                perform a lot of subsequent decompositions.
+
+OUTPUT PARAMETERS:
+    A       -   updated factorization.  If  IsUpper=True,  then  the  upper
+                triangle contains matrix U, and the elements below the main
+                diagonal are not modified. Similarly, if IsUpper = False.
+
+NOTE: this function always succeeds, so it does not return completion code
+
+NOTE: this function checks sizes of input arrays, but it does  NOT  checks
+      for presence of infinities or NAN's.
+
+NOTE: this  function  is  efficient  only  for  moderate amount of updated
+      variables - say, 0.1*N or 0.3*N. For larger amount of  variables  it
+      will  still  work,  but  you  may  get   better   performance   with
+      straightforward Cholesky.
+
+  -- ALGLIB --
+     03.02.2014
+     Sergey Bochkanov
+*************************************************************************/
+void spdmatrixcholeskyupdatefix(const real_2d_array &a, const ae_int_t n, const bool isupper, const boolean_1d_array &fix);
+
+
+/*************************************************************************
+Update of Cholesky decomposition: rank-1 update to original A.  "Buffered"
+version which uses preallocated buffer which is saved  between  subsequent
+function calls.
+
+See comments for SPDMatrixCholeskyUpdateAdd1() for more information.
+
+INPUT PARAMETERS:
+    A       -   upper or lower Cholesky factor.
+                array with elements [0..N-1, 0..N-1].
+                Exception is thrown if array size is too small.
+    N       -   size of matrix A, N>0
+    IsUpper -   if IsUpper=True, then A contains  upper  Cholesky  factor;
+                otherwise A contains a lower one.
+    U       -   array[N], rank-1 update to A: A_mod = A + u*u'
+                Exception is thrown if array size is too small.
+    BufR    -   possibly preallocated  buffer;  automatically  resized  if
+                needed. It is recommended to  reuse  this  buffer  if  you
+                perform a lot of subsequent decompositions.
+
+OUTPUT PARAMETERS:
+    A       -   updated factorization.  If  IsUpper=True,  then  the  upper
+                triangle contains matrix U, and the elements below the main
+                diagonal are not modified. Similarly, if IsUpper = False.
+
+  -- ALGLIB --
+     03.02.2014
+     Sergey Bochkanov
+*************************************************************************/
+void spdmatrixcholeskyupdateadd1buf(const real_2d_array &a, const ae_int_t n, const bool isupper, const real_1d_array &u, real_1d_array &bufr);
+
+
+/*************************************************************************
+Update of Cholesky  decomposition:  "fixing"  some  variables.  "Buffered"
+version which uses preallocated buffer which is saved  between  subsequent
+function calls.
+
+See comments for SPDMatrixCholeskyUpdateFix() for more information.
+
+INPUT PARAMETERS:
+    A       -   upper or lower Cholesky factor.
+                array with elements [0..N-1, 0..N-1].
+                Exception is thrown if array size is too small.
+    N       -   size of matrix A, N>0
+    IsUpper -   if IsUpper=True, then A contains  upper  Cholesky  factor;
+                otherwise A contains a lower one.
+    Fix     -   array[N], I-th element is True if I-th  variable  must  be
+                fixed. Exception is thrown if array size is too small.
+    BufR    -   possibly preallocated  buffer;  automatically  resized  if
+                needed. It is recommended to  reuse  this  buffer  if  you
+                perform a lot of subsequent decompositions.
+
+OUTPUT PARAMETERS:
+    A       -   updated factorization.  If  IsUpper=True,  then  the  upper
+                triangle contains matrix U, and the elements below the main
+                diagonal are not modified. Similarly, if IsUpper = False.
+
+  -- ALGLIB --
+     03.02.2014
+     Sergey Bochkanov
+*************************************************************************/
+void spdmatrixcholeskyupdatefixbuf(const real_2d_array &a, const ae_int_t n, const bool isupper, const boolean_1d_array &fix, real_1d_array &bufr);
+
+
+/*************************************************************************
+Sparse Cholesky decomposition for skyline matrixm using in-place algorithm
+without allocating additional storage.
+
+The algorithm computes Cholesky decomposition  of  a  symmetric  positive-
+definite sparse matrix. The result of an algorithm is a representation  of
+A as A=U^T*U or A=L*L^T
+
+This  function  is  a  more  efficient alternative to general, but  slower
+SparseCholeskyX(), because it does not  create  temporary  copies  of  the
+target. It performs factorization in-place, which gives  best  performance
+on low-profile matrices. Its drawback, however, is that it can not perform
+profile-reducing permutation of input matrix.
+
+INPUT PARAMETERS:
+    A       -   sparse matrix in skyline storage (SKS) format.
+    N       -   size of matrix A (can be smaller than actual size of A)
+    IsUpper -   if IsUpper=True, then factorization is performed on  upper
+                triangle. Another triangle is ignored (it may contant some
+                data, but it is not changed).
+
+
+OUTPUT PARAMETERS:
+    A       -   the result of factorization, stored in SKS. If IsUpper=True,
+                then the upper  triangle  contains  matrix  U,  such  that
+                A = U^T*U. Lower triangle is not changed.
+                Similarly, if IsUpper = False. In this case L is returned,
+                and we have A = L*(L^T).
+                Note that THIS function does not  perform  permutation  of
+                rows to reduce bandwidth.
+
+RESULT:
+    If  the  matrix  is  positive-definite,  the  function  returns  True.
+    Otherwise, the function returns False. Contents of A is not determined
+    in such case.
+
+NOTE: for  performance  reasons  this  function  does NOT check that input
+      matrix  includes  only  finite  values. It is your responsibility to
+      make sure that there are no infinite or NAN values in the matrix.
+
+  -- ALGLIB routine --
+     16.01.2014
+     Bochkanov Sergey
+*************************************************************************/
+bool sparsecholeskyskyline(const sparsematrix &a, const ae_int_t n, const bool isupper);
 
 /*************************************************************************
 Estimate of a matrix condition number (1-norm)
@@ -2731,6 +5422,42 @@ double cmatrixtrrcondinf(const complex_2d_array &a, const ae_int_t n, const bool
 /*************************************************************************
 Inversion of a matrix given by its LU decomposition.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that matrix inversion  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 INPUT PARAMETERS:
     A       -   LU decomposition of the matrix
                 (output of RMatrixLU subroutine).
@@ -2763,11 +5490,49 @@ Subroutine sets following fields of the Rep structure:
      Bochkanov Sergey
 *************************************************************************/
 void rmatrixluinverse(real_2d_array &a, const integer_1d_array &pivots, const ae_int_t n, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixluinverse(real_2d_array &a, const integer_1d_array &pivots, const ae_int_t n, ae_int_t &info, matinvreport &rep);
 void rmatrixluinverse(real_2d_array &a, const integer_1d_array &pivots, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixluinverse(real_2d_array &a, const integer_1d_array &pivots, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
 Inversion of a general matrix.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that matrix inversion  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix.
@@ -2790,11 +5555,49 @@ Result:
      Copyright 2005-2010 by Bochkanov Sergey
 *************************************************************************/
 void rmatrixinverse(real_2d_array &a, const ae_int_t n, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixinverse(real_2d_array &a, const ae_int_t n, ae_int_t &info, matinvreport &rep);
 void rmatrixinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
 Inversion of a matrix given by its LU decomposition.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that matrix inversion  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 INPUT PARAMETERS:
     A       -   LU decomposition of the matrix
@@ -2817,11 +5620,49 @@ OUTPUT PARAMETERS:
      Bochkanov Sergey
 *************************************************************************/
 void cmatrixluinverse(complex_2d_array &a, const integer_1d_array &pivots, const ae_int_t n, ae_int_t &info, matinvreport &rep);
+void smp_cmatrixluinverse(complex_2d_array &a, const integer_1d_array &pivots, const ae_int_t n, ae_int_t &info, matinvreport &rep);
 void cmatrixluinverse(complex_2d_array &a, const integer_1d_array &pivots, ae_int_t &info, matinvreport &rep);
+void smp_cmatrixluinverse(complex_2d_array &a, const integer_1d_array &pivots, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
 Inversion of a general matrix.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that matrix inversion  is  harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix
@@ -2840,12 +5681,44 @@ Output parameters:
      Copyright 2005 by Bochkanov Sergey
 *************************************************************************/
 void cmatrixinverse(complex_2d_array &a, const ae_int_t n, ae_int_t &info, matinvreport &rep);
+void smp_cmatrixinverse(complex_2d_array &a, const ae_int_t n, ae_int_t &info, matinvreport &rep);
 void cmatrixinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_cmatrixinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
 Inversion of a symmetric positive definite matrix which is given
 by Cholesky decomposition.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  However,  Cholesky  inversion  is  a  "difficult"
+  ! algorithm  -  it  has  lots  of  internal synchronization points which
+  ! prevents efficient  parallelization  of  algorithm.  Only  very  large
+  ! problems (N=thousands) can be efficiently parallelized.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   Cholesky decomposition of the matrix to be inverted:
@@ -2875,7 +5748,9 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void spdmatrixcholeskyinverse(real_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
+void smp_spdmatrixcholeskyinverse(real_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
 void spdmatrixcholeskyinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_spdmatrixcholeskyinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
@@ -2884,6 +5759,36 @@ Inversion of a symmetric positive definite matrix.
 Given an upper or lower triangle of a symmetric positive definite matrix,
 the algorithm generates matrix A^-1 and saves the upper or lower triangle
 depending on the input.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  However,  Cholesky  inversion  is  a  "difficult"
+  ! algorithm  -  it  has  lots  of  internal synchronization points which
+  ! prevents efficient  parallelization  of  algorithm.  Only  very  large
+  ! problems (N=thousands) can be efficiently parallelized.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix to be inverted (upper or lower triangle).
@@ -2913,12 +5818,44 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void spdmatrixinverse(real_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
+void smp_spdmatrixinverse(real_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
 void spdmatrixinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_spdmatrixinverse(real_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
 Inversion of a Hermitian positive definite matrix which is given
 by Cholesky decomposition.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  However,  Cholesky  inversion  is  a  "difficult"
+  ! algorithm  -  it  has  lots  of  internal synchronization points which
+  ! prevents efficient  parallelization  of  algorithm.  Only  very  large
+  ! problems (N=thousands) can be efficiently parallelized.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   Cholesky decomposition of the matrix to be inverted:
@@ -2948,7 +5885,9 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void hpdmatrixcholeskyinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
+void smp_hpdmatrixcholeskyinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
 void hpdmatrixcholeskyinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_hpdmatrixcholeskyinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
@@ -2957,6 +5896,36 @@ Inversion of a Hermitian positive definite matrix.
 Given an upper or lower triangle of a Hermitian positive definite matrix,
 the algorithm generates matrix A^-1 and saves the upper or lower triangle
 depending on the input.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of  this  function.  However,  Cholesky  inversion  is  a  "difficult"
+  ! algorithm  -  it  has  lots  of  internal synchronization points which
+  ! prevents efficient  parallelization  of  algorithm.  Only  very  large
+  ! problems (N=thousands) can be efficiently parallelized.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix to be inverted (upper or lower triangle).
@@ -2986,7 +5955,9 @@ Output parameters:
      Bochkanov Sergey
 *************************************************************************/
 void hpdmatrixinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
+void smp_hpdmatrixinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, ae_int_t &info, matinvreport &rep);
 void hpdmatrixinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
+void smp_hpdmatrixinverse(complex_2d_array &a, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
@@ -3005,6 +5976,42 @@ main diagonal are not changed by the algorithm.
 
 If  the matrix  has a unit diagonal, the inverse matrix also  has  a  unit
 diagonal, and the diagonal elements are not passed to the algorithm.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that triangular inverse is harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix, array[0..N-1, 0..N-1].
@@ -3028,7 +6035,9 @@ Output parameters:
      Copyright 05.02.2010 by Bochkanov Sergey
 *************************************************************************/
 void rmatrixtrinverse(real_2d_array &a, const ae_int_t n, const bool isupper, const bool isunit, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixtrinverse(real_2d_array &a, const ae_int_t n, const bool isupper, const bool isunit, ae_int_t &info, matinvreport &rep);
 void rmatrixtrinverse(real_2d_array &a, const bool isupper, ae_int_t &info, matinvreport &rep);
+void smp_rmatrixtrinverse(real_2d_array &a, const bool isupper, ae_int_t &info, matinvreport &rep);
 
 
 /*************************************************************************
@@ -3047,6 +6056,42 @@ main diagonal are not changed by the algorithm.
 
 If  the matrix  has a unit diagonal, the inverse matrix also  has  a  unit
 diagonal, and the diagonal elements are not passed to the algorithm.
+
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes two  important  improvements  of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  ! * multicore support
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Say, on SSE2-capable CPU with N=1024, HPC ALGLIB will be:
+  ! * about 2-3x faster than ALGLIB for C++ without MKL
+  ! * about 7-10x faster than "pure C#" edition of ALGLIB
+  ! Difference in performance will be more striking  on  newer  CPU's with
+  ! support for newer SIMD instructions. Generally,  MKL  accelerates  any
+  ! problem whose size is at least 128, with best  efficiency achieved for
+  ! N's larger than 512.
+  !
+  ! Commercial edition of ALGLIB also supports multithreaded  acceleration
+  ! of this function. We should note that triangular inverse is harder  to
+  ! parallelize than, say, matrix-matrix  product  -  this  algorithm  has
+  ! many internal synchronization points which can not be avoided. However
+  ! parallelism starts to be profitable starting  from  N=1024,  achieving
+  ! near-linear speedup for N=4096 or higher.
+  !
+  ! In order to use multicore features you have to:
+  ! * use commercial version of ALGLIB
+  ! * call  this  function  with  "smp_"  prefix,  which  indicates  that
+  !   multicore code will be used (for multicore support)
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
 
 Input parameters:
     A       -   matrix, array[0..N-1, 0..N-1].
@@ -3070,783 +6115,9 @@ Output parameters:
      Copyright 05.02.2010 by Bochkanov Sergey
 *************************************************************************/
 void cmatrixtrinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, const bool isunit, ae_int_t &info, matinvreport &rep);
+void smp_cmatrixtrinverse(complex_2d_array &a, const ae_int_t n, const bool isupper, const bool isunit, ae_int_t &info, matinvreport &rep);
 void cmatrixtrinverse(complex_2d_array &a, const bool isupper, ae_int_t &info, matinvreport &rep);
-
-/*************************************************************************
-This function creates sparse matrix in a Hash-Table format.
-
-This function creates Hast-Table matrix, which can be  converted  to  CRS
-format after its initialization is over. Typical  usage  scenario  for  a
-sparse matrix is:
-1. creation in a Hash-Table format
-2. insertion of the matrix elements
-3. conversion to the CRS representation
-4. matrix is passed to some linear algebra algorithm
-
-Some  information  about  different matrix formats can be found below, in
-the "NOTES" section.
-
-INPUT PARAMETERS
-    M           -   number of rows in a matrix, M>=1
-    N           -   number of columns in a matrix, N>=1
-    K           -   K>=0, expected number of non-zero elements in a matrix.
-                    K can be inexact approximation, can be less than actual
-                    number  of  elements  (table will grow when needed) or
-                    even zero).
-                    It is important to understand that although hash-table
-                    may grow automatically, it is better to  provide  good
-                    estimate of data size.
-
-OUTPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table representation.
-                    All elements of the matrix are zero.
-
-NOTE 1.
-
-Sparse matrices can be stored using either Hash-Table  representation  or
-Compressed  Row  Storage  representation. Hast-table is better suited for
-querying   and   dynamic   operations   (thus,  it  is  used  for  matrix
-initialization), but it is inefficient when you want to make some  linear
-algebra operations.
-
-From the other side, CRS is better suited for linear algebra  operations,
-but initialization is less convenient - you have to tell row sizes at the
-initialization,  and  you  can  fill matrix only row by row, from left to
-right. CRS is also very inefficient when you want to find matrix  element
-by its index.
-
-Thus,  Hash-Table  representation   does   not   support  linear  algebra
-operations, while CRS format does not support modification of the  table.
-Tables below outline information about these two formats:
-
-    OPERATIONS WITH MATRIX      HASH        CRS
-    create                      +           +
-    read element                +           +
-    modify element              +
-    add value to element        +
-    A*x  (dense vector)                     +
-    A'*x (dense vector)                     +
-    A*X  (dense matrix)                     +
-    A'*X (dense matrix)                     +
-
-NOTE 2.
-
-Hash-tables use memory inefficiently, and they have to keep  some  amount
-of the "spare memory" in order to have good performance. Hash  table  for
-matrix with K non-zero elements will  need  C*K*(8+2*sizeof(int))  bytes,
-where C is a small constant, about 1.5-2 in magnitude.
-
-CRS storage, from the other side, is  more  memory-efficient,  and  needs
-just K*(8+sizeof(int))+M*sizeof(int) bytes, where M is a number  of  rows
-in a matrix.
-
-When you convert from the Hash-Table to CRS  representation, all unneeded
-memory will be freed.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsecreate(const ae_int_t m, const ae_int_t n, const ae_int_t k, sparsematrix &s);
-void sparsecreate(const ae_int_t m, const ae_int_t n, sparsematrix &s);
-
-
-/*************************************************************************
-This function creates sparse matrix in a CRS format (expert function for
-situations when you are running out of memory).
-
-This function creates CRS matrix. Typical usage scenario for a CRS matrix
-is:
-1. creation (you have to tell number of non-zero elements at each row  at
-   this moment)
-2. insertion of the matrix elements (row by row, from left to right)
-3. matrix is passed to some linear algebra algorithm
-
-This function is a memory-efficient alternative to SparseCreate(), but it
-is more complex because it requires you to know in advance how large your
-matrix is. Some  information about  different matrix formats can be found
-below, in the "NOTES" section.
-
-INPUT PARAMETERS
-    M           -   number of rows in a matrix, M>=1
-    N           -   number of columns in a matrix, N>=1
-    NER         -   number of elements at each row, array[M], NER[I]>=0
-
-OUTPUT PARAMETERS
-    S           -   sparse M*N matrix in CRS representation.
-                    You have to fill ALL non-zero elements by calling
-                    SparseSet() BEFORE you try to use this matrix.
-
-NOTE 1.
-
-Sparse matrices can be stored using either Hash-Table  representation  or
-Compressed  Row  Storage  representation. Hast-table is better suited for
-querying   and   dynamic   operations   (thus,  it  is  used  for  matrix
-initialization), but it is inefficient when you want to make some  linear
-algebra operations.
-
-From the other side, CRS is better suited for linear algebra  operations,
-but initialization is less convenient - you have to tell row sizes at the
-initialization,  and  you  can  fill matrix only row by row, from left to
-right. CRS is also very inefficient when you want to find matrix  element
-by its index.
-
-Thus,  Hash-Table  representation   does   not   support  linear  algebra
-operations, while CRS format does not support modification of the  table.
-Tables below outline information about these two formats:
-
-    OPERATIONS WITH MATRIX      HASH        CRS
-    create                      +           +
-    read element                +           +
-    modify element              +
-    add value to element        +
-    A*x  (dense vector)                     +
-    A'*x (dense vector)                     +
-    A*X  (dense matrix)                     +
-    A'*X (dense matrix)                     +
-
-NOTE 2.
-
-Hash-tables use memory inefficiently, and they have to keep  some  amount
-of the "spare memory" in order to have good performance. Hash  table  for
-matrix with K non-zero elements will  need  C*K*(8+2*sizeof(int))  bytes,
-where C is a small constant, about 1.5-2 in magnitude.
-
-CRS storage, from the other side, is  more  memory-efficient,  and  needs
-just K*(8+sizeof(int))+M*sizeof(int) bytes, where M is a number  of  rows
-in a matrix.
-
-When you convert from the Hash-Table to CRS  representation, all unneeded
-memory will be freed.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsecreatecrs(const ae_int_t m, const ae_int_t n, const integer_1d_array &ner, sparsematrix &s);
-
-
-/*************************************************************************
-This function copies S0 to S1.
-
-NOTE:  this  function  does  not verify its arguments, it just copies all
-fields of the structure.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsecopy(const sparsematrix &s0, sparsematrix &s1);
-
-
-/*************************************************************************
-This function adds value to S[i,j] - element of the sparse matrix. Matrix
-must be in a Hash-Table mode.
-
-In case S[i,j] already exists in the table, V i added to  its  value.  In
-case  S[i,j]  is  non-existent,  it  is  inserted  in  the  table.  Table
-automatically grows when necessary.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table representation.
-                    Exception will be thrown for CRS matrix.
-    I           -   row index of the element to modify, 0<=I<M
-    J           -   column index of the element to modify, 0<=J<N
-    V           -   value to add, must be finite number
-
-OUTPUT PARAMETERS
-    S           -   modified matrix
-
-NOTE 1:  when  S[i,j]  is exactly zero after modification, it is  deleted
-from the table.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparseadd(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
-
-
-/*************************************************************************
-This function modifies S[i,j] - element of the sparse matrix.
-
-For Hash-based storage format:
-* new value can be zero or non-zero.  In case new value of S[i,j] is zero,
-  this element is deleted from the table.
-* this  function  has  no  effect when called with zero V for non-existent
-  element.
-
-For CRS-bases storage format:
-* new value MUST be non-zero. Exception will be thrown for zero V.
-* elements must be initialized in correct order -  from top row to bottom,
-  within row - from left to right.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table or CRS representation.
-    I           -   row index of the element to modify, 0<=I<M
-    J           -   column index of the element to modify, 0<=J<N
-    V           -   value to set, must be finite number, can be zero
-
-OUTPUT PARAMETERS
-    S           -   modified matrix
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparseset(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
-
-
-/*************************************************************************
-This function returns S[i,j] - element of the sparse matrix.  Matrix  can
-be in any mode (Hash-Table or CRS), but this function is  less  efficient
-for CRS matrices.  Hash-Table  matrices can  find element  in O(1)  time,
-while  CRS  matrices  need O(log(RS)) time, where RS is an number of non-
-zero elements in a row.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table representation.
-                    Exception will be thrown for CRS matrix.
-    I           -   row index of the element to modify, 0<=I<M
-    J           -   column index of the element to modify, 0<=J<N
-
-RESULT
-    value of S[I,J] or zero (in case no element with such index is found)
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-double sparseget(const sparsematrix &s, const ae_int_t i, const ae_int_t j);
-
-
-/*************************************************************************
-This function returns I-th diagonal element of the sparse matrix.
-
-Matrix can be in any mode (Hash-Table or CRS storage), but this  function
-is most efficient for CRS matrices - it requires less than 50 CPU  cycles
-to extract diagonal element. For Hash-Table matrices we still  have  O(1)
-query time, but function is many times slower.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table representation.
-                    Exception will be thrown for CRS matrix.
-    I           -   index of the element to modify, 0<=I<min(M,N)
-
-RESULT
-    value of S[I,I] or zero (in case no element with such index is found)
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-double sparsegetdiagonal(const sparsematrix &s, const ae_int_t i);
-
-
-/*************************************************************************
-This function converts matrix to CRS format.
-
-Some  algorithms  (linear  algebra ones, for example) require matrices in
-CRS format.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in any format
-
-OUTPUT PARAMETERS
-    S           -   matrix in CRS format
-
-NOTE:  this  function  has  no  effect  when  called with matrix which is
-already in CRS mode.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparseconverttocrs(const sparsematrix &s);
-
-
-/*************************************************************************
-This function calculates matrix-vector product  S*x.  Matrix  S  must  be
-stored in CRS format (exception will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    X           -   array[N], input vector. For  performance  reasons  we
-                    make only quick checks - we check that array size  is
-                    at least N, but we do not check for NAN's or INF's.
-    Y           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    Y           -   array[M], S*x
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemv(const sparsematrix &s, const real_1d_array &x, real_1d_array &y);
-
-
-/*************************************************************************
-This function calculates matrix-vector product  S^T*x. Matrix S  must  be
-stored in CRS format (exception will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    X           -   array[M], input vector. For  performance  reasons  we
-                    make only quick checks - we check that array size  is
-                    at least M, but we do not check for NAN's or INF's.
-    Y           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    Y           -   array[N], S^T*x
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemtv(const sparsematrix &s, const real_1d_array &x, real_1d_array &y);
-
-
-/*************************************************************************
-This function simultaneously calculates two matrix-vector products:
-    S*x and S^T*x.
-S must be square (non-rectangular) matrix stored in CRS format (exception
-will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse N*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    X           -   array[N], input vector. For  performance  reasons  we
-                    make only quick checks - we check that array size  is
-                    at least N, but we do not check for NAN's or INF's.
-    Y0          -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-    Y1          -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    Y0          -   array[N], S*x
-    Y1          -   array[N], S^T*x
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function. It also throws exception when S is non-square.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemv2(const sparsematrix &s, const real_1d_array &x, real_1d_array &y0, real_1d_array &y1);
-
-
-/*************************************************************************
-This function calculates matrix-vector product  S*x, when S is  symmetric
-matrix.  Matrix  S  must  be stored in  CRS  format  (exception  will  be
-thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*M matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    IsUpper     -   whether upper or lower triangle of S is given:
-                    * if upper triangle is given,  only   S[i,j] for j>=i
-                      are used, and lower triangle is ignored (it can  be
-                      empty - these elements are not referenced at all).
-                    * if lower triangle is given,  only   S[i,j] for j<=i
-                      are used, and upper triangle is ignored.
-    X           -   array[N], input vector. For  performance  reasons  we
-                    make only quick checks - we check that array size  is
-                    at least N, but we do not check for NAN's or INF's.
-    Y           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    Y           -   array[M], S*x
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsesmv(const sparsematrix &s, const bool isupper, const real_1d_array &x, real_1d_array &y);
-
-
-/*************************************************************************
-This function calculates matrix-matrix product  S*A.  Matrix  S  must  be
-stored in CRS format (exception will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    A           -   array[N][K], input dense matrix. For  performance reasons
-                    we make only quick checks - we check that array size
-                    is at least N, but we do not check for NAN's or INF's.
-    K           -   number of columns of matrix (A).
-    B           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    B           -   array[M][K], S*A
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemm(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
-
-
-/*************************************************************************
-This function calculates matrix-matrix product  S^T*A. Matrix S  must  be
-stored in CRS format (exception will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    A           -   array[M][K], input dense matrix. For performance reasons
-                    we make only quick checks - we check that array size  is
-                    at least M, but we do not check for NAN's or INF's.
-    K           -   number of columns of matrix (A).
-    B           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    B           -   array[N][K], S^T*A
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemtm(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
-
-
-/*************************************************************************
-This function simultaneously calculates two matrix-matrix products:
-    S*A and S^T*A.
-S must be square (non-rectangular) matrix stored in CRS format (exception
-will be thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse N*N matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    A           -   array[N][K], input dense matrix. For performance reasons
-                    we make only quick checks - we check that array size  is
-                    at least N, but we do not check for NAN's or INF's.
-    K           -   number of columns of matrix (A).
-    B0          -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-    B1          -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    B0          -   array[N][K], S*A
-    B1          -   array[N][K], S^T*A
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function. It also throws exception when S is non-square.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsemm2(const sparsematrix &s, const real_2d_array &a, const ae_int_t k, real_2d_array &b0, real_2d_array &b1);
-
-
-/*************************************************************************
-This function calculates matrix-matrix product  S*A, when S  is  symmetric
-matrix.  Matrix  S  must  be stored  in  CRS  format  (exception  will  be
-thrown otherwise).
-
-INPUT PARAMETERS
-    S           -   sparse M*M matrix in CRS format (you MUST convert  it
-                    to CRS before calling this function).
-    IsUpper     -   whether upper or lower triangle of S is given:
-                    * if upper triangle is given,  only   S[i,j] for j>=i
-                      are used, and lower triangle is ignored (it can  be
-                      empty - these elements are not referenced at all).
-                    * if lower triangle is given,  only   S[i,j] for j<=i
-                      are used, and upper triangle is ignored.
-    A           -   array[N][K], input dense matrix. For performance reasons
-                    we make only quick checks - we check that array size is
-                    at least N, but we do not check for NAN's or INF's.
-    K           -   number of columns of matrix (A).
-    B           -   output buffer, possibly preallocated. In case  buffer
-                    size is too small to store  result,  this  buffer  is
-                    automatically resized.
-
-OUTPUT PARAMETERS
-    B           -   array[M][K], S*A
-
-NOTE: this function throws exception when called for non-CRS matrix.  You
-must convert your matrix  with  SparseConvertToCRS()  before  using  this
-function.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparsesmm(const sparsematrix &s, const bool isupper, const real_2d_array &a, const ae_int_t k, real_2d_array &b);
-
-
-/*************************************************************************
-This procedure resizes Hash-Table matrix. It can be called when you  have
-deleted too many elements from the matrix, and you want to  free unneeded
-memory.
-
-  -- ALGLIB PROJECT --
-     Copyright 14.10.2011 by Bochkanov Sergey
-*************************************************************************/
-void sparseresizematrix(const sparsematrix &s);
-
-
-/*************************************************************************
-This  function  is  used  to enumerate all elements of the sparse matrix.
-Before  first  call  user  initializes  T0 and T1 counters by zero. These
-counters are used to remember current position in a  matrix;  after  each
-call they are updated by the function.
-
-Subsequent calls to this function return non-zero elements of the  sparse
-matrix, one by one. If you enumerate CRS matrix, matrix is traversed from
-left to right, from top to bottom. In case you enumerate matrix stored as
-Hash table, elements are returned in random order.
-
-EXAMPLE
-    > T0=0
-    > T1=0
-    > while SparseEnumerate(S,T0,T1,I,J,V) do
-    >     ....do something with I,J,V
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table or CRS representation.
-    T0          -   internal counter
-    T1          -   internal counter
-
-OUTPUT PARAMETERS
-    T0          -   new value of the internal counter
-    T1          -   new value of the internal counter
-    I           -   row index of non-zero element, 0<=I<M.
-    J           -   column index of non-zero element, 0<=J<N
-    V           -   value of the T-th element
-
-RESULT
-    True in case of success (next non-zero element was retrieved)
-    False in case all non-zero elements were enumerated
-
-  -- ALGLIB PROJECT --
-     Copyright 14.03.2012 by Bochkanov Sergey
-*************************************************************************/
-bool sparseenumerate(const sparsematrix &s, ae_int_t &t0, ae_int_t &t1, ae_int_t &i, ae_int_t &j, double &v);
-
-
-/*************************************************************************
-This function rewrites existing (non-zero) element. It  returns  True   if
-element  exists  or  False,  when  it  is  called for non-existing  (zero)
-element.
-
-The purpose of this function is to provide convenient thread-safe  way  to
-modify  sparse  matrix.  Such  modification  (already  existing element is
-rewritten) is guaranteed to be thread-safe without any synchronization, as
-long as different threads modify different elements.
-
-INPUT PARAMETERS
-    S           -   sparse M*N matrix in Hash-Table or CRS representation.
-    I           -   row index of non-zero element to modify, 0<=I<M
-    J           -   column index of non-zero element to modify, 0<=J<N
-    V           -   value to rewrite, must be finite number
-
-OUTPUT PARAMETERS
-    S           -   modified matrix
-RESULT
-    True in case when element exists
-    False in case when element doesn't exist or it is zero
-
-  -- ALGLIB PROJECT --
-     Copyright 14.03.2012 by Bochkanov Sergey
-*************************************************************************/
-bool sparserewriteexisting(const sparsematrix &s, const ae_int_t i, const ae_int_t j, const double v);
-
-
-/*************************************************************************
-This function returns I-th row of the sparse matrix stored in CRS format.
-
-NOTE: when  incorrect  I  (outside  of  [0,M-1]) or  matrix (non-CRS)  are
-      passed, this function throws exception.
-
-INPUT PARAMETERS:
-    S           -   sparse M*N matrix in CRS format
-    I           -   row index, 0<=I<M
-    IRow        -   output buffer, can be  preallocated.  In  case  buffer
-                    size  is  too  small  to  store  I-th   row,   it   is
-                    automatically reallocated.
-
-OUTPUT PARAMETERS:
-    IRow        -   array[M], I-th row.
-
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-void sparsegetrow(const sparsematrix &s, const ae_int_t i, real_1d_array &irow);
-
-
-/*************************************************************************
-This function performs in-place conversion from CRS format to  Hash  table
-storage.
-
-INPUT PARAMETERS
-    S           -   sparse matrix in CRS format.
-
-OUTPUT PARAMETERS
-    S           -   sparse matrix in Hash table format.
-
-NOTE:  this  function  has  no  effect  when  called with matrix which is
-already in Hash table mode.
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-void sparseconverttohash(const sparsematrix &s);
-
-
-/*************************************************************************
-This  function  performs  out-of-place  conversion  to  Hash table storage
-format. S0 is copied to S1 and converted on-the-fly.
-
-INPUT PARAMETERS
-    S0          -   sparse matrix in any format.
-
-OUTPUT PARAMETERS
-    S1          -   sparse matrix in Hash table format.
-
-NOTE: if S0 is stored as Hash-table, it is just copied without conversion.
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-void sparsecopytohash(const sparsematrix &s0, sparsematrix &s1);
-
-
-/*************************************************************************
-This  function  performs  out-of-place  conversion  to  CRS format.  S0 is
-copied to S1 and converted on-the-fly.
-
-INPUT PARAMETERS
-    S0          -   sparse matrix in any format.
-
-OUTPUT PARAMETERS
-    S1          -   sparse matrix in CRS format.
-
-NOTE: if S0 is stored as CRS, it is just copied without conversion.
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-void sparsecopytocrs(const sparsematrix &s0, sparsematrix &s1);
-
-
-/*************************************************************************
-This function returns type of the matrix storage format.
-
-INPUT PARAMETERS:
-    S           -   sparse matrix.
-
-RESULT:
-    sparse storage format used by matrix:
-        0   -   Hash-table
-        1   -   CRS-format
-
-NOTE: future  versions  of  ALGLIB  may  include additional sparse storage
-      formats.
-
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-ae_int_t sparsegetmatrixtype(const sparsematrix &s);
-
-
-/*************************************************************************
-This function checks matrix storage format and returns True when matrix is
-stored using Hash table representation.
-
-INPUT PARAMETERS:
-    S   -   sparse matrix.
-
-RESULT:
-    True if matrix type is Hash table
-    False if matrix type is not Hash table
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-bool sparseishash(const sparsematrix &s);
-
-
-/*************************************************************************
-This function checks matrix storage format and returns True when matrix is
-stored using CRS representation.
-
-INPUT PARAMETERS:
-    S   -   sparse matrix.
-
-RESULT:
-    True if matrix type is CRS
-    False if matrix type is not CRS
-
-  -- ALGLIB PROJECT --
-     Copyright 20.07.2012 by Bochkanov Sergey
-*************************************************************************/
-bool sparseiscrs(const sparsematrix &s);
-
-
-/*************************************************************************
-The function frees all memory occupied by  sparse  matrix.  Sparse  matrix
-structure becomes unusable after this call.
-
-OUTPUT PARAMETERS
-    S   -   sparse matrix to delete
-
-  -- ALGLIB PROJECT --
-     Copyright 24.07.2012 by Bochkanov Sergey
-*************************************************************************/
-void sparsefree(sparsematrix &s);
-
-
-/*************************************************************************
-The function returns number of rows of a sparse matrix.
-
-RESULT: number of rows of a sparse matrix.
-
-  -- ALGLIB PROJECT --
-     Copyright 23.08.2012 by Bochkanov Sergey
-*************************************************************************/
-ae_int_t sparsegetnrows(const sparsematrix &s);
-
-
-/*************************************************************************
-The function returns number of columns of a sparse matrix.
-
-RESULT: number of columns of a sparse matrix.
-
-  -- ALGLIB PROJECT --
-     Copyright 23.08.2012 by Bochkanov Sergey
-*************************************************************************/
-ae_int_t sparsegetncols(const sparsematrix &s);
+void smp_cmatrixtrinverse(complex_2d_array &a, const bool isupper, ae_int_t &info, matinvreport &rep);
 
 
 
@@ -4286,6 +6557,23 @@ void rmatrixinvupdateuv(real_2d_array &inva, const ae_int_t n, const real_1d_arr
 Subroutine performing the Schur decomposition of a general matrix by using
 the QR algorithm with multiple shifts.
 
+COMMERCIAL EDITION OF ALGLIB:
+
+  ! Commercial version of ALGLIB includes one  important  improvement   of
+  ! this function, which can be used from C++ and C#:
+  ! * Intel MKL support (lightweight Intel MKL is shipped with ALGLIB)
+  !
+  ! Intel MKL gives approximately constant  (with  respect  to  number  of
+  ! worker threads) acceleration factor which depends on CPU  being  used,
+  ! problem  size  and  "baseline"  ALGLIB  edition  which  is  used   for
+  ! comparison.
+  !
+  ! Multithreaded acceleration is NOT supported for this function.
+  !
+  ! We recommend you to read 'Working with commercial version' section  of
+  ! ALGLIB Reference Manual in order to find out how to  use  performance-
+  ! related features provided by commercial edition of ALGLIB.
+
 The source matrix A is represented as S'*A*S = T, where S is an orthogonal
 matrix (Schur vectors), T - upper quasi-triangular matrix (with blocks of
 sizes 1x1 and 2x2 on the main diagonal).
@@ -4364,6 +6652,10 @@ void rmatrixtranspose(ae_int_t m,
      ae_int_t ib,
      ae_int_t jb,
      ae_state *_state);
+void rmatrixenforcesymmetricity(/* Real    */ ae_matrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     ae_state *_state);
 void cmatrixcopy(ae_int_t m,
      ae_int_t n,
      /* Complex */ ae_matrix* a,
@@ -4436,6 +6728,17 @@ void cmatrixrighttrsm(ae_int_t m,
      ae_int_t i2,
      ae_int_t j2,
      ae_state *_state);
+void _pexec_cmatrixrighttrsm(ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_matrix* a,
+    ae_int_t i1,
+    ae_int_t j1,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t optype,
+    /* Complex */ ae_matrix* x,
+    ae_int_t i2,
+    ae_int_t j2, ae_state *_state);
 void cmatrixlefttrsm(ae_int_t m,
      ae_int_t n,
      /* Complex */ ae_matrix* a,
@@ -4448,6 +6751,17 @@ void cmatrixlefttrsm(ae_int_t m,
      ae_int_t i2,
      ae_int_t j2,
      ae_state *_state);
+void _pexec_cmatrixlefttrsm(ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_matrix* a,
+    ae_int_t i1,
+    ae_int_t j1,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t optype,
+    /* Complex */ ae_matrix* x,
+    ae_int_t i2,
+    ae_int_t j2, ae_state *_state);
 void rmatrixrighttrsm(ae_int_t m,
      ae_int_t n,
      /* Real    */ ae_matrix* a,
@@ -4460,6 +6774,17 @@ void rmatrixrighttrsm(ae_int_t m,
      ae_int_t i2,
      ae_int_t j2,
      ae_state *_state);
+void _pexec_rmatrixrighttrsm(ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_matrix* a,
+    ae_int_t i1,
+    ae_int_t j1,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t optype,
+    /* Real    */ ae_matrix* x,
+    ae_int_t i2,
+    ae_int_t j2, ae_state *_state);
 void rmatrixlefttrsm(ae_int_t m,
      ae_int_t n,
      /* Real    */ ae_matrix* a,
@@ -4472,7 +6797,18 @@ void rmatrixlefttrsm(ae_int_t m,
      ae_int_t i2,
      ae_int_t j2,
      ae_state *_state);
-void cmatrixsyrk(ae_int_t n,
+void _pexec_rmatrixlefttrsm(ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_matrix* a,
+    ae_int_t i1,
+    ae_int_t j1,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t optype,
+    /* Real    */ ae_matrix* x,
+    ae_int_t i2,
+    ae_int_t j2, ae_state *_state);
+void cmatrixherk(ae_int_t n,
      ae_int_t k,
      double alpha,
      /* Complex */ ae_matrix* a,
@@ -4485,6 +6821,18 @@ void cmatrixsyrk(ae_int_t n,
      ae_int_t jc,
      ae_bool isupper,
      ae_state *_state);
+void _pexec_cmatrixherk(ae_int_t n,
+    ae_int_t k,
+    double alpha,
+    /* Complex */ ae_matrix* a,
+    ae_int_t ia,
+    ae_int_t ja,
+    ae_int_t optypea,
+    double beta,
+    /* Complex */ ae_matrix* c,
+    ae_int_t ic,
+    ae_int_t jc,
+    ae_bool isupper, ae_state *_state);
 void rmatrixsyrk(ae_int_t n,
      ae_int_t k,
      double alpha,
@@ -4498,6 +6846,18 @@ void rmatrixsyrk(ae_int_t n,
      ae_int_t jc,
      ae_bool isupper,
      ae_state *_state);
+void _pexec_rmatrixsyrk(ae_int_t n,
+    ae_int_t k,
+    double alpha,
+    /* Real    */ ae_matrix* a,
+    ae_int_t ia,
+    ae_int_t ja,
+    ae_int_t optypea,
+    double beta,
+    /* Real    */ ae_matrix* c,
+    ae_int_t ic,
+    ae_int_t jc,
+    ae_bool isupper, ae_state *_state);
 void cmatrixgemm(ae_int_t m,
      ae_int_t n,
      ae_int_t k,
@@ -4515,6 +6875,22 @@ void cmatrixgemm(ae_int_t m,
      ae_int_t ic,
      ae_int_t jc,
      ae_state *_state);
+void _pexec_cmatrixgemm(ae_int_t m,
+    ae_int_t n,
+    ae_int_t k,
+    ae_complex alpha,
+    /* Complex */ ae_matrix* a,
+    ae_int_t ia,
+    ae_int_t ja,
+    ae_int_t optypea,
+    /* Complex */ ae_matrix* b,
+    ae_int_t ib,
+    ae_int_t jb,
+    ae_int_t optypeb,
+    ae_complex beta,
+    /* Complex */ ae_matrix* c,
+    ae_int_t ic,
+    ae_int_t jc, ae_state *_state);
 void rmatrixgemm(ae_int_t m,
      ae_int_t n,
      ae_int_t k,
@@ -4548,26 +6924,67 @@ void _pexec_rmatrixgemm(ae_int_t m,
     /* Real    */ ae_matrix* c,
     ae_int_t ic,
     ae_int_t jc, ae_state *_state);
+void cmatrixsyrk(ae_int_t n,
+     ae_int_t k,
+     double alpha,
+     /* Complex */ ae_matrix* a,
+     ae_int_t ia,
+     ae_int_t ja,
+     ae_int_t optypea,
+     double beta,
+     /* Complex */ ae_matrix* c,
+     ae_int_t ic,
+     ae_int_t jc,
+     ae_bool isupper,
+     ae_state *_state);
+void _pexec_cmatrixsyrk(ae_int_t n,
+    ae_int_t k,
+    double alpha,
+    /* Complex */ ae_matrix* a,
+    ae_int_t ia,
+    ae_int_t ja,
+    ae_int_t optypea,
+    double beta,
+    /* Complex */ ae_matrix* c,
+    ae_int_t ic,
+    ae_int_t jc,
+    ae_bool isupper, ae_state *_state);
 void rmatrixqr(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Real    */ ae_vector* tau,
      ae_state *_state);
+void _pexec_rmatrixqr(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_vector* tau, ae_state *_state);
 void rmatrixlq(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Real    */ ae_vector* tau,
      ae_state *_state);
+void _pexec_rmatrixlq(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_vector* tau, ae_state *_state);
 void cmatrixqr(/* Complex */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Complex */ ae_vector* tau,
      ae_state *_state);
+void _pexec_cmatrixqr(/* Complex */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_vector* tau, ae_state *_state);
 void cmatrixlq(/* Complex */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Complex */ ae_vector* tau,
      ae_state *_state);
+void _pexec_cmatrixlq(/* Complex */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_vector* tau, ae_state *_state);
 void rmatrixqrunpackq(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
@@ -4575,6 +6992,12 @@ void rmatrixqrunpackq(/* Real    */ ae_matrix* a,
      ae_int_t qcolumns,
      /* Real    */ ae_matrix* q,
      ae_state *_state);
+void _pexec_rmatrixqrunpackq(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_vector* tau,
+    ae_int_t qcolumns,
+    /* Real    */ ae_matrix* q, ae_state *_state);
 void rmatrixqrunpackr(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
@@ -4587,6 +7010,12 @@ void rmatrixlqunpackq(/* Real    */ ae_matrix* a,
      ae_int_t qrows,
      /* Real    */ ae_matrix* q,
      ae_state *_state);
+void _pexec_rmatrixlqunpackq(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Real    */ ae_vector* tau,
+    ae_int_t qrows,
+    /* Real    */ ae_matrix* q, ae_state *_state);
 void rmatrixlqunpackl(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
@@ -4599,6 +7028,12 @@ void cmatrixqrunpackq(/* Complex */ ae_matrix* a,
      ae_int_t qcolumns,
      /* Complex */ ae_matrix* q,
      ae_state *_state);
+void _pexec_cmatrixqrunpackq(/* Complex */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_vector* tau,
+    ae_int_t qcolumns,
+    /* Complex */ ae_matrix* q, ae_state *_state);
 void cmatrixqrunpackr(/* Complex */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
@@ -4611,6 +7046,12 @@ void cmatrixlqunpackq(/* Complex */ ae_matrix* a,
      ae_int_t qrows,
      /* Complex */ ae_matrix* q,
      ae_state *_state);
+void _pexec_cmatrixlqunpackq(/* Complex */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Complex */ ae_vector* tau,
+    ae_int_t qrows,
+    /* Complex */ ae_matrix* q, ae_state *_state);
 void cmatrixlqunpackl(/* Complex */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
@@ -4750,6 +7191,15 @@ ae_bool rmatrixsvd(/* Real    */ ae_matrix* a,
      /* Real    */ ae_matrix* u,
      /* Real    */ ae_matrix* vt,
      ae_state *_state);
+ae_bool _pexec_rmatrixsvd(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    ae_int_t uneeded,
+    ae_int_t vtneeded,
+    ae_int_t additionalmemory,
+    /* Real    */ ae_vector* w,
+    /* Real    */ ae_matrix* u,
+    /* Real    */ ae_matrix* vt, ae_state *_state);
 ae_bool smatrixevd(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_int_t zneeded,
@@ -4885,23 +7335,245 @@ void smatrixrndmultiply(/* Real    */ ae_matrix* a,
 void hmatrixrndmultiply(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_state *_state);
+void sparsecreate(ae_int_t m,
+     ae_int_t n,
+     ae_int_t k,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecreatebuf(ae_int_t m,
+     ae_int_t n,
+     ae_int_t k,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecreatecrs(ae_int_t m,
+     ae_int_t n,
+     /* Integer */ ae_vector* ner,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecreatecrsbuf(ae_int_t m,
+     ae_int_t n,
+     /* Integer */ ae_vector* ner,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecreatesks(ae_int_t m,
+     ae_int_t n,
+     /* Integer */ ae_vector* d,
+     /* Integer */ ae_vector* u,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecreatesksbuf(ae_int_t m,
+     ae_int_t n,
+     /* Integer */ ae_vector* d,
+     /* Integer */ ae_vector* u,
+     sparsematrix* s,
+     ae_state *_state);
+void sparsecopy(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
+void sparsecopybuf(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
+void sparseswap(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
+void sparseadd(sparsematrix* s,
+     ae_int_t i,
+     ae_int_t j,
+     double v,
+     ae_state *_state);
+void sparseset(sparsematrix* s,
+     ae_int_t i,
+     ae_int_t j,
+     double v,
+     ae_state *_state);
+double sparseget(sparsematrix* s,
+     ae_int_t i,
+     ae_int_t j,
+     ae_state *_state);
+double sparsegetdiagonal(sparsematrix* s, ae_int_t i, ae_state *_state);
+void sparsemv(sparsematrix* s,
+     /* Real    */ ae_vector* x,
+     /* Real    */ ae_vector* y,
+     ae_state *_state);
+void sparsemtv(sparsematrix* s,
+     /* Real    */ ae_vector* x,
+     /* Real    */ ae_vector* y,
+     ae_state *_state);
+void sparsemv2(sparsematrix* s,
+     /* Real    */ ae_vector* x,
+     /* Real    */ ae_vector* y0,
+     /* Real    */ ae_vector* y1,
+     ae_state *_state);
+void sparsesmv(sparsematrix* s,
+     ae_bool isupper,
+     /* Real    */ ae_vector* x,
+     /* Real    */ ae_vector* y,
+     ae_state *_state);
+double sparsevsmv(sparsematrix* s,
+     ae_bool isupper,
+     /* Real    */ ae_vector* x,
+     ae_state *_state);
+void sparsemm(sparsematrix* s,
+     /* Real    */ ae_matrix* a,
+     ae_int_t k,
+     /* Real    */ ae_matrix* b,
+     ae_state *_state);
+void sparsemtm(sparsematrix* s,
+     /* Real    */ ae_matrix* a,
+     ae_int_t k,
+     /* Real    */ ae_matrix* b,
+     ae_state *_state);
+void sparsemm2(sparsematrix* s,
+     /* Real    */ ae_matrix* a,
+     ae_int_t k,
+     /* Real    */ ae_matrix* b0,
+     /* Real    */ ae_matrix* b1,
+     ae_state *_state);
+void sparsesmm(sparsematrix* s,
+     ae_bool isupper,
+     /* Real    */ ae_matrix* a,
+     ae_int_t k,
+     /* Real    */ ae_matrix* b,
+     ae_state *_state);
+void sparsetrmv(sparsematrix* s,
+     ae_bool isupper,
+     ae_bool isunit,
+     ae_int_t optype,
+     /* Real    */ ae_vector* x,
+     /* Real    */ ae_vector* y,
+     ae_state *_state);
+void sparsetrsv(sparsematrix* s,
+     ae_bool isupper,
+     ae_bool isunit,
+     ae_int_t optype,
+     /* Real    */ ae_vector* x,
+     ae_state *_state);
+void sparseresizematrix(sparsematrix* s, ae_state *_state);
+double sparsegetaveragelengthofchain(sparsematrix* s, ae_state *_state);
+ae_bool sparseenumerate(sparsematrix* s,
+     ae_int_t* t0,
+     ae_int_t* t1,
+     ae_int_t* i,
+     ae_int_t* j,
+     double* v,
+     ae_state *_state);
+ae_bool sparserewriteexisting(sparsematrix* s,
+     ae_int_t i,
+     ae_int_t j,
+     double v,
+     ae_state *_state);
+void sparsegetrow(sparsematrix* s,
+     ae_int_t i,
+     /* Real    */ ae_vector* irow,
+     ae_state *_state);
+void sparsegetcompressedrow(sparsematrix* s,
+     ae_int_t i,
+     /* Integer */ ae_vector* colidx,
+     /* Real    */ ae_vector* vals,
+     ae_int_t* nzcnt,
+     ae_state *_state);
+void sparsetransposesks(sparsematrix* s, ae_state *_state);
+void sparseconvertto(sparsematrix* s0, ae_int_t fmt, ae_state *_state);
+void sparsecopytobuf(sparsematrix* s0,
+     ae_int_t fmt,
+     sparsematrix* s1,
+     ae_state *_state);
+void sparseconverttohash(sparsematrix* s, ae_state *_state);
+void sparsecopytohash(sparsematrix* s0,
+     sparsematrix* s1,
+     ae_state *_state);
+void sparsecopytohashbuf(sparsematrix* s0,
+     sparsematrix* s1,
+     ae_state *_state);
+void sparseconverttocrs(sparsematrix* s, ae_state *_state);
+void sparsecopytocrs(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
+void sparsecopytocrsbuf(sparsematrix* s0,
+     sparsematrix* s1,
+     ae_state *_state);
+void sparseconverttosks(sparsematrix* s, ae_state *_state);
+void sparsecopytosks(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
+void sparsecopytosksbuf(sparsematrix* s0,
+     sparsematrix* s1,
+     ae_state *_state);
+ae_int_t sparsegetmatrixtype(sparsematrix* s, ae_state *_state);
+ae_bool sparseishash(sparsematrix* s, ae_state *_state);
+ae_bool sparseiscrs(sparsematrix* s, ae_state *_state);
+ae_bool sparseissks(sparsematrix* s, ae_state *_state);
+void sparsefree(sparsematrix* s, ae_state *_state);
+ae_int_t sparsegetnrows(sparsematrix* s, ae_state *_state);
+ae_int_t sparsegetncols(sparsematrix* s, ae_state *_state);
+ae_int_t sparsegetuppercount(sparsematrix* s, ae_state *_state);
+ae_int_t sparsegetlowercount(sparsematrix* s, ae_state *_state);
+void _sparsematrix_init(void* _p, ae_state *_state);
+void _sparsematrix_init_copy(void* _dst, void* _src, ae_state *_state);
+void _sparsematrix_clear(void* _p);
+void _sparsematrix_destroy(void* _p);
+void _sparsebuffers_init(void* _p, ae_state *_state);
+void _sparsebuffers_init_copy(void* _dst, void* _src, ae_state *_state);
+void _sparsebuffers_clear(void* _p);
+void _sparsebuffers_destroy(void* _p);
 void rmatrixlu(/* Real    */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Integer */ ae_vector* pivots,
      ae_state *_state);
+void _pexec_rmatrixlu(/* Real    */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Integer */ ae_vector* pivots, ae_state *_state);
 void cmatrixlu(/* Complex */ ae_matrix* a,
      ae_int_t m,
      ae_int_t n,
      /* Integer */ ae_vector* pivots,
      ae_state *_state);
+void _pexec_cmatrixlu(/* Complex */ ae_matrix* a,
+    ae_int_t m,
+    ae_int_t n,
+    /* Integer */ ae_vector* pivots, ae_state *_state);
 ae_bool hpdmatrixcholesky(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
      ae_state *_state);
+ae_bool _pexec_hpdmatrixcholesky(/* Complex */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper, ae_state *_state);
 ae_bool spdmatrixcholesky(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
+     ae_state *_state);
+ae_bool _pexec_spdmatrixcholesky(/* Real    */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper, ae_state *_state);
+void spdmatrixcholeskyupdateadd1(/* Real    */ ae_matrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Real    */ ae_vector* u,
+     ae_state *_state);
+void spdmatrixcholeskyupdatefix(/* Real    */ ae_matrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Boolean */ ae_vector* fix,
+     ae_state *_state);
+void spdmatrixcholeskyupdateadd1buf(/* Real    */ ae_matrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Real    */ ae_vector* u,
+     /* Real    */ ae_vector* bufr,
+     ae_state *_state);
+void spdmatrixcholeskyupdatefixbuf(/* Real    */ ae_matrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Boolean */ ae_vector* fix,
+     /* Real    */ ae_vector* bufr,
+     ae_state *_state);
+ae_bool sparsecholeskyskyline(sparsematrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     ae_state *_state);
+ae_bool sparsecholeskyx(sparsematrix* a,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Integer */ ae_vector* p0,
+     /* Integer */ ae_vector* p1,
+     ae_int_t ordering,
+     ae_int_t algo,
+     ae_int_t fmt,
+     sparsebuffers* buf,
+     sparsematrix* c,
      ae_state *_state);
 void rmatrixlup(/* Real    */ ae_matrix* a,
      ae_int_t m,
@@ -4996,46 +7668,84 @@ void rmatrixluinverse(/* Real    */ ae_matrix* a,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_rmatrixluinverse(/* Real    */ ae_matrix* a,
+    /* Integer */ ae_vector* pivots,
+    ae_int_t n,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void rmatrixinverse(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_rmatrixinverse(/* Real    */ ae_matrix* a,
+    ae_int_t n,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void cmatrixluinverse(/* Complex */ ae_matrix* a,
      /* Integer */ ae_vector* pivots,
      ae_int_t n,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_cmatrixluinverse(/* Complex */ ae_matrix* a,
+    /* Integer */ ae_vector* pivots,
+    ae_int_t n,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void cmatrixinverse(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_cmatrixinverse(/* Complex */ ae_matrix* a,
+    ae_int_t n,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void spdmatrixcholeskyinverse(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_spdmatrixcholeskyinverse(/* Real    */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void spdmatrixinverse(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_spdmatrixinverse(/* Real    */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void hpdmatrixcholeskyinverse(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_hpdmatrixcholeskyinverse(/* Complex */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void hpdmatrixinverse(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_hpdmatrixinverse(/* Complex */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void rmatrixtrinverse(/* Real    */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
@@ -5043,6 +7753,12 @@ void rmatrixtrinverse(/* Real    */ ae_matrix* a,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
+void _pexec_rmatrixtrinverse(/* Real    */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
 void cmatrixtrinverse(/* Complex */ ae_matrix* a,
      ae_int_t n,
      ae_bool isupper,
@@ -5050,110 +7766,22 @@ void cmatrixtrinverse(/* Complex */ ae_matrix* a,
      ae_int_t* info,
      matinvreport* rep,
      ae_state *_state);
-ae_bool _matinvreport_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _matinvreport_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
+void _pexec_cmatrixtrinverse(/* Complex */ ae_matrix* a,
+    ae_int_t n,
+    ae_bool isupper,
+    ae_bool isunit,
+    ae_int_t* info,
+    matinvreport* rep, ae_state *_state);
+void spdmatrixcholeskyinverserec(/* Real    */ ae_matrix* a,
+     ae_int_t offs,
+     ae_int_t n,
+     ae_bool isupper,
+     /* Real    */ ae_vector* tmp,
+     ae_state *_state);
+void _matinvreport_init(void* _p, ae_state *_state);
+void _matinvreport_init_copy(void* _dst, void* _src, ae_state *_state);
 void _matinvreport_clear(void* _p);
 void _matinvreport_destroy(void* _p);
-void sparsecreate(ae_int_t m,
-     ae_int_t n,
-     ae_int_t k,
-     sparsematrix* s,
-     ae_state *_state);
-void sparsecreatecrs(ae_int_t m,
-     ae_int_t n,
-     /* Integer */ ae_vector* ner,
-     sparsematrix* s,
-     ae_state *_state);
-void sparsecopy(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
-void sparseadd(sparsematrix* s,
-     ae_int_t i,
-     ae_int_t j,
-     double v,
-     ae_state *_state);
-void sparseset(sparsematrix* s,
-     ae_int_t i,
-     ae_int_t j,
-     double v,
-     ae_state *_state);
-double sparseget(sparsematrix* s,
-     ae_int_t i,
-     ae_int_t j,
-     ae_state *_state);
-double sparsegetdiagonal(sparsematrix* s, ae_int_t i, ae_state *_state);
-void sparseconverttocrs(sparsematrix* s, ae_state *_state);
-void sparsemv(sparsematrix* s,
-     /* Real    */ ae_vector* x,
-     /* Real    */ ae_vector* y,
-     ae_state *_state);
-void sparsemtv(sparsematrix* s,
-     /* Real    */ ae_vector* x,
-     /* Real    */ ae_vector* y,
-     ae_state *_state);
-void sparsemv2(sparsematrix* s,
-     /* Real    */ ae_vector* x,
-     /* Real    */ ae_vector* y0,
-     /* Real    */ ae_vector* y1,
-     ae_state *_state);
-void sparsesmv(sparsematrix* s,
-     ae_bool isupper,
-     /* Real    */ ae_vector* x,
-     /* Real    */ ae_vector* y,
-     ae_state *_state);
-void sparsemm(sparsematrix* s,
-     /* Real    */ ae_matrix* a,
-     ae_int_t k,
-     /* Real    */ ae_matrix* b,
-     ae_state *_state);
-void sparsemtm(sparsematrix* s,
-     /* Real    */ ae_matrix* a,
-     ae_int_t k,
-     /* Real    */ ae_matrix* b,
-     ae_state *_state);
-void sparsemm2(sparsematrix* s,
-     /* Real    */ ae_matrix* a,
-     ae_int_t k,
-     /* Real    */ ae_matrix* b0,
-     /* Real    */ ae_matrix* b1,
-     ae_state *_state);
-void sparsesmm(sparsematrix* s,
-     ae_bool isupper,
-     /* Real    */ ae_matrix* a,
-     ae_int_t k,
-     /* Real    */ ae_matrix* b,
-     ae_state *_state);
-void sparseresizematrix(sparsematrix* s, ae_state *_state);
-double sparsegetaveragelengthofchain(sparsematrix* s, ae_state *_state);
-ae_bool sparseenumerate(sparsematrix* s,
-     ae_int_t* t0,
-     ae_int_t* t1,
-     ae_int_t* i,
-     ae_int_t* j,
-     double* v,
-     ae_state *_state);
-ae_bool sparserewriteexisting(sparsematrix* s,
-     ae_int_t i,
-     ae_int_t j,
-     double v,
-     ae_state *_state);
-void sparsegetrow(sparsematrix* s,
-     ae_int_t i,
-     /* Real    */ ae_vector* irow,
-     ae_state *_state);
-void sparseconverttohash(sparsematrix* s, ae_state *_state);
-void sparsecopytohash(sparsematrix* s0,
-     sparsematrix* s1,
-     ae_state *_state);
-void sparsecopytocrs(sparsematrix* s0, sparsematrix* s1, ae_state *_state);
-ae_int_t sparsegetmatrixtype(sparsematrix* s, ae_state *_state);
-ae_bool sparseishash(sparsematrix* s, ae_state *_state);
-ae_bool sparseiscrs(sparsematrix* s, ae_state *_state);
-void sparsefree(sparsematrix* s, ae_state *_state);
-ae_int_t sparsegetnrows(sparsematrix* s, ae_state *_state);
-ae_int_t sparsegetncols(sparsematrix* s, ae_state *_state);
-ae_bool _sparsematrix_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _sparsematrix_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
-void _sparsematrix_clear(void* _p);
-void _sparsematrix_destroy(void* _p);
 void fblscholeskysolve(/* Real    */ ae_matrix* cha,
      double sqrtscalea,
      ae_int_t n,
@@ -5183,8 +7811,8 @@ void fblssolvels(/* Real    */ ae_matrix* a,
      /* Real    */ ae_vector* tmp1,
      /* Real    */ ae_vector* tmp2,
      ae_state *_state);
-ae_bool _fblslincgstate_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _fblslincgstate_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
+void _fblslincgstate_init(void* _p, ae_state *_state);
+void _fblslincgstate_init_copy(void* _dst, void* _src, ae_state *_state);
 void _fblslincgstate_clear(void* _p);
 void _fblslincgstate_destroy(void* _p);
 void normestimatorcreate(ae_int_t m,
@@ -5205,8 +7833,8 @@ void normestimatorresults(normestimatorstate* state,
      double* nrm,
      ae_state *_state);
 void normestimatorrestart(normestimatorstate* state, ae_state *_state);
-ae_bool _normestimatorstate_init(void* _p, ae_state *_state, ae_bool make_automatic);
-ae_bool _normestimatorstate_init_copy(void* _dst, void* _src, ae_state *_state, ae_bool make_automatic);
+void _normestimatorstate_init(void* _p, ae_state *_state);
+void _normestimatorstate_init_copy(void* _dst, void* _src, ae_state *_state);
 void _normestimatorstate_clear(void* _p);
 void _normestimatorstate_destroy(void* _p);
 double rmatrixludet(/* Real    */ ae_matrix* a,

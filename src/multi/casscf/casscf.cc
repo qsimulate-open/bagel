@@ -35,6 +35,10 @@ using namespace bagel;
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
+  // drop the reference if restart is requested
+  if (idata_->get<bool>("restart", false))
+    ref_ = nullptr;
+
   if (!ref_) {
     auto scf = make_shared<RHF>(idat, geom);
     scf->compute();
@@ -92,6 +96,8 @@ void CASSCF::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
 

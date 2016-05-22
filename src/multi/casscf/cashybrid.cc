@@ -35,7 +35,7 @@ void CASHybrid::compute() {
 
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // construct and compute SuperCI
-  {
+  if (maxiter_switch_ != 0) {
     auto idata = make_shared<PTree>(*idata_);
     if (maxiter_switch_ != -1) {
       idata->erase("maxiter");
@@ -46,11 +46,13 @@ void CASHybrid::compute() {
       idata->erase("thresh");
       idata->put("thresh",  thresh_switch_);
     }
+    idata->erase("conv_ignore");
+    idata->put("conv_ignore", true);
     auto active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << "      * CASSCF converged *    " << endl;
       fci_ = active_method->fci();
@@ -63,11 +65,12 @@ void CASHybrid::compute() {
   {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
+    idata->erase("restart");
     auto active_method = make_shared<CASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;
