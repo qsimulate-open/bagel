@@ -5,7 +5,7 @@ Copyright (c) Sergey Bochkanov (ALGLIB project).
 >>> SOURCE LICENSE >>>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation (www.fsf.org); either version 2 of the 
+the Free Software Foundation (www.fsf.org); either version 2 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -298,7 +298,7 @@ OUTPUT PARAMETERS:
 *************************************************************************/
 void mincgcreate(const real_1d_array &x, mincgstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -418,7 +418,7 @@ NOTES:
 *************************************************************************/
 void mincgcreatef(const real_1d_array &x, const double diffstep, mincgstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -797,7 +797,7 @@ bool mincgiteration(const mincgstate &state)
 
 void mincgoptimize(mincgstate &state,
     std::function<void(const real_1d_array &x, double &func, void *ptr)> func,
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -832,7 +832,7 @@ void mincgoptimize(mincgstate &state,
 
 void mincgoptimize(mincgstate &state,
     std::function<void(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)> grad,
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -1371,7 +1371,7 @@ OUTPUT PARAMETERS:
 *************************************************************************/
 void minbleiccreate(const real_1d_array &x, minbleicstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -1491,7 +1491,7 @@ NOTES:
 *************************************************************************/
 void minbleiccreatef(const real_1d_array &x, const double diffstep, minbleicstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -1642,7 +1642,7 @@ solution and in all intermediate points).
 *************************************************************************/
 void minbleicsetlc(const minbleicstate &state, const real_2d_array &c, const integer_1d_array &ct)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t k;
     if( (c.rows()!=ct.length()))
         throw ap_error("Error while calling 'minbleicsetlc': looks like one of arguments has wrong size");
@@ -1949,7 +1949,7 @@ bool minbleiciteration(const minbleicstate &state)
 
 void minbleicoptimize(minbleicstate &state,
     void (*func)(const real_1d_array &x, double &func, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -1984,7 +1984,7 @@ void minbleicoptimize(minbleicstate &state,
 
 void minbleicoptimize(minbleicstate &state,
     void (*grad)(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -2505,7 +2505,7 @@ NOTES:
 *************************************************************************/
 void minlbfgscreate(const ae_int_t m, const real_1d_array &x, minlbfgsstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -2635,7 +2635,7 @@ NOTES:
 *************************************************************************/
 void minlbfgscreatef(const ae_int_t m, const real_1d_array &x, const double diffstep, minlbfgsstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -2976,7 +2976,7 @@ bool minlbfgsiteration(const minlbfgsstate &state)
 
 void minlbfgsoptimize(minlbfgsstate &state,
     std::function<void(const real_1d_array &x, double &func, void *ptr)> func,
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -3011,7 +3011,7 @@ void minlbfgsoptimize(minlbfgsstate &state,
 
 void minlbfgsoptimize(minlbfgsstate &state,
     std::function<void(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)> grad,
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -3307,11 +3307,11 @@ alglib_impl::minqpstate* _minqpstate_owner::c_ptr() const
 {
     return const_cast<alglib_impl::minqpstate*>(p_struct);
 }
-minqpstate::minqpstate() : _minqpstate_owner() 
+minqpstate::minqpstate() : _minqpstate_owner()
 {
 }
 
-minqpstate::minqpstate(const minqpstate &rhs):_minqpstate_owner(rhs) 
+minqpstate::minqpstate(const minqpstate &rhs):_minqpstate_owner(rhs)
 {
 }
 
@@ -3568,7 +3568,7 @@ INPUT PARAMETERS:
 *************************************************************************/
 void minqpsetquadraticterm(const minqpstate &state, const real_2d_array &a)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     bool isupper;
     if( !alglib_impl::ae_is_symmetric(const_cast<alglib_impl::ae_matrix*>(a.c_ptr())) )
         throw ap_error("'a' parameter is not symmetric matrix");
@@ -4078,7 +4078,7 @@ NOTE 1: linear (non-bound) constraints are satisfied only approximately  -
 *************************************************************************/
 void minqpsetlc(const minqpstate &state, const real_2d_array &c, const integer_1d_array &ct)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t k;
     if( (c.rows()!=ct.length()))
         throw ap_error("Error while calling 'minqpsetlc': looks like one of arguments has wrong size");
@@ -4518,7 +4518,7 @@ NOTES:
 *************************************************************************/
 void minlmcreatevj(const ae_int_t m, const real_1d_array &x, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -4676,7 +4676,7 @@ NOTES:
 *************************************************************************/
 void minlmcreatev(const ae_int_t m, const real_1d_array &x, const double diffstep, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -4836,7 +4836,7 @@ NOTES:
 *************************************************************************/
 void minlmcreatefgh(const real_1d_array &x, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -5144,7 +5144,7 @@ bool minlmiteration(const minlmstate &state)
 
 void minlmoptimize(minlmstate &state,
     void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -5180,7 +5180,7 @@ void minlmoptimize(minlmstate &state,
 void minlmoptimize(minlmstate &state,
     void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
     void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -5224,7 +5224,7 @@ void minlmoptimize(minlmstate &state,
     void (*func)(const real_1d_array &x, double &func, void *ptr),
     void (*grad)(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr),
     void (*hess)(const real_1d_array &x, double &func, real_1d_array &grad, real_2d_array &hess, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -5274,7 +5274,7 @@ void minlmoptimize(minlmstate &state,
 void minlmoptimize(minlmstate &state,
     void (*func)(const real_1d_array &x, double &func, void *ptr),
     void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -5318,7 +5318,7 @@ void minlmoptimize(minlmstate &state,
     void (*func)(const real_1d_array &x, double &func, void *ptr),
     void (*grad)(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr),
     void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -5544,7 +5544,7 @@ Since ALGLIB 3.3 it is equivalent to MinLMCreateVJ().
 *************************************************************************/
 void minlmcreatevgj(const ae_int_t m, const real_1d_array &x, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -5596,7 +5596,7 @@ Since ALGLIB 3.3 it is equivalent to MinLMCreateFJ().
 *************************************************************************/
 void minlmcreatefgj(const ae_int_t m, const real_1d_array &x, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -5648,7 +5648,7 @@ provides similar, but more consistent and feature-rich interface.
 *************************************************************************/
 void minlmcreatefj(const ae_int_t m, const real_1d_array &x, minlmstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -5979,7 +5979,7 @@ Was replaced by MinBLEIC subpackage.
 *************************************************************************/
 void minasacreate(const real_1d_array &x, const real_1d_array &bndl, const real_1d_array &bndu, minasastate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
     if( (x.length()!=bndl.length()) || (x.length()!=bndu.length()))
         throw ap_error("Error while calling 'minasacreate': looks like one of arguments has wrong size");
@@ -6114,7 +6114,7 @@ bool minasaiteration(const minasastate &state)
 
 void minasaoptimize(minasastate &state,
     void (*grad)(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -6586,7 +6586,7 @@ OUTPUT PARAMETERS:
 *************************************************************************/
 void minnlccreate(const real_1d_array &x, minnlcstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -6712,7 +6712,7 @@ NOTES:
 *************************************************************************/
 void minnlccreatef(const real_1d_array &x, const double diffstep, minnlcstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -6865,7 +6865,7 @@ NOTE 1: when you solve your problem  with  augmented  Lagrangian   solver,
 *************************************************************************/
 void minnlcsetlc(const minnlcstate &state, const real_2d_array &c, const integer_1d_array &ct)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t k;
     if( (c.rows()!=ct.length()))
         throw ap_error("Error while calling 'minnlcsetlc': looks like one of arguments has wrong size");
@@ -7428,7 +7428,7 @@ bool minnlciteration(const minnlcstate &state)
 
 void minnlcoptimize(minnlcstate &state,
     void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -7463,7 +7463,7 @@ void minnlcoptimize(minnlcstate &state,
 
 void minnlcoptimize(minnlcstate &state,
     void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -8043,7 +8043,7 @@ NOTE: minnscreatef() function may be used if  you  do  not  have  analytic
 *************************************************************************/
 void minnscreate(const real_1d_array &x, minnsstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -8139,7 +8139,7 @@ OUTPUT PARAMETERS:
 *************************************************************************/
 void minnscreatef(const real_1d_array &x, const double diffstep, minnsstate &state)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t n;
 
     n = x.length();
@@ -8296,7 +8296,7 @@ solution and in all intermediate points).
 *************************************************************************/
 void minnssetlc(const minnsstate &state, const real_2d_array &c, const integer_1d_array &ct)
 {
-    alglib_impl::ae_state _alglib_env_state;    
+    alglib_impl::ae_state _alglib_env_state;
     ae_int_t k;
     if( (c.rows()!=ct.length()))
         throw ap_error("Error while calling 'minnssetlc': looks like one of arguments has wrong size");
@@ -8664,7 +8664,7 @@ bool minnsiteration(const minnsstate &state)
 
 void minnsoptimize(minnsstate &state,
     void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -8699,7 +8699,7 @@ void minnsoptimize(minnsstate &state,
 
 void minnsoptimize(minnsstate &state,
     void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
-    void  (*rep)(const real_1d_array &x, double func, void *ptr), 
+    void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
     alglib_impl::ae_state _alglib_env_state;
@@ -9213,7 +9213,7 @@ transformation:
                    { {F,G}          if F<Threshold
     {F_tr, G_tr} = {
                    { {Threshold, 0} if F>=Threshold
-                   
+
 Such transformation allows us to  solve  problems  with  singularities  by
 redefining function in such way that it becomes bounded from above.
 
@@ -9313,7 +9313,7 @@ ae_bool enforceboundaryconstraints(/* Real    */ ae_vector* x,
 /*************************************************************************
 This function projects gradient into feasible area of boundary constrained
 optimization  problem.  X  can  be  infeasible  with  respect  to boundary
-constraints.  We  have  NMain+NSlack  dimensional  X,   with  first  NMain 
+constraints.  We  have  NMain+NSlack  dimensional  X,   with  first  NMain
 components bounded by BL/BU, and next NSlack ones bounded by non-negativity
 constraints.
 
@@ -9402,8 +9402,8 @@ Notes:
       that we activate at least one constraint, and everything else is the
       responsibility of the caller.
     * steps smaller than MaxStepLen still can activate constraints due  to
-      numerical errors. Thus purpose of this  function  is  not  to  guard 
-      against accidental activation of the constraints - quite the reverse, 
+      numerical errors. Thus purpose of this  function  is  not  to  guard
+      against accidental activation of the constraints - quite the reverse,
       its purpose is to activate at least constraint upon performing  step
       which is too long.
     * in case there is no constraints to activate, we return negative
@@ -9412,7 +9412,7 @@ Notes:
       exception otherwise.
 
 INPUT PARAMETERS
-    X           -   array[NMain+NSlack], point. Must be feasible with respect 
+    X           -   array[NMain+NSlack], point. Must be feasible with respect
                     to bound constraints (exception will be thrown otherwise)
     D           -   array[NMain+NSlack], step direction
     alpha       -   scalar multiplier before D, alpha<>0
@@ -9426,7 +9426,7 @@ INPUT PARAMETERS
                     then i-th bound is not present
     NMain       -   number of main variables
     NSlack      -   number of slack variables
-    
+
 OUTPUT PARAMETERS
     VariableToFreeze:
                     * negative value     = step is unbounded, ValueToFreeze=0,
@@ -9516,12 +9516,12 @@ void calculatestepbound(/* Real    */ ae_vector* x,
 
 /*************************************************************************
 This function postprocesses bounded step by:
-* analysing step length (whether it is equal to MaxStepLen) and activating 
+* analysing step length (whether it is equal to MaxStepLen) and activating
   constraint given by VariableToFreeze if needed
 * checking for additional bound constraints to activate
 
 This function uses final point of the step, quantities calculated  by  the
-CalculateStepBound()  function.  As  result,  it  returns  point  which is 
+CalculateStepBound()  function.  As  result,  it  returns  point  which is
 exactly feasible with respect to boundary constraints.
 
 NOTE 1: this function does NOT handle and check linear equality constraints
@@ -9542,16 +9542,16 @@ INPUT PARAMETERS
     NSlack      -   number of slack variables
     VariableToFreeze-result of CalculateStepBound()
     ValueToFreeze-  result of CalculateStepBound()
-    StepTaken   -   actual step length (actual step is equal to the possibly 
+    StepTaken   -   actual step length (actual step is equal to the possibly
                     non-unit step direction vector times this parameter).
                     StepTaken<=MaxStepLen.
     MaxStepLen  -   result of CalculateStepBound()
-    
+
 OUTPUT PARAMETERS
     X           -   point bounded with respect to constraints.
                     components corresponding to active constraints are exactly
                     equal to the boundary values.
-                    
+
 RESULT:
     number of constraints activated in addition to previously active ones.
     Constraints which were DEACTIVATED are ignored (do not influence
@@ -9580,7 +9580,7 @@ ae_int_t postprocessboundedstep(/* Real    */ ae_vector* x,
 
 
     ae_assert(variabletofreeze<0||ae_fp_less_eq(steptaken,maxsteplen), "Assertion failed", _state);
-    
+
     /*
      * Activate constraints
      */
@@ -9606,7 +9606,7 @@ ae_int_t postprocessboundedstep(/* Real    */ ae_vector* x,
             x->ptr.p_double[nmain+i] = (double)(0);
         }
     }
-    
+
     /*
      * Calculate number of constraints being activated
      */
@@ -9634,7 +9634,7 @@ ae_int_t postprocessboundedstep(/* Real    */ ae_vector* x,
 
 
 /*************************************************************************
-The  purpose  of  this  function is to prevent algorithm from "unsticking" 
+The  purpose  of  this  function is to prevent algorithm from "unsticking"
 from  the  active  bound  constraints  because  of  numerical noise in the
 gradient or Hessian.
 
@@ -9643,7 +9643,7 @@ zeroed when both (a) and (b) are true:
 a) corresponding X[i] is exactly at the boundary
 b) |D[i]*S[i]| <= DropTol*Sqrt(SUM(D[i]^2*S[I]^2))
 
-D  can  be  step  direction , antigradient, gradient, or anything similar. 
+D  can  be  step  direction , antigradient, gradient, or anything similar.
 Sign of D does not matter, nor matters step length.
 
 NOTE 1: boundary constraints are expected to be consistent, as well as X
@@ -9664,7 +9664,7 @@ INPUT PARAMETERS
     NMain       -   number of main variables
     NSlack      -   number of slack variables
     DropTol     -   drop tolerance, >=0
-    
+
 OUTPUT PARAMETERS
     X           -   point bounded with respect to constraints.
                     components corresponding to active constraints are exactly
@@ -9743,7 +9743,7 @@ INPUT PARAMETERS
                     then i-th bound is not present
     NMain       -   number of main variables
     NSlack      -   number of slack variables
-    
+
 RESULT:
     number of constraints whose state was changed.
 
@@ -9827,7 +9827,7 @@ OUTPUT PARAMETERS:
                     algorithm termination
     QPIts       -   number of QP iterations (for debug purposes)
     GPAIts      -   number of GPA iterations (for debug purposes)
-    
+
 RESULT:
     True in case X is feasible, False - if it is infeasible.
 
@@ -9931,7 +9931,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
     maxarmijoruns = 5;
     *qpits = 0;
     *gpaits = 0;
-    
+
     /*
      * Initial enforcement of the feasibility with respect to boundary constraints
      * NOTE: after this block we assume that boundary constraints are consistent.
@@ -9944,7 +9944,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
     }
     if( k==0 )
     {
-        
+
         /*
          * No linear constraints, we can exit right now
          */
@@ -9952,7 +9952,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
         ae_frame_leave(_state);
         return result;
     }
-    
+
     /*
      * Scale rows of CE in such way that max(CE[i,0..nmain+nslack-1])=1 for any i=0..k-1
      */
@@ -9969,7 +9969,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             ae_v_muld(&ce->ptr.pp_double[i][0], 1, ae_v_len(0,nmain+nslack), v);
         }
     }
-    
+
     /*
      * Allocate temporaries
      */
@@ -9993,7 +9993,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             colnorms.ptr.p_double[i] = colnorms.ptr.p_double[i]+ae_sqr(ce->ptr.pp_double[j][i], _state);
         }
     }
-    
+
     /*
      * K>0, we have linear equality constraints combined with bound constraints.
      *
@@ -10010,7 +10010,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
     itscount = 0;
     for(;;)
     {
-        
+
         /*
          * Stage 0: check for exact convergence
          */
@@ -10018,7 +10018,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
         feaserr = (double)(0);
         for(i=0; i<=k-1; i++)
         {
-            
+
             /*
              * Calculate:
              * * V - error in the right part
@@ -10047,11 +10047,11 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             ae_frame_leave(_state);
             return result;
         }
-        
+
         /*
          * Stage 1: equality constrained quadratic programming
          *
-         * * treat active bound constraints as equality ones (constraint is considered 
+         * * treat active bound constraints as equality ones (constraint is considered
          *   active when we are at the boundary, independently of the antigradient direction)
          * * calculate unrestricted Newton step to point XM (which may be infeasible)
          *   calculate MaxStepLen = largest step in direction of XM which retains feasibility.
@@ -10081,7 +10081,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
          */
         for(;;)
         {
-            
+
             /*
              * Calculate G - gradient subject to equality constraints,
              * multiply it by inverse of the Hessian diagonal to obtain initial
@@ -10142,7 +10142,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             }
             if( ae_fp_eq(v,(double)(0)) )
             {
-                
+
                 /*
                  * Constrained gradient is zero, QP iterations are over
                  */
@@ -10151,7 +10151,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             calculatestepbound(x, &newtonstep, 1.0, bndl, havebndl, bndu, havebndu, nmain, nslack, &vartofreeze, &valtofreeze, &maxsteplen, _state);
             if( vartofreeze>=0&&ae_fp_eq(maxsteplen,(double)(0)) )
             {
-                
+
                 /*
                  * Can not perform step, QP iterations are over
                  */
@@ -10188,7 +10188,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             }
             ae_v_addd(&x->ptr.p_double[0], 1, &newtonstep.ptr.p_double[0], 1, ae_v_len(0,nmain+nslack-1), armijobeststep);
             enforceboundaryconstraints(x, bndl, havebndl, bndu, havebndu, nmain, nslack, _state);
-            
+
             /*
              * Determine number of active and free constraints
              */
@@ -10227,7 +10227,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 break;
             }
             *qpits = *qpits+1;
-            
+
             /*
              * Reorder variables
              */
@@ -10260,7 +10260,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                     permx.ptr.p_double[idx1] = v;
                 }
             }
-            
+
             /*
              * Calculate (unprojected) gradient:
              * G(xi) = CEi'*(CEi*xi + CEa*xa - b)
@@ -10279,14 +10279,14 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 v = tmpk.ptr.p_double[i];
                 ae_v_addd(&g.ptr.p_double[0], 1, &a.ptr.pp_double[i][0], 1, ae_v_len(0,nfree-1), v);
             }
-            
+
             /*
              * Calculate Newton step using SVD of CEi:
              *     F(xi)  = 0.5*xi'*H*xi + g'*xi    (Taylor decomposition)
              *     XN     = -H^(-1)*g               (new point, solution of the QP subproblem)
-             *     H      = CEi'*CEi                
+             *     H      = CEi'*CEi
              *     CEi    = U*W*V'                  (SVD of CEi)
-             *     H      = V*W^2*V'                 
+             *     H      = V*W^2*V'
              *     H^(-1) = V*W^(-2)*V'
              *     step     = -V*W^(-2)*V'*g          (it is better to perform multiplication from right to left)
              *
@@ -10306,9 +10306,9 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             }
             for(i=0; i<=nsvd-1; i++)
             {
-                
+
                 /*
-                 * It is important to have strict ">" in order to correctly 
+                 * It is important to have strict ">" in order to correctly
                  * handle zero singular values.
                  */
                 if( ae_fp_greater(ae_sqr(w.ptr.p_double[i], _state),ae_sqr(w.ptr.p_double[0], _state)*(nmain+nslack)*ae_machineepsilon) )
@@ -10340,7 +10340,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                     newtonstep.ptr.p_double[idx1] = v;
                 }
             }
-            
+
             /*
              * NewtonStep contains Newton step subject to active bound constraints.
              *
@@ -10357,7 +10357,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             calculatestepbound(x, &newtonstep, 1.0, bndl, havebndl, bndu, havebndu, nmain, nslack, &vartofreeze, &valtofreeze, &maxsteplen, _state);
             if( vartofreeze>=0&&ae_fp_eq(maxsteplen,(double)(0)) )
             {
-                
+
                 /*
                  * Activation of the constraints prevent us from performing step,
                  * QP iterations are over
@@ -10377,7 +10377,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             postprocessboundedstep(&xn, x, bndl, havebndl, bndu, havebndu, nmain, nslack, vartofreeze, valtofreeze, v, maxsteplen, _state);
             if( ae_fp_greater(maxsteplen,(double)(0))&&ae_fp_less(maxsteplen,(double)(1)) )
             {
-                
+
                 /*
                  * Newton step was restricted by activation of the constraints,
                  * perform Armijo iteration.
@@ -10422,14 +10422,14 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             }
             else
             {
-                
+
                 /*
                  * Armijo iteration is not performed
                  */
                 ae_v_move(&xa.ptr.p_double[0], 1, &xn.ptr.p_double[0], 1, ae_v_len(0,nmain+nslack-1));
             }
             stage1isover = ae_fp_greater_eq(maxsteplen,(double)(1))||ae_fp_eq(maxsteplen,(double)(0));
-            
+
             /*
              * Calculate feasibility errors for old and new X.
              * These quantinies are used for debugging purposes only.
@@ -10458,7 +10458,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 break;
             }
         }
-        
+
         /*
          * Stage 2: gradient projection algorithm (GPA)
          *
@@ -10477,13 +10477,13 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
          * * grad(F) = (CE'*CE)*x - (b'*CE)^T
          * * CE[i] denotes I-th row of CE
          * * XM = X+stp*(-PG) where stp=(grad(F(X)),PG)/(CE*PG,CE*PG).
-         *   Here PG is a projected gradient, but in fact it can be arbitrary non-zero 
+         *   Here PG is a projected gradient, but in fact it can be arbitrary non-zero
          *   direction vector - formula for minimum of F along PG still will be correct.
          */
         werechangesinconstraints = ae_false;
         for(gparuns=1; gparuns<=k; gparuns++)
         {
-            
+
             /*
              * calculate feasibility error and G
              */
@@ -10494,7 +10494,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             }
             for(i=0; i<=k-1; i++)
             {
-                
+
                 /*
                  * G += CE[i]^T * (CE[i]*x-b[i])
                  */
@@ -10503,7 +10503,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 feaserr = feaserr+ae_sqr(v, _state);
                 ae_v_addd(&g.ptr.p_double[0], 1, &ce->ptr.pp_double[i][0], 1, ae_v_len(0,nmain+nslack-1), v);
             }
-            
+
             /*
              * project G, filter it (strip numerical noise)
              */
@@ -10521,7 +10521,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                     pg.ptr.p_double[i] = 0.0;
                 }
             }
-            
+
             /*
              * Check GNorm and feasibility.
              * Exit when GNorm is exactly zero.
@@ -10535,7 +10535,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 ae_frame_leave(_state);
                 return result;
             }
-            
+
             /*
              * calculate planned step length
              */
@@ -10547,7 +10547,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 vd = vd+ae_sqr(v, _state);
             }
             stp = vn/vd;
-            
+
             /*
              * Calculate step bound.
              * Perform bounded step and post-process it
@@ -10570,7 +10570,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
             ae_v_move(&xn.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,nmain+nslack-1));
             ae_v_subd(&xn.ptr.p_double[0], 1, &pg.ptr.p_double[0], 1, ae_v_len(0,nmain+nslack-1), v);
             postprocessboundedstep(&xn, x, bndl, havebndl, bndu, havebndu, nmain, nslack, vartofreeze, valtofreeze, v, maxsteplen, _state);
-            
+
             /*
              * update X
              * check stopping criteria
@@ -10583,7 +10583,7 @@ ae_bool findfeasiblepoint(/* Real    */ ae_vector* x,
                 break;
             }
         }
-        
+
         /*
          * Stage 3: decide to stop algorithm or not to stop
          *
@@ -10637,7 +10637,7 @@ parameters DF0 and DF1 from segment [A;B] to [0;1]. Then it builds Hermite
 spline and derivative of it in 0.5. Search scale as Max(DF0,DF1, |F0-F1|).
 Right derivative has to satisfy condition:
     |H-F|/S<=0,01, |H'-F'|/S<=0,01.
-    
+
 INPUT PARAMETERS:
     F0  -   function's value in X-TestStep point;
     DF0 -   derivative's value in X-TestStep point;
@@ -10648,9 +10648,9 @@ INPUT PARAMETERS:
    Width-   width of verification segment.
 
 RESULT:
-    If input derivatives is right then function returns true, else 
+    If input derivatives is right then function returns true, else
     function returns false.
-    
+
   -- ALGLIB --
      Copyright 29.05.2012 by Bochkanov Sergey
 *************************************************************************/
@@ -10700,13 +10700,13 @@ ae_bool derivativecheck(double f0,
 Having quadratic target function
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 and its parabolic model along direction D
 
     F(x0+alpha*D) = D2*alpha^2 + D1*alpha
-    
+
 this function estimates numerical errors in the coefficients of the model.
-    
+
 It is important that this  function  does  NOT calculate D1/D2  -  it only
 estimates numerical errors introduced during evaluation and compares their
 magnitudes against magnitudes of numerical errors. As result, one of three
@@ -10740,7 +10740,7 @@ OUTPUT PARAMETERS:
                 * =0    means "pessimistic estimate  of  numerical  errors
                         in D2 is larger than magnitude of D2 itself; it is
                         impossible to reliably distinguish D2 from zero".
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -10764,7 +10764,7 @@ void estimateparabolicmodel(double absasum,
     *d1est = 0;
     *d2est = 0;
 
-    
+
     /*
      * Error estimates:
      *
@@ -10865,7 +10865,7 @@ void inexactlbfgspreconditioner(/* Real    */ ae_vector* s,
     rvectorsetlengthatleast(&buf->rho, k, _state);
     rmatrixsetlengthatleast(&buf->yk, k, n, _state);
     ivectorsetlengthatleast(&buf->idx, k, _state);
-    
+
     /*
      * Check inputs
      */
@@ -10877,7 +10877,7 @@ void inexactlbfgspreconditioner(/* Real    */ ae_vector* s,
     {
         ae_assert(ae_fp_greater_eq(c->ptr.p_double[i],(double)(0)), "InexactLBFGSPreconditioner: C[]<0", _state);
     }
-    
+
     /*
      * Reorder linear terms according to increase of second derivative.
      * Fill Norms[] array.
@@ -10889,18 +10889,18 @@ void inexactlbfgspreconditioner(/* Real    */ ae_vector* s,
         buf->idx.ptr.p_int[idx] = idx;
     }
     tagsortfasti(&buf->norms, &buf->idx, &buf->bufa, &buf->bufb, k, _state);
-    
+
     /*
      * Apply updates
      */
     for(idx=0; idx<=k-1; idx++)
     {
-        
+
         /*
          * Select update to perform (ordered by ascending of second derivative)
          */
         i = buf->idx.ptr.p_int[idx];
-        
+
         /*
          * Calculate YK and Rho
          */
@@ -10932,12 +10932,12 @@ void inexactlbfgspreconditioner(/* Real    */ ae_vector* s,
     }
     for(idx=k-1; idx>=0; idx--)
     {
-        
+
         /*
          * Select update to perform (ordered by ascending of second derivative)
          */
         i = buf->idx.ptr.p_int[idx];
-        
+
         /*
          * Calculate Alpha[] according to L-BFGS algorithm
          * and update S[]
@@ -10953,12 +10953,12 @@ void inexactlbfgspreconditioner(/* Real    */ ae_vector* s,
     }
     for(idx=0; idx<=k-1; idx++)
     {
-        
+
         /*
          * Select update to perform (ordered by ascending of second derivative)
          */
         i = buf->idx.ptr.p_int[idx];
-        
+
         /*
          * Calculate Beta according to L-BFGS algorithm
          * and update S[]
@@ -11004,7 +11004,7 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
     ae_bool b;
 
 
-    
+
     /*
      * Check inputs
      */
@@ -11018,7 +11018,7 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
     {
         ae_assert(ae_fp_greater_eq(c->ptr.p_double[i],(double)(0)), "PrepareLowRankPreconditioner: C[]<0", _state);
     }
-    
+
     /*
      * Prepare buffer structure; skip zero entries of update.
      */
@@ -11030,7 +11030,7 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
     buf->k = 0;
     for(i=0; i<=k-1; i++)
     {
-        
+
         /*
          * Estimate magnitude of update row; skip zero rows (either W or C are zero)
          */
@@ -11045,7 +11045,7 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
             continue;
         }
         ae_assert(ae_fp_greater(v,(double)(0)), "PrepareLowRankPreconditioner: internal error", _state);
-        
+
         /*
          * Copy non-zero update to buffer
          */
@@ -11057,12 +11057,12 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
         }
         inc(&buf->k, _state);
     }
-    
+
     /*
      * Reset K (for convenience)
      */
     k = buf->k;
-    
+
     /*
      * Prepare diagonal factor; quick exit for K=0
      */
@@ -11074,7 +11074,7 @@ void preparelowrankpreconditioner(/* Real    */ ae_vector* d,
     {
         return;
     }
-    
+
     /*
      * Use Woodbury matrix identity
      */
@@ -11371,7 +11371,7 @@ This subroutine changes main quadratic term of the model.
 INPUT PARAMETERS:
     S       -   model
     A       -   possibly preallocated buffer
-    
+
 OUTPUT PARAMETERS:
     A       -   NxN matrix, full matrix is returned.
                 Zero matrix is returned if model is empty.
@@ -11565,7 +11565,7 @@ void cqmsetq(convexquadraticmodel* s,
     ae_assert((k==0||ae_fp_eq(theta,(double)(0)))||apservisfinitematrix(q, k, s->n, _state), "CQMSetQ: Q is not finite matrix", _state);
     ae_assert((k==0||ae_fp_eq(theta,(double)(0)))||isfinitevector(r, k, _state), "CQMSetQ: R is not finite vector", _state);
     ae_assert(ae_isfinite(theta, _state)&&ae_fp_greater_eq(theta,(double)(0)), "CQMSetQ: Theta<0 or is not finite number", _state);
-    
+
     /*
      * degenerate case: K=0 or Theta=0
      */
@@ -11576,7 +11576,7 @@ void cqmsetq(convexquadraticmodel* s,
         s->issecondarytermchanged = ae_true;
         return;
     }
-    
+
     /*
      * General case: both Theta>0 and K>0
      */
@@ -11656,7 +11656,7 @@ double cqmeval(convexquadraticmodel* s,
     n = s->n;
     ae_assert(isfinitevector(x, n, _state), "CQMEval: X is not finite vector", _state);
     result = 0.0;
-    
+
     /*
      * main quadratic term
      */
@@ -11677,7 +11677,7 @@ double cqmeval(convexquadraticmodel* s,
             result = result+0.5*ae_sqr(x->ptr.p_double[i], _state)*s->tau*s->d.ptr.p_double[i];
         }
     }
-    
+
     /*
      * secondary quadratic term
      */
@@ -11689,7 +11689,7 @@ double cqmeval(convexquadraticmodel* s,
             result = result+0.5*s->theta*ae_sqr(v-s->r.ptr.p_double[i], _state);
         }
     }
-    
+
     /*
      * linear term
      */
@@ -11733,7 +11733,7 @@ void cqmevalx(convexquadraticmodel* s,
     *noise = 0.0;
     eps = 2*ae_machineepsilon;
     mxq = 0.0;
-    
+
     /*
      * Main quadratic term.
      *
@@ -11761,7 +11761,7 @@ void cqmevalx(convexquadraticmodel* s,
             *noise = ae_maxreal(*noise, eps*ae_fabs(v, _state), _state);
         }
     }
-    
+
     /*
      * secondary quadratic term
      *
@@ -11788,7 +11788,7 @@ void cqmevalx(convexquadraticmodel* s,
             *noise = ae_maxreal(*noise, eps*mxq*(2*ae_fabs(v-s->r.ptr.p_double[i], _state)+eps*mxq), _state);
         }
     }
-    
+
     /*
      * linear term
      */
@@ -11797,7 +11797,7 @@ void cqmevalx(convexquadraticmodel* s,
         *r = *r+x->ptr.p_double[i]*s->b.ptr.p_double[i];
         *noise = ae_maxreal(*noise, eps*ae_fabs(x->ptr.p_double[i]*s->b.ptr.p_double[i], _state), _state);
     }
-    
+
     /*
      * Final update of the noise
      */
@@ -11835,7 +11835,7 @@ void cqmgradunconstrained(convexquadraticmodel* s,
     {
         g->ptr.p_double[i] = (double)(0);
     }
-    
+
     /*
      * main quadratic term
      */
@@ -11858,7 +11858,7 @@ void cqmgradunconstrained(convexquadraticmodel* s,
             g->ptr.p_double[i] = g->ptr.p_double[i]+x->ptr.p_double[i]*s->tau*s->d.ptr.p_double[i];
         }
     }
-    
+
     /*
      * secondary quadratic term
      */
@@ -11871,7 +11871,7 @@ void cqmgradunconstrained(convexquadraticmodel* s,
             ae_v_addd(&g->ptr.p_double[0], 1, &s->q.ptr.pp_double[i][0], 1, ae_v_len(0,n-1), v);
         }
     }
-    
+
     /*
      * linear term
      */
@@ -11901,7 +11901,7 @@ double cqmxtadx2(convexquadraticmodel* s,
     n = s->n;
     ae_assert(isfinitevector(x, n, _state), "CQMEval: X is not finite vector", _state);
     result = 0.0;
-    
+
     /*
      * main quadratic term
      */
@@ -11947,7 +11947,7 @@ void cqmadx(convexquadraticmodel* s,
     n = s->n;
     ae_assert(isfinitevector(x, n, _state), "CQMEval: X is not finite vector", _state);
     rvectorsetlengthatleast(y, n, _state);
-    
+
     /*
      * main quadratic term
      */
@@ -12000,7 +12000,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
     ae_bool result;
 
 
-    
+
     /*
      * Rebuild internal structures
      */
@@ -12013,7 +12013,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
     k = s->k;
     nfree = s->nfree;
     result = ae_true;
-    
+
     /*
      * Calculate initial point for the iterative refinement:
      * * free components are set to zero
@@ -12031,7 +12031,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
             x->ptr.p_double[i] = (double)(0);
         }
     }
-    
+
     /*
      * Iterative refinement.
      *
@@ -12046,7 +12046,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
      */
     for(itidx=0; itidx<=cqmodels_newtonrefinementits-1; itidx++)
     {
-        
+
         /*
          * Calculate gradient at the current point.
          * Move free components of the gradient in the beginning.
@@ -12061,7 +12061,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
                 cidx0 = cidx0+1;
             }
         }
-        
+
         /*
          * Free components of the extrema are calculated in the first NFree elements of TXC.
          *
@@ -12069,7 +12069,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
          */
         ae_v_moveneg(&s->txc.ptr.p_double[0], 1, &s->tmpg.ptr.p_double[0], 1, ae_v_len(0,nfree-1));
         cqmodels_cqmsolveea(s, &s->txc, &s->tmp0, _state);
-        
+
         /*
          * Then, we account for rank-K correction.
          * Woodbury matrix identity is used.
@@ -12098,7 +12098,7 @@ ae_bool cqmconstrainedoptimum(convexquadraticmodel* s,
             cqmodels_cqmsolveea(s, &s->tmp1, &s->tmp0, _state);
             ae_v_sub(&s->txc.ptr.p_double[0], 1, &s->tmp1.ptr.p_double[0], 1, ae_v_len(0,nfree-1));
         }
-        
+
         /*
          * Unpack components from TXC into X. We pass through all
          * free components of X and add our step.
@@ -12135,11 +12135,11 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     X       -   scaled vector
-    
+
 NOTE:
     when called for non-SPD matrices, it silently skips components of X
     which correspond to zero or negative diagonal elements.
-    
+
 NOTE:
     this function uses diagonals of A and D; it ignores Q - rank-K term of
     the quadratic model.
@@ -12219,7 +12219,7 @@ double cqmdebugconstrainedevalt(convexquadraticmodel* s,
     }
     result = 0.0;
     nfree = s->nfree;
-    
+
     /*
      * Reorder variables
      */
@@ -12233,14 +12233,14 @@ double cqmdebugconstrainedevalt(convexquadraticmodel* s,
             j = j+1;
         }
     }
-    
+
     /*
      * TQ2, TQ1, TQ0
      *
      */
     if( ae_fp_greater(s->alpha,(double)(0)) )
     {
-        
+
         /*
          * Dense TQ2
          */
@@ -12254,7 +12254,7 @@ double cqmdebugconstrainedevalt(convexquadraticmodel* s,
     }
     else
     {
-        
+
         /*
          * Diagonal TQ2
          */
@@ -12268,7 +12268,7 @@ double cqmdebugconstrainedevalt(convexquadraticmodel* s,
         result = result+s->tq1.ptr.p_double[i]*s->txc.ptr.p_double[i];
     }
     result = result+s->tq0;
-    
+
     /*
      * TK2, TK1, TK0
      */
@@ -12289,7 +12289,7 @@ double cqmdebugconstrainedevalt(convexquadraticmodel* s,
         }
         result = result+s->tk0;
     }
-    
+
     /*
      * TB (Bf and Bc parts)
      */
@@ -12343,7 +12343,7 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
     }
     result = 0.0;
     nfree = s->nfree;
-    
+
     /*
      * Reorder variables
      */
@@ -12357,14 +12357,14 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
             j = j+1;
         }
     }
-    
+
     /*
      * ECA
      */
     ae_assert((s->ecakind==0||s->ecakind==1)||(s->ecakind==-1&&nfree==0), "CQMDebugConstrainedEvalE: unexpected ECAKind", _state);
     if( s->ecakind==0 )
     {
-        
+
         /*
          * Dense ECA
          */
@@ -12380,7 +12380,7 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
     }
     if( s->ecakind==1 )
     {
-        
+
         /*
          * Diagonal ECA
          */
@@ -12389,7 +12389,7 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
             result = result+0.5*ae_sqr(s->ecadiag.ptr.p_double[i]*s->txc.ptr.p_double[i], _state);
         }
     }
-    
+
     /*
      * EQ
      */
@@ -12402,7 +12402,7 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
         }
         result = result+0.5*ae_sqr(v, _state);
     }
-    
+
     /*
      * EB
      */
@@ -12410,7 +12410,7 @@ double cqmdebugconstrainedevale(convexquadraticmodel* s,
     {
         result = result+s->eb.ptr.p_double[i]*s->txc.ptr.p_double[i];
     }
-    
+
     /*
      * EC
      */
@@ -12444,7 +12444,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
 
     if( ae_fp_eq(s->alpha,(double)(0))&&ae_fp_eq(s->tau,(double)(0)) )
     {
-        
+
         /*
          * Non-SPD model, quick exit
          */
@@ -12454,7 +12454,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
     result = ae_true;
     n = s->n;
     k = s->k;
-    
+
     /*
      * Determine number of free variables.
      * Fill TXC - array whose last N-NFree elements store constraints.
@@ -12480,13 +12480,13 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
         }
     }
     nfree = s->nfree;
-    
+
     /*
      * Re-evaluate TQ2/TQ1/TQ0, if needed
      */
     if( s->isactivesetchanged||s->ismaintermchanged )
     {
-        
+
         /*
          * Handle cases Alpha>0 and Alpha=0 separately:
          * * in the first case we have dense matrix
@@ -12495,22 +12495,22 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
          */
         if( ae_fp_greater(s->alpha,(double)(0)) )
         {
-            
+
             /*
              * Alpha>0, dense QP
              *
              * Split variables into two groups - free (F) and constrained (C). Reorder
              * variables in such way that free vars come first, constrained are last:
              * x = [xf, xc].
-             * 
+             *
              * Main quadratic term x'*(alpha*A+tau*D)*x now splits into quadratic part,
              * linear part and constant part:
-             *                   ( alpha*Aff+tau*Df  alpha*Afc        ) ( xf )              
+             *                   ( alpha*Aff+tau*Df  alpha*Afc        ) ( xf )
              *   0.5*( xf' xc' )*(                                    )*(    ) =
              *                   ( alpha*Acf         alpha*Acc+tau*Dc ) ( xc )
              *
              *   = 0.5*xf'*(alpha*Aff+tau*Df)*xf + (alpha*Afc*xc)'*xf + 0.5*xc'(alpha*Acc+tau*Dc)*xc
-             *                    
+             *
              * We store these parts into temporary variables:
              * * alpha*Aff+tau*Df, alpha*Afc, alpha*Acc+tau*Dc are stored into upper
              *   triangle of TQ2
@@ -12538,7 +12538,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                 {
                     if( !s->activeset.ptr.p_bool[i]&&!s->activeset.ptr.p_bool[j] )
                     {
-                        
+
                         /*
                          * Element belongs to Aff
                          */
@@ -12551,7 +12551,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                     }
                     if( !s->activeset.ptr.p_bool[i]&&s->activeset.ptr.p_bool[j] )
                     {
-                        
+
                         /*
                          * Element belongs to Afc
                          */
@@ -12559,7 +12559,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                     }
                     if( s->activeset.ptr.p_bool[i]&&!s->activeset.ptr.p_bool[j] )
                     {
-                        
+
                         /*
                          * Element belongs to Acf
                          */
@@ -12567,7 +12567,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                     }
                     if( s->activeset.ptr.p_bool[i]&&s->activeset.ptr.p_bool[j] )
                     {
-                        
+
                         /*
                          * Element belongs to Acc
                          */
@@ -12596,7 +12596,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                     ridx0 = ridx0+1;
                 }
             }
-            
+
             /*
              * Now we have TQ2, and we can evaluate TQ1.
              * In the special case when we have Alpha=0, NFree=0 or NFree=N,
@@ -12610,7 +12610,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             {
                 rmatrixmv(s->nfree, n-s->nfree, &s->tq2dense, 0, s->nfree, 0, &s->txc, s->nfree, &s->tq1, 0, _state);
             }
-            
+
             /*
              * And finally, we evaluate TQ0.
              */
@@ -12626,22 +12626,22 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
         }
         else
         {
-            
+
             /*
              * Alpha=0, diagonal QP
              *
              * Split variables into two groups - free (F) and constrained (C). Reorder
              * variables in such way that free vars come first, constrained are last:
              * x = [xf, xc].
-             * 
+             *
              * Main quadratic term x'*(tau*D)*x now splits into quadratic and constant
              * parts:
-             *                   ( tau*Df        ) ( xf )              
+             *                   ( tau*Df        ) ( xf )
              *   0.5*( xf' xc' )*(               )*(    ) =
              *                   (        tau*Dc ) ( xc )
              *
              *   = 0.5*xf'*(tau*Df)*xf + 0.5*xc'(tau*Dc)*xc
-             *                    
+             *
              * We store these parts into temporary variables:
              * * tau*Df is stored in TQ2Diag
              * * 0.5*xc'(tau*Dc)*xc is stored into TQ0
@@ -12666,27 +12666,27 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             }
         }
     }
-    
+
     /*
      * Re-evaluate TK2/TK1/TK0, if needed
      */
     if( s->isactivesetchanged||s->issecondarytermchanged )
     {
-        
+
         /*
          * Split variables into two groups - free (F) and constrained (C). Reorder
          * variables in such way that free vars come first, constrained are last:
          * x = [xf, xc].
-         * 
+         *
          * Secondary term theta*(Q*x-r)'*(Q*x-r) now splits into quadratic part,
          * linear part and constant part:
          *             (          ( xf )     )'  (          ( xf )     )
          *   0.5*theta*( (Qf Qc)'*(    ) - r ) * ( (Qf Qc)'*(    ) - r ) =
          *             (          ( xc )     )   (          ( xc )     )
          *
-         *   = 0.5*theta*xf'*(Qf'*Qf)*xf + theta*((Qc*xc-r)'*Qf)*xf + 
+         *   = 0.5*theta*xf'*(Qf'*Qf)*xf + theta*((Qc*xc-r)'*Qf)*xf +
          *     + theta*(-r'*(Qc*xc-r)-0.5*r'*r+0.5*xc'*Qc'*Qc*xc)
-         *                    
+         *
          * We store these parts into temporary variables:
          * * sqrt(theta)*Qf is stored into TK2
          * * theta*((Qc*xc-r)'*Qf) is stored into TK1
@@ -12720,7 +12720,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
         s->tk0 = 0.0;
         if( s->k>0&&ae_fp_greater(s->theta,(double)(0)) )
         {
-            
+
             /*
              * Split Q into Qf and Qc
              * Calculate Qc*xc-r, store in Tmp0
@@ -12757,7 +12757,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             {
                 s->tmp0.ptr.p_double[i] = s->tmp1.ptr.p_double[i]-s->r.ptr.p_double[i];
             }
-            
+
             /*
              * Calculate TK0
              */
@@ -12767,7 +12767,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                 v = v+s->theta*(0.5*ae_sqr(s->tmp1.ptr.p_double[i], _state)-s->r.ptr.p_double[i]*s->tmp0.ptr.p_double[i]-0.5*ae_sqr(s->r.ptr.p_double[i], _state));
             }
             s->tk0 = v;
-            
+
             /*
              * Calculate TK1
              */
@@ -12779,7 +12779,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
                     ae_v_addd(&s->tk1.ptr.p_double[0], 1, &s->tk2.ptr.pp_double[i][0], 1, ae_v_len(0,nfree-1), v);
                 }
             }
-            
+
             /*
              * Calculate TK2
              */
@@ -12793,7 +12793,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             }
         }
     }
-    
+
     /*
      * Re-evaluate TB
      */
@@ -12815,7 +12815,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             }
         }
     }
-    
+
     /*
      * Compose ECA: either dense ECA or diagonal ECA
      */
@@ -12823,7 +12823,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
     {
         if( ae_fp_greater(s->alpha,(double)(0)) )
         {
-            
+
             /*
              * Dense ECA
              */
@@ -12843,7 +12843,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
         }
         else
         {
-            
+
             /*
              * Diagonal ECA
              */
@@ -12859,7 +12859,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             }
         }
     }
-    
+
     /*
      * Compose EQ
      */
@@ -12873,13 +12873,13 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             }
         }
     }
-    
+
     /*
      * Calculate ECCM
      */
     if( ((((s->isactivesetchanged||s->ismaintermchanged)||s->issecondarytermchanged)&&s->k>0)&&ae_fp_greater(s->theta,(double)(0)))&&nfree>0 )
     {
-        
+
         /*
          * Calculate ECCM - Cholesky factor of the "effective" capacitance
          * matrix CM = I + EQ*inv(EffectiveA)*EQ'.
@@ -12923,7 +12923,7 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
             return result;
         }
     }
-    
+
     /*
      * Compose EB and EC
      *
@@ -12939,9 +12939,9 @@ static ae_bool cqmodels_cqmrebuild(convexquadraticmodel* s,
     {
         s->ec = s->ec+s->tb.ptr.p_double[i]*s->txc.ptr.p_double[i];
     }
-    
+
     /*
-     * Change cache status - everything is cached 
+     * Change cache status - everything is cached
      */
     s->ismaintermchanged = ae_false;
     s->issecondarytermchanged = ae_false;
@@ -12962,7 +12962,7 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     X       -   solution, array[S.NFree]
-    
+
 NOTE: when called with zero S.NFree, returns silently
 NOTE: this function assumes that EA is non-degenerate
 
@@ -12980,7 +12980,7 @@ static void cqmodels_cqmsolveea(convexquadraticmodel* s,
     ae_assert((s->ecakind==0||s->ecakind==1)||(s->ecakind==-1&&s->nfree==0), "CQMSolveEA: unexpected ECAKind", _state);
     if( s->ecakind==0 )
     {
-        
+
         /*
          * Dense ECA, use FBLSCholeskySolve() dense solver.
          */
@@ -12988,7 +12988,7 @@ static void cqmodels_cqmsolveea(convexquadraticmodel* s,
     }
     if( s->ecakind==1 )
     {
-        
+
         /*
          * Diagonal ECA
          */
@@ -13205,7 +13205,7 @@ INPUT PARAMETERS:
 NOTE:
     1. You can have NS+ND=0, solver will correctly accept such combination
        and return empty array as problem solution.
-    
+
   -- ALGLIB --
      Copyright 10.10.2012 by Bochkanov Sergey
 *************************************************************************/
@@ -13229,7 +13229,7 @@ void snnlssetproblem(snnlssolver* s,
     ae_assert(b->cnt>=nr, "SNNLSSetProblem: length(B)<NR", _state);
     ae_assert(apservisfinitematrix(a, nr, nd, _state), "SNNLSSetProblem: A contains INF/NAN", _state);
     ae_assert(isfinitevector(b, nr, _state), "SNNLSSetProblem: B contains INF/NAN", _state);
-    
+
     /*
      * Copy problem
      */
@@ -13264,7 +13264,7 @@ INPUT PARAMETERS:
     S   -   SNNLS solver, must be initialized with SNNLSInit() call,
             problem must be set with SNNLSSetProblem() call.
     Idx -   constraint index, 0<=IDX<NS+ND
-    
+
   -- ALGLIB --
      Copyright 10.10.2012 by Bochkanov Sergey
 *************************************************************************/
@@ -13288,15 +13288,15 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     X   -   array[NS+ND], solution
-    
+
 NOTE:
     1. You can have NS+ND=0, solver will correctly accept such combination
        and return empty array as problem solution.
-    
+
     2. Internal field S.DebugFLOPS contains rough estimate of  FLOPs  used
        to solve problem. It can be used for debugging purposes. This field
        is real-valued.
-    
+
   -- ALGLIB --
      Copyright 10.10.2012 by Bochkanov Sergey
 *************************************************************************/
@@ -13327,7 +13327,7 @@ void snnlssolve(snnlssolver* s,
     double stpmax;
 
 
-    
+
     /*
      * Prepare
      */
@@ -13335,7 +13335,7 @@ void snnlssolve(snnlssolver* s,
     nd = s->nd;
     nr = s->nr;
     s->debugflops = 0.0;
-    
+
     /*
      * Handle special cases:
      * * NS+ND=0
@@ -13358,7 +13358,7 @@ void snnlssolve(snnlssolver* s,
         }
         return;
     }
-    
+
     /*
      * Main cycle of BLEIC-SNNLS algorithm.
      * Below we assume that ND>0.
@@ -13385,7 +13385,7 @@ void snnlssolve(snnlssolver* s,
     kicklength = ae_sqrt(ae_minrealnumber, _state);
     for(;;)
     {
-        
+
         /*
          * Initial check for correctness of X
          */
@@ -13393,7 +13393,7 @@ void snnlssolve(snnlssolver* s,
         {
             ae_assert(!s->nnc.ptr.p_bool[i]||ae_fp_greater_eq(x->ptr.p_double[i],(double)(0)), "SNNLS: integrity check failed", _state);
         }
-        
+
         /*
          * Calculate gradient G and constrained descent direction D
          */
@@ -13409,7 +13409,7 @@ void snnlssolve(snnlssolver* s,
                 s->d.ptr.p_double[i] = -s->g.ptr.p_double[i];
             }
         }
-        
+
         /*
          * Decide whether we need "kick" stage: special stage
          * that moves us away from boundary constraints which are
@@ -13431,7 +13431,7 @@ void snnlssolve(snnlssolver* s,
         }
         if( kickneeded )
         {
-            
+
             /*
              * Perform kick.
              * Restart.
@@ -13446,7 +13446,7 @@ void snnlssolve(snnlssolver* s,
             }
             continue;
         }
-        
+
         /*
          * Newton phase
          * Reduce problem to constrained triangular form and perform Newton
@@ -13460,7 +13460,7 @@ void snnlssolve(snnlssolver* s,
         snnls_trdprepare(s, x, &s->regdiag, lambdav, &s->trdd, &s->trda, &s->tmp0, &s->tmp1, &s->tmp2, &s->tmplq, _state);
         for(;;)
         {
-            
+
             /*
              * Skip if debug limit on inner iterations count is turned on.
              */
@@ -13468,7 +13468,7 @@ void snnlssolve(snnlssolver* s,
             {
                 break;
             }
-            
+
             /*
              * Prepare step vector.
              */
@@ -13482,7 +13482,7 @@ void snnlssolve(snnlssolver* s,
                 }
             }
             snnls_trdsolve(&s->trdd, &s->trda, ns, nd, &s->d, _state);
-            
+
             /*
              * Perform unconstrained trial step and compare function values.
              */
@@ -13495,7 +13495,7 @@ void snnlssolve(snnlssolver* s,
             {
                 break;
             }
-            
+
             /*
              * Calculate length of D, maximum step and component which is
              * activated by this step. Break if D is exactly zero.
@@ -13524,7 +13524,7 @@ void snnlssolve(snnlssolver* s,
             {
                 break;
             }
-            
+
             /*
              * Perform constrained step and update X
              * and triangular model.
@@ -13556,7 +13556,7 @@ void snnlssolve(snnlssolver* s,
             {
                 x->ptr.p_double[i] = s->xn.ptr.p_double[i];
             }
-            
+
             /*
              * Increment iterations counter.
              * Terminate if no constraint was activated.
@@ -13567,7 +13567,7 @@ void snnlssolve(snnlssolver* s,
                 break;
             }
         }
-        
+
         /*
          * Update outer iterations counter.
          *
@@ -13714,14 +13714,14 @@ static void snnls_trdprepare(snnlssolver* s,
     double r;
 
 
-    
+
     /*
      * Prepare
      */
     ns = s->ns;
     nd = s->nd;
     nr = s->nr;
-    
+
     /*
      * Triangular reduction
      */
@@ -13730,7 +13730,7 @@ static void snnls_trdprepare(snnlssolver* s,
     rmatrixsetlengthatleast(tmplq, nd, nr+nd, _state);
     for(i=0; i<=ns-1; i++)
     {
-        
+
         /*
          * Apply rotation to I-th row and corresponding row of
          * regularizer. Here V is diagonal element of I-th row,
@@ -13762,7 +13762,7 @@ static void snnls_trdprepare(snnlssolver* s,
     {
         if( s->nnc.ptr.p_bool[ns+j]&&ae_fp_eq(x->ptr.p_double[ns+j],0.0) )
         {
-            
+
             /*
              * Variable is constrained, entire row is set to zero.
              */
@@ -13820,7 +13820,7 @@ static void snnls_trdsolve(/* Real    */ ae_vector* trdd,
     double v;
 
 
-    
+
     /*
      * Solve U'*y=d first.
      *
@@ -13846,7 +13846,7 @@ static void snnls_trdsolve(/* Real    */ ae_vector* trdd,
             d->ptr.p_double[ns+j] = d->ptr.p_double[ns+j]-v*trda->ptr.pp_double[ns+i][j];
         }
     }
-    
+
     /*
      * Solve U*x=y then.
      *
@@ -13899,13 +13899,13 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
     ae_assert(idx>=0, "TRDFixVariable: integrity error", _state);
     ae_assert(idx<ns+nd, "TRDFixVariable: integrity error", _state);
     rvectorsetlengthatleast(tmp, nd, _state);
-    
+
     /*
      * Depending on variable index, two situations are possible
      */
     if( idx<ns )
     {
-        
+
         /*
          * We fix variable in the diagonal part of the model. It means
          * that prior to fixing we have:
@@ -13957,7 +13957,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
          */
         if( nd==0 )
         {
-            
+
             /*
              * Quick exit for empty dense part
              */
@@ -13966,7 +13966,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
         }
         for(j=0; j<=nd-1; j++)
         {
-            
+
             /*
              * Apply first rotation
              */
@@ -13978,7 +13978,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
         {
             if( ae_fp_neq(tmp->ptr.p_double[i],(double)(0)) )
             {
-                
+
                 /*
                  * Apply subsequent rotations with bottom triangular part of A
                  */
@@ -13995,7 +13995,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
     }
     else
     {
-        
+
         /*
          * We fix variable in the dense part of the model. It means
          * that prior to fixing we have:
@@ -14052,7 +14052,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
         }
         for(j=k+1; j<=nd-1; j++)
         {
-            
+
             /*
              * Apply first rotation
              */
@@ -14064,7 +14064,7 @@ static void snnls_trdfixvariable(/* Real    */ ae_vector* trdd,
         {
             if( ae_fp_neq(tmp->ptr.p_double[i],(double)(0)) )
             {
-                
+
                 /*
                  * Apply subsequent rotations with bottom triangular part of A
                  */
@@ -14254,7 +14254,7 @@ void sasinit(ae_int_t n, sactiveset* s, ae_state *_state)
 
     s->n = n;
     s->algostate = 0;
-    
+
     /*
      * Constraints
      */
@@ -14272,7 +14272,7 @@ void sasinit(ae_int_t n, sactiveset* s, ae_state *_state)
         s->hasbndl.ptr.p_bool[i] = ae_false;
         s->hasbndu.ptr.p_bool[i] = ae_false;
     }
-    
+
     /*
      * current point, scale
      */
@@ -14286,7 +14286,7 @@ void sasinit(ae_int_t n, sactiveset* s, ae_state *_state)
         s->s.ptr.p_double[i] = 1.0;
         s->h.ptr.p_double[i] = 1.0;
     }
-    
+
     /*
      * Other
      */
@@ -14465,7 +14465,7 @@ void sassetlc(sactiveset* state,
 
     ae_assert(state->algostate==0, "SASSetLC: you may change constraints only in modification mode", _state);
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -14474,7 +14474,7 @@ void sassetlc(sactiveset* state,
     ae_assert(c->rows>=k, "SASSetLC: Rows(C)<K", _state);
     ae_assert(ct->cnt>=k, "SASSetLC: Length(CT)<K", _state);
     ae_assert(apservisfinitematrix(c, k, n+1, _state), "SASSetLC: C contains infinite or NaN values!", _state);
-    
+
     /*
      * Handle zero K
      */
@@ -14485,7 +14485,7 @@ void sassetlc(sactiveset* state,
         state->constraintschanged = ae_true;
         return;
     }
-    
+
     /*
      * Equality constraints are stored first, in the upper
      * NEC rows of State.CLEIC matrix. Inequality constraints
@@ -14520,7 +14520,7 @@ void sassetlc(sactiveset* state,
             state->nic = state->nic+1;
         }
     }
-    
+
     /*
      * Mark state as changed
      */
@@ -14573,7 +14573,7 @@ void sassetlcx(sactiveset* state,
 
     ae_assert(state->algostate==0, "SASSetLCX: you may change constraints only in modification mode", _state);
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -14582,7 +14582,7 @@ void sassetlcx(sactiveset* state,
     ae_assert(cleic->cols>=n+1||nec+nic==0, "SASSetLCX: Cols(CLEIC)<N+1", _state);
     ae_assert(cleic->rows>=nec+nic, "SASSetLCX: Rows(CLEIC)<NEC+NIC", _state);
     ae_assert(apservisfinitematrix(cleic, nec+nic, n+1, _state), "SASSetLCX: CLEIC contains infinite or NaN values!", _state);
-    
+
     /*
      * Store constraints
      */
@@ -14596,7 +14596,7 @@ void sassetlcx(sactiveset* state,
             state->cleic.ptr.pp_double[i][j] = cleic->ptr.pp_double[i][j];
         }
     }
-    
+
     /*
      * Mark state as changed
      */
@@ -14614,11 +14614,11 @@ INPUT PARAMETERS:
     S   -   active set object
     X   -   initial point (candidate), array[N]. It is expected that X
             contains only finite values (we do not check it).
-    
+
 OUTPUT PARAMETERS:
     S   -   state is changed
     X   -   initial point can be changed to enforce feasibility
-    
+
 RESULT:
     True in case feasible point was found (mode was changed to "optimization")
     False in case no feasible point was found (mode was not changed)
@@ -14644,7 +14644,7 @@ ae_bool sasstartoptimization(sactiveset* state,
     n = state->n;
     nec = state->nec;
     nic = state->nic;
-    
+
     /*
      * Enforce feasibility and calculate set of "candidate"/"active" constraints.
      * Always active equality constraints are marked as "active", all other constraints
@@ -14664,7 +14664,7 @@ ae_bool sasstartoptimization(sactiveset* state,
     ae_v_move(&state->xc.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,n-1));
     if( state->nec+state->nic>0 )
     {
-        
+
         /*
          * General linear constraints are present; general code is used.
          */
@@ -14727,7 +14727,7 @@ ae_bool sasstartoptimization(sactiveset* state,
     }
     else
     {
-        
+
         /*
          * Only bound constraints are present, quick code can be used
          */
@@ -14754,7 +14754,7 @@ ae_bool sasstartoptimization(sactiveset* state,
             }
         }
     }
-    
+
     /*
      * Change state, allocate temporaries
      */
@@ -14856,7 +14856,7 @@ void sasexploredirection(sactiveset* state,
             }
             if( ae_fp_less(vc,(double)(0)) )
             {
-                
+
                 /*
                  * XC is strictly feasible with respect to I-th constraint,
                  * we can perform non-zero step because there is non-zero distance
@@ -14871,7 +14871,7 @@ void sasexploredirection(sactiveset* state,
             }
             else
             {
-                
+
                 /*
                  * XC is at the boundary (or slightly beyond it), and step vector
                  * points beyond the boundary.
@@ -14915,7 +14915,7 @@ INPUT PARAMETERS:
                 assigned to XC[CIdx] during activation. CVal is ignored in
                 other cases.
                 This value is calculated by SASExploreDirection().
-    
+
 OUTPUT PARAMETERS:
     S       -   current point and list of active constraints are changed.
 
@@ -14949,7 +14949,7 @@ ae_int_t sasmoveto(sactiveset* state,
     n = state->n;
     nec = state->nec;
     nic = state->nic;
-    
+
     /*
      * Save previous state, update current point
      */
@@ -14964,21 +14964,21 @@ ae_int_t sasmoveto(sactiveset* state,
     {
         state->mtas.ptr.p_int[i] = state->activeset.ptr.p_int[i];
     }
-    
+
     /*
      * Activate constraints
      */
     wasactivation = ae_false;
     if( needact )
     {
-        
+
         /*
          * Activation
          */
         ae_assert(cidx>=0&&cidx<n+nec+nic, "SASMoveTo: incorrect CIdx", _state);
         if( cidx<n )
         {
-            
+
             /*
              * CIdx in [0,N-1] means that bound constraint was activated.
              * We activate it explicitly to avoid situation when roundoff-error
@@ -14991,7 +14991,7 @@ ae_int_t sasmoveto(sactiveset* state,
     }
     for(i=0; i<=n-1; i++)
     {
-        
+
         /*
          * Post-check (some constraints may be activated because of numerical errors)
          */
@@ -15008,7 +15008,7 @@ ae_int_t sasmoveto(sactiveset* state,
             wasactivation = ae_true;
         }
     }
-    
+
     /*
      * Determine return status:
      * * -1 in case no constraints were activated
@@ -15017,7 +15017,7 @@ ae_int_t sasmoveto(sactiveset* state,
      */
     if( wasactivation )
     {
-        
+
         /*
          * Step activated one/several constraints, but sometimes it is spurious
          * activation - RecalculateConstraints() tells us that constraint is
@@ -15059,13 +15059,13 @@ ae_int_t sasmoveto(sactiveset* state,
     }
     else
     {
-        
+
         /*
          * No activation, return -1
          */
         result = -1;
     }
-    
+
     /*
      * Invalidate basis
      */
@@ -15117,13 +15117,13 @@ INPUT PARAMETERS:
     G       -   array[N], gradient
     D       -   possibly prealocated buffer;
                 automatically resized if needed.
-    
+
 OUTPUT PARAMETERS:
     D       -   descent direction projected onto current active set.
                 Components of D which correspond to active boundary
                 constraints are forced to be exactly zero.
                 In case D is non-zero, it is normalized to have unit norm.
-                
+
 NOTE: in  case active set has N  active  constraints  (or  more),  descent
       direction is forced to be exactly zero.
 
@@ -15152,13 +15152,13 @@ INPUT PARAMETERS:
     G       -   array[N], gradient
     D       -   possibly prealocated buffer;
                 automatically resized if needed.
-    
+
 OUTPUT PARAMETERS:
     D       -   descent direction projected onto current active set.
                 Components of D which correspond to active boundary
                 constraints are forced to be exactly zero.
                 In case D is non-zero, it is normalized to have unit norm.
-                
+
 NOTE: in  case active set has N  active  constraints  (or  more),  descent
       direction is forced to be exactly zero.
 
@@ -15185,12 +15185,12 @@ active set.
 INPUT PARAMETERS:
     S       -   active set object
     D       -   array[N], direction
-    
+
 OUTPUT PARAMETERS:
     D       -   direction projected onto current active set.
                 Components of D which correspond to active boundary
                 constraints are forced to be exactly zero.
-                
+
 NOTE: in  case active set has N  active  constraints  (or  more),  descent
       direction is forced to be exactly zero.
 
@@ -15221,12 +15221,12 @@ multiplied subject to current active set.
 INPUT PARAMETERS:
     S       -   active set object
     D       -   array[N], direction
-    
+
 OUTPUT PARAMETERS:
     D       -   preconditioned direction projected onto current active set.
                 Components of D which correspond to active boundary
                 constraints are forced to be exactly zero.
-                
+
 NOTE: in  case active set has N  active  constraints  (or  more),  descent
       direction is forced to be exactly zero.
 
@@ -15270,7 +15270,7 @@ from leaving feasible set because of rounding errors.
 INPUT PARAMETERS:
     S       -   active set object
     X       -   array[N], candidate point
-    
+
 OUTPUT PARAMETERS:
     X       -   "improved" candidate point:
                 a) feasible with respect to all boundary constraints
@@ -15278,7 +15278,7 @@ OUTPUT PARAMETERS:
                    good level.
     Penalty -   penalty term, which can be added to function value if user
                 wants to penalize violation of constraints (recommended).
-                
+
 NOTE: this function is not intended to find exact  projection  (i.e.  best
       approximation) of X into feasible set. It just improves situation  a
       bit.
@@ -15306,12 +15306,12 @@ void sascorrection(sactiveset* state,
     sasrebuildbasis(state, _state);
     n = state->n;
     rvectorsetlengthatleast(&state->corrtmp, n, _state);
-    
+
     /*
      * Calculate penalty term.
      */
     *penalty = sasactivelcpenalty1(state, x, _state);
-    
+
     /*
      * Perform projection 1.
      *
@@ -15333,7 +15333,7 @@ void sascorrection(sactiveset* state,
      *       following minimization problem.
      *
      *           min ||inv(S)*(x_proj-x)||^2 s.t. As*x_proj=b
-     *       
+     *
      */
     ae_v_move(&state->corrtmp.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,n-1));
     for(i=0; i<=state->basissize-1; i++)
@@ -15355,7 +15355,7 @@ void sascorrection(sactiveset* state,
             state->corrtmp.ptr.p_double[i] = state->xc.ptr.p_double[i];
         }
     }
-    
+
     /*
      * Perform projection 2
      */
@@ -15380,9 +15380,9 @@ constraints (violation of boundary or inactive linear constraints  is  not
 added to penalty).
 
 Penalty term is equal to:
-    
+
     Penalty = SUM( Abs((C_i*x-R_i)/Alpha_i) )
-    
+
 Here:
 * summation is performed for I=0...NEC+NIC-1, ActiveSet[N+I]>0
   (only for rows of CLEIC which are in active set)
@@ -15419,7 +15419,7 @@ double sasactivelcpenalty1(sactiveset* state,
     n = state->n;
     nec = state->nec;
     nic = state->nic;
-    
+
     /*
      * Calculate penalty term.
      */
@@ -15455,12 +15455,12 @@ stopping conditions.
 INPUT PARAMETERS:
     S       -   active set object
     D       -   vector whose norm is calculated
-    
+
 RESULT:
     Vector norm (after projection and scaling)
-    
+
 NOTE: projection is performed first, scaling is performed after projection
-                
+
 NOTE: if we have N active constraints, zero value (exact zero) is returned
 
   -- ALGLIB --
@@ -15480,12 +15480,12 @@ double sasscaledconstrainednorm(sactiveset* state,
     ae_assert(state->algostate==1, "SASMoveTo: is not in optimization mode", _state);
     n = state->n;
     rvectorsetlengthatleast(&state->scntmp, n, _state);
-    
+
     /*
      * Prepare basis (if needed)
      */
     sasrebuildbasis(state, _state);
-    
+
     /*
      * Calculate descent direction
      */
@@ -15504,7 +15504,7 @@ double sasscaledconstrainednorm(sactiveset* state,
     }
     if( nactive+state->basissize>=n )
     {
-        
+
         /*
          * Quick exit if number of active constraints is N or larger
          */
@@ -15531,7 +15531,7 @@ This subroutine turns off optimization mode.
 
 INPUT PARAMETERS:
     S   -   active set object
-    
+
 OUTPUT PARAMETERS:
     S   -   state is changed
 
@@ -15565,7 +15565,7 @@ constraints which are not active are not examined.
 INPUT PARAMETERS:
     State       -   active set object
     GC          -   array[N], gradient at XC
-    
+
 OUTPUT PARAMETERS:
     State       -   active set object, with new set of constraint
 
@@ -15600,7 +15600,7 @@ constraints which are not active are not examined.
 INPUT PARAMETERS:
     State       -   active set object
     GC          -   array[N], gradient at XC
-    
+
 OUTPUT PARAMETERS:
     State       -   active set object, with new set of constraint
 
@@ -15630,7 +15630,7 @@ NOTE: all sets of orthogonal vectors are guaranteed  to  have  same  size.
       P-orthogonal basis is built first, I/S-orthogonal basises are forced
       to have same number of vectors as P-orthogonal one (padded  by  zero
       vectors if needed).
-      
+
 NOTE: this function tracks changes in active set; first call  will  result
       in reorthogonalization
 
@@ -15640,7 +15640,7 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     State   -   active set object with new basis
-    
+
   -- ALGLIB --
      Copyright 20.06.2012 by Bochkanov Sergey
 *************************************************************************/
@@ -15669,7 +15669,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
     rmatrixsetlengthatleast(&state->tmpbasis, nec+nic, n+1, _state);
     state->basissize = 0;
     state->basisisready = ae_true;
-    
+
     /*
      * Determine number of active boundary and non-boundary
      * constraints, move them to TmpBasis. Quick exit if no
@@ -15695,7 +15695,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
     {
         return;
     }
-    
+
     /*
      * Orthogonalize linear constraints (inner product is given by preconditioner)
      * with respect to each other and boundary ones:
@@ -15746,7 +15746,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
     }
     while(state->basissize+nactivebnd<n)
     {
-        
+
         /*
          * Find largest vector, add to basis
          */
@@ -15773,7 +15773,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
         v = 1/vmax;
         ae_v_moved(&state->pbasis.ptr.pp_double[state->basissize][0], 1, &state->tmpbasis.ptr.pp_double[kmax][0], 1, ae_v_len(0,n), v);
         state->basissize = state->basissize+1;
-        
+
         /*
          * Reorthogonalize other vectors with respect to chosen one.
          * Remove it from the array.
@@ -15795,7 +15795,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
             state->tmpbasis.ptr.pp_double[kmax][j] = (double)(0);
         }
     }
-    
+
     /*
      * Orthogonalize linear constraints using traditional dot product
      * with respect to each other and boundary ones.
@@ -15841,7 +15841,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
     }
     for(t=0; t<=state->basissize-1; t++)
     {
-        
+
         /*
          * Find largest vector, add to basis.
          */
@@ -15871,7 +15871,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
         }
         v = 1/vmax;
         ae_v_moved(&state->ibasis.ptr.pp_double[t][0], 1, &state->tmpbasis.ptr.pp_double[kmax][0], 1, ae_v_len(0,n), v);
-        
+
         /*
          * Reorthogonalize other vectors with respect to chosen one.
          * Remove it from the array.
@@ -15893,7 +15893,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
             state->tmpbasis.ptr.pp_double[kmax][j] = (double)(0);
         }
     }
-    
+
     /*
      * Orthogonalize linear constraints using inner product given by
      * scale matrix.
@@ -15939,7 +15939,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
     }
     for(t=0; t<=state->basissize-1; t++)
     {
-        
+
         /*
          * Find largest vector, add to basis.
          */
@@ -15969,7 +15969,7 @@ void sasrebuildbasis(sactiveset* state, ae_state *_state)
         }
         v = 1/vmax;
         ae_v_moved(&state->sbasis.ptr.pp_double[t][0], 1, &state->tmpbasis.ptr.pp_double[kmax][0], 1, ae_v_len(0,n), v);
-        
+
         /*
          * Reorthogonalize other vectors with respect to chosen one.
          * Remove it from the array.
@@ -16006,14 +16006,14 @@ INPUT PARAMETERS:
                 that HA*inv(H)*HA'= I.
     Normalize-  whether we need normalized descent or not
     D       -   possibly preallocated buffer; automatically resized.
-    
+
 OUTPUT PARAMETERS:
     D       -   descent direction projected onto current active set.
                 Components of D which correspond to active boundary
                 constraints are forced to be exactly zero.
                 In case D is non-zero and Normalize is True, it is
                 normalized to have unit norm.
-                
+
 NOTE: if we have N active constraints, D is explicitly set to zero.
 
   -- ALGLIB --
@@ -16038,7 +16038,7 @@ static void sactivesets_constraineddescent(sactiveset* state,
     ae_assert(state->basisisready, "SAS: internal error in ConstrainedDescent() - no basis", _state);
     n = state->n;
     rvectorsetlengthatleast(d, n, _state);
-    
+
     /*
      * Calculate preconditioned constrained descent direction:
      *
@@ -16119,7 +16119,7 @@ INPUT PARAMETERS:
     State       -   active set object
     GC          -   array[N], gradient at XC
     H           -   array[N], Hessian matrix
-    
+
 OUTPUT PARAMETERS:
     State       -   active set object, with new set of constraint
 
@@ -16146,7 +16146,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
 
 
     ae_assert(state->algostate==1, "SASReactivateConstraintsPrec: must be in optimization mode", _state);
-    
+
     /*
      * Prepare
      */
@@ -16154,7 +16154,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
     nec = state->nec;
     nic = state->nic;
     state->basisisready = ae_false;
-    
+
     /*
      * Handle important special case - no linear constraints,
      * only boundary constraints are present
@@ -16182,7 +16182,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         }
         return;
     }
-    
+
     /*
      * General case.
      * Allocate temporaries.
@@ -16194,12 +16194,12 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
     rmatrixsetlengthatleast(&state->rctmpdense1, n, nec+nic, _state);
     bvectorsetlengthatleast(&state->rctmpisequality, n+nec+nic, _state);
     ivectorsetlengthatleast(&state->rctmpconstraintidx, n+nec+nic, _state);
-    
+
     /*
      * Calculate descent direction
      */
     ae_v_moveneg(&state->rctmpg.ptr.p_double[0], 1, &gc->ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Determine candidates to the active set.
      *
@@ -16223,7 +16223,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
     nactivelin = 0;
     for(i=0; i<=n-1; i++)
     {
-        
+
         /*
          * Activate boundary constraints:
          * * copy constraint index to RCTmpConstraintIdx
@@ -16234,7 +16234,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
          */
         if( (state->hasbndl.ptr.p_bool[i]&&state->hasbndu.ptr.p_bool[i])&&ae_fp_eq(state->bndl.ptr.p_double[i],state->bndu.ptr.p_double[i]) )
         {
-            
+
             /*
              * Equality constraint is activated
              */
@@ -16248,7 +16248,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         }
         if( state->hasbndl.ptr.p_bool[i]&&ae_fp_eq(state->xc.ptr.p_double[i],state->bndl.ptr.p_double[i]) )
         {
-            
+
             /*
              * Lower bound is activated
              */
@@ -16262,7 +16262,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         }
         if( state->hasbndu.ptr.p_bool[i]&&ae_fp_eq(state->xc.ptr.p_double[i],state->bndu.ptr.p_double[i]) )
         {
-            
+
             /*
              * Upper bound is activated
              */
@@ -16279,7 +16279,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
     {
         if( i>=nec&&state->activeset.ptr.p_int[n+i]<0 )
         {
-            
+
             /*
              * Inequality constraints are skipped if both (a) constraint was
              * not active, and (b) we are too far away from the boundary.
@@ -16293,7 +16293,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
             }
             if( ae_fp_less_eq(v,-1.0E5*ae_machineepsilon*rowscale) )
             {
-                
+
                 /*
                  * NOTE: it is important to check for non-strict inequality
                  *       because we have to correctly handle zero constraint
@@ -16309,7 +16309,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         nactiveconstraints = nactiveconstraints+1;
         nactivelin = nactivelin+1;
     }
-    
+
     /*
      * Skip if no "candidate" constraints was found
      */
@@ -16335,7 +16335,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         }
         return;
     }
-    
+
     /*
      * General case.
      *
@@ -16345,7 +16345,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
      * NActiveLin linear candidates. Indexes of boundary constraints are stored
      * in RCTmpConstraintIdx[0:NActiveBnd-1], indexes of linear ones are stored
      * in RCTmpConstraintIdx[NActiveBnd:NActiveBnd+NActiveLin-1]. Some of the
-     * constraints are equality ones, some are inequality - as specified by 
+     * constraints are equality ones, some are inequality - as specified by
      * RCTmpIsEquality[i].
      *
      * Now we have to determine active subset of "candidates" set. In order to
@@ -16426,7 +16426,7 @@ static void sactivesets_reactivateconstraints(sactiveset* state,
         }
     }
     snnlssolve(&state->solver, &state->rctmplambdas, _state);
-    
+
     /*
      * After solution of the problem we activate equality constraints (always active)
      * and inequality constraints with non-zero Lagrange multipliers. Then we reorthogonalize
@@ -16988,10 +16988,10 @@ parameter.
 
 INPUT PARAMETERS:
     State   -   structure used to store algorithm state.
-    
+
 RESULT:
     length of last good step being accepted
-    
+
 NOTE:
     result of this function is undefined if you called it before
 
@@ -17105,7 +17105,7 @@ NOTES:
    (analytical) user-supplied  gradient, and one which uses function value
    only  and  numerically  differentiates  function  in  order  to  obtain
    gradient.
-   
+
    Depending  on  the  specific  function  used to create optimizer object
    (either MinCGCreate()  for analytical gradient  or  MinCGCreateF()  for
    numerical differentiation) you should  choose  appropriate  variant  of
@@ -17116,7 +17116,7 @@ NOTES:
    your optimization scheme! Table below lists different  combinations  of
    callback (function/gradient) passed  to  MinCGOptimize()  and  specific
    function used to create optimizer.
-   
+
 
                   |         USER PASSED TO MinCGOptimize()
    CREATED WITH   |  function only   |  function and gradient
@@ -17144,7 +17144,7 @@ ae_bool mincgiteration(mincgstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -17251,11 +17251,11 @@ ae_bool mincgiteration(mincgstate* state, ae_state *_state)
     {
         goto lbl_19;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Prepare
      */
@@ -17267,7 +17267,7 @@ ae_bool mincgiteration(mincgstate* state, ae_state *_state)
     state->repvaridx = -1;
     state->repnfev = 0;
     state->debugrestartscount = 0;
-    
+
     /*
      *  Check, that transferred derivative value is right
      */
@@ -17300,7 +17300,7 @@ lbl_1:
     state->rstate.stage = 2;
     goto lbl_rcomm;
 lbl_2:
-    
+
     /*
      * 2*State.TestStep   -   scale parameter
      * width of segment [Xi-TestStep;Xi+TestStep]
@@ -17317,7 +17317,7 @@ lbl_2:
 lbl_24:
     state->needfg = ae_false;
 lbl_20:
-    
+
     /*
      * Preparations continue:
      * * set XK
@@ -17385,7 +17385,7 @@ lbl_26:
     {
         goto lbl_30;
     }
-    
+
     /*
      * Report algorithm powerup (if needed)
      */
@@ -17412,7 +17412,7 @@ lbl_10:
 lbl_32:
     if( state->terminationneeded||state->userterminationneeded )
     {
-        
+
         /*
          * Combined termination point for "internal" termination by TerminationNeeded flag
          * and for "user" termination by MinCGRequestTermination() (UserTerminationNeeded flag).
@@ -17438,14 +17438,14 @@ lbl_32:
     state->repnfev = 1;
     state->k = 0;
     state->fold = state->f;
-    
+
     /*
      * Choose initial step.
      * Apply preconditioner, if we have something other than default.
      */
     if( state->prectype==2||state->prectype==3 )
     {
-        
+
         /*
          * because we use preconditioner, step length must be equal
          * to the norm of DK
@@ -17455,7 +17455,7 @@ lbl_32:
     }
     else
     {
-        
+
         /*
          * No preconditioner is used, we try to use suggested step
          */
@@ -17468,7 +17468,7 @@ lbl_32:
             state->lastgoodstep = 1.0;
         }
     }
-    
+
     /*
      * Main cycle
      */
@@ -17478,7 +17478,7 @@ lbl_34:
     {
         goto lbl_35;
     }
-    
+
     /*
      * * clear reset flag
      * * clear termination flag
@@ -17498,7 +17498,7 @@ lbl_34:
         state->stp = state->lastgoodstep;
     }
     state->curstpmax = state->stpmax;
-    
+
     /*
      * Report beginning of line search (if needed)
      * Terminate algorithm, if user request was detected
@@ -17521,7 +17521,7 @@ lbl_36:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Minimization along D
      */
@@ -17531,7 +17531,7 @@ lbl_38:
     {
         goto lbl_39;
     }
-    
+
     /*
      * Calculate function/gradient using either
      * analytical gradient supplied by user
@@ -17592,14 +17592,14 @@ lbl_44:
     state->needf = ae_false;
 lbl_41:
     trimfunction(&state->f, &state->g, n, state->trimthreshold, _state);
-    
+
     /*
      * Call MCSRCH again
      */
     mcsrch(n, &state->x, &state->f, &state->g, &state->d, &state->stp, state->curstpmax, mincg_gtol, &state->mcinfo, &state->nfev, &state->work0, &state->lstate, &state->mcstage, _state);
     goto lbl_38;
 lbl_39:
-    
+
     /*
      * * terminate algorithm if "user" request for detected
      * * report end of line search
@@ -17618,7 +17618,7 @@ lbl_39:
     {
         goto lbl_45;
     }
-    
+
     /*
      * Report end of line search (if needed)
      */
@@ -17648,7 +17648,7 @@ lbl_47:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Line search is finished.
      * * calculate BetaK
@@ -17661,26 +17661,26 @@ lbl_47:
      */
     if( state->mcinfo==1&&!state->innerresetneeded )
     {
-        
+
         /*
          * Standard Wolfe conditions hold
          * Calculate Y[K] and D[K]'*Y[K]
          */
         ae_v_add(&state->yk.ptr.p_double[0], 1, &state->g.ptr.p_double[0], 1, ae_v_len(0,n-1));
         vv = ae_v_dotproduct(&state->yk.ptr.p_double[0], 1, &state->dk.ptr.p_double[0], 1, ae_v_len(0,n-1));
-        
+
         /*
          * Calculate BetaK according to DY formula
          */
         v = mincg_preconditionedmultiply2(state, &state->g, &state->g, &state->work0, &state->work1, _state);
         state->betady = v/vv;
-        
+
         /*
          * Calculate BetaK according to HS formula
          */
         v = mincg_preconditionedmultiply2(state, &state->g, &state->yk, &state->work0, &state->work1, _state);
         state->betahs = v/vv;
-        
+
         /*
          * Choose BetaK
          */
@@ -17695,7 +17695,7 @@ lbl_47:
     }
     else
     {
-        
+
         /*
          * Something is wrong (may be function is too wild or too flat)
          * or we just have to restart algo.
@@ -17708,7 +17708,7 @@ lbl_47:
     }
     if( state->repiterationscount>0&&state->repiterationscount%(3+n)==0 )
     {
-        
+
         /*
          * clear Beta every N iterations
          */
@@ -17733,7 +17733,7 @@ lbl_47:
     state->lastscaledstep = state->stp*ae_sqrt(state->lastscaledstep, _state);
     if( state->mcinfo==1 )
     {
-        
+
         /*
          * Step is good (Wolfe conditions hold), update LastGoodStep.
          *
@@ -17757,7 +17757,7 @@ lbl_47:
         }
         state->lastgoodstep = state->stp*ae_sqrt(state->lastgoodstep, _state);
     }
-    
+
     /*
      * Update information.
      * Check stopping conditions.
@@ -17769,7 +17769,7 @@ lbl_47:
     }
     if( !ae_isfinite(v, _state)||!ae_isfinite(state->f, _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
@@ -17781,7 +17781,7 @@ lbl_47:
     state->repiterationscount = state->repiterationscount+1;
     if( state->repiterationscount>=state->maxits&&state->maxits>0 )
     {
-        
+
         /*
          * Too many iterations
          */
@@ -17791,7 +17791,7 @@ lbl_47:
     }
     if( ae_fp_less_eq(ae_sqrt(v, _state),state->epsg) )
     {
-        
+
         /*
          * Gradient is small enough
          */
@@ -17801,13 +17801,13 @@ lbl_47:
     }
     if( !state->innerresetneeded )
     {
-        
+
         /*
          * These conditions are checked only when no inner reset was requested by user
          */
         if( ae_fp_less_eq(state->fold-state->f,state->epsf*ae_maxreal(ae_fabs(state->fold, _state), ae_maxreal(ae_fabs(state->f, _state), 1.0, _state), _state)) )
         {
-            
+
             /*
              * F(k+1)-F(k) is small enough
              */
@@ -17817,7 +17817,7 @@ lbl_47:
         }
         if( ae_fp_less_eq(state->lastscaledstep,state->epsx) )
         {
-            
+
             /*
              * X(k+1)-X(k) is small enough
              */
@@ -17828,7 +17828,7 @@ lbl_47:
     }
     if( state->rstimer<=0 )
     {
-        
+
         /*
          * Too many subsequent restarts
          */
@@ -17836,7 +17836,7 @@ lbl_47:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Shift Xk/Dk, update other information
      */
@@ -17848,7 +17848,7 @@ lbl_47:
 lbl_35:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -17984,7 +17984,7 @@ NOTE: after  request  for  termination  optimizer  may   perform   several
 
 NOTE: calling this function on optimizer which is NOT running will have no
       effect.
-      
+
 NOTE: multiple calls to this function are possible. First call is counted,
       subsequent calls are silently ignored.
 
@@ -18042,7 +18042,7 @@ Preconditioner P is calculated using approximate Woodburry formula:
 where
     VC = sqrt(B)*V
     B  = (C^(-1)+V*D1^(-1)*V')^(-1)
-    
+
 Note that B is calculated using constant term (D1) only,  which  allows us
 to update D2 without recalculation of B or   VC.  Such  preconditioner  is
 exact when D2 is zero. When D2 is non-zero, it is only approximation,  but
@@ -18266,7 +18266,7 @@ static void mincg_preconditionedmultiply(mincgstate* state,
         return;
     }
     ae_assert(state->prectype==2, "MinCG: internal error (unexpected PrecType)", _state);
-    
+
     /*
      * handle part common for VCnt=0 and VCnt<>0
      */
@@ -18274,7 +18274,7 @@ static void mincg_preconditionedmultiply(mincgstate* state,
     {
         x->ptr.p_double[i] = x->ptr.p_double[i]/(state->diagh.ptr.p_double[i]+state->diaghl2.ptr.p_double[i]);
     }
-    
+
     /*
      * if VCnt>0
      */
@@ -18327,7 +18327,7 @@ static double mincg_preconditionedmultiply2(mincgstate* state,
 
     n = state->n;
     vcnt = state->vcnt;
-    
+
     /*
      * no preconditioning
      */
@@ -18347,7 +18347,7 @@ static double mincg_preconditionedmultiply2(mincgstate* state,
         return result;
     }
     ae_assert(state->prectype==2, "MinCG: internal error (unexpected PrecType)", _state);
-    
+
     /*
      * low rank preconditioning
      */
@@ -18388,7 +18388,7 @@ static void mincg_mincginitinternal(ae_int_t n,
     ae_int_t i;
 
 
-    
+
     /*
      * Initialize
      */
@@ -18842,7 +18842,7 @@ void minbleicsetlc(minbleicstate* state,
 
 
     n = state->nmain;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -18851,7 +18851,7 @@ void minbleicsetlc(minbleicstate* state,
     ae_assert(c->rows>=k, "MinBLEICSetLC: Rows(C)<K", _state);
     ae_assert(ct->cnt>=k, "MinBLEICSetLC: Length(CT)<K", _state);
     ae_assert(apservisfinitematrix(c, k, n+1, _state), "MinBLEICSetLC: C contains infinite or NaN values!", _state);
-    
+
     /*
      * Handle zero K
      */
@@ -18861,7 +18861,7 @@ void minbleicsetlc(minbleicstate* state,
         state->nic = 0;
         return;
     }
-    
+
     /*
      * Equality constraints are stored first, in the upper
      * NEC rows of State.CLEIC matrix. Inequality constraints
@@ -18896,7 +18896,7 @@ void minbleicsetlc(minbleicstate* state,
             state->nic = state->nic+1;
         }
     }
-    
+
     /*
      * Normalize rows of State.CLEIC: each row must have unit norm.
      * Norm is calculated using first N elements (i.e. right part is
@@ -19257,7 +19257,7 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -19398,11 +19398,11 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
     {
         goto lbl_23;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Algorithm parameters:
      * * M          number of L-BFGS corrections.
@@ -19413,7 +19413,7 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
      */
     m = ae_minint(5, state->nmain, _state);
     gdecay = minbleic_initialdecay;
-    
+
     /*
      * Init
      */
@@ -19440,7 +19440,7 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
     rvectorsetlengthatleast(&state->bufrho, m, _state);
     rvectorsetlengthatleast(&state->buftheta, m, _state);
     rvectorsetlengthatleast(&state->tmp0, n, _state);
-    
+
     /*
      * Fill TmpPrec with current preconditioner
      */
@@ -19460,7 +19460,7 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
         state->tmpprec.ptr.p_double[i] = (double)(1);
     }
     sassetprecdiag(&state->sas, &state->tmpprec, _state);
-    
+
     /*
      * Start optimization
      */
@@ -19470,7 +19470,7 @@ ae_bool minbleiciteration(minbleicstate* state, ae_state *_state)
         result = ae_false;
         return result;
     }
-    
+
     /*
      *  Check correctness of user-supplied gradient
      */
@@ -19538,7 +19538,7 @@ lbl_2:
 lbl_28:
     state->needfg = ae_false;
 lbl_24:
-    
+
     /*
      * Main cycle of BLEIC-PG algorithm
      */
@@ -19573,7 +19573,7 @@ lbl_30:
     {
         goto lbl_31;
     }
-    
+
     /*
      * Report current point
      */
@@ -19587,7 +19587,7 @@ lbl_5:
 lbl_31:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -19601,7 +19601,7 @@ lbl_33:
     {
         goto lbl_34;
     }
-    
+
     /*
      * Preparations
      *
@@ -19616,7 +19616,7 @@ lbl_33:
     {
         goto lbl_35;
     }
-    
+
     /*
      * Analytic gradient
      */
@@ -19627,7 +19627,7 @@ lbl_6:
     state->needfg = ae_false;
     goto lbl_36;
 lbl_35:
-    
+
     /*
      * Numerical differentiation
      */
@@ -19729,7 +19729,7 @@ lbl_36:
     state->maxscaledgrad = ae_maxreal(state->maxscaledgrad, ginit, _state);
     if( !ae_isfinite(ginit, _state)||!ae_isfinite(state->fc, _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
@@ -19740,7 +19740,7 @@ lbl_36:
     }
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -19749,7 +19749,7 @@ lbl_36:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * LBFGS stage:
      * * during LBFGS iterations we activate new constraints, but never
@@ -19779,7 +19779,7 @@ lbl_42:
     {
         goto lbl_44;
     }
-    
+
     /*
      * At the beginning of each iteration:
      * * SAS.XC stores current point
@@ -19799,7 +19799,7 @@ lbl_42:
      */
     if( state->steepestdescentstep&&ae_fp_less_eq(sasscaledconstrainednorm(&state->sas, &state->ugc, _state),state->epsg) )
     {
-        
+
         /*
          * Gradient is small enough.
          * Optimization is terminated
@@ -19807,7 +19807,7 @@ lbl_42:
         state->repterminationtype = 4;
         goto lbl_44;
     }
-    
+
     /*
      * 1. Calculate search direction D according to L-BFGS algorithm
      *    using constrained preconditioner to perform inner multiplication.
@@ -19840,7 +19840,7 @@ lbl_42:
     v = ae_sqrt(v, _state);
     if( ae_fp_eq(v,(double)(0)) )
     {
-        
+
         /*
          * Search direction is zero.
          * If we perform "steepest descent step", algorithm is terminated.
@@ -19861,7 +19861,7 @@ lbl_42:
     {
         state->stp = 1.0/v;
     }
-    
+
     /*
      * Calculate bound on step length.
      * Step direction is stored
@@ -19870,7 +19870,7 @@ lbl_42:
     state->activationstep = state->curstpmax;
     if( state->cidx>=0&&ae_fp_eq(state->activationstep,(double)(0)) )
     {
-        
+
         /*
          * We are exactly at the boundary, immediate activation
          * of constraint is required. LBFGS stage is continued
@@ -19893,7 +19893,7 @@ lbl_42:
             state->curstpmax = ae_minreal(state->curstpmax, state->stpmax/v, _state);
         }
     }
-    
+
     /*
      * Report beginning of line search (if requested by caller).
      * See description of the MinBLEICState for more information
@@ -19917,7 +19917,7 @@ lbl_42:
 lbl_14:
     state->lsstart = ae_false;
 lbl_45:
-    
+
     /*
      * Minimize F(x+alpha*d)
      */
@@ -19932,7 +19932,7 @@ lbl_47:
     {
         goto lbl_48;
     }
-    
+
     /*
      * Perform correction (constraints are enforced)
      * Copy XN to X
@@ -19942,7 +19942,7 @@ lbl_47:
     {
         state->x.ptr.p_double[i] = state->xn.ptr.p_double[i];
     }
-    
+
     /*
      * Gradient, either user-provided or numerical differentiation
      */
@@ -19951,7 +19951,7 @@ lbl_47:
     {
         goto lbl_49;
     }
-    
+
     /*
      * Analytic gradient
      */
@@ -19963,7 +19963,7 @@ lbl_15:
     state->repnfev = state->repnfev+1;
     goto lbl_50;
 lbl_49:
-    
+
     /*
      * Numerical differentiation
      */
@@ -20053,7 +20053,7 @@ lbl_53:
     state->f = state->fbase;
     state->needf = ae_false;
 lbl_50:
-    
+
     /*
      * Back to MCSRCH
      *
@@ -20072,7 +20072,7 @@ lbl_48:
     ae_v_moveneg(&state->bufyk.ptr.pp_double[state->bufsize][0], 1, &state->cgc.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_add(&state->bufsk.ptr.pp_double[state->bufsize][0], 1, &state->xn.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_add(&state->bufyk.ptr.pp_double[state->bufsize][0], 1, &state->cgn.ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Check for presence of NAN/INF in function/gradient
      */
@@ -20083,20 +20083,20 @@ lbl_48:
     }
     if( !ae_isfinite(v, _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
         state->repterminationtype = -8;
         goto lbl_44;
     }
-    
+
     /*
      * Handle possible failure of the line search or request for termination
      */
     if( mcinfo!=1&&mcinfo!=5 )
     {
-        
+
         /*
          * We can not find step which decreases function value. We have
          * two possibilities:
@@ -20121,7 +20121,7 @@ lbl_48:
         v = ae_sqrt(v, _state);
         if( (state->cidx>=0&&ae_fp_less_eq(v,minbleic_maxnonmonotoniclen))&&state->nonmonotoniccnt>0 )
         {
-            
+
             /*
              * We enforce non-monotonic step:
              * * Stp    := CurStpMax
@@ -20141,7 +20141,7 @@ lbl_48:
         }
         else
         {
-            
+
             /*
              * Numerical properties of the function does not allow
              * us to solve problem. Here we have two possibilities:
@@ -20152,7 +20152,7 @@ lbl_48:
              */
             if( state->steepestdescentstep )
             {
-                
+
                 /*
                  * Algorithm is terminated
                  */
@@ -20161,7 +20161,7 @@ lbl_48:
             }
             else
             {
-                
+
                 /*
                  * Re-evaluate active set and restart LBFGS
                  */
@@ -20173,7 +20173,7 @@ lbl_48:
     {
         goto lbl_44;
     }
-    
+
     /*
      * Current point is updated:
      * * move XC/FC/GC to XP/FP/GP
@@ -20203,13 +20203,13 @@ lbl_56:
     state->repinneriterationscount = state->repinneriterationscount+1;
     if( mcinfo==1 )
     {
-        
+
         /*
          * Accept new LBFGS update given by Sk,Yk
          */
         if( state->bufsize==m )
         {
-            
+
             /*
              * Buffer is full, shift contents by one row
              */
@@ -20226,7 +20226,7 @@ lbl_56:
         }
         else
         {
-            
+
             /*
              * Buffer is not full, increase buffer size by 1
              */
@@ -20236,7 +20236,7 @@ lbl_56:
         vv = ae_v_dotproduct(&state->bufyk.ptr.pp_double[state->bufsize-1][0], 1, &state->bufyk.ptr.pp_double[state->bufsize-1][0], 1, ae_v_len(0,n-1));
         if( ae_fp_eq(v,(double)(0))||ae_fp_eq(vv,(double)(0)) )
         {
-            
+
             /*
              * Strange internal error in LBFGS - either YK=0
              * (which should not have been) or (SK,YK)=0 (again,
@@ -20249,7 +20249,7 @@ lbl_56:
         }
         state->bufrho.ptr.p_double[state->bufsize-1] = 1/v;
         ae_assert(state->bufsize<=m, "MinBLEIC: internal error", _state);
-        
+
         /*
          * Update length of the good step
          */
@@ -20263,7 +20263,7 @@ lbl_56:
         state->lastgoodstep = ae_sqrt(vv, _state);
         minbleic_updateestimateofgoodstep(&state->lastscaledgoodstep, ae_sqrt(v, _state), _state);
     }
-    
+
     /*
      * Check stopping criteria
      *
@@ -20278,7 +20278,7 @@ lbl_56:
      */
     if( mcinfo==1&&state->steepestdescentstep )
     {
-        
+
         /*
          * Step is small enough
          */
@@ -20293,7 +20293,7 @@ lbl_56:
             state->repterminationtype = 2;
             goto lbl_44;
         }
-        
+
         /*
          * Function change is small enough
          */
@@ -20308,12 +20308,12 @@ lbl_56:
         state->repterminationtype = 5;
         goto lbl_44;
     }
-    
+
     /*
      * Clear "steepest descent" flag.
      */
     state->steepestdescentstep = ae_false;
-    
+
     /*
      * Smooth reset (LBFGS memory model is refreshed) or hard restart:
      * * LBFGS model is refreshed, if line search was performed with activation of constraints
@@ -20339,7 +20339,7 @@ lbl_43:
 lbl_44:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -20348,13 +20348,13 @@ lbl_44:
     }
     if( state->repterminationtype!=0 )
     {
-        
+
         /*
          * Algorithm terminated
          */
         goto lbl_34;
     }
-    
+
     /*
      * Decrease decay coefficient. Subsequent L-BFGS stages will
      * have more stringent stopping criteria.
@@ -20366,7 +20366,7 @@ lbl_34:
     state->repouteriterationscount = 1;
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -20418,7 +20418,7 @@ OUTPUT PARAMETERS:
                        termination request was submitted.
                 More information about fields of this  structure  can  be
                 found in the comments on MinBLEICReport datatype.
-   
+
   -- ALGLIB --
      Copyright 28.11.2010 by Bochkanov Sergey
 *************************************************************************/
@@ -20506,18 +20506,18 @@ void minbleicrestartfrom(minbleicstate* state,
 
 
     n = state->nmain;
-    
+
     /*
      * First, check for errors in the inputs
      */
     ae_assert(x->cnt>=n, "MinBLEICRestartFrom: Length(X)<N", _state);
     ae_assert(isfinitevector(x, n, _state), "MinBLEICRestartFrom: X contains infinite or NaN values!", _state);
-    
+
     /*
      * Set XC
      */
     ae_v_move(&state->xstart.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * prepare RComm facilities
      */
@@ -20547,7 +20547,7 @@ NOTE: after  request  for  termination  optimizer  may   perform   several
 
 NOTE: calling this function on optimizer which is NOT running will have no
       effect.
-      
+
 NOTE: multiple calls to this function are possible. First call is counted,
       subsequent calls are silently ignored.
 
@@ -20673,7 +20673,7 @@ static void minbleic_minbleicinitinternal(ae_int_t n,
     ae_matrix_init(&c, 0, 0, DT_REAL, _state);
     ae_vector_init(&ct, 0, DT_INT, _state);
 
-    
+
     /*
      * Initialize
      */
@@ -21037,7 +21037,7 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     State   -   structure which stores algorithm state
-    
+
 
 NOTES:
 1. you may tune stopping conditions with MinLBFGSSetCond() function
@@ -21328,7 +21328,7 @@ void minlbfgscreatex(ae_int_t n,
     ae_assert(n>=1, "MinLBFGS: N too small!", _state);
     ae_assert(m>=1, "MinLBFGS: M too small!", _state);
     ae_assert(m<=n, "MinLBFGS: M too large!", _state);
-    
+
     /*
      * Initialize
      */
@@ -21650,7 +21650,7 @@ ae_bool minlbfgsiteration(minlbfgsstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -21751,11 +21751,11 @@ ae_bool minlbfgsiteration(minlbfgsstate* state, ae_state *_state)
     {
         goto lbl_16;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Unload frequently used variables from State structure
      * (just for typing convinience)
@@ -21767,7 +21767,7 @@ ae_bool minlbfgsiteration(minlbfgsstate* state, ae_state *_state)
     state->repiterationscount = 0;
     state->repvaridx = -1;
     state->repnfev = 0;
-    
+
     /*
      *  Check, that transferred derivative value is right
      */
@@ -21800,7 +21800,7 @@ lbl_1:
     state->rstate.stage = 2;
     goto lbl_rcomm;
 lbl_2:
-    
+
     /*
      * 2*State.TestStep   -   scale parameter
      * width of segment [Xi-TestStep;Xi+TestStep]
@@ -21817,7 +21817,7 @@ lbl_2:
 lbl_21:
     state->needfg = ae_false;
 lbl_17:
-    
+
     /*
      * Calculate F/G at the initial point
      */
@@ -21887,7 +21887,7 @@ lbl_9:
 lbl_27:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -21908,7 +21908,7 @@ lbl_27:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Choose initial step and direction.
      * Apply preconditioner, if we have something other than default.
@@ -21916,7 +21916,7 @@ lbl_27:
     ae_v_moveneg(&state->d.ptr.p_double[0], 1, &state->g.ptr.p_double[0], 1, ae_v_len(0,n-1));
     if( state->prectype==0 )
     {
-        
+
         /*
          * Default preconditioner is used, but we can't use it before iterations will start
          */
@@ -21933,7 +21933,7 @@ lbl_27:
     }
     if( state->prectype==1 )
     {
-        
+
         /*
          * Cholesky preconditioner is used
          */
@@ -21942,7 +21942,7 @@ lbl_27:
     }
     if( state->prectype==2 )
     {
-        
+
         /*
          * diagonal approximation is used
          */
@@ -21954,7 +21954,7 @@ lbl_27:
     }
     if( state->prectype==3 )
     {
-        
+
         /*
          * scale-based preconditioner is used
          */
@@ -21966,7 +21966,7 @@ lbl_27:
     }
     if( state->prectype==4 )
     {
-        
+
         /*
          * rank-k BFGS-based preconditioner is used
          */
@@ -21975,14 +21975,14 @@ lbl_27:
     }
     if( state->prectype==5 )
     {
-        
+
         /*
          * exact low-rank preconditioner is used
          */
         applylowrankpreconditioner(&state->d, &state->lowrankbuf, _state);
         state->stp = (double)(1);
     }
-    
+
     /*
      * Main cycle
      */
@@ -21992,20 +21992,20 @@ lbl_29:
     {
         goto lbl_30;
     }
-    
+
     /*
      * Main cycle: prepare to 1-D line search
      */
     state->p = state->k%m;
     state->q = ae_minint(state->k, m-1, _state);
-    
+
     /*
      * Store X[k], G[k]
      */
     ae_v_move(&state->xp.ptr.p_double[0], 1, &state->x.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_moveneg(&state->sk.ptr.pp_double[state->p][0], 1, &state->x.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_moveneg(&state->yk.ptr.pp_double[state->p][0], 1, &state->g.ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Minimize F(x+alpha*d)
      * Calculate S[k], Y[k]
@@ -22080,7 +22080,7 @@ lbl_34:
 lbl_32:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination.
          * Restore previous point and return.
@@ -22094,7 +22094,7 @@ lbl_32:
     {
         goto lbl_38;
     }
-    
+
     /*
      * report
      */
@@ -22109,7 +22109,7 @@ lbl_38:
     state->repiterationscount = state->repiterationscount+1;
     ae_v_add(&state->sk.ptr.pp_double[state->p][0], 1, &state->x.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_add(&state->yk.ptr.pp_double[state->p][0], 1, &state->g.ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Stopping conditions
      */
@@ -22120,7 +22120,7 @@ lbl_38:
     }
     if( !ae_isfinite(v, _state)||!ae_isfinite(state->f, _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
@@ -22130,7 +22130,7 @@ lbl_38:
     }
     if( state->repiterationscount>=state->maxits&&state->maxits>0 )
     {
-        
+
         /*
          * Too many iterations
          */
@@ -22140,7 +22140,7 @@ lbl_38:
     }
     if( ae_fp_less_eq(ae_sqrt(v, _state),state->epsg) )
     {
-        
+
         /*
          * Gradient is small enough
          */
@@ -22150,7 +22150,7 @@ lbl_38:
     }
     if( ae_fp_less_eq(state->fold-state->f,state->epsf*ae_maxreal(ae_fabs(state->fold, _state), ae_maxreal(ae_fabs(state->f, _state), 1.0, _state), _state)) )
     {
-        
+
         /*
          * F(k+1)-F(k) is small enough
          */
@@ -22165,7 +22165,7 @@ lbl_38:
     }
     if( ae_fp_less_eq(ae_sqrt(v, _state),state->epsx) )
     {
-        
+
         /*
          * X(k+1)-X(k) is small enough
          */
@@ -22173,7 +22173,7 @@ lbl_38:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * If Wolfe conditions are satisfied, we can update
      * limited memory model.
@@ -22183,7 +22183,7 @@ lbl_38:
      */
     if( mcinfo!=1 )
     {
-        
+
         /*
          * Skip update.
          *
@@ -22196,7 +22196,7 @@ lbl_38:
     }
     else
     {
-        
+
         /*
          * Calculate Rho[k], GammaK
          */
@@ -22204,7 +22204,7 @@ lbl_38:
         vv = ae_v_dotproduct(&state->yk.ptr.pp_double[state->p][0], 1, &state->yk.ptr.pp_double[state->p][0], 1, ae_v_len(0,n-1));
         if( ae_fp_eq(v,(double)(0))||ae_fp_eq(vv,(double)(0)) )
         {
-            
+
             /*
              * Rounding errors make further iterations impossible.
              */
@@ -22214,7 +22214,7 @@ lbl_38:
         }
         state->rho.ptr.p_double[state->p] = 1/v;
         state->gammak = v/vv;
-        
+
         /*
          *  Calculate d(k+1) = -H(k+1)*g(k+1)
          *
@@ -22240,7 +22240,7 @@ lbl_38:
         }
         if( state->prectype==0 )
         {
-            
+
             /*
              * Simple preconditioner is used
              */
@@ -22249,7 +22249,7 @@ lbl_38:
         }
         if( state->prectype==1 )
         {
-            
+
             /*
              * Cholesky preconditioner is used
              */
@@ -22257,7 +22257,7 @@ lbl_38:
         }
         if( state->prectype==2 )
         {
-            
+
             /*
              * diagonal approximation is used
              */
@@ -22268,7 +22268,7 @@ lbl_38:
         }
         if( state->prectype==3 )
         {
-            
+
             /*
              * scale-based preconditioner is used
              */
@@ -22279,7 +22279,7 @@ lbl_38:
         }
         if( state->prectype==4 )
         {
-            
+
             /*
              * Rank-K BFGS-based preconditioner is used
              */
@@ -22287,7 +22287,7 @@ lbl_38:
         }
         if( state->prectype==5 )
         {
-            
+
             /*
              * Exact low-rank preconditioner is used
              */
@@ -22301,7 +22301,7 @@ lbl_38:
             ae_v_addd(&state->work.ptr.p_double[0], 1, &state->sk.ptr.pp_double[ic][0], 1, ae_v_len(0,n-1), vv);
         }
         ae_v_moveneg(&state->d.ptr.p_double[0], 1, &state->work.ptr.p_double[0], 1, ae_v_len(0,n-1));
-        
+
         /*
          * Next step
          */
@@ -22312,7 +22312,7 @@ lbl_38:
 lbl_30:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -22454,7 +22454,7 @@ NOTE: after  request  for  termination  optimizer  may   perform   several
 
 NOTE: calling this function on optimizer which is NOT running will have no
       effect.
-      
+
 NOTE: multiple calls to this function are possible. First call is counted,
       subsequent calls are silently ignored.
 
@@ -22775,7 +22775,7 @@ This function runs QQP solver; it returns after optimization  process  was
 completed. Following QP problem is solved:
 
     min(0.5*(x-x_origin)'*A*(x-x_origin)+b'*(x-x_origin))
-    
+
 subject to boundary constraints.
 
 IMPORTANT: UNLIKE MANY OTHER SOLVERS, THIS FUNCTION DOES NOT  REQUIRE  YOU
@@ -22815,8 +22815,8 @@ INPUT PARAMETERS:
                     * previously allocated memory is reused as much
                       as possible
     XS          -   initial point, array[NC]
-    
-    
+
+
 OUTPUT PARAMETERS:
     XS          -   last point
     TerminationType-termination type:
@@ -22876,7 +22876,7 @@ void qqpoptimize(convexquadraticmodel* ac,
 
     *terminationtype = 0;
 
-    
+
     /*
      * Primary checks
      */
@@ -22894,7 +22894,7 @@ void qqpoptimize(convexquadraticmodel* ac,
     sstate->repouteriterationscount = 0;
     sstate->repncholesky = 0;
     sstate->repncupdates = 0;
-    
+
     /*
      * Several checks
      * * matrix size
@@ -22923,7 +22923,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         }
     }
     ae_assert(settings->cgphase||settings->cnphase, "QQPOptimize: both phases (CG and Newton) are inactive", _state);
-    
+
     /*
      * Allocate data structures
      */
@@ -22941,7 +22941,7 @@ void qqpoptimize(convexquadraticmodel* ac,
     rvectorsetlengthatleast(&sstate->tmp0, n, _state);
     rvectorsetlengthatleast(&sstate->stpbuf, 15, _state);
     sasinit(n, &sstate->sas, _state);
-    
+
     /*
      * Scale/shift problem coefficients:
      *
@@ -22955,10 +22955,10 @@ void qqpoptimize(convexquadraticmodel* ac,
      * stored into SState.DenseA and SState.B.
      *
      * NOTE: DenseA/DenseB are arrays whose lengths are
-     *       NMain, not N=NMain+NSlack! We store reduced 
+     *       NMain, not N=NMain+NSlack! We store reduced
      *       matrix and vector because extend parts (last
      *       NSlack rows/columns) are exactly zero.
-     *       
+     *
      */
     rvectorsetlengthatleast(&sstate->b, nmain, _state);
     for(i=0; i<=nmain-1; i++)
@@ -22967,7 +22967,7 @@ void qqpoptimize(convexquadraticmodel* ac,
     }
     if( akind==0 )
     {
-        
+
         /*
          * Dense QP problem - just copy and scale.
          */
@@ -22990,7 +22990,7 @@ void qqpoptimize(convexquadraticmodel* ac,
     }
     else
     {
-        
+
         /*
          * Sparse QP problem - a bit tricky. Depending on format of the
          * input we use different strategies for copying matrix:
@@ -23016,7 +23016,7 @@ void qqpoptimize(convexquadraticmodel* ac,
                 sstate->sparsea.vals.ptr.p_double[k] = v;
                 if( i==j )
                 {
-                    
+
                     /*
                      * Diagonal terms are counted only once
                      */
@@ -23026,7 +23026,7 @@ void qqpoptimize(convexquadraticmodel* ac,
                 }
                 else
                 {
-                    
+
                     /*
                      * Offdiagonal terms are counted twice
                      */
@@ -23038,7 +23038,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             }
         }
     }
-    
+
     /*
      * Load box constraints into State structure.
      *
@@ -23075,7 +23075,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         sstate->havebndu.ptr.p_bool[i] = ae_false;
         sstate->bndu.ptr.p_double[i] = _state->v_posinf;
     }
-    
+
     /*
      * Shift/scale linear constraints with transformation y=(x-x_origin)/s:
      * * constraint "c[i]'*x = b[i]" becomes "(s[i]*c[i])'*x = b[i]-c[i]'*x_origin".
@@ -23110,7 +23110,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             }
         }
     }
-    
+
     /*
      * Process initial point:
      * * first NMain components are equal to XS-XOriginC
@@ -23142,7 +23142,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         v = ae_v_dotproduct(&sstate->xs.ptr.p_double[0], 1, &sstate->cleic.ptr.pp_double[nec+i][0], 1, ae_v_len(0,nmain-1));
         sstate->xs.ptr.p_double[nmain+i] = ae_maxreal(sstate->cleic.ptr.pp_double[nec+i][n]-v, 0.0, _state);
     }
-    
+
     /*
      * Prepare "active set" structure
      */
@@ -23153,7 +23153,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         *terminationtype = -3;
         return;
     }
-    
+
     /*
      * Select sparse direct solver
      */
@@ -23175,7 +23175,7 @@ void qqpoptimize(convexquadraticmodel* ac,
     {
         sparsesolver = 0;
     }
-    
+
     /*
      * Main loop.
      *
@@ -23200,7 +23200,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         }
         if( sstate->repouteriterationscount>0 )
         {
-            
+
             /*
              * Check EpsF- and EpsX-based stopping criteria.
              * Because problem was already scaled, we do not scale step before checking its length.
@@ -23208,7 +23208,7 @@ void qqpoptimize(convexquadraticmodel* ac,
              */
             if( ae_fp_greater(settings->epsf,(double)(0)) )
             {
-                
+
                 /*
                  * NOTE 1: here we rely on the fact that ProjectedTargetFunction() ignore D when Stp=0
                  * NOTE 2: code below handles situation when update increases function value instead
@@ -23249,7 +23249,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         }
         for(cgcnt=0; cgcnt<=cgmax-1; cgcnt++)
         {
-            
+
             /*
              * Calculate unconstrained gradient GC for "extended" QP problem
              * Determine active set, current constrained gradient CGC.
@@ -23268,7 +23268,7 @@ void qqpoptimize(convexquadraticmodel* ac,
                 *terminationtype = 4;
                 break;
             }
-            
+
             /*
              * Prepare search direction DC and explore it.
              *
@@ -23308,7 +23308,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             ae_v_addd(&sstate->dc.ptr.p_double[0], 1, &sstate->dp.ptr.p_double[0], 1, ae_v_len(0,n-1), beta);
             sasconstraineddirection(&sstate->sas, &sstate->dc, _state);
             sasexploredirection(&sstate->sas, &sstate->dc, &stpmax, &cidx, &cval, _state);
-            
+
             /*
              * Build quadratic model of F along descent direction:
              *
@@ -23321,7 +23321,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             qqpsolver_quadraticmodel(sstate, &sstate->sas.xc, &sstate->dc, &sstate->gc, &d1, &d1est, &d2, &d2est, _state);
             if( ae_fp_eq(d1,(double)(0))&&ae_fp_eq(d2,(double)(0)) )
             {
-                
+
                 /*
                  * D1 and D2 are exactly zero, success.
                  * After this if-then we assume that D is non-zero.
@@ -23331,7 +23331,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             }
             if( d1est>=0 )
             {
-                
+
                 /*
                  * Numerical noise is too large, it means that we are close
                  * to minimum - and that further improvement is impossible.
@@ -23344,7 +23344,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             }
             if( d2est<=0&&cidx<0 )
             {
-                
+
                 /*
                  * Function is unbounded from below:
                  * * D1<0 (verified by previous block)
@@ -23358,7 +23358,7 @@ void qqpoptimize(convexquadraticmodel* ac,
                 *terminationtype = -4;
                 break;
             }
-            
+
             /*
              * Perform step along DC.
              *
@@ -23416,13 +23416,13 @@ void qqpoptimize(convexquadraticmodel* ac,
                 stpcnt = 1;
             }
             qqpsolver_findbeststepandmove(sstate, &sstate->sas, &sstate->dc, stp, needact, cidx, cval, &sstate->stpbuf, stpcnt, &sstate->activated, &sstate->tmp0, _state);
-            
+
             /*
              * Update CG information.
              */
             ae_v_move(&sstate->dp.ptr.p_double[0], 1, &sstate->dc.ptr.p_double[0], 1, ae_v_len(0,n-1));
             ae_v_move(&sstate->cgp.ptr.p_double[0], 1, &sstate->cgc.ptr.p_double[0], 1, ae_v_len(0,n-1));
-            
+
             /*
              * Update iterations counter
              */
@@ -23433,7 +23433,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             break;
         }
         cgmax = settings->cgmaxits;
-        
+
         /*
          * Generate YIdx - reordering of variables for constrained Newton phase.
          * Free variables come first, fixed are last ones.
@@ -23441,7 +23441,7 @@ void qqpoptimize(convexquadraticmodel* ac,
         newtcnt = 0;
         for(;;)
         {
-            
+
             /*
              * Skip iteration if constrained Newton is turned off.
              */
@@ -23449,7 +23449,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             {
                 break;
             }
-            
+
             /*
              * At the first iteration   - build Cholesky decomposition of Hessian.
              * At subsequent iterations - refine Hessian by adding new constraints.
@@ -23466,7 +23466,7 @@ void qqpoptimize(convexquadraticmodel* ac,
              */
             if( newtcnt==0 )
             {
-                
+
                 /*
                  * Perform initial Newton step. If Cholesky decomposition fails,
                  * increase number of CG iterations to CGMaxIts - it should help
@@ -23488,12 +23488,12 @@ void qqpoptimize(convexquadraticmodel* ac,
                 break;
             }
             inc(&newtcnt, _state);
-            
+
             /*
              * Calculate gradient GC.
              */
             qqpsolver_targetgradient(sstate, &sstate->sas.xc, &sstate->gc, _state);
-            
+
             /*
              * Bound-constrained Newton step
              */
@@ -23537,7 +23537,7 @@ void qqpoptimize(convexquadraticmodel* ac,
             break;
         }
     }
-    
+
     /*
      * Stop optimization and unpack results.
      *
@@ -23607,7 +23607,7 @@ static double qqpsolver_projectedtargetfunction(qqpbuffers* sstate,
     nec = sstate->nec;
     nic = sstate->nic;
     rvectorsetlengthatleast(tmp0, n, _state);
-    
+
     /*
      * Calculate projected point
      */
@@ -23631,7 +23631,7 @@ static double qqpsolver_projectedtargetfunction(qqpbuffers* sstate,
         }
         tmp0->ptr.p_double[i] = v;
     }
-    
+
     /*
      * Function value at the Tmp0:
      *
@@ -23644,7 +23644,7 @@ static double qqpsolver_projectedtargetfunction(qqpbuffers* sstate,
     }
     if( sstate->akind==0 )
     {
-        
+
         /*
          * Dense matrix A
          */
@@ -23662,7 +23662,7 @@ static double qqpsolver_projectedtargetfunction(qqpbuffers* sstate,
     }
     else
     {
-        
+
         /*
          * sparse matrix A
          */
@@ -23683,7 +23683,7 @@ Gradient of "extended" (N>=NMain variables, original + slack ones)  target
 function:
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 which is equal to
 
     grad = A*x + b + penaltyfactor*C'*(C*x-b)
@@ -23701,7 +23701,7 @@ INPUT PARAMETERS:
 
 OUTPUT PARAMETERS:
     G       -   array[N], gradient
-            
+
   -- ALGLIB --
      Copyright 21.12.2013 by Bochkanov Sergey
 *************************************************************************/
@@ -23725,7 +23725,7 @@ static void qqpsolver_targetgradient(qqpbuffers* sstate,
     rvectorsetlengthatleast(g, n, _state);
     if( sstate->akind==0 )
     {
-        
+
         /*
          * Dense matrix A
          */
@@ -23733,7 +23733,7 @@ static void qqpsolver_targetgradient(qqpbuffers* sstate,
     }
     else
     {
-        
+
         /*
          * Sparse matrix A
          */
@@ -23761,11 +23761,11 @@ specified direction. Target  function  is  called  "extended"  because  of
 additional slack variables and has form:
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 with gradient
 
     grad = A*x + b + penaltyfactor*C'*(C*x-b)
-    
+
 Quadratic model has form
 
     F(x0+alpha*D) = D2*alpha^2 + D1*alpha
@@ -23793,7 +23793,7 @@ OUTPUT PARAMETERS:
                 * =0    means "pessimistic estimate  of  numerical  errors
                         in D2 is larger than magnitude of D2 itself; it is
                         impossible to reliably distinguish D2 from zero".
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -23828,7 +23828,7 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
     nmain = sstate->nmain;
     nec = sstate->nec;
     nic = sstate->nic;
-    
+
     /*
      * Maximums
      */
@@ -23844,13 +23844,13 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
     {
         mb = ae_maxreal(mb, ae_fabs(sstate->b.ptr.p_double[i], _state), _state);
     }
-    
+
     /*
      * D2
      */
     if( sstate->akind==0 )
     {
-        
+
         /*
          * Dense matrix A
          */
@@ -23869,7 +23869,7 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
     }
     else
     {
-        
+
         /*
          * Sparse matrix A
          */
@@ -23878,7 +23878,7 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
     }
     for(i=0; i<=nec+nic-1; i++)
     {
-        
+
         /*
          * NOTE: there is no "V:=V-CLEIC[I,N]" line, and it is not an error!
          *       We estimate curvature information here, which is not dependent
@@ -23889,7 +23889,7 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
     }
     v = ae_v_dotproduct(&d->ptr.p_double[0], 1, &g->ptr.p_double[0], 1, ae_v_len(0,n-1));
     *d1 = v;
-    
+
     /*
      * Error estimates
      */
@@ -23901,7 +23901,7 @@ static void qqpsolver_quadraticmodel(qqpbuffers* sstate,
 This function accepts quadratic model of the form
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 and list of possible steps along direction D. It chooses  best  step  (one
 which achieves minimum value of the target  function)  and  moves  current
 point (given by SAS object) to the new location. Step is  bounded  subject
@@ -23915,7 +23915,7 @@ Candidate steps are divided into two groups:
 * "additional candidates", which may be shorter or longer than the default
   step. Candidates which are shorter that the default  step  are  ignored;
   candidates which are longer than the "default" step are tested.
-  
+
 The idea is that we ALWAYS try "default" step, and it is responsibility of
 the caller to provide us with something which is worth trying.  This  step
 may activate some constraint - that's why we  stopped  at  "default"  step
@@ -23940,7 +23940,7 @@ INPUT PARAMETERS:
                 will be reused.
     Tmp0    -  possibly preallocated buffer; previously allocated memory
                 will be reused.
-    
+
 OUTPUT PARAMETERS:
     SAS     -   SAS.XC is set to new point;  if  there  was  a  constraint
                 specified  by  NeedAct/CIdx/CVal,  it  will  be  activated
@@ -23951,7 +23951,7 @@ OUTPUT PARAMETERS:
                 new one.
                 Situations when we deactivate xi>=0 and activate xi<=1 are
                 considered as activation of previously inactive constraint
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -23980,7 +23980,7 @@ static void qqpsolver_findbeststepandmove(qqpbuffers* sstate,
     n = sstate->n;
     rvectorsetlengthatleast(tmp0, n, _state);
     bvectorsetlengthatleast(activated, n, _state);
-    
+
     /*
      * Calculate initial step, store to Tmp0
      *
@@ -24003,13 +24003,13 @@ static void qqpsolver_findbeststepandmove(qqpbuffers* sstate,
     {
         tmp0->ptr.p_double[cidx] = cval;
     }
-    
+
     /*
      * Try additional steps, if AddStepsCnt>0
      */
     if( addstepscnt>0 )
     {
-        
+
         /*
          * Find best step
          */
@@ -24027,7 +24027,7 @@ static void qqpsolver_findbeststepandmove(qqpbuffers* sstate,
                 }
             }
         }
-        
+
         /*
          * Prepare best step
          *
@@ -24052,7 +24052,7 @@ static void qqpsolver_findbeststepandmove(qqpbuffers* sstate,
             tmp0->ptr.p_double[cidx] = cval;
         }
     }
-    
+
     /*
      * Fill Activated array by information about activated constraints.
      * Perform step
@@ -24083,7 +24083,7 @@ This function prepares data for  constrained  Newton  step  for  penalized
 quadratic model of the form
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 where A can be dense or sparse, and model is considered subject to equality
 constraints specified by SState.SAS.XC  object.  Constraint  is considered
 active if XC[i] is exactly BndL[i] or BndU[i],  i.e.  we  ignore  internal
@@ -24113,20 +24113,20 @@ INPUT PARAMETERS:
                 * 2 -   SKS-based Cholesky
     NCholesky-  counter which is incremented after Cholesky (successful or
                 failed one)
-    
+
 OUTPUT PARAMETERS:
     NCholesky-  possibly updated counter
-    
+
 RESULT:
     True, if Cholesky decomposition was successfully performed.
     False, if a) matrix was semi-definite or indefinite, or b)  particular
     combination of matrix type (sparse) and constraints  (general  linear)
     is not supported.
-    
+
 NOTE: this function may routinely return False, for indefinite matrices or
       for sparse problems with general linear constraints. You  should  be
       able to handle such situations.
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -24151,7 +24151,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
 
 
     result = ae_false;
-    
+
     /*
      * Fetch often used fields
      */
@@ -24159,7 +24159,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
     nmain = sstate->nmain;
     nec = sstate->nec;
     nic = sstate->nic;
-    
+
     /*
      * Check problem properties.
      * Sparse problems with general linear constraints are not supported yet.
@@ -24168,7 +24168,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
     {
         return result;
     }
-    
+
     /*
      * 1. Set CNModelAge to zero
      * 2. Generate YIdx - reordering of variables such that free variables
@@ -24210,7 +24210,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
     {
         return result;
     }
-    
+
     /*
      * Constrained Newton matrix: dense version
      */
@@ -24220,7 +24220,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
         rvectorsetlengthatleast(&sstate->tmpcn, n, _state);
         if( nec+nic>0 )
         {
-            
+
             /*
              * Initialize Z with C'*C, add A
              */
@@ -24235,7 +24235,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
         }
         else
         {
-            
+
             /*
              * No linear constraints, just set Z to A
              */
@@ -24312,7 +24312,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
         result = ae_true;
         return result;
     }
-    
+
     /*
      * Constrained Newton matrix: sparse version
      */
@@ -24320,7 +24320,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
     {
         ae_assert(nec+nic==0, "CNewtonBuild: internal error", _state);
         ae_assert(sparsesolver==2, "CNewtonBuild: internal error", _state);
-        
+
         /*
          * Copy sparse A to Z and fill rows/columns corresponding to active
          * constraints by zeros. Diagonal elements corresponding to active
@@ -24343,7 +24343,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
             {
                 if( ae_fp_neq(sstate->tmpcn.ptr.p_double[i],(double)(0))||ae_fp_neq(sstate->tmpcn.ptr.p_double[j],(double)(0)) )
                 {
-                    
+
                     /*
                      * I-th or J-th variable is in active set (constrained)
                      */
@@ -24359,7 +24359,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
                 k = k+1;
             }
         }
-        
+
         /*
          * Perform sparse Cholesky
          */
@@ -24371,7 +24371,7 @@ static ae_bool qqpsolver_cnewtonbuild(qqpbuffers* sstate,
         result = ae_true;
         return result;
     }
-    
+
     /*
      * Unexpected :)
      */
@@ -24386,7 +24386,7 @@ activation of the  new  equality  constraints.  Matrix  being  updated  is
 quadratic term of the function below
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 where A can be dense or sparse.
 
 This  function  uses  YIdx[]  array  (set by CNewtonBuild()  function)  to
@@ -24410,18 +24410,18 @@ INPUT PARAMETERS:
                 construction function.
     NCUpdates-  counter which is incremented after each update (one update
                 means one variable being fixed)
-    
+
 OUTPUT PARAMETERS:
     NCUpdates-  possibly updated counter
-    
+
 RESULT:
     True, if Cholesky decomposition was successfully performed.
     False, if a) model age was too high, or b) particular  combination  of
     matrix type (sparse) and constraints (general linear) is not supported
-    
+
 NOTE: this function may routinely return False.
       You should be able to handle such situations.
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -24442,7 +24442,7 @@ static ae_bool qqpsolver_cnewtonupdate(qqpbuffers* sstate,
 
 
     result = ae_false;
-    
+
     /*
      * Cholesky updates for sparse problems are not supported
      */
@@ -24450,13 +24450,13 @@ static ae_bool qqpsolver_cnewtonupdate(qqpbuffers* sstate,
     {
         return result;
     }
-    
+
     /*
      * Fetch often used fields
      */
     n = sstate->n;
     nfree = sstate->nfree;
-    
+
     /*
      * Determine variables to fix and move them to YIdx[NFree-NToFix:NFree-1]
      * Exit if CNModelAge increased too much.
@@ -24501,13 +24501,13 @@ static ae_bool qqpsolver_cnewtonupdate(qqpbuffers* sstate,
     {
         sstate->yidx.ptr.p_int[i] = sstate->tmpcni.ptr.p_int[i];
     }
-    
+
     /*
      * Constrained Newton matrix: dense version.
      */
     if( sstate->akind==0 )
     {
-        
+
         /*
          * Update Cholesky matrix with SPDMatrixCholeskyUpdateFixBuf()
          */
@@ -24521,7 +24521,7 @@ static ae_bool qqpsolver_cnewtonupdate(qqpbuffers* sstate,
             sstate->tmpcnb.ptr.p_bool[sstate->yidx.ptr.p_int[i]] = ae_true;
         }
         spdmatrixcholeskyupdatefixbuf(&sstate->densez, n, ae_true, &sstate->tmpcnb, &sstate->tmpcn, _state);
-        
+
         /*
          * Update information stored in State and exit
          */
@@ -24531,7 +24531,7 @@ static ae_bool qqpsolver_cnewtonupdate(qqpbuffers* sstate,
         result = ae_true;
         return result;
     }
-    
+
     /*
      * Unexpected :)
      */
@@ -24545,7 +24545,7 @@ This   function prepares equality-constrained Newton step using previously
 calculated constrained Cholesky matrix of the problem
 
     f(x) = 0.5*x'*A*x + b'*x + penaltyfactor*0.5*(C*x-b)'*(C*x-b)
-    
+
 where A can be dense or sparse.
 
 As  input,  this  function  accepts  gradient  at the current location. As
@@ -24568,20 +24568,20 @@ INPUT PARAMETERS:
     Settings -  QQPSettings object which was  initialized  by  appropriate
                 construction function.
     GC       -  array[NMain+NSlack], gradient of the target function
-    
+
 OUTPUT PARAMETERS:
     GC       -  array[NMain+NSlack], step vector (on success)
-    
+
 RESULT:
     True, if step was successfully calculated.
     False, if step calculation failed:
     a) gradient was exactly zero,
     b) gradient norm was smaller than EpsG (stopping condition)
     c) all variables were equality-constrained
-    
+
 NOTE: this function may routinely return False.
       You should be able to handle such situations.
-            
+
   -- ALGLIB --
      Copyright 14.05.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -24615,7 +24615,7 @@ static ae_bool qqpsolver_cnewtonstep(qqpbuffers* sstate,
     }
     if( sstate->akind==0 )
     {
-        
+
         /*
          * Dense Newton step.
          * Use straightforward Cholesky solver.
@@ -24626,7 +24626,7 @@ static ae_bool qqpsolver_cnewtonstep(qqpbuffers* sstate,
     }
     if( sstate->akind==1 )
     {
-        
+
         /*
          * Sparse Newton step.
          *
@@ -24893,7 +24893,7 @@ This function runs QPBLEIC solver; it returns after optimization   process
 was completed. Following QP problem is solved:
 
     min(0.5*(x-x_origin)'*A*(x-x_origin)+b'*(x-x_origin))
-    
+
 subject to boundary constraints.
 
 INPUT PARAMETERS:
@@ -24936,8 +24936,8 @@ INPUT PARAMETERS:
     FirstCall   -   whether it is first call of this function for this specific
                     instance of SState, with this number of variables N specified.
     XS          -   initial point, array[NC]
-    
-    
+
+
 OUTPUT PARAMETERS:
     XS          -   last point
     FirstCall   -   uncondtionally set to False
@@ -24990,7 +24990,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
     sstate->repinneriterationscount = 0;
     sstate->repouteriterationscount = 0;
     *terminationtype = 0;
-    
+
     /*
      * Prepare solver object, if needed
      */
@@ -24999,7 +24999,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
         minbleiccreate(n, xs, &sstate->solver, _state);
         *firstcall = ae_false;
     }
-    
+
     /*
      * Prepare max(|B|)
      */
@@ -25008,7 +25008,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
     {
         mb = ae_maxreal(mb, ae_fabs(b->ptr.p_double[i], _state), _state);
     }
-    
+
     /*
      * Temporaries
      */
@@ -25032,13 +25032,13 @@ void qpbleicoptimize(convexquadraticmodel* a,
     minbleicrestartfrom(&sstate->solver, xs, _state);
     while(minbleiciteration(&sstate->solver, _state))
     {
-        
+
         /*
          * Line search started
          */
         if( sstate->solver.lsstart )
         {
-            
+
             /*
              * Iteration counters:
              * * inner iterations count is increased on every line search
@@ -25049,7 +25049,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
             {
                 inc(&sstate->repouteriterationscount, _state);
             }
-            
+
             /*
              * Build quadratic model of F along descent direction:
              *
@@ -25083,7 +25083,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                 md = ae_maxreal(md, ae_fabs(sstate->solver.d.ptr.p_double[i], _state), _state);
             }
             estimateparabolicmodel(absasum, absasum2, mx, mb, md, d1, d2, &d1est, &d2est, _state);
-            
+
             /*
              * Tests for "normal" convergence.
              *
@@ -25112,7 +25112,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
             {
                 if( d1est>=0 )
                 {
-                    
+
                     /*
                      * "Emergency" stopping condition: D is non-descent direction.
                      * Sometimes it is possible because of numerical noise in the
@@ -25127,7 +25127,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                 }
                 if( d2est>0 )
                 {
-                    
+
                     /*
                      * Stopping condition #4 - gradient norm is small:
                      *
@@ -25157,7 +25157,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                         }
                         break;
                     }
-                    
+
                     /*
                      * Stopping condition #1 - relative function improvement is small:
                      *
@@ -25176,7 +25176,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                         }
                         break;
                     }
-                    
+
                     /*
                      * Stopping condition #2 - scaled step is small:
                      *
@@ -25201,13 +25201,13 @@ void qpbleicoptimize(convexquadraticmodel* a,
                     }
                 }
             }
-            
+
             /*
              * Test for unconstrained direction of negative curvature
              */
             if( (d2est<0||(d2est==0&&d1est<0))&&!sstate->solver.boundedstep )
             {
-                
+
                 /*
                  * Function is unbounded from below:
                  * * function will decrease along D, i.e. either:
@@ -25226,7 +25226,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                 }
                 break;
             }
-            
+
             /*
              * Suggest new step (only if D1 is negative far away from zero,
              * D2 is positive far away from zero).
@@ -25236,7 +25236,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
                 sstate->solver.stp = safeminposrv(-d1, 2*d2, sstate->solver.curstpmax, _state);
             }
         }
-        
+
         /*
          * Gradient evaluation
          */
@@ -25263,7 +25263,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
     }
     if( *terminationtype==0 )
     {
-        
+
         /*
          * BLEIC optimizer was terminated by one of its inner stopping
          * conditions. Usually it is iteration counter (if such
@@ -25274,7 +25274,7 @@ void qpbleicoptimize(convexquadraticmodel* a,
     }
     else
     {
-        
+
         /*
          * BLEIC optimizer was terminated in "emergency" mode by QP
          * solver.
@@ -25419,7 +25419,7 @@ This function runs QPCholesky solver; it returns after optimization   process
 was completed. Following QP problem is solved:
 
     min(0.5*(x-x_origin)'*A*(x-x_origin)+b'*(x-x_origin))
-    
+
 subject to boundary constraints.
 
 INPUT PARAMETERS:
@@ -25458,8 +25458,8 @@ INPUT PARAMETERS:
                       initialized by previous call to this function with same
                       problem dimensions (variable count N).
     XS          -   initial point, array[NC]
-    
-    
+
+
 OUTPUT PARAMETERS:
     XS          -   last point
     TerminationType-termination type:
@@ -25506,7 +25506,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
 
     *terminationtype = 0;
 
-    
+
     /*
      * Allocate storage and prepare fields
      */
@@ -25525,7 +25525,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
     sstate->repouteriterationscount = 0;
     sstate->repncholesky = 0;
     noisetolerance = (double)(10);
-    
+
     /*
      * Our formulation of quadratic problem includes origin point,
      * i.e. we have F(x-x_origin) which is minimized subject to
@@ -25579,7 +25579,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         ae_v_move(&sstate->workcleic.ptr.pp_double[i][0], 1, &cleic->ptr.pp_double[i][0], 1, ae_v_len(0,n-1));
         sstate->workcleic.ptr.pp_double[i][n] = cleic->ptr.pp_double[i][n]-v;
     }
-    
+
     /*
      * We have starting point in StartX, so we just have to shift and bound it
      */
@@ -25601,13 +25601,13 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             }
         }
     }
-    
+
     /*
      * Handle special case - no constraints
      */
     if( !havebc&&nec+nic==0 )
     {
-        
+
         /*
          * "Simple" unconstrained Cholesky
          */
@@ -25631,7 +25631,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         *terminationtype = 4;
         return;
     }
-    
+
     /*
      * Prepare "active set" structure
      */
@@ -25644,7 +25644,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         *terminationtype = -3;
         return;
     }
-    
+
     /*
      * Main cycle of CQP algorithm
      */
@@ -25653,13 +25653,13 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
     maxscaledgrad = 0.0;
     for(;;)
     {
-        
+
         /*
          * Update iterations count
          */
         inc(&sstate->repouteriterationscount, _state);
         inc(&sstate->repinneriterationscount, _state);
-        
+
         /*
          * Phase 1.
          *
@@ -25675,7 +25675,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             v = v+ae_sqr(sstate->rctmpg.ptr.p_double[i]*s->ptr.p_double[i], _state);
         }
         maxscaledgrad = ae_maxreal(maxscaledgrad, ae_sqrt(v, _state), _state);
-        
+
         /*
          * Phase 2: perform penalized steepest descent step.
          *
@@ -25686,7 +25686,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
          */
         for(;;)
         {
-            
+
             /*
              * Calculate constrained descent direction, store to PG.
              * Successful termination if PG is zero.
@@ -25697,7 +25697,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             v0 = ae_v_dotproduct(&sstate->pg.ptr.p_double[0], 1, &sstate->pg.ptr.p_double[0], 1, ae_v_len(0,n-1));
             if( ae_fp_eq(v0,(double)(0)) )
             {
-                
+
                 /*
                  * Constrained derivative is zero.
                  * Solution found.
@@ -25705,7 +25705,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
                 nextaction = 0;
                 break;
             }
-            
+
             /*
              * Build quadratic model of F along descent direction:
              *     F(xc+alpha*pg) = D2*alpha^2 + D1*alpha + D0
@@ -25727,7 +25727,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             d0 = fprev;
             if( ae_fp_less_eq(d2,(double)(0)) )
             {
-                
+
                 /*
                  * Second derivative is non-positive, function is non-convex.
                  */
@@ -25737,7 +25737,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             }
             if( ae_fp_greater_eq(d1,(double)(0)) )
             {
-                
+
                 /*
                  * Second derivative is positive, first derivative is non-negative.
                  * Solution found.
@@ -25745,7 +25745,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
                 nextaction = 0;
                 break;
             }
-            
+
             /*
              * Modify quadratic model - add penalty for violation of the active
              * constraints.
@@ -25777,7 +25777,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
                     d0 = d0+v*ae_sqr(v1, _state);
                 }
             }
-            
+
             /*
              * Try unbounded step.
              * In case function change is dominated by noise or function actually increased
@@ -25793,14 +25793,14 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
                 nextaction = 0;
                 break;
             }
-            
+
             /*
              * Save active set
              * Perform bounded step with (possible) activation
              */
             actstatus = qpcholeskysolver_boundedstepandactivation(&sstate->sas, &sstate->xn, n, &sstate->tmp0, _state);
             fcur = qpcholeskysolver_modelvalue(a, b, &sstate->sas.xc, n, &sstate->tmp0, _state);
-            
+
             /*
              * Depending on results, decide what to do:
              * 1. In case step was performed without activation of constraints,
@@ -25812,7 +25812,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
              */
             if( actstatus<0 )
             {
-                
+
                 /*
                  * Step without activation, proceed to Newton
                  */
@@ -25821,7 +25821,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             }
             if( actstatus==0 )
             {
-                
+
                 /*
                  * No new constraints added during last activation - only
                  * ones which were at the boundary (ActiveSet[I]=0), but
@@ -25834,7 +25834,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
             }
             else
             {
-                
+
                 /*
                  * Last step activated at least one significantly new
                  * constraint (ActiveSet[I]<0), we have to re-evaluate
@@ -25852,7 +25852,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         {
             break;
         }
-        
+
         /*
          * Phase 3: fast equality-constrained solver
          *
@@ -25875,7 +25875,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         fprev = qpcholeskysolver_modelvalue(a, b, &sstate->sas.xc, n, &sstate->tmp0, _state);
         for(;;)
         {
-            
+
             /*
              * Calculate optimum subject to presently active constraints
              */
@@ -25886,7 +25886,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
                 sasstopoptimization(&sstate->sas, _state);
                 return;
             }
-            
+
             /*
              * Add constraints.
              * If no constraints was added, accept candidate point XN and move to next phase.
@@ -25903,7 +25903,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         }
         if( badnewtonits>=qpcholeskysolver_maxbadnewtonits )
         {
-            
+
             /*
              * Algorithm found solution, but keeps iterating because Newton
              * algorithm performs uphill steps (noise in the Augmented Lagrangian
@@ -25914,7 +25914,7 @@ void qpcholeskyoptimize(convexquadraticmodel* a,
         }
     }
     sasstopoptimization(&sstate->sas, _state);
-    
+
     /*
      * Post-process: add XOrigin to XC
      */
@@ -26082,21 +26082,21 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
     ae_bool result;
 
 
-    
+
     /*
      * Rebuild basis accroding to current active set.
      * We call SASRebuildBasis() to make sure that fields of SAS
      * store up to date values.
      */
     sasrebuildbasis(sas, _state);
-    
+
     /*
      * Allocate temporaries.
      */
     rvectorsetlengthatleast(tmp, ae_maxint(n, sas->basissize, _state), _state);
     bvectorsetlengthatleast(tmpb, n, _state);
     rvectorsetlengthatleast(lagrangec, sas->basissize, _state);
-    
+
     /*
      * Prepare model
      */
@@ -26118,7 +26118,7 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
     }
     cqmsetactiveset(a, &sas->xc, tmpb, _state);
     cqmsetq(a, &sas->pbasis, tmp, sas->basissize, theta, _state);
-    
+
     /*
      * Iterate until optimal values of Lagrange multipliers are found
      */
@@ -26130,7 +26130,7 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
     result = ae_true;
     for(itidx=1; itidx<=qpcholeskysolver_maxlagrangeits; itidx++)
     {
-        
+
         /*
          * Generate right part B using linear term and current
          * estimate of the Lagrange multipliers.
@@ -26142,7 +26142,7 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
             ae_v_subd(&tmp->ptr.p_double[0], 1, &sas->pbasis.ptr.pp_double[i][0], 1, ae_v_len(0,n-1), v);
         }
         cqmsetb(a, tmp, _state);
-        
+
         /*
          * Solve
          */
@@ -26151,7 +26151,7 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
         {
             return result;
         }
-        
+
         /*
          * Compare feasibility errors.
          * Terminate if error decreased too slowly.
@@ -26168,7 +26168,7 @@ static ae_bool qpcholeskysolver_constrainedoptimum(sactiveset* sas,
         {
             break;
         }
-        
+
         /*
          * Update Lagrange multipliers
          */
@@ -26318,7 +26318,7 @@ obtained with MinQPResults() function.
 
 INPUT PARAMETERS:
     N       -   problem size
-    
+
 OUTPUT PARAMETERS:
     State   -   optimizer with zero quadratic/linear terms
                 and no constraints
@@ -26333,7 +26333,7 @@ void minqpcreate(ae_int_t n, minqpstate* state, ae_state *_state)
     _minqpstate_clear(state);
 
     ae_assert(n>=1, "MinQPCreate: N<1", _state);
-    
+
     /*
      * initialize QP solver
      */
@@ -26498,7 +26498,7 @@ void minqpsetquadratictermsparse(minqpstate* state,
     sparsecopytocrsbuf(a, &state->sparsea, _state);
     state->sparseaupper = isupper;
     state->akind = 1;
-    
+
     /*
      * Estimate norm of A
      * (it will be used later in the quadratic penalty function)
@@ -26512,7 +26512,7 @@ void minqpsetquadratictermsparse(minqpstate* state,
     {
         if( i==j )
         {
-            
+
             /*
              * Diagonal terms are counted only once
              */
@@ -26522,7 +26522,7 @@ void minqpsetquadratictermsparse(minqpstate* state,
         }
         if( (j>i&&isupper)||(j<i&&!isupper) )
         {
-            
+
             /*
              * Offdiagonal terms are counted twice
              */
@@ -26565,11 +26565,11 @@ This  function sets origin for QP solver. By default, following QP program
 is solved:
 
     min(0.5*x'*A*x+b'*x)
-    
+
 This function allows to solve different problem:
 
     min(0.5*(x-x_origin)'*A*(x-x_origin)+b'*(x-x_origin))
-    
+
 INPUT PARAMETERS:
     State   -   structure which stores algorithm state
     XOrigin -   origin, array[N].
@@ -26674,7 +26674,7 @@ ALGORITHM OUTLINE:
   quadratic  programming   problem   as   general   linearly   constrained
   optimization problem, which is solved by means of BLEIC solver  (part of
   ALGLIB, active set method).
-  
+
 ALGORITHM LIMITATIONS:
 
 * unlike QuickQP solver, this algorithm does not perform Newton steps  and
@@ -26702,7 +26702,7 @@ INPUT PARAMETERS:
     EpsX    -   >=0
                 The  subroutine  finishes its work if exploratory steepest
                 descent  step  on  k+1-th iteration  satisfies   following
-                condition:  
+                condition:
                 * |.| means Euclidian norm
                 * v - scaled step vector, v[i]=dx[i]/s[i]
                 * dx - step vector, dx=X(k+1)-X(k)
@@ -26788,7 +26788,7 @@ ALGORITHM OUTLINE:
   is called "outer iteration".
 * it is possible to turn off Newton  phase  (beneficial  for  semidefinite
   problems - Cholesky decomposition will fail too often)
-  
+
 ALGORITHM LIMITATIONS:
 
 * algorithm does not support general  linear  constraints;  only  boundary
@@ -26822,7 +26822,7 @@ INPUT PARAMETERS:
     EpsX    -   >=0
                 The  subroutine  finishes its work if exploratory steepest
                 descent  step  on  k+1-th iteration  satisfies   following
-                condition:  
+                condition:
                 * |.| means Euclidian norm
                 * v - scaled step vector, v[i]=dx[i]/s[i]
                 * dx - step vector, dx=X(k+1)-X(k)
@@ -26899,7 +26899,7 @@ INPUT PARAMETERS:
                 If some (all) variables are unbounded, you may specify
                 very large number or +INF (latter is recommended because
                 it will allow solver to use better algorithm).
-                
+
 NOTE: it is possible to specify BndL[i]=BndU[i]. In this case I-th
 variable will be "frozen" at X[i]=BndL[i]=BndU[i].
 
@@ -26971,7 +26971,7 @@ void minqpsetlc(minqpstate* state,
 
 
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -26980,7 +26980,7 @@ void minqpsetlc(minqpstate* state,
     ae_assert(c->rows>=k, "MinQPSetLC: Rows(C)<K", _state);
     ae_assert(ct->cnt>=k, "MinQPSetLC: Length(CT)<K", _state);
     ae_assert(apservisfinitematrix(c, k, n+1, _state), "MinQPSetLC: C contains infinite or NaN values!", _state);
-    
+
     /*
      * Handle zero K
      */
@@ -26990,7 +26990,7 @@ void minqpsetlc(minqpstate* state,
         state->nic = 0;
         return;
     }
-    
+
     /*
      * Equality constraints are stored first, in the upper
      * NEC rows of State.CLEIC matrix. Inequality constraints
@@ -27025,7 +27025,7 @@ void minqpsetlc(minqpstate* state,
             state->nic = state->nic+1;
         }
     }
-    
+
     /*
      * Normalize rows of State.CLEIC: each row must have unit norm.
      * Norm is calculated using first N elements (i.e. right part is
@@ -27088,7 +27088,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
     state->repouteriterationscount = 0;
     state->repncholesky = 0;
     state->repnmv = 0;
-    
+
     /*
      * check correctness of constraints
      */
@@ -27103,7 +27103,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
             }
         }
     }
-    
+
     /*
      * count number of bound and linear constraints
      */
@@ -27119,7 +27119,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
             nbc = nbc+1;
         }
     }
-    
+
     /*
      * Initial point:
      * * if we have starting point in StartX, we just have to bound it
@@ -27162,20 +27162,20 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
             state->xs.ptr.p_double[i] = (double)(0);
         }
     }
-    
+
     /*
      * Choose solver - user-specified or default one.
      */
     currentsolver = state->algokind;
     if( currentsolver==0 )
     {
-        
+
         /*
          * Choose solver automatically
          */
         if( state->nec+state->nic==0 )
         {
-            
+
             /*
              * QQP solver is used for problems without linear constraints
              */
@@ -27184,7 +27184,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
         }
         else
         {
-            
+
             /*
              * QP-BLEIC solver is used for problems without linear constraints
              */
@@ -27200,7 +27200,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
         }
         if( currentsolver==2 )
         {
-            
+
             /*
              * QP-BLEIC solver is chosen by user
              */
@@ -27208,14 +27208,14 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
         }
         if( currentsolver==3 )
         {
-            
+
             /*
              * QQP solver is chosen by user
              */
             qqpcopysettings(&state->qqpsettingsuser, &state->qqpsettingscurrent, _state);
         }
     }
-    
+
     /*
      * QP-BLEIC solver
      */
@@ -27226,7 +27226,7 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
         state->repouteriterationscount = state->qpbleicbuf.repouteriterationscount;
         return;
     }
-    
+
     /*
      * QuickQP solver
      */
@@ -27243,13 +27243,13 @@ void minqpoptimize(minqpstate* state, ae_state *_state)
         state->repncholesky = state->qqpbuf.repncholesky;
         return;
     }
-    
+
     /*
      * Cholesky solver.
      */
     if( currentsolver==1 )
     {
-        
+
         /*
          * Check matrix type.
          * Cholesky solver supports only dense matrices.
@@ -27282,7 +27282,7 @@ OUTPUT PARAMETERS:
                 which contains completion code, and you may check  another
                 fields which contain another information  about  algorithm
                 functioning.
-                
+
                 Failure codes returned by algorithm are:
                 * -5    inappropriate solver was used:
                         * Cholesky solver for (semi)indefinite problems
@@ -27297,10 +27297,10 @@ OUTPUT PARAMETERS:
                         is too  hard  to  find).  If  you  are  sure  that
                         constraints are feasible, try to restart optimizer
                         with better initial approximation.
-                        
+
                 Completion codes specific for Cholesky algorithm:
                 *  4   successful completion
-                
+
                 Completion codes specific for BLEIC/QuickQP algorithms:
                 *  1   relative function improvement is no more than EpsF.
                 *  2   scaled step is no more than EpsX.
@@ -27408,7 +27408,7 @@ void minqpsetquadratictermfast(minqpstate* state,
         }
         cqmrewritedensediagonal(&state->a, &state->tmp0, _state);
     }
-    
+
     /*
      * Estimate norm of A
      * (it will be used later in the quadratic penalty function)
@@ -27735,7 +27735,7 @@ void minlmcreatevj(ae_int_t n,
     ae_assert(m>=1, "MinLMCreateVJ: M<1!", _state);
     ae_assert(x->cnt>=n, "MinLMCreateVJ: Length(X)<N!", _state);
     ae_assert(isfinitevector(x, n, _state), "MinLMCreateVJ: X contains infinite or NaN values!", _state);
-    
+
     /*
      * initialize, check parameters
      */
@@ -27746,7 +27746,7 @@ void minlmcreatevj(ae_int_t n,
     state->hasf = ae_false;
     state->hasfi = ae_true;
     state->hasg = ae_false;
-    
+
     /*
      * second stage of initialization
      */
@@ -27836,7 +27836,7 @@ void minlmcreatev(ae_int_t n,
     ae_assert(m>=1, "MinLMCreateV: M<1!", _state);
     ae_assert(x->cnt>=n, "MinLMCreateV: Length(X)<N!", _state);
     ae_assert(isfinitevector(x, n, _state), "MinLMCreateV: X contains infinite or NaN values!", _state);
-    
+
     /*
      * Initialize
      */
@@ -27848,7 +27848,7 @@ void minlmcreatev(ae_int_t n,
     state->hasfi = ae_true;
     state->hasg = ae_false;
     state->diffstep = diffstep;
-    
+
     /*
      * Second stage of initialization
      */
@@ -27934,7 +27934,7 @@ void minlmcreatefgh(ae_int_t n,
     ae_assert(n>=1, "MinLMCreateFGH: N<1!", _state);
     ae_assert(x->cnt>=n, "MinLMCreateFGH: Length(X)<N!", _state);
     ae_assert(isfinitevector(x, n, _state), "MinLMCreateFGH: X contains infinite or NaN values!", _state);
-    
+
     /*
      * initialize
      */
@@ -27945,7 +27945,7 @@ void minlmcreatefgh(ae_int_t n,
     state->hasf = ae_true;
     state->hasfi = ae_false;
     state->hasg = ae_true;
-    
+
     /*
      * init2
      */
@@ -28281,7 +28281,7 @@ ae_bool minlmiteration(minlmstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -28392,11 +28392,11 @@ ae_bool minlmiteration(minlmstate* state, ae_state *_state)
     {
         goto lbl_18;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * prepare
      */
@@ -28412,7 +28412,7 @@ ae_bool minlmiteration(minlmstate* state, ae_state *_state)
     state->repnhess = 0;
     state->repncholesky = 0;
     state->userterminationneeded = ae_false;
-    
+
     /*
      * check consistency of constraints,
      * enforce feasibility of the solution
@@ -28425,7 +28425,7 @@ ae_bool minlmiteration(minlmstate* state, ae_state *_state)
         return result;
     }
     minqpsetbc(&state->qpstate, &state->bndl, &state->bndu, _state);
-    
+
     /*
      *  Check, that transferred derivative value is right
      */
@@ -28498,7 +28498,7 @@ lbl_2:
 lbl_23:
     state->needfij = ae_false;
 lbl_19:
-    
+
     /*
      * Initial report of current point
      *
@@ -28545,7 +28545,7 @@ lbl_5:
 lbl_24:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -28554,7 +28554,7 @@ lbl_24:
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Prepare control variables
      */
@@ -28563,7 +28563,7 @@ lbl_24:
     state->modelage = state->maxmodelage+1;
     state->deltaxready = ae_false;
     state->deltafready = ae_false;
-    
+
     /*
      * Main cycle.
      *
@@ -28578,7 +28578,7 @@ lbl_28:
     {
         goto lbl_29;
     }
-    
+
     /*
      * First, we have to prepare quadratic model for our function.
      * We use BFlag to ensure that model is prepared;
@@ -28606,7 +28606,7 @@ lbl_28:
     {
         goto lbl_30;
     }
-    
+
     /*
      * Calculate f[] and Jacobian
      */
@@ -28614,7 +28614,7 @@ lbl_28:
     {
         goto lbl_32;
     }
-    
+
     /*
      * Refresh model (using either finite differences or analytic Jacobian)
      */
@@ -28622,7 +28622,7 @@ lbl_28:
     {
         goto lbl_34;
     }
-    
+
     /*
      * Optimization using F values only.
      * Use finite differences to estimate Jacobian.
@@ -28634,7 +28634,7 @@ lbl_36:
     {
         goto lbl_38;
     }
-    
+
     /*
      * We guard X[k] from leaving [BndL,BndU].
      * In case BndL=BndU, we assume that derivative in this direction is zero.
@@ -28692,7 +28692,7 @@ lbl_7:
     k = k+1;
     goto lbl_36;
 lbl_38:
-    
+
     /*
      * Calculate F(XBase)
      */
@@ -28705,14 +28705,14 @@ lbl_8:
     state->needfi = ae_false;
     state->repnfunc = state->repnfunc+1;
     state->repnjac = state->repnjac+1;
-    
+
     /*
      * New model
      */
     state->modelage = 0;
     goto lbl_35;
 lbl_34:
-    
+
     /*
      * Obtain f[] and Jacobian
      */
@@ -28725,7 +28725,7 @@ lbl_9:
     state->needfij = ae_false;
     state->repnfunc = state->repnfunc+1;
     state->repnjac = state->repnjac+1;
-    
+
     /*
      * New model
      */
@@ -28733,7 +28733,7 @@ lbl_9:
 lbl_35:
     goto lbl_33;
 lbl_32:
-    
+
     /*
      * State.J contains Jacobian or its current approximation;
      * refresh it using secant updates:
@@ -28763,13 +28763,13 @@ lbl_32:
     }
     ae_v_move(&state->fi.ptr.p_double[0], 1, &state->fibase.ptr.p_double[0], 1, ae_v_len(0,m-1));
     ae_v_add(&state->fi.ptr.p_double[0], 1, &state->deltaf.ptr.p_double[0], 1, ae_v_len(0,m-1));
-    
+
     /*
      * Increase model age
      */
     state->modelage = state->modelage+1;
 lbl_33:
-    
+
     /*
      * Generate quadratic model:
      *     f(xbase+dx) =
@@ -28787,7 +28787,7 @@ lbl_33:
     v = ae_v_dotproduct(&state->fi.ptr.p_double[0], 1, &state->fi.ptr.p_double[0], 1, ae_v_len(0,m-1));
     state->fbase = v;
     ae_v_move(&state->fibase.ptr.p_double[0], 1, &state->fi.ptr.p_double[0], 1, ae_v_len(0,m-1));
-    
+
     /*
      * set control variables
      */
@@ -28798,7 +28798,7 @@ lbl_30:
         goto lbl_39;
     }
     ae_assert(!state->hasfi, "MinLMIteration: internal error (HasFI is True in Hessian-based mode)", _state);
-    
+
     /*
      * Obtain F, G, H
      */
@@ -28815,7 +28815,7 @@ lbl_10:
     rmatrixcopy(n, n, &state->h, 0, 0, &state->quadraticmodel, 0, 0, _state);
     ae_v_move(&state->gbase.ptr.p_double[0], 1, &state->g.ptr.p_double[0], 1, ae_v_len(0,n-1));
     state->fbase = state->f;
-    
+
     /*
      * set control variables
      */
@@ -28825,7 +28825,7 @@ lbl_39:
     ae_assert(bflag, "MinLM: internal integrity check failed!", _state);
     state->deltaxready = ae_false;
     state->deltafready = ae_false;
-    
+
     /*
      * If Lambda is not initialized, initialize it using quadratic model
      */
@@ -28842,7 +28842,7 @@ lbl_39:
             state->lambdav = (double)(1);
         }
     }
-    
+
     /*
      * Test stopping conditions for function gradient
      */
@@ -28854,7 +28854,7 @@ lbl_39:
     {
         goto lbl_43;
     }
-    
+
     /*
      * Model is fresh, we can rely on it and terminate algorithm
      */
@@ -28876,7 +28876,7 @@ lbl_45:
     return result;
     goto lbl_44;
 lbl_43:
-    
+
     /*
      * Model is not fresh, we should refresh it and test
      * conditions once more
@@ -28885,7 +28885,7 @@ lbl_43:
     goto lbl_28;
 lbl_44:
 lbl_41:
-    
+
     /*
      * Find value of Levenberg-Marquardt damping parameter which:
      * * leads to positive definite damped model
@@ -28907,7 +28907,7 @@ lbl_47:
     {
         goto lbl_48;
     }
-    
+
     /*
      * Do we need model update?
      */
@@ -28916,7 +28916,7 @@ lbl_47:
         iflag = -2;
         goto lbl_48;
     }
-    
+
     /*
      * Setup quadratic solver and solve quadratic programming problem.
      * After problem is solved we'll try to bound step by StpMax
@@ -28939,7 +28939,7 @@ lbl_47:
     minqpresultsbuf(&state->qpstate, &state->xdir, &state->qprep, _state);
     if( state->qprep.terminationtype>0 )
     {
-        
+
         /*
          * successful solution of QP problem
          */
@@ -28960,7 +28960,7 @@ lbl_47:
     }
     else
     {
-        
+
         /*
          * Either problem is non-convex (increase LambdaV) or constraints are inconsistent
          */
@@ -28974,7 +28974,7 @@ lbl_47:
     }
     if( !bflag )
     {
-        
+
         /*
          * Solution failed:
          * try to increase lambda to make matrix positive definite and continue.
@@ -28986,7 +28986,7 @@ lbl_47:
         }
         goto lbl_47;
     }
-    
+
     /*
      * Step in State.XDir and it is bounded by StpMax.
      *
@@ -29022,7 +29022,7 @@ lbl_47:
     {
         goto lbl_51;
     }
-    
+
     /*
      * Step is too short, model is fresh and we can rely on it.
      * Terminating.
@@ -29045,7 +29045,7 @@ lbl_53:
     return result;
     goto lbl_52;
 lbl_51:
-    
+
     /*
      * Step is suspiciously short, but model is not fresh
      * and we can't rely on it.
@@ -29054,7 +29054,7 @@ lbl_51:
     goto lbl_48;
 lbl_52:
 lbl_49:
-    
+
     /*
      * Let's evaluate new step:
      * a) if we have Fi vector, we evaluate it using rcomm, and
@@ -29093,7 +29093,7 @@ lbl_56:
     state->repnfunc = state->repnfunc+1;
     if( ae_fp_greater_eq(state->f,state->fbase) )
     {
-        
+
         /*
          * Increase lambda and continue
          */
@@ -29104,7 +29104,7 @@ lbl_56:
         }
         goto lbl_47;
     }
-    
+
     /*
      * We've found our step!
      */
@@ -29114,7 +29114,7 @@ lbl_56:
 lbl_48:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -29140,7 +29140,7 @@ lbl_48:
     {
         goto lbl_29;
     }
-    
+
     /*
      * Levenberg-Marquardt step is ready.
      * Compare predicted vs. actual decrease and decide what to do with lambda.
@@ -29170,7 +29170,7 @@ lbl_48:
     {
         goto lbl_59;
     }
-    
+
     /*
      * Lambda is too large, we have to break iterations.
      */
@@ -29196,7 +29196,7 @@ lbl_57:
     {
         minlm_decreaselambda(&state->lambdav, &state->nu, _state);
     }
-    
+
     /*
      * Accept step, report it and
      * test stopping conditions on iterations count and function decrease.
@@ -29241,7 +29241,7 @@ lbl_63:
     {
         goto lbl_67;
     }
-    
+
     /*
      * Report: XBase contains new point, F contains function value at new point
      */
@@ -29259,7 +29259,7 @@ lbl_65:
     state->modelage = state->modelage+1;
     goto lbl_28;
 lbl_29:
-    
+
     /*
      * Lambda is too large, we have to break iterations.
      */
@@ -29279,7 +29279,7 @@ lbl_18:
 lbl_69:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -29425,7 +29425,7 @@ NOTE: after  request  for  termination  optimizer  may   perform   several
 
 NOTE: calling this function on optimizer which is NOT running will have no
       effect.
-      
+
 NOTE: multiple calls to this function are possible. First call is counted,
       subsequent calls are silently ignored.
 
@@ -29503,7 +29503,7 @@ void minlmcreatefj(ae_int_t n,
     ae_assert(m>=1, "MinLMCreateFJ: M<1!", _state);
     ae_assert(x->cnt>=n, "MinLMCreateFJ: Length(X)<N!", _state);
     ae_assert(isfinitevector(x, n, _state), "MinLMCreateFJ: X contains infinite or NaN values!", _state);
-    
+
     /*
      * initialize
      */
@@ -29514,7 +29514,7 @@ void minlmcreatefj(ae_int_t n,
     state->hasf = ae_true;
     state->hasfi = ae_false;
     state->hasg = ae_false;
-    
+
     /*
      * init 2
      */
@@ -29633,7 +29633,7 @@ static void minlm_lmprepare(ae_int_t n,
     ae_vector_set_length(&state->gbase, n, _state);
     ae_vector_set_length(&state->xdir, n, _state);
     ae_vector_set_length(&state->tmp0, n, _state);
-    
+
     /*
      * prepare internal L-BFGS
      */
@@ -29643,13 +29643,13 @@ static void minlm_lmprepare(ae_int_t n,
     }
     minlbfgscreate(n, ae_minint(minlm_additers, n, _state), &state->x, &state->internalstate, _state);
     minlbfgssetcond(&state->internalstate, 0.0, 0.0, 0.0, ae_minint(minlm_additers, n, _state), _state);
-    
+
     /*
      * Prepare internal QP solver
      */
     minqpcreate(n, &state->qpstate, _state);
     minqpsetalgocholesky(&state->qpstate, _state);
-    
+
     /*
      * Prepare boundary constraints
      */
@@ -29664,7 +29664,7 @@ static void minlm_lmprepare(ae_int_t n,
         state->bndu.ptr.p_double[i] = _state->v_posinf;
         state->havebndu.ptr.p_bool[i] = ae_false;
     }
-    
+
     /*
      * Prepare scaling matrix
      */
@@ -30124,7 +30124,7 @@ void minasacreate(ae_int_t n,
         ae_assert(ae_fp_less_eq(bndl->ptr.p_double[i],x->ptr.p_double[i]), "MinASA: infeasible X!", _state);
         ae_assert(ae_fp_less_eq(x->ptr.p_double[i],bndu->ptr.p_double[i]), "MinASA: infeasible X!", _state);
     }
-    
+
     /*
      * Initialize
      */
@@ -30258,7 +30258,7 @@ ae_bool minasaiteration(minasastate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -30353,11 +30353,11 @@ ae_bool minasaiteration(minasastate* state, ae_state *_state)
     {
         goto lbl_14;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Prepare
      */
@@ -30381,7 +30381,7 @@ ae_bool minasaiteration(minasastate* state, ae_state *_state)
     }
     state->mu = 0.1;
     state->curalgo = 0;
-    
+
     /*
      * Calculate F/G, initialize algorithm
      */
@@ -30395,7 +30395,7 @@ lbl_0:
     {
         goto lbl_15;
     }
-    
+
     /*
      * progress report
      */
@@ -30413,7 +30413,7 @@ lbl_15:
         return result;
     }
     state->repnfev = state->repnfev+1;
-    
+
     /*
      * Main cycle
      *
@@ -30427,7 +30427,7 @@ lbl_17:
     {
         goto lbl_18;
     }
-    
+
     /*
      * GPA algorithm
      */
@@ -30442,7 +30442,7 @@ lbl_21:
     {
         goto lbl_22;
     }
-    
+
     /*
      * Determine Dk = proj(xk - gk)-xk
      */
@@ -30450,7 +30450,7 @@ lbl_21:
     {
         state->d.ptr.p_double[i] = boundval(state->xk.ptr.p_double[i]-state->g.ptr.p_double[i], state->bndl.ptr.p_double[i], state->bndu.ptr.p_double[i], _state)-state->xk.ptr.p_double[i];
     }
-    
+
     /*
      * Armijo line search.
      * * exact search with alpha=1 is tried first,
@@ -30474,7 +30474,7 @@ lbl_21:
     {
         goto lbl_23;
     }
-    
+
     /*
      * Try alpha=1 step first
      */
@@ -30498,7 +30498,7 @@ lbl_24:
     {
         goto lbl_25;
     }
-    
+
     /*
      * we are at the boundary(ies)
      */
@@ -30506,7 +30506,7 @@ lbl_24:
     state->stp = (double)(1);
     goto lbl_26;
 lbl_25:
-    
+
     /*
      * alpha=1 is too large, try smaller values
      */
@@ -30551,7 +30551,7 @@ lbl_26:
     {
         goto lbl_29;
     }
-    
+
     /*
      * progress report
      */
@@ -30562,7 +30562,7 @@ lbl_26:
 lbl_4:
     state->xupdated = ae_false;
 lbl_29:
-    
+
     /*
      * Calculate new set of active constraints.
      * Reset counter if active set was changed.
@@ -30590,7 +30590,7 @@ lbl_29:
     state->acount = state->acount+1;
     ae_v_move(&state->xk.ptr.p_double[0], 1, &state->xn.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_move(&state->ak.ptr.p_double[0], 1, &state->an.ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Stopping conditions
      */
@@ -30598,7 +30598,7 @@ lbl_29:
     {
         goto lbl_31;
     }
-    
+
     /*
      * Too many iterations
      */
@@ -30621,7 +30621,7 @@ lbl_31:
     {
         goto lbl_35;
     }
-    
+
     /*
      * Gradient is small enough
      */
@@ -30645,7 +30645,7 @@ lbl_35:
     {
         goto lbl_39;
     }
-    
+
     /*
      * Step size is too small, no further improvement is
      * possible
@@ -30669,7 +30669,7 @@ lbl_39:
     {
         goto lbl_43;
     }
-    
+
     /*
      * F(k+1)-F(k) is small enough
      */
@@ -30688,7 +30688,7 @@ lbl_45:
     result = ae_false;
     return result;
 lbl_43:
-    
+
     /*
      * Decide - should we switch algorithm or not
      */
@@ -30715,7 +30715,7 @@ lbl_43:
             }
         }
     }
-    
+
     /*
      * Next iteration
      */
@@ -30723,7 +30723,7 @@ lbl_43:
     goto lbl_21;
 lbl_22:
 lbl_19:
-    
+
     /*
      * CG algorithm
      */
@@ -30731,7 +30731,7 @@ lbl_19:
     {
         goto lbl_47;
     }
-    
+
     /*
      * first, check that there are non-active constraints.
      * move to GPA algorithm, if all constraints are active
@@ -30750,7 +30750,7 @@ lbl_19:
         state->curalgo = 0;
         goto lbl_17;
     }
-    
+
     /*
      * CG iterations
      */
@@ -30766,7 +30766,7 @@ lbl_49:
     {
         goto lbl_50;
     }
-    
+
     /*
      * Store G[k] for later calculation of Y[k]
      */
@@ -30774,7 +30774,7 @@ lbl_49:
     {
         state->yk.ptr.p_double[i] = -state->gc.ptr.p_double[i];
     }
-    
+
     /*
      * Make a CG step in direction given by DK[]:
      * * calculate step. Step projection into feasible set
@@ -30801,7 +30801,7 @@ lbl_51:
     {
         goto lbl_52;
     }
-    
+
     /*
      * preprocess data: bound State.XN so it belongs to the
      * feasible set and store it in the State.X
@@ -30810,7 +30810,7 @@ lbl_51:
     {
         state->x.ptr.p_double[i] = boundval(state->xn.ptr.p_double[i], state->bndl.ptr.p_double[i], state->bndu.ptr.p_double[i], _state);
     }
-    
+
     /*
      * RComm
      */
@@ -30820,7 +30820,7 @@ lbl_51:
     goto lbl_rcomm;
 lbl_9:
     state->needfg = ae_false;
-    
+
     /*
      * postprocess data: zero components of G corresponding to
      * the active constraints
@@ -30842,13 +30842,13 @@ lbl_52:
     diffcnt = 0;
     for(i=0; i<=n-1; i++)
     {
-        
+
         /*
          * XN contains unprojected result, project it,
          * save copy to X (will be used for progress reporting)
          */
         state->xn.ptr.p_double[i] = boundval(state->xn.ptr.p_double[i], state->bndl.ptr.p_double[i], state->bndu.ptr.p_double[i], _state);
-        
+
         /*
          * update active set
          */
@@ -30873,7 +30873,7 @@ lbl_52:
     {
         goto lbl_53;
     }
-    
+
     /*
      * progress report
      */
@@ -30884,13 +30884,13 @@ lbl_52:
 lbl_10:
     state->xupdated = ae_false;
 lbl_53:
-    
+
     /*
      * Update info about step length
      */
     v = ae_v_dotproduct(&state->d.ptr.p_double[0], 1, &state->d.ptr.p_double[0], 1, ae_v_len(0,n-1));
     state->laststep = ae_sqrt(v, _state)*state->stp;
-    
+
     /*
      * Check stopping conditions.
      */
@@ -30898,7 +30898,7 @@ lbl_53:
     {
         goto lbl_55;
     }
-    
+
     /*
      * Gradient is small enough
      */
@@ -30921,7 +30921,7 @@ lbl_55:
     {
         goto lbl_59;
     }
-    
+
     /*
      * Too many iterations
      */
@@ -30944,7 +30944,7 @@ lbl_59:
     {
         goto lbl_63;
     }
-    
+
     /*
      * These conditions (EpsF/EpsX) are explicitly or implicitly
      * related to the current step size and influenced
@@ -30965,7 +30965,7 @@ lbl_59:
     {
         goto lbl_65;
     }
-    
+
     /*
      * F(k+1)-F(k) is small enough
      */
@@ -30988,7 +30988,7 @@ lbl_65:
     {
         goto lbl_69;
     }
-    
+
     /*
      * X(k+1)-X(k) is small enough
      */
@@ -31008,7 +31008,7 @@ lbl_71:
     return result;
 lbl_69:
 lbl_63:
-    
+
     /*
      * Check conditions for switching
      */
@@ -31029,7 +31029,7 @@ lbl_63:
         }
         goto lbl_50;
     }
-    
+
     /*
      * Calculate D(k+1)
      *
@@ -31040,7 +31040,7 @@ lbl_63:
      */
     if( mcinfo==1 )
     {
-        
+
         /*
          * Standard Wolfe conditions are satisfied:
          * * calculate Y[K] and BetaK
@@ -31062,7 +31062,7 @@ lbl_63:
     }
     else
     {
-        
+
         /*
          * Something is wrong (may be function is too wild or too flat).
          *
@@ -31075,7 +31075,7 @@ lbl_63:
     ae_v_moveneg(&state->dn.ptr.p_double[0], 1, &state->gc.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_addd(&state->dn.ptr.p_double[0], 1, &state->dk.ptr.p_double[0], 1, ae_v_len(0,n-1), betak);
     ae_v_move(&state->dk.ptr.p_double[0], 1, &state->dn.ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * update other information
      */
@@ -31088,7 +31088,7 @@ lbl_47:
 lbl_18:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -31538,10 +31538,10 @@ http://www.alglib.net/optimization/
    may change in future releases of ALGLIB without notice, and no one  can
    guarantee that new solver will be  able  to  solve  your  problem  with
    default settings.
-   
+
    From the other side, if you choose solver explicitly, you can be pretty
    sure that it will work with new ALGLIB releases.
-   
+
    In the current release following solvers can be used:
    * AUL solver (activated with MinNLCSetAlgoAUL() function)
 
@@ -31551,7 +31551,7 @@ http://www.alglib.net/optimization/
    b) MinNLCSetLC() for linear constraints
    c) MinNLCSetNLC() for nonlinear constraints
    You may combine (a), (b) and (c) in one optimization problem.
-   
+
 3. User sets scale of the variables with MinNLCSetScale() function. It  is
    VERY important to set  scale  of  the  variables,  because  nonlinearly
    constrained problems are hard to solve when variables are badly scaled.
@@ -31559,7 +31559,7 @@ http://www.alglib.net/optimization/
 4. User sets  stopping  conditions  with  MinNLCSetCond(). If  NLC  solver
    uses  inner/outer  iteration  layout,  this  function   sets   stopping
    conditions for INNER iterations.
-   
+
 5. User chooses one of the  preconditioning  methods.  Preconditioning  is
    very  important  for  efficient  handling  of boundary/linear/nonlinear
    constraints. Without preconditioning algorithm would require  thousands
@@ -31778,7 +31778,7 @@ void minnlcsetlc(minnlcstate* state,
 
 
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -31787,7 +31787,7 @@ void minnlcsetlc(minnlcstate* state,
     ae_assert(c->rows>=k, "MinNLCSetLC: Rows(C)<K", _state);
     ae_assert(ct->cnt>=k, "MinNLCSetLC: Length(CT)<K", _state);
     ae_assert(apservisfinitematrix(c, k, n+1, _state), "MinNLCSetLC: C contains infinite or NaN values!", _state);
-    
+
     /*
      * Handle zero K
      */
@@ -31797,7 +31797,7 @@ void minnlcsetlc(minnlcstate* state,
         state->nic = 0;
         return;
     }
-    
+
     /*
      * Equality constraints are stored first, in the upper
      * NEC rows of State.CLEIC matrix. Inequality constraints
@@ -31863,16 +31863,16 @@ NOTE 1: when you solve your problem  with  augmented  Lagrangian   solver,
         nonlinear constraints are satisfied only  approximately!   It   is
         possible   that  algorithm  will  evaluate  function  outside   of
         feasible area!
-        
+
 NOTE 2: algorithm scales variables  according  to   scale   specified   by
         MinNLCSetScale()  function,  so  it can handle problems with badly
         scaled variables (as long as we KNOW their scales).
-           
+
         However,  there  is  no  way  to  automatically  scale   nonlinear
         constraints Gi(x) and Hi(x). Inappropriate scaling  of  Gi/Hi  may
         ruin convergence. Solving problem with  constraint  "1000*G0(x)=0"
         is NOT same as solving it with constraint "0.001*G0(x)=0".
-           
+
         It  means  that  YOU  are  the  one who is responsible for correct
         scaling of nonlinear constraints Gi(x) and Hi(x). We recommend you
         to scale nonlinear constraints in such way that I-th component  of
@@ -32121,10 +32121,10 @@ Augmented Lagrangian algorithm works by converting problem  of  minimizing
 F(x) subject to equality/inequality constraints   to unconstrained problem
 of the form
 
-    min[ f(x) + 
-        + Rho*PENALTY_EQ(x)   + SHIFT_EQ(x,Nu1) + 
+    min[ f(x) +
+        + Rho*PENALTY_EQ(x)   + SHIFT_EQ(x,Nu1) +
         + Rho*PENALTY_INEQ(x) + SHIFT_INEQ(x,Nu2) ]
-    
+
 where:
 * Rho is a fixed penalization coefficient
 * PENALTY_EQ(x) is a penalty term, which is used to APPROXIMATELY  enforce
@@ -32176,7 +32176,7 @@ INPUT PARAMETERS:
                   barrier method.
                 * ItsCnt>1 means that  AUL  algorithm  performs  specified
                   number of outer iterations
-                
+
 HOW TO CHOOSE PARAMETERS
 
 Nonlinear optimization is a tricky area and Augmented Lagrangian algorithm
@@ -32191,11 +32191,11 @@ recommendations:
   outer iteration (ItcCnt=1). In this case algorithm behaves like  penalty
   method. Increase Rho in 2x or 10x steps until you  see  that  one  outer
   iteration returns point which is "rough approximation to solution".
-  
+
   It is very important to have Rho so  large  that  penalty  term  becomes
   constraining i.e. modified function becomes highly convex in constrained
   directions.
-  
+
   From the other side, too large Rho may prevent you  from  converging  to
   the solution. You can diagnose it by studying number of inner iterations
   performed by algorithm: too few (5-10 on  1000-dimensional  problem)  or
@@ -32206,18 +32206,18 @@ recommendations:
   Some constraints can be violated with very  large  margin,  while  other
   ones (which are NOT violated in the true solution) can push final  point
   too far in the inner area of the feasible set.
-  
+
   For example, if you have constraint x0>=0 and true solution  x0=1,  then
   merely a presence of "x0>=0" will introduce a bias towards larger values
   of x0. Say, algorithm may stop at x0=1.5 instead of 1.0.
-  
+
 * after you found good Rho, you may increase number of  outer  iterations.
   ItsCnt=10 is a good value. Subsequent outer iteration will refine values
   of  Lagrange  multipliers.  Constraints  which  were  violated  will  be
   enforced, inactive constraints will be dropped (corresponding multipliers
   will be decreased). Ideally, you  should  see  10-1000x  improvement  in
   constraint handling (constraint violation is reduced).
-  
+
 * if  you  see  that  algorithm  converges  to  vicinity  of solution, but
   additional outer iterations do not refine solution,  it  may  mean  that
   algorithm is unstable - it wanders around true  solution,  but  can  not
@@ -32270,7 +32270,7 @@ In all these cases algorithm is unstable - each outer iteration results in
 large and almost random step which improves handling of some  constraints,
 but violates other ones (ideally  outer iterations should form a  sequence
 of progressively decreasing steps towards solution).
-   
+
 First reason possible is  that  too  loose  stopping  criteria  for  inner
 iteration were specified. Augmented Lagrangian algorithm solves a sequence
 of intermediate problems, and requries each of them to be solved with high
@@ -32392,7 +32392,7 @@ ae_bool minnlciteration(minnlcstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -32455,11 +32455,11 @@ ae_bool minnlciteration(minnlcstate* state, ae_state *_state)
     {
         goto lbl_8;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Init
      */
@@ -32474,7 +32474,7 @@ ae_bool minnlciteration(minnlcstate* state, ae_state *_state)
     ng = state->ng;
     nh = state->nh;
     minnlc_clearrequestfields(state, _state);
-    
+
     /*
      * Test gradient
      */
@@ -32533,7 +32533,7 @@ lbl_2:
 lbl_13:
     state->needfij = ae_false;
 lbl_9:
-    
+
     /*
      * AUL solver
      */
@@ -32558,7 +32558,7 @@ lbl_16:
     {
         goto lbl_17;
     }
-    
+
     /*
      * Numerical differentiation (if needed) - intercept NeedFiJ
      * request and replace it by sequence of NeedFi requests
@@ -32611,7 +32611,7 @@ lbl_22:
     state->rstate.stage = 7;
     goto lbl_rcomm;
 lbl_7:
-    
+
     /*
      * Restore previous values of fields and continue
      */
@@ -32619,7 +32619,7 @@ lbl_7:
     state->needfij = ae_true;
     goto lbl_16;
 lbl_18:
-    
+
     /*
      * Forward request to caller
      */
@@ -32633,7 +32633,7 @@ lbl_17:
 lbl_14:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -32670,7 +32670,7 @@ OUTPUT PARAMETERS:
                 *  5   MaxIts steps was taken
                 More information about fields of this  structure  can  be
                 found in the comments on MinNLCReport datatype.
-   
+
   -- ALGLIB --
      Copyright 06.06.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -32752,18 +32752,18 @@ void minnlcrestartfrom(minnlcstate* state,
 
 
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
     ae_assert(x->cnt>=n, "MinNLCRestartFrom: Length(X)<N", _state);
     ae_assert(isfinitevector(x, n, _state), "MinNLCRestartFrom: X contains infinite or NaN values!", _state);
-    
+
     /*
      * Set XC
      */
     ae_v_move(&state->xstart.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * prepare RComm facilities
      */
@@ -32839,7 +32839,7 @@ INPUT PARAMETERS:
     Alpha   -   function argument. Penalty function becomes large when
                 Alpha approaches -1 or +1. It is defined for Alpha<=-1 or
                 Alpha>=+1 - in this case infinite value is returned.
-                
+
 OUTPUT PARAMETERS:
     F       -   depending on Alpha:
                 * for Alpha in (-1+eps,+1-eps), F=F(Alpha)
@@ -32897,12 +32897,12 @@ INPUT PARAMETERS:
                 feasible set.
     StabilizingPoint- point where F becomes  non-zero.  Must  be  negative
                 value, at least -1, large values (hundreds) are possible.
-                
+
 OUTPUT PARAMETERS:
     F       -   F(Alpha)
     DF      -   DF=dF(Alpha)/dAlpha, exact derivative
     D2F     -   second derivative
-    
+
 NOTE: it is improtant to  have  significantly  non-zero  StabilizingPoint,
       because when it  is  large,  shift  term  does  not  interfere  with
       Lagrange  multipliers  converging  to  their  final  values.   Thus,
@@ -32960,7 +32960,7 @@ INPUT PARAMETERS:
                 Large positive Alpha's correspond to  inner  area  of  the
                 feasible set. Alpha<1 corresponds to  outer  area  of  the
                 feasible set.
-                
+
 OUTPUT PARAMETERS:
     F       -   F(Alpha)
     DF      -   DF=dF(Alpha)/dAlpha, exact derivative
@@ -33028,13 +33028,13 @@ static void minnlc_minnlcinitinternal(ae_int_t n,
     ae_matrix_init(&c, 0, 0, DT_REAL, _state);
     ae_vector_init(&ct, 0, DT_INT, _state);
 
-    
+
     /*
      * Default params
      */
     state->stabilizingpoint = -100.0;
     state->initialinequalitymultiplier = 1.0;
-    
+
     /*
      * Initialize other params
      */
@@ -33077,7 +33077,7 @@ state);
 
 Parameters:
     AULOptimizer    -   optimizer to tune
-    
+
   -- ALGLIB --
      Copyright 06.06.2014 by Bochkanov Sergey
 *************************************************************************/
@@ -33151,7 +33151,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
     rvectorsetlengthatleast(bufd, n, _state);
     rvectorsetlengthatleast(bufc, nec+nic+ng+nh, _state);
     rmatrixsetlengthatleast(bufw, nec+nic+ng+nh, n, _state);
-    
+
     /*
      * Preconditioner before update from barrier/penalty functions
      */
@@ -33163,7 +33163,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
     {
         bufd->ptr.p_double[i] = gammak;
     }
-    
+
     /*
      * Update diagonal Hessian using nonlinearity from boundary constraints:
      * * penalty term from equality constraints
@@ -33191,7 +33191,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
             bufd->ptr.p_double[i] = bufd->ptr.p_double[i]+nubc->ptr.p_double[2*i+1]*d2p*rho;
         }
     }
-    
+
     /*
      * Process linear constraints
      */
@@ -33202,7 +33202,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
         v = v-cleic->ptr.pp_double[i][n];
         if( i<nec )
         {
-            
+
             /*
              * Equality constraint
              */
@@ -33211,7 +33211,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
         }
         else
         {
-            
+
             /*
              * Inequality constraint
              */
@@ -33219,7 +33219,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
             bufc->ptr.p_double[i] = nulc->ptr.p_double[i]*d2p*rho;
         }
     }
-    
+
     /*
      * Process nonlinear constraints
      */
@@ -33229,7 +33229,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
         v = fi->ptr.p_double[1+i];
         if( i<ng )
         {
-            
+
             /*
              * Equality constraint
              */
@@ -33238,7 +33238,7 @@ static void minnlc_updatepreconditioner(ae_int_t prectype,
         }
         else
         {
-            
+
             /*
              * Inequality constraint
              */
@@ -33299,7 +33299,7 @@ static void minnlc_penaltybc(/* Real    */ ae_vector* x,
     {
         if( (hasbndl->ptr.p_bool[i]&&hasbndu->ptr.p_bool[i])&&ae_fp_eq(bndl->ptr.p_double[i],bndu->ptr.p_double[i]) )
         {
-            
+
             /*
              * I-th boundary constraint is of equality-type
              */
@@ -33310,7 +33310,7 @@ static void minnlc_penaltybc(/* Real    */ ae_vector* x,
         }
         if( hasbndl->ptr.p_bool[i] )
         {
-            
+
             /*
              * Handle lower bound
              */
@@ -33323,7 +33323,7 @@ static void minnlc_penaltybc(/* Real    */ ae_vector* x,
         }
         if( hasbndu->ptr.p_bool[i] )
         {
-            
+
             /*
              * Handle upper bound
              */
@@ -33386,7 +33386,7 @@ static void minnlc_penaltylc(/* Real    */ ae_vector* x,
         v = v-cleic->ptr.pp_double[i][n];
         if( i<nec )
         {
-            
+
             /*
              * Equality constraint
              */
@@ -33400,7 +33400,7 @@ static void minnlc_penaltylc(/* Real    */ ae_vector* x,
         }
         else
         {
-            
+
             /*
              * Inequality constraint
              */
@@ -33461,7 +33461,7 @@ static void minnlc_penaltynlc(/* Real    */ ae_vector* fi,
     double d2p;
 
 
-    
+
     /*
      * IMPORTANT: loop starts from 1, not zero!
      */
@@ -33470,7 +33470,7 @@ static void minnlc_penaltynlc(/* Real    */ ae_vector* fi,
         v = fi->ptr.p_double[i];
         if( i<=ng )
         {
-            
+
             /*
              * Equality constraint
              */
@@ -33484,7 +33484,7 @@ static void minnlc_penaltynlc(/* Real    */ ae_vector* fi,
         }
         else
         {
-            
+
             /*
              * Inequality constraint
              */
@@ -33536,7 +33536,7 @@ static ae_bool minnlc_auliteration(minnlcstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -33599,7 +33599,7 @@ static ae_bool minnlc_auliteration(minnlcstate* state, ae_state *_state)
     {
         goto lbl_2;
     }
-    
+
     /*
      * Routine body
      */
@@ -33609,7 +33609,7 @@ static ae_bool minnlc_auliteration(minnlcstate* state, ae_state *_state)
     nic = state->nic;
     ng = state->ng;
     nh = state->nh;
-    
+
     /*
      * Prepare scaled problem
      */
@@ -33630,7 +33630,7 @@ static ae_bool minnlc_auliteration(minnlcstate* state, ae_state *_state)
     }
     for(i=0; i<=nec+nic-1; i++)
     {
-        
+
         /*
          * Scale and normalize linear constraints
          */
@@ -33651,12 +33651,12 @@ static ae_bool minnlc_auliteration(minnlcstate* state, ae_state *_state)
             }
         }
     }
-    
+
     /*
      * Prepare stopping criteria
      */
     minlbfgssetcond(&state->auloptimizer, state->epsg, state->epsf, state->epsx, state->maxits, _state);
-    
+
     /*
      * Main AUL cycle:
      * * prepare Lagrange multipliers NuNB/NuLC
@@ -33712,7 +33712,7 @@ lbl_3:
     {
         goto lbl_5;
     }
-    
+
     /*
      * Optimize with current Lagrange multipliers
      *
@@ -33740,7 +33740,7 @@ lbl_6:
     {
         goto lbl_8;
     }
-    
+
     /*
      * Un-scale X, evaluate F/G/H, re-scale Jacobian
      */
@@ -33760,7 +33760,7 @@ lbl_0:
             state->j.ptr.pp_double[i][j] = state->j.ptr.pp_double[i][j]*state->s.ptr.p_double[j];
         }
     }
-    
+
     /*
      * Store data for estimation of Hessian norm:
      * * current point (re-scaled)
@@ -33768,7 +33768,7 @@ lbl_0:
      */
     ae_v_move(&state->xk1.ptr.p_double[0], 1, &state->auloptimizer.x.ptr.p_double[0], 1, ae_v_len(0,n-1));
     ae_v_move(&state->gk1.ptr.p_double[0], 1, &state->j.ptr.pp_double[0][0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * Function being optimized
      */
@@ -33777,14 +33777,14 @@ lbl_0:
     {
         state->auloptimizer.g.ptr.p_double[i] = state->j.ptr.pp_double[0][i];
     }
-    
+
     /*
      * Penalty for violation of boundary/linear/nonlinear constraints
      */
     minnlc_penaltybc(&state->auloptimizer.x, &state->scaledbndl, &state->hasbndl, &state->scaledbndu, &state->hasbndu, &state->nubc, n, state->rho, state->stabilizingpoint, &state->auloptimizer.f, &state->auloptimizer.g, _state);
     minnlc_penaltylc(&state->auloptimizer.x, &state->scaledcleic, &state->nulc, n, nec, nic, state->rho, state->stabilizingpoint, &state->auloptimizer.f, &state->auloptimizer.g, _state);
     minnlc_penaltynlc(&state->fi, &state->j, &state->nunlc, n, ng, nh, state->rho, state->stabilizingpoint, &state->auloptimizer.f, &state->auloptimizer.g, _state);
-    
+
     /*
      * To optimizer
      */
@@ -33794,7 +33794,7 @@ lbl_8:
     {
         goto lbl_10;
     }
-    
+
     /*
      * Report current point (if needed)
      */
@@ -33813,13 +33813,13 @@ lbl_8:
 lbl_1:
     state->xupdated = ae_false;
 lbl_12:
-    
+
     /*
      * Update GammaK
      */
     if( state->xkpresent )
     {
-        
+
         /*
          * XK/GK store beginning of current line search, and XK1/GK1
          * store data for the end of the line search:
@@ -33858,7 +33858,7 @@ lbl_12:
     }
     else
     {
-        
+
         /*
          * Beginning of the first line search, XK is not yet initialized.
          */
@@ -33866,7 +33866,7 @@ lbl_12:
         ae_v_move(&state->gk.ptr.p_double[0], 1, &state->gk1.ptr.p_double[0], 1, ae_v_len(0,n-1));
         state->xkpresent = ae_true;
     }
-    
+
     /*
      * Update preconsitioner using current GammaK
      */
@@ -33885,7 +33885,7 @@ lbl_7:
     {
         goto lbl_5;
     }
-    
+
     /*
      * 1. Evaluate F/J
      * 2. Check for NAN/INF in F/J: we just calculate sum of their
@@ -33914,7 +33914,7 @@ lbl_2:
     }
     if( !ae_isfinite(v, _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
@@ -33931,7 +33931,7 @@ lbl_2:
     }
     for(i=0; i<=n-1; i++)
     {
-        
+
         /*
          * Process coefficients corresponding to equality-type
          * constraints.
@@ -33942,7 +33942,7 @@ lbl_2:
             state->nubc.ptr.p_double[2*i+0] = state->nubc.ptr.p_double[2*i+0]-dp;
             continue;
         }
-        
+
         /*
          * Process coefficients corresponding to inequality-type
          * constraints. These coefficients have limited growth/decay
@@ -33986,7 +33986,7 @@ lbl_2:
     }
     for(i=1; i<=ng+nh; i++)
     {
-        
+
         /*
          * NOTE: loop index must start from 1, not zero!
          */
@@ -34014,7 +34014,7 @@ lbl_5:
     }
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -34555,7 +34555,7 @@ void minnssetlc(minnsstate* state,
 
 
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
@@ -34564,7 +34564,7 @@ void minnssetlc(minnsstate* state,
     ae_assert(c->rows>=k, "MinNSSetLC: Rows(C)<K", _state);
     ae_assert(ct->cnt>=k, "MinNSSetLC: Length(CT)<K", _state);
     ae_assert(apservisfinitematrix(c, k, n+1, _state), "MinNSSetLC: C contains infinite or NaN values!", _state);
-    
+
     /*
      * Handle zero K
      */
@@ -34574,7 +34574,7 @@ void minnssetlc(minnsstate* state,
         state->nic = 0;
         return;
     }
-    
+
     /*
      * Equality constraints are stored first, in the upper
      * NEC rows of State.CLEIC matrix. Inequality constraints
@@ -34972,7 +34972,7 @@ ae_bool minnsiteration(minnsstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -35021,11 +35021,11 @@ ae_bool minnsiteration(minnsstate* state, ae_state *_state)
     {
         goto lbl_3;
     }
-    
+
     /*
      * Routine body
      */
-    
+
     /*
      * Init
      */
@@ -35043,7 +35043,7 @@ ae_bool minnsiteration(minnsstate* state, ae_state *_state)
     ng = state->ng;
     nh = state->nh;
     minns_clearrequestfields(state, _state);
-    
+
     /*
      * AGS solver
      */
@@ -35066,7 +35066,7 @@ lbl_6:
     {
         goto lbl_7;
     }
-    
+
     /*
      * Numerical differentiation (if needed) - intercept NeedFiJ
      * request and replace it by sequence of NeedFi requests
@@ -35131,7 +35131,7 @@ lbl_12:
     state->rstate.stage = 2;
     goto lbl_rcomm;
 lbl_2:
-    
+
     /*
      * Restore previous values of fields and continue
      */
@@ -35139,7 +35139,7 @@ lbl_2:
     state->needfij = ae_true;
     goto lbl_6;
 lbl_8:
-    
+
     /*
      * Forward request to caller
      */
@@ -35154,7 +35154,7 @@ lbl_7:
 lbl_4:
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -35278,18 +35278,18 @@ void minnsrestartfrom(minnsstate* state,
 
 
     n = state->n;
-    
+
     /*
      * First, check for errors in the inputs
      */
     ae_assert(x->cnt>=n, "MinNSRestartFrom: Length(X)<N", _state);
     ae_assert(isfinitevector(x, n, _state), "MinNSRestartFrom: X contains infinite or NaN values!", _state);
-    
+
     /*
      * Set XC
      */
     ae_v_move(&state->xstart.ptr.p_double[0], 1, &x->ptr.p_double[0], 1, ae_v_len(0,n-1));
-    
+
     /*
      * prepare RComm facilities
      */
@@ -35349,7 +35349,7 @@ static void minns_minnsinitinternal(ae_int_t n,
     state->agsminupdate = ae_maxint(5, n/2, _state);
     state->agssamplesize = ae_maxint(2*n+1, state->agsminupdate+1, _state);
     state->agsshortlimit = 4+state->agssamplesize/state->agsminupdate;
-    
+
     /*
      * Initialize other params
      */
@@ -35431,7 +35431,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     ae_bool result;
 
 
-    
+
     /*
      * Reverse communication preparations
      * I know it looks ugly, but it works the same way
@@ -35520,7 +35520,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     {
         goto lbl_3;
     }
-    
+
     /*
      * Routine body
      */
@@ -35530,7 +35530,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     nic = state->nic;
     ng = state->ng;
     nh = state->nh;
-    
+
     /*
      * Check consistency of parameters
      */
@@ -35540,7 +35540,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
         result = ae_false;
         return result;
     }
-    
+
     /*
      * Allocate arrays.
      */
@@ -35555,7 +35555,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     rvectorsetlengthatleast(&state->samplef, maxsamplesize+1, _state);
     rvectorsetlengthatleast(&state->samplef0, maxsamplesize+1, _state);
     rvectorsetlengthatleast(&state->grs, n, _state);
-    
+
     /*
      * Prepare optimizer
      */
@@ -35568,13 +35568,13 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
         state->tmp0.ptr.p_double[i] = 0.0;
         state->tmp1.ptr.p_double[i] = _state->v_posinf;
     }
-    
+
     /*
      * Prepare RNG, seed it with fixed values so
      * that each run on same problem yeilds same results
      */
     hqrndseed(7235, 98532, &state->agsrs, _state);
-    
+
     /*
      * Prepare initial point subject to current bound constraints and
      * perform scaling of bound constraints, linear constraints, point itself
@@ -35583,7 +35583,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     rvectorsetlengthatleast(&state->scaledbndu, n, _state);
     for(i=0; i<=n-1; i++)
     {
-        
+
         /*
          * Check and scale constraints
          */
@@ -35617,7 +35617,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
         {
             ae_assert(ae_fp_eq(state->scaledbndl.ptr.p_double[i],state->scaledbndu.ptr.p_double[i]), "MinNS: integrity check failed", _state);
         }
-        
+
         /*
          * Scale and constrain point
          */
@@ -35646,12 +35646,12 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
     rvectorsetlengthatleast(&state->rholinear, nec+nic, _state);
     for(i=0; i<=nec+nic-1; i++)
     {
-        
+
         /*
          * Initial value of penalty coefficient is zero
          */
         state->rholinear.ptr.p_double[i] = 0.0;
-        
+
         /*
          * Scale and normalize linear constraints
          */
@@ -35672,7 +35672,7 @@ static ae_bool minns_agsiteration(minnsstate* state, ae_state *_state)
             }
         }
     }
-    
+
     /*
      * Main cycle
      *
@@ -35696,7 +35696,7 @@ lbl_4:
     {
         goto lbl_5;
     }
-    
+
     /*
      * First phase of iteration - central point:
      *
@@ -35763,7 +35763,7 @@ lbl_1:
 lbl_6:
     if( state->userterminationneeded )
     {
-        
+
         /*
          * User requested termination
          */
@@ -35777,7 +35777,7 @@ lbl_6:
     }
     if( !ae_isfinite(v, _state)||!ae_isfinite(state->samplef.ptr.p_double[0], _state) )
     {
-        
+
         /*
          * Abnormal termination - infinities in function/gradient
          */
@@ -35787,7 +35787,7 @@ lbl_6:
     restartneeded = ae_false;
     for(i=0; i<=nec+nic-1; i++)
     {
-        
+
         /*
          * Evaluate penalty function.
          *
@@ -35807,7 +35807,7 @@ lbl_6:
         {
             continue;
         }
-        
+
         /*
          * Calculate directional derivative, compare it with threshold.
          *
@@ -35832,13 +35832,13 @@ lbl_6:
         cursamplesize = 0;
         goto lbl_4;
     }
-    
+
     /*
      * Check stopping conditions.
      */
     if( radiusdecays>=state->agsmaxraddecays )
     {
-        
+
         /*
          * Too many attempts to decrease radius
          */
@@ -35847,7 +35847,7 @@ lbl_6:
     }
     if( state->repinneriterationscount>=state->maxits&&state->maxits>0 )
     {
-        
+
         /*
          * Too many iterations
          */
@@ -35856,7 +35856,7 @@ lbl_6:
     }
     if( ae_fp_less_eq(radius,state->epsx*state->agsraddecay) )
     {
-        
+
         /*
          * Radius is smaller than required step tolerance multiplied by radius decay.
          *
@@ -35866,7 +35866,7 @@ lbl_6:
         state->repterminationtype = 2;
         goto lbl_5;
     }
-    
+
     /*
      * Update sample:
      *
@@ -35883,7 +35883,7 @@ lbl_6:
     k = 1;
     for(i=1; i<=cursamplesize-1; i++)
     {
-        
+
         /*
          * If entry is outside of Radius-ball around XC, discard it.
          */
@@ -35896,7 +35896,7 @@ lbl_6:
         {
             continue;
         }
-        
+
         /*
          * If central point is exactly at boundary, and corresponding
          * component of entry is OUT of boundary, entry is discarded.
@@ -35911,7 +35911,7 @@ lbl_6:
         {
             continue;
         }
-        
+
         /*
          * Move to the beginning
          */
@@ -35924,7 +35924,7 @@ lbl_6:
     cursamplesize = k;
     if( state->agssamplesize-cursamplesize<state->agsminupdate )
     {
-        
+
         /*
          * Remove oldest entries
          */
@@ -35948,12 +35948,12 @@ lbl_8:
     }
     for(j=0; j<=n-1; j++)
     {
-        
+
         /*
          * Undistorted position
          */
         state->samplex.ptr.pp_double[i][j] = state->xc.ptr.p_double[j];
-        
+
         /*
          * Do not apply distortion, if we are exactly at boundary constraint.
          */
@@ -35969,13 +35969,13 @@ lbl_8:
         {
             continue;
         }
-        
+
         /*
          * Apply distortion
          */
         if( ae_fp_greater_eq(hqrnduniformr(&state->agsrs, _state),0.5) )
         {
-            
+
             /*
              * Sample at the left side with 50% probability
              */
@@ -35988,7 +35988,7 @@ lbl_8:
         }
         else
         {
-            
+
             /*
              * Sample at the right side with 50% probability
              */
@@ -36019,7 +36019,7 @@ lbl_10:
     fullsample = cursamplesize==state->agssamplesize;
     for(j=0; j<=cursamplesize-1; j++)
     {
-        
+
         /*
          * For J-th element in gradient sample, process all of its components
          * and modify them according to status of box constraints
@@ -36031,7 +36031,7 @@ lbl_10:
             state->samplegmbc.ptr.pp_double[j][i] = state->samplegm.ptr.pp_double[j][i];
             if( (state->hasbndl.ptr.p_bool[i]&&state->hasbndu.ptr.p_bool[i])&&ae_fp_eq(state->scaledbndl.ptr.p_double[i],state->scaledbndu.ptr.p_double[i]) )
             {
-                
+
                 /*
                  * I-th box constraint is of equality type (lower bound matches upper one).
                  * Simplest case, always active.
@@ -36041,7 +36041,7 @@ lbl_10:
             }
             if( state->hasbndl.ptr.p_bool[i]&&ae_fp_eq(state->xc.ptr.p_double[i],state->scaledbndl.ptr.p_double[i]) )
             {
-                
+
                 /*
                  * We are at lower bound.
                  *
@@ -36058,7 +36058,7 @@ lbl_10:
             }
             if( state->hasbndu.ptr.p_bool[i]&&ae_fp_eq(state->xc.ptr.p_double[i],state->scaledbndu.ptr.p_double[i]) )
             {
-                
+
                 /*
                  * We are at upper bound.
                  *
@@ -36075,7 +36075,7 @@ lbl_10:
             }
         }
     }
-    
+
     /*
      * Calculate diagonal Hessian.
      *
@@ -36113,7 +36113,7 @@ lbl_10:
     {
         if( ae_fp_neq(state->signmin.ptr.p_double[j],state->signmax.ptr.p_double[j]) )
         {
-            
+
             /*
              * Alternating signs of gradient - step is proportional to current sampling radius
              */
@@ -36124,7 +36124,7 @@ lbl_10:
         }
         if( ae_fp_neq(state->colmax.ptr.p_double[j],(double)(0)) )
         {
-            
+
             /*
              * Non-alternating sign of gradient, but non-zero.
              * Step is proportional to initial sampling radius
@@ -36135,7 +36135,7 @@ lbl_10:
         }
         state->diagh.ptr.p_double[j] = (double)(1);
     }
-    
+
     /*
      * PROJECTION PHASE
      *
@@ -36165,7 +36165,7 @@ lbl_10:
     }
     if( ae_fp_less_eq(v,state->agsstattold) )
     {
-        
+
         /*
          * Stationarity test succeded.
          * Decrease radius and restart.
@@ -36182,7 +36182,7 @@ lbl_10:
     {
         state->d.ptr.p_double[i] = -state->d.ptr.p_double[i]/state->diagh.ptr.p_double[i];
     }
-    
+
     /*
      * Perform backtracking line search.
      * Update initial step length depending on search results.
@@ -36216,7 +36216,7 @@ lbl_11:
     {
         goto lbl_12;
     }
-    
+
     /*
      * Prepare XN and evaluate merit function at XN
      */
@@ -36233,7 +36233,7 @@ lbl_11:
 lbl_3:
     state->needfij = ae_false;
     minns_generatemeritfunction(state, maxsamplesize, _state);
-    
+
     /*
      * Check sufficient decrease condition
      */
@@ -36242,20 +36242,20 @@ lbl_3:
     {
         goto lbl_12;
     }
-    
+
     /*
      * Decrease Alpha
      */
     alpha = alpha*state->agsalphadecay;
     alphadecreased = ae_true;
-    
+
     /*
      * Update and check iterations counter.
      */
     inc(&backtrackits, _state);
     if( backtrackits>=maxbacktrackits )
     {
-        
+
         /*
          * Too many backtracking searches performed without success.
          * Terminate iterations.
@@ -36277,7 +36277,7 @@ lbl_12:
     }
     if( shortstepscnt>=state->agsshortlimit )
     {
-        
+
         /*
          * Too many subsequent short steps.
          *
@@ -36301,7 +36301,7 @@ lbl_12:
     {
         recommendedstep = recommendedstep*0.5;
     }
-    
+
     /*
      * Next iteration
      */
@@ -36309,14 +36309,14 @@ lbl_12:
     inc(&state->repinneriterationscount, _state);
     goto lbl_4;
 lbl_5:
-    
+
     /*
      * Convert back from scaled to unscaled representation
      */
     minns_unscalepointbc(state, &state->xc, _state);
     result = ae_false;
     return result;
-    
+
     /*
      * Saving state
      */
@@ -36387,7 +36387,7 @@ static void minns_generatemeritfunction(minnsstate* state,
     nic = state->nic;
     ng = state->ng;
     nh = state->nh;
-    
+
     /*
      * Integrity check
      */
@@ -36396,7 +36396,7 @@ static void minns_generatemeritfunction(minnsstate* state,
         ae_assert(!state->hasbndl.ptr.p_bool[i]||ae_fp_greater_eq(state->x.ptr.p_double[i],state->bndl.ptr.p_double[i]), "MinNS: integrity error", _state);
         ae_assert(!state->hasbndu.ptr.p_bool[i]||ae_fp_less_eq(state->x.ptr.p_double[i],state->bndu.ptr.p_double[i]), "MinNS: integrity error", _state);
     }
-    
+
     /*
      * Prepare "raw" function
      */
@@ -36406,7 +36406,7 @@ static void minns_generatemeritfunction(minnsstate* state,
     {
         state->samplegm.ptr.pp_double[sampleidx][j] = state->j.ptr.pp_double[0][j]*state->s.ptr.p_double[j];
     }
-    
+
     /*
      * Modify merit function with linear constraints
      */
@@ -36428,7 +36428,7 @@ static void minns_generatemeritfunction(minnsstate* state,
             state->samplegm.ptr.pp_double[sampleidx][j] = state->samplegm.ptr.pp_double[sampleidx][j]+state->rholinear.ptr.p_double[i]*s*state->scaledcleic.ptr.pp_double[i][j];
         }
     }
-    
+
     /*
      * Modify merit function with nonlinear constraints
      */
@@ -36544,7 +36544,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
 
 
     n = nsample;
-    
+
     /*
      * Allocate arrays, prepare data
      */
@@ -36579,7 +36579,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
         maxdiag = ae_maxreal(maxdiag, state->uh.ptr.pp_double[i][i], _state);
     }
     maxdiag = coalesce(maxdiag, 1.0, _state);
-    
+
     /*
      * Main cycle:
      */
@@ -36591,12 +36591,12 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
     termcnt = 0;
     for(;;)
     {
-        
+
         /*
          * Save current point to X0
          */
         ae_v_move(&state->x0.ptr.p_double[0], 1, &state->xc.ptr.p_double[0], 1, ae_v_len(0,n-1));
-        
+
         /*
          * Calculate gradient at initial point, solve NNLS problem
          * to determine descent direction D subject to constraints.
@@ -36640,7 +36640,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
         {
             if( ae_fp_eq(state->xc.ptr.p_double[i],0.0) )
             {
-                
+
                 /*
                  * Candidate for activation of boundary constraint,
                  * comes first.
@@ -36656,7 +36656,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             }
             else
             {
-                
+
                 /*
                  * We are far away from boundary.
                  */
@@ -36683,7 +36683,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
                 state->d.ptr.p_double[state->tmpidx.ptr.p_int[i]] = 0.0;
             }
         }
-        
+
         /*
          * Additional stage to "polish" D (improve situation
          * with sum-to-one constraint and boundary constraints)
@@ -36705,7 +36705,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             vv = ae_maxreal(vv, ae_fabs(state->gc.ptr.p_double[i], _state), _state);
         }
         ae_assert(ae_fp_less(ae_fabs(v, _state),1.0E5*ae_sqrt((double)(n), _state)*ae_machineepsilon*ae_maxreal(vv, 1.0, _state)), "MinNSQP: integrity check failed", _state);
-        
+
         /*
          * Decide whether we need "kick" stage: special stage
          * that moves us away from boundary constraints which are
@@ -36725,7 +36725,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
         }
         if( kickneeded )
         {
-            
+
             /*
              * Perform kick.
              * Restart.
@@ -36748,7 +36748,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             inc(&innerits, _state);
             continue;
         }
-        
+
         /*
          * Calculate Cholesky decomposition of constrained Hessian
          * for Newton phase.
@@ -36757,7 +36757,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
         {
             for(i=0; i<=n-1; i++)
             {
-                
+
                 /*
                  * Diagonal element
                  */
@@ -36769,7 +36769,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
                 {
                     state->ch.ptr.pp_double[i][i] = 1.0;
                 }
-                
+
                 /*
                  * Offdiagonal elements
                  */
@@ -36788,7 +36788,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             inc(dbgncholesky, _state);
             if( !spdmatrixcholeskyrec(&state->ch, 0, n, ae_true, &state->tmp0, _state) )
             {
-                
+
                 /*
                  * Cholesky decomposition failed.
                  * Increase LambdaV and repeat iteration.
@@ -36799,13 +36799,13 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             }
             break;
         }
-        
+
         /*
          * Newton phase
          */
         for(;;)
         {
-            
+
             /*
              * Calculate constrained (equality and sum-to-one) descent direction D.
              *
@@ -36861,7 +36861,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
                     }
                 }
             }
-            
+
             /*
              * Calculate length of D, maximum step and component which is
              * activated by this step.
@@ -36896,7 +36896,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             {
                 break;
             }
-            
+
             /*
              * Calculate trial function value at unconstrained full step.
              * If trial value is greater or equal to FC, terminate iterations.
@@ -36910,7 +36910,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             {
                 break;
             }
-            
+
             /*
              * Perform step
              * Update Hessian
@@ -36946,7 +36946,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             }
             spdmatrixcholeskyupdatefixbuf(&state->ch, n, ae_true, &state->tmpb, &state->tmp0, _state);
         }
-        
+
         /*
          * Compare status of boundary constraints - if nothing changed during
          * last outer iteration, TermCnt is increased. Otherwise it is reset
@@ -36971,7 +36971,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
         {
             break;
         }
-        
+
         /*
          * Increase number of outer iterations.
          * Break if we performed too many.
@@ -36982,7 +36982,7 @@ static void minns_solveqp(/* Real    */ ae_matrix* sampleg,
             break;
         }
     }
-    
+
     /*
      * Store result
      */
@@ -37017,7 +37017,7 @@ static void minns_qpcalculategradfunc(/* Real    */ ae_matrix* sampleg,
 
     rvectorsetlengthatleast(g, nsample, _state);
     rvectorsetlengthatleast(tmp, nvars, _state);
-    
+
     /*
      * Calculate GS*p
      */
@@ -37030,7 +37030,7 @@ static void minns_qpcalculategradfunc(/* Real    */ ae_matrix* sampleg,
         v = coeffs->ptr.p_double[i];
         ae_v_addd(&tmp->ptr.p_double[0], 1, &sampleg->ptr.pp_double[i][0], 1, ae_v_len(0,nvars-1), v);
     }
-    
+
     /*
      * Calculate F
      */
@@ -37039,7 +37039,7 @@ static void minns_qpcalculategradfunc(/* Real    */ ae_matrix* sampleg,
     {
         *f = *f+0.5*ae_sqr(tmp->ptr.p_double[i], _state)/diagh->ptr.p_double[i];
     }
-    
+
     /*
      * Multiply by inverse Hessian
      */
@@ -37047,7 +37047,7 @@ static void minns_qpcalculategradfunc(/* Real    */ ae_matrix* sampleg,
     {
         tmp->ptr.p_double[i] = tmp->ptr.p_double[i]/diagh->ptr.p_double[i];
     }
-    
+
     /*
      * Function gradient
      */
@@ -37081,7 +37081,7 @@ static void minns_qpcalculatefunc(/* Real    */ ae_matrix* sampleg,
     *f = 0;
 
     rvectorsetlengthatleast(tmp, nvars, _state);
-    
+
     /*
      * Calculate GS*p
      */
@@ -37094,7 +37094,7 @@ static void minns_qpcalculatefunc(/* Real    */ ae_matrix* sampleg,
         v = coeffs->ptr.p_double[i];
         ae_v_addd(&tmp->ptr.p_double[0], 1, &sampleg->ptr.pp_double[i][0], 1, ae_v_len(0,nvars-1), v);
     }
-    
+
     /*
      * Calculate F
      */
@@ -37122,7 +37122,7 @@ static void minns_qpsolveu(/* Real    */ ae_matrix* a,
     double v;
 
 
-    
+
     /*
      * A^(-1)*X
      */
@@ -37154,7 +37154,7 @@ static void minns_qpsolveut(/* Real    */ ae_matrix* a,
     double v;
 
 
-    
+
     /*
      * A^(-T)*X
      */

@@ -237,7 +237,7 @@ class SRBFGS {
      double shift = 1e-12;
      auto shift_vec = grad->clone();
      shift_vec->fill(shift);
-     double dl_norm;
+     double dl_norm = 0.0;
      for (int k = 0; k != hebden_iter_; ++k) {
        auto dl  = level_shift_inverse_hessian(grad, shift_vec); // Hn^-1 * gn
        dl_norm = dl->norm();//std::sqrt(detail::real(dl->dot_product(dl)));
@@ -256,14 +256,23 @@ class SRBFGS {
        shift_vec->fill(shift);
        if (k == hebden_iter_ - 1) {
          std::cout << " Hebden algorithm did not converge to appropriate level shift within " << k << " iterations " << std::endl;
-         std::cout << " step norm with shift   = " << dl_norm << " ...  level shift will be discarded." << std::endl;
+         std::cout << " step norm with shift   = " << dl_norm << std::endl;
          converged = false;
        }
      }
-     if (converged)
-       level_shift_ = shift;
-     else
-       shift = 1e-12;
+
+     if (!converged) {
+       // If the step size has exploded, then we throw away the level shift
+       auto temp = grad->clone();
+       temp->fill(1e-12);
+       auto dl2 = level_shift_inverse_hessian(grad, temp); // Hn^-1 * gn
+       const double unshifted_norm = dl2->norm();
+       if (unshifted_norm < dl_norm) {
+         std::cout << " Level shift will be discarded." << std::endl;
+         shift = 1e-12;
+       }
+     }
+     level_shift_ = shift;
      return shift;
    }
 

@@ -171,7 +171,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm34deriv(const int target, s
       for (int o = 0; o != norb_; ++o)
         for (int p = 0; p != norb_; ++p) {
           if (k == p)
-            blas::ax_plus_y_n(-1.0, fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)))->data() + offset, size, tmp->data(o+norb_*p)->data() + offset); 
+            blas::ax_plus_y_n(-1.0, fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)))->data() + offset, size, tmp->data(o+norb_*p)->data() + offset);
           if (i == p)
             blas::ax_plus_y_n(-1.0, fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)))->data() + offset, size, tmp->data(o+norb_*p)->data() + offset);
           for (int inode = 0; inode != mpi__->size(); ++inode)

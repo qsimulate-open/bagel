@@ -97,7 +97,10 @@ void PTree::print() const {
 
 
 shared_ptr<const PTree> PTree::read_basis(string name) {
-  name = to_lower(name);
+  // convert name to lowercase so things like cc-pVDZ are read
+  const int split = name.find_last_of("/");
+  name = name.substr(0, split+1) + to_lower(name.substr(split+1));
+
   shared_ptr<const PTree> out;
   // first try the absolute path (or current directory)
   try {
@@ -111,10 +114,10 @@ shared_ptr<const PTree> PTree::read_basis(string name) {
     } catch (...) {
       // last, the debug location
       const string filename = "../../src/basis/" + name + ".json";
-      out = make_shared<const PTree>(filename);
       try {
+        out = make_shared<const PTree>(filename);
       } catch (...) {
-        throw runtime_error(name + " cannot be opened. Please see if the file is in ${prefix}/share.\n "
+        throw runtime_error(name + " cannot be opened. Please see if the file is in " + string(BASIS_DIR) + ".\n "
                                  + " You can also specify the full path to the basis file.");
       }
     }

@@ -723,10 +723,10 @@ ofs << "\n\
 //        cout << \"T = \" << torig << \", need " << nroot << " roots: Used complex interpolation, with " << RGRID << " by " << IGRID << " gridpoints.\" << endl;
         ofs << "\
         for (int j=1; j <=" << nroot << "; ++j) {\n\
-          vector<double> xrval(" << IGRID << ");\n\
-          vector<double> xival(" << IGRID << ");\n\
-          vector<double> wrval(" << IGRID << ");\n\
-          vector<double> wival(" << IGRID << ");\n\
+          double xrval[" << IGRID << "];\n\
+          double xival[" << IGRID << "];\n\
+          double wrval[" << IGRID << "];\n\
+          double wival[" << IGRID << "];\n\
           for (int k=1; k<= " << IGRID << "; k++){\n";
         if (cycle == 0) {
           ofs << "\
@@ -780,10 +780,10 @@ ofs << "\n\
           const double denom = " << IGRID << ";\n\
           const double fac = 2 / denom;\n\
           const double pi = 3.141592653589793238462;\n\
-          vector<double> tcxr(" << IGRID << ");\n\
-          vector<double> tcxi(" << IGRID << ");\n\
-          vector<double> tcwr(" << IGRID << ");\n\
-          vector<double> tcwi(" << IGRID << ");\n\
+          double tcxr[" << IGRID << "];\n\
+          double tcxi[" << IGRID << "];\n\
+          double tcwr[" << IGRID << "];\n\
+          double tcwi[" << IGRID << "];\n\
           for (int b = 0; b != " << IGRID << "; ++b) {\n\
             double sumxr = 0;\n\
             double sumxi = 0;\n\

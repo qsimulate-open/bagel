@@ -9039,10 +9039,10 @@ void ComplexERIRootList::complex_eriroot5(const complex<double>* ta, complex<dou
       const double ti2 = ti * 2.0;
       if (itr < 11) {
         for (int j=1; j <=5; ++j) {
-          vector<double> xrval(10);
-          vector<double> xival(10);
-          vector<double> wrval(10);
-          vector<double> wival(10);
+          double xrval[10];
+          double xival[10];
+          double wrval[10];
+          double wival[10];
           for (int k=1; k<= 10; k++){
             const int boxof = iti*15700 + itr*700 + (j-1)*140 + (k-1)*14;
             double dr = xr[boxof+13];
@@ -9105,10 +9105,10 @@ void ComplexERIRootList::complex_eriroot5(const complex<double>* ta, complex<dou
           const double denom = 10;
           const double fac = 2 / denom;
           const double pi = 3.141592653589793238462;
-          vector<double> tcxr(10);
-          vector<double> tcxi(10);
-          vector<double> tcwr(10);
-          vector<double> tcwi(10);
+          double tcxr[10];
+          double tcxi[10];
+          double tcwr[10];
+          double tcwi[10];
           for (int b = 0; b != 10; ++b) {
             double sumxr = 0;
             double sumxi = 0;
@@ -9175,10 +9175,10 @@ void ComplexERIRootList::complex_eriroot5(const complex<double>* ta, complex<dou
         }
       } else {
         for (int j=1; j <=5; ++j) {
-          vector<double> xrval(8);
-          vector<double> xival(8);
-          vector<double> wrval(8);
-          vector<double> wival(8);
+          double xrval[8];
+          double xival[8];
+          double wrval[8];
+          double wival[8];
           for (int k=1; k<= 8; k++){
             const int boxof = iti*15700 + itr*400 + 3300 + (j-1)*80 + (k-1)*10;
             double dr = xr[boxof+9];
@@ -9225,10 +9225,10 @@ void ComplexERIRootList::complex_eriroot5(const complex<double>* ta, complex<dou
           const double denom = 8;
           const double fac = 2 / denom;
           const double pi = 3.141592653589793238462;
-          vector<double> tcxr(8);
-          vector<double> tcxi(8);
-          vector<double> tcwr(8);
-          vector<double> tcwi(8);
+          double tcxr[8];
+          double tcxi[8];
+          double tcwr[8];
+          double tcwi[8];
           for (int b = 0; b != 8; ++b) {
             double sumxr = 0;
             double sumxi = 0;
