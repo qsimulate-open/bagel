@@ -46,6 +46,8 @@ void CASHybrid::compute() {
       idata->erase("thresh");
       idata->put("thresh",  thresh_switch_);
     }
+    idata->erase("conv_ignore");
+    idata->put("conv_ignore", true);
     auto active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();

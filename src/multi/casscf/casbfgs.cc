@@ -35,7 +35,10 @@ void CASBFGS::compute() {
     throw runtime_error("unknown BFGS type specified");
   // first do BFGS2 (alglib version)
   if (algo != "bagel") {
-    auto bfgs = make_shared<CASBFGS2>(idata_, geom_, ref_);
+    auto idata = make_shared<PTree>(*idata_);
+    idata->erase("conv_ignore");
+    idata->put("conv_ignore", true);
+    auto bfgs = make_shared<CASBFGS2>(idata, geom_, ref_);
     bfgs->compute();
     refout_ = bfgs->conv_to_ref();
 

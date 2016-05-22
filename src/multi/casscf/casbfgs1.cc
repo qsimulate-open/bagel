@@ -181,6 +181,8 @@ void CASBFGS1::compute() {
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached during the quasi-Newton optimization. *     " << endl << endl;
+      if (!conv_ignore_)
+        throw runtime_error("CASSCF BFGS1 did not converge");
     }
     mute_stdcout();
   }

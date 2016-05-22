@@ -51,6 +51,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int max_micro_iter_;
     double thresh_;
     double thresh_micro_;
+    bool conv_ignore_;
     bool natocc_;
 
     VectorB occup_;
