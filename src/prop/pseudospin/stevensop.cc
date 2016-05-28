@@ -111,10 +111,12 @@ long long compute_Fkq(const vector<vector<long long>> input) {
 
 // And now the driver
 vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vector<int> ranks) const {
-  cout << "    Using extended Stevens operators for rank" << ((ranks.size() > 1) ? "s " : " ");
-  for (int i = 0; i != ranks.size(); ++i)
-    cout << ranks[i] << " ";
-  cout << endl;
+  if (ranks.size()) {
+    cout << "    Using extended Stevens operators for rank" << ((ranks.size() > 1) ? "s " : " ");
+    for (int i = 0; i != ranks.size(); ++i)
+      cout << ranks[i] << " ";
+    cout << endl;
+  }
   const double ss1 = nspin_ * (nspin_ + 2.0) / 4.0; // S(S+1)
 
   vector<Stevens_Operator> stevensop = {};

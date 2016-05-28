@@ -86,6 +86,10 @@ int main(int argc, char** argv) {
         archive >> ptr;
         ref = shared_ptr<Reference>(ptr);
         geom = ref->geom();
+        if (itree->get<bool>("extract_average_rdms", false)) {
+          vector<int> rdm_states = itree->get_vector<int>("rdm_state");
+          ref = ref->extract_average_rdm(rdm_states);
+        }
       }
 #endif
 

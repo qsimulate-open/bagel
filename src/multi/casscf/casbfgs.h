@@ -76,7 +76,7 @@ class CASBFGS_base : public CASSCF {
 
 
 // uses BAGEL's native BFGS
-class CASBFGS1 : public CASBFGS_base { 
+class CASBFGS1 : public CASBFGS_base {
   public:
     CASBFGS1(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
      : CASBFGS_base(idat, geom, ref) { }
@@ -85,7 +85,7 @@ class CASBFGS1 : public CASBFGS_base {
 
 
 // uses alglib's BFGS
-class CASBFGS2 : public CASBFGS_base { 
+class CASBFGS2 : public CASBFGS_base {
   protected:
     bool only_energy_converged_;
   public:

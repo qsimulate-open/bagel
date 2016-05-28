@@ -70,7 +70,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   set_london(geominfo);
 
   /* Set up atoms_ */
-  basisfile_ = to_lower(geominfo->get<string>("basis", ""));
+  basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
@@ -98,7 +98,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-  auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
+  auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
   if (!auxfile_.empty()) {
     // read the default aux basis file
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
@@ -333,7 +333,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
-  basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
+  basisfile_ = geominfo->get<string>("basis", basisfile_);
   use_finite_ = geominfo->get<bool>("finite_nucleus", use_finite_);
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms || newfield) {
@@ -351,7 +351,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     }
   }
   const string prevaux = auxfile_;
-  auxfile_ = to_lower(geominfo->get<string>("df_basis", auxfile_));
+  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
   if (prevaux != auxfile_ || atoms) {
     aux_atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);

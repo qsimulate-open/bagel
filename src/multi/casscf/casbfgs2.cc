@@ -79,7 +79,7 @@ void CASBFGS2::compute() {
       copy_n(fci_->rdm1_av()->data(), nact_*nact_, rdm1av.data());
       rdm1av.sqrt();
       rdm1av.scale(sqrt(1.0/2.0));
-      acoeff = make_shared<Matrix>(coeff_->slice(nclosed_, nocc_) * rdm1av); 
+      acoeff = make_shared<Matrix>(coeff_->slice(nclosed_, nocc_) * rdm1av);
     }
     // then make a AO density matrix
     shared_ptr<const Matrix> afock;

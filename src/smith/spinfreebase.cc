@@ -215,7 +215,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<RDM<3>> frdm4 = rdm3->clone();
       auto rdm4v = group(group(*rdm4, 6,8), 0,6);
       auto frdm4v = group(*frdm4, 0, 6);
-      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, frdm4v, {0}); 
+      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, frdm4v, {0});
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
@@ -234,7 +234,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4all_->emplace(jst, ist, rdm4t);
 
-      if (!info_->sssr() || jst == ist) 
+      if (!info_->sssr() || jst == ist)
         denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
     }
   }

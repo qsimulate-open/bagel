@@ -5,7 +5,7 @@ Copyright (c) Sergey Bochkanov (ALGLIB project).
 >>> SOURCE LICENSE >>>
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation (www.fsf.org); either version 2 of the 
+the Free Software Foundation (www.fsf.org); either version 2 of the
 License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -130,8 +130,8 @@ http://www.fsf.org/licensing/licenses
 
 /////////////////////////////////////////////////////////////////////////
 //
-// THIS SECTION CONTAINS DECLARATIONS FOR BASIC FUNCTIONALITY 
-// LIKE MEMORY MANAGEMENT FOR VECTORS/MATRICES WHICH IS SHARED 
+// THIS SECTION CONTAINS DECLARATIONS FOR BASIC FUNCTIONALITY
+// LIKE MEMORY MANAGEMENT FOR VECTORS/MATRICES WHICH IS SHARED
 // BETWEEN C++ AND PURE C LIBRARIES
 //
 /////////////////////////////////////////////////////////////////////////
@@ -345,29 +345,29 @@ typedef struct ae_state
      * endianness type: AE_LITTLE_ENDIAN or AE_BIG_ENDIAN
      */
     ae_int_t endianness;
-    
+
     /*
      * double value for NAN
      */
     double v_nan;
-    
+
     /*
      * double value for +INF
      */
     double v_posinf;
-    
+
     /*
      * double value for -INF
      */
     double v_neginf;
-    
+
     /*
      * pointer to the top block in a stack of frames
      * which hold dynamically allocated objects
      */
     ae_dyn_block * volatile p_top_block;
     ae_dyn_block last_block;
-    
+
     /*
      * jmp_buf for cases when C-style exception handling is used
      */
@@ -379,12 +379,12 @@ typedef struct ae_state
      * ae_error_type of the last error (filled when exception is thrown)
      */
     ae_error_type volatile last_error;
-    
+
     /*
      * human-readable message (filled when exception is thrown)
      */
     const char* volatile error_msg;
-    
+
     /*
      * threading information:
      * a) current thread pool
@@ -398,7 +398,7 @@ typedef struct ae_state
     void *worker_thread;
     void *parent_task;
     void (*thread_exception_handler)(void*);
-    
+
 } ae_state;
 
 /************************************************************************
@@ -427,26 +427,26 @@ typedef struct ae_vector
      * Number of elements in array, cnt>=0
      */
     ae_int_t cnt;
-    
+
     /*
      * Either DT_BOOL, DT_INT, DT_REAL or DT_COMPLEX
      */
     ae_datatype datatype;
-    
+
     /*
      * If ptr points to memory owned and managed by ae_vector itself,
      * this field is ae_false. If vector was attached to x_vector structure
      * with ae_vector_attach_to_x(), this field is ae_true.
      */
     ae_bool is_attached;
-    
+
     /*
      * ae_dyn_block structure which manages data in ptr. This structure
      * is responsible for automatic deletion of object when its frame
      * is destroyed.
      */
     ae_dyn_block data;
-    
+
     /*
      * Pointer to data.
      * User usually works with this field.
@@ -467,14 +467,14 @@ typedef struct ae_matrix
     ae_int_t cols;
     ae_int_t stride;
     ae_datatype datatype;
-    
+
     /*
      * If ptr points to memory owned and managed by ae_vector itself,
      * this field is ae_false. If vector was attached to x_vector structure
      * with ae_vector_attach_to_x(), this field is ae_true.
      */
     ae_bool is_attached;
-    
+
     ae_dyn_block data;
     union
     {
@@ -491,20 +491,20 @@ typedef struct ae_smart_ptr
 {
     /* pointer to subscriber; all changes in ptr are translated to subscriber */
     void **subscriber;
-    
+
     /* pointer to object */
     void *ptr;
-    
+
     /* whether smart pointer owns ptr */
     ae_bool is_owner;
-    
+
     /* whether object pointed by ptr is dynamic - clearing such object requires BOTH
        calling destructor function AND calling ae_free for memory occupied by object. */
     ae_bool is_dynamic;
-    
+
     /* destructor function for pointer; clears all dynamically allocated memory */
     void (*destroy)(void*);
-    
+
     /* frame entry; used to ensure automatic deallocation of smart pointer in case of exception/exit */
     ae_dyn_block frame_entry;
 } ae_smart_ptr;
@@ -547,10 +547,10 @@ typedef struct ae_shared_pool
 {
     /* lock object which protects pool */
     ae_lock pool_lock;
-    
+
     /* seed object (used to create new instances of temporaries) */
     void                    * volatile seed_object;
-    
+
     /*
      * list of recycled OBJECTS:
      * 1. entries in this list store pointers to recycled objects
@@ -558,8 +558,8 @@ typedef struct ae_shared_pool
      *    move it to recycled_entries and return its obj field to caller/
      */
     ae_shared_pool_entry    * volatile recycled_objects;
-    
-    /* 
+
+    /*
      * list of recycled ENTRIES:
      * 1. this list holds entries which are not used to store recycled objects;
      *    every time recycled object is retrieved, its entry is moved to this list.
@@ -567,26 +567,26 @@ typedef struct ae_shared_pool
      *    before allocating it with malloc()
      */
     ae_shared_pool_entry    * volatile recycled_entries;
-    
+
     /* enumeration pointer, points to current recycled object*/
     ae_shared_pool_entry    * volatile enumeration_counter;
-    
+
     /* size of object; this field is used when we call malloc() for new objects */
     ae_int_t                size_of_object;
-    
+
     /* initializer function; accepts pointer to malloc'ed object, initializes its fields */
     void (*init)(void* dst, ae_state* state);
-    
+
     /* copy constructor; accepts pointer to malloc'ed, but not initialized object */
     void (*init_copy)(void* dst, void* src, ae_state* state);
-    
+
     /* destructor function; */
     void (*destroy)(void* ptr);
-    
+
     /* frame entry; contains pointer to the pool object itself */
     ae_dyn_block frame_entry;
 } ae_shared_pool;
- 
+
 ae_int_t ae_misalignment(const void *ptr, size_t alignment);
 void* ae_align(void *ptr, size_t alignment);
 void* aligned_malloc(size_t size, size_t alignment);
@@ -930,7 +930,7 @@ class ap_error
 {
 public:
     std::string msg;
-    
+
     ap_error();
     ap_error(const char *s);
     static void make_assertion(bool bClause);
@@ -963,7 +963,7 @@ public:
 
     alglib_impl::ae_complex*       c_ptr();
     const alglib_impl::ae_complex* c_ptr() const;
-    
+
     std::string tostring(int dps) const;
 
     double x, y;
@@ -996,9 +996,9 @@ Level 1 BLAS functions
 
 NOTES:
 * destination and source should NOT overlap
-* stride is assumed to be positive, but it is not 
+* stride is assumed to be positive, but it is not
   assert'ed within function
-* conj_src parameter specifies whether complex source is conjugated 
+* conj_src parameter specifies whether complex source is conjugated
   before processing or not. Pass string which starts with 'N' or 'n'
   ("No conj", for example) to use unmodified parameter. All other
   values will result in conjugation of input, but it is recommended
@@ -1103,7 +1103,7 @@ protected:
     // called from copy constructor).
     //
     void create(const ae_vector_wrapper &rhs);
-    
+
     //
     // Copies array given by string into current object. Additional
     // parameter DATATYPE contains information about type of the data
@@ -1113,7 +1113,7 @@ protected:
     // called from copy constructor).
     //
     void create(const char *s, alglib_impl::ae_datatype datatype);
-    
+
     //
     // Assigns RHS to current object.
     //
@@ -1127,7 +1127,7 @@ protected:
     // NOTE: this function correctly handles assignments of the object to itself.
     //
     void assign(const ae_vector_wrapper &rhs);
-    
+
     alglib_impl::ae_vector *p_vec;
     alglib_impl::ae_vector vec;
 };
@@ -1252,7 +1252,7 @@ protected:
     // called from copy constructor).
     //
     void create(const ae_matrix_wrapper &rhs);
-    
+
     //
     // Copies array given by string into current object. Additional
     // parameter DATATYPE contains information about type of the data
@@ -1262,7 +1262,7 @@ protected:
     // called from copy constructor).
     //
     void create(const char *s, alglib_impl::ae_datatype datatype);
-    
+
     //
     // Assigns RHS to current object.
     //
@@ -1276,7 +1276,7 @@ protected:
     // NOTE: this function correctly handles assignments of the object to itself.
     //
     void assign(const ae_matrix_wrapper &rhs);
-    
+
     alglib_impl::ae_matrix *p_mat;
     alglib_impl::ae_matrix mat;
 };
@@ -1295,9 +1295,9 @@ public:
 
     const ae_bool* operator[](ae_int_t i) const;
     ae_bool* operator[](ae_int_t i);
-    
+
     void setcontent(ae_int_t irows, ae_int_t icols, const bool *pContent );
-    
+
     std::string tostring() const ;
 };
 
@@ -1317,7 +1317,7 @@ public:
     ae_int_t* operator[](ae_int_t i);
 
     void setcontent(ae_int_t irows, ae_int_t icols, const ae_int_t *pContent );
-    
+
     std::string tostring() const;
 };
 
@@ -1392,10 +1392,10 @@ INPUT PARAMETERS:
                       that's all.
                     If no flags are specified, default value 0x0  (or
                     alglib::CSV_DEFAULT, which is same) should be used.
-                    
+
 OUTPUT PARAMETERS:
     out             2D matrix, CSV file parsed with atof()
-    
+
 HANDLING OF SPECIAL CASES:
 * file does not exist - alglib::ap_error exception is thrown
 * empty file - empty array is returned (no exception)

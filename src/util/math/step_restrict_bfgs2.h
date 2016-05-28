@@ -3,7 +3,7 @@
 // Filename: step_restrict_bfgs.h
 // Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -52,7 +52,7 @@ class SRBFGS2 {
 
     void evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr) {
       if (converged_) return;
-      // set new x to the member 
+      // set new x to the member
       for (int i = 0; i != current_->size(); ++i)
         *(current_->data()+i) = x[i];
       flag_ = true;
@@ -94,12 +94,12 @@ class SRBFGS2 {
       // start the server thread in the first iteration
       if (!server_) {
         alglib::real_1d_array x;
-        x.setcontent(_value->size(), _value->data()); 
+        x.setcontent(_value->size(), _value->data());
         eval_type eval = std::bind(&SRBFGS2<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
         if (!cg_) {
           alglib::minlbfgsreport rep;
-          alglib::minlbfgscreate(1, x, state_); 
+          alglib::minlbfgscreate(1, x, state_);
           alglib::minlbfgssetcond(state_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
           alglib::minlbfgssetstpmax(state_, /*maxstep*/ 0.0);
           alglib::minlbfgssetprecdiag(state_, denom_);
@@ -108,7 +108,7 @@ class SRBFGS2 {
           server_ = std::make_shared<std::thread>([&eval,this](){ alglib::minlbfgsoptimize(state_, eval); });
         } else {
           alglib::mincgreport rep;
-          alglib::mincgcreate(x, cstate_); 
+          alglib::mincgcreate(x, cstate_);
           alglib::mincgsetcond(cstate_, /*essentially zero*/1.0e-50, 0.0, 0.0, /*essentially infty*/1000);
           alglib::mincgsetstpmax(cstate_, /*maxstep*/ 0.0);
           alglib::mincgsetprecdiag(cstate_, denom_);

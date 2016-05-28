@@ -54,10 +54,10 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
 
   if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
-    const int istate = idata->get<int>("istate", 0);
-    const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-    cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
-    ref_ = ref_->extract_state(istate);
+    vector<int> rdm_states;
+    if (idata->get<bool>("extract_average_rdms", false))
+      rdm_states = idata->get_vector<int>("rdm_state");
+    ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
@@ -163,6 +163,23 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
   assert(false);
   return nullptr;
 }
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, const vector<int> dummy2) const {
+  return ref_;
+}
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {
+  shared_ptr<const Reference> out = ref_;
+  const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
+  cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
+  out = ref_->extract_state(istate, rdm_states);
+  return out;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file

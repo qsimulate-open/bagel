@@ -389,7 +389,7 @@ void CASPT2::CASPT2::solve_deriv() {
   const int nact = info_->nact();
   {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
-    auto dtmp = den2_->copy(); 
+    auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
       for (int i = nclosed; i != nclosed+nact; ++i)
@@ -438,7 +438,7 @@ void CASPT2::CASPT2::solve_deriv() {
   // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and contribution to y
   if (xmsmat_) {
     Matrix wmn(nstates_, nstates_);
-    shared_ptr<Tensor> dc = rdm1_->clone(); 
+    shared_ptr<Tensor> dc = rdm1_->clone();
     for (int i = 0; i != nstates_; ++i)
       for (int j = 0; j != i; ++j) {
         const double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
@@ -451,13 +451,13 @@ void CASPT2::CASPT2::solve_deriv() {
     dcheck_ = dc->matrix();
 
     // fill this into CI derivative. (Y contribution is done inside Z-CASSCF together with frozen core)
-    shared_ptr<const Matrix> gdc = focksub(dcheck_, acoeff, false); 
+    shared_ptr<const Matrix> gdc = focksub(dcheck_, acoeff, false);
     for (int ist = 0; ist != nstates_; ++ist) {
       shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
       for (int jst = 0; jst != nstates_; ++jst) {
         Matrix op(*fock * wmn(jst, ist));
         if (ist == jst)
-          op += *gdc * (1.0/nstates_); 
+          op += *gdc * (1.0/nstates_);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             ci_deriv_->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
@@ -465,7 +465,7 @@ void CASPT2::CASPT2::solve_deriv() {
     }
 
     // also rotate cideriv back to the MS states
-    btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3}); 
+    btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3});
   }
 
   // restore original energy
