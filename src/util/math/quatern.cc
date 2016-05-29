@@ -48,5 +48,5 @@ template<> void Quatern<double>::normalize() {
   data_[1] /= n;
   data_[2] /= n;
   data_[3] /= n;
-};
+}
 

@@ -190,54 +190,26 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     Quatern<double> oc = o.charge_center();
     Quatern<double> mc = charge_center();
     // (2) direction of the first atom
-    Quatern<double> oa = o.atoms().front()->position();
-    Quatern<double> ma =   atoms().front()->position();
-    Quatern<double> od = oa - oc;
-    Quatern<double> md = ma - mc;
-    // Quaternion that maps md to od.
-    od.normalize();
-    md.normalize();
-    Quatern<double> op = md * od;
-    op[0] = 1.0 - op[0];
-    op.normalize();
-    Quatern<double> opd = op.dagger();
-
-    // first subtract mc, rotate, and then add oc
-    vector<shared_ptr<const Atom>> newatoms;
-    vector<shared_ptr<const Atom>> newauxatoms;
-    for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-      assert((*i)->position() == (*j)->position());
-      Quatern<double> source = (*i)->position();
-      Quatern<double> target = op * (source - mc) * opd + oc;
-      array<double,3> cdispl = (target - source).ijk();
-
-      newatoms.push_back(make_shared<Atom>(**i, cdispl));
-      newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-    }
-    atoms_ = newatoms;
-    aux_atoms_ = newauxatoms;
-
-    // (3) plane of center of charges, first and second atoms.
-    if (natom() > 2) {
-      assert(natom() == o.natom());
-      Quatern<double> oa0 = o.atoms(0)->position();
-      Quatern<double> ma0 =   atoms(0)->position();
-      Quatern<double> oa1 = o.atoms(1)->position();
-      Quatern<double> ma1 =   atoms(1)->position();
-      mc = charge_center();
-      od = (oa0 - oc) * (oa1 - oc);
-      md = (ma0 - mc) * (ma1 - mc);
-      od[0] = 0.0;
-      md[0] = 0.0;
+    int iatom = 0;
+    for ( ; iatom != natom(); ++iatom) {
+      Quatern<double> oa = o.atoms(iatom)->position();
+      Quatern<double> ma =   atoms(iatom)->position();
+      Quatern<double> od = oa - oc;
+      Quatern<double> md = ma - mc;
+      // if the charge center coincide with the location of the atom, skip
+      if (od.norm() < 1.0e-5 || md.norm() < 1.0e-5)
+        continue;
+      // Quaternion that maps md to od.
       od.normalize();
       md.normalize();
-      op = md * od;
+      Quatern<double> op = md * od;
       op[0] = 1.0 - op[0];
       op.normalize();
-      opd = op.dagger();
+      Quatern<double> opd = op.dagger();
 
-      newatoms.clear();
-      newauxatoms.clear();
+      // first subtract mc, rotate, and then add oc
+      vector<shared_ptr<const Atom>> newatoms;
+      vector<shared_ptr<const Atom>> newauxatoms;
       for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
         assert((*i)->position() == (*j)->position());
         Quatern<double> source = (*i)->position();
@@ -249,6 +221,47 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
       }
       atoms_ = newatoms;
       aux_atoms_ = newauxatoms;
+      break;
+    }
+
+    // (3) plane of center of charges, first and second atoms.
+    if (natom() > 2) {
+      assert(natom() == o.natom());
+      for (int jatom = 0; jatom != natom(); ++jatom) {
+        if (iatom == jatom) continue;
+        Quatern<double> oa0 = o.atoms(iatom)->position();
+        Quatern<double> ma0 =   atoms(iatom)->position();
+        Quatern<double> oa1 = o.atoms(jatom)->position();
+        Quatern<double> ma1 =   atoms(jatom)->position();
+        Quatern<double> mc = charge_center();
+        Quatern<double> od = (oa0 - oc) * (oa1 - oc);
+        Quatern<double> md = (ma0 - mc) * (ma1 - mc);
+        od[0] = 0.0;
+        md[0] = 0.0;
+        if (od.norm() < 1.0e-5 || md.norm() < 1.0e-5)
+          continue;
+        od.normalize();
+        md.normalize();
+        Quatern<double> op = md * od;
+        op[0] = 1.0 - op[0];
+        op.normalize();
+        Quatern<double> opd = op.dagger();
+
+        vector<shared_ptr<const Atom>> newatoms;
+        vector<shared_ptr<const Atom>> newauxatoms;
+        for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
+          assert((*i)->position() == (*j)->position());
+          Quatern<double> source = (*i)->position();
+          Quatern<double> target = op * (source - mc) * opd + oc;
+          array<double,3> cdispl = (target - source).ijk();
+
+          newatoms.push_back(make_shared<Atom>(**i, cdispl));
+          newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
+        }
+        atoms_ = newatoms;
+        aux_atoms_ = newauxatoms;
+        break;
+      }
     }
   }
 
