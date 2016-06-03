@@ -173,6 +173,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
+  get_shellpairs();
 
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 }
@@ -560,38 +561,40 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 }
 
 
-vector<double> Geometry::schwarz() const {
+void Geometry::get_shellpairs() {
+
+  int iat = 0;
+  vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
-  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
-    const vector<shared_ptr<const Shell>> tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());
+  for (int n = 0; n != natom(); ++n) {
+    const vector<int> tmpoff = offset(n);
+    offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
+    const vector<shared_ptr<const Shell>> tmpsh = atoms_[n]->shells();
+    basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
   }
-  const int size = basis.size();
+  const int nsh = basis.size();
+  int lmax = -1;
+  if (dofmm_) lmax = 10;
 
-  vector<double> schwarz(size * size);
-  for (int i0 = 0; i0 != size; ++i0) {
-    shared_ptr<const Shell> b0 = basis[i0];
-    for (int i1 = i0; i1 != size; ++i1) {
-      shared_ptr<const Shell> b1 = basis[i1];
-
-      array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
-#ifdef LIBINT_INTERFACE
-      Libint eribatch(input);
-#else
-      ERIBatch eribatch(input, 1.0);
-#endif
-      eribatch.compute();
-      const double* eridata = eribatch.data();
-      const int datasize = eribatch.data_size();
-      double cmax = 0.0;
-      for (int xi = 0; xi != datasize; ++xi, ++eridata) {
-        const double absed = fabs(*eridata);
-        if (absed > cmax) cmax = absed;
-      }
-      schwarz[i0 * size + i1] = cmax;
-      schwarz[i1 * size + i0] = cmax;
+  shellpairs_.resize(nsh * nsh);
+  for (int i0 = 0; i0 != nsh; ++i0) {
+    for (int i1 = i0; i1 != nsh; ++i1) {
+      const int i01 = i0 * nsh + i1;
+      const int i10 = i1 * nsh + i0;
+      shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i0], basis[i1]}},
+                                                      array<int, 2>{{offsets[i0], offsets[i1]}}, make_pair(i0, i1), lmax);
+      shellpairs_[i10] = make_shared<const ShellPair>(*shellpairs_[i01]);
     }
   }
+}
+
+
+vector<double> Geometry::schwarz() const {
+
+  const int nsp = shellpairs_.size();
+  vector<double> schwarz(nsp);
+  for (int i = 0; i != nsp; ++i)
+    schwarz[i] = shellpairs_[i]->schwarz();
   return schwarz;
 }
 

@@ -30,6 +30,7 @@
 #include <src/df/df.h>
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
+#include <src/molecule/shellpair.h>
 
 namespace bagel {
 
@@ -62,6 +63,10 @@ class Geometry : public Molecule {
     // Lattice parameters
     std::vector<std::array<double, 3>> primitive_vectors_;
     bool do_periodic_df_;
+
+    // Schwarz, multipoles
+    void get_shellpairs();
+    std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
 
   private:
     // serialization
@@ -147,6 +152,9 @@ class Geometry : public Molecule {
     const bool do_periodic_df() const { return do_periodic_df_; }
     std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
+    std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
+    std::shared_ptr<const ShellPair> shellpairs(const int i) const { return shellpairs_[i]; }
+    int nshellpair() const { return shellpairs_.size(); }
 
 };
 
