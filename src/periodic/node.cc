@@ -83,6 +83,7 @@ void Node::init() {
 
   position_ = {{0.0, 0.0, 0.0}};
   nbasis_ = 0;
+  nshell_ = 0;
   double sum = 0.0;
   for (auto& body : bodies_) {
     for (auto& atom : body->atoms()) {
@@ -91,6 +92,7 @@ void Node::init() {
       position_[2] += atom->atom_charge() * atom->position(2);
       sum += atom->atom_charge();
       nbasis_ += atom->nbasis();
+      nshell_ += atom->nshell();
     }
   }
   position_[0] /= sum;
@@ -114,6 +116,59 @@ void Node::init() {
 }
 
 
+bool Node::is_neighbour(array<shared_ptr<const Shell>, 4> shells, const int ws) {
+
+  const double extent01 = pair_extent(array<shared_ptr<const Shell>, 2>{{shells[0], shells[1]}});
+  const double extent23 = pair_extent(array<shared_ptr<const Shell>, 2>{{shells[2], shells[3]}});
+
+  array<double, 3> rvec01 = compute_centre(array<shared_ptr<const Shell>, 2>{{shells[0], shells[1]}});;
+  array<double, 3> rvec23 = compute_centre(array<shared_ptr<const Shell>, 2>{{shells[2], shells[3]}});;
+
+  array<double, 3> v;
+  v[0] = rvec01[0] - rvec23[0];
+  v[1] = rvec01[1] - rvec23[1];
+  v[2] = rvec01[2] - rvec23[2];
+  const double r = sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+  return (r <= (1.0 + ws) * (extent01 + extent23));
+}
+
+
+double Node::pair_extent(array<shared_ptr<const Shell>, 2> shells) {
+
+  const vector<double> exp0 = shells[0]->exponents();
+  const vector<double> exp1 = shells[1]->exponents();
+  array<double, 3> AB;
+  AB[0] = shells[0]->position(0) - shells[1]->position(0);
+  AB[1] = shells[0]->position(1) - shells[1]->position(1);
+  AB[2] = shells[0]->position(2) - shells[1]->position(2);
+  const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
+  const double lnthresh = log(thresh_);
+
+  double out = 0;
+  array<double, 3> rvec = compute_centre(array<shared_ptr<const Shell>, 2>{{shells[0], shells[1]}});;
+  for (auto& expi0 : exp0) {
+    for (auto& expi1 : exp1) {
+      const double cxp_inv = 1.0 / (expi0 + expi1);
+      const double expi01 = expi0 * expi1;
+      const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
+      //const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
+      //const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
+
+      array<double, 3> tmp;
+      tmp[0] = (shells[0]->position(0) * expi0 + shells[1]->position(0) * expi1) * cxp_inv - rvec[0];
+      tmp[1] = (shells[0]->position(1) * expi0 + shells[1]->position(1) * expi1) * cxp_inv - rvec[1];
+      tmp[2] = (shells[0]->position(2) * expi0 + shells[1]->position(2) * expi1) * cxp_inv - rvec[2];
+
+      const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+      //const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + r01;
+      if (extent01 > out) out = extent01;
+    }
+  }
+
+  return out;
+}
+
+
 void Node::compute_extent(const double thresh) {
 
   vector<shared_ptr<const Shell>> shells;
@@ -124,31 +179,8 @@ void Node::compute_extent(const double thresh) {
   extent_ = 0.0;
   for (auto& ish : shells)
     for (auto& jsh : shells) {
-      const vector<double> exp0 = ish->exponents();
-      const vector<double> exp1 = jsh->exponents();
-      array<double, 3> AB;
-      AB[0] = ish->position(0) - jsh->position(0);
-      AB[1] = ish->position(1) - jsh->position(1);
-      AB[2] = ish->position(2) - jsh->position(2);
-      const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
-      const double lnthresh = log(thresh);
-
-      array<double, 3> rvec = compute_centre(array<shared_ptr<const Shell>, 2>{{ish, jsh}});;
-      for (auto& expi0 : exp0) {
-        for (auto& expi1 : exp1) {
-          const double cxp_inv = 1.0 / (expi0 + expi1);
-          const double expi01 = expi0 * expi1;
-          const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
-
-          array<double, 3> tmp;
-          tmp[0] = (ish->position(0) * expi0 + jsh->position(0) * expi1) * cxp_inv - rvec[0];
-          tmp[1] = (ish->position(1) * expi0 + jsh->position(1) * expi1) * cxp_inv - rvec[1];
-          tmp[2] = (ish->position(2) * expi0 + jsh->position(2) * expi1) * cxp_inv - rvec[2];
-
-          const double extent0 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
-          if (extent0 > extent_) extent_ = extent0;
-        }
-      }
+      const double extent01 = pair_extent(array<shared_ptr<const Shell>, 2>{{ish, jsh}});
+      if (extent01 > extent_) extent_ = extent01;
     }
 }
 
@@ -375,6 +407,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         *lrs += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
       }
 
+#if 1
       // get sub-density matrix D_su (s=this u=far)
       auto den_su = make_shared<Matrix>(nbasis_, dimb);
       ob0 = 0;
@@ -419,13 +452,15 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         const int sign = pow(-1.0, l_map[i]);
         lrt->add_block(sign, 0, ob, nbasis_, dimb, tmp_rt);
       }
+#endif
 
       ob += distant_node->nbasis();
     }
   }
 
-  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax, scale);
-  local_expansion_ = make_shared<const ZMatrix>(*lrs + *nai);
+//  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax, scale);
+//  local_expansion_ = make_shared<const ZMatrix>(*lrs + *nai);
+  local_expansion_ = make_shared<const ZMatrix>(*lrs);
   exchange_ = make_shared<const ZMatrix>(*lrt);
 }
 
@@ -456,6 +491,10 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
   out->zero();
+  n1e_int_ = 0;
+  n2e_int_ = 0;
+  n2e_total_ = 0;
+  const size_t ndim = density->ndim();
 
   // add FF local expansions to coulomb matrix
   size_t ob0 = 0;
@@ -487,6 +526,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
 
 
+#if 1
         size_t ob = 0;
         for (auto& distant_node : interaction_list_) {
           for (auto& body1 : distant_node->bodies()) {
@@ -506,6 +546,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             }
           }
         }
+#endif
 
         ob0 += size0;
       }
@@ -569,8 +610,38 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   assert(ishell < size);
   assert(shell_id.size() == size);
 
+
+#if 0 /////// DEBUG
+  // get significant distributions
+  int nsignif = 0;
+  for (int i = 0; i != size; ++i) {
+    const shared_ptr<const Shell>  bi = basis[i];
+    const int ioffset = new_offset[i];
+    const int isize = bi->nbasis();
+    for (int j = 0; j != size; ++j) {
+      const shared_ptr<const Shell>  bj = basis[j];
+      const int joffset = new_offset[j];
+      const int jsize = bj->nbasis();
+
+      {
+        array<shared_ptr<const Shell>,2> shells = {{bi, bj}};
+        OverlapBatch obatch(shells);
+        obatch.compute();
+        const double* odata = obatch.data();
+        double tmp = 0;
+        for (int n = 0; n != isize * jsize; ++n, ++odata)
+          tmp = *odata * *odata;
+        if (tmp > 1e-10) ++nsignif;
+      }
+    }
+  }
+//  cout << size * size << " *** " << nsignif << endl;
+#endif ///////DEBUG
+
+#if 0
   // NAI for close-range
   auto mol = make_shared<const Molecule>(close_atoms, vector<shared_ptr<const Atom>>{});
+  n1e_int_ = nshell_ * size;
 
   for (auto& a3 : bodies_) {
     size_t iat3 = 0;
@@ -603,13 +674,15 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       ++iat3;
     }
   }
+#endif
 
-
+  n2e_total_ = nshell_ * size * size * size;
   if (!dodf && density) {
     const double* density_data = density->data();
     const int nshell = sqrt(schwarz.size());
 
     vector<double> max_density(size * size);
+    vector<int> do_int(size * size, 1);
     for (int i = 0; i != size; ++i) {
       const int ioffset = new_offset[i];
       const int isize = basis[i]->nbasis();
@@ -619,6 +692,13 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
         const int ij = i * size + j;
         const int ji = j * size + i;
+
+        const double schwarz_ij = schwarz[shell_id[i]*nshell + shell_id[j]];
+        if (schwarz_ij < 1e-10) {
+          do_int[ij] = 0;
+          do_int[ji] = 0;
+        }
+
 
         double denmax = 0.0;
         for (int ii = ioffset; ii != ioffset + isize; ++ii) {
@@ -631,6 +711,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       }
     }
 
+    int nfar = 0;
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
       const int b0offset = new_offset[i0];
@@ -644,6 +725,9 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         const int i01 = i0 * size + i1;
         const double density_01 = max_density[i01] * 4.0;
         const double schwarz_i01 = schwarz[shell_id[i0]*nshell + shell_id[i1]];
+
+        const bool skip01 = do_int[i0 * size + i1] == 0;
+        if (skip01) continue;
 
         for (int i2 = 0; i2 != size; ++i2) {
           const shared_ptr<const Shell>  b2 = basis[i2];
@@ -663,12 +747,20 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
                 ++ish3;
 
+                const bool skip23 = do_int[i2 * size + i3] == 0;
+                if (skip23) continue;
+
+                const bool isclose = is_neighbour(array<shared_ptr<const Shell>, 4>{{b0, b1, b2, b3}}, 2);
+                if (!isclose) {
+                  //++nfar;
+                  continue;
+                }
+
                 const int i23 = i2 * size + i3;
                 const double density_23 = max_density[i23] * 4.0;
                 const double density_03 = max_density[i0 * size + i3];
                 const double density_13 = max_density[i1 * size + i3];
                 const double schwarz_i23 = schwarz[shell_id[i2]*nshell + shell_id[i3]];
-                ++i3;
 
                 const double mulfactor = max(max(max(density_01, density_02),
                                                  max(density_12, density_23)),
@@ -676,6 +768,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 const double integral_bound = mulfactor * schwarz_i01 * schwarz_i23;
                 const bool skip_schwarz = integral_bound < schwarz_thresh;
                 if (skip_schwarz) continue;
+                ++n2e_int_;
 
 
                 array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
@@ -686,16 +779,19 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
                   const int j0n = j0 * density->ndim();
                   for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                    const int j1n = j1 * density->ndim();
                     for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                       for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                        const double eri = *eridata;
+                        double eri = *eridata;
                         out->element(j2, j3) += density_data[j0n + j1] * eri;
-                        out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
+                        out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+////                        out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
                       }
                     }
                   }
                 }
 
+                ++i3;
               }
               ++iat3;
             }
@@ -703,6 +799,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
       }
     }
+//    cout << "Pair distributions that are far = " << nfar << endl;
   } else if (dodf && density) {
     Matrix subden(nbas, nbas);
     int o0 = 0;
@@ -725,6 +822,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
     shared_ptr<const Matrix> o = df_->compute_Jop(make_shared<const Matrix>(subden));
 
+#if 1
     // exchange
     shared_ptr<Matrix> coeff = subden.copy();
     *coeff *= -1.0;
@@ -744,6 +842,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
     shared_ptr<DFHalfDist> halfbj = df_->compute_half_transform(coeff->slice(0,nocc));
     shared_ptr<DFHalfDist> half = halfbj->apply_J();
     Matrix ex = *half->form_2index(half, -0.5);
+#endif
 
     o0 = 0;
     for (int i0 = 0; i0 != size; ++i0) {

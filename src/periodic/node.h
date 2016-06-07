@@ -54,17 +54,20 @@ class Node {
     std::vector<std::shared_ptr<const Node>> neighbour_;
     const double thresh_;
     std::shared_ptr<const DFDist> df_;
+    int n1e_int_, n2e_int_, n2e_total_;
 
     void insert_vertex(std::shared_ptr<const Vertex>);
     void insert_child(std::shared_ptr<const Node> = NULL);
     void init();
     void get_interaction_list();
     void compute_extent(const double thresh = PRIM_SCREEN_THRESH);
+    double pair_extent(std::array<std::shared_ptr<const Shell>, 2> shells);
+    bool is_neighbour(std::array<std::shared_ptr<const Shell>, 4> shells, const int ws);
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
     void make_interaction_list(const int ws);
     void form_df(const std::string auxfile);
 
-    int nbasis_;
+    int nbasis_, nshell_;
     bool is_same_as_parent_;
     int rank_;
     int iself_; // in neighbour_
@@ -120,6 +123,9 @@ class Node {
     std::shared_ptr<const ZMatrix> local_expansion() const { return local_expansion_; }
     std::vector<std::shared_ptr<const ZMatrix>> child_local_expansion() const { return child_local_expansion_; }
     std::shared_ptr<const ZMatrix> child_local_expansion(const int i) const { return child_local_expansion_[i]; }
+    int n1e_int() const { return n1e_int_; }
+    int n2e_int() const { return n2e_int_; }
+    int n2e_total() const { return n2e_total_; }
     void print_node() const;
 };
 
