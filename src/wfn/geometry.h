@@ -153,7 +153,7 @@ class Geometry : public Molecule {
     std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
     std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
-    std::shared_ptr<const ShellPair> shellpairs(const int i) const { return shellpairs_[i]; }
+    std::shared_ptr<const ShellPair> shellpair(const int i) const { return shellpairs_[i]; }
     int nshellpair() const { return shellpairs_.size(); }
 
 };

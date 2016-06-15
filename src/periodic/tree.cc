@@ -259,16 +259,20 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 
 shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
 
+#if 1
+  ///////// DEBUG ///////////
   shared_ptr<const ZMatrix> out;
   if (density) {
     out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
   } else {
     out = make_shared<const ZMatrix>(nbasis_, nbasis_);
   }
+  /////////// END OF DEBUG ///////////
+#endif
 
-  ///////// DEBUG ///////////
   #if 0
   // Upward pass
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
   vector<int> offsets;
   for (int n = 0; n != geom_->natom(); ++n) {
     const vector<int> tmpoff = geom_->offset(n);
@@ -290,7 +294,6 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   // return the Coulomb matrix
   out->allreduce();
   #endif
-  /////////// END OF DEBUG ///////////
   return out;
 }
 
@@ -465,25 +468,23 @@ void Tree::print_leaves() const {
 
 shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<const Matrix> density, const vector<double> schwarz, const double schwarz_thresh) const {
 
-  int nsh = 0;
-  for (int n = 0; n != geom_->natom(); ++n)
-    nsh += geom_->atoms(n)->nshell();
-
   const int nspairs = geom_->nshellpair();
-  assert(nspairs == nsh * nsh);
+  const int nsh = sqrt(nspairs);
+  assert(nsh*nsh == nspairs);
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
-  out->zero();
   const double* density_data = density->data();
-  assert(schwarz.size() == nspairs);
 
   vector<double> max_density(nspairs);
-  for (int i = 0; i != nspairs; ++i) {
-    shared_ptr<const Shell> sh0 = geom_->shellpairs(i)->shell(0);
-    shared_ptr<const Shell> sh1 = geom_->shellpairs(i)->shell(1);
-    const int offset0 = geom_->shellpairs(i)->offset(0);
-    const int offset1 = geom_->shellpairs(i)->offset(1);
+  for (int i01 = 0; i01 != nspairs; ++i01) {
+    shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
+    const int offset0 = geom_->shellpair(i01)->offset(0);
+    const int i0 = geom_->shellpair(i01)->shell_ind(0);
     const int size0 = sh0->nbasis();
-    const int size1 = sh1->nbasis();
+
+    shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
+    const int offset1 = geom_->shellpair(i01)->offset(1);
+    const int i1 = geom_->shellpair(i01)->shell_ind(1);
+    const int size1 = sh0->nbasis();
 
     double denmax = 0.0;
     for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
@@ -491,93 +492,83 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
       for (int i1 = offset1; i1 != offset1 + size1; ++i1)
         denmax = max(denmax, fabs(density_data[i0n + i1]));
     }
-    max_density[i] = denmax;
+    max_density[i01] = denmax;
   }
-  cout << "**** nshells = " << nsh << " * nshell pairs = " << nspairs << endl;
-  //debug
-  if (density)
-  for (int i = 0; i != nsh; ++i)
-    for (int j = 0; j != nsh; ++j) {
-      const int ij = i * density->ndim() + j;
-      const int ji = j * density->ndim() + i;
-      //cout << density_data[ij] << " *** " << density_data[ji] << endl;
-      assert(abs(density_data[ij]-density_data[ji]) < 1e-10);
-    }
-  //end debug
-
 
  #if 1
   assert(out->ndim() == density->ndim());
   int nint = 0;
-  for (int i = 0; i != nspairs; ++i) {
-    if (geom_->shellpairs(i)->schwarz() < 1e-15) continue;
-    const int i0 = geom_->shellpairs(i)->shell_ind(0);
-    const int i1 = geom_->shellpairs(i)->shell_ind(1);
-    shared_ptr<const Shell> sh0 = geom_->shellpairs(i)->shell(0);
-    shared_ptr<const Shell> sh1 = geom_->shellpairs(i)->shell(1);
-    const int offset0 = geom_->shellpairs(i)->offset(0);
-    const int offset1 = geom_->shellpairs(i)->offset(1);
+  for (int i01 = 0; i01 != nspairs; ++i01) {
+    if (schwarz[i01] < 1e-15) continue;
+    const double density_01 = max_density[i01];
+
+    shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
+    const int i0 = geom_->shellpair(i01)->shell_ind(0);
+    const int offset0 = geom_->shellpair(i01)->offset(0);
     const int size0 = sh0->nbasis();
+
+    shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
+    const int offset1 = geom_->shellpair(i01)->offset(1);
+    const int i1 = geom_->shellpair(i01)->shell_ind(1);
     const int size1 = sh1->nbasis();
-    const double density_01 = max_density[i];
-    assert(i == i0 * nsh + i1);
 
-    for (int j = 0; j != nspairs; ++j) {
-      if (geom_->shellpairs(j)->schwarz() < 1e-15) continue;
-      const int j2 = geom_->shellpairs(j)->shell_ind(0);
-      const int j3 = geom_->shellpairs(j)->shell_ind(1);
-      shared_ptr<const Shell> sh2 = geom_->shellpairs(j)->shell(0);
-      shared_ptr<const Shell> sh3 = geom_->shellpairs(j)->shell(1);
-      const int offset2 = geom_->shellpairs(j)->offset(0);
-      const int offset3 = geom_->shellpairs(j)->offset(1);
+    for (int i23 = 0; i23 != nspairs; ++i23) {
+      if (schwarz[i23] < 1e-15) continue;
+      const double density_23 = max_density[i23];
+
+      shared_ptr<const Shell> sh2 = geom_->shellpair(i23)->shell(0);
+      const int i2 = geom_->shellpair(i23)->shell_ind(0);
+      const int offset2 = geom_->shellpair(i23)->offset(0);
       const int size2 = sh2->nbasis();
+
+      shared_ptr<const Shell> sh3 = geom_->shellpair(i23)->shell(1);
+      const int offset3 = geom_->shellpair(i23)->offset(1);
+      const int i3 = geom_->shellpair(i23)->shell_ind(1);
       const int size3 = sh3->nbasis();
-      const double density_23 = max_density[j];
-      assert(j == j2 * nsh + j3);
 
-
-      const double density_02 = max_density[i0 * nsh + j2];
-      const double density_03 = max_density[i0 * nsh + j3];
-      const double density_12 = max_density[i1 * nsh + j2];
-      const double density_13 = max_density[i1 * nsh + j3];
+      const double density_02 = max_density[i0 * nsh + i2];
+      const double density_03 = max_density[i0 * nsh + i3];
+      const double density_12 = max_density[i1 * nsh + i2];
+      const double density_13 = max_density[i1 * nsh + i3];
 
       const double mulfactor = max(max(max(density_01, density_02),
                                        max(density_03, density_12)),
                                        max(density_13, density_23));
-      const double integral_bound = mulfactor * schwarz[i] * schwarz[j];
+      const double integral_bound = mulfactor * schwarz[i01] * schwarz[i23];
       const bool skip_schwarz = integral_bound < schwarz_thresh;
       if (skip_schwarz) continue;
 
-      array<shared_ptr<const Shell>,4> input = {{sh0, sh1, sh2, sh3}};
-      const bool is_neigh = geom_->shellpairs(i)->is_neighbour(geom_->shellpairs(j), ws_);
+      array<shared_ptr<const Shell>,4> input = {{sh3, sh2, sh1, sh0}};
+      const bool is_neigh = geom_->shellpair(i01)->is_neighbour(geom_->shellpair(i23), ws_);
 
-//      if (!is_neigh) {
-//        continue;
-//      } else {
+      if (!is_neigh) {
+        continue;
+      } else {
         // integrate
         ERIBatch eribatch(input, mulfactor);
         eribatch.compute();
         const double* eridata = eribatch.data();
         ++nint;
 
-        for (int ii0 = offset0; ii0 != offset0 + size0; ++ii0) {
-          const int ii0n = ii0 * density->ndim();
-          for (int ii1 = offset1; ii1 != offset1 + size1; ++ii1) {
-            const int ii1n = ii1 * density->ndim();
-            for (int jj2 = offset2; jj2 != offset2 + size2; ++jj2) {
-              const int jj2n = jj2 * density->ndim();
-              for (int jj3 = offset3; jj3 != offset3 + size3; ++jj3, ++eridata) {
-                 const int jj3n = jj3 * density->ndim();
-                 double eri = *eridata;
-                 out->element(ii0, ii1) += density_data[jj2n + jj3] * eri;        // (ab|cd)
-                 out->element(ii0, jj3) -= density_data[jj2n + ii1] * eri * 0.5;  // (ad|cb)
+        for (int j0 = offset0; j0 != offset0 + size0; ++j0) {
+          const int j0n = j0 * density->ndim();
+          for (int j1 = offset1; j1 != offset1 + size1; ++j1) {
+            const int j1n = j1 * density->ndim();
+            for (int j2 = offset2; j2 != offset2 + size2; ++j2) {
+              const int j2n = j2 * density->ndim();
+              for (int j3 = offset3; j3 != offset3 + size3; ++j3, ++eridata) {
+                const int j3n = j3 * density->ndim();
+                double eri = *eridata;
+                out->element(j2, j3) += density_data[j0n + j1] * eri;        // (ab|cd)
+                out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;  // (ad|cb)
               }
             }
           }
         }
-//      }
-    } // j
-  } // i
+      }
+
+    }
+  }
   cout << "# integrals = " << nint <<  " *** without screening = " << nsh*nsh*nsh*nsh << endl;
   #endif
 

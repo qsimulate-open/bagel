@@ -694,7 +694,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         const int ji = j * size + i;
 
         const double schwarz_ij = schwarz[shell_id[i]*nshell + shell_id[j]];
-        if (schwarz_ij < 1e-10) {
+        if (schwarz_ij < 1e-15) {
           do_int[ij] = 0;
           do_int[ji] = 0;
         }
