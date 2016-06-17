@@ -261,12 +261,7 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
 #if 1
   ///////// DEBUG ///////////
-  shared_ptr<const ZMatrix> out;
-  if (density) {
-    out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
-  } else {
-    out = make_shared<const ZMatrix>(nbasis_, nbasis_);
-  }
+  shared_ptr<const ZMatrix> out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
   /////////// END OF DEBUG ///////////
 #endif
 
@@ -472,6 +467,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
   const int nsh = sqrt(nspairs);
   assert(nsh*nsh == nspairs);
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  if (!density) return out;
+
   const double* density_data = density->data();
 
   vector<double> max_density(nspairs);
@@ -496,35 +493,48 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
   }
 
  #if 1
-  assert(out->ndim() == density->ndim());
+  const int shift = sizeof(int) * 4;
+  shared_ptr<Petite> plist = geom_->plist();;
   int nint = 0;
+  int nzero = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
+    if (!plist->in_p2(i01)) continue;
     if (schwarz[i01] < 1e-15) continue;
-    const double density_01 = max_density[i01];
+    const double density_01 = max_density[i01] * 4.0;
 
     shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
     const int i0 = geom_->shellpair(i01)->shell_ind(0);
     const int offset0 = geom_->shellpair(i01)->offset(0);
     const int size0 = sh0->nbasis();
+    if (!plist->in_p1(i0)) continue;
 
     shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
     const int offset1 = geom_->shellpair(i01)->offset(1);
     const int i1 = geom_->shellpair(i01)->shell_ind(1);
     const int size1 = sh1->nbasis();
 
-    for (int i23 = 0; i23 != nspairs; ++i23) {
+    assert(i01 == i0 * nsh + i1);
+    if (i1 < i0) continue;
+
+    for (int i23 = i01; i23 != nspairs; ++i23) {
       if (schwarz[i23] < 1e-15) continue;
-      const double density_23 = max_density[i23];
+      const double density_23 = max_density[i23] * 4.0;
 
       shared_ptr<const Shell> sh2 = geom_->shellpair(i23)->shell(0);
       const int i2 = geom_->shellpair(i23)->shell_ind(0);
       const int offset2 = geom_->shellpair(i23)->offset(0);
       const int size2 = sh2->nbasis();
+      if (i2 < i0) continue;
 
       shared_ptr<const Shell> sh3 = geom_->shellpair(i23)->shell(1);
       const int offset3 = geom_->shellpair(i23)->offset(1);
       const int i3 = geom_->shellpair(i23)->shell_ind(1);
       const int size3 = sh3->nbasis();
+
+      assert(i23 == i2 * nsh + i3);
+      if (i3 < i2) continue;
+      int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
+      if (ijkl == 0) continue;
 
       const double density_02 = max_density[i0 * nsh + i2];
       const double density_03 = max_density[i0 * nsh + i3];
@@ -542,6 +552,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
       const bool is_neigh = geom_->shellpair(i01)->is_neighbour(geom_->shellpair(i23), ws_);
 
       if (!is_neigh) {
+        // multipoles
         continue;
       } else {
         // integrate
@@ -553,14 +564,45 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
         for (int j0 = offset0; j0 != offset0 + size0; ++j0) {
           const int j0n = j0 * density->ndim();
           for (int j1 = offset1; j1 != offset1 + size1; ++j1) {
+            if (j1 < j0) {
+              eridata += size2 * size3;
+              continue;
+            }
+
             const int j1n = j1 * density->ndim();
+            const double scale_01 = (j0 == j1) ? 0.5 : 1.0;
+            const unsigned int nj01 = (j0 << shift) + j1;
+
             for (int j2 = offset2; j2 != offset2 + size2; ++j2) {
               const int j2n = j2 * density->ndim();
+
+              const int maxj0j2 = max(j0, j2);
+              const int minj0j2 = min(j0, j2);
+
+              const int maxj1j2 = max(j1, j2);
+              const int minj1j2 = min(j1, j2);
+
               for (int j3 = offset3; j3 != offset3 + size3; ++j3, ++eridata) {
+                if (j3 < j2) continue;
+                const unsigned int nj23 = (j2 << shift) + j3;
+                if ((nj23 < nj01) && (i01 == i23)) continue;
+
                 const int j3n = j3 * density->ndim();
-                double eri = *eridata;
-                out->element(j2, j3) += density_data[j0n + j1] * eri;        // (ab|cd)
-                out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;  // (ad|cb)
+                const double scale_23 = (j2 == j3) ? 0.5 : 1.0;
+                const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
+
+                const int maxj1j3 = max(j1, j3);
+                const int minj1j3 = min(j1, j3);
+                const double eri = *eridata;
+
+                const double intval = eri * scale_01 * scale_23 * scale;
+                out->element(j1, j0) += density_data[j2n + j3] * intval * 4.0;
+                out->element(j3, j2) += density_data[j0n + j1] * intval * 4.0;
+                out->element(j3, j0) -= density_data[j2n + j1] * intval;
+
+                out->element(maxj1j2, minj1j2) -= density_data[j0n + j3] * intval;
+                out->element(maxj0j2, minj0j2) -= density_data[j1n + j3] * intval;
+                out->element(maxj1j3, minj1j3) -= density_data[j0n + j2] * intval;
               }
             }
           }
@@ -569,6 +611,9 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
     }
   }
+  for (int i = 0; i != density->ndim(); ++i) out->element(i, i) *= 2.0;
+  out->fill_upper();
+
   cout << "# integrals = " << nint <<  " *** without screening = " << nsh*nsh*nsh*nsh << endl;
   #endif
 
