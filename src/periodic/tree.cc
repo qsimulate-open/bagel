@@ -242,7 +242,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
     throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
-#if 0
+#if 1
   // Downward pass
   int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
@@ -261,11 +261,11 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
 #if 1
   ///////// DEBUG ///////////
-  shared_ptr<const ZMatrix> out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
+  shared_ptr<const ZMatrix> nf = compute_interactions(lmax, density, schwarz, schwarz_thresh);
   /////////// END OF DEBUG ///////////
 #endif
 
-  #if 0
+  #if 1
   // Upward pass
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
   vector<int> offsets;
@@ -288,6 +288,7 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   // return the Coulomb matrix
   out->allreduce();
+  *out += *nf;
   #endif
   return out;
 }
@@ -495,7 +496,6 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
  #if 1
   const int shift = sizeof(int) * 4;
   shared_ptr<Petite> plist = geom_->plist();;
-  int nint = 0;
   int nzero = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
     if (!plist->in_p2(i01)) continue;
@@ -559,7 +559,6 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
         ERIBatch eribatch(input, mulfactor);
         eribatch.compute();
         const double* eridata = eribatch.data();
-        ++nint;
 
         for (int j0 = offset0; j0 != offset0 + size0; ++j0) {
           const int j0n = j0 * density->ndim();
@@ -613,8 +612,6 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
   }
   for (int i = 0; i != density->ndim(); ++i) out->element(i, i) *= 2.0;
   out->fill_upper();
-
-  cout << "# integrals = " << nint <<  " *** without screening = " << nsh*nsh*nsh*nsh << endl;
   #endif
 
   return out;

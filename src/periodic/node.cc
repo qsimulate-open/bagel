@@ -554,6 +554,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
     }
   }
 
+#if 0 //DEBUG: no near-field
   // compute near-field interactions using direct integration and add to far field
   vector<shared_ptr<const Shell>> basis;
   vector<int> new_offset;
@@ -873,6 +874,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       o0 += b0size;
     }
   }
+#endif //DEBUG: no near-field
 
   return out;
 }
