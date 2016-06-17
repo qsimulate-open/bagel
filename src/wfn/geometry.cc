@@ -197,7 +197,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
       Quatern<double> od = oa - oc;
       Quatern<double> md = ma - mc;
       // if the charge center coincide with the location of the atom, skip
-      if (od.norm() < 1.0e-5 || md.norm() < 1.0e-5)
+      if (od.norm() < 0.1 || md.norm() < 0.1)
         continue;
       // Quaternion that maps md to od.
       od.normalize();
