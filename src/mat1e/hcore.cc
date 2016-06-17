@@ -61,14 +61,14 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
 
-  if (!dofmm_) {
+//  if (!dofmm_) {
     {
       NAIBatch nai(input, mol);
       nai.compute();
 
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
     }
-  }
+//  }
 
   if (mol->atoms().front()->use_ecp_basis()) {
     {
