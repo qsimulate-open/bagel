@@ -29,30 +29,31 @@
 
 namespace bagel {
 
-  class MoldenIn : public MoldenIO {
-     protected:
-        bool is_spherical_;
-        bool cartesian_;
+class MoldenIn : public MoldenIO {
+  protected:
+    bool is_spherical_;
+    bool cartesian_;
 
-        std::vector<std::shared_ptr<const Atom>> atoms_;
+    std::vector<std::shared_ptr<const Atom>> atoms_;
 
-        std::vector<std::vector<double>> mo_coefficients_;
+    std::vector<std::vector<double>> mo_coefficients_;
 
-        std::vector<std::vector<std::vector<std::pair<int, double>>>> lmtuv_;
-        std::vector<int> gto_order_;
-        std::vector<std::vector<int>> shell_orders_;
+    std::vector<std::vector<std::vector<std::pair<int, double>>>> lmtuv_;
+    std::vector<int> gto_order_;
+    std::vector<std::vector<int>> shell_orders_;
 
-        void compute_transforms();
-        std::vector<double> transform_cart(std::vector<double> in, int ang_l);
+    void compute_transforms();
+    std::vector<double> transform_cart(std::vector<double> in, int ang_l);
 
-     public:
-        MoldenIn(const std::string filename, const bool is_spherical = true);
+  public:
+    MoldenIn(const std::string filename, const bool is_spherical = true);
 
-        void read();
+    void read();
 
-        MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
-        MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>>);
-  };
+    MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
+    MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>>);
+};
+
 }
 
 #endif

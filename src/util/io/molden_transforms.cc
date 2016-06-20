@@ -96,18 +96,14 @@ void MoldenIn::compute_transforms() {
       }
       /* I have no idea if this will work for the general case, but it works up to d */
       double scale = 0.0;
-      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
+      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv)
         scale += ituv->second*ituv->second;
-      }
 
-      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
+      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv)
         ituv->second /= scale;
-      }
 
       mtuv.push_back(tuv);
     }
-
-
     lmtuv_.push_back(mtuv);
   }
 }
@@ -118,11 +114,8 @@ vector<double> MoldenIn::transform_cart(vector<double> carts, int ang_l) {
    vector<double> out;
    for(auto& im : mtuv) {
      double value = 0.0;
-
-     for(auto& ituv : im) {
+     for(auto& ituv : im)
         value += (ituv.second) * carts.at(ituv.first);
-     }
-
      out.push_back(value);
    }
 
