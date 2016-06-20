@@ -57,7 +57,7 @@ MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
 MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>> inp) {
   shared_ptr<Coeff>         coeff = get<0>(inp);
   shared_ptr<const Geometry> geom = get<1>(inp);
-  assert(!mo_coefficients_.empty());
+  assert(has_mo());
 
   vector<int> atom_offsets;
   for (auto& ioff : geom->offsets())

@@ -96,6 +96,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     Reference(const Reference& o, std::shared_ptr<const Coeff> c = nullptr) :
       Reference(o.geom(), c ? c : o.coeff(), o.nclosed(), o.nact(), o.nvirt(), o.energy(), o.rdm1(), o.rdm2(), o.rdm1_av(), o.rdm2_av(), o.ciwfn()) { }
 
+    // construct from a molden file
+    Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const PTree> itree);
+
     virtual ~Reference() { }
 
     std::shared_ptr<const Geometry> geom() const { return geom_; }

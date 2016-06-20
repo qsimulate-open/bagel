@@ -27,6 +27,7 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/mat1e/mixedbasis.h>
 #include <src/ci/fci/fci.h>
+#include <src/util/io/moldenin.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
 
@@ -60,6 +61,21 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
 
+}
+
+
+Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree) : geom_(g), hcore_(make_shared<Hcore>(geom_)) {
+  // Note that other informations are not available...
+  // Then read molden
+  const string molden_file = itree->get<string>("molden_file", "");
+  assert(!molden_file.empty());
+  MoldenIn mfs(molden_file, geom_->spherical());
+  mfs.read();
+  if (mfs.has_mo()) {
+    auto c = make_shared<Coeff>(geom_);
+    mfs >> tie(c, g);
+    coeff_ = c;
+  }
 }
 
 

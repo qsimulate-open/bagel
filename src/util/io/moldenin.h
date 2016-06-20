@@ -52,6 +52,7 @@ class MoldenIn : public MoldenIO {
 
     MoldenIn& operator>> (std::vector<std::shared_ptr<const Atom>>& atoms_);
     MoldenIn& operator>> (std::tuple<std::shared_ptr<Coeff>, std::shared_ptr<const Geometry>>);
+    bool has_mo() const { return !mo_coefficients_.empty(); }
 };
 
 }
