@@ -128,7 +128,7 @@ void ZCASSCF::init() {
 
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)
-    throw runtime_error("two many closed orbitals in the input");
+    throw runtime_error("too many closed orbitals in the input");
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
