@@ -69,7 +69,7 @@ class Tree {
 
     std::shared_ptr<const ZMatrix> compute_interactions(const int lmax, std::shared_ptr<const Matrix> density,
                              const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0) const;
-    std::vector<std::shared_ptr<const ZMatrix>> get_blm_kl(const int lmax, std::array<double, 3> r01, std::vector<std::shared_ptr<const ZMatrix>> qlm0) const;
+    std::vector<std::complex<double>> get_mlm(const int lmax, std::array<double, 3> r01, std::vector<std::complex<double>> omega0) const;
 
   public:
     Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const bool do_contract = false,

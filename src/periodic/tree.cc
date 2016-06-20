@@ -35,6 +35,7 @@ using namespace std;
 
 static const AtomMap atommap_;
 static const double pisq__ = pi__ * pi__;
+const static Legendre plm;
 
 Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contract, const double thresh, const int ws)
  : geom_(geom), max_height_(maxht), do_contraction_(do_contract), thresh_(thresh), ws_(ws) {
@@ -242,7 +243,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
     throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
-#if 1
+#if 0
   // Downward pass
   int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
@@ -259,15 +260,15 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 
 shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
 
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
 #if 1
   ///////// DEBUG ///////////
   shared_ptr<const ZMatrix> nf = compute_interactions(lmax, density, schwarz, schwarz_thresh);
   /////////// END OF DEBUG ///////////
 #endif
 
-  #if 1
+  #if 0
   // Upward pass
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
   vector<int> offsets;
   for (int n = 0; n != geom_->natom(); ++n) {
     const vector<int> tmpoff = geom_->offset(n);
@@ -288,8 +289,8 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   // return the Coulomb matrix
   out->allreduce();
-  *out += *nf;
   #endif
+  *out += *nf;
   return out;
 }
 
@@ -495,6 +496,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
  #if 1
   const int shift = sizeof(int) * 4;
+  const int nmult = (lmax+1)*(lmax+1);
   shared_ptr<Petite> plist = geom_->plist();;
   int nzero = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
@@ -553,7 +555,45 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
       if (!is_neigh) {
         // multipoles
-        continue;
+        vector<complex<double>> omega01(nmult), omega23(nmult);
+        vector<shared_ptr<const ZMatrix>> qlm01(nmult), qlm23(nmult);
+        {
+          auto den01 = density->get_submatrix(offset1, offset0, size1, size0);
+          MultipoleBatch mpole(geom_->shellpair(i01)->shells(), geom_->shellpair(i01)->centre(), lmax);
+          mpole.compute();
+          for (int i = 0; i != nmult; ++i) {
+            auto tmp01 = make_shared<ZMatrix>(size1, size0);
+            tmp01->copy_block(0, 0, size1, size0, mpole.data(i));
+            qlm01[i] = make_shared<const ZMatrix>(*tmp01);
+            omega01[i] = qlm01[i]->get_real_part()->dot_product(*den01);
+          }
+        }
+        {
+          auto den23 = density->get_submatrix(offset3, offset2, size3, size2);
+          MultipoleBatch mpole(geom_->shellpair(i23)->shells(), geom_->shellpair(i23)->centre(), lmax);
+          mpole.compute();
+          for (int i = 0; i != nmult; ++i) {
+            auto tmp23 = make_shared<ZMatrix>(size3, size2);
+            tmp23->copy_block(0, 0, size3, size2, mpole.data(i));
+            qlm23[i] = make_shared<const ZMatrix>(*tmp23);
+            omega23[i] = qlm23[i]->get_real_part()->dot_product(*den23);
+          }
+        }
+        array<double, 3> rvec0123, rvec2301;
+        for (int i = 0; i != 3; ++i) {
+          rvec0123[i] = geom_->shellpair(i23)->centre(i) - geom_->shellpair(i01)->centre(i);
+          rvec2301[i] = -rvec0123[i];
+        }
+        vector<complex<double>> mlm01 = get_mlm(lmax, rvec0123, omega01);
+        vector<complex<double>> mlm23 = get_mlm(lmax, rvec2301, omega23);
+        for (int j2 = 0; j2 != size2; ++j2)
+          for (int j3 = 0; j3 != size3; ++j3)
+              for (int i = 0; i != nmult; ++i)
+                out->element(j3+offset3, j2+offset2) += qlm23[i]->element(j3, j2) * mlm01[i];
+        for (int j0 = 0; j0 != size0; ++j0)
+          for (int j1 = 0; j1 != size1; ++j1)
+              for (int i = 0; i != nmult; ++i)
+                out->element(j1+offset1, j0+offset0) += qlm01[i]->element(j1, j0) * mlm23[i];
       } else {
         // integrate
         ERIBatch eribatch(input, mulfactor);
@@ -618,10 +658,44 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 }
 
 
-vector<shared_ptr<const ZMatrix>> Tree::get_blm_kl(const int lmax, array<double, 3> r01, vector<shared_ptr<const ZMatrix>> qlm0) const {
+vector<complex<double>> Tree::get_mlm(const int lmax, array<double, 3> r01, vector<complex<double>> omega0) const {
 
-  LocalExpansion lx(r01, qlm0, lmax);
-  vector<shared_ptr<const ZMatrix>> blm = lx.compute_local_moments();
+  const int nmult = (lmax + 1) * (lmax + 1);
+  assert(omega0.size() == nmult);
+  const double r = sqrt(r01[0]*r01[0] + r01[1]*r01[1] + r01[2]*r01[2]);
+  const double ctheta = (r > numerical_zero__) ? r01[2]/r : 0.0;
+  const double phi = atan2(r01[1], r01[0]);
 
-  return blm;
+  vector<complex<double>> out(nmult);
+
+  int i1 = 0;
+  for (int l = 0; l <= lmax; ++l) {
+    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+
+
+      out[i1] = 0.0;
+      int i2 = 0;
+      for (int j = 0; j <= lmax; ++j) {
+        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+
+          const int a = l + j;
+          const int b = m - l + k - j;
+
+          double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
+          double ft = 1.0;
+          for (int i = 1; i <= a - abs(b); ++i) {
+            prefactor *= ft;
+            ++ft;
+          }
+          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
+          const double imag = prefactor * sin(abs(b) * phi);
+          const complex<double> coeff(real, imag);
+
+          out[i1] += omega0[i2] * coeff;
+        } //jk
+      }
+    } //lm
+  }
+
+  return out;
 }
