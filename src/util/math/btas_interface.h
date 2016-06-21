@@ -32,6 +32,7 @@
 #define _HAS_INTEL_MKL
 #endif
 
+#include <iostream>
 #include <iomanip>
 #include <complex>
 #include <btas/btas.h>
