@@ -100,17 +100,19 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
 
   // add second-order contribution
   assert(target() == 0); // this is assumed in CASPT2 when computing the norm
-  auto out2 = make_shared<Matrix>(*sd1_ - *out0 * wf1norm_[target()]);
+  // CAUTION - this is because spin-free d(2) includes the <1|1>d(0) term, but the alpha spin one does not.
+  shared_ptr<const Matrix> d0active = ref_->rdm1(target_)->rdm1_mat(nclosed, false)->resize(nmo,nmo);
+  auto out2 = make_shared<Matrix>(*sd1_ - (*out0 + *d0active) * wf1norm_[target()]);
 
-  if (out2->trace() > 1.0e-8)
+  if (fabs(out2->trace()) > 1.0e-8)
     cout << "  **** warning **** Trace of the second-order CASPT2 spin-density matrix is nonzero: "
          << setprecision(10) << out2->trace() << endl;
   if ((*out1 - *sd11_).rms() > 1.0e-8)
     cout << "  **** warning **** First order CASPT2 spin-density matrix has inconsistency: "
          << (*out1 - *sd11_).rms() << endl;
 
-  auto out = make_shared<Matrix>(*coeff_ * (*out0 + *out1 + *out2) ^ *coeff_);
-  return out;
+  // returns an AO matrix
+  return make_shared<Matrix>(*coeff_ * (*out0 + *out1 + *out2) ^ *coeff_);
 #else
   return coeff_->clone(); // dummy
 #endif

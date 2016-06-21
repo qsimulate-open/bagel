@@ -82,7 +82,7 @@ void Smith::compute() {
     if (idata_->get<bool>("_hyperfine")) {
       auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
       sp->solve();
-      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_);
+      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
       sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
     }
   }

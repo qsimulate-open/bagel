@@ -28,6 +28,7 @@
 #include <src/grad/cpcasscf.h>
 #include <src/grad/gradeval.h>
 #include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/casnoopt.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
@@ -44,13 +45,19 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   Timer timer;
 
   // compute CASSCF first
-  auto cas = make_shared<CASHybrid>(inp, geom, ref);
-  cas->compute();
-
-  // update reference
-  ref_ = cas->conv_to_ref();
-  fci_ = cas->fci();
-  thresh_ = cas->thresh();
+  if (inp->get<string>("algorithm", "") != "noopt") {
+    auto cas = make_shared<CASHybrid>(inp, geom, ref);
+    cas->compute();
+    ref_ = cas->conv_to_ref();
+    fci_ = cas->fci();
+    thresh_ = cas->thresh();
+  } else {
+    auto cas = make_shared<CASNoopt>(inp, geom, ref);
+    cas->compute();
+    ref_ = cas->conv_to_ref();
+    fci_ = cas->fci();
+    thresh_ = cas->thresh();
+  }
 
   // gradient/property calculation
   target_ = inp->get<int>("_target");
