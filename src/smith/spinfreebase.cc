@@ -185,7 +185,65 @@ void SpinFreeMethod<double>::rotate_xms() {
 
 template<>
 void SpinFreeMethod<complex<double>>::rotate_xms() {
-  assert(false);
+  assert(fockact_);
+  const int nstates = info_->ciwfn()->nstates();
+  ZMatrix fmn(nstates, nstates);
+
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst <= ist; ++jst) {
+      // first compute 1RDM
+      shared_ptr<const RDM<1>> rdm1;
+      tie(rdm1, ignore) = info_->rdm12(jst, ist);
+      // then assign the dot product: fmn=fij rdm1
+      fmn(ist, jst) = blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data());
+      fmn(jst, ist) = std::conj(fmn(ist, jst));
+    }
+  }
+
+  // diagonalize fmn
+  VectorB eig(nstates);
+  fmn.diagonalize(eig);
+
+  cout << endl;
+  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl;
+  cout << "      Rotation matrix:";
+  for (int ist = 0; ist != nstates; ++ist) {
+    cout << endl << "      ";
+    for (int jst = 0; jst != nstates; ++jst)
+      cout << setw(20) << setprecision(10) << fmn(ist, jst);
+  }
+  cout << endl << endl;
+
+  // construct CIWfn
+  shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
+  shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
+  shared_ptr<RelZDvec> new_dvec = dvec->clone();
+  vector<shared_ptr<Civector<complex<double>>>> civecs = dvec->dvec();
+  vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvec->dvec();
+
+  for (int jst =0; jst != nstates; ++jst) {
+    for (int ist =0; ist != nstates; ++ist)
+      new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(ciwfn->nstates());
+  for (int i = 0; i != ciwfn->nstates(); ++i)
+    energies[i] = ciwfn->energy(i);
+  auto new_ciwfn = make_shared<RelCIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
+                                         energies, new_dvec, ciwfn->det());
+
+  // construct Reference
+  auto new_ref = make_shared<RelReference>(info_->geom(), make_shared<RelCoeff_Striped>(*info_->coeff()), info_->ref()->energy(),
+                                           info_->ref()->nneg(), info_->nclosed(), info_->nact(), info_->nvirt(), 
+                                           info_->gaunt(), info_->breit(), /*kramers*/true,
+                                           info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
+
+  // construct SMITH_info
+  info_ = make_shared<SMITH_Info<complex<double>>>(new_ref, info_);
+
+  // update eref_
+  eref_ = make_shared<ZMatrix>(fmn % (*eref_) *fmn);
+  xmsmat_ = make_shared<ZMatrix>(move(fmn));
 }
 
 
