@@ -374,8 +374,8 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
           *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
 
-        vector<vector<double>> cont(1, *iter);
-        vector<pair<int, int>> cran(1, *citer);
+        vector<vector<double>> cont {*iter};
+        vector<pair<int, int>> cran {*citer};
         auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
         array<shared_ptr<const Shell>,2> cinp {{ current, current }};
         OverlapBatch coverlap(cinp);
@@ -389,13 +389,6 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
     }
 
   } // end of batch loop
-
-  // shuffle, but deterministic
-  // FIXME this breaks the atomic density guess, since it relies on the shell ordering
-#if 0
-  srand(0);
-  random_shuffle(shells_.begin(), shells_.end(), [](const int& i) { return rand()%i; });
-#endif
 
   // TODO size is not optimized!
   split_shells(40);

@@ -143,8 +143,7 @@ void MoldenIn::read() {
     ifstream sph_input(filename_);
     if (!sph_input.is_open()){
       throw runtime_error("Molden input file not found");
-    }
-    else {
+    } else {
       regex _5d_re("\\[5[Dd]\\]");
       regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
       while (!sph_input.eof()) {
