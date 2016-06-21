@@ -171,7 +171,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
-                                        info_->nvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->nvirt() + info_->nfrozenvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
@@ -234,7 +234,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
 
   // construct Reference
   auto new_ref = make_shared<RelReference>(info_->geom(), make_shared<RelCoeff_Striped>(*info_->coeff()), info_->ref()->energy(),
-                                           info_->ref()->nneg(), info_->nclosed(), info_->nact(), info_->nvirt(), 
+                                           info_->ref()->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(), 
                                            info_->gaunt(), info_->breit(), /*kramers*/true,
                                            info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
