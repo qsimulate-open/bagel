@@ -26,6 +26,7 @@
 #define __SRC_MULTI_CASSCF_CASNOOPT_H
 
 #include <src/multi/casscf/casscf.h>
+#include <src/prop/hyperfine.h>
 
 namespace bagel {
 
@@ -43,6 +44,11 @@ class CASNoopt : public CASSCF {
       fci_->compute();
       fci_->compute_rdm12();
       energy_ = fci_->energy();
+
+      if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+        HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
+        hfcc.compute();
+      }
     }
 
     std::shared_ptr<const Reference> conv_to_ref() const override {

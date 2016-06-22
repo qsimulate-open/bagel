@@ -762,8 +762,8 @@ AtomMap::AtomMap () {
   hfccp.emplace("ca",    0.0000);
   hfccp.emplace("sc",    0.0000);
   hfccp.emplace("ti",  -30.1264);
-  hfccp.emplace("v",     0.0000);
-  hfccp.emplace("cr",    0.0000);
+  hfccp.emplace("v",   140.2594);
+  hfccp.emplace("cr",  -30.0605);
   hfccp.emplace("mn",  132.0006);
   hfccp.emplace("fe",    0.0000);
   hfccp.emplace("co",    0.0000);
