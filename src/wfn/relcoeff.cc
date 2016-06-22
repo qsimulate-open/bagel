@@ -300,7 +300,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
 
 
 shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_indices, const int nele, const bool paired) const {
-  // assumes coefficient is in striped format
+  const int pairfac = paired ? 1 : 2;
   const int nmobasis = paired ? npos()/2 : npos();
 
   cout << " " << endl;
@@ -309,21 +309,16 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
   cout << "    ============================ " << endl << endl;
 
-  if (active_indices.size() != (paired ? nact_ : 2*nact_))
-    throw logic_error("RelCoeff_Striped::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(paired ? nact_ : 2*nact_) + " expected)");
+  if (active_indices.size() != (nact_ * pairfac))
+    throw logic_error("RelCoeff_Striped::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(nact_ * pairfac) + " expected)");
   if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
     throw runtime_error("RelCoeff_Striped::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
   auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
 
   int iclosed = 0;
-  int iactive = nclosed_;
-  int ivirt   = nclosed_ + nact_;
-
-  if (!paired) {
-    iactive *= 2;
-    ivirt *= 2;
-  }
+  int iactive = pairfac * nclosed_;
+  int ivirt   = pairfac * (nclosed_ + nact_);
 
   auto cp   = [&out, this, &paired] (const int i, int& pos) {
     if (paired) {
@@ -339,7 +334,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
       cp(i, iactive);
-    } else if (closed_count < (paired ? nclosed_ : 2*nclosed_)) {
+    } else if (closed_count < (pairfac * nclosed_)) {
       cp(i, iclosed);
       closed_count++;
     } else {
@@ -347,7 +342,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
     }
   }
 
-  if (closed_count != (paired ? nclosed_ : 2*nclosed_))
+  if (closed_count != (pairfac * nclosed_))
     throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons
