@@ -319,12 +319,10 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   int iclosed = 0;
   int iactive = nclosed_;
   int ivirt   = nclosed_ + nact_;
-  int nclosed_start = nele / 2;
 
   if (!paired) {
     iactive *= 2;
     ivirt *= 2;
-    nclosed_start = nele;
   }
 
   auto cp   = [&out, this, &paired] (const int i, int& pos) {
@@ -341,7 +339,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
       cp(i, iactive);
-    } else if (i < nclosed_start) {
+    } else if (closed_count < (paired ? nclosed_ : 2*nclosed_)) {
       cp(i, iclosed);
       closed_count++;
     } else {
