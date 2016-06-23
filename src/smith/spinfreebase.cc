@@ -192,8 +192,10 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   for (int ist = 0; ist != nstates; ++ist) {
     for (int jst = 0; jst <= ist; ++jst) {
       // first compute 1RDM
-      shared_ptr<const RDM<1>> rdm1;
-      tie(rdm1, ignore) = info_->rdm12(jst, ist);
+      shared_ptr<const Kramers<2,ZRDM<1>>> krdm1;
+      tie(krdm1, ignore) = info_->rdm12(jst, ist);
+      //shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
+      shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, active_.size());
       // then assign the dot product: fmn=fij rdm1
       fmn(ist, jst) = blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data());
       fmn(jst, ist) = std::conj(fmn(ist, jst));
@@ -215,15 +217,32 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   cout << endl << endl;
 
   // construct CIWfn
+  // TODO:  Verify this chunk of code carefully
   shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
   shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
   shared_ptr<RelZDvec> new_dvec = dvec->clone();
-  vector<shared_ptr<Civector<complex<double>>>> civecs = dvec->dvec();
-  vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvec->dvec();
 
-  for (int jst =0; jst != nstates; ++jst) {
-    for (int ist =0; ist != nstates; ++ist)
-      new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
+
+//  map<pair<int, int>, vector<shared_ptr<Civector<complex<double>>>>> civecs;
+//  map<pair<int, int>, vector<shared_ptr<Civector<complex<double>>>>> new_civecs;
+//  for (auto& i: dvecs)
+//    civecs.emplace(i.first, i.second->dvec());
+//  for (auto& i: new_dvecs)
+//    new_civecs.emplace(i.first, i.second->dvec());
+
+//  for (int jst =0; jst != nstates; ++jst) {
+//    for (int ist =0; ist != nstates; ++ist)
+//      for (auto& i: new_civecs)
+//        i.second[jst]->ax_plus_y(fmn(ist,jst), civecs.at(i.first)[ist]);
+//  }
+  for (auto& i: dvecs) {
+    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
+    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
+    for (int jst =0; jst != nstates; ++jst)
+      for (int ist =0; ist != nstates; ++ist)
+        new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
   }
 
   vector<double> energies(ciwfn->nstates());
@@ -233,10 +252,13 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
                                          energies, new_dvec, ciwfn->det());
 
   // construct Reference
-  auto new_ref = make_shared<RelReference>(info_->geom(), make_shared<RelCoeff_Striped>(*info_->coeff()), info_->ref()->energy(),
-                                           info_->ref()->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(), 
+  auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
+  auto relcoeff = dynamic_pointer_cast<const RelCoeff_Striped>(info_->coeff());
+  assert(relref && relcoeff);
+  auto new_ref = make_shared<RelReference>(info_->geom(), make_shared<RelCoeff_Striped>(*relcoeff), relref->energy(),
+                                           relref->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(), 
                                            info_->gaunt(), info_->breit(), /*kramers*/true,
-                                           info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
+                                           relref->rdm1_av(), relref->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
   info_ = make_shared<SMITH_Info<complex<double>>>(new_ref, info_);
