@@ -135,9 +135,11 @@ void ZCASBFGS::compute() {
     // compute approximate diagonal hessian
     if (iter == 0) {
       shared_ptr<ZRotFile> denom = compute_denom(cfock, afock, qvec, rdm1);
+      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
+      const int maxiter_hebden = idata_->get<int>("maxiter_hebden", 75);
+      const double alpha_param = idata_->get<double>("bfgs_alpha", 1.3);
       // IMPROVISED LEVEL SHIFT
       const bool shift = idata_->get<bool>("shift", false);
-      const double trust_rad = idata_->get<double>("trust_radius", 0.4);
       if (shift) {
         level_shift_ = find_level_shift(denom);
         shared_ptr<ZRotFile> diagonal_shift = denom->clone();
@@ -146,9 +148,8 @@ void ZCASBFGS::compute() {
       }
       { // electronic rotation bfgs
         auto newdenom = copy_electronic_rotations(denom);
-        ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
         const double erad = idata_->get<double>("ele_trust_radius", trust_rad);
-        ele_srbfgs->initiate_trust_radius(erad);
+        ele_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom, erad, maxiter_hebden, alpha_param);
       }
       { // positronic rotation bfgs
         auto newdenom = copy_positronic_rotations(denom);
@@ -157,9 +158,8 @@ void ZCASBFGS::compute() {
           if (fabs(newdenom->data(i)) < thresh) {
             newdenom->data(i) = 1.0e10;
           }
-        pos_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom);
         const double prad = idata_->get<double>("pos_trust_radius", trust_rad);
-        pos_srbfgs->initiate_trust_radius(prad);
+        pos_srbfgs = make_shared<SRBFGS<ZRotFile>>(newdenom, prad, maxiter_hebden, alpha_param);
       }
     }
     onebody.tick_print("One body operators");
