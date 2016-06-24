@@ -45,8 +45,19 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
-    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
+    std::shared_ptr<Tensor> n;
 
+    int nstates_;
+    std::vector<double> err_;
+    std::vector<double> pt2energy_;
+    std::shared_ptr<Matrix> heff_;
+
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> lall_;
+
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma92_();
@@ -80,6 +91,10 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTensor> Gamma109_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
+
+    std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>>
+      solve_linear(std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> s, std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> t);
 
   public:
     RelCASPT2(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);

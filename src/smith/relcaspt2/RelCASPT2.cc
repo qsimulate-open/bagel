@@ -27,50 +27,170 @@
 
 
 #include <src/smith/relcaspt2/RelCASPT2.h>
+#include <src/util/math/linearRM.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
 RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
+  nstates_ = ref->ciwfn()->nstates();
   auto eig = f1_->diag();
   eig_.resize(eig.size());
   for (int i = 0; i != eig.size(); ++i)
     eig_[i] = real(eig[i]);
-  t2 = init_amplitude();
-  r = init_residual();
-  s = init_residual();
+  assert(eig.size() == nstates_);
+
+  // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
+  for (int i = 0; i != nstates_; ++i) {
+    auto tmp = make_shared<MultiTensor>(nstates_);
+    for (auto& j : *tmp)
+      j = init_amplitude();
+    t2all_.push_back(tmp);
+
+    auto tmp2 = make_shared<MultiTensor>(nstates_);
+    for (auto& j : *tmp2)
+      j = init_residual();
+    sall_.push_back(tmp2);
+    rall_.push_back(tmp2->clone());
+  }
+
+  energy_.resize(nstates_);
+  pt2energy_.resize(nstates_);
 }
 
 
 void RelCASPT2::RelCASPT2::solve() {
   Timer timer;
   print_iteration();
-  shared_ptr<Queue> sourceq = make_sourceq();
-  while (!sourceq->done())
-    sourceq->next_compute();
-  Timer mtimer;
-  int iter = 0;
-  energy_.resize(1);
-  e0_ = e0all_[0];
-  for ( ; iter != info_->maxiter(); ++iter) {
-    energy_[0] = detail::real(dot_product_transpose(s, t2));
-    shared_ptr<Queue> queue = make_residualq();
-    while (!queue->done())
-      queue->next_compute();
-    diagonal(r, t2, true);
-    r->ax_plus_y(1.0, s);
-    energy_[0] += detail::real(dot_product_transpose(r, t2));
-    const double err = r->rms();
-    print_iteration(iter, energy_[0], err, mtimer.tick());
 
-    update_amplitude(t2, r);
-    r->zero();
-    if (err < info_->thresh()) break;
+  // <proj_jst|H|0_K> set to sall in ms-caspt2
+  for (int istate = 0; istate != nstates_; ++istate) { //K states
+    t2all_[istate]->fac(istate) = 0.0;
+    sall_[istate]->fac(istate)  = 0.0;
+
+    for (int jst=0; jst != nstates_; ++jst) { // <jst|
+      if (info_->sssr() && jst != istate)
+        continue;
+      set_rdm(jst, istate);
+      s = sall_[istate]->at(jst);
+      shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+      while(!sourceq->done())
+        sourceq->next_compute();
+    }   
   }
-  print_iteration(iter == info_->maxiter());
-  timer.tick_print("CASPT2 energy evaluation");
-  cout << "    * CASPT2 energy : " << fixed << setw(20) << setprecision(10) << energy_[0]+info_->ciwfn()->energy(0) << endl;
+
+  // solve linear equation for t amplitudes
+  t2all_ = solve_linear(sall_, t2all_);
+
+  // print out energies
+  cout << endl;
+  for (int istate = 0; istate != nstates_; ++istate) {
+    if (info_->shift() == 0.0) {
+      pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate));
+      assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
+      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
+    } else {
+      // TODO Not checked thoroughly - same as non-relativistic code
+      throw logic_error("Please carefully verify the use of level shift in relativistic multi-state CASPT2.");
+      // will be used in normq
+      n = init_residual();
+      complex<double> norm = 0.0;
+      for (int jst = 0; jst != nstates_; ++jst) { // bra
+        for (int ist = 0; ist != nstates_; ++ist) { // ket
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          shared_ptr<Queue> normq = make_normq(true, jst == ist);
+          while (!normq->done())
+            normq->next_compute();
+          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
+        }
+      }
+
+      pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate)) - info_->shift()*std::real(norm);
+      assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
+      assert(std::abs(std::imag(norm)) < 1.0e-8);
+      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
+      cout <<endl;
+    }
+  }
+}
+
+
+// function to solve linear equation
+vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s, 
+                                                                                     vector<shared_ptr<MultiTensor_<complex<double>>>> t) {
+  Timer mtimer;
+  // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+  // loop over state of interest
+  bool converged = true;
+  for (int i = 0; i != nstates_; ++i) {  // K states
+    bool conv = false;
+    double error = 0.0;
+    e0_ = e0all_[i] - info_->shift();
+    energy_[i] = 0.0;
+    // set guess vector
+    t[i]->zero();
+    if (s[i]->rms() < 1.0e-15) {
+      print_iteration(0, 0.0, 0.0, mtimer.tick());
+      if (i+1 != nstates_) cout << endl;
+      continue;
+    } else {
+      update_amplitude(t[i], s[i]);
+    }
+
+    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(30, s[i]);
+    int iter = 0;
+    for ( ; iter != info_->maxiter(); ++iter) {
+      rall_[i]->zero();
+      const double norm = t[i]->norm();
+      t[i]->scale(1.0/norm);
+
+      // compute residuals named r for each K
+      for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+        for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
+          if (info_->sssr() && (jst != i || ist != i))
+            continue;
+          // first term <proj_jst| H0 - E0_K |1_ist>
+          set_rdm(jst, ist);
+          t2 = t[i]->at(ist);
+          r = rall_[i]->at(jst);
+
+          e0_ = e0all_[i] - info_->shift();
+          shared_ptr<Queue> queue = make_residualq(false, jst == ist);
+          while (!queue->done())
+            queue->next_compute();
+          diagonal(r, t2, jst == ist);
+        }
+      }
+      // solve using subspace updates
+      rall_[i] = solver->compute_residual(t[i], rall_[i]);
+      t[i] = solver->civec();
+
+      // energy is now the Hylleraas energy
+      energy_[i] = detail::real(dot_product_transpose(s[i], t[i]));
+      energy_[i] += detail::real(dot_product_transpose(rall_[i], t[i]));
+
+      // compute rms for state i
+      error = rall_[i]->rms();
+      print_iteration(iter, energy_[i], error, mtimer.tick());
+      conv = error < info_->thresh();
+
+      // compute delta t2 and update amplitude
+      if (!conv) {
+        t[i]->zero();
+        update_amplitude(t[i], rall_[i]);
+      }
+      if (conv) break;
+    }
+    if (i+1 != nstates_) cout << endl;
+    converged &= conv;
+  }
+  print_iteration(!converged);
+  return t;
 }
 
 

@@ -134,6 +134,7 @@ namespace MSCASPT2  { using MultiTensor = MultiTensor_<double>; }
 namespace MRCI   { using MultiTensor = MultiTensor_<double>; }
 namespace RelCASPT2 { using MultiTensor = MultiTensor_<std::complex<double>>; }
 namespace RelMRCI   { using MultiTensor = MultiTensor_<std::complex<double>>; }
+namespace RelMSCASPT2  { using MultiTensor = MultiTensor_<std::complex<double>>; }
 
 }
 }
