@@ -263,8 +263,8 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
- : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in, const string bas)
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -374,14 +374,16 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
           *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
 
-        vector<vector<double>> cont {*iter};
-        vector<pair<int, int>> cran {*citer};
-        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
-        array<shared_ptr<const Shell>,2> cinp {{ current, current }};
-        OverlapBatch coverlap(cinp);
-        coverlap.compute();
-        const double scal = 1.0 / sqrt((coverlap.data())[0]);
-        for (auto& d : *iter) d *= scal;
+        if (basis_ != "molden") {
+          vector<vector<double>> cont {*iter};
+          vector<pair<int, int>> cran {*citer};
+          auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
+          array<shared_ptr<const Shell>,2> cinp {{ current, current }};
+          OverlapBatch coverlap(cinp);
+          coverlap.compute();
+          const double scal = 1.0 / sqrt((coverlap.data())[0]);
+          for (auto& d : *iter) d *= scal;
+        }
       }
 
       shells_.push_back(make_shared<Shell>(spherical_, position_, i, exponents, contractions, contranges));

@@ -88,7 +88,7 @@ class Atom {
          const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
-         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
+         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>, const std::string bas = "custom_basis");
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore, const int maxl);
