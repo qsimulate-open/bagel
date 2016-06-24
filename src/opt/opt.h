@@ -61,8 +61,7 @@ class Opt {
     int maxiter_;
     double thresh_;
     double maxstep_;
-    static const bool nodf = true;
-    static const bool rotate = false;
+    bool scratch_;
 
     std::array<std::shared_ptr<const Matrix>,2> bmat_;
 
@@ -83,6 +82,7 @@ class Opt {
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
       maxstep_ = idat->get<double>("maxstep", 0.1);
+      scratch_ = idat->get<bool>("scratch", false);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 5.0e-5);
@@ -194,7 +194,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // first calculate reference (if needed)
   std::shared_ptr<PTree> cinput; 
   std::shared_ptr<const Reference> ref;
-  if (!prev_ref_) {
+  if (!prev_ref_ || scratch_) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const std::string title = to_lower((*m)->get<std::string>("title", ""));

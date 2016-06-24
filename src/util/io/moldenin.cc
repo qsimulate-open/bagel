@@ -57,16 +57,11 @@ MoldenIn& MoldenIn::operator>> (vector<shared_ptr<const Atom>>& atoms) {
 MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geometry>> inp) {
   shared_ptr<Coeff>         coeff = get<0>(inp);
   shared_ptr<const Geometry> geom = get<1>(inp);
-  assert(!mo_coefficients_.empty());
+  assert(has_mo());
 
   vector<int> atom_offsets;
-  for (auto& ioff : geom->offsets()) {
+  for (auto& ioff : geom->offsets())
     atom_offsets.push_back(ioff.front());
-  }
-
-  const int num_basis = geom->nbasis();
-
-  cout << shell_orders_.size() << endl;
 
   double *idata = coeff->data();
   for (auto& imo : mo_coefficients_) {
@@ -98,9 +93,8 @@ MoldenIn& MoldenIn::operator>> (tuple<shared_ptr<Coeff>, shared_ptr<const Geomet
         }
       }
     }
-    idata += num_basis;
+    idata += geom->nbasis();
   }
-
   return *this;
 }
 
@@ -149,8 +143,7 @@ void MoldenIn::read() {
     ifstream sph_input(filename_);
     if (!sph_input.is_open()){
       throw runtime_error("Molden input file not found");
-    }
-    else {
+    } else {
       regex _5d_re("\\[5[Dd]\\]");
       regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
       while (!sph_input.eof()) {
@@ -204,10 +197,9 @@ void MoldenIn::read() {
         }
         else { getline(ifs, line); }
       }
-
       found_atoms = true;
-    }
-    else if (regex_search(line,gto_re)){
+
+    } else if (regex_search(line,gto_re)){
       getline(ifs, line);
 
       regex atom_line("(\\d+)\\s*\\S*");
@@ -215,7 +207,7 @@ void MoldenIn::read() {
       regex exp_line("(\\S+)\\s+(\\S+)");
       regex Dd("[Dd]");
 
-      while (!regex_search(line,other_re) && !ifs.eof()){
+      while (!regex_search(line, other_re) && !ifs.eof()){
         /* This line should be a new atom */
         if (!regex_search(line.c_str(), matches, atom_line)) {
            getline(ifs, line); continue;
@@ -273,10 +265,9 @@ void MoldenIn::read() {
         shell_orders_.push_back(atomic_shell_order);
         basis_info.insert(pair<int,vector<tuple<string,vector<double>,vector<double>>>>(atom_no, atom_basis_info));
       }
-
       found_gto = true;
-    }
-    else if (regex_search(line,mo_re)) {
+
+    } else if (regex_search(line, mo_re)) {
       if (!found_gto) {
         throw runtime_error("MO section found before GTO section. Check Molden file.");
       }
@@ -288,23 +279,21 @@ void MoldenIn::read() {
       regex coeff_re("\\d+\\s+(\\S+)");
 
       getline(ifs, line);
-      while (!regex_search(line,other_re) && !ifs.eof()) {
-        vector<double> movec;
-
+      while (!regex_search(line, other_re) && !ifs.eof()) {
         getline(ifs, line);
-        while (!regex_search(line.c_str(),coeff_re)) {
+        if (ifs.eof()) break;
+
+        while (!regex_search(line.c_str(), coeff_re)) {
           /* For now, throwing away excess data until we get to MO coefficients */
           getline(ifs, line);
         }
 
-        while (regex_search(line.c_str(),matches,coeff_re)){
+        vector<double> movec;
+        while (regex_search(line.c_str(), matches, coeff_re)){
           string mo_string(matches[1].first, matches[1].second);
-          double coeff = lexical_cast<double>(mo_string);
-
-          movec.push_back(coeff);
+          movec.push_back(lexical_cast<double>(mo_string));
           getline(ifs, line);
         }
-
         mo_coefficients_.push_back(movec);
       }
     } else {
@@ -316,7 +305,7 @@ void MoldenIn::read() {
   *  Check to make sure all the necessary information was     *
   *  found.                                                   *
   ************************************************************/
-  if( !(found_atoms && found_gto) ){
+  if (!(found_atoms && found_gto)){
      string message("Section not found in Molden file: ");
      if (!found_atoms){ message += "atoms "; }
      if (!found_gto)  { message += "GTO"; }
@@ -335,7 +324,7 @@ void MoldenIn::read() {
     }
 
     /* For each atom, I need to make an atom object and stick it into a vector */
-    all_atoms.push_back(make_shared<const Atom>(is_spherical_, to_lower(*iname), *piter, binfo));
+    all_atoms.push_back(make_shared<const Atom>(is_spherical_, to_lower(*iname), *piter, binfo, "molden"));
   }
 
   atoms_ = all_atoms;

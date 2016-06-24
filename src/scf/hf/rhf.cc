@@ -38,8 +38,7 @@ RHF::RHF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
 
-  // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
-  // In the future, this should probably be moved to SCF_base and designed to work properly there
+  // TODO In the future, this should probably be moved to SCF_base and designed to work properly there
   lshift_ = idata->get<double>("levelshift", 0.0);
   if (lshift_ != 0.0) {
     cout << "  level shift : " << setprecision(3) << lshift_ << endl << endl;

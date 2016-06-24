@@ -98,6 +98,8 @@ int main(int argc, char** argv) {
         if (itree->get<bool>("restart", false))
           ref.reset();
         if (ref) ref = ref->project_coeff(geom);
+        if (!itree->get<string>("molden_file", "").empty())
+          ref = make_shared<Reference>(geom, itree);
       } else {
         if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;

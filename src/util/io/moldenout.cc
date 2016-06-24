@@ -95,11 +95,11 @@ void MoldenOut::write_mos() {
       for (int jj = 0; jj < num_contracted; ++jj) {
         pair<int,int> range = ishell->contraction_ranges(jj);
 
-        ofs_ << setw(2) << ang_l << setw(8) << range.second - range.first << endl;
+        ofs_ << setw(2) << ang_l << setw(12) << range.second - range.first << endl;
         for (int kk = range.first; kk < range.second; ++kk) {
           ofs_ << setiosflags(ios_base::scientific)
-               << setw(20) << setprecision(8) << exponents[kk]
-               << setw(20) << setprecision(8)
+               << setw(24) << setprecision(12) << exponents[kk]
+               << setw(24) << setprecision(12)
                << ishell->contractions(jj)[kk]*denormalize(ishell->angular_number(), exponents[kk]) << endl;
         }
       }

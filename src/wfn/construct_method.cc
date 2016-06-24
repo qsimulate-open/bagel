@@ -39,6 +39,7 @@
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cashybrid.h>
 #include <src/multi/casscf/casbfgs.h>
+#include <src/multi/casscf/casnoopt.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zcashybrid.h>
@@ -105,6 +106,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<CASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
+      else if (algorithm == "noopt")
+        out = make_shared<CASNoopt>(itree, geom, ref);
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }

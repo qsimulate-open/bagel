@@ -331,9 +331,11 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
       if (*i == *j) continue;
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
-        if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
+//        if (!((*k)->connected_with(*j))) continue;
+          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
           if (*c == *k || *k == *i) continue;
+          if (*j == *k) continue;
 #if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
