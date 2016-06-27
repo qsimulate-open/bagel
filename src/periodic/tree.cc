@@ -290,7 +290,6 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   // return the Coulomb matrix
   out->allreduce();
   #endif
-  *out += *nf;
   return out;
 }
 
@@ -555,29 +554,16 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
       if (!is_neigh) {
         // multipoles
+        #if 0
         vector<complex<double>> omega01(nmult), omega23(nmult);
-        vector<shared_ptr<const ZMatrix>> qlm01(nmult), qlm23(nmult);
-        {
-          auto den01 = density->get_submatrix(offset1, offset0, size1, size0);
-          MultipoleBatch mpole(geom_->shellpair(i01)->shells(), geom_->shellpair(i01)->centre(), lmax);
-          mpole.compute();
-          for (int i = 0; i != nmult; ++i) {
-            auto tmp01 = make_shared<ZMatrix>(size1, size0);
-            tmp01->copy_block(0, 0, size1, size0, mpole.data(i));
-            qlm01[i] = make_shared<const ZMatrix>(*tmp01);
-            omega01[i] = qlm01[i]->get_real_part()->dot_product(*den01);
-          }
-        }
-        {
-          auto den23 = density->get_submatrix(offset3, offset2, size3, size2);
-          MultipoleBatch mpole(geom_->shellpair(i23)->shells(), geom_->shellpair(i23)->centre(), lmax);
-          mpole.compute();
-          for (int i = 0; i != nmult; ++i) {
-            auto tmp23 = make_shared<ZMatrix>(size3, size2);
-            tmp23->copy_block(0, 0, size3, size2, mpole.data(i));
-            qlm23[i] = make_shared<const ZMatrix>(*tmp23);
-            omega23[i] = qlm23[i]->get_real_part()->dot_product(*den23);
-          }
+        vector<shared_ptr<const ZMatrix>> qlm01 = geom_->shellpair(i01)->multipoles();
+        vector<shared_ptr<const ZMatrix>> qlm23 = geom_->shellpair(i23)->multipoles();
+
+        auto den01 = density->get_submatrix(offset1, offset0, size1, size0);
+        auto den23 = density->get_submatrix(offset3, offset2, size3, size2);
+        for (int i = 0; i != nmult; ++i) {
+          omega01[i] = qlm01[i]->get_real_part()->dot_product(*den01);
+          omega23[i] = qlm23[i]->get_real_part()->dot_product(*den23);
         }
         array<double, 3> rvec0123, rvec2301;
         for (int i = 0; i != 3; ++i) {
@@ -594,6 +580,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
           for (int j1 = 0; j1 != size1; ++j1)
               for (int i = 0; i != nmult; ++i)
                 out->element(j1+offset1, j0+offset0) += qlm01[i]->element(j1, j0) * mlm23[i];
+        #endif
+        continue;
       } else {
         // integrate
         ERIBatch eribatch(input, mulfactor);
