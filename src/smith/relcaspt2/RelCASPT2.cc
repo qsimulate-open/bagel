@@ -89,7 +89,7 @@ void RelCASPT2::RelCASPT2::solve() {
     if (info_->shift() == 0.0) {
       pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate));
       assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
+      cout << "    * RelCASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
     } else {
       // TODO Not checked thoroughly - same as non-relativistic code
       throw logic_error("Please carefully verify the use of level shift in relativistic multi-state CASPT2.");
@@ -112,11 +112,79 @@ void RelCASPT2::RelCASPT2::solve() {
       pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate)) - info_->shift()*std::real(norm);
       assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
       assert(std::abs(std::imag(norm)) < 1.0e-8);
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+      cout << "    * RelCASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
       cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
       cout <<endl;
     }
   }
+
+  // MS-CASPT2
+  if (info_->do_ms() && info_->sssr())
+    for (int istate = 0; istate != nstates_; ++istate) //K states
+      for (int jst=0; jst != nstates_; ++jst) // <jst|
+        if (info_->sssr() && jst != istate) {
+          set_rdm(jst, istate);
+          s = sall_[istate]->at(jst);
+          shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+          while(!sourceq->done())
+            sourceq->next_compute();
+        }
+
+  if (info_->do_ms() && nstates_ > 1) {
+    heff_ = make_shared<ZMatrix>(nstates_, nstates_);
+
+    for (int ist = 0; ist != nstates_; ++ist) {
+      for (int jst = 0; jst != nstates_; ++jst) {
+        if (ist == jst) {
+          // set diagonal elements
+          (*heff_)(ist, ist) = pt2energy_[ist];
+        } else if (ist < jst) {
+          // set off-diag elements
+          // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
+          //(*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
+          //                        + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
+          (*heff_)(jst, ist) = 0.5*(dot_product_transpose(sall_[ist], t2all_[jst])
+                                  + dot_product_transpose(sall_[jst], t2all_[ist]))
+                             + (*eref_)(jst, ist);
+          //(*heff_)(ist, jst) = (*heff_)(jst, ist);
+          (*heff_)(ist, jst) = std::conj((*heff_)(jst, ist));
+        }
+      }
+    }
+
+    // print out the effective Hamiltonian
+    cout << endl;
+    cout << "    * MS-RelCASPT2 Heff";
+    for (int ist = 0; ist != nstates_; ++ist) {
+      cout << endl << "      ";
+      for (int jst = 0; jst != nstates_; ++jst)
+        cout << setw(20) << setprecision(10) << (*heff_)(ist, jst);
+    }
+    cout << endl << endl;
+
+    VectorB eig(nstates_);
+    heff_->diagonalize(eig);
+    copy_n(eig.data(), nstates_, pt2energy_.data());
+
+    // print out the eigen vector
+    cout << endl;
+    cout << "    * MS-RelCASPT2 rotation matrix";
+    for (int ist = 0; ist != nstates_; ++ist) {
+      cout << endl << "      ";
+      for (int jst = 0; jst != nstates_; ++jst)
+        cout << setw(20) << setprecision(10) << (*heff_)(ist, jst);
+    }
+    cout << endl << endl;
+
+    // energy printout
+    for (int istate = 0; istate != nstates_; ++istate)
+      cout << "    * MS-RelCASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+    cout << endl << endl;
+  } else {
+    heff_ = make_shared<ZMatrix>(1,1);
+    heff_->element(0,0) = 1.0;
+  }
+  energy_ = pt2energy_;
 }
 
 

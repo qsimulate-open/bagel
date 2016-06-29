@@ -50,7 +50,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     int nstates_;
     std::vector<double> err_;
     std::vector<double> pt2energy_;
-    std::shared_ptr<Matrix> heff_;
+    std::shared_ptr<ZMatrix> heff_;
 
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
     std::vector<std::shared_ptr<MultiTensor>> rall_;
