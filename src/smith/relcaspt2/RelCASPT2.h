@@ -88,7 +88,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTensor> Gamma60_();
     std::shared_ptr<FutureTensor> Gamma79_();
     std::shared_ptr<FutureTensor> Gamma90_();
-    std::shared_ptr<FutureTensor> Gamma109_();
+    std::shared_ptr<FutureTensor> Gamma143_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
