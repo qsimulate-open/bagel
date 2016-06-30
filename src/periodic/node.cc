@@ -407,7 +407,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
         *lrs += pow(-1.0, l_map[i]) * contract * *multipoles_[i];
       }
 
-#if 1
+#if 0
       // get sub-density matrix D_su (s=this u=far)
       auto den_su = make_shared<Matrix>(nbasis_, dimb);
       ob0 = 0;
@@ -461,7 +461,7 @@ void Node::compute_local_expansions(shared_ptr<const Matrix> density, const int 
 //  shared_ptr<const ZMatrix> nai = compute_NAI_far_field(lmax, scale);
 //  local_expansion_ = make_shared<const ZMatrix>(*lrs + *nai);
   local_expansion_ = make_shared<const ZMatrix>(*lrs);
-  exchange_ = make_shared<const ZMatrix>(*lrt);
+  //exchange_ = make_shared<const ZMatrix>(*lrt);
 }
 
 
@@ -496,6 +496,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   n2e_total_ = 0;
   const size_t ndim = density->ndim();
 
+#if 0
   // add FF local expansions to coulomb matrix
   size_t ob0 = 0;
   for (auto& body0 : bodies_) {
@@ -525,8 +526,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
           }
         }
 
-
-#if 1
+#if 0
         size_t ob = 0;
         for (auto& distant_node : interaction_list_) {
           for (auto& body1 : distant_node->bodies()) {
@@ -553,8 +553,10 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
       ++iat0;
     }
   }
+#endif
 
-#if 0 //DEBUG: no near-field
+
+#if 1 //DEBUG: no near-field
   // compute near-field interactions using direct integration and add to far field
   vector<shared_ptr<const Shell>> basis;
   vector<int> new_offset;
@@ -679,6 +681,8 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
   n2e_total_ = nshell_ * size * size * size;
   if (!dodf && density) {
+    shellquads_.clear();
+    int_offsets_.clear();
     const double* density_data = density->data();
     const int nshell = sqrt(schwarz.size());
 
@@ -715,13 +719,14 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
     int nfar = 0;
     for (int i0 = 0; i0 != size; ++i0) {
       const shared_ptr<const Shell>  b0 = basis[i0];
-      const int b0offset = new_offset[i0];
-      const int b0size = b0->nbasis();
+      const size_t b0offset = new_offset[i0];
+      const size_t b0size = b0->nbasis();
 
       for (int i1 = 0; i1 != size; ++i1) {
+//        if (shell_id[i1] < shell_id[i0]) continue;
         const shared_ptr<const Shell>  b1 = basis[i1];
-        const int b1offset = new_offset[i1];
-        const int b1size = b1->nbasis();
+        const size_t b1offset = new_offset[i1];
+        const size_t b1size = b1->nbasis();
 
         const int i01 = i0 * size + i1;
         const double density_01 = max_density[i01] * 4.0;
@@ -731,9 +736,10 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         if (skip01) continue;
 
         for (int i2 = 0; i2 != size; ++i2) {
+//          if (shell_id[i2] < shell_id[i0]) continue;
           const shared_ptr<const Shell>  b2 = basis[i2];
-          const int b2offset = new_offset[i2];
-          const int b2size = b2->nbasis();
+          const size_t b2offset = new_offset[i2];
+          const size_t b2size = b2->nbasis();
 
           const double density_02 = max_density[i0 * size + i2];
           const double density_12 = max_density[i1 * size + i2];
@@ -744,20 +750,22 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
             for (auto& atom3 : a3->atoms()) {
               size_t ish3 = 0;
               for (auto& b3 : atom3->shells()) {
-                const int b3size = b3->nbasis();
+                const size_t b3size = b3->nbasis();
                 const size_t b3offset = offsets[a3->ishell(iat3) + ish3];
                 ++ish3;
+//                if (shell_id[i3] < shell_id[i2]) continue;
 
                 const bool skip23 = do_int[i2 * size + i3] == 0;
                 if (skip23) continue;
 
                 const bool isclose = is_neighbour(array<shared_ptr<const Shell>, 4>{{b0, b1, b2, b3}}, 2);
                 if (!isclose) {
-                  //++nfar;
+                  ++nfar;
                   continue;
                 }
 
                 const int i23 = i2 * size + i3;
+//                if (shell_id[i2]*nshell + shell_id[i3] < shell_id[i0]*nshell + shell_id[i1]) continue;
                 const double density_23 = max_density[i23] * 4.0;
                 const double density_03 = max_density[i0 * size + i3];
                 const double density_13 = max_density[i1 * size + i3];
@@ -771,7 +779,10 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                 if (skip_schwarz) continue;
                 ++n2e_int_;
 
-
+                shellquads_.insert(shellquads_.end(), {{shell_id[i0], shell_id[i1], shell_id[i2], shell_id[i3]}});
+                int_offsets_.insert(int_offsets_.end(), {{b0offset, b1offset, b2offset, b3offset}});
+#if 0
+/////////// DEBUG //////// NO NF INTEGRATION
                 array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
                 ERIBatch eribatch(input, mulfactor);
                 eribatch.compute();
@@ -786,11 +797,11 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
                         double eri = *eridata;
                         out->element(j2, j3) += density_data[j0n + j1] * eri;
                         out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
-////                        out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
                       }
                     }
                   }
                 }
+#endif
 
                 ++i3;
               }
@@ -800,7 +811,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
         }
       }
     }
-//    cout << "Pair distributions that are far = " << nfar << endl;
   } else if (dodf && density) {
     Matrix subden(nbas, nbas);
     int o0 = 0;

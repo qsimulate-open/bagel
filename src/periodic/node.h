@@ -66,6 +66,8 @@ class Node {
     void insert_neighbour(std::shared_ptr<const Node> neigh, const bool is_neighbour = false, const int ws = 2);
     void make_interaction_list(const int ws);
     void form_df(const std::string auxfile);
+    std::vector<std::array<int,4>> shellquads_;
+    std::vector<std::array<size_t,4>> int_offsets_;
 
     int nbasis_, nshell_;
     bool is_same_as_parent_;

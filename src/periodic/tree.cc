@@ -243,7 +243,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
     throw runtime_error("Do FMM with DF but no df basis provided");
 
   Timer fmmtime;
-#if 0
+#if 1
   // Downward pass
   int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
@@ -260,14 +260,13 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 
 shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
 
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
-#if 1
+#if 0
   ///////// DEBUG ///////////
-  shared_ptr<const ZMatrix> nf = compute_interactions(lmax, density, schwarz, schwarz_thresh);
+  shared_ptr<const ZMatrix> out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
   /////////// END OF DEBUG ///////////
 #endif
 
-  #if 0
+  #if 1
   // Upward pass
   vector<int> offsets;
   for (int n = 0; n != geom_->natom(); ++n) {
@@ -276,6 +275,7 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   }
 
   int u = 0;
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
   for (int i = 1; i != nnode_; ++i) {
     if (u++ % mpi__->size() == mpi__->rank()) {
 //    nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
@@ -287,8 +287,20 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
     }
   }
 
+  int n2e = 0;
+  int nshellquads = 0;
+  for (int i = 1; i != nnode_; ++i)
+    if (nodes_[i]->is_leaf()) {
+      n2e += nodes_[i]->n2e_int();
+      nshellquads += nodes_[i]->shellquads_.size();
+    }
+
   // return the Coulomb matrix
   out->allreduce();
+  shared_ptr<const ZMatrix> nf = compute_JK(density);
+  *out += *nf;
+  cout << "n2e int from Nodes = " << n2e << " *** nshellquads = " << nshellquads << endl;
+
   #endif
   return out;
 }
@@ -498,8 +510,9 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
   const int nmult = (lmax+1)*(lmax+1);
   shared_ptr<Petite> plist = geom_->plist();;
   int nzero = 0;
+  int nint = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
-    if (!plist->in_p2(i01)) continue;
+//    if (!plist->in_p2(i01)) continue;
     if (schwarz[i01] < 1e-15) continue;
     const double density_01 = max_density[i01] * 4.0;
 
@@ -507,7 +520,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
     const int i0 = geom_->shellpair(i01)->shell_ind(0);
     const int offset0 = geom_->shellpair(i01)->offset(0);
     const int size0 = sh0->nbasis();
-    if (!plist->in_p1(i0)) continue;
+//    if (!plist->in_p1(i0)) continue;
 
     shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
     const int offset1 = geom_->shellpair(i01)->offset(1);
@@ -534,8 +547,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
       assert(i23 == i2 * nsh + i3);
       if (i3 < i2) continue;
-      int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
-      if (ijkl == 0) continue;
+//      int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
+//      if (ijkl == 0) continue;
 
       const double density_02 = max_density[i0 * nsh + i2];
       const double density_03 = max_density[i0 * nsh + i3];
@@ -584,6 +597,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
         continue;
       } else {
         // integrate
+        ++nint;
         ERIBatch eribatch(input, mulfactor);
         eribatch.compute();
         const double* eridata = eribatch.data();
@@ -616,7 +630,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
                 const int j3n = j3 * density->ndim();
                 const double scale_23 = (j2 == j3) ? 0.5 : 1.0;
-                const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
+                const double scale = ((nj01 == nj23) ? 0.25 : 0.5);
+                //const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
 
                 const int maxj1j3 = max(j1, j3);
                 const int minj1j3 = min(j1, j3);
@@ -638,6 +653,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
     }
   }
+  cout << "nint in compute_interactions = " << nint << endl;
   for (int i = 0; i != density->ndim(); ++i) out->element(i, i) *= 2.0;
   out->fill_upper();
   #endif
@@ -687,3 +703,116 @@ vector<complex<double>> Tree::get_mlm(const int lmax, array<double, 3> r01, vect
 
   return out;
 }
+
+
+shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density) const {
+
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  if (!density) return out;
+  const double* density_data = density->data();
+  vector<shared_ptr<const Shell>> shells;
+  for (auto& atom : geom_->atoms()) {
+    const vector<shared_ptr<const Shell>> tmpsh = atom->shells();
+    shells.insert(shells.end(), tmpsh.begin(), tmpsh.end());
+  }
+  const int nsh = shells.size();
+
+  const int shift = sizeof(int) * 4;
+//  shared_ptr<Petite> plist = geom_->plist();;
+  int nint = 0;
+  for (int i = 0; i != nnode_; ++i) {
+    if (!nodes_[i]->is_leaf()) continue;
+    assert(!nodes_[i]->shellquads_.empty() && !nodes_[i]->int_offsets_.empty());
+
+    int ish = 0;
+    for (auto& sh : nodes_[i]->shellquads_) {
+      ++nint;
+//      if (!plist->in_p1(sh[0])) continue;
+      const int i01 = sh[0] * nsh + sh[1];
+      const int i23 = sh[2] * nsh + sh[3];
+//      if (!plist->in_p2(i01)) continue;
+//      int ijkl = plist->in_p4(i01, i23, sh[0], sh[1], sh[2], sh[3]);
+//      if (ijkl == 0) continue;
+      array<size_t, 4> offsets = nodes_[i]->int_offsets_[ish];
+      const size_t b0offset = offsets[0];
+      const size_t b1offset = offsets[1];
+      const size_t b2offset = offsets[2];
+      const size_t b3offset = offsets[3];
+
+      shared_ptr<const Shell> b0 = shells[sh[0]];
+      shared_ptr<const Shell> b1 = shells[sh[1]];
+      shared_ptr<const Shell> b2 = shells[sh[2]];
+      shared_ptr<const Shell> b3 = shells[sh[3]];
+      array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+      ERIBatch eribatch(input, 0.0);
+      eribatch.compute();
+      const double* eridata = eribatch.data();
+
+      for (int j0 = b0offset; j0 != b0offset + b0->nbasis(); ++j0) {
+        const int j0n = j0 * density->ndim();
+
+        for (int j1 = b1offset; j1 != b1offset + b1->nbasis(); ++j1) {
+          const int j1n = j1 * density->ndim();
+
+#if 0
+          if (j1 < j0) {
+            eridata += b2->nbasis() * b3->nbasis();
+            continue;
+          }
+          const double scale_01 = (j0 == j1) ? 0.5 : 1.0;
+          const unsigned int nj01 = (j0 << shift) + j1;
+#endif
+
+          for (int j2 = b2offset; j2 != b2offset + b2->nbasis(); ++j2) {
+            const int j2n = j2 * density->ndim();
+
+#if 0
+            const int maxj0j2 = max(j0, j2);
+            const int minj0j2 = min(j0, j2);
+            const int maxj1j2 = max(j1, j2);
+            const int minj1j2 = min(j1, j2);
+#endif
+
+            for (int j3 = b3offset; j3 != b3offset + b3->nbasis(); ++j3, ++eridata) {
+              const int j3n = j3 * density->ndim();
+#if 0
+              if (j3 < j2) continue;
+              const unsigned int nj23 = (j2 << shift) + j3;
+              if ((nj23 < nj01) && (i01 == i23)) continue;
+              const double scale_23 = (j2 == j3) ? 0.5 : 1.0;
+              const double scale = ((nj01 == nj23) ? 0.25 : 0.5);
+//              const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
+              const int maxj1j3 = max(j1, j3);
+              const int minj1j3 = min(j1, j3);
+#endif
+              const double eri = *eridata;
+
+#if 0
+              const double intval = eri * scale_01 * scale_23 * scale;
+              out->element(j1, j0) += density_data[j2n + j3] * intval * 4.0;
+              out->element(j3, j2) += density_data[j0n + j1] * intval * 4.0;
+              out->element(j3, j0) -= density_data[j2n + j1] * intval;
+
+              out->element(maxj1j2, minj1j2) -= density_data[j0n + j3] * intval;
+              out->element(maxj0j2, minj0j2) -= density_data[j1n + j3] * intval;
+              out->element(maxj1j3, minj1j3) -= density_data[j0n + j2] * intval;
+#endif
+              out->element(j2, j3) += density_data[j0n + j1] * eri;
+              out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+            }
+          }
+        }
+      }
+      ++ish;
+    }
+  }
+//  for (int i = 0; i != density->ndim(); ++i) out->element(i, i) *= 2.0;
+//  out->fill_upper();
+
+  cout << "*** Number of integrals done = " << nint << endl;
+
+
+  return out;
+
+}
+
