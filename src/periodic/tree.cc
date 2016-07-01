@@ -78,7 +78,10 @@ void Tree::init() {
   keysort();
 
   build_tree();
-//  print_tree_xyz();
+  //print_tree_xyz();
+  nleaf_ = 0;
+  for (int i = 0; i != nnode_; ++i)
+    if (nodes_[i]->is_leaf()) ++nleaf_;
 }
 
 
@@ -276,6 +279,7 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   int u = 0;
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
+  int nint = 0;
   for (int i = 1; i != nnode_; ++i) {
     if (u++ % mpi__->size() == mpi__->rank()) {
 //    nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
@@ -283,23 +287,15 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
         nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
         shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz, schwarz_thresh);
         *out += *tmp;
+        nint += nodes_[i]->shellquads_.size();
       }
     }
   }
 
-  int n2e = 0;
-  int nshellquads = 0;
-  for (int i = 1; i != nnode_; ++i)
-    if (nodes_[i]->is_leaf()) {
-      n2e += nodes_[i]->n2e_int();
-      nshellquads += nodes_[i]->shellquads_.size();
-    }
-
   // return the Coulomb matrix
   out->allreduce();
-  shared_ptr<const ZMatrix> nf = compute_JK(density);
+  shared_ptr<const ZMatrix> nf = compute_JK(density, nint);
   *out += *nf;
-  cout << "n2e int from Nodes = " << n2e << " *** nshellquads = " << nshellquads << endl;
 
   #endif
   return out;
@@ -461,16 +457,12 @@ void Tree::print_tree_xyz() const { // to visualize with VMD, but not enough ato
 void Tree::print_leaves() const {
 
   const std::string space = "       ";
-  int nleaf = 0;
   cout << "   i      Rank   Nbody   Ninter    Nneigh   Extent " << endl;
-  for (int i = 0; i != nnode_; ++i) {
-    if (nodes_[i]->is_leaf()) {
+  for (int i = 0; i != nnode_; ++i)
+    if (nodes_[i]->is_leaf())
       cout << "  " << i << space << nodes_[i]->rank() << space << nodes_[i]->nbody() << space
            << nodes_[i]->interaction_list().size() << space << nodes_[i]->nneighbour() << space << nodes_[i]->extent() << endl;
-      ++nleaf;
-    }
-  }
-  cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf << endl;
+  cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf_ << endl;
 }
 
 
@@ -705,114 +697,77 @@ vector<complex<double>> Tree::get_mlm(const int lmax, array<double, 3> r01, vect
 }
 
 
-shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density) const {
+shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density, const int nint) const {
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   if (!density) return out;
-  const double* density_data = density->data();
   vector<shared_ptr<const Shell>> shells;
   for (auto& atom : geom_->atoms()) {
     const vector<shared_ptr<const Shell>> tmpsh = atom->shells();
     shells.insert(shells.end(), tmpsh.begin(), tmpsh.end());
   }
-  const int nsh = shells.size();
 
-  const int shift = sizeof(int) * 4;
-//  shared_ptr<Petite> plist = geom_->plist();;
-  int nint = 0;
+  /////TaskQueue<function<void(void)>> tasks(nleaf_);
+  TaskQueue<function<void(void)>> tasks(nint);
   for (int i = 0; i != nnode_; ++i) {
     if (!nodes_[i]->is_leaf()) continue;
-    assert(!nodes_[i]->shellquads_.empty() && !nodes_[i]->int_offsets_.empty());
-
+////    tasks.emplace_back(
+////      [this, i, &out, &density, shells] () {
     int ish = 0;
     for (auto& sh : nodes_[i]->shellquads_) {
-      ++nint;
-//      if (!plist->in_p1(sh[0])) continue;
+      shared_ptr<Petite> plist = geom_->plist();;
+      const int nsh = shells.size();
+      if (!plist->in_p1(sh[0])) continue;
       const int i01 = sh[0] * nsh + sh[1];
       const int i23 = sh[2] * nsh + sh[3];
-//      if (!plist->in_p2(i01)) continue;
-//      int ijkl = plist->in_p4(i01, i23, sh[0], sh[1], sh[2], sh[3]);
-//      if (ijkl == 0) continue;
-      array<size_t, 4> offsets = nodes_[i]->int_offsets_[ish];
-      const size_t b0offset = offsets[0];
-      const size_t b1offset = offsets[1];
-      const size_t b2offset = offsets[2];
-      const size_t b3offset = offsets[3];
+      if (!plist->in_p2(i01)) continue;
+      int ijkl = plist->in_p4(i01, i23, sh[0], sh[1], sh[2], sh[3]);
+      if (ijkl == 0) continue;
 
       shared_ptr<const Shell> b0 = shells[sh[0]];
       shared_ptr<const Shell> b1 = shells[sh[1]];
       shared_ptr<const Shell> b2 = shells[sh[2]];
       shared_ptr<const Shell> b3 = shells[sh[3]];
       array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-      ERIBatch eribatch(input, 0.0);
-      eribatch.compute();
-      const double* eridata = eribatch.data();
+      array<size_t, 4> offsets = nodes_[i]->int_offsets_[ish];
+      ++ish;
 
-      for (int j0 = b0offset; j0 != b0offset + b0->nbasis(); ++j0) {
-        const int j0n = j0 * density->ndim();
+      tasks.emplace_back(
+        [this, &out, &density, input, offsets, ijkl] () {
+          const double* density_data = density->data();
+          ERIBatch eribatch(input, 0.0);
+          eribatch.compute();
+          const double* eridata = eribatch.data();
 
-        for (int j1 = b1offset; j1 != b1offset + b1->nbasis(); ++j1) {
-          const int j1n = j1 * density->ndim();
+          const size_t b0offset = offsets[0];
+          const size_t b1offset = offsets[1];
+          const size_t b2offset = offsets[2];
+          const size_t b3offset = offsets[3];
 
-#if 0
-          if (j1 < j0) {
-            eridata += b2->nbasis() * b3->nbasis();
-            continue;
-          }
-          const double scale_01 = (j0 == j1) ? 0.5 : 1.0;
-          const unsigned int nj01 = (j0 << shift) + j1;
-#endif
+          for (int j0 = b0offset; j0 != b0offset + input[3]->nbasis(); ++j0) {
+            const int j0n = j0 * density->ndim();
+            for (int j1 = b1offset; j1 != b1offset + input[2]->nbasis(); ++j1) {
+              const int j1n = j1 * density->ndim();
+              for (int j2 = b2offset; j2 != b2offset + input[1]->nbasis(); ++j2) {
+                const int j2n = j2 * density->ndim();
+                for (int j3 = b3offset; j3 != b3offset + input[0]->nbasis(); ++j3, ++eridata) {
+                  const int j3n = j3 * density->ndim();
+                  const double eri = *eridata * static_cast<double>(ijkl);
 
-          for (int j2 = b2offset; j2 != b2offset + b2->nbasis(); ++j2) {
-            const int j2n = j2 * density->ndim();
-
-#if 0
-            const int maxj0j2 = max(j0, j2);
-            const int minj0j2 = min(j0, j2);
-            const int maxj1j2 = max(j1, j2);
-            const int minj1j2 = min(j1, j2);
-#endif
-
-            for (int j3 = b3offset; j3 != b3offset + b3->nbasis(); ++j3, ++eridata) {
-              const int j3n = j3 * density->ndim();
-#if 0
-              if (j3 < j2) continue;
-              const unsigned int nj23 = (j2 << shift) + j3;
-              if ((nj23 < nj01) && (i01 == i23)) continue;
-              const double scale_23 = (j2 == j3) ? 0.5 : 1.0;
-              const double scale = ((nj01 == nj23) ? 0.25 : 0.5);
-//              const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
-              const int maxj1j3 = max(j1, j3);
-              const int minj1j3 = min(j1, j3);
-#endif
-              const double eri = *eridata;
-
-#if 0
-              const double intval = eri * scale_01 * scale_23 * scale;
-              out->element(j1, j0) += density_data[j2n + j3] * intval * 4.0;
-              out->element(j3, j2) += density_data[j0n + j1] * intval * 4.0;
-              out->element(j3, j0) -= density_data[j2n + j1] * intval;
-
-              out->element(maxj1j2, minj1j2) -= density_data[j0n + j3] * intval;
-              out->element(maxj0j2, minj0j2) -= density_data[j1n + j3] * intval;
-              out->element(maxj1j3, minj1j3) -= density_data[j0n + j2] * intval;
-#endif
-              out->element(j2, j3) += density_data[j0n + j1] * eri;
-              out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+                  out->element(j2, j3) += density_data[j0n + j1] * eri;
+                  out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+                }
+              }
             }
           }
         }
-      }
-      ++ish;
+      );
     }
+//////        }
+//////      ); // end task
   }
-//  for (int i = 0; i != density->ndim(); ++i) out->element(i, i) *= 2.0;
-//  out->fill_upper();
-
-  cout << "*** Number of integrals done = " << nint << endl;
-
+  tasks.compute();
 
   return out;
 
 }
-

@@ -50,7 +50,7 @@ class Tree {
     std::vector<std::bitset<nbit__>> particle_keys_;
     std::vector<std::shared_ptr<const Vertex>> leaves_;
     std::vector<int> ordering_, shell_id_;
-    int nnode_;
+    int nnode_, nleaf_;
     std::vector<std::shared_ptr<Node>> nodes_;
     int height_;
     // to define well-separated distributions
@@ -70,7 +70,7 @@ class Tree {
     std::shared_ptr<const ZMatrix> compute_interactions(const int lmax, std::shared_ptr<const Matrix> density,
                              const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0) const;
     std::vector<std::complex<double>> get_mlm(const int lmax, std::array<double, 3> r01, std::vector<std::complex<double>> omega0) const;
-    std::shared_ptr<const ZMatrix> compute_JK(std::shared_ptr<const Matrix> density) const;
+    std::shared_ptr<const ZMatrix> compute_JK(std::shared_ptr<const Matrix> density, const int nint) const;
 
   public:
     Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const bool do_contract = false,
