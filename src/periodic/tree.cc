@@ -707,12 +707,12 @@ shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density, con
     shells.insert(shells.end(), tmpsh.begin(), tmpsh.end());
   }
 
-  /////TaskQueue<function<void(void)>> tasks(nleaf_);
-  TaskQueue<function<void(void)>> tasks(nint);
+  TaskQueue<function<void(void)>> tasks(nleaf_);
+/////  TaskQueue<function<void(void)>> tasks(nint);
   for (int i = 0; i != nnode_; ++i) {
     if (!nodes_[i]->is_leaf()) continue;
-////    tasks.emplace_back(
-////      [this, i, &out, &density, shells] () {
+    tasks.emplace_back(
+      [this, i, &out, &density, shells] () {
     int ish = 0;
     for (auto& sh : nodes_[i]->shellquads_) {
       shared_ptr<Petite> plist = geom_->plist();;
@@ -732,41 +732,60 @@ shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density, con
       array<size_t, 4> offsets = nodes_[i]->int_offsets_[ish];
       ++ish;
 
-      tasks.emplace_back(
-        [this, &out, &density, input, offsets, ijkl] () {
+      const size_t b0offset = offsets[0];
+      const size_t b1offset = offsets[1];
+      const size_t b2offset = offsets[2];
+      const size_t b3offset = offsets[3];
+      if ((b0offset + input[3]->nbasis() + b1offset + input[2]->nbasis()) < (b2offset + b3offset)) continue;
+      if ((b0offset + input[3]->nbasis() + b2offset + input[1]->nbasis()) < (b1offset + b3offset)) continue;
+
+/////      tasks.emplace_back(
+/////        [this, &out, &density, input, offsets, ijkl] () {
           const double* density_data = density->data();
           ERIBatch eribatch(input, 0.0);
           eribatch.compute();
           const double* eridata = eribatch.data();
 
-          const size_t b0offset = offsets[0];
-          const size_t b1offset = offsets[1];
-          const size_t b2offset = offsets[2];
-          const size_t b3offset = offsets[3];
 
           for (int j0 = b0offset; j0 != b0offset + input[3]->nbasis(); ++j0) {
             const int j0n = j0 * density->ndim();
             for (int j1 = b1offset; j1 != b1offset + input[2]->nbasis(); ++j1) {
               const int j1n = j1 * density->ndim();
+              const double scale_01 = (j0 == j1) ? 1.0 : 2.0;
               for (int j2 = b2offset; j2 != b2offset + input[1]->nbasis(); ++j2) {
                 const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + input[0]->nbasis(); ++j3, ++eridata) {
                   const int j3n = j3 * density->ndim();
-                  const double eri = *eridata * static_cast<double>(ijkl);
+                  double eri = *eridata * static_cast<double>(ijkl) * 0.5;
 
-                  out->element(j2, j3) += density_data[j0n + j1] * eri;
-                  out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+                  if (j0 + j1 <  j2 + j3) continue;
+                  if (j0 + j2 <  j1 + j3) continue;
+                  if (j0 + j1 == j2 + j3) eri *= 0.5;
+                  if (j0 + j2 == j1 + j3) eri *= 0.5;
+                  const double eri2 = eri * 2.0;
+                  out->element(j1, j0) += density_data[j3n + j2] * eri2;
+                  out->element(j3, j0) -= density_data[j1n + j2] * eri;
+
+                  out->element(j3, j2) += density_data[j1n + j0] * eri2;
+                  out->element(j1, j2) -= density_data[j3n + j0] * eri;
+
+                  out->element(j0, j1) += density_data[j2n + j3] * eri2;
+                  out->element(j0, j3) -= density_data[j2n + j1] * eri;
+
+                  out->element(j2, j3) += density_data[j0n + j1] * eri2;
+                  out->element(j2, j1) -= density_data[j0n + j3] * eri;
                 }
               }
             }
           }
-        }
-      );
-    }
 //////        }
-//////      ); // end task
+//////      );
+    }
+        }
+      ); // end task
   }
   tasks.compute();
+  out->allreduce();
 
   return out;
 
