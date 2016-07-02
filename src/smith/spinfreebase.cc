@@ -202,7 +202,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
 #ifndef NDEBUG
       tie(krdm1, ignore) = info_->rdm12(ist, jst);
       rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
-      assert(fmn(jst, ist) = blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data()));
+      assert(std::abs(fmn(jst, ist) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
 #endif
     }
   }
