@@ -218,7 +218,6 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
     assert(bounds.size() == nspaces);
 
     for (int ia = 0; ia < la; ++ia) {
-      map<size_t, double> row;
       map<size_t, vector<tuple<int, int>>> row_positions;
       for (auto& iter : det->phia(ia + ispace->offset())) {
         const int kk = iter.ij/norb;
@@ -230,7 +229,7 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
 
       for (auto& irow : row_positions) {
         for (int isp = 0; isp < nspaces; ++isp) {
-          if ( irow.first >= bounds[isp].first && irow.first < bounds[isp].second) {
+          if (irow.first >= bounds[isp].first && irow.first < bounds[isp].second) {
             const size_t pos = data[isp].size();
             for (auto& i : irow.second)
               sparse_info[isp].emplace_back(pos, get<0>(i), get<1>(i));
@@ -380,48 +379,37 @@ void DistFormSigmaRAS::sigma_ab(shared_ptr<const DistRASCivec> cc, shared_ptr<Di
     }
   }
 
-  bool done;
-  do {
-    done = true;
-    for (auto ir = requests.begin(); ir != requests.end(); ) {
-      const int rq = get<0>(*ir);
-      mpi__->wait(rq);
-      {
-      //if (mpi__->test(rq)) {
-        shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
-        shared_ptr<const RASString> ispace = get<3>(*ir);
-        const int ij = get<4>(*ir);
+  for (auto ir = requests.begin(); ir != requests.end(); ) {
+    const int rq = get<0>(*ir);
+    mpi__->wait(rq);
 
-        const size_t astart = get<0>(bounds_map[ispace->offset()]);
-        const size_t aend = get<1>(bounds_map[ispace->offset()]);
-        const size_t asize = aend - astart;
+    shared_ptr<Matrix> Vt_chunk = get<2>(*ir)->transpose();
+    shared_ptr<const RASString> ispace = get<3>(*ir);
+    const int ij = get<4>(*ir);
 
-        const double* vdata = Vt_chunk->data();
-        for (auto& iphiblock : det->phib_ij(ij) ) {
-          for (auto& iphi : iphiblock) {
-            shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
-            if (det->allowed(ispace, betaspace)) {
+    const size_t astart = get<0>(bounds_map[ispace->offset()]);
+    const size_t aend = get<1>(bounds_map[ispace->offset()]);
+    const size_t asize = aend - astart;
 
-              shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);
-              double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
+    const double* vdata = Vt_chunk->data();
+    for (auto& iphiblock : det->phib_ij(ij) ) {
+      for (auto& iphi : iphiblock) {
+        shared_ptr<const RASString> betaspace = det->space<1>(det->string_bits_b(iphi.target));
+        if (det->allowed(ispace, betaspace)) {
 
-              const size_t lb = sgblock->lenb();
+          shared_ptr<DistCIBlock<double>> sgblock = sigma->block(betaspace, ispace);
+          double* const targetdata = sgblock->local() + iphi.target - betaspace->offset();
 
-              for (size_t ii = sgblock->astart(), jj = 0; ii < sgblock->aend(); ++ii, ++jj)
-                targetdata[jj*lb] += vdata[jj];
-            }
+          const size_t lb = sgblock->lenb();
 
-            vdata += asize;
-          }
+          for (size_t ii = sgblock->astart(), jj = 0; ii < sgblock->aend(); ++ii, ++jj)
+            targetdata[jj*lb] += vdata[jj];
         }
-        ir = requests.erase(ir);
+
+        vdata += asize;
       }
-      //else {
-      //  ++ir;
-      //  done = false;
-      //}
     }
-    if (!done) std::this_thread::sleep_for(sleeptime__);
-  } while (!done);
+    ir = requests.erase(ir);
+  }
   mpi__->barrier();
 }

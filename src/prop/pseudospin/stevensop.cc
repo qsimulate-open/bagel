@@ -64,7 +64,7 @@ double compute_Nk0(const int k) {
 // a(k, q; m, i) in Ryabov's notation
 // Uses a downward recurrence relation:  the input vector akq1m contains the output for k, q+1, and all values of m, i
 // Output corresponds to a specific k, q; m but all values of i
-vector<long long> compute_akqmi(const int k, const int q, const int m, const int nspin, const vector<vector<long long>> akq1mi) {
+vector<long long> compute_akqmi(const int k, const int q, const int m, const int nspin, const vector<vector<long long>>& akq1mi) {
   assert (k >= 1 && q >= 0 && m >= 0 && q < k && m <= k - q);
 
   const int nval = (k - q - m) / 2 + 1;
@@ -98,7 +98,7 @@ long long greatest_common_factor(const long long a, const long long b) {
 }
 
 // Fkq is the greatest common factor of all a(k, q; m, i) with the same k, q
-long long compute_Fkq(const vector<vector<long long>> input) {
+long long compute_Fkq(const vector<vector<long long>>& input) {
   long long out = std::abs(input[0][0]);
   for(int m = 0; m != input.size(); ++m)
     for(int i = 0; i != input[m].size(); ++i)

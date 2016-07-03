@@ -104,7 +104,7 @@ void GradBatch::compute() {
       a = asph;
       b = bsph;
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -118,7 +118,7 @@ void GradBatch::compute() {
       for (int i = 0; i != nloop; ++i, offset += m * n)
         blas::transpose(source_now+offset, m, n, target_now+offset);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? cdata : bkup_;
@@ -134,7 +134,7 @@ void GradBatch::compute() {
       c = csph;
       d = dsph;
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     if (spherical1_) {
@@ -151,7 +151,7 @@ void GradBatch::compute() {
       const SortList sort2(spherical2_);
       sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? cdata : bkup_;
@@ -163,7 +163,7 @@ void GradBatch::compute() {
       const int n = a * b * cont0size_ * cont1size_;
       blas::transpose(source_now, m, n, target_now);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -176,7 +176,7 @@ void GradBatch::compute() {
       const SortList sort1(spherical1_);
       sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     if (swapped) copy_n(bkup_, size_block_, cdata);

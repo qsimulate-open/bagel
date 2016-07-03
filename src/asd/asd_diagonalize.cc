@@ -180,7 +180,6 @@ vector<double> ASD_base::diagonalize(shared_ptr<Matrix>& cc, const vector<DimerS
             target_array[i] = source_array[i] / min(en - denom_[i], -0.1);
           }
         }
-        list<shared_ptr<const Matrix>> tmp;
         spin_->filter(*tmp_cc, nspin_);
         double nrm = tmp_cc->norm();
         double scal = (nrm > 1.0e-15 ? 1.0/nrm : 0.0);

@@ -212,6 +212,7 @@ shared_ptr<ZMatrix> ComplexDFHalfDist::complex_form_2index(shared_ptr<const Comp
     out = make_shared<ZMatrix>(*rout, *iout);
   } else {
     throw runtime_error("Please verify carefully that ComplexDFHalfDist::form_2index(...) is correct when swap = true");
+#if 0
     shared_ptr<DFBlock> oblockri = o->block_[0]->copy();
     *oblockri -= *o->block_[1];
     shared_ptr<DFBlock> blockri = block_[0]->copy();
@@ -226,6 +227,7 @@ shared_ptr<ZMatrix> ComplexDFHalfDist::complex_form_2index(shared_ptr<const Comp
     *rout += *tmp;
 
     out = make_shared<ZMatrix>(*rout, *iout);
+#endif
   }
 
   if (!serial_)

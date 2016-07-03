@@ -678,20 +678,24 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
 
   shared_ptr<ZMatrix> spinham_s = make_shared<ZMatrix>(transform % *spinham_h_ * transform);
   array<shared_ptr<ZMatrix>, 3> mu_s;
+#ifdef LOCAL_DEBUG
   array<shared_ptr<ZMatrix>, 3> spin_s;
   array<shared_ptr<ZMatrix>, 3> orbang_s;
   auto trev_s = make_shared<ZMatrix>(transform % *trev_h_ * *transform.get_conjg());
+#endif
   for (int i = 0; i != 3; ++i) {
     mu_s[i] = make_shared<ZMatrix>(transform % *zfci2_mu_[i] * transform);
+#ifdef LOCAL_DEBUG
     spin_s[i] = make_shared<ZMatrix>(transform % *zfci2_spin_[i] * transform);
     orbang_s[i] = make_shared<ZMatrix>(transform % *zfci2_orbang_[i] * transform);
+#endif
   }
 
   cout << endl;
   spinham_s->print("Pseudospin Hamiltonian", 24);
   cout << endl;
 
-/*
+#ifdef LOCAL_DEBUG
   trev_s->print("Time-reversal operator in pseudospin states", 24);
   cout << endl;
   for (int i = 0; i != 3; ++i) {
@@ -701,7 +705,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     cout << endl;
   }
   cout << endl;
-*/
+#endif
 
   if (!is_t_symmetric(*spinham_s, /*hermitian*/true, /*time reversal*/true))
     throw runtime_error("The spin Hamiltonian seems to not have proper time-reversal symmetry.  Check that your spin value and states mapped are reasonable.");

@@ -140,7 +140,7 @@ tuple</*conj*/bool, /*rev*/bool, list<GammaSQ>> GammaForestProdASD::try_permutat
     const bool rev = bitset<2>(conjrev)[1];
     const bool conj = bitset<2>(conjrev)[0];
 
-    list<GammaSQ> tmp = rev^conj ? list<GammaSQ>(gammalist.rbegin(), gammalist.rend()) : list<GammaSQ>(gammalist.begin(), gammalist.end());
+    list<GammaSQ> tmp = (rev != conj) ? list<GammaSQ>(gammalist.rbegin(), gammalist.rend()) : list<GammaSQ>(gammalist.begin(), gammalist.end());
     if (conj) for_each(tmp.begin(), tmp.end(), [] (GammaSQ& a) { a = conjugate(a); });
 
     if (count(possible_couplings_.begin(), possible_couplings_.end(), tmp)==1)
@@ -238,7 +238,7 @@ void GammaForestProdASD::compute() {
 
         vector<tuple<size_t, size_t, size_t>> index_data; index_data.reserve(nijk_part);
         for (size_t ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
-          tuple<size_t, size_t, size_t> indices = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj^ci_rev);
+          tuple<size_t, size_t, size_t> indices = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj != ci_rev);
           if (ci_conj) transpose_list.insert(std::get<0>(indices));
           index_data.push_back(indices);
         }
@@ -267,7 +267,7 @@ void GammaForestProdASD::compute() {
             // second part: the phase from rearranging the operators so that the block operators are on the right
             //   sign only changes if part = "010" or "101"
             // third part: phase from moving block operators past ci ket
-            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((original_blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
+            const int phase = ((block_rev != ci_rev) ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((original_blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
 
             // swap where appropriate
             if (block_conj) swap(block_bra, block_ket);
@@ -285,7 +285,7 @@ void GammaForestProdASD::compute() {
               for (int ket_k = 0; ket_k < Mket; ++ket_k) {
                 if (blockI && ket_k!=bra_k) continue; // block states are orthonormal
 
-                if (block_conj ^ ci_conj) {
+                if (block_conj != ci_conj) {
                   ps_bra.state = ket_k;
                   ps_ket.state = bra_k;
                 }

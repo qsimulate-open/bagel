@@ -34,7 +34,6 @@ SymMat::SymMat(const shared_ptr<const Geometry> gm, const int iop) : Matrix(gm->
 
   const vector<shared_ptr<const Atom>> atoms = gm->atoms();
   const int natom = atoms.size();
-  vector<shared_ptr<const Atom>>::const_iterator aiter, biter;
 
   vector<int> offsets(natom, 0);
   for (int i = 1; i != natom; ++i) offsets[i] = offsets[i - 1] + atoms[i - 1]->nbasis();

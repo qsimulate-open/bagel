@@ -158,7 +158,6 @@ using namespace bagel;\n\
   code += "\n";
       const vector<vector<pair<int, mpreal>>> l1mtuv = lmtuv.at(l1);
       assert(l1mtuv.size() == spherical_xyz[l1]);
-      const int lcartsize = cartesian_xyz[l1];
 
 auto function = [&](const string T, const string classname) {
 string code = "\
@@ -182,7 +181,6 @@ void " + classname + "::carsph_" + l1str + l0str + "(const int nloop, const " + 
             }
           }
         }
-        vector<string> tmp;
         for (map<double, string>::reverse_iterator iter = coeff_map.rbegin(); iter != coeff_map.rend(); ++iter) {
           code += "  const double " + iter->second + " = " + lexical_cast<string>(iter->first) + ";\n";
         }

@@ -26,7 +26,7 @@
 #include <memory>
 #include <src/pt2/mp2/mp2.h>
 
-double mp2_energy(const std::string job) {
+double mp2_energy(const std::string& job) {
 
   auto ofs = std::make_shared<std::ofstream>(job + ".testout", std::ios::trunc);
   std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());

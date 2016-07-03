@@ -163,7 +163,6 @@ const double tiny = 1.0e-100;
         for (m1 = l1mtuv.begin(); m1 != l1mtuv.end(); ++m1) {
           for (vector<pair<int, mpreal>>::const_iterator p1 = m1->begin(); p1 != m1->end(); ++p1) {
             const int position = p1->first;
-            const string posstr = lexical_cast<string>(position);
             const double coeff = (p1->second).toDouble();
 
             stringstream coeffss;

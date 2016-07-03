@@ -48,7 +48,7 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
   istate_ = idata_->get<int>("istate", 0);
   ncore_  = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0))*z2;
   nfrozenvirt_ = idata_->get<int>("nfrozenvirt", 0)*z2;
-  if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
+  if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << ((ncore_^1) ? "s" : "") << endl;
 
   // if three is a aux_basis keyword, we use that basis
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
@@ -307,7 +307,7 @@ struct NEVView {
 
 template<typename DataType>
 typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type
-  compute_mat(const NEVView<DataType> a, const NEVView<DataType> b, const bool conjg = false) {
+  compute_mat(const NEVView<DataType>& a, const NEVView<DataType>& b, const bool conjg = false) {
 
   using MatType = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
@@ -479,7 +479,7 @@ void NEVPT2<DataType>::compute() {
   {
     // * core Fock operator
     shared_ptr<const MatType> hcore = make_shared<typename conditional<is_same<DataType,double>::value,Hcore,RelHcore>::type>(cgeom);
-    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
+    shared_ptr<const MatType> ofockao = (nclosed_+ncore_) ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     MatType rdm1_mat(*rdm1_->get_conjg());
