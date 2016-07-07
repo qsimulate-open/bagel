@@ -430,7 +430,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
 pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
   assert(rdm1_av_ != nullptr);
-  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
+  const bool occ_sort = idata_->get<bool>("occ_sort", false);
+  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals(occ_sort);
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   for (auto& i : natorb.second)
