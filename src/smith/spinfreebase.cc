@@ -194,11 +194,16 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
       // first compute 1RDM
       shared_ptr<const Kramers<2,ZRDM<1>>> krdm1;
       tie(krdm1, ignore) = info_->rdm12(jst, ist);
-      //shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
-      shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, active_.size());
+      shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
       // then assign the dot product: fmn=fij rdm1
       fmn(ist, jst) = blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data());
+      assert(fockact_->size() == rdm1->size());
       fmn(jst, ist) = std::conj(fmn(ist, jst));
+#ifndef NDEBUG
+      tie(krdm1, ignore) = info_->rdm12(ist, jst);
+      rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
+      assert(std::abs(fmn(jst, ist) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
+#endif
     }
   }
 
@@ -253,9 +258,9 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
 
   // construct Reference
   auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
-  auto relcoeff = dynamic_pointer_cast<const RelCoeff_Striped>(info_->coeff());
+  auto relcoeff = dynamic_pointer_cast<const RelCoeff_Block>(info_->coeff());
   assert(relref && relcoeff);
-  auto new_ref = make_shared<RelReference>(info_->geom(), make_shared<RelCoeff_Striped>(*relcoeff), relref->energy(),
+  auto new_ref = make_shared<RelReference>(info_->geom(), relcoeff->striped_format(), relref->energy(),
                                            relref->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(), 
                                            info_->gaunt(), info_->breit(), /*kramers*/true,
                                            relref->rdm1_av(), relref->rdm2_av(), new_ciwfn);

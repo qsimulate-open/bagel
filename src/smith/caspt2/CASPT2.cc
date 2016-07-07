@@ -133,7 +133,7 @@ void CASPT2::CASPT2::solve() {
           (*heff_)(ist, ist) = pt2energy_[ist];
         } else if (ist < jst) {
           // set off-diag elements
-          // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
+          // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
           (*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
                                   + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
                              + (*eref_)(jst, ist);

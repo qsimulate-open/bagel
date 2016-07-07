@@ -39,7 +39,6 @@ RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>
   eig_.resize(eig.size());
   for (int i = 0; i != eig.size(); ++i)
     eig_[i] = real(eig[i]);
-  assert(eig.size() == nstates_);
 
   // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
