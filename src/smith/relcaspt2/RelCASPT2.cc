@@ -142,11 +142,13 @@ void RelCASPT2::RelCASPT2::solve() {
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
           //(*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
           //                        + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
-          (*heff_)(jst, ist) = 0.5*(dot_product_transpose(sall_[ist], t2all_[jst])
+          (*heff_)(jst, ist) = 0.5*(std::conj(dot_product_transpose(sall_[ist], t2all_[jst]))
                                   + dot_product_transpose(sall_[jst], t2all_[ist]))
                              + (*eref_)(jst, ist);
           //(*heff_)(ist, jst) = (*heff_)(jst, ist);
           (*heff_)(ist, jst) = std::conj((*heff_)(jst, ist));
+          assert(std::abs((0.5*(std::conj(dot_product_transpose(sall_[jst], t2all_[ist])) + dot_product_transpose(sall_[ist], t2all_[jst]))
+                           + (*eref_)(ist, jst)) - (*heff_)(ist, jst)) < 1.0e-6);
         }
       }
     }
