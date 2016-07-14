@@ -31,7 +31,7 @@
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
-#include <src/periodic/tree.h>
+#include <src/periodic/tree_sp.h>
 
 namespace bagel {
 
@@ -72,7 +72,7 @@ class SCF_base_ : public Method {
     std::shared_ptr<DFHalfDist> half_;
 
     // FMM
-    std::shared_ptr<const Tree> fmmtree_;
+    std::shared_ptr<const TreeSP> fmmtree_;
     int fmm_lmax_;
 
     bool restart_;
