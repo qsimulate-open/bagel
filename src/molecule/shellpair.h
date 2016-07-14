@@ -38,6 +38,7 @@ class ShellPair {
     std::array<int, 2> offset_;
     std::pair<int, int> shell_ind_;
     int lmax_;
+    int nbasis_;
 
     double thresh_;
     double schwarz_;
@@ -67,6 +68,7 @@ class ShellPair {
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
     double extent() const { return extent_; }
+    int nbasis() const { return nbasis_; }
 };
 
 }
