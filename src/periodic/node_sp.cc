@@ -255,10 +255,6 @@ void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const in
     for (int m = 0; m <= 2 * l; ++m, ++cnt)
       l_map[cnt] = l;
 
-  int nfbas = 0;
-  for (auto& distant_node : interaction_list_)
-    nfbas += distant_node->nbasis();
-
   auto lrs = make_shared<ZMatrix>(nbasis_, nbasis_);
 
   if (density) {
@@ -304,14 +300,15 @@ void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const in
 }
 
 
-shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(shared_ptr<const Matrix> density, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) {
+shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<const Matrix> density, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) {
 
   assert(is_leaf());
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto out = make_shared<ZMatrix>(dim, dim);
   out->zero();
   const size_t ndim = density->ndim();
 
   // add FF local expansions to coulomb matrix
+  #if 0
   size_t ob0 = 0;
   size_t ob1 = 0;
   for (auto& v : vertex_) {
@@ -326,7 +323,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(shared_ptr<const Matrix> densi
     ob0 += size0;
     ob1 += size1;
   }
-
+  #endif
 
   // compute near-field interactions using direct integration and add to far field
 
@@ -367,10 +364,12 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(shared_ptr<const Matrix> densi
             for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
               const int j1n = j1 * density->ndim();
               for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                  const int j3n = j3 * density->ndim();
                   double eri = *eridata;
-                  out->element(j2, j3) += density_data[j0n + j1] * eri;
-                  out->element(j0, j3) -= density_data[j1n + j2] * eri * 0.5;
+                  out->element(j0, j1) += density_data[j2n + j3] * eri;
+                  out->element(j0, j2) -= density_data[j1n + j3] * eri * 0.5;
                 }
               }
             }

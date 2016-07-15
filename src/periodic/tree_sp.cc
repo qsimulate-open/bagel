@@ -171,7 +171,7 @@ shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> d
 //    nodes_[i]->compute_local_expansions(density, lmax);
       if (nodes_[i]->is_leaf()) {
         nodes_[i]->compute_local_expansions(density, lmax); //////// TMP
-        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(density, dodf, schwarz, schwarz_thresh);
+        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, dodf, schwarz, schwarz_thresh);
         *out += *tmp;
       }
     }
@@ -344,5 +344,5 @@ void TreeSP::print_leaves() const {
     if (nodes_[i]->is_leaf())
       cout << "  " << i << space << nodes_[i]->rank() << space << nodes_[i]->nvertex() << space
            << nodes_[i]->interaction_list().size() << space << nodes_[i]->nneigh() << space << nodes_[i]->extent() << endl;
-  cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf_ << endl;
+  cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf_ << " #SHELL PAIRS = " << geom_->nshellpair() << endl;
 }

@@ -71,7 +71,7 @@ class NodeSP {
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(std::shared_ptr<const Matrix> density, const bool dodf = false, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(const int dim, std::shared_ptr<const Matrix> density, const bool dodf = false, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0);
 
   public:
     NodeSP(const std::bitset<nbit__> key = 0, const int depth = 0,
