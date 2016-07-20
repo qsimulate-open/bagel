@@ -63,6 +63,7 @@ class VertexSP {
     int nbasis() const { return sp_->nbasis(); }
     std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return sp_->multipoles(); }
     int nmult() const { return sp_->nmult(); }
+    double schwarz() const { return sp_->schwarz(); }
 };
 
 }

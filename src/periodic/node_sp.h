@@ -51,7 +51,9 @@ class NodeSP {
     std::vector<std::shared_ptr<const VertexSP>> vertex_;
     std::vector<std::shared_ptr<const NodeSP>> interaction_list_;
     std::vector<std::shared_ptr<const NodeSP>> neigh_;
-    const double thresh_;
+    double thresh_;
+    int id_in_tree_;
+
 
     void insert_vertex(std::shared_ptr<const VertexSP>);
     void insert_child(std::shared_ptr<const NodeSP> = NULL);
@@ -60,10 +62,11 @@ class NodeSP {
     void compute_extent();
     bool is_neighbour(std::shared_ptr<const NodeSP> shells, const int ws);
     void insert_neigh(std::shared_ptr<const NodeSP> neigh, const bool is_neigh = false, const int ws = 2);
+    void sort_neigh();
     void make_interaction_list(const int ws);
 
     bool is_same_as_parent_;
-    int rank_, iself_;
+    int rank_;
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
     std::vector<std::shared_ptr<const ZMatrix>> local_moment_;
     std::shared_ptr<const ZMatrix> local_expansion_;
@@ -71,7 +74,7 @@ class NodeSP {
     std::array<double, 3> compute_centre(std::array<std::shared_ptr<const Shell>, 2> shells);
     void compute_multipoles(const int lmax = ANG_HRR_END);
     void compute_local_expansions(std::shared_ptr<const Matrix> density, const int lmax);
-    std::shared_ptr<const ZMatrix> compute_Coulomb(const int dim, std::shared_ptr<const Matrix> density, const bool dodf = false, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0);
+    std::shared_ptr<const ZMatrix> compute_Coulomb(const int dim, std::shared_ptr<const Matrix> density, std::vector<double> max_den, const bool dodf = false, const double schwarz_thresh = 0.0);
 
   public:
     NodeSP(const std::bitset<nbit__> key = 0, const int depth = 0,
@@ -102,6 +105,7 @@ class NodeSP {
 
     bool is_same_as_parent() const { return is_same_as_parent_; }
     int rank() const { return rank_; }
+    int id_in_tree() const { return id_in_tree_; }
     std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return multipole_; }
     std::vector<std::shared_ptr<const ZMatrix>> local_moment() const { return local_moment_; }
     std::shared_ptr<const ZMatrix> local_moment(const int i) const { return local_moment_[i]; }

@@ -217,6 +217,7 @@ void Node::insert_neighbour(shared_ptr<const Node> neigh, const bool is_neighbou
     neighbour_.resize(nneighbour_ + 1);
     neighbour_[nneighbour_] = neigh;
     ++nneighbour_;
+    sort_neighbours(neighbour_);
   }
 }
 

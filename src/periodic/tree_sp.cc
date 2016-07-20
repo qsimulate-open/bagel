@@ -133,6 +133,7 @@ void TreeSP::build_tree() {
     nodes_[i]->init();
 
   for (int i = 1; i != nnode_; ++i) {
+    nodes_[i]->id_in_tree_ = i;
     for (int j = 1; j != nnode_; ++j) {
       if (nodes_[j]->depth() == nodes_[i]->depth()) {
         nodes_[i]->insert_neigh(nodes_[j], false, ws_);
@@ -141,8 +142,6 @@ void TreeSP::build_tree() {
       }
     }
   }
-
-  cout << "    * Tree construction: " << setw(15) << setprecision(2) << treetime.tick() << endl;
 }
 
 
@@ -161,7 +160,32 @@ void TreeSP::init_fmm(const int lmax, const bool dodf, const string auxfile) con
 }
 
 
-shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double schwarz_thresh) const {
+
+  const int nsp = geom_->nshellpair();
+  vector<double> max_den(nsp);
+  if (density) {
+    const double* density_data = density->data();
+    for (int i01 = 0; i01 != nsp; ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
+      const int offset0 = geom_->shellpair(i01)->offset(0);
+      const int i0 = geom_->shellpair(i01)->shell_ind(0);
+      const int size0 = sh0->nbasis();
+
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
+      const int offset1 = geom_->shellpair(i01)->offset(1);
+      const int i1 = geom_->shellpair(i01)->shell_ind(1);
+      const int size1 = sh0->nbasis();
+
+      double denmax = 0.0;
+      for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
+        const int i0n = i0 * density->ndim();
+        for (int i1 = offset1; i1 != offset1 + size1; ++i1)
+          denmax = max(denmax, fabs(density_data[i0n + i1]));
+      }
+      max_den[i01] = denmax;
+    }
+  }
 
   // Upward pass
   int u = 0;
@@ -171,7 +195,7 @@ shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> d
 //    nodes_[i]->compute_local_expansions(density, lmax);
       if (nodes_[i]->is_leaf()) {
         nodes_[i]->compute_local_expansions(density, lmax); //////// TMP
-        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, dodf, schwarz, schwarz_thresh);
+        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, max_den, dodf, schwarz_thresh);
         *out += *tmp;
       }
     }

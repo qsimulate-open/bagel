@@ -75,7 +75,6 @@ void NodeSP::insert_child(shared_ptr<const NodeSP> child) {
 void NodeSP::init() {
 
   is_complete_ = true;
-  iself_ = -1;
   extent_ = -1.0;
   if (nchild_ == 0) is_leaf_ = true;
 
@@ -136,16 +135,9 @@ void NodeSP::insert_neigh(shared_ptr<const NodeSP> neigh, const bool is_neigh, c
   assert(neigh->depth() == depth_);
   if (!is_neigh) {
     const bool check = is_neighbour(neigh, ws);
-    array<double, 3> r12;
-    r12[0] = centre_[0] - neigh->centre(0);
-    r12[1] = centre_[1] - neigh->centre(1);
-    r12[2] = centre_[2] - neigh->centre(2);
-    const double r = sqrt(r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2]);
     if (check) {
       neigh_.resize(nneigh_ + 1);
       neigh_[nneigh_] = neigh;
-      if (r < numerical_zero__)
-        iself_ = nneigh_;
       ++nneigh_;
     } else {
       interaction_list_.resize(ninter_ + 1);
@@ -300,7 +292,7 @@ void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const in
 }
 
 
-shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<const Matrix> density, const bool dodf, const vector<double> schwarz, const double schwarz_thresh) {
+shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<const Matrix> density, vector<double> max_den, const bool dodf, const double schwarz_thresh) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(dim, dim);
@@ -323,15 +315,17 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
     ob0 += size0;
     ob1 += size1;
   }
+  cout << " Done FF " << endl;
   #endif
 
   // compute near-field interactions using direct integration and add to far field
 
   if (!dodf && density) {
     const double* density_data = density->data();
-    const int nshell = sqrt(schwarz.size());
+    const int nsh = sqrt(max_den.size());
 
     for (auto& v01 : vertex_) {
+      if (v01->schwarz() < 1e-15) continue;
       shared_ptr<const Shell> b0 = v01->shell0();
       const int i0 = v01->shell_ind(0);
       const int b0offset = v01->offset(0);
@@ -342,8 +336,13 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
       const int b1offset = v01->offset(1);
       const int b1size = b1->nbasis();
 
+      const int i01 = i0 * density->ndim() + i1;
+      const double density_01 = max_den[i01] * 4.0;
+
       for (auto& neigh : neigh_) {
+//        if (neigh->id_in_tree() < id_in_tree_) continue;
         for (auto& v23 : neigh->vertex()) {
+          if (v23->schwarz() < 1e-15) continue;
           shared_ptr<const Shell> b2 = v23->shell0();
           const int i2 = v23->shell_ind(0);
           const int b2offset = v23->offset(0);
@@ -354,8 +353,23 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
           const int b3offset = v23->offset(1);
           const int b3size = b3->nbasis();
 
+          const int i23 = i2 * density->ndim() + i3;
+
+          const double density_23 = max_den[i01] * 4.0;
+          const double density_02 = max_den[i0 * nsh + i2];
+          const double density_03 = max_den[i0 * nsh + i3];
+          const double density_12 = max_den[i1 * nsh + i2];
+          const double density_13 = max_den[i1 * nsh + i3];
+
+          const double mulfactor = max(max(max(density_01, density_02),
+                                           max(density_03, density_12)),
+                                           max(density_13, density_23));
+          const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+          const bool skip_schwarz = integral_bound < schwarz_thresh;
+          if (skip_schwarz) continue;
+
           array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-          ERIBatch eribatch(input, 0.0);
+          ERIBatch eribatch(input, mulfactor);
           eribatch.compute();
           const double* eridata = eribatch.data();
 
@@ -367,9 +381,15 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
                 const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                   const int j3n = j3 * density->ndim();
+                  //const double scale = ((neigh->id_in_tree() == id_in_tree_) ? 1.0 : 2.0);
+
                   double eri = *eridata;
                   out->element(j0, j1) += density_data[j2n + j3] * eri;
                   out->element(j0, j2) -= density_data[j1n + j3] * eri * 0.5;
+                  //if (neigh->id_in_tree() !=  id_in_tree_) {
+                  //  out->element(j2, j3) += density_data[j0n + j1] * eri;
+                  //  out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
+                  //}
                 }
               }
             }
@@ -383,6 +403,28 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
   }
 
   return out;
+}
+
+
+void NodeSP::sort_neigh() {
+
+  vector<shared_ptr<const NodeSP>> tmp(neigh_.size());
+
+  const size_t nbit = neigh_[0]->key().size();
+  vector<shared_ptr<const NodeSP>>::iterator it = neigh_.begin();
+  for (int i = 0; i != nneigh_-1; ++i) {
+    bool swap = false;
+    for (int j = nbit-1; j >= 0; j--)
+      if (neigh_[i]->key()[j] ^ neigh_[nneigh_-1]->key()[j])
+        swap = neigh_[nneigh_-1]->key()[j];
+
+    if (swap) {
+      neigh_.insert(it, neigh_[nneigh_-1]);
+      neigh_.resize(nneigh_);
+      break;
+    }
+    ++it;
+  }
 }
 
 
