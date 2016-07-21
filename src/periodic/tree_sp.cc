@@ -149,6 +149,7 @@ void TreeSP::init_fmm(const int lmax, const bool dodf, const string auxfile) con
   if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
 
+  if (lmax < 0) return;
   Timer fmmtime;
   // Downward pass
   int u = 0;
@@ -194,7 +195,7 @@ shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> d
     if (u++ % mpi__->size() == mpi__->rank()) {
 //    nodes_[i]->compute_local_expansions(density, lmax);
       if (nodes_[i]->is_leaf()) {
-        nodes_[i]->compute_local_expansions(density, lmax); //////// TMP
+        if (lmax >= 0) nodes_[i]->compute_local_expansions(density, lmax); //////// TMP
         shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, max_den, dodf, schwarz_thresh);
         *out += *tmp;
       }

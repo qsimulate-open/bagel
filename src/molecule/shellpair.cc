@@ -75,7 +75,8 @@ void ShellPair::init() {
   const vector<double> exp1 = shells_[1]->exponents();
   shared_ptr<const Shell> b0 = shells_[0];
   shared_ptr<const Shell> b1 = shells_[1];
-  nbasis_ = b0->nbasis() + b1->nbasis();
+  nbasis0_ = b0->nbasis();
+  nbasis1_ = b1->nbasis();
 
   // centre
   centre_ = {{0.0, 0.0, 0.0}};

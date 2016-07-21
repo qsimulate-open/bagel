@@ -46,7 +46,7 @@ class NodeSP {
     std::array<double, 3> centre_;
     bool is_complete_;
     bool is_leaf_;
-    int nvertex_, nchild_, nneigh_, ninter_, nbasis_;
+    int nvertex_, nchild_, nneigh_, ninter_, nbasis0_, nbasis1_;
     double extent_;
     std::vector<std::shared_ptr<const VertexSP>> vertex_;
     std::vector<std::shared_ptr<const NodeSP>> interaction_list_;
@@ -99,7 +99,8 @@ class NodeSP {
 
     double extent() const { return extent_; }
     int nneigh() const { return nneigh_; }
-    int nbasis() const { return nbasis_; }
+    int nbasis0() const { return nbasis0_; }
+    int nbasis1() const { return nbasis1_; }
     std::vector<std::shared_ptr<const NodeSP>> neigh() const { return neigh_; }
     std::vector<std::shared_ptr<const NodeSP>> interaction_list() const { return interaction_list_; }
 

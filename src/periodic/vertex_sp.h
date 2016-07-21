@@ -60,7 +60,8 @@ class VertexSP {
     std::array<int, 2> offset() const { return sp_->offset(); }
     int offset(const int i) const { assert(i==0 || i==1); return sp_->offset(i); }
     double extent() const { return sp_->extent(); }
-    int nbasis() const { return sp_->nbasis(); }
+    int nbasis0() const { return sp_->nbasis0(); }
+    int nbasis1() const { return sp_->nbasis1(); }
     std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return sp_->multipoles(); }
     int nmult() const { return sp_->nmult(); }
     double schwarz() const { return sp_->schwarz(); }
