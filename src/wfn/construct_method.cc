@@ -38,6 +38,7 @@
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/multi/zcasscf/zcasscf.h>
@@ -102,6 +103,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")
         out = make_shared<SuperCI>(itree, geom, ref);
+      else if (algorithm == "second")
+        out = make_shared<CASSecond>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<CASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
