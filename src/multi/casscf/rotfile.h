@@ -27,6 +27,7 @@
 #define __BAGEL_CASSCF_ROTFILE_H
 
 #include <src/util/math/matrix.h>
+#include <src/util/math/zmatrix.h>
 
 namespace bagel {
 
@@ -34,6 +35,7 @@ template<typename DataType>
 class RotationMatrix {
   public:
     using data_type = DataType;
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
 
   protected:
     const int nclosed_;
@@ -43,53 +45,25 @@ class RotationMatrix {
     std::unique_ptr<DataType[]> data_;
 
   public:
-    RotationMatrix(const int iclos, const int iact, const int ivirt)
-     : nclosed_(iclos), nact_(iact), nvirt_(ivirt), size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
-      zero();
-    }
-    RotationMatrix(const RotationMatrix& o) : nclosed_(o.nclosed_), nact_(o.nact_), nvirt_(o.nvirt_), size_(o.size_), data_(new DataType[o.size_]) {
-      *this = o;
-    }
-    RotationMatrix(std::shared_ptr<const RotationMatrix> o)
-      : nclosed_(o->nclosed_), nact_(o->nact_), nvirt_(o->nvirt_), size_(o->size_), data_(new DataType[o->size_]) {
-      *this = *o;
-    }
-    RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt)
-      : nclosed_(iclos), nact_(iact), nvirt_(ivirt), size_(iclos*iact+iclos*ivirt+iact*ivirt), data_(new DataType[size_]) {
-      const int nocc = nclosed_ + nact_;
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          ele_va(j, i) = o->element(j+nocc, i+nclosed_);
-        }
-        for (int j = 0; j != nclosed_; ++j) {
-          ele_ca(j, i) = o->element(i+nclosed_, j);
-        }
-      }
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          ele_vc(j, i) = o->element(j+nocc, i);
-        }
-      }
-    }
+    RotationMatrix(const int iclos, const int iact, const int ivirt);
+    RotationMatrix(const RotationMatrix& o);
+    RotationMatrix(std::shared_ptr<const RotationMatrix> o);
+    RotationMatrix(std::shared_ptr<const Matrix_base<DataType>> o, const int iclos, const int iact, const int ivirt);
 
-    std::shared_ptr<RotationMatrix<DataType>> clone() const {
-      return std::make_shared<RotationMatrix<DataType>>(nclosed_, nact_, nvirt_);
-    }
-    std::shared_ptr<RotationMatrix<DataType>> copy() const {
-      return std::make_shared<RotationMatrix<DataType>>(*this);
-    }
+    std::shared_ptr<RotationMatrix<DataType>> clone() const;
+    std::shared_ptr<RotationMatrix<DataType>> copy() const;
 
     // overloaded operators
-    RotationMatrix<DataType> operator+(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); out.ax_plus_y(1.0, o); return out; }
-    RotationMatrix<DataType> operator-(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); out.ax_plus_y(-1.0, o); return out; }
-    RotationMatrix<DataType>& operator+=(const RotationMatrix<DataType>& o) { ax_plus_y(1.0, o); return *this; }
-    RotationMatrix<DataType>& operator-=(const RotationMatrix<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
-    RotationMatrix<DataType>& operator*=(const DataType a) { scale(a); return *this; }
-    RotationMatrix<DataType>& operator/=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)/= o.data(i); return *this; }
-    RotationMatrix<DataType>& operator*=(const RotationMatrix<DataType>& o) { for (int i = 0; i != size(); ++i) data(i)*= o.data(i); return *this; }
-    RotationMatrix<DataType> operator/(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out /= o; }
-    RotationMatrix<DataType> operator*(const RotationMatrix<DataType>& o) const { RotationMatrix<DataType> out(*this); return out *= o; }
-    RotationMatrix<DataType>& operator=(const RotationMatrix<DataType>& o) { std::copy_n(o.data(), size(), data());  return *this; }
+    RotationMatrix<DataType> operator+(const RotationMatrix<DataType>& o) const;
+    RotationMatrix<DataType> operator-(const RotationMatrix<DataType>& o) const;
+    RotationMatrix<DataType>& operator+=(const RotationMatrix<DataType>& o);
+    RotationMatrix<DataType>& operator-=(const RotationMatrix<DataType>& o);
+    RotationMatrix<DataType>& operator*=(const DataType a);
+    RotationMatrix<DataType>& operator/=(const RotationMatrix<DataType>& o);
+    RotationMatrix<DataType>& operator*=(const RotationMatrix<DataType>& o);
+    RotationMatrix<DataType> operator/(const RotationMatrix<DataType>& o) const;
+    RotationMatrix<DataType> operator*(const RotationMatrix<DataType>& o) const;
+    RotationMatrix<DataType>& operator=(const RotationMatrix<DataType>& o);
 
     // size of the file
     int size() const { return size_; }
@@ -106,27 +80,13 @@ class RotationMatrix {
     // returns a root mean square
     double rms() const { return norm() / std::sqrt(static_cast<double>(size())); }
     // daxpy added to self
-    void ax_plus_y(const DataType& a, const RotationMatrix& o) { std::transform(o.data(), o.data()+size_, data(), data(), [&a](DataType p, DataType q) { return p*a+q; }); }
+    void ax_plus_y(const DataType& a, const RotationMatrix& o) { blas::ax_plus_y_n(a, o.data(), size_, data()); }
     void ax_plus_y(const DataType& a, const std::shared_ptr<const RotationMatrix> o) { ax_plus_y(a, *o); }
 
     // orthogonalize to the liset of RotationMatrix's
-    double orthog(std::list<std::shared_ptr<const RotationMatrix<DataType>>> c) {
-      for (auto iter = c.begin(); iter != c.end(); ++iter)
-        this->ax_plus_y(- this->dot_product(**iter), **iter);
-      return normalize();
-    }
-
-    double normalize() {
-      const double scal = 1.0/this->norm();
-      scale(scal);
-      return 1.0/scal;
-    }
-
-    void synchronize() {
-#ifdef HAVE_MPI_H
-      mpi__->broadcast(data(), size(), 0);
-#endif
-    }
+    double orthog(std::list<std::shared_ptr<const RotationMatrix<DataType>>> c);
+    double normalize();
+    void synchronize();
 
     // return data_
     DataType* data() { return data_.get(); }
@@ -155,97 +115,23 @@ class RotationMatrix {
     const DataType* ptr_va() const { return data() + nclosed_*nact_; }
     const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
 
+    void ax_plus_y_ca(const double a, const MatView mat);
+    void ax_plus_y_va(const double a, const MatView mat);
+    void ax_plus_y_vc(const double a, const MatView mat);
+
     // unpack to Matrix
-    template<class MatType>
-    std::shared_ptr<MatType> unpack(const DataType a = 0.0) const {
-      const int nocc = nclosed_ + nact_;
-      const int nbasis = nclosed_ + nact_ + nvirt_;
-      auto out = std::make_shared<MatType>(nbasis, nbasis);
-      std::fill_n(out->data(), out->size(), a);
-
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i+nclosed_) = ele_va(j, i);
-        }
-        for (int j = 0; j != nclosed_; ++j) {
-          out->element(i+nclosed_, j) = ele_ca(j, i);
-        }
-      }
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i) = ele_vc(j, i);
-        }
-      }
-      for (int i = 0; i != nbasis; ++i) {
-        for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = - detail::conj(out->element(i, j));
-        }
-      }
-      return out;
-    }
-
-    template<class MatType>
-    std::shared_ptr<MatType> unpack_sym(const DataType a = 0.0) const {
-      const int nocc = nclosed_ + nact_;
-      const int nbasis = nclosed_ + nact_ + nvirt_;
-      auto out = std::make_shared<MatType>(nbasis, nbasis);
-      std::fill_n(out->data(), out->size(), a);
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i+nclosed_) = ele_va(j, i);
-        }
-        for (int j = 0; j != nclosed_; ++j) {
-          out->element(i+nclosed_, j) = ele_ca(j, i);
-        }
-      }
-      for (int i = 0; i != nclosed_; ++i) {
-        for (int j = 0; j != nvirt_;   ++j) {
-          out->element(j+nocc, i) = ele_vc(j, i);
-        }
-      }
-      for (int i = 0; i != nbasis; ++i) {
-        for (int j = 0; j <= i; ++j) {
-          out->element(j, i) = detail::conj(out->element(i, j));
-        }
-      }
-      return out;
-    }
+    std::shared_ptr<MatType> unpack(const DataType a = 0.0) const;
+    std::shared_ptr<MatType> unpack_sym(const DataType a = 0.0) const;
 
     // print matrix
-    void print(const std::string in = "") const {
-      std::cout << "++++ " + in + " ++++" << std::endl;
-      if (nact_ && nclosed_) {
-        std::cout << " printing closed-active block" << std::endl;
-        for (int i = 0; i != nact_; ++i) {
-          for (int j = 0; j != nclosed_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_ca(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-      if (nact_ && nvirt_) {
-        std::cout << " printing virtual-active block" << std::endl;
-        for (int i = 0; i != nact_; ++i) {
-          for (int j = 0; j != nvirt_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_va(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-      if (nclosed_ && nvirt_) {
-        std::cout << " printing virtual-closed block" << std::endl;
-        for (int i = 0; i != nclosed_; ++i) {
-          for (int j = 0; j != nvirt_; ++j) {
-            std::cout << std::setw(10) << std::setprecision(6) << ele_vc(j,i);
-          }
-          std::cout << std::endl;
-        }
-      }
-    }
+    void print(const std::string in = "") const;
 };
 
 using RotFile = RotationMatrix<double>;
 using ZRotFile = RotationMatrix<std::complex<double>>;
+
+extern template class RotationMatrix<double>;
+extern template class RotationMatrix<std::complex<double>>;
 
 }
 

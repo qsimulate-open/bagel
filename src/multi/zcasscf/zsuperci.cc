@@ -135,7 +135,7 @@ void ZSuperCI::compute() {
     }
 
     // orbital rotation matrix
-    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
+    shared_ptr<ZMatrix> amat = cc->unpack();
     if (tsymm_)
       kramers_adapt(amat, nvirtnr_);
     // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit

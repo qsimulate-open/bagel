@@ -150,7 +150,7 @@ void CASBFGS1::compute() {
     cout << " " << endl;
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = a->unpack();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 

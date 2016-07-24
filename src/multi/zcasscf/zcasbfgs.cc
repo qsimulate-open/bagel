@@ -150,7 +150,7 @@ shared_ptr<ZMatrix> ZCASBFGS::compute_unitary_rotation(vector<double>& subspace_
     kramers_adapt(subspace_rot, nclosed_, nact_, nvirt_subspace);
 
   // Rotate orbitals
-  shared_ptr<ZMatrix> amat = subspace_rot->unpack<ZMatrix>();
+  shared_ptr<ZMatrix> amat = subspace_rot->unpack();
 
   // multiply -1 from the formula taken care of in extrap. multiply -i to make amat hermite (will be compensated)
   *amat *= 1.0 * complex<double>(0.0, -1.0);

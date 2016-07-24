@@ -118,7 +118,7 @@ void CASBFGS2::compute() {
     arot = bfgs->extrapolate(sigma, arot, blas::average(energy_));
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = arot->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = arot->unpack();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 

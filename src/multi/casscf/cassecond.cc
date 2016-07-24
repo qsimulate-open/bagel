@@ -72,11 +72,16 @@ cout << "max " << max_iter_ << endl;
     grad_va(cfock, qxr, sigma);
     grad_ca(cfock, afock, qxr, sigma);
 
-    sigma->print();
+    // create
+    for (int miter = 0; miter != max_micro_iter_; ++miter) {
 
+
+
+    }
+
+    resume_stdcout();
 const double gradient = 0.0;
 energy_ = {0.0, 0.0};
-    resume_stdcout();
     print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) {

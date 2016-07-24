@@ -113,7 +113,7 @@ void SuperCI::compute() {
     }
 
     // unitary matrix
-    shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
+    shared_ptr<Matrix> rot = cc->unpack()->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
