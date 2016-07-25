@@ -103,6 +103,22 @@ void CASSecond::compute() {
     shared_ptr<const Matrix> fcvc = nclosed_ ? cfock->get_submatrix(nocc_, 0, nvirt_, nclosed_) : nullptr;
     shared_ptr<const Matrix> favc = nclosed_ ? afock->get_submatrix(nocc_, 0, nvirt_, nclosed_) : nullptr;
 
+    // compute denominator...
+    auto denom = grad->clone();
+    {
+      const Matrix fcd = *fcaa * rdm1;
+      for (int i = 0; i != nact_; ++i)
+        for (int j = 0; j != nclosed_; ++j)
+          denom->ele_ca(j, i) += 4.0 * ((*fcaa)(i, i) + (*faaa)(i, i)) - 4.0 * ((*fccc)(j, j) + (*facc)(j, j)) - 2.0 * fcd(i, i) + 2.0 * (*fccc)(j, j) * rdm1(i, i);
+      for (int i = 0; i != nclosed_; ++i)
+        for (int j = 0; j != nvirt_; ++j)
+          denom->ele_vc(j, i) += 4.0 * ((*fcvv)(j, j) + (*favv)(j, j)) - 4.0 * ((*fccc)(i, i) + (*facc)(i, i));
+      for (int i = 0; i != nact_; ++i)
+        for (int j = 0; j != nvirt_; ++j)
+          denom->ele_va(j, i) += 2.0 * (*fcvv)(j, j) * rdm1(i, i) - 2.0 * fcd(i, i);
+    }
+    denom->print();
+
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
       // trial vector
