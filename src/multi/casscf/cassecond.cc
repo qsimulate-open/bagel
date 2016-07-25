@@ -48,17 +48,22 @@ cout << "max " << max_iter_ << endl;
       fci_time.tick_print("FCI and RDMs");
     }
 
+    // coeff spaces and RDM1
     const MatView ccoeff = coeff_->slice(0, nclosed_);
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
+    const MatView acoeff = coeff_->slice(nclosed_, nocc_);
+    const MatView vcoeff = coeff_->slice(nocc_, nvirt_);
+
+    Matrix rdm1(nact_, nact_);
+    copy_n(fci_->rdm1_av()->data(), nact_*nact_, rdm1.data());
+
+    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/true, /*rhf*/true) : hcore_;
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     shared_ptr<const Matrix> afock;
     if (nact_) {
-      shared_ptr<Matrix> acoeff = coeff_->slice_copy(nclosed_, nocc_);
-      Matrix dkl(nact_, nact_);
-      copy_n(fci_->rdm1_av()->data(), nact_*nact_, dkl.data());
+      Matrix dkl = rdm1;
       dkl.sqrt();
       dkl.scale(1.0/sqrt(2.0));
-      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, *acoeff * dkl, /*store*/false, /*rhf*/true);
+      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff * dkl, /*store*/false, /*rhf*/true);
       afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
     } else {
       afock = cfock->clone();
@@ -67,16 +72,56 @@ cout << "max " << max_iter_ << endl;
     if (nact_)
       qxr = make_shared<const Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
 
-    auto sigma = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-    grad_vc(cfock, afock, sigma);
-    grad_va(cfock, qxr, sigma);
-    grad_ca(cfock, afock, qxr, sigma);
+    auto grad = make_shared<RotFile>(nclosed_, nact_, nvirt_);
+    grad_vc(cfock, afock, grad);
+    grad_va(cfock, qxr, grad);
+    grad_ca(cfock, afock, qxr, grad);
+
+    // half-transformed integrals (with JJ)
+    shared_ptr<const DFHalfDist> half = nclosed_ ? dynamic_pointer_cast<const Fock<1>>(cfockao)->half()->apply_J() : nullptr;
+    shared_ptr<const DFHalfDist> halfa = fci_->jop()->mo2e_1ext()->apply_JJ();
 
     // create
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
+      // trial vector
+      auto trot = grad->clone();
+      shared_ptr<const Matrix> ca = trot->ca_mat();
+      shared_ptr<const Matrix> va = trot->va_mat();
+      shared_ptr<const Matrix> vc = trot->vc_mat();
+      // sigma vector
+      auto sigma = grad->clone();
 
+      // lambda for computing g(D)
+      auto compute_gd = [&,this](const MatView tcoeff, const MatView pcoeff, shared_ptr<const DFHalfDist> halfjj, shared_ptr<const DFHalfDist> halft) {
+        if (!halft)
+          halft = geom_->df()->compute_half_transform(tcoeff);
+        shared_ptr<const Matrix> pcoefft = make_shared<Matrix>(pcoeff)->transpose();
+        shared_ptr<Matrix> gd = geom_->df()->compute_Jop(halft, pcoefft);
+        shared_ptr<Matrix> ex0 = halfjj->form_2index(halft, 1.0);
+        ex0->symmetrize();
+        gd->ax_plus_y(-0.5, ex0);
+        return gd;
+      };
 
-
+      // g(t_vc) operator and g(t_ac) operator
+      {
+        const Matrix gt = *compute_gd(vcoeff * *vc, vcoeff, half, nullptr)
+                        + *compute_gd(ccoeff * *ca, acoeff, halfa, nullptr);
+        sigma->ax_plus_y_ca(32.0, ccoeff % gt * acoeff);
+        sigma->ax_plus_y_vc(32.0, vcoeff % gt * ccoeff);
+        sigma->ax_plus_y_va(16.0, vcoeff % gt * acoeff * rdm1);
+        sigma->ax_plus_y_ca(-16.0, ccoeff % gt * acoeff * rdm1);
+      }
+      // g(t_va - t_ca)
+      const Matrix tcoeff = vcoeff * *va - ccoeff * *ca;
+      shared_ptr<const DFHalfDist> halfta = geom_->df()->compute_half_transform(tcoeff);
+      {
+        shared_ptr<DFHalfDist> halftad = halfta->copy();
+        halftad->rotate_occ(make_shared<Matrix>(rdm1));
+        const Matrix gt = *compute_gd(/*not referenced*/tcoeff, acoeff, halfa, halftad);
+        sigma->ax_plus_y_ca(16.0, ccoeff % gt * acoeff);
+        sigma->ax_plus_y_vc(16.0, vcoeff % gt * ccoeff);
+      }
     }
 
     resume_stdcout();

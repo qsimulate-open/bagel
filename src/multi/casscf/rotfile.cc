@@ -198,8 +198,35 @@ void RotationMatrix<DataType>::ax_plus_y_va(const double a, const MatView mat) {
 
 template<typename DataType>
 void RotationMatrix<DataType>::ax_plus_y_vc(const double a, const MatView mat) {
-  assert(mat.ndim() == nvrit_ && mat.mdim() == nclosed_);
+  assert(mat.ndim() == nvirt_ && mat.mdim() == nclosed_);
   blas::ax_plus_y_n(a, mat.data(), nvirt_*nclosed_, ptr_vc());
+}
+
+
+template<typename DataType>
+shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>
+  RotationMatrix<DataType>::ca_mat() const {
+  auto out = make_shared<MatType>(nclosed_, nact_);
+  copy_n(ptr_ca(), nclosed_*nact_, out->data());
+  return out;
+}
+
+
+template<typename DataType>
+shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>
+  RotationMatrix<DataType>::va_mat() const {
+  auto out = make_shared<MatType>(nvirt_, nact_);
+  copy_n(ptr_va(), nvirt_*nact_, out->data());
+  return out;
+}
+
+
+template<typename DataType>
+shared_ptr<typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type>
+  RotationMatrix<DataType>::vc_mat() const {
+  auto out = make_shared<MatType>(nvirt_, nclosed_);
+  copy_n(ptr_vc(), nvirt_*nclosed_, out->data());
+  return out;
 }
 
 

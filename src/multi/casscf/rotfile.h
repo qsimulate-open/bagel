@@ -119,6 +119,10 @@ class RotationMatrix {
     void ax_plus_y_va(const double a, const MatView mat);
     void ax_plus_y_vc(const double a, const MatView mat);
 
+    std::shared_ptr<MatType> ca_mat() const;
+    std::shared_ptr<MatType> va_mat() const;
+    std::shared_ptr<MatType> vc_mat() const;
+
     // unpack to Matrix
     std::shared_ptr<MatType> unpack(const DataType a = 0.0) const;
     std::shared_ptr<MatType> unpack_sym(const DataType a = 0.0) const;
