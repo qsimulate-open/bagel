@@ -30,8 +30,6 @@ using namespace std;
 using namespace bagel;
 
 void CASSecond::compute() {
-cout << "thresh " << thresh_ << endl;
-cout << "max " << max_iter_ << endl;
   Timer timer;
 
   mute_stdcout();
@@ -81,10 +79,29 @@ cout << "max " << max_iter_ << endl;
     shared_ptr<const DFHalfDist> half = nclosed_ ? dynamic_pointer_cast<const Fock<1>>(cfockao)->half()->apply_J() : nullptr;
     shared_ptr<const DFHalfDist> halfa = fci_->jop()->mo2e_1ext()->apply_JJ();
 
+    // fock submatrices
+    shared_ptr<const Matrix> fccc = cfock->get_submatrix(0, 0, nclosed_, nclosed_);
+    shared_ptr<const Matrix> facc = afock->get_submatrix(0, 0, nclosed_, nclosed_);
+    shared_ptr<const Matrix> fcca = cfock->get_submatrix(0, nclosed_, nclosed_, nact_);
+    shared_ptr<const Matrix> faca = afock->get_submatrix(0, nclosed_, nclosed_, nact_);
+    shared_ptr<const Matrix> fcaa = cfock->get_submatrix(nclosed_, nclosed_, nact_, nact_);
+    shared_ptr<const Matrix> faaa = afock->get_submatrix(nclosed_, nclosed_, nact_, nact_);
+    shared_ptr<const Matrix> fcvc = cfock->get_submatrix(nocc_, 0, nvirt_, nclosed_);
+    shared_ptr<const Matrix> favc = afock->get_submatrix(nocc_, 0, nvirt_, nclosed_);
+    shared_ptr<const Matrix> fcva = cfock->get_submatrix(nocc_, nclosed_, nvirt_, nact_);
+    shared_ptr<const Matrix> fava = afock->get_submatrix(nocc_, nclosed_, nvirt_, nact_);
+    shared_ptr<const Matrix> fcvv = cfock->get_submatrix(nocc_, nocc_, nvirt_, nvirt_);
+    shared_ptr<const Matrix> favv = afock->get_submatrix(nocc_, nocc_, nvirt_, nvirt_);
+
     // create
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
+      Timer mtimer;
       // trial vector
       auto trot = grad->clone();
+trot->ax_plus_y_vc(1.0, *grad->vc_mat());
+trot->ax_plus_y_va(1.0, *grad->va_mat());
+trot->ax_plus_y_ca(1.0, *grad->ca_mat());
+trot->print();
       shared_ptr<const Matrix> ca = trot->ca_mat();
       shared_ptr<const Matrix> va = trot->va_mat();
       shared_ptr<const Matrix> vc = trot->vc_mat();
@@ -136,19 +153,52 @@ cout << "max " << max_iter_ << endl;
         sigma->ax_plus_y_ca(-2.0, *ca * *qaa);
       }
       // compute Q' and Q''
-      shared_ptr<const DFFullDist> fullaa = halfa->compute_second_transform(acoeff);
-      shared_ptr<DFFullDist> fullta = halfta->compute_second_transform(acoeff);
       {
+        shared_ptr<const DFFullDist> fullaa = halfa->compute_second_transform(acoeff);
+        shared_ptr<DFFullDist> fullta = halfta->compute_second_transform(acoeff);
         shared_ptr<const DFFullDist> fulltas = fullta->swap();
         fullta->ax_plus_y(1.0, fulltas);
-      }
-      shared_ptr<const DFFullDist> fullaaD = fullaa->apply_2rdm(*fci_->rdm2_av());
-      shared_ptr<const DFFullDist> fulltaD = fullta->apply_2rdm(*fci_->rdm2_av());
-      shared_ptr<const Matrix> qp  = halfa->form_2index(fulltaD, 1.0);
-      shared_ptr<const Matrix> qpp = halfta->form_2index(fullaaD, 1.0);
+        shared_ptr<const DFFullDist> fullaaD = fullaa->apply_2rdm(*fci_->rdm2_av());
+        shared_ptr<const DFFullDist> fulltaD = fullta->apply_2rdm(*fci_->rdm2_av());
+        shared_ptr<const Matrix> qp  = halfa->form_2index(fulltaD, 1.0);
+        shared_ptr<const Matrix> qpp = halfta->form_2index(fullaaD, 1.0);
 
-      sigma->ax_plus_y_va( 4.0, vcoeff % (*qp + *qpp));
-      sigma->ax_plus_y_ca(-4.0, ccoeff % (*qp + *qpp));
+        sigma->ax_plus_y_va( 4.0, vcoeff % (*qp + *qpp));
+        sigma->ax_plus_y_ca(-4.0, ccoeff % (*qp + *qpp));
+      }
+
+      // next 1-electron contribution...
+      {
+        sigma->ax_plus_y_ca( 8.0, *ca * (*fcaa + *faaa));
+        sigma->ax_plus_y_ca(-2.0, *ca * rdm1 * *fcaa);
+        sigma->ax_plus_y_ca(-2.0, *ca * *fcaa * rdm1);
+        sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
+        sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
+        sigma->ax_plus_y_ca( 8.0, *vc % (*fcva + *fava));
+        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+        sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
+        sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
+        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+        sigma->ax_plus_y_vc(-2.0, *fcva * rdm1 ^ *ca);
+        sigma->ax_plus_y_ca(-2.0, *vc % *fcva * rdm1);
+        sigma->ax_plus_y_vc( 8.0, (*fcvv + *favv) * *vc);
+        sigma->ax_plus_y_vc(-8.0, *vc * (*fccc + *facc));
+        sigma->ax_plus_y_vc(-2.0, *va * rdm1 ^ *fcca);
+        sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
+        sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
+        sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
+        sigma->ax_plus_y_va(-4.0, *vc * (*fcca + *faca));
+        sigma->ax_plus_y_vc(-4.0, *va ^ (*fcca + *faca));
+        sigma->ax_plus_y_va( 4.0, *fcvv * *va * rdm1);
+        sigma->ax_plus_y_va(-2.0, *va * rdm1 * *fcaa);
+        sigma->ax_plus_y_va(-2.0, *va * *fcaa * rdm1);
+      }
+
+      sigma->scale(0.5);
+
+sigma->print();
+      cout << "         " << mtimer.tick() << endl;
+break;
     }
 
     resume_stdcout();
