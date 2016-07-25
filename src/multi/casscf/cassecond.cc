@@ -170,28 +170,26 @@ trot->print();
       // next 1-electron contribution...
       {
         sigma->ax_plus_y_ca( 8.0, *ca * (*fcaa + *faaa));
-        sigma->ax_plus_y_ca(-2.0, *ca * rdm1 * *fcaa);
-        sigma->ax_plus_y_ca(-2.0, *ca * *fcaa * rdm1);
-        sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
-        sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
         sigma->ax_plus_y_ca( 8.0, *vc % (*fcva + *fava));
-        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
-        sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
-        sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
-        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
-        sigma->ax_plus_y_vc(-2.0, *fcva * rdm1 ^ *ca);
-        sigma->ax_plus_y_ca(-2.0, *vc % *fcva * rdm1);
-        sigma->ax_plus_y_vc( 8.0, (*fcvv + *favv) * *vc);
         sigma->ax_plus_y_vc(-8.0, *vc * (*fccc + *facc));
-        sigma->ax_plus_y_vc(-2.0, *va * rdm1 ^ *fcca);
-        sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
-        sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
-        sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
         sigma->ax_plus_y_va(-4.0, *vc * (*fcca + *faca));
         sigma->ax_plus_y_vc(-4.0, *va ^ (*fcca + *faca));
+        sigma->ax_plus_y_ca(-2.0, *ca * (rdm1 * *fcaa + *fcaa * rdm1));
+        sigma->ax_plus_y_va(-2.0, *va * (rdm1 * *fcaa + *fcaa * rdm1));
+        sigma->ax_plus_y_vc( 8.0, (*fcvv + *favv) * *vc);
+        sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
+        sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
+        sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
+        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+        sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+        sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
         sigma->ax_plus_y_va( 4.0, *fcvv * *va * rdm1);
-        sigma->ax_plus_y_va(-2.0, *va * rdm1 * *fcaa);
-        sigma->ax_plus_y_va(-2.0, *va * *fcaa * rdm1);
+        sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
+        sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
+        sigma->ax_plus_y_vc(-2.0, *fcva * rdm1 ^ *ca);
+        sigma->ax_plus_y_vc(-2.0, *va * rdm1 ^ *fcca);
+        sigma->ax_plus_y_ca(-2.0, *vc % *fcva * rdm1);
+        sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
       }
 
       sigma->scale(0.5);
