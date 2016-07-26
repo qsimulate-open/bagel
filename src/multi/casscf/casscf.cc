@@ -365,20 +365,16 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
 
     *f *= 2.0;
 
-    for (int i = 0; i != nbasis_; ++i) {
+    for (int i = 0; i != nbasis_; ++i)
       for (int j = 0; j != nbasis_; ++j) {
         if (i < nocc_ && j < nocc_) continue;
         f->element(j,i) = 0.0;
       }
-    }
-    for (int j = 0; j != nact_; ++j) {
-      for (int i = 0; i != nocc_; ++i) {
+    for (int j = 0; j != nact_; ++j)
+      for (int i = 0; i != nocc_; ++i)
         f->element(i,j+nclosed_) = fact->element(i,j);
-      }
-    }
 
     auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
-
     out->set_erdm1(erdm);
   } else {
     out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);

@@ -121,8 +121,9 @@ class AugHess {
       // first set mat (=x(i)Ax(j)) and prod (= x(i)*y)
       ++size_;
       auto citer = c_.begin();
-      for (int i = 0; i != size_; ++i, ++citer) {
-        mat(i,size_-1) = mat(size_-1,i) = s->dot_product(**citer);
+      auto siter = sigma_.begin();
+      for (int i = 0; i != size_; ++i, ++citer, ++siter) {
+        mat(i,size_-1) = mat(size_-1,i) = 0.5*(s->dot_product(**citer) + c->dot_product(**siter));
       }
       prod_(size_-1) = c->dot_product(*grad_);
 
@@ -138,21 +139,29 @@ class AugHess {
       Matrix scr = scr1 + scr2 * (1.0/lambda);
       scr.diagonalize(eig_);
 
+      // find the best vector ((c) Yanatech)
+      int ivec = -1;
+      for (int i = 0; i != size_+1; ++i)
+        if (std::fabs(scr.element(size_,i)) <= 1.1 && std::fabs(scr.element(size_,i)) > 0.1) {
+          ivec = i;
+          break;
+        }
+      if (ivec < 0)
+       throw std::logic_error("logical error in AugHess");
+
       // scale eigenfunction
       for (int i = 0; i != size_; ++i)
-        vec_(i) = scr.element(i,0) / scr.element(size_,0);
+        vec_(i) = scr.element(i,ivec) / (lambda*scr.element(size_,ivec));
 
       auto out = std::make_shared<T>(*grad_);
       int cnt = 0;
       for (auto i = c_.begin(), j = sigma_.begin(); i != c_.end(); ++i, ++j, ++cnt) {
-        out->ax_plus_y(vec_(cnt)/lambda, *j);
-        out->ax_plus_y(-vec_(cnt)*eig_(0), *i);
+        out->ax_plus_y(vec_(cnt), *j);
+        out->ax_plus_y(-vec_(cnt)*lambda*eig_(ivec), *i);
       }
       assert(cnt == size_);
-      return std::make_tuple(out, lambda, eig_(0), stepsize);
+      return std::make_tuple(out, lambda, eig_(ivec), stepsize);
     }
-
-    double eig() const { return eig_(0); }
 
     std::shared_ptr<T> civec() const {
       std::shared_ptr<T> out = c_.front()->clone();

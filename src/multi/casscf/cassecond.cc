@@ -26,6 +26,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/multi/casscf/cassecond.h>
+#include <src/prop/hyperfine.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,6 +46,7 @@ void CASSecond::compute() {
       fci_->compute_rdm12();
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
+      occup_ = natorb.second;
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -78,7 +80,7 @@ void CASSecond::compute() {
     shared_ptr<const RotFile> denom = compute_denom(half, half_1j, halfa, cfock, afock);
     denom->print();
 
-    AugHess<RotFile> solver(20, grad);
+    AugHess<RotFile> solver(max_micro_iter_, grad);
     // initial trial vector
     shared_ptr<RotFile> trot = apply_denom(grad, denom, 0.001, 1.0);
     trot->normalize();
@@ -90,27 +92,61 @@ void CASSecond::compute() {
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
       const double err = residual->norm() / lambda;
+      resume_stdcout();
       cout << "         residual: " << setw(10) << setprecision(3) << scientific << err
            <<         " lambda  : " << setw(10) << setprecision(3) << scientific << lambda
            <<         " epsilon : " << setw(10) << setprecision(3) << scientific << epsilon
            <<         " stepsize: " << setw(10) << setprecision(3) << scientific << stepsize
            << setw(6) << fixed << setprecision(2) << mtimer.tick() << endl;
-      if (err < thresh_*0.5 *0.001) // TODO
+      mute_stdcout();
+      if (err < thresh_*0.5) // TODO
         break;
 
       trot = apply_denom(residual, denom, -epsilon, 1.0/lambda);
-      solver.orthog(trot);
+      for (int i = 0; i != 10; ++i) {
+        const double norm = solver.orthog(trot);
+        if (norm > 0.25) break;
+      }
     }
+
+    shared_ptr<RotFile> sol = solver.civec();
+    shared_ptr<const Matrix> a = sol->unpack();
+    Matrix w(*a * *a);
+    VectorB eig(a->ndim());
+    w.diagonalize(eig);
+    Matrix wc(w);
+    Matrix ws(w);
+    for (int i = 0; i != a->ndim(); ++i) {
+      const double tau = sqrt(fabs(eig(i)));
+      blas::scale_n(cos(tau), wc.element_ptr(0,i), wc.ndim());
+      blas::scale_n(tau > 1.0e-15 ? sin(tau)/tau : 1.0, ws.element_ptr(0,i), ws.ndim());
+    }
+    const Matrix R = (wc ^ w) + (ws ^ w) * *a;
+    R.print();
+
+    coeff_ = make_shared<Coeff>(*coeff_ * R);
 
     resume_stdcout();
     if (iter == max_iter_-1)
       cout << endl << "    * Max iteration reached during the second optimization. *     " << endl << endl;
     mute_stdcout();
-break;
   }
   resume_stdcout();
 
-  throw logic_error("reached the end of tmp implementaiton");
+  // block diagonalize coeff_ in nclosed and nvirt
+  coeff_ = semi_canonical_orb();
+
+  // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
+  fci_->update(coeff_);
+  fci_->compute();
+  fci_->compute_rdm12();
+
+  // calculate the HFCCs
+  if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+    HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
+    hfcc.compute();
+  }
 }
 
 
