@@ -25,6 +25,7 @@
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/cassecond.h>
 
 double cas_energy(std::string filename) {
   auto ofs = std::make_shared<std::ofstream>(filename + ".testout", std::ios::trunc);
@@ -35,33 +36,45 @@ double cas_energy(std::string filename) {
   auto idata = std::make_shared<const PTree>(ss.str());
   auto keys = idata->get_child("bagel");
   std::shared_ptr<Geometry> geom;
+  std::shared_ptr<const Reference> ref;
 
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
     if (method == "molecule") {
       geom = std::make_shared<Geometry>(itree);
+    } else if (method == "hf") {
+      auto hf = std::make_shared<RHF>(itree, geom);
+      hf->compute();
+      ref = hf->conv_to_ref();
 
     } else if (method == "casscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
-        auto cas = std::make_shared<SuperCI>(itree, geom);
+      if (algorithm == "superci") {
+        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
         cas->compute();
-        std::shared_ptr<const Reference> ref = cas->conv_to_ref();
+        ref = cas->conv_to_ref();
+
+        std::cout.rdbuf(backup_stream);
+        return ref->energy(0);
+      } else if (algorithm == "second") {
+        auto cas = std::make_shared<CASSecond>(itree, geom, ref);
+        cas->compute();
+        ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
         return ref->energy(0);
       } else if (algorithm == "hybrid") {
-        auto cas = std::make_shared<CASHybrid>(itree, geom);
+        auto cas = std::make_shared<CASHybrid>(itree, geom, ref);
         cas->compute();
-        std::shared_ptr<const Reference> ref = cas->conv_to_ref();
+        ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
         return ref->energy(0);
       } else if (algorithm == "bfgs") {
-        auto cas = std::make_shared<CASBFGS>(itree, geom);
+        auto cas = std::make_shared<CASBFGS>(itree, geom, ref);
         cas->compute();
-        std::shared_ptr<const Reference> ref = cas->conv_to_ref();
+        ref = cas->conv_to_ref();
 
         std::cout.rdbuf(backup_stream);
         return ref->energy(0);
@@ -75,6 +88,7 @@ double cas_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_CASSCF)
 
 BOOST_AUTO_TEST_CASE(DF_CASSCF) {
+    BOOST_CHECK(compare(cas_energy("h2o_svp_cassecond"),    -76.00368392));
     BOOST_CHECK(compare(cas_energy("lif_svp_cas22"),        -106.70563743));
     BOOST_CHECK(compare(cas_energy("li2_tzvpp_cas43"),      -14.87300366));
     BOOST_CHECK(compare(cas_energy("lih_tzvpp_cas22"),      -7.98191070));

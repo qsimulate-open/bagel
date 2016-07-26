@@ -14,6 +14,7 @@
 
 {
   "title" : "casscf",
+  "algorithm" : "superci",
   "nact" : 0,
   "nact_cas" : 2,
   "nclosed" : 5,
