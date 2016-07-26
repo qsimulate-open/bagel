@@ -63,7 +63,10 @@ class AugHess {
       const int nlast = mat1.ndim();
       VectorB v(nlast);
       assert(nlast > 1);
-      double lambda_test = 1.0, lambda_lasttest, stepsize_lasttest, stepsize;
+      double lambda_test = 1.0;
+      double lambda_lasttest = 0.0;
+      double stepsize_lasttest = 0.0;
+      double stepsize = 0.0;
       int iok = 0;
       for (int i = 0; i < 10; ++i) {
         Matrix scr = mat1 + mat2 * (1.0/lambda_test);
