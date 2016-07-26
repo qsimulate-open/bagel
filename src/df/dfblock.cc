@@ -284,6 +284,26 @@ shared_ptr<Matrix> DFBlock::form_4index_1fixed(const shared_ptr<const DFBlock> o
 }
 
 
+shared_ptr<Matrix> DFBlock::form_4index_diagonal() const {
+  auto target = make_shared<Matrix>(b1size(), b2size());
+  for (int i = 0; i != b2size(); ++i)
+    for (int j = 0; j != b1size(); ++j)
+      target->element(j, i) = blas::dot_product(data()+asize()*(j+b1size()*i), asize(), data()+asize()*(j+b1size()*i));
+  return target;
+}
+
+
+shared_ptr<Matrix> DFBlock::form_4index_diagonal_part() const {
+  // not very good code (assuming that b1size() is small)
+  auto target = make_shared<Matrix>(b1size()*b1size(), b2size());
+  for (int i = 0; i != b2size(); ++i)
+    for (int j = 0; j != b1size(); ++j)
+      for (int k = 0; k != b1size(); ++k)
+         target->element(k+b1size()*j, i) = blas::dot_product(data()+asize()*(k+b1size()*i), asize(), data()+asize()*(j+b1size()*i));
+  return target;
+}
+
+
 shared_ptr<Matrix> DFBlock::form_aux_2index(const shared_ptr<const DFBlock> o, const double a) const {
   if (b1size() != o->b1size() || b2size() != o->b2size()) throw logic_error("illegal call of DFBlock::form_aux_2index");
   auto target = make_shared<Matrix>(asize(), o->asize());
@@ -338,6 +358,65 @@ shared_ptr<Tensor3<double>> DFBlock::get_block(const int ist, const int i, const
       copy_n(&((*this)(ista, jj, kk)), ifen-ista, &((*out)(0, jj-jsta, kk-ksta)));
 
   return out;
+}
+
+
+DFBlock& DFBlock::operator=(const DFBlock& o) {
+  btas::Tensor3<double>::operator=(o);
+  adist_shell_ = o.adist_shell_;
+  adist_ = o.adist_;
+  averaged_ = o.averaged_;
+  astart_ = o.astart_;
+  b1start_ = o.b1start_;
+  b2start_ = o.b2start_;
+  return *this;
+}
+
+
+DFBlock& DFBlock::operator=(DFBlock&& o) {
+  btas::Tensor3<double>::operator=(move(o));
+  adist_shell_ = o.adist_shell_;
+  adist_ = o.adist_;
+  averaged_ = o.averaged_;
+  astart_ = o.astart_;
+  b1start_ = o.b1start_;
+  b2start_ = o.b2start_;
+  return *this;
+}
+
+
+void DFBlock::symmetrize() {
+  if (b1size() != b2size()) throw logic_error("illegal call of DFBlock::symmetrize()");
+  const int n = b1size();
+  for (int i = 0; i != n; ++i)
+    for (int j = i; j != n; ++j) {
+      blas::ax_plus_y_n(1.0, data()+asize()*(j+n*i), asize(), data()+asize()*(i+n*j));
+      copy_n(data()+asize()*(i+n*j), asize(), data()+asize()*(j+n*i));
+    }
+}
+
+
+void DFBlock::copy_block(shared_ptr<MatView> o, const int jdim, const size_t offset) {
+  assert(o->size() == asize()*jdim);
+  copy_n(o->data(), asize()*jdim, data()+offset);
+}
+
+
+void DFBlock::copy_block(MatView o, const int jdim, const size_t offset) {
+  assert(o.size() == asize()*jdim);
+  copy_n(o.data(), asize()*jdim, data()+offset);
+}
+
+
+void DFBlock::add_block(shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac) {
+  assert(o->size() == asize()*jdim);
+  blas::ax_plus_y_n(fac, o->data(), asize()*jdim, data()+offset);
+}
+
+
+void DFBlock::add_block(MatView o, const int jdim, const size_t offset, const double fac) {
+  assert(o.size() == asize()*jdim);
+  blas::ax_plus_y_n(fac, o.data(), asize()*jdim, data()+offset);
 }
 
 
