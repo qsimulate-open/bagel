@@ -30,6 +30,7 @@
 #include <list>
 #include <stdexcept>
 #include <src/util/f77.h>
+#include <src/util/math/matrix.h>
 
 namespace bagel {
 

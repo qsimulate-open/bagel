@@ -202,6 +202,14 @@ shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool ina
 }
 
 
+std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared_ptr<const RDM<1>> rdm1) const {
+  Matrix dkl(nact_, nact_);
+  copy_n(rdm1->data(), nact_*nact_, dkl.data());
+  dkl.sqrt();
+  dkl.scale(1.0/sqrt(2.0));
+  return make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * dkl, /*store*/false, /*rhf*/true);
+}
+
 
 void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
                                 shared_ptr<RotFile>& d, const bool superci) const {

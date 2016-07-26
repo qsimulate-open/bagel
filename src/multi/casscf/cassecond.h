@@ -34,11 +34,15 @@ namespace bagel {
 // implements the second-order algorithm with augmented Hessian (with the help of Takeshi Yanai)
 
 class CASSecond : public CASSCF {
-
   protected:
-    void grad_vc(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<RotFile> sigma) const;
-    void grad_va(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> qxr,   std::shared_ptr<RotFile> sigma) const;
-    void grad_ca(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr, std::shared_ptr<RotFile> sigma) const;
+    // compute orbital gradient
+    std::shared_ptr<RotFile> compute_gradient(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
+    // compute exact diagonal Hessian
+    std::shared_ptr<RotFile> compute_denom(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> half_1j, std::shared_ptr<const DFHalfDist> halfa,
+                                           std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock) const;
+    // compute H*t (Hessian times trial vector)
+    std::shared_ptr<RotFile> compute_hess_trial(std::shared_ptr<const RotFile> trot, std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfa,
+                                                std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
 
   public:
     CASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
