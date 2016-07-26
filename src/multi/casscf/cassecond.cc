@@ -79,18 +79,27 @@ void CASSecond::compute() {
     denom->print();
 
     AugHess<RotFile> solver(20, grad);
+    // initial trial vector
+    shared_ptr<RotFile> trot = apply_denom(grad, denom, 0.001, 1.0);
+    trot->normalize();
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
-      // trial vector
-      auto trot = grad->copy();
-      // sigma vector
       shared_ptr<const RotFile> sigma = compute_hess_trial(trot, half, halfa, cfock, afock, qxr);
+      shared_ptr<const RotFile> residual;
+      double lambda, epsilon, stepsize;
+      tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
+      const double err = residual->norm() / lambda;
+      cout << "         residual: " << setw(10) << setprecision(3) << scientific << err
+           <<         " lambda  : " << setw(10) << setprecision(3) << scientific << lambda
+           <<         " epsilon : " << setw(10) << setprecision(3) << scientific << epsilon
+           <<         " stepsize: " << setw(10) << setprecision(3) << scientific << stepsize
+           << setw(6) << fixed << setprecision(2) << mtimer.tick() << endl;
+      if (err < thresh_*0.5 *0.001) // TODO
+        break;
 
-
-sigma->print();
-      cout << "         " << mtimer.tick() << endl;
-break;
+      trot = apply_denom(residual, denom, -epsilon, 1.0/lambda);
+      solver.orthog(trot);
     }
 
     resume_stdcout();
@@ -102,6 +111,15 @@ break;
   resume_stdcout();
 
   throw logic_error("reached the end of tmp implementaiton");
+}
+
+
+shared_ptr<RotFile> CASSecond::apply_denom(shared_ptr<const RotFile> grad, shared_ptr<const RotFile> denom, const double shift, const double scale) const {
+  shared_ptr<RotFile> out = grad->copy();
+  for (int i = 0; i != out->size(); ++i)
+    if (fabs(denom->data(i)*scale+shift) > 1.0e-12)
+      out->data(i) /= denom->data(i)*scale+shift;
+  return out;
 }
 
 

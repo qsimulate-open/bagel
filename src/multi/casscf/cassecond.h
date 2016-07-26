@@ -43,6 +43,8 @@ class CASSecond : public CASSCF {
     // compute H*t (Hessian times trial vector)
     std::shared_ptr<RotFile> compute_hess_trial(std::shared_ptr<const RotFile> trot, std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfa,
                                                 std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
+    // apply denominator in microiterations
+    std::shared_ptr<RotFile> apply_denom(std::shared_ptr<const RotFile> grad, std::shared_ptr<const RotFile> denom, const double shift, const double scale) const;
 
   public:
     CASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
