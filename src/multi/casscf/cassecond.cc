@@ -86,7 +86,8 @@ void CASSecond::compute() {
     }
 
     // half-transformed integrals (with JJ)
-    shared_ptr<const DFHalfDist> half = nclosed_ ? dynamic_pointer_cast<const Fock<1>>(cfockao)->half()->apply_J() : nullptr;
+    shared_ptr<const DFHalfDist> half_1j = nclosed_ ? dynamic_pointer_cast<const Fock<1>>(cfockao)->half() : nullptr;
+    shared_ptr<const DFHalfDist> half = nclosed_ ? half_1j->apply_J() : nullptr;
     shared_ptr<const DFHalfDist> halfa = fci_->jop()->mo2e_1ext()->apply_JJ();
 
     // fock submatrices
@@ -117,42 +118,37 @@ void CASSecond::compute() {
         for (int j = 0; j != nvirt_; ++j)
           denom->ele_va(j, i) += 2.0 * (*fcvv)(j, j) * rdm1(i, i) - 2.0 * fcd(i, i);
 
+      const int nao = coeff_->ndim();
       if (nclosed_) {
-        auto vvc = dynamic_pointer_cast<const Fock<1>>(cfockao)->half()->compute_second_transform(vcoeff)->form_4index_diagonal()->transpose();
-        blas::ax_plus_y_n(12.0, vvc->data(), nvirt_*nclosed_, denom->ptr_vc());
+        auto vvc = half_1j->compute_second_transform(vcoeff)->form_4index_diagonal()->transpose();
+        denom->ax_plus_y_vc(12.0, *vvc);
 
-        // hack to compute (vv|cc) diagonal
-        // first compute (g|cc)
         shared_ptr<const DFFullDist> vgcc = half->compute_second_transform(ccoeff);
         const int nri = vgcc->block(0)->asize();
-        const int nao = coeff_->ndim();
         Matrix tmp(nao, nao);
         for (int i = 0; i != nclosed_; ++i) {
           dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgcc->block(0)->data()+nri*(i+nclosed_*i), 1, 0.0, tmp.data(), 1);
-          Matrix vvvcc = vcoeff % tmp * vcoeff;
-          vvvcc.allreduce();
-          blas::ax_plus_y_n(-4.0, vvvcc.diag().get(), nvirt_, denom->ptr_vc()+nvirt_*i);
+          Matrix tmp0 = vcoeff % tmp * vcoeff;
+          tmp0.allreduce();
+          blas::ax_plus_y_n(-4.0, tmp0.diag().get(), nvirt_, denom->ptr_vc()+nvirt_*i);
         }
       }
+      shared_ptr<const DFFullDist> vaa  = halfa->compute_second_transform(acoeff);
+      const int nri = vaa->block(0)->asize();
       {
-        // hack to compute (vv|aa) diagonal with 2RDM
-        shared_ptr<const DFFullDist> vaa  = halfa->compute_second_transform(acoeff);
         shared_ptr<const DFFullDist> vgaa = vaa->apply_2rdm(*fci_->rdm2_av());
-        const int nri = vgaa->block(0)->asize();
-        const int nao = coeff_->ndim();
         Matrix tmp(nao, nao);
         for (int i = 0; i != nact_; ++i) {
           dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
-          Matrix vvvaa = vcoeff % tmp * vcoeff;
-          vvvaa.allreduce();
-          blas::ax_plus_y_n(2.0, vvvaa.diag().get(), nvirt_, denom->ptr_va()+nvirt_*i);
+          Matrix tmp0 = vcoeff % tmp * vcoeff;
+          tmp0.allreduce();
+          blas::ax_plus_y_n(2.0, tmp0.diag().get(), nvirt_, denom->ptr_va()+nvirt_*i);
+          if (nclosed_) {
+            Matrix tmp1 = ccoeff % tmp * ccoeff;
+            tmp1.allreduce();
+            blas::ax_plus_y_n(2.0, tmp1.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
+          }
         }
-        Matrix rdmk(nact_*nact_, nact_);
-        for (int i = 0; i != nact_; ++i)
-          for (int j = 0; j != nact_; ++j)
-            for (int k = 0; k != nact_; ++k)
-              rdmk(k+nact_*j, i) = fci_->rdm2_av()->element(k, i, j, i) + fci_->rdm2_av()->element(k, i, i, j);
-
         shared_ptr<const DFFullDist> vaa_noj = fci_->jop()->mo2e_1ext()->compute_second_transform(acoeff);
         shared_ptr<const Matrix> mo2e = vaa->form_4index(vaa_noj, 1.0);
         for (int i = 0; i != nact_; ++i) {
@@ -162,10 +158,35 @@ void CASSecond::compute() {
           for (int j = 0; j != nclosed_; ++j)
             denom->ele_ca(j, i) += e2;
         }
+
+        Matrix rdmk(nact_*nact_, nact_);
+        for (int i = 0; i != nact_; ++i)
+          for (int j = 0; j != nact_; ++j)
+            for (int k = 0; k != nact_; ++k)
+              rdmk(k+nact_*j, i) = fci_->rdm2_av()->element(k, i, j, i) + fci_->rdm2_av()->element(k, i, i, j);
         shared_ptr<const DFFullDist> vav = fci_->jop()->mo2e_1ext()->compute_second_transform(vcoeff)->apply_J();
-        shared_ptr<const Matrix> maav = vav->form_4index_diagonal_part();
-        shared_ptr<const Matrix> mva = (rdmk % *maav).transpose();
-        denom->ax_plus_y_va(2.0, *mva);
+        denom->ax_plus_y_va(2.0, *(rdmk % *vav->form_4index_diagonal_part()).transpose());
+        if (nclosed_) {
+          shared_ptr<const DFFullDist> vac = fci_->jop()->mo2e_1ext()->compute_second_transform(ccoeff)->apply_J();
+          shared_ptr<const Matrix> mcaa = vac->form_4index_diagonal_part()->transpose();
+          denom->ax_plus_y_ca(2.0, *mcaa * rdmk);
+          shared_ptr<Matrix> mcaad = mcaa->copy();
+          dgemm_("N", "N", nclosed_*nact_, nact_, nact_, -1.0, mcaa->data(), nclosed_*nact_, rdm1.data(), nact_, 1.0, mcaad->data(), nclosed_*nact_);
+          for (int i = 0; i != nact_; ++i)
+            blas::ax_plus_y_n(12.0, mcaad->element_ptr(0, i+nact_*i), nclosed_, denom->ptr_ca()+i*nclosed_);
+        }
+      }
+      if (nclosed_) {
+        Matrix tmp(nao, nao);
+        shared_ptr<DFFullDist> vgaa = vaa->copy();
+        vgaa->rotate_occ1(make_shared<Matrix>(rdm1));
+        vgaa->ax_plus_y(-1.0, vaa);
+        for (int i = 0; i != nact_; ++i) {
+          dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
+          Matrix tmp0 = ccoeff % tmp * ccoeff;
+          tmp0.allreduce();
+          blas::ax_plus_y_n(4.0, tmp0.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
+        }
       }
     }
     denom->print();
