@@ -48,7 +48,7 @@ class CASSecond : public CASSCF {
 
   public:
     CASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-      : CASSCF(idat, geom, ref) { std::cout << "    * Using the second-order algorithm" << std::endl; }
+      : CASSCF(idat, geom, ref) { std::cout << "    * Using the second-order algorithm" << std::endl << std::endl; }
 
     void compute() override;
 };

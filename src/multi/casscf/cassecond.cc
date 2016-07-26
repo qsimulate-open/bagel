@@ -78,7 +78,6 @@ void CASSecond::compute() {
 
     // compute denominator...
     shared_ptr<const RotFile> denom = compute_denom(half, half_1j, halfa, cfock, afock);
-    denom->print();
 
     AugHess<RotFile> solver(max_micro_iter_, grad);
     // initial trial vector
@@ -122,7 +121,6 @@ void CASSecond::compute() {
       blas::scale_n(tau > 1.0e-15 ? sin(tau)/tau : 1.0, ws.element_ptr(0,i), ws.ndim());
     }
     const Matrix R = (wc ^ w) + (ws ^ w) * *a;
-    R.print();
 
     coeff_ = make_shared<Coeff>(*coeff_ * R);
 
