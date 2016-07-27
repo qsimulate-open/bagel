@@ -169,19 +169,17 @@ void CASSCF::print_iteration(int iter, int miter, int tcount, const vector<doubl
   }
 }
 
-static streambuf* backup_stream_;
-static ofstream* ofs_;
+
+static bool append__ = false;
 
 void CASSCF::mute_stdcout() {
-  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-  ofs_ = ofs;
-  backup_stream_ = cout.rdbuf(ofs->rdbuf());
+  ofs_ = make_shared<Muffle>("casscf.log", append__);
+  append__ = true;
 }
 
 
 void CASSCF::resume_stdcout() {
-  cout.rdbuf(backup_stream_);
-  delete ofs_;
+  ofs_.reset();
 }
 
 

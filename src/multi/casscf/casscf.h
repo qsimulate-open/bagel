@@ -31,6 +31,7 @@
 #define __BAGEL_CASSCF_CASSCF_H
 
 #include <src/wfn/reference.h>
+#include <src/util/muffle.h>
 #include <src/ci/fci/knowles.h>
 #include <src/multi/casscf/rotfile.h>
 
@@ -77,6 +78,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // properties
     bool do_hyperfine_;
+    std::shared_ptr<Muffle> ofs_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
