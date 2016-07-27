@@ -221,8 +221,8 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
       Matrix tmp(nao, nao);
       for (int i = 0; i != nclosed_; ++i) {
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgcc->block(0)->data()+nri*(i+nclosed_*i), 1, 0.0, tmp.data(), 1);
+        tmp.allreduce();
         Matrix tmp0 = vcoeff % tmp * vcoeff;
-        tmp0.allreduce();
         blas::ax_plus_y_n(-4.0, tmp0.diag().get(), nvirt_, denom->ptr_vc()+nvirt_*i);
       }
     }
@@ -233,12 +233,11 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
       Matrix tmp(nao, nao);
       for (int i = 0; i != nact_; ++i) {
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
+        tmp.allreduce();
         Matrix tmp0 = vcoeff % tmp * vcoeff;
-        tmp0.allreduce();
         blas::ax_plus_y_n(2.0, tmp0.diag().get(), nvirt_, denom->ptr_va()+nvirt_*i);
         if (nclosed_) {
           Matrix tmp1 = ccoeff % tmp * ccoeff;
-          tmp1.allreduce();
           blas::ax_plus_y_n(2.0, tmp1.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
         }
       }
@@ -276,8 +275,8 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
       vgaa->ax_plus_y(-1.0, vaa);
       for (int i = 0; i != nact_; ++i) {
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
+        tmp.allreduce();
         Matrix tmp0 = ccoeff % tmp * ccoeff;
-        tmp0.allreduce();
         blas::ax_plus_y_n(4.0, tmp0.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
       }
     }
