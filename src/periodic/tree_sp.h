@@ -45,11 +45,12 @@ class TreeSP {
     std::array<double, 3> centre_;
 
     std::vector<std::bitset<nbit__>> particle_keys_;
-    std::vector<std::shared_ptr<const VertexSP>> leaves_;
+    std::vector<std::shared_ptr<const VertexSP>> vertex_;
     std::vector<int> ordering_;
     int nnode_, nleaf_;
     std::vector<std::shared_ptr<NodeSP>> nodes_;
     int height_;
+    std::vector<int> shell_in_geom_;
     // to define well-separated distributions
     double thresh_;
     int ws_;

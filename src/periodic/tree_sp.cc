@@ -48,14 +48,21 @@ void TreeSP::init() {
 
   assert(max_height_ <= (nbit__ - 1)/3);
   centre_ = geom_->charge_center();
-  nvertex_ = geom_->nshellpair();
-  coordinates_.resize(nvertex_);
-
   nbasis_ = geom_->nbasis();
-  for (int i = 0; i != nvertex_; ++i) {
-    coordinates_[i][0] = geom_->shellpair(i)->centre(0) - centre_[0];
-    coordinates_[i][1] = geom_->shellpair(i)->centre(1) - centre_[1];
-    coordinates_[i][2] = geom_->shellpair(i)->centre(2) - centre_[2];
+
+  nvertex_ = 0;
+  for (int i = 0; i != geom_->nshellpair(); ++i) {
+    if (geom_->shellpair(i)->schwarz() < 1e-15) continue;
+
+    coordinates_.resize(nvertex_ + 1);
+    coordinates_[nvertex_][0] = geom_->shellpair(i)->centre(0) - centre_[0];
+    coordinates_[nvertex_][1] = geom_->shellpair(i)->centre(1) - centre_[1];
+    coordinates_[nvertex_][2] = geom_->shellpair(i)->centre(2) - centre_[2];
+
+    shell_in_geom_.resize(nvertex_ + 1);
+    shell_in_geom_[nvertex_] = i;
+
+    ++nvertex_;
   }
 
   ordering_.resize(nvertex_);
@@ -88,7 +95,7 @@ void TreeSP::build_tree() {
 
     int max_nvertex = 0;
     for (int n = 0; n != nvertex_; ++n) {
-      const bitset<nbit__> key = (leaves_[n]->key() >> shift);
+      const bitset<nbit__> key = (vertex_[n]->key() >> shift);
 
       if (key != current_key) { /* insert node */
         current_key = key;
@@ -96,7 +103,7 @@ void TreeSP::build_tree() {
 
         if (depth == 1) {
           nodes_[nnode_] = make_shared<NodeSP>(key, 1, nodes_[0], thresh_);
-          (nodes_[nnode_])->insert_vertex(leaves_[n]);
+          (nodes_[nnode_])->insert_vertex(vertex_[n]);
           nodes_[0]->insert_child(nodes_[nnode_]);
         } else {
           const bitset<nbit__> parent_key = key >> 3;
@@ -104,7 +111,7 @@ void TreeSP::build_tree() {
           for (int j = 0; j != nnode_; ++j) {
             if (parent_key == nodes_[j]->key()) {
               nodes_[nnode_] = make_shared<NodeSP>(key, depth, nodes_[j], thresh_);
-              (nodes_[nnode_])->insert_vertex(leaves_[n]);
+              (nodes_[nnode_])->insert_vertex(vertex_[n]);
               parent_found = true;
               nodes_[j]->insert_child(nodes_[nnode_]);
             }
@@ -116,7 +123,7 @@ void TreeSP::build_tree() {
 
         ++nnode_;
       } else { /* node exists */
-        (nodes_[nnode_-1])->insert_vertex(leaves_[n]);
+        (nodes_[nnode_-1])->insert_vertex(vertex_[n]);
         if (nodes_[nnode_-1]->nvertex() > max_nvertex)
           max_nvertex = nodes_[nnode_-1]->nvertex();
       }
@@ -215,14 +222,24 @@ void TreeSP::get_particle_key() {
 
   const unsigned int nbitx = (nbit__ - 1) / 3;
 
+  double maxx = 0;
+  double maxy = 0;
+  double maxz = 0;
+  for (auto& pos : coordinates_) {
+    if (abs(pos[0]) > maxx) maxx = abs(pos[0]);
+    if (abs(pos[1]) > maxy) maxy = abs(pos[1]);
+    if (abs(pos[2]) > maxz) maxz = abs(pos[2]);
+  }
+
   int isp = 0;
   for (auto& pos : coordinates_) {
     bitset<nbit__> key;
     key[nbit__-1] = 1;
-    bitset<nbitx> binx(pos[0]);
-    bitset<nbitx> biny(pos[1]);
-    bitset<nbitx> binz(pos[2]);
-    for (int i = 0; i != 21; ++i) {
+    bitset<nbitx> binx = bitset<nbitx>(double(pos[0]/maxx*1e7));
+    bitset<nbitx> biny = bitset<nbitx>(double(pos[1]/maxy*1e7));
+    bitset<nbitx> binz = bitset<nbitx>(double(pos[2]/maxz*1e7));
+    //cout << pos[0] << " " << binx << " * " << pos[1] << " " << biny << " * " << pos[2] << " " << binz << endl;
+    for (int i = 0; i != nbitx; ++i) {
       key[i * 3 + 0] = binx[i];
       key[i * 3 + 1] = biny[i];
       key[i * 3 + 2] = binz[i];
@@ -256,11 +273,13 @@ void TreeSP::keysort() {
     move(id1.begin(), id1.begin()+n1, ordering_.begin()+n0);
   }
 
-  leaves_.resize(nvertex_);
+  vertex_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
     const int pos = ordering_[n];
-    auto leaf = make_shared<VertexSP>(particle_keys_[n], geom_->shellpair(pos));
-    leaves_[n] = leaf;
+    array<double, 3> coord = geom_->shellpair(shell_in_geom_[pos])->centre();
+    //cout << coord[0] << "  " << coord[1] << "   " << coord[2] << " *** " << particle_keys_[n] << endl;
+    auto v = make_shared<VertexSP>(particle_keys_[n], geom_->shellpair(shell_in_geom_[pos]));
+    vertex_[n] = v;
   }
 }
 
@@ -350,11 +369,26 @@ void TreeSP::print_tree_xyz() const { // to visualize with VMD, but not enough a
                                                    << setw(10) << nodes_[i]->vertex(j)->centre(1) << "   "
                                                    << setw(10) << nodes_[i]->vertex(j)->centre(2) << endl;
       if (nodes_[i]->depth() == max_height_) {
+        #if 0
         cout << "*** Neighbours: " << endl;
         for (auto& neigh : nodes_[i]->neigh())
           cout << setprecision(5) << setw(10) << neigh->centre(0) << "  "
                                   << setw(10) << neigh->centre(1) << "  "
                                   << setw(10) << neigh->centre(2) << endl;
+        #endif
+        if (!nodes_[i]->interaction_list().empty()) {
+          cout << "*** Distant nodes: " << endl;
+          for (auto& far : nodes_[i]->interaction_list()) {
+            cout << setprecision(5) << setw(10) << far->centre(0) << "  "
+                                    << setw(10) << far->centre(1) << "  "
+                                    << setw(10) << far->centre(2) << endl;
+            cout << "   *** vertices: " << endl;
+            for (auto& v : far->vertex())
+              cout << "   " << setprecision(5) << setw(10) << v->centre(0) << "  "
+                                               << setw(10) << v->centre(1) << "  "
+                                               << setw(10) << v->centre(2) << endl;
+          }
+        }
       }
     }
   }

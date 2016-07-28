@@ -54,8 +54,10 @@ class VertexSP {
     std::array<double, 3> centre() const { return sp_->centre(); }
     double centre(const int i) const { return sp_->centre(i); }
     std::shared_ptr<const ShellPair> sp() const { return sp_; }
+    std::array<std::shared_ptr<const Shell>, 2> shells() const { return sp_->shells(); }
     std::shared_ptr<const Shell> shell0() const { return sp_->shell(0); }
     std::shared_ptr<const Shell> shell1() const { return sp_->shell(1); }
+    bool is_neighbour(std::shared_ptr<const VertexSP> v, const int ws) const { return sp_->is_neighbour(v->sp(), ws); }
     int shell_ind(const int i) const { assert(i==0 || i==1); return (i == 0) ? sp_->shell_ind(0) : sp_->shell_ind(1); }
     std::array<int, 2> offset() const { return sp_->offset(); }
     int offset(const int i) const { assert(i==0 || i==1); return sp_->offset(i); }

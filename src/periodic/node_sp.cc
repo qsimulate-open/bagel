@@ -91,6 +91,9 @@ void NodeSP::init() {
     nbasis0_ += v->nbasis0();
     nbasis1_ += v->nbasis1();
   }
+  centre_[0] /= nvertex_;
+  centre_[1] /= nvertex_;
+  centre_[2] /= nvertex_;
 
   array<double, 3> r12;
   r12[0] = centre_[0] - parent_->centre(0);
