@@ -199,11 +199,12 @@ void NodeSP::compute_multipoles(const int lmax) {
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
       assert(nmult == v->nmult());
-      LocalExpansion shift(r12, v->multipole(), lmax);
-      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
+//      LocalExpansion shift(r12, v->multipole(), lmax);
+//      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
       for (int i = 0; i != nmult; ++i)
-        multipole[i]->copy_block(offset1, offset0, v->nbasis1(), v->nbasis0(), moment[i]->data());
+        //multipole[i]->copy_block(offset1, offset0, v->nbasis1(), v->nbasis0(), moment[i]->data());
+        multipole[i]->copy_block(offset1, offset0, v->nbasis1(), v->nbasis0(), v->multipole()[i]->data());
 
       offset0 += v->nbasis0();
       offset1 += v->nbasis1();
@@ -287,8 +288,117 @@ void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const in
         const int size0 = sh0->nbasis();
         const int size1 = sh1->nbasis();
 
-        shared_ptr<const Matrix> tmp = density->get_submatrix(v->offset(1), v->offset(0), size1, size0);
-        den_tu.copy_block(ob1, ob0, size1, size0, tmp);
+        shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), size1, size0);
+        den_tu.copy_block(ob1, ob0, size1, size0, den);
+
+#if 1
+        /******** DEBUG: contract with multipoles here and compare with 4c integrals ********/
+        if (is_leaf_) {
+
+          // get mult of v
+          vector<shared_ptr<const ZMatrix>> vmult(nmult);
+          for (int i = 0; i != nmult; ++i)
+            vmult[i] = distant_node->multipole(i)->get_submatrix(ob1, ob0, size1, size0);
+
+          // check mult of v
+          vector<shared_ptr<const ZMatrix>> vchk(nmult);
+          {
+            MultipoleBatch mpole(v->shells(), v->centre(), lmax);
+            mpole.compute();
+
+            for (int i = 0; i != nmult; ++i) {
+              ZMatrix tmp0(size1, size0);
+              tmp0.copy_block(0, 0, size1, size0, mpole.data(i));
+              vchk[i] = make_shared<const ZMatrix>(tmp0);
+            }
+          }
+#if 1
+          for (int i = 0; i != nmult; ++i) {
+            auto verr = make_shared<const ZMatrix>(*vchk[i] - *vmult[i]);
+            const double vrmserr = verr->get_real_part()->rms();
+            if (vrmserr > 1e-2) {
+              cout << " *** CHECK MULT OF V *** L = " << i << " error = " << setprecision(9) << vrmserr << endl;
+              vmult[i]->get_real_part()->print("MULT FROM DISTANT NODE");
+              vchk[i]->get_real_part()->print("MULT FROM BATCH");
+            }
+          }
+#endif
+
+
+          // get local expansion of v (using r12 to distant node)
+          LocalExpansion local(r12, vchk, lmax);
+          //LocalExpansion local(r12, vmult, lmax);
+          vector<shared_ptr<const ZMatrix>> vl = local.compute_local_moments();
+
+          // for each v0, compute jrs using mult of v0
+          size_t o0 = 0;
+          size_t o1 = 0;
+          vector<shared_ptr<const ZMatrix>> v0mult(nmult);
+          for (auto& v0 : vertex_) {
+            const double r = sqrt(r12[0]*r12[0]+r12[1]*r12[1]+r12[2]*r12[2]);
+            // check if v and v0 are well sep
+            const bool isneigh = v->is_neighbour(v0, 2);
+
+            shared_ptr<const Shell> s0 = v0->shell0();
+            shared_ptr<const Shell> s1 = v0->shell1();
+            for (int i = 0; i != nmult; ++i)
+              v0mult[i] = multipole_[i]->get_submatrix(o1, o0, s1->nbasis(), s0->nbasis());
+
+            // check mult of v0
+            vector<shared_ptr<const ZMatrix>> vchk0(nmult);
+            {
+              MultipoleBatch mpole0(v0->shells(), v0->centre(), lmax);
+              mpole0.compute();
+
+              for (int i = 0; i != nmult; ++i) {
+                ZMatrix tmp0(s1->nbasis(), s0->nbasis());
+                tmp0.copy_block(0, 0, s1->nbasis(), s0->nbasis(), mpole0.data(i));
+                vchk0[i] = make_shared<const ZMatrix>(tmp0);
+              }
+            }
+
+            auto jrs = make_shared<ZMatrix>(s1->nbasis(), s0->nbasis());
+            for (int i = 0; i != nmult; ++i) {
+              const double contract = vl[i]->get_real_part()->dot_product(den);
+              *jrs += pow(-1.0, l_map[i]) * contract * *vchk0[i];
+              //*jrs += pow(-1.0, l_map[i]) * contract * *v0mult[i];
+            }
+
+            // now compare jrs with 4c-jrs using v and v0
+            auto jrs0 = make_shared<ZMatrix>(s1->nbasis(), s0->nbasis());
+            array<shared_ptr<const Shell>,4> input = {{sh1, sh0, s1, s0}};
+
+            {
+              ERIBatch eribatch(input, 0.0);
+              eribatch.compute();
+              const double* eridata = eribatch.data();
+
+              for (int j0 = 0; j0 != s0->nbasis(); ++j0)
+                for (int j1 = 0; j1 != s1->nbasis(); ++j1)
+                  for (int j2 = 0; j2 != size0; ++j2)
+                    for (int j3 = 0; j3 != size1; ++j3, ++eridata) {
+                      const double eri = *eridata;
+                      jrs0->element(j1, j0) += den->element(j2, j3) * eri;
+                    }
+            }
+
+#if 0
+            auto error = make_shared<const ZMatrix>(*jrs-*jrs0);
+            const double rmserr = error->get_real_part()->rms();
+            if (rmserr > 1e-4) {
+              cout << " **CHECK MULT APPROX *** " << setprecision(9) << error->get_real_part()->rms() << "  R = " << r << " check neigh = " << isneigh << endl;
+              jrs0->get_real_part()->print("4C INTEGRATION");
+              jrs->get_real_part()->print("MULTIPOLE APPROXIMATION");
+            }
+#endif
+
+            o0 += s0->nbasis();
+            o1 += s1->nbasis();
+          }
+        }
+        /******** END DEBUG ********/
+#endif
+
         ob1 += size1;
         ob0 += size0;
       }
@@ -315,6 +425,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
   const size_t ndim = density->ndim();
 
   // add FF local expansions to coulomb matrix
+  #if 1
   if (local_expansion_) {
     size_t ob0 = 0;
     size_t ob1 = 0;
@@ -331,6 +442,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
       ob1 += size1;
     }
   }
+  #endif
 
   // compute near-field interactions using direct integration and add to far field
 
