@@ -86,26 +86,11 @@ void Optimize::compute() {
     geom_ = opt->geometry();
 
   } else if (method == "casscf") {
-    string algorithm = lastmethod->get<string>("algorithm", "");
-    // in case of SS-CASSCF
-    if (lastmethod->get<int>("nstate", 1) == 1) {
-      if (algorithm == "second" || algorithm == "") {
-        auto opt = make_shared<Opt<CASSecond>>(idata_, methodblock, geom_, ref_);
-        opt->compute();
-        geom_ = opt->geometry();
-      } else {
-        throw runtime_error("CASSCF optimization is only implemented with the second-order algorithm.");
-      }
-    // in case of SA-CASSCF
-    } else {
-      if (algorithm == "second" || algorithm == "") {
-        auto opt = make_shared<Opt<SACASGrad>>(idata_, methodblock, geom_, ref_);
-        opt->compute();
-        geom_ = opt->geometry();
-      } else {
-        throw runtime_error("CASSCF optimization is only implemented with the second-order algorithm.");
-      }
-    }
+
+    auto opt = make_shared<Opt<CASSCF>>(idata_, methodblock, geom_, ref_);
+    opt->compute();
+    geom_ = opt->geometry();
+
   } else if (method == "caspt2") {
 
     auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_, ref_);
