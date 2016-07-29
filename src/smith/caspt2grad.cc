@@ -27,7 +27,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/grad/cpcasscf.h>
 #include <src/grad/gradeval.h>
-#include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/smith/smith.h>
@@ -46,7 +46,7 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 
   // compute CASSCF first
   if (inp->get<string>("algorithm", "") != "noopt") {
-    auto cas = make_shared<CASHybrid>(inp, geom, ref);
+    auto cas = make_shared<CASSecond>(inp, geom, ref);
     cas->compute();
     ref_ = cas->conv_to_ref();
     fci_ = cas->fci();

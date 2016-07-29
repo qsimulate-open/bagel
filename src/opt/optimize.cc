@@ -89,21 +89,21 @@ void Optimize::compute() {
     string algorithm = lastmethod->get<string>("algorithm", "");
     // in case of SS-CASSCF
     if (lastmethod->get<int>("nstate", 1) == 1) {
-      if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_, ref_);
+      if (algorithm == "second" || algorithm == "") {
+        auto opt = make_shared<Opt<CASSecond>>(idata_, methodblock, geom_, ref_);
         opt->compute();
         geom_ = opt->geometry();
       } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("CASSCF optimization is only implemented with the second-order algorithm.");
       }
     // in case of SA-CASSCF
     } else {
-      if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_, ref_);
+      if (algorithm == "second" || algorithm == "") {
+        auto opt = make_shared<Opt<SACASGrad>>(idata_, methodblock, geom_, ref_);
         opt->compute();
         geom_ = opt->geometry();
       } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("CASSCF optimization is only implemented with the second-order algorithm.");
       }
     }
   } else if (method == "caspt2") {

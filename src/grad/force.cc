@@ -97,19 +97,19 @@ void Force::compute() {
     string algorithm = cinput->get<string>("algorithm", "");
     // in case of SS-CASSCF
     if (cinput->get<int>("nstate", 1) == 1) {
-      if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCI>>(cinput, geom_, ref_, target);
+      if (algorithm == "second" || algorithm == "") {
+        auto force = make_shared<GradEval<CASSecond>>(cinput, geom_, ref_, target);
         force->compute();
       } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("CASSCF force calculations are only implemented with the second-order algorithm.");
       }
     // in case of SA-CASSCF
     } else {
-      if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCIGrad>>(cinput, geom_, ref_, target);
+      if (algorithm == "second" || algorithm == "") {
+        auto force = make_shared<GradEval<SACASGrad>>(cinput, geom_, ref_, target);
         force->compute();
       } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
+        throw runtime_error("CASSCF force calculations are only implemented with the second-order algorithm.");
       }
     }
   } else if (method == "caspt2") {

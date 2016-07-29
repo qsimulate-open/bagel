@@ -180,7 +180,7 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
 
 
 template<>
-shared_ptr<GradFile> GradEval<SuperCI>::compute() {
+shared_ptr<GradFile> GradEval<CASSecond>::compute() {
   Timer timer;
 
   //- One ELECTRON PART -//

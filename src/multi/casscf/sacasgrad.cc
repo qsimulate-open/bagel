@@ -25,7 +25,6 @@
 
 #include <src/grad/gradeval.h>
 #include <src/grad/cpcasscf.h>
-#include <src/multi/casscf/qvec.h>
 #include <src/prop/multipole.h>
 
 using namespace std;
@@ -40,7 +39,7 @@ static string tostring(const T i) {
 
 
 template<>
-shared_ptr<GradFile> GradEval<SuperCIGrad>::compute() {
+shared_ptr<GradFile> GradEval<SACASGrad>::compute() {
 
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);

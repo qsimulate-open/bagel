@@ -32,7 +32,7 @@
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/pt2/dmp2/dmp2grad.h>
 #include <src/grad/gradeval_base.h>
-#include <src/multi/casscf/supercigrad.h>
+#include <src/multi/casscf/sacasgrad.h>
 #include <src/smith/caspt2grad.h>
 
 // T should have
@@ -82,8 +82,8 @@ template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<KS>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
-template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
-template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
+template<> std::shared_ptr<GradFile> GradEval<CASSecond>::compute();
+template<> std::shared_ptr<GradFile> GradEval<SACASGrad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
 template<> std::shared_ptr<GradFile> GradEval<DMP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();

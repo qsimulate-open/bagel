@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: supercigrad.h
+// Filename: sacasgrad.h
 // Copyright (C) 2011 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -26,18 +26,18 @@
 #ifndef __BAGEL_CASSCF_SUPERCIGRAD_H
 #define __BAGEL_CASSCF_SUPERCIGRAD_H
 
-#include <src/multi/casscf/superci.h>
+#include <src/multi/casscf/cassecond.h>
 
 namespace bagel {
 
-class SuperCIGrad : public SuperCI {
+class SACASGrad : public CASSecond {
   public:
-    SuperCIGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-      : SuperCI(idat, geom, ref) { }
+    SACASGrad(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
+      : CASSecond(idat, geom, ref) { }
 
     void compute() {
       // compute CASSCF fist
-      SuperCI::compute();
+      CASSecond::compute();
 
       // then make sure that the orbitals are natural orbitals
       // in the worst case, coeff and RDMs are not consistent and coeff is not natural orbital...
