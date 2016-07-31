@@ -61,7 +61,7 @@ void FCI::compute_rdm12() {
   cc_->set_det(detex);
 
   for (int i = 0; i != nstate_; ++i)
-    compute_rdm12(i);
+    compute_rdm12(i, i);
 
   // calculate state averaged RDMs
   if (nstate_ != 1) {

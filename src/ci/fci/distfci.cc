@@ -472,3 +472,13 @@ void DistFCI::compute() {
     cc_->data(ist)->print(print_thresh_);
   }
 }
+
+
+shared_ptr<const CIWfn> DistFCI::conv_to_ciwfn() const {
+  // convert DistDvec to Dvec
+  vector<shared_ptr<Civec>> vec; 
+  for (auto& i : cc_->dvec())
+    vec.push_back(i->civec());
+  auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc, cc->det());
+}

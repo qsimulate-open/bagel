@@ -25,9 +25,6 @@
 
 #include <src/ci/fci/fci_base.h>
 
-//BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCI_base<Civec,Dvec>)
-//BOOST_CLASS_EXPORT_IMPLEMENT(bagel::FCI_base<DistCivec,DistDvec>)
-
 using namespace bagel;
 
 template class FCI_base<Civec,Dvec>;

@@ -138,6 +138,43 @@ class FCI_base : public Method {
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }
 
+    // compute all states at once + averaged rdm
+    virtual void compute_rdm12() = 0;
+    virtual void compute_rdm12(const int ist, const int jst) = 0;
+    // compute 3 and 4 RDMs
+    virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const = 0;
+    // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
+    virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const = 0;
+    // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...
+    virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const = 0;
+
+    virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_from_civec(std::shared_ptr<const CivecType>, std::shared_ptr<const CivecType>) const = 0;
+    virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_av_from_dvec(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const Determinants> o = nullptr) const = 0;
+
+    // rdm ci derivatives
+    virtual std::shared_ptr<Dvec> rdm1deriv(const int istate) const = 0;
+    virtual std::shared_ptr<Dvec> rdm2deriv(const int istate) const = 0;
+    // 4RDM derivative is precontracted by an Fock operator
+    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const = 0;
+
+    std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
+    std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }
+    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1(i, i); }
+    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2(i, i); }
+    std::shared_ptr<RDM<1>> rdm1(const int i, const int j) { return rdm1_->at(i, j); }
+    std::shared_ptr<RDM<2>> rdm2(const int i, const int j) { return rdm2_->at(i, j); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1(i, i); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2(i, i); }
+    std::shared_ptr<const RDM<1>> rdm1(const int i, const int j) const { return rdm1_->at(i, j); }
+    std::shared_ptr<const RDM<2>> rdm2(const int i, const int j) const { return rdm2_->at(i, j); }
+    std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
+    std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
+    std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
+    std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
+
     // TODO
     virtual std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() = 0;
 
@@ -149,10 +186,5 @@ extern template class FCI_base<Civec,Dvec>;
 extern template class FCI_base<DistCivec,DistDvec>;
 
 }
-
-//#include <src/util/archive.h>
-//BOOST_CLASS_EXPORT_KEY(bagel::FCI_base<Civec,Dvec>)
-//BOOST_CLASS_EXPORT_KEY(bagel::FCI_base<DistCivec,DistDvec>)
-
 
 #endif

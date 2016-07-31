@@ -68,10 +68,29 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
 
     void update(std::shared_ptr<const Matrix>) override;
 
-    // move to natural orbitals
-    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override { return std::pair<std::shared_ptr<Matrix>, VectorB>(); }
+    // rdms
+    void compute_rdm12() override;
+    void compute_rdm12(const int ist, const int jst) override;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
-    std::shared_ptr<const CIWfn> conv_to_ciwfn() const override { return nullptr; }
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_from_civec(std::shared_ptr<const DistCivec>, std::shared_ptr<const DistCivec>) const override;
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_av_from_dvec(std::shared_ptr<const DistDvec>, std::shared_ptr<const DistDvec>, std::shared_ptr<const Determinants> o = nullptr) const override;
+
+    // rdm ci derivatives
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const override;
+    // 4RDM derivative is precontracted by an Fock operator
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
+
+    // move to natural orbitals
+    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override;
+
+    std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 

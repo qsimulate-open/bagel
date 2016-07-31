@@ -84,42 +84,26 @@ class FCI : public FCI_base<Civec,Dvec> {
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
 
     // rdms
-    void compute_rdm12(); // compute all states at once + averaged rdm
-    void compute_rdm12(const int ist) { compute_rdm12(ist, ist); }
-    void compute_rdm12(const int ist, const int jst);
+    void compute_rdm12() override;
+    void compute_rdm12(const int ist, const int jst) override;
     // compute 3 and 4 RDMs
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst);
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
     // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst);
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
+      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const override;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const;
-
-    std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
-    std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }
-    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1(i, i); }
-    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2(i, i); }
-    std::shared_ptr<RDM<1>> rdm1(const int i, const int j) { return rdm1_->at(i, j); }
-    std::shared_ptr<RDM<2>> rdm2(const int i, const int j) { return rdm2_->at(i, j); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1(i, i); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2(i, i); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i, const int j) const { return rdm1_->at(i, j); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i, const int j) const { return rdm2_->at(i, j); }
-    std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
-    std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
-    std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
-    std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const override;
 
     // rdm ci derivatives
-    std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
-    std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const override;
     // 4RDM derivative is precontracted by an Fock operator
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
 
     // move to natural orbitals
     std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override;

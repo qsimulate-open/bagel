@@ -31,7 +31,7 @@ using namespace bagel;
 // <iaja>, <kl,iaja>, <kl,mn,iaja>, <kl,mn,op,iaja>
 // the formulas are more or less the same.
 
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, const int jst) {
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, const int jst) const {
   if (det_->compress()) {
     auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
     cc_->set_det(detex);
@@ -58,7 +58,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> FCI::rdm12_alpha(const int ist, co
 }
 
 
-tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, const int jst) {
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34_alpha(const int ist, const int jst) const {
   shared_ptr<const RDM<1>> rdm1;
   shared_ptr<const RDM<2>> rdm2;
   tie(rdm1, rdm2) = rdm12_alpha(ist, jst);
