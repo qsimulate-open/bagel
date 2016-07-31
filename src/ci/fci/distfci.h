@@ -27,7 +27,7 @@
 
 #include <src/ci/fci/distcivec.h>
 #include <src/ci/fci/space.h>
-#include <src/ci/fci/mofile.h>
+#include <src/ci/fci/fci_base.h>
 
 namespace bagel {
 
@@ -37,38 +37,16 @@ namespace bagel {
 //
 // The implementation is based on the HarrisonZarrabian class written by Shane Parker.
 
-class DistFCI : public Method {
+class DistFCI : public FCI_base<DistCivec,DistDvec> {
   protected:
     std::shared_ptr<Space_base> space_;
     std::shared_ptr<DistCivec> denom_;
 
-    // Options
-    int max_iter_;
-    int davidson_subspace_;
-    int nguess_;
-    double thresh_;
-    double print_thresh_;
-
-    int nelea_;
-    int neleb_;
-    int ncore_;
-    int norb_;
-
-    int nstate_;
-
-    // extra
-    std::shared_ptr<const Determinants> det_;
-
-    // results
-    std::vector<double> energy_;
-    std::shared_ptr<DistDvec> cc_;
-    std::shared_ptr<MOFile> jop_;
-
     void common_init();
-    void print_header() const;
+    void print_header() const override;
 
     // const_denom function here only makes a denom for local data of DistCivec.
-    void const_denom();
+    void const_denom() override;
 
     // denominator
     void generate_guess(const int nspin, const int nstate, std::vector<std::shared_ptr<DistCivec>>& out);
@@ -80,29 +58,20 @@ class DistFCI : public Method {
   public:
     // this constructor is ugly... to be fixed some day...
     DistFCI(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-            const int ncore = -1, const int nocc = -1, const int nstate = -1);
+            const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI_base<DistCivec,DistDvec>(a,g,b,ncore,nocc,nstate) {
+      common_init();
+      update(b->coeff());
+    }
 
     // FCI compute function using DistCivec
     void compute() override;
 
-    int norb() const { return norb_; }
-    int nelea() const { return nelea_; }
-    int neleb() const { return neleb_; }
-    int ncore() const { return ncore_; }
-    double core_energy() const { return jop_->core_energy(); }
+    void update(std::shared_ptr<const Matrix>) override;
 
-    int nij() const { return (norb_*(norb_+1))/2; }
+    // move to natural orbitals
+    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override { return std::pair<std::shared_ptr<Matrix>, VectorB>(); }
 
-    void update(std::shared_ptr<const Matrix>);
-
-    std::shared_ptr<const Determinants> det() const { return det_; }
-    std::shared_ptr<const MOFile> jop() const { return jop_; }
-    std::shared_ptr<const DistCivec> denom() const { return denom_; }
-    std::shared_ptr<const DistDvec> civectors() const { return cc_; }
-
-    std::vector<double> energy() const { return energy_; }
-    double energy(const int i) const { return energy_.at(i); }
-
+    std::shared_ptr<const CIWfn> conv_to_ciwfn() const override { return nullptr; }
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 

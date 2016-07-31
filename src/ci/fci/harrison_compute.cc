@@ -24,7 +24,6 @@
 
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/hztasks.h>
-#include <src/util/math/davidson.h>
 #include <src/util/taskqueue.h>
 #include <src/util/prim_op.h>
 

@@ -36,20 +36,14 @@
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
-  common_init();
 
+void DistFCI::common_init() {
 #ifndef HAVE_MPI_H
   throw logic_error("DistFCI can be used only with MPI");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  update(ref_->coeff());
-}
-
-void DistFCI::common_init() {
   print_header();
 
   const bool frozen = idata_->get<bool>("frozen", false);
@@ -364,6 +358,7 @@ void DistFCI::const_denom() {
   denom_->accumulate_buffer(1.0, buf);
   denom_t.tick_print("denom");
 }
+
 
 void DistFCI::compute() {
   Timer pdebug(3);
