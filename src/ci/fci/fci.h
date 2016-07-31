@@ -32,7 +32,6 @@
 namespace bagel {
 
 class FCI : public FCI_base<Civec,Dvec> {
-
   protected:
     // properties to be calculated
     std::vector<std::shared_ptr<CIProperties>> properties_;
@@ -83,9 +82,6 @@ class FCI : public FCI_base<Civec,Dvec> {
     // virtual application of Hamiltonian
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
 
-    // rdms
-    void compute_rdm12() override;
-    void compute_rdm12(const int ist, const int jst) override;
     // compute 3 and 4 RDMs
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
@@ -95,8 +91,6 @@ class FCI : public FCI_base<Civec,Dvec> {
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const override;
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const override;
 
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;

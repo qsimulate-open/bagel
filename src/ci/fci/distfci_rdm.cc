@@ -28,16 +28,6 @@ using namespace std;
 using namespace bagel;
 
 
-void DistFCI::compute_rdm12() {
-
-}
-
-
-void DistFCI::compute_rdm12(const int ist, const int jst) {
-
-}
-
-
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> DistFCI::rdm34(const int ist, const int jst) const {
   return tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>(); 
 }
@@ -55,12 +45,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> DistFCI::rdm34_alpha(const int ist
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 DistFCI::compute_rdm12_from_civec(shared_ptr<const DistCivec>, shared_ptr<const DistCivec>) const {
-  return tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>();
-}
-
-
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
-DistFCI::compute_rdm12_av_from_dvec(shared_ptr<const DistDvec>, shared_ptr<const DistDvec>, shared_ptr<const Determinants> o) const {
   return tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>();
 }
 

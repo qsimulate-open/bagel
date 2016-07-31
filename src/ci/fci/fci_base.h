@@ -139,8 +139,8 @@ class FCI_base : public Method {
     double energy(const int i) const { return energy_.at(i); }
 
     // compute all states at once + averaged rdm
-    virtual void compute_rdm12() = 0;
-    virtual void compute_rdm12(const int ist, const int jst) = 0;
+    void compute_rdm12();
+    void compute_rdm12(const int ist, const int jst);
     // compute 3 and 4 RDMs
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const = 0;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
@@ -150,8 +150,8 @@ class FCI_base : public Method {
 
     virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const CivecType>, std::shared_ptr<const CivecType>) const = 0;
-    virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const Determinants> o = nullptr) const = 0;
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_av_from_dvec(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const Determinants> o = nullptr) const;
 
     // rdm ci derivatives
     virtual std::shared_ptr<Dvec> rdm1deriv(const int istate) const = 0;

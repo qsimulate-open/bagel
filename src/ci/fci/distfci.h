@@ -68,17 +68,12 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
 
     void update(std::shared_ptr<const Matrix>) override;
 
-    // rdms
-    void compute_rdm12() override;
-    void compute_rdm12(const int ist, const int jst) override;
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const DistCivec>, std::shared_ptr<const DistCivec>) const override;
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const DistDvec>, std::shared_ptr<const DistDvec>, std::shared_ptr<const Determinants> o = nullptr) const override;
 
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
