@@ -73,7 +73,10 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const DistCivec>, std::shared_ptr<const DistCivec>) const override;
+      compute_rdm12_from_civec(std::shared_ptr<const DistCivec> cbra, std::shared_ptr<const DistCivec> cket) const override;
+
+    void sigma_2a1(std::shared_ptr<const DistCivec> c, std::shared_ptr<DistDvec> d) const;
+    void sigma_2a2(std::shared_ptr<const DistCivec> c, std::shared_ptr<DistDvec> d) const;
 
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;

@@ -47,45 +47,6 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
 
 
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
-  FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
-
-  const int nri = dbra->lena()*dbra->lenb();
-  const int ij  = norb_*norb_;
-
-  if (nri != dket->lena()*dket->lenb())
-    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
-
-  // 1RDM
-  // c^dagger <I|\hat{E}|0>
-  auto rdm1 = make_shared<RDM<1>>(norb_);
-  dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
-  // 2RDM
-  // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
-  auto rdm2 = make_shared<RDM<2>>(norb_);
-  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
-
-  // sorting... a bit stupid but cheap anyway
-  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
-  unique_ptr<double[]> buf(new double[norb_*norb_]);
-  for (int i = 0; i != norb_; ++i) {
-    for (int k = 0; k != norb_; ++k) {
-      copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
-      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
-    }
-  }
-
-  // put in diagonal into 2RDM
-  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
-  for (int i = 0; i != norb_; ++i)
-    for (int k = 0; k != norb_; ++k)
-      for (int j = 0; j != norb_; ++j)
-        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
-
-  return tie(rdm1, rdm2);
-}
-
-
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
   // since we consider here number conserving operators...

@@ -86,6 +86,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out -= o; return out; }
 
     void zero() { this->fill(0.0); }
+    void allreduce() { mpi__->allreduce(data(), size()); }
 
     void ax_plus_y(const DataType a, const btas::TensorN<DataType,N>& o) { btas::axpy(a, o, *this); }
     void ax_plus_y(const DataType& a, const std::shared_ptr<const btas::TensorN<DataType,N>>& o) { this->ax_plus_y(a, *o); }

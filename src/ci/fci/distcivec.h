@@ -83,6 +83,8 @@ class DistCivector : public RMAWindow<DataType> {
     size_t aend() const { return aend_; }
     size_t asize() const { return aend_ - astart_; }
 
+    const DataType* data() const { return local_data(); }
+
     void synchronize(const int root = 0) { /* do nothing */ }
 
     std::shared_ptr<Civector<DataType>> civec() const;

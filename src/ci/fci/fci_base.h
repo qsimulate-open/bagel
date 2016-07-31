@@ -82,6 +82,10 @@ class FCI_base : public Method {
     bool restart_;
     bool restarted_;
 
+    // internal function for RDM1 and RDM2 computations
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_last_step(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const CivecType>) const;
+
   private:
     // serialization
     friend class boost::serialization::access;

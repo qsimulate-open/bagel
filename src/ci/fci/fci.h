@@ -61,10 +61,6 @@ class FCI : public FCI_base<Civec,Dvec> {
     // functions related to natural orbitals
     void update_rdms(const std::shared_ptr<Matrix>& coeff);
 
-    // internal function for RDM1 and RDM2 computations
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
-
     // print functions
     void print_header() const override;
 
@@ -90,7 +86,7 @@ class FCI : public FCI_base<Civec,Dvec> {
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const override;
+      compute_rdm12_from_civec(std::shared_ptr<const Civec> cbra, std::shared_ptr<const Civec> cket) const override;
 
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
