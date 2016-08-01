@@ -58,9 +58,6 @@ class FCI : public FCI_base<Civec,Dvec> {
     // denominator
     virtual void const_denom() override = 0;
 
-    // functions related to natural orbitals
-    void update_rdms(const std::shared_ptr<Matrix>& coeff);
-
     // print functions
     void print_header() const override;
 
@@ -94,9 +91,6 @@ class FCI : public FCI_base<Civec,Dvec> {
     // 4RDM derivative is precontracted by an Fock operator
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
-
-    // move to natural orbitals
-    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override;
 
     // functions for RDM computation
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;

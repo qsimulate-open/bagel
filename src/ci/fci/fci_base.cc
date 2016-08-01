@@ -169,5 +169,35 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
 }
 
 
+// note that this does not transform internal integrals (since it is not needed in CASSCF).
+template<class CivecType, class DvecType>
+pair<shared_ptr<Matrix>, VectorB> FCI_base<CivecType,DvecType>::natorb_convert() {
+  assert(rdm1_av_ != nullptr);
+  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
+  update_rdms(natorb.first);
+  jop_->update_1ext_ints(natorb.first);
+  for (auto& i : natorb.second)
+    if (i < numerical_zero__) i = 0.0;
+  return natorb;
+}
+
+
+template<class CivecType, class DvecType>
+void FCI_base<CivecType,DvecType>::update_rdms(shared_ptr<const Matrix> coeff) {
+  for (auto& i : *rdm1_)
+    i.second->transform(coeff);
+  for (auto& i : *rdm2_)
+    i.second->transform(coeff);
+
+  // Only when #state > 1, this is needed.
+  // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
+  if (rdm1_->size() > 1) rdm1_av_->transform(coeff);
+  if (rdm2_->size() > 1) rdm2_av_->transform(coeff);
+  assert(rdm1_->size() > 1 || rdm1_->at(0) == rdm1_av_);
+  assert(rdm2_->size() > 1 || rdm2_->at(0) == rdm2_av_);
+}
+
+
+
 template class FCI_base<Civec,Dvec>;
 template class FCI_base<DistCivec,DistDvec>;

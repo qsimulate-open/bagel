@@ -85,9 +85,6 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
 
-    // move to natural orbitals
-    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() override;
-
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };

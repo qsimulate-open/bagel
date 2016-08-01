@@ -303,31 +303,3 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
   return make_tuple(rdm3, frdm4);
 }
 #endif
-
-
-// note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
-  assert(rdm1_av_ != nullptr);
-  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
-  update_rdms(natorb.first);
-  jop_->update_1ext_ints(natorb.first);
-  for (auto& i : natorb.second)
-    if (i < numerical_zero__) i = 0.0;
-  return natorb;
-}
-
-
-void FCI::update_rdms(const shared_ptr<Matrix>& coeff) {
-  for (auto& i : *rdm1_)
-    i.second->transform(coeff);
-  for (auto& i : *rdm2_)
-    i.second->transform(coeff);
-
-  // Only when #state > 1, this is needed.
-  // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
-  if (rdm1_->size() > 1) rdm1_av_->transform(coeff);
-  if (rdm2_->size() > 1) rdm2_av_->transform(coeff);
-  assert(rdm1_->size() > 1 || rdm1_->at(0) == rdm1_av_);
-  assert(rdm2_->size() > 1 || rdm2_->at(0) == rdm2_av_);
-}
-

@@ -82,6 +82,9 @@ class FCI_base : public Method {
     bool restart_;
     bool restarted_;
 
+    // functions related to natural orbitals
+    void update_rdms(std::shared_ptr<const Matrix> coeff);
+
     // internal function for RDM1 and RDM2 computations
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_last_step(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const CivecType>) const;
@@ -179,8 +182,7 @@ class FCI_base : public Method {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    // TODO
-    virtual std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert() = 0;
+    virtual std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();
 
     virtual std::shared_ptr<const CIWfn> conv_to_ciwfn() const = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0; 

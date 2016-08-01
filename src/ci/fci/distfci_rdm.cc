@@ -113,8 +113,3 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
 DistFCI::rdm34deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
   return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>();
 }
-
-
-pair<shared_ptr<Matrix>, VectorB> DistFCI::natorb_convert() {
-  return pair<shared_ptr<Matrix>, VectorB>();
-}
