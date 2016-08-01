@@ -145,8 +145,11 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
     btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2}); 
   }
 
-  rdm1->allreduce();
-  rdm2->allreduce();
+  // when used with dist FCI, we have to allreduce
+  if (is_same<CivecType,DistCivec>::value) {
+    rdm1->allreduce();
+    rdm2->allreduce();
+  }
 
   // sorting... a bit stupid but cheap anyway
   // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
