@@ -95,7 +95,6 @@ DistFCI::compute_rdm12_from_civec(shared_ptr<const DistCivec> cbra, shared_ptr<c
   } else {
     dket = dbra;
   }
-
   return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
