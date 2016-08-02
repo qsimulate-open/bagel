@@ -98,7 +98,7 @@ void CASSecond::compute() {
            <<         " stepsize: " << setw(10) << setprecision(3) << scientific << stepsize
            << setw(6) << fixed << setprecision(2) << mtimer.tick() << endl;
       mute_stdcout();
-      if (err < max(thresh_*0.5, gradient*1.0e-5))
+      if (err < max(thresh_micro_, stepsize*thresh_microstep_))
         break;
 
       trot = apply_denom(residual, denom, -epsilon, 1.0/lambda);

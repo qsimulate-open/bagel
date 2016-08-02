@@ -35,6 +35,9 @@ namespace bagel {
 
 class CASSecond : public CASSCF {
   protected:
+    // convergence threshold for micro iteration relative to stepsize
+    double thresh_microstep_;
+
     // compute orbital gradient
     std::shared_ptr<RotFile> compute_gradient(std::shared_ptr<const Matrix> cfock, std::shared_ptr<const Matrix> afock, std::shared_ptr<const Matrix> qxr) const;
     // compute exact diagonal Hessian
@@ -48,7 +51,12 @@ class CASSecond : public CASSCF {
 
   public:
     CASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-      : CASSCF(idat, geom, ref) { std::cout << "    * Using the second-order algorithm" << std::endl << std::endl; }
+      : CASSCF(idat, geom, ref) {
+      std::cout << "    * Using the second-order algorithm" << std::endl << std::endl;
+      // overwriting thresh_micro
+      thresh_micro_ = idata_->get<double>("thresh_micro", thresh_*0.5);
+      thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
+    }
 
     void compute() override;
 };
