@@ -314,7 +314,7 @@ bool Matrix::inverse_half(const double thresh) {
     diagonalize(vec);
     for (int i = 0; i != n; ++i) {
       double s = vec(i) > thresh ? 1.0/std::sqrt(std::sqrt(vec(i))) : 0.0;
-      for_each(element_ptr(0,i), element_ptr(0,i+1), [&s](double& a){ a*= s; });
+      blas::scale_n(s, element_ptr(0,i), n);
     }
     *this = *this ^ *this;
 #ifdef HAVE_SCALAPACK
