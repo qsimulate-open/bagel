@@ -192,6 +192,7 @@ class Dvector : public btas::Tensor3<DataType> {
     }
 
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return norm() / std::sqrt(size()); }
 
     void scale(const DataType& a) {
       std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
