@@ -25,7 +25,6 @@
 
 #include <src/grad/cpcasscf.h>
 #include <src/util/math/linearRM.h>
-#include <src/util/math/bfgs.h>
 #include <src/scf/hf/fock.h>
 
 using namespace std;
@@ -165,9 +164,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate
   }
 
-  // BFGS update of the denominator above
-  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, /*debug*/true);
-
   // gradient Y and y
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
   // divide by weight
@@ -196,10 +192,8 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   auto solver = make_shared<LinearRM<PairFile<Matrix, Dvec>>>(zmaxiter, source);
 
   // initial guess
-  shared_ptr<PairFile<Matrix, Dvec>> z = source->clone();
-  z->zero();
-
-  z = bfgs->extrapolate(source, z);
+  shared_ptr<PairFile<Matrix, Dvec>> z = source->copy();
+  *z /= *denom;
   z->second()->project_out(civector_);
 
   // inverse matrix of C
@@ -220,7 +214,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     z = solver->compute_residual(z, sigma);
 
-    z = bfgs->extrapolate(z, solver->civec());
+    *z /= *denom; 
     z->second()->project_out(civector_);
 
     cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->rms() << setw(10) << setprecision(2) << timer.tick() << endl;
