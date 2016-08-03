@@ -115,8 +115,8 @@ void CASSCF::common_init() {
   }
   nocc_ = nclosed_ + nact_;
 
-  nbasis_ = coeff_->mdim();
-  nvirt_ = nbasis_ - nocc_;
+  nmo_ = coeff_->mdim();
+  nvirt_ = nmo_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
@@ -124,7 +124,7 @@ void CASSCF::common_init() {
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
-  const int idel = geom_->nbasis() - nbasis_;
+  const int idel = geom_->nbasis() - nmo_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
@@ -233,9 +233,9 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
-    fact = qxr->copy();// nbasis_ runs first
+    fact = qxr->copy();// nmo_ runs first
     for (int i = 0; i != nact_; ++i)
-      daxpy_(nbasis_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
+      daxpy_(nmo_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nmo_, 1);
   }
 
   {
@@ -312,11 +312,11 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   rdm1mat->scale(1.0/sqrt(2.0));
   auto ocoeff = coeff_->slice(0, nclosed_);
   auto acoeff = coeff_->slice(nclosed_, nocc_);
-  auto vcoeff = coeff_->slice(nocc_, nbasis_);
+  auto vcoeff = coeff_->slice(nocc_, nmo_);
 
   VectorB eig(coeff_->mdim());
   Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
-  Matrix trans(nbasis_, nbasis_);
+  Matrix trans(nmo_, nmo_);
   trans.unit();
   if (nclosed_) {
     Matrix ofock = ocoeff % fock * ocoeff;
@@ -363,8 +363,8 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
 
     *f *= 2.0;
 
-    for (int i = 0; i != nbasis_; ++i)
-      for (int j = 0; j != nbasis_; ++j) {
+    for (int i = 0; i != nmo_; ++i)
+      for (int j = 0; j != nmo_; ++j) {
         if (i < nocc_ && j < nocc_) continue;
         f->element(j,i) = 0.0;
       }

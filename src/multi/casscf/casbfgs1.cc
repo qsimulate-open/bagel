@@ -43,7 +43,7 @@ void CASBFGS1::compute() {
   // ============================
   Timer timer;
 
-  auto x = make_shared<Matrix>(nbasis_, nbasis_);
+  auto x = make_shared<Matrix>(nmo_, nmo_);
   x->unit();
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
