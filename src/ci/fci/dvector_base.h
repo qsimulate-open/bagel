@@ -164,10 +164,9 @@ class Dvector_base {
     }
 
     void project_out(std::shared_ptr<const Dvector_base<CiType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::project_out called inconsistently");
-      auto j = o->dvec().begin();
-      // simply project out each CI vector
-      for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
+      for (auto& i : dvec())
+        for (auto& j : o->dvec())
+          i->project_out(j);
     }
 
     void print(const double thresh = 0.05) const {
