@@ -31,7 +31,6 @@
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
 #include <src/ci/ras/rasci.h>
-#include <src/ci/ras/distrasci.h>
 #include <src/ci/zfci/zharrison.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2.h>
@@ -74,13 +73,11 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "zfci")     out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "ras") {
       const string algorithm = itree->get<string>("algorithm", "");
-      if ( algorithm == "local" || algorithm == "" ) {
+      if ( algorithm == "local" || algorithm == "" )
         out = make_shared<RASCI>(itree, geom, ref);
-      }
 #ifdef HAVE_MPI_H
-      else if ( algorithm == "dist" || algorithm == "parallel" ) {
-        out = make_shared<DistRASCI>(itree, geom, ref);
-      }
+      else if ( algorithm == "dist" || algorithm == "parallel" )
+        throw logic_error("Parallel RASCI not implemented");
 #endif
       else
         throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
@@ -114,10 +111,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
-    else if (title == "caspt2grad") {
-      // TODO to be called from optimizer
-      out = make_shared<CASPT2Grad>(itree, geom, ref);
-    }
+    else if (title == "caspt2grad") out = make_shared<CASPT2Grad>(itree, geom, ref);
     else if (title == "nevpt2")  out = make_shared<NEVPT2<double>>(itree, geom, ref);
     else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {

@@ -57,7 +57,6 @@ shared_ptr<Matrix> CASPT2Grad::diagonal_D1() const {
 }
 
 
-// TODO second-order part still missing
 shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
 #ifdef COMPILE_SMITH
   const int nele_act = fci_->det()->nelea() + fci_->det()->neleb();

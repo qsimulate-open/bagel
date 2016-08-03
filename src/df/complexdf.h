@@ -93,7 +93,6 @@ class ComplexDFDist_ints : public ComplexDFDist {
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
-          // TODO careful
           // Since we use a real auxiliary basis set, half the 3-index integrals will be complex conjugates of the other half
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
