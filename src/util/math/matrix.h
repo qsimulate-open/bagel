@@ -128,8 +128,6 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
-    void purify_idempotent(const Matrix& s);
-    void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     std::shared_ptr<Matrix> solve(std::shared_ptr<const Matrix> A, const int n) const;
 

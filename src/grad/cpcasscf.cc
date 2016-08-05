@@ -185,7 +185,20 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   }
   // antisymmetrize
   source->first()->antisymmetrize();
-  source->first()->purify_redrotation(nclosed, nact, nvirt);
+
+  // set zero to redundant rotation
+  auto purify = [](Matrix& mat, const int nc, const int na, const int nv) {
+    for (int g = 0; g != nc; ++g)
+      for (int h = 0; h != nc; ++h)
+        mat(h, g) = 0.0;
+    for (int g = 0; g != na; ++g)
+      for (int h = 0; h != na; ++h)
+        mat(h+nc, g+nc) = 0.0;
+    for (int g = 0; g != nv; ++g)
+      for (int h = 0; h != nv; ++h)
+        mat(h+nc+na, g+nc+na) = 0.0;
+  };
+  purify(*source->first(), nclosed, nact, nvirt);
 
   // project out Civector from the gradient
   source->second()->project_out(civector_);
@@ -214,7 +227,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     // given z, computes sigma (before anti-symmetrization)
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true, lambda);
     sigma->first()->antisymmetrize();
-    sigma->first()->purify_redrotation(nclosed, nact, nvirt);
+    purify(*sigma->first(), nclosed, nact, nvirt);
     sigma->second()->project_out(civector_);
 
     z = solver->compute_residual(z, sigma);

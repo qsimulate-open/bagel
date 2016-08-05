@@ -219,32 +219,6 @@ void Matrix::purify_unitary() {
 }
 
 
-void Matrix::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
-  assert(ndim() == mdim() && nclosed + nact + nvirt == ndim());
-  for (int g = 0; g != nclosed; ++g)
-    for (int h = 0; h != nclosed; ++h)
-      element(h,g)=0.0;
-  for (int g = 0; g != nact; ++g)
-    for (int h = 0; h != nact; ++h)
-      element(h+nclosed,g+nclosed)=0.0;
-  for (int g = 0; g != nvirt; ++g)
-    for (int h = 0; h != nvirt; ++h)
-      element(h+nclosed+nact,g+nclosed+nact)=0.0;
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != i; ++j) {
-      const double ele = (element(j,i) - element(i,j)) * 0.5;
-      element(j,i) = ele;
-      element(i,j) = -ele;
-    }
-  }
-}
-
-
-void Matrix::purify_idempotent(const Matrix& s) {
-  *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0;
-}
-
-
 // in-place matrix inverse (practically we use buffer area)
 void Matrix::inverse() {
   assert(ndim() == mdim());

@@ -137,8 +137,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
-    void purify_idempotent(const ZMatrix& s);
-    void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 
