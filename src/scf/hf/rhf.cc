@@ -27,6 +27,7 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
+#include <src/periodic/fmmbox.h>
 
 using namespace bagel;
 using namespace std;
@@ -53,9 +54,9 @@ void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
-  shared_ptr<const Matrix> nai;
-  if (dofmm_)
-    nai = fmmtree_->fmm(fmm_lmax_)->get_real_part();
+  //shared_ptr<const Matrix> nai;
+  //if (dofmm_)
+  //  nai = fmmtree_->fmm()->get_real_part();
 
   shared_ptr<const Matrix> aodensity_;
 
@@ -78,7 +79,8 @@ void RHF::compute() {
             focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aden, dodf_)->get_real_part();
+          //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aden, dodf_)->get_real_part();
+          shared_ptr<const Matrix> tmp = fmmtree_->fmm(aden, dodf_)->get_real_part();
           focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
         fock = focka->distmatrix();
@@ -97,7 +99,8 @@ void RHF::compute() {
         }
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, aodensity_, dodf_)->get_real_part();
+        //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
+        shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
         focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
@@ -143,8 +146,9 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmmtree_->fmm(fmm_lmax_, densitychange, dodf_)->get_real_part();
-      previous_fock = make_shared<const Matrix>(*tmp + *previous_fock);
+      //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
+      previous_fock = make_shared<const Matrix>(*tmp + *hcore);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -152,8 +156,8 @@ void RHF::compute() {
 
     pdebug.tick_print("Fock build");
 
-    if (dofmm_)
-      fock = make_shared<const DistMatrix>(*fock-*nai);
+//    if (dofmm_)
+//      fock = make_shared<const DistMatrix>(*fock-*nai);
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 

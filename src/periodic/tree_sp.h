@@ -39,6 +39,7 @@ class TreeSP {
   protected:
     std::shared_ptr<const Geometry>geom_;
     int max_height_;
+    int lmax_;
     int nvertex_;
     int nbasis_;
     std::vector<std::array<double, 3>> coordinates_;
@@ -61,12 +62,12 @@ class TreeSP {
     void keysort();
 
   public:
-    TreeSP(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
+    TreeSP(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
 
     ~TreeSP() { }
 
-    void init_fmm(const int lmax, const bool dodf, const std::string auxfile) const;
-    std::shared_ptr<const ZMatrix> fmm(const int lmax, std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const double schwarz_thresh = 0.0) const;
+    void init_fmm(const bool dodf, const std::string auxfile) const;
+    std::shared_ptr<const ZMatrix> fmm(std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const double schwarz_thresh = 0.0) const;
 
     void print_tree_xyz() const;
     void print_leaves() const;

@@ -414,13 +414,9 @@ void Lattice::build_tree(tuple<int, int, bool, bool, double> fmmp) {
   // Schwarz screening
   vector<double> schwarz;
   const bool dodf = get<3>(fmmp);
-  if (!dodf) {
-    schwarz_ = supergeom_->schwarz();
-    time.tick_print("  Schwarz matrix");
-  }
 
   // build tree
-  fmmtree_ = make_shared<const Tree>(supergeom_, get<0>(fmmp)/*height*/, get<2>(fmmp)/*contract*/, get<4>(fmmp)/*thresh*/);
-  fmmtree_->init_fmm(get<1>(fmmp)/*lmax*/, dodf, primitive_cell_->auxfile());
+  fmmtree_ = make_shared<const Tree>(supergeom_, get<0>(fmmp)/*height*/, get<2>(fmmp)/*contract*/, get<1>(fmmp)/*lmax*/, get<4>(fmmp)/*thresh*/);
+  fmmtree_->init_fmm(dodf, primitive_cell_->auxfile());
   time.tick_print("  Construct tree and compute integrals");
 }

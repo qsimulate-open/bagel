@@ -37,8 +37,8 @@ static const AtomMap atommap_;
 static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
 
-Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contract, const double thresh, const int ws)
- : geom_(geom), max_height_(maxht), do_contraction_(do_contract), thresh_(thresh), ws_(ws) {
+Tree::Tree(shared_ptr<const Geometry> geom, const int maxht, const bool do_contract, const int lmax, const double thresh, const int ws)
+ : geom_(geom), schwarz_(geom_->schwarz()), max_height_(maxht), do_contraction_(do_contract), lmax_(lmax), thresh_(thresh), ws_(ws) {
 
   init();
   print_leaves();
@@ -241,7 +241,9 @@ void Tree::build_tree() {
 }
 
 
-void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const {
+void Tree::init_fmm(const bool dodf, const string auxfile) const {
+
+  if (lmax_ < 0) return;
   if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
 
@@ -251,7 +253,7 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
   int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-      nodes_[i]->compute_multipoles(lmax);
+      nodes_[i]->compute_multipoles(lmax_);
       if (dodf && nodes_[i]->is_leaf())
         nodes_[i]->form_df(auxfile);
     }
@@ -261,11 +263,11 @@ void Tree::init_fmm(const int lmax, const bool dodf, const string auxfile) const
 }
 
 
-shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Tree::fmm(shared_ptr<const Matrix> density, const bool dodf, const double scale, const double schwarz_thresh) const {
 
 #if 0
   ///////// DEBUG ///////////
-  shared_ptr<const ZMatrix> out = compute_interactions(lmax, density, schwarz, schwarz_thresh);
+  shared_ptr<const ZMatrix> out = compute_interactions(lmax_, density, schwarz_, schwarz_thresh);
   /////////// END OF DEBUG ///////////
 #endif
 
@@ -282,10 +284,10 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
   int nint = 0;
   for (int i = 1; i != nnode_; ++i) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-//    nodes_[i]->compute_local_expansions(density, lmax, offsets, scale);
+//    nodes_[i]->compute_local_expansions(density, lmax_, offsets, scale);
       if (nodes_[i]->is_leaf()) {
-        nodes_[i]->compute_local_expansions(density, lmax, offsets, scale); //////// TMP
-        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz, schwarz_thresh);
+        nodes_[i]->compute_local_expansions(density, lmax_, offsets, scale); //////// TMP
+        shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, offsets, dodf, scale, schwarz_, schwarz_thresh);
         *out += *tmp;
         nint += nodes_[i]->shellquads_.size();
       }
@@ -294,8 +296,8 @@ shared_ptr<const ZMatrix> Tree::fmm(const int lmax, shared_ptr<const Matrix> den
 
   // return the Coulomb matrix
   out->allreduce();
-  shared_ptr<const ZMatrix> nf = compute_JK(density, nint);
-  *out += *nf;
+//  shared_ptr<const ZMatrix> nf = compute_JK(density, nint);
+//  *out += *nf;
 
   #endif
   return out;
@@ -466,7 +468,7 @@ void Tree::print_leaves() const {
 }
 
 
-shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<const Matrix> density, const vector<double> schwarz, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Tree::compute_interactions(shared_ptr<const Matrix> density, const double schwarz_thresh) const {
 
   const int nspairs = geom_->nshellpair();
   const int nsh = sqrt(nspairs);
@@ -499,13 +501,13 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 
  #if 1
   const int shift = sizeof(int) * 4;
-  const int nmult = (lmax+1)*(lmax+1);
+  const int nmult = (lmax_+1)*(lmax_+1);
   shared_ptr<Petite> plist = geom_->plist();;
   int nzero = 0;
   int nint = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
 //    if (!plist->in_p2(i01)) continue;
-    if (schwarz[i01] < 1e-15) continue;
+    if (schwarz_[i01] < 1e-15) continue;
     const double density_01 = max_density[i01] * 4.0;
 
     shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
@@ -523,7 +525,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
     if (i1 < i0) continue;
 
     for (int i23 = i01; i23 != nspairs; ++i23) {
-      if (schwarz[i23] < 1e-15) continue;
+      if (schwarz_[i23] < 1e-15) continue;
       const double density_23 = max_density[i23] * 4.0;
 
       shared_ptr<const Shell> sh2 = geom_->shellpair(i23)->shell(0);
@@ -550,7 +552,7 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
       const double mulfactor = max(max(max(density_01, density_02),
                                        max(density_03, density_12)),
                                        max(density_13, density_23));
-      const double integral_bound = mulfactor * schwarz[i01] * schwarz[i23];
+      const double integral_bound = mulfactor * schwarz_[i01] * schwarz_[i23];
       const bool skip_schwarz = integral_bound < schwarz_thresh;
       if (skip_schwarz) continue;
 
@@ -575,8 +577,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
           rvec0123[i] = geom_->shellpair(i23)->centre(i) - geom_->shellpair(i01)->centre(i);
           rvec2301[i] = -rvec0123[i];
         }
-        vector<complex<double>> mlm01 = get_mlm(lmax, rvec0123, omega01);
-        vector<complex<double>> mlm23 = get_mlm(lmax, rvec2301, omega23);
+        vector<complex<double>> mlm01 = get_mlm(rvec0123, omega01);
+        vector<complex<double>> mlm23 = get_mlm(rvec2301, omega23);
         for (int j2 = 0; j2 != size2; ++j2)
           for (int j3 = 0; j3 != size3; ++j3)
               for (int i = 0; i != nmult; ++i)
@@ -654,9 +656,9 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(const int lmax, shared_ptr<
 }
 
 
-vector<complex<double>> Tree::get_mlm(const int lmax, array<double, 3> r01, vector<complex<double>> omega0) const {
+vector<complex<double>> Tree::get_mlm(array<double, 3> r01, vector<complex<double>> omega0) const {
 
-  const int nmult = (lmax + 1) * (lmax + 1);
+  const int nmult = (lmax_ + 1) * (lmax_ + 1);
   assert(omega0.size() == nmult);
   const double r = sqrt(r01[0]*r01[0] + r01[1]*r01[1] + r01[2]*r01[2]);
   const double ctheta = (r > numerical_zero__) ? r01[2]/r : 0.0;
@@ -665,13 +667,13 @@ vector<complex<double>> Tree::get_mlm(const int lmax, array<double, 3> r01, vect
   vector<complex<double>> out(nmult);
 
   int i1 = 0;
-  for (int l = 0; l <= lmax; ++l) {
+  for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
 
       out[i1] = 0.0;
       int i2 = 0;
-      for (int j = 0; j <= lmax; ++j) {
+      for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
 
           const int a = l + j;

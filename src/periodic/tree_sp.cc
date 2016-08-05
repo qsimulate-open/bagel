@@ -36,8 +36,8 @@ using namespace std;
 static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
 
-TreeSP::TreeSP(shared_ptr<const Geometry> geom, const int maxht, const double thresh, const int ws)
- : geom_(geom), max_height_(maxht), thresh_(thresh), ws_(ws) {
+TreeSP::TreeSP(shared_ptr<const Geometry> geom, const int maxht, const int lmax, const double thresh, const int ws)
+ : geom_(geom), max_height_(maxht), lmax_(lmax), thresh_(thresh), ws_(ws) {
 
   init();
   print_leaves();
@@ -52,7 +52,7 @@ void TreeSP::init() {
 
   nvertex_ = 0;
   for (int i = 0; i != geom_->nshellpair(); ++i) {
-    if (geom_->shellpair(i)->schwarz() < 1e-15) continue;
+//    if (geom_->shellpair(i)->schwarz() < 1e-15) continue;
 
     coordinates_.resize(nvertex_ + 1);
     coordinates_[nvertex_][0] = geom_->shellpair(i)->centre(0) - centre_[0];
@@ -152,57 +152,58 @@ void TreeSP::build_tree() {
 }
 
 
-void TreeSP::init_fmm(const int lmax, const bool dodf, const string auxfile) const {
+void TreeSP::init_fmm(const bool dodf, const string auxfile) const {
   if (dodf && auxfile.empty())
     throw runtime_error("Do FMM with DF but no df basis provided");
 
-  if (lmax < 0) return;
+  if (lmax_ < 0) return;
+
   Timer fmmtime;
   // Downward pass
   int u = 0;
   for (int i = nnode_ - 1; i > 0; --i) {
     if (u++ % mpi__->size() == mpi__->rank())
-      nodes_[i]->compute_multipoles(lmax);
+      nodes_[i]->compute_multipoles(lmax_);
   }
   fmmtime.tick_print("Downward pass");
 }
 
 
-shared_ptr<const ZMatrix> TreeSP::fmm(const int lmax, shared_ptr<const Matrix> density, const bool dodf, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> TreeSP::fmm(shared_ptr<const Matrix> density, const bool dodf, const double schwarz_thresh) const {
+
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
+  if (!density) return out;
 
   const int nsp = geom_->nshellpair();
   vector<double> max_den(nsp);
-  if (density) {
-    const double* density_data = density->data();
-    for (int i01 = 0; i01 != nsp; ++i01) {
-      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
-      const int offset0 = geom_->shellpair(i01)->offset(0);
-      const int i0 = geom_->shellpair(i01)->shell_ind(0);
-      const int size0 = sh0->nbasis();
+  const double* density_data = density->data();
+  for (int i01 = 0; i01 != nsp; ++i01) {
+    shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
+    const int offset0 = geom_->shellpair(i01)->offset(0);
+    const int i0 = geom_->shellpair(i01)->shell_ind(0);
+    const int size0 = sh0->nbasis();
 
-      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
-      const int offset1 = geom_->shellpair(i01)->offset(1);
-      const int i1 = geom_->shellpair(i01)->shell_ind(1);
-      const int size1 = sh0->nbasis();
+    shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
+    const int offset1 = geom_->shellpair(i01)->offset(1);
+    const int i1 = geom_->shellpair(i01)->shell_ind(1);
+    const int size1 = sh0->nbasis();
 
-      double denmax = 0.0;
-      for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
-        const int i0n = i0 * density->ndim();
-        for (int i1 = offset1; i1 != offset1 + size1; ++i1)
-          denmax = max(denmax, fabs(density_data[i0n + i1]));
-      }
-      max_den[i01] = denmax;
+    double denmax = 0.0;
+    for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
+      const int i0n = i0 * density->ndim();
+      for (int i1 = offset1; i1 != offset1 + size1; ++i1)
+        denmax = max(denmax, fabs(density_data[i0n + i1]));
     }
+    max_den[i01] = denmax;
   }
 
   // Upward pass
   int u = 0;
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);;
   for (int i = 1; i != nnode_; ++i) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-//    nodes_[i]->compute_local_expansions(density, lmax);
+//    nodes_[i]->compute_local_expansions(density, lmax_);
       if (nodes_[i]->is_leaf()) {
-        if (lmax >= 0) nodes_[i]->compute_local_expansions(density, lmax); //////// TMP
+        nodes_[i]->compute_local_expansions(density, lmax_); //////// TMP
         shared_ptr<const ZMatrix> tmp = nodes_[i]->compute_Coulomb(nbasis_, density, max_den, dodf, schwarz_thresh);
         *out += *tmp;
       }
@@ -234,16 +235,21 @@ void TreeSP::get_particle_key() {
   int isp = 0;
   for (auto& pos : coordinates_) {
     bitset<nbit__> key;
-    key[nbit__-1] = 1;
-    bitset<nbitx> binx = bitset<nbitx>(double(pos[0]/maxx*1e7));
-    bitset<nbitx> biny = bitset<nbitx>(double(pos[1]/maxy*1e7));
-    bitset<nbitx> binz = bitset<nbitx>(double(pos[2]/maxz*1e7));
+    key[nbit__ - 1] = 1;
+    bitset<nbitx> binx = bitset<nbitx>(double(pos[0]/maxx*1e9));
+    bitset<nbitx> biny = bitset<nbitx>(double(pos[1]/maxy*1e9));
+    bitset<nbitx> binz = bitset<nbitx>(double(pos[2]/maxz*1e9));
     //cout << pos[0] << " " << binx << " * " << pos[1] << " " << biny << " * " << pos[2] << " " << binz << endl;
     for (int i = 0; i != nbitx; ++i) {
-      key[i * 3 + 0] = binx[i];
-      key[i * 3 + 1] = biny[i];
-      key[i * 3 + 2] = binz[i];
+      key[(nbitx-i)*3 - 1] = binx[i];
+      key[(nbitx-i)*3 - 2] = biny[i];
+      key[(nbitx-i)*3 - 3] = binz[i];
     }
+    //for (int i = 0; i != nbitx; ++i) {
+    //  key[i * 3 + 0] = binx[i];
+    //  key[i * 3 + 1] = biny[i];
+    //  key[i * 3 + 2] = binz[i];
+    //}
     particle_keys_[isp] = key;
     ++isp;
   }
@@ -398,10 +404,15 @@ void TreeSP::print_tree_xyz() const { // to visualize with VMD, but not enough a
 void TreeSP::print_leaves() const {
 
   const std::string space = "       ";
-  cout << "   i      Rank   Nvertex   Ninter    Nneigh   Extent " << endl;
+  cout << "   i      Rank   Nvertex   Ninter    Nneigh   Extent    Radius" << endl;
   for (int i = 0; i != nnode_; ++i)
-    if (nodes_[i]->is_leaf())
+    if (nodes_[i]->is_leaf()) {
       cout << "  " << i << space << nodes_[i]->rank() << space << nodes_[i]->nvertex() << space
-           << nodes_[i]->interaction_list().size() << space << nodes_[i]->nneigh() << space << nodes_[i]->extent() << endl;
+           << nodes_[i]->interaction_list().size() << space << nodes_[i]->nneigh() << space << nodes_[i]->extent() << space << nodes_[i]->radius()
+           << endl;
+//           << " *** " << nodes_[i]->key() << endl;
+//      for (auto& v : nodes_[i]->vertex())
+//        cout << v->key() << " * " << setprecision(2) << v->centre(0) << " * " << v->centre(1) << " * " << v->centre(2) << endl;
+    }
   cout << "#NODES = " << nnode_ << " #LEAVES = " << nleaf_ << " #SHELL PAIRS = " << geom_->nshellpair() << endl;
 }

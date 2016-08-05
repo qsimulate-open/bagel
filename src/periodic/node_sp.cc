@@ -111,6 +111,20 @@ void NodeSP::init() {
   compute_extent();
 }
 
+double NodeSP::radius() const {
+
+  double out = 0;
+  for (auto& v : vertex_) {
+    array<double, 3> r12;
+    r12[0] = centre_[0] - v->centre(0);
+    r12[1] = centre_[1] - v->centre(1);
+    r12[2] = centre_[2] - v->centre(2);
+    const double r = sqrt(r12[0]*r12[0]+r12[1]*r12[1]+r12[2]*r12[2]);
+    if (r > out) out = r;
+  }
+
+  return out;
+}
 
 bool NodeSP::is_neighbour(shared_ptr<const NodeSP> nd, const int ws) {
 
@@ -199,6 +213,8 @@ void NodeSP::compute_multipoles(const int lmax) {
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
       assert(nmult == v->nmult());
+      const double r = sqrt(r12[0]*r12[0]+r12[1]*r12[1]+r12[2]*r12[2]);
+      //cout << setprecision(9) << " r = " << r << endl;
 //      LocalExpansion shift(r12, v->multipole(), lmax);
 //      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
@@ -253,8 +269,9 @@ void NodeSP::compute_multipoles(const int lmax) {
 
 void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const int lmax) {
 
-  const int nmult = (lmax + 1) * (lmax + 1);
+  if (lmax < 0 || !density) return;
 
+  const int nmult = (lmax + 1) * (lmax + 1);
   vector<int> l_map(nmult);
   int cnt = 0;
   for (int l = 0; l <= lmax; ++l)
@@ -291,7 +308,7 @@ void NodeSP::compute_local_expansions(shared_ptr<const Matrix> density, const in
         shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), size1, size0);
         den_tu.copy_block(ob1, ob0, size1, size0, den);
 
-#if 1
+#if 0
         /******** DEBUG: contract with multipoles here and compare with 4c integrals ********/
         if (is_leaf_) {
 
@@ -425,7 +442,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
   const size_t ndim = density->ndim();
 
   // add FF local expansions to coulomb matrix
-  #if 1
+  #if 0
   if (local_expansion_) {
     size_t ob0 = 0;
     size_t ob1 = 0;
@@ -451,7 +468,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
     const int nsh = sqrt(max_den.size());
 
     for (auto& v01 : vertex_) {
-      if (v01->schwarz() < 1e-15) continue;
+//      if (v01->schwarz() < 1e-15) continue;
       shared_ptr<const Shell> b0 = v01->shell0();
       const int i0 = v01->shell_ind(0);
       const int b0offset = v01->offset(0);
@@ -468,7 +485,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
       for (auto& neigh : neigh_) {
 //        if (neigh->id_in_tree() < id_in_tree_) continue;
         for (auto& v23 : neigh->vertex()) {
-          if (v23->schwarz() < 1e-15) continue;
+//          if (v23->schwarz() < 1e-15) continue;
           shared_ptr<const Shell> b2 = v23->shell0();
           const int i2 = v23->shell_ind(0);
           const int b2offset = v23->offset(0);
@@ -492,7 +509,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
                                            max(density_13, density_23));
           const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
           const bool skip_schwarz = integral_bound < schwarz_thresh;
-          if (skip_schwarz) continue;
+          //if (skip_schwarz) continue;
 
           array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
           ERIBatch eribatch(input, mulfactor);

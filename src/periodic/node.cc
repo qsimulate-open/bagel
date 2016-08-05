@@ -487,7 +487,8 @@ shared_ptr<const ZMatrix> Node::compute_NAI_far_field(const int lmax, const doub
 }
 
 
-shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const double scale, const vector<double> schwarz, const double schwarz_thresh) {
+shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<const Matrix> density, vector<int> offsets, const bool dodf, const double scale,
+                                                const vector<double> schwarz, const double schwarz_thresh) {
 
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
@@ -497,7 +498,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   n2e_total_ = 0;
   const size_t ndim = density->ndim();
 
-#if 0
+#if 1
   // add FF local expansions to coulomb matrix
   size_t ob0 = 0;
   for (auto& body0 : bodies_) {
@@ -614,33 +615,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   assert(ishell < size);
   assert(shell_id.size() == size);
 
-
-#if 0 /////// DEBUG
-  // get significant distributions
-  int nsignif = 0;
-  for (int i = 0; i != size; ++i) {
-    const shared_ptr<const Shell>  bi = basis[i];
-    const int ioffset = new_offset[i];
-    const int isize = bi->nbasis();
-    for (int j = 0; j != size; ++j) {
-      const shared_ptr<const Shell>  bj = basis[j];
-      const int joffset = new_offset[j];
-      const int jsize = bj->nbasis();
-
-      {
-        array<shared_ptr<const Shell>,2> shells = {{bi, bj}};
-        OverlapBatch obatch(shells);
-        obatch.compute();
-        const double* odata = obatch.data();
-        double tmp = 0;
-        for (int n = 0; n != isize * jsize; ++n, ++odata)
-          tmp = *odata * *odata;
-        if (tmp > 1e-10) ++nsignif;
-      }
-    }
-  }
-//  cout << size * size << " *** " << nsignif << endl;
-#endif ///////DEBUG
 
 #if 0
   // NAI for close-range
@@ -782,7 +756,7 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
 
                 shellquads_.insert(shellquads_.end(), {{shell_id[i0], shell_id[i1], shell_id[i2], shell_id[i3]}});
                 int_offsets_.insert(int_offsets_.end(), {{b0offset, b1offset, b2offset, b3offset}});
-#if 0
+#if 1
 /////////// DEBUG //////// NO NF INTEGRATION
                 array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
                 ERIBatch eribatch(input, mulfactor);

@@ -581,7 +581,7 @@ shared_ptr<const PData> PFMM::compute_cfmm(shared_ptr<const PData> density) cons
   }
 
   // compute Coulomb from lattice tree
-  shared_ptr<const ZMatrix> coulomb = lattice_->fmmtree()->fmm(lmax_, superden, dodf_, 2.0/*nai*/, lattice_->schwarz(), lattice_->schwarz_thresh());
+  shared_ptr<const ZMatrix> coulomb = lattice_->fmmtree()->fmm(superden, dodf_, 2.0/*nai*/, lattice_->schwarz_thresh());
   time.tick_print("  Compute NF Coulomb matrix");
 
   vector<shared_ptr<const ZMatrix>> out(nvec);

@@ -40,8 +40,10 @@ class Node;
 class Tree {
   protected:
     std::shared_ptr<const Geometry>geom_;
+    std::vector<double> schwarz_;
     int max_height_;
     bool do_contraction_;
+    int lmax_;
     int nvertex_;
     int nbasis_;
     std::vector<std::array<double, 3>> coordinates_;
@@ -67,18 +69,17 @@ class Tree {
     void get_particle_key(); // a place holder and (nbit__-1)/3 per coordinate
     void keysort();
 
-    std::shared_ptr<const ZMatrix> compute_interactions(const int lmax, std::shared_ptr<const Matrix> density,
-                             const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0) const;
-    std::vector<std::complex<double>> get_mlm(const int lmax, std::array<double, 3> r01, std::vector<std::complex<double>> omega0) const;
+    std::shared_ptr<const ZMatrix> compute_interactions(std::shared_ptr<const Matrix> density, const double schwarz_thresh = 0.0) const;
+    std::vector<std::complex<double>> get_mlm(std::array<double, 3> r01, std::vector<std::complex<double>> omega0) const;
     std::shared_ptr<const ZMatrix> compute_JK(std::shared_ptr<const Matrix> density, const int nint) const;
 
   public:
     Tree(std::shared_ptr<const Geometry> geom, const int max_height = (nbit__ - 1)/3, const bool do_contract = false,
-         const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
+         const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
     ~Tree() { }
 
-    void init_fmm(const int lmax, const bool dodf, const std::string auxfile) const;
-    std::shared_ptr<const ZMatrix> fmm(const int lmax, std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const double scale = 1.0, const std::vector<double> schwarz = std::vector<double>(), const double schwarz_thresh = 0.0) const;
+    void init_fmm(const bool dodf, const std::string auxfile) const;
+    std::shared_ptr<const ZMatrix> fmm(std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const double scale = 1.0, const double schwarz_thresh = 0.0) const;
 
     void print_tree_xyz() const;
     void print_leaves() const;

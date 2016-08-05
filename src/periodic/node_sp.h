@@ -88,6 +88,7 @@ class NodeSP {
     std::shared_ptr<const NodeSP> parent() const { return parent_; }
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
+    double radius() const;
 
     bool is_complete() const { return is_complete_; }
     bool is_leaf() const { return is_leaf_; }
