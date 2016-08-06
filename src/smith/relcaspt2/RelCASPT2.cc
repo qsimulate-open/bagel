@@ -148,8 +148,6 @@ void RelCASPT2::RelCASPT2::solve() {
         } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
-          //(*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
-          //                        + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
           (*heff_)(jst, ist) = 0.5*(std::conj(dot_product_transpose(sall_[ist], t2all_[jst]))
                                   + dot_product_transpose(sall_[jst], t2all_[ist]))
                                   + (*eref_)(jst, ist);
