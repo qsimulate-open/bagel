@@ -55,9 +55,10 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
     vector<int> rdm_states;
-    if (idata->get<bool>("extract_average_rdms", false))
+    if (idata->get<bool>("extract_average_rdms", false)) {
       rdm_states = idata->get_vector<int>("rdm_state");
-    ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
+      ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
+    }
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
