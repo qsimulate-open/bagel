@@ -83,6 +83,7 @@ void RelCASPT2::RelCASPT2::solve() {
   t2all_ = solve_linear(sall_, t2all_);
 
   // print out energies
+  vector<complex<double>> shift_correction(nstates_*nstates_);
   cout << endl;
   for (int istate = 0; istate != nstates_; ++istate) {
     if (info_->shift() == 0.0) {
@@ -90,22 +91,27 @@ void RelCASPT2::RelCASPT2::solve() {
       assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
       cout << "    * RelCASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
     } else {
-      // TODO Not checked thoroughly - same as non-relativistic code
-      throw logic_error("Please carefully verify the use of level shift in relativistic multi-state CASPT2.");
       // will be used in normq
       n = init_residual();
       complex<double> norm = 0.0;
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
+      for (int jstate = 0; jstate != nstates_; ++jstate) {
+        if (istate != jstate && info_->shift_diag())
+          continue;
+        complex<double> nn = 0.0;
+        for (int jst = 0; jst != nstates_; ++jst) { // bra
+          for (int ist = 0; ist != nstates_; ++ist) { // ket
+            if (info_->sssr() && (jst != istate || ist != istate))
+              continue;
+            set_rdm(jst, ist);
+            t2 = t2all_[jstate]->at(ist);
+            shared_ptr<Queue> normq = make_normq(true, jst == ist);
+            while (!normq->done())
+              normq->next_compute();
+            nn += conj(dot_product_transpose(n, t2all_[istate]->at(jst)));
+          }
         }
+        shift_correction[istate + nstates_*jstate] = nn;
+        if (jstate == istate) norm = nn;
       }
 
       pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate)) - info_->shift()*std::real(norm);
@@ -118,6 +124,8 @@ void RelCASPT2::RelCASPT2::solve() {
   }
 
   // MS-CASPT2
+  if (info_->shift() && info_->do_ms())
+    cout << "    MS-CASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
   if (info_->do_ms() && info_->sssr())
     for (int istate = 0; istate != nstates_; ++istate) //K states
       for (int jst=0; jst != nstates_; ++jst) // <jst|
@@ -144,11 +152,13 @@ void RelCASPT2::RelCASPT2::solve() {
           //                        + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
           (*heff_)(jst, ist) = 0.5*(std::conj(dot_product_transpose(sall_[ist], t2all_[jst]))
                                   + dot_product_transpose(sall_[jst], t2all_[ist]))
-                             + (*eref_)(jst, ist);
-          //(*heff_)(ist, jst) = (*heff_)(jst, ist);
+                                  + (*eref_)(jst, ist);
+          if (!info_->shift_diag())
+            (*heff_)(jst, ist) -= shift_correction[jst+nstates_*ist]*info_->shift();
+
           (*heff_)(ist, jst) = std::conj((*heff_)(jst, ist));
           assert(std::abs((0.5*(std::conj(dot_product_transpose(sall_[jst], t2all_[ist])) + dot_product_transpose(sall_[ist], t2all_[jst]))
-                           + (*eref_)(ist, jst)) - (*heff_)(ist, jst)) < 1.0e-6);
+                           + (*eref_)(ist, jst) - (info_->shift_diag() ? 0.0 : shift_correction[ist+nstates_*jst]*info_->shift())) - (*heff_)(ist, jst)) < 1.0e-6);
         }
       }
     }

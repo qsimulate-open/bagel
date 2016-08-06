@@ -54,6 +54,7 @@ class SMITH_Info {
     bool do_ms_;
     bool do_xms_;
     bool sssr_;
+    bool shift_diag_;
 
     double thresh_overlap_;
 
@@ -85,6 +86,7 @@ class SMITH_Info {
     bool do_ms() const { return do_ms_; }
     bool do_xms() const { return do_xms_; }
     bool sssr() const { return sssr_; }
+    bool shift_diag() const { return shift_diag_; }
     double thresh_overlap() const { return thresh_overlap_; }
 
     template<typename T = DataType, class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type>
