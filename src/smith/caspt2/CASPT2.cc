@@ -83,6 +83,7 @@ void CASPT2::CASPT2::solve() {
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
 
+  vector<complex<double>> shift_correction(nstates_*nstates_);
   for (int istate = 0; istate != nstates_; ++istate) {
     if (info_->shift() == 0.0) {
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
@@ -91,17 +92,24 @@ void CASPT2::CASPT2::solve() {
       // will be used in normq
       n = init_residual();
       double norm = 0.0;
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
+      for (int jstate = 0; jstate != nstates_; ++jstate) {
+        if (istate != jstate && info_->shift_diag())
+          continue;
+        complex<double> nn = 0.0;
+        for (int jst = 0; jst != nstates_; ++jst) { // bra
+          for (int ist = 0; ist != nstates_; ++ist) { // ket
+            if (info_->sssr() && (jst != istate || ist != istate))
+              continue;
+            set_rdm(jst, ist);
+            t2 = t2all_[istate]->at(ist);
+            shared_ptr<Queue> normq = make_normq(true, jst == ist);
+            while (!normq->done())
+              normq->next_compute();
+            nn += dot_product_transpose(n, t2all_[istate]->at(jst));
+          }
         }
+        shift_correction[istate + nstates_*jstate] = nn;
+        if (jstate == istate) norm = nn;
       }
 
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
@@ -112,6 +120,8 @@ void CASPT2::CASPT2::solve() {
   }
 
   // MS-CASPT2
+  if (info_->shift() && info_->do_ms())
+    cout << "    MS-CASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
   if (info_->do_ms() && info_->sssr())
     for (int istate = 0; istate != nstates_; ++istate) //K states
       for (int jst=0; jst != nstates_; ++jst) // <jst|
@@ -137,6 +147,8 @@ void CASPT2::CASPT2::solve() {
           (*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
                                   + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
                              + (*eref_)(jst, ist);
+          if (!info_->shift_diag())
+            (*heff_)(jst, ist) -= shift_correction[jst+nstates_*ist]*info_->shift();
           (*heff_)(ist, jst) = (*heff_)(jst, ist);
         }
       }
@@ -275,6 +287,8 @@ void CASPT2::CASPT2::solve_deriv() {
         if (!info_->sssr() || istate == jst)
           sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), rall_[0]->at(jst));
       if (info_->shift() != 0.0) {
+        if (!info_->shift_diag())
+          throw runtime_error("Sorry, off-diagonal levelshift corrections are implemented for energies but not for gradients.");
         // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
         n = init_residual();
         for (int jst = 0; jst != nstates_; ++jst) { // bra
