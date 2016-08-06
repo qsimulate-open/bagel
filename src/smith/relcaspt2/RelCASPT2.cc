@@ -125,7 +125,7 @@ void RelCASPT2::RelCASPT2::solve() {
 
   // MS-CASPT2
   if (info_->shift() && info_->do_ms())
-    cout << "    MS-CASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
+    cout << "    MS-RelCASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
   if (info_->do_ms() && info_->sssr())
     for (int istate = 0; istate != nstates_; ++istate) //K states
       for (int jst=0; jst != nstates_; ++jst) // <jst|
