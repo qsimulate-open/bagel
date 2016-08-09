@@ -232,12 +232,12 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     z = solver->compute_residual(z, sigma);
 
+    cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->first()->rms()
+                                     << setw(17) << z->second()->rms()*lambda  << setw(10) << setprecision(2) << timer.tick() << endl;
+    if (z->first()->rms()+z->second()->rms()*lambda < zthresh) break;
+
     *z /= *denom; 
     z->second()->project_out(civector_);
-
-    cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->first()->rms()
-                                     << setw(17) << z->second()->rms()/lambda  << setw(10) << setprecision(2) << timer.tick() << endl;
-    if (z->first()->rms()+z->second()->rms()/lambda < zthresh) break;
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
