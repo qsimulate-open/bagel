@@ -496,7 +496,6 @@ shared_ptr<const ZMatrix> Node::compute_Coulomb(const int nbasis, shared_ptr<con
   n1e_int_ = 0;
   n2e_int_ = 0;
   n2e_total_ = 0;
-  const size_t ndim = density->ndim();
 
 #if 1
   // add FF local expansions to coulomb matrix

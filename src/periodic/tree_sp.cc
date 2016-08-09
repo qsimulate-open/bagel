@@ -180,12 +180,10 @@ shared_ptr<const ZMatrix> TreeSP::fmm(shared_ptr<const Matrix> density, const bo
   for (int i01 = 0; i01 != nsp; ++i01) {
     shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
     const int offset0 = geom_->shellpair(i01)->offset(0);
-    const int i0 = geom_->shellpair(i01)->shell_ind(0);
     const int size0 = sh0->nbasis();
 
     shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
     const int offset1 = geom_->shellpair(i01)->offset(1);
-    const int i1 = geom_->shellpair(i01)->shell_ind(1);
     const int size1 = sh0->nbasis();
 
     double denmax = 0.0;
@@ -282,8 +280,6 @@ void TreeSP::keysort() {
   vertex_.resize(nvertex_);
   for (int n = 0; n != nvertex_; ++n) {
     const int pos = ordering_[n];
-    array<double, 3> coord = geom_->shellpair(shell_in_geom_[pos])->centre();
-    //cout << coord[0] << "  " << coord[1] << "   " << coord[2] << " *** " << particle_keys_[n] << endl;
     auto v = make_shared<VertexSP>(particle_keys_[n], geom_->shellpair(shell_in_geom_[pos]));
     vertex_[n] = v;
   }

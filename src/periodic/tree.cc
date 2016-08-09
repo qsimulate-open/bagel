@@ -482,12 +482,10 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(shared_ptr<const Matrix> de
   for (int i01 = 0; i01 != nspairs; ++i01) {
     shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
     const int offset0 = geom_->shellpair(i01)->offset(0);
-    const int i0 = geom_->shellpair(i01)->shell_ind(0);
     const int size0 = sh0->nbasis();
 
     shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
     const int offset1 = geom_->shellpair(i01)->offset(1);
-    const int i1 = geom_->shellpair(i01)->shell_ind(1);
     const int size1 = sh0->nbasis();
 
     double denmax = 0.0;
@@ -501,9 +499,8 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(shared_ptr<const Matrix> de
 
  #if 1
   const int shift = sizeof(int) * 4;
-  const int nmult = (lmax_+1)*(lmax_+1);
+  //const int nmult = (lmax_+1)*(lmax_+1);
   shared_ptr<Petite> plist = geom_->plist();;
-  int nzero = 0;
   int nint = 0;
   for (int i01 = 0; i01 != nspairs; ++i01) {
 //    if (!plist->in_p2(i01)) continue;
@@ -622,7 +619,6 @@ shared_ptr<const ZMatrix> Tree::compute_interactions(shared_ptr<const Matrix> de
                 const unsigned int nj23 = (j2 << shift) + j3;
                 if ((nj23 < nj01) && (i01 == i23)) continue;
 
-                const int j3n = j3 * density->ndim();
                 const double scale_23 = (j2 == j3) ? 0.5 : 1.0;
                 const double scale = ((nj01 == nj23) ? 0.25 : 0.5);
                 //const double scale = ((nj01 == nj23) ? 0.25 : 0.5) * static_cast<double>(ijkl);
@@ -753,7 +749,6 @@ shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density, con
             const int j0n = j0 * density->ndim();
             for (int j1 = b1offset; j1 != b1offset + input[2]->nbasis(); ++j1) {
               const int j1n = j1 * density->ndim();
-              const double scale_01 = (j0 == j1) ? 1.0 : 2.0;
               for (int j2 = b2offset; j2 != b2offset + input[1]->nbasis(); ++j2) {
                 const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + input[0]->nbasis(); ++j3, ++eridata) {
