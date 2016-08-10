@@ -44,6 +44,7 @@ class FMM {
     std::array<double, 3> centre_;
     std::array<double, 3> maxxyz_;
     double boxsize_, unitsize_;
+    std::vector<int> nbranch_;
 
     std::vector<std::shared_ptr<Box>> box_;
     std::vector<std::array<int, 3>> nsp_box_;

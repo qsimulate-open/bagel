@@ -51,12 +51,13 @@ void FMM::init() {
 
   nsp_ = geom_->nshellpair();
 
+  coordinates_.resize(nsp_);
   maxxyz_ = {{0, 0, 0}};
   double rad = 0;
   for (int j = 0; j != 3; ++j) {
     for (int i = 0; i != nsp_; ++i) {
       coordinates_[i][j] = geom_->shellpair(i)->centre(j) - centre_[j];
-      if (coordinates_[i][j] > maxxyz_[j]) maxxyz_[j] = coordinates_[i][j];
+      if (abs(coordinates_[i][j]) > maxxyz_[j]) maxxyz_[j] = abs(coordinates_[i][j]);
     }
     if (maxxyz_[j] > rad) rad = maxxyz_[j];
   }
@@ -77,23 +78,25 @@ void FMM::get_boxes() {
   vector<int> ibox(nsp_);
 
   map<array<int, 3>, int> leafmap;
+  assert(leafmap.empty());
   int nleaf = 0;
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
-      idxbox[i] = (int) floor(coordinates_[isp][i]/unitsize_);
+      idxbox[i] = (int) floor((coordinates_[isp][i] + maxxyz_[i])/unitsize_);
       assert(idxbox[i] < ns2);
     }
 
     pair<map<array<int, 3>,int>::iterator, bool> chk_newbox;
     chk_newbox = leafmap.insert(pair<array<int, 3>,int>(idxbox, nleaf));
     if (!chk_newbox.second) {
-     leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
-     ibox[isp] = nleaf;
-     boxid[nleaf] = idxbox;
-     ++nleaf;
-    } else {
       ibox[isp] = leafmap.find(idxbox)->second;
+    } else {
+      leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
+      ibox[isp] = nleaf;
+      boxid.resize(nleaf+1);
+      boxid[nleaf] = idxbox;
+      ++nleaf;
     }
   }
   assert(nleaf == boxid.size());
@@ -119,7 +122,11 @@ void FMM::get_boxes() {
 
   int icntc = 0;
   int icntp = ns2;
+  nbranch_.resize(ns_+1);
+  nbranch_[0] = 1;
+  nbranch_[ns_] = nleaf;
   for (int nss = ns_; nss != 0; --nss) {
+    int nbranch = 0;
     const int nss2 = pow(nss, 2);
 
     for (int i = 0; i != nss2; ++i) {
@@ -142,6 +149,7 @@ void FMM::get_boxes() {
             box_.insert(box_.end(), newbox);
             leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxp, nbox));
             ++nbox;
+            ++nbranch;
           } else if (child_exist.second && parent_exist.second) {
             const int ibox = leafmap.find(idxp)->second;
             const int ichild = leafmap.find(idxc)->second;
@@ -153,7 +161,10 @@ void FMM::get_boxes() {
     }
     icntc = icntp;
     icntp += nss2;
+    nbranch_[nss] = nbranch;
   }
+  assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
+  nbox_ = nbox;
 
 }
 
