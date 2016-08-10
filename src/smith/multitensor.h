@@ -50,7 +50,7 @@ class MultiTensor_ {
 
     MultiTensor_(const MultiTensor_<DataType>& o) : fac_(o.fac_.begin(), o.fac_.end()) {
       for (auto& i : o.tensors_)
-        tensors_.push_back(i->copy());
+        tensors_.push_back(i ? i->copy() : std::shared_ptr<TType>());
     }
 
     std::shared_ptr<MultiTensor_<DataType>> copy() const {
@@ -60,16 +60,23 @@ class MultiTensor_ {
     std::shared_ptr<MultiTensor_<DataType>> clone() const {
       auto out = std::make_shared<MultiTensor_<DataType>>(nref());
       auto oiter = out->tensors_.begin();
-      for (auto& i : tensors_)
-        *oiter++ = i->clone();
+      for (auto& i : tensors_) {
+        if (i)
+          *oiter = i->clone();
+        ++oiter;
+      }
       return out;
     }
 
     void ax_plus_y(const DataType& a, const MultiTensor_<DataType>& o) {
       blas::ax_plus_y_n(a, o.fac_.data(), o.fac_.size(), fac_.data());
       auto oiter = o.tensors_.begin();
-      for (auto& i : tensors_)
-        i->ax_plus_y(a, *oiter++);
+      for (auto& i : tensors_) {
+        assert(!(!i ^ !*oiter));
+        if (i)
+          i->ax_plus_y(a, *oiter);
+        ++oiter;
+      }
     }
 
     void ax_plus_y(const DataType& a, std::shared_ptr<const MultiTensor_<DataType>> o) { ax_plus_y(a, *o); }
@@ -91,27 +98,29 @@ class MultiTensor_ {
     void scale(const DataType& a) {
       blas::scale_n(a, fac_.data(), fac_.size());
       for (auto& i : tensors_)
-        i->scale(a);
+        if (i)
+          i->scale(a);
     }
 
     void zero() { scale(0.0); }
 
     size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); }
-    size_t size = fac_.size();
 
     double norm() const {
       double out = 0.0;
       for (auto& i : fac_)
         out += detail::real(detail::conj(i)*i);
       for (auto& i : tensors_)
-        out += std::pow(i->norm(),2);
+        if (i)
+          out += std::pow(i->norm(),2);
       return std::sqrt(out);
     }
 
     double rms() const {
       size_t size = fac_.size();
       for (auto& i : tensors_)
-        size += i->size_alloc();
+        if (i)
+          size += i->size_alloc();
       return norm() / std::sqrt(size);
     }
 
@@ -120,7 +129,9 @@ class MultiTensor_ {
       assert(fac_.size() == o.fac_.size());
       for (int i = 0; i != fac_.size(); ++i) {
         out += detail::conj(fac_[i]) * o.fac_[i];
-        out += tensors_[i]->dot_product(o.tensors_[i]);
+        assert(!(!tensors_[i] ^ !o.tensors_[i]));
+        if (tensors_[i])
+          out += tensors_[i]->dot_product(o.tensors_[i]);
       }
       return out;
     }

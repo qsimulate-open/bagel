@@ -43,13 +43,13 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
   // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
     auto tmp = make_shared<MultiTensor>(nstates_);
-    for (auto& j : *tmp)
-      j = init_amplitude();
-    t2all_.push_back(tmp);
-
     auto tmp2 = make_shared<MultiTensor>(nstates_);
-    for (auto& j : *tmp2)
-      j = init_residual();
+    for (int j = 0; j != nstates_; ++j)
+      if (!info_->sssr() || i == j) {
+        (*tmp)[j] = init_amplitude();
+        (*tmp2)[j] = init_residual();
+      }
+    t2all_.push_back(tmp);
     sall_.push_back(tmp2);
     rall_.push_back(tmp2->clone());
   }
@@ -112,35 +112,36 @@ void CASPT2::CASPT2::solve() {
   }
 
   // MS-CASPT2
-  if (info_->do_ms() && info_->sssr())
-    for (int istate = 0; istate != nstates_; ++istate) //K states
-      for (int jst=0; jst != nstates_; ++jst) // <jst|
-        if (info_->sssr() && jst != istate) {
-          set_rdm(jst, istate);
-          s = sall_[istate]->at(jst);
-          shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
-          while(!sourceq->done())
-            sourceq->next_compute();
-        }
-
   if (info_->do_ms() && nstates_ > 1) {
     heff_ = make_shared<Matrix>(nstates_, nstates_);
 
     for (int ist = 0; ist != nstates_; ++ist) {
+      auto sist = make_shared<MultiTensor>(nstates_);
+      for (int jst = 0; jst != nstates_; ++jst) {
+        if (sall_[ist]->at(jst)) {
+          sist->at(jst) = sall_[ist]->at(jst);
+        } else {
+          set_rdm(jst, ist);
+          s = init_residual();
+          shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+          while(!sourceq->done())
+            sourceq->next_compute();
+          sist->at(jst) = s;
+        }
+      }
+
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
           (*heff_)(ist, ist) = pt2energy_[ist];
-        } else if (ist < jst) {
+        } else {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > }
-          (*heff_)(jst, ist) = 0.5*(detail::real(dot_product_transpose(sall_[ist], t2all_[jst]))
-                                  + detail::real(dot_product_transpose(sall_[jst], t2all_[ist])))
-                             + (*eref_)(jst, ist);
-          (*heff_)(ist, jst) = (*heff_)(jst, ist);
+          (*heff_)(jst, ist) = dot_product_transpose(sist, t2all_[jst]) + (*eref_)(jst, ist);
         }
       }
     }
+    heff_->symmetrize();
 
     // print out the effective Hamiltonian
     cout << endl;
@@ -217,6 +218,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           t2 = t[i]->at(ist);
           r = rall_[i]->at(jst);
 
+          // compute residuals named r for each K
           e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
@@ -263,17 +265,33 @@ void CASPT2::CASPT2::solve_deriv() {
     // compute first term and shift term (if used)
     print_iteration();
 
-    // rall_[0] stores the result of summation over M'
+    // source stores the result of summation over M'
     const int target = info_->target();
-    rall_[0]->zero();
-    for (int istate = 0; istate != nstates_; ++istate) //K states
-      rall_[0]->ax_plus_y((*heff_)(istate, target), sall_[istate]);
+    auto source = make_shared<MultiTensor>(nstates_);
+    for (auto& i : *source)
+      i = init_residual(); 
+    for (int ist = 0; ist != nstates_; ++ist) {//K states
+      auto sist = make_shared<MultiTensor>(nstates_);
+      for (int jst = 0; jst != nstates_; ++jst) {
+        if (sall_[ist]->at(jst)) {
+          sist->at(jst) = sall_[ist]->at(jst);
+        } else {
+          set_rdm(jst, ist);
+          s = init_residual();
+          shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+          while(!sourceq->done())
+            sourceq->next_compute();
+          sist->at(jst) = s;
+        }
+      }
+      source->ax_plus_y((*heff_)(ist, target), sist);
+    }
 
     for (int istate = 0; istate != nstates_; ++istate) { //K states
       sall_[istate]->zero();
       for (int jst = 0; jst != nstates_; ++jst)
         if (!info_->sssr() || istate == jst)
-          sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), rall_[0]->at(jst));
+          sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), source->at(jst));
       if (info_->shift() != 0.0) {
         // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
         n = init_residual();
