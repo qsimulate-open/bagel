@@ -51,19 +51,25 @@ void FMM::init() {
 
   nsp_ = geom_->nshellpair();
 
+  double minext = geom_->shellpair(0)->extent();
+  for (int i = 1; i != nsp_; ++i)
+    if (minext > geom_->shellpair(i)->extent())
+      minext = geom_->shellpair(i)->extent();
+
   coordinates_.resize(nsp_);
   maxxyz_ = {{0, 0, 0}};
   double rad = 0;
   for (int j = 0; j != 3; ++j) {
     for (int i = 0; i != nsp_; ++i) {
-      coordinates_[i][j] = geom_->shellpair(i)->centre(j) - centre_[j];
+      coordinates_[i][j] = geom_->shellpair(i)->centre(j);
       if (abs(coordinates_[i][j]) > maxxyz_[j]) maxxyz_[j] = abs(coordinates_[i][j]);
     }
     if (maxxyz_[j] > rad) rad = maxxyz_[j];
   }
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
-  nsp_box_.resize(nsp_);
+
+  //if (minext > unitsize_) throw runtime_error("Too small partitions: need smaller NS");
 
   get_boxes();
 }
@@ -87,9 +93,9 @@ void FMM::get_boxes() {
       assert(idxbox[i] < ns2);
     }
 
-    pair<map<array<int, 3>,int>::iterator, bool> is_newbox;
-    is_newbox = leafmap.insert(pair<array<int, 3>,int>(idxbox, nleaf));
-    if (!is_newbox.second) {
+    map<array<int, 3>,int>::iterator box = leafmap.find(idxbox);
+    const bool box_found = (box != leafmap.end());
+    if (box_found) {
       ibox[isp] = leafmap.find(idxbox)->second;
     } else {
       leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
@@ -99,7 +105,7 @@ void FMM::get_boxes() {
       ++nleaf;
     }
   }
-  assert(nleaf == boxid.size());
+  assert(nleaf == boxid.size() && nleaf <= nsp_);
 
   // get leaves
   vector<vector<int>> leaves(nleaf);
@@ -125,10 +131,10 @@ void FMM::get_boxes() {
   nbranch_.resize(ns_+1);
   nbranch_[0] = 1;
   nbranch_[ns_] = nleaf;
+
   for (int nss = ns_; nss != 0; --nss) {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
-    cout << "nss = " << nss << endl;
 
     for (int i = 0; i != nss2; ++i) {
       for (int j = 0; j != nss2; ++j) {
@@ -138,24 +144,28 @@ void FMM::get_boxes() {
           idxp[0] = (int) floor(0.5*(i+1)) + icntp;
           idxp[1] = (int) floor(0.5*(j+1)) + icntp;
           idxp[2] = (int) floor(0.5*(k+1)) + icntp;
-          array<int, 3> idxc = {{i+icntc, j+icntc, k+icntc}};
-          const int ichild = leafmap.find(idxc)->second;
 
-          pair<map<array<int, 3>,int>::iterator, bool> child_exist;
-          child_exist = leafmap.insert(pair<array<int, 3>,int>(idxc, 0));
-          pair<map<array<int, 3>,int>::iterator, bool> parent_exist;
-          parent_exist = leafmap.insert(pair<array<int, 3>,int>(idxp, 0));
-          if (child_exist.second && !parent_exist.second) {
-            auto newbox = make_shared<Box>(nss-1, nbox, idxp, lmax_, box_[ichild]->sp());
-            box_.insert(box_.end(), newbox);
-            leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxp, nbox));
-            box_[nbox]->insert_child(box_[ichild]);
-            ++nbox;
-            ++nbranch;
-          } else if (child_exist.second && parent_exist.second) {
-            const int ibox = leafmap.find(idxp)->second;
-            box_[ibox]->insert_child(box_[ichild]);
-            box_[ibox]->insert_sp(box_[ichild]->sp());
+          array<int, 3> idxc = {{i+icntc, j+icntc, k+icntc}};
+          map<array<int, 3>,int>::iterator child = leafmap.find(idxc);
+          const bool child_found = (child != leafmap.end());
+
+          if (child_found) {
+            const int ichild = leafmap.find(idxc)->second;
+            map<array<int, 3>,int>::iterator parent = leafmap.find(idxp);
+            const bool parent_found = (parent != leafmap.end());
+
+            if (!parent_found) {
+              auto newbox = make_shared<Box>(nss-1, nbox, idxp, lmax_, box_[ichild]->sp());
+              box_.insert(box_.end(), newbox);
+              leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxp, nbox));
+              box_[nbox]->insert_child(box_[ichild]);
+              ++nbox;
+              ++nbranch;
+            } else {
+              const int ibox = leafmap.find(idxp)->second;
+              box_[ibox]->insert_child(box_[ichild]);
+              box_[ibox]->insert_sp(box_[ichild]->sp());
+            }
           }
 
         }
@@ -167,6 +177,9 @@ void FMM::get_boxes() {
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << endl;
+  for (int i = ns_; i != 0; --i)
+    print_boxes(i);
 
 }
 

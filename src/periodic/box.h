@@ -47,7 +47,7 @@ class Box {
 
     bool is_leaf_;
     double thresh_, extent_;
-    int nsp_, nbasis0_, nbasis1_;
+    int nbasis0_, nbasis1_;
 
 
     void init();
@@ -75,7 +75,7 @@ class Box {
     int boxid() const { return boxid_; }
     std::array<int, 3> tvec() const { return tvec(); }
 
-    int nsp() const { return nsp_; }
+    int nsp() const { return sp_.size(); }
     int nchild() const { return child_.size(); }
     int nneigh() const { return neigh_.size(); }
     int ninter() const { return inter_.size(); }

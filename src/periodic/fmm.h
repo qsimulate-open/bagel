@@ -47,7 +47,6 @@ class FMM {
     std::vector<int> nbranch_;
 
     std::vector<std::shared_ptr<Box>> box_;
-    std::vector<std::array<int, 3>> nsp_box_;
     double thresh_;
     int ws_;
 
