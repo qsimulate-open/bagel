@@ -35,7 +35,7 @@ namespace bagel {
 class Box {
   friend class FMM;
   protected:
-    int boxid_, lmax_;
+    int rank_, boxid_, lmax_;
     std::array<int, 3> tvec_;
     std::array<double, 3> centre_;
     double boxsize_;
@@ -47,7 +47,7 @@ class Box {
 
     bool is_leaf_;
     double thresh_, extent_;
-    int nsp_, nchild_, nneigh_, ninter_, nbasis0_, nbasis1_;
+    int nsp_, nbasis0_, nbasis1_;
 
 
     void init();
@@ -65,16 +65,20 @@ class Box {
 
 
   public:
-    Box(int id, std::array<int, 3> v, const int lmax = 10, std::vector<std::shared_ptr<const ShellPair>> sp = std::vector<std::shared_ptr<const ShellPair>>()) : boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
+    Box(int n, int id, std::array<int, 3> v, const int lmax = 10, std::vector<std::shared_ptr<const ShellPair>> sp = std::vector<std::shared_ptr<const ShellPair>>()) : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
     ~Box() { }
 
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
 
+    int rank() const { return rank_; }
+    int boxid() const { return boxid_; }
+    std::array<int, 3> tvec() const { return tvec(); }
+
     int nsp() const { return nsp_; }
-    int nchild() const { return nchild_; }
-    int nneigh() const { return nneigh_; }
-    int ninter() const { return ninter_; }
+    int nchild() const { return child_.size(); }
+    int nneigh() const { return neigh_.size(); }
+    int ninter() const { return inter_.size(); }
     bool is_leaf() const { return is_leaf_; }
     double extent() const { return extent_; }
     int nbasis0() const { return nbasis0_; }

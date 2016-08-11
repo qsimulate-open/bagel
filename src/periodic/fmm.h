@@ -64,6 +64,7 @@ class FMM {
     void M2L();
     void L2L();
     std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr, const bool dodf = false, const double schwarz_thresh = 0.0) const;
+    void print_boxes(const int i) const;
 };
 
 }

@@ -87,9 +87,9 @@ void FMM::get_boxes() {
       assert(idxbox[i] < ns2);
     }
 
-    pair<map<array<int, 3>,int>::iterator, bool> chk_newbox;
-    chk_newbox = leafmap.insert(pair<array<int, 3>,int>(idxbox, nleaf));
-    if (!chk_newbox.second) {
+    pair<map<array<int, 3>,int>::iterator, bool> is_newbox;
+    is_newbox = leafmap.insert(pair<array<int, 3>,int>(idxbox, nleaf));
+    if (!is_newbox.second) {
       ibox[isp] = leafmap.find(idxbox)->second;
     } else {
       leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
@@ -115,7 +115,7 @@ void FMM::get_boxes() {
     vector<shared_ptr<const ShellPair>> sp;
     for (int i = 0; i != leaves[il].size(); ++i)
       sp.insert(sp.end(), geom_->shellpair(i));
-    auto newbox = make_shared<Box>(il, boxid[il], lmax_, sp);
+    auto newbox = make_shared<Box>(ns_, il, boxid[il], lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -127,32 +127,34 @@ void FMM::get_boxes() {
   nbranch_[ns_] = nleaf;
   for (int nss = ns_; nss != 0; --nss) {
     int nbranch = 0;
-    const int nss2 = pow(nss, 2);
+    const int nss2 = pow(2, nss);
+    cout << "nss = " << nss << endl;
 
     for (int i = 0; i != nss2; ++i) {
-      for (int j = 0; i != nss2; ++j) {
-        for (int k = 0; i != nss2; ++k) {
+      for (int j = 0; j != nss2; ++j) {
+        for (int k = 0; k != nss2; ++k) {
           vector<shared_ptr<const ShellPair>> sp;
           array<int, 3> idxp;
           idxp[0] = (int) floor(0.5*(i+1)) + icntp;
           idxp[1] = (int) floor(0.5*(j+1)) + icntp;
           idxp[2] = (int) floor(0.5*(k+1)) + icntp;
           array<int, 3> idxc = {{i+icntc, j+icntc, k+icntc}};
+          const int ichild = leafmap.find(idxc)->second;
 
           pair<map<array<int, 3>,int>::iterator, bool> child_exist;
           child_exist = leafmap.insert(pair<array<int, 3>,int>(idxc, 0));
           pair<map<array<int, 3>,int>::iterator, bool> parent_exist;
           parent_exist = leafmap.insert(pair<array<int, 3>,int>(idxp, 0));
           if (child_exist.second && !parent_exist.second) {
-            const int ichild = leafmap.find(idxc)->second;
-            auto newbox = make_shared<Box>(nbox, idxp, lmax_, box_[ichild]->sp());
+            auto newbox = make_shared<Box>(nss-1, nbox, idxp, lmax_, box_[ichild]->sp());
             box_.insert(box_.end(), newbox);
             leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxp, nbox));
+            box_[nbox]->insert_child(box_[ichild]);
             ++nbox;
             ++nbranch;
           } else if (child_exist.second && parent_exist.second) {
             const int ibox = leafmap.find(idxp)->second;
-            const int ichild = leafmap.find(idxc)->second;
+            box_[ibox]->insert_child(box_[ichild]);
             box_[ibox]->insert_sp(box_[ichild]->sp());
           }
 
@@ -161,7 +163,7 @@ void FMM::get_boxes() {
     }
     icntc = icntp;
     icntp += nss2;
-    nbranch_[nss] = nbranch;
+    nbranch_[nss-1] = nbranch;
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
@@ -196,4 +198,18 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density, 
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
 
   return out;
+}
+
+
+void FMM::print_boxes(const int i) const {
+
+  for (auto& b : box_) {
+    if (b->rank() == i) {
+      cout << "Rank = " << i << " *** nsp = " << b->nsp() << endl;
+      for (int i = 0; i != b->nsp(); ++i)
+        cout << setprecision(5) << b->sp(i)->centre(0) << "  " << b->sp(i)->centre(1) << "  " << b->sp(i)->centre(2) << endl;
+    }
+    if (b->rank() > i) break;
+  }
+
 }
