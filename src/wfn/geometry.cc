@@ -563,7 +563,6 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 void Geometry::get_shellpairs() {
 
-  int iat = 0;
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
   for (int n = 0; n != natom(); ++n) {

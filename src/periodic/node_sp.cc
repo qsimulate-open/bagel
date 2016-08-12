@@ -213,7 +213,6 @@ void NodeSP::compute_multipoles(const int lmax) {
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
       assert(nmult == v->nmult());
-      const double r = sqrt(r12[0]*r12[0]+r12[1]*r12[1]+r12[2]*r12[2]);
       //cout << setprecision(9) << " r = " << r << endl;
 //      LocalExpansion shift(r12, v->multipole(), lmax);
 //      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
@@ -439,7 +438,6 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
   assert(is_leaf());
   auto out = make_shared<ZMatrix>(dim, dim);
   out->zero();
-  const size_t ndim = density->ndim();
 
   // add FF local expansions to coulomb matrix
   #if 0
@@ -498,7 +496,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
 
           const int i23 = i2 * density->ndim() + i3;
 
-          const double density_23 = max_den[i01] * 4.0;
+          const double density_23 = max_den[i23] * 4.0;
           const double density_02 = max_den[i0 * nsh + i2];
           const double density_03 = max_den[i0 * nsh + i3];
           const double density_12 = max_den[i1 * nsh + i2];
@@ -509,7 +507,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
                                            max(density_13, density_23));
           const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
           const bool skip_schwarz = integral_bound < schwarz_thresh;
-          //if (skip_schwarz) continue;
+          if (skip_schwarz) continue;
 
           array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
           ERIBatch eribatch(input, mulfactor);
@@ -517,22 +515,16 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
           const double* eridata = eribatch.data();
 
           for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-            const int j0n = j0 * density->ndim();
             for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
               const int j1n = j1 * density->ndim();
               for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                 const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                  const int j3n = j3 * density->ndim();
                   //const double scale = ((neigh->id_in_tree() == id_in_tree_) ? 1.0 : 2.0);
 
                   double eri = *eridata;
                   out->element(j0, j1) += density_data[j2n + j3] * eri;
                   out->element(j0, j2) -= density_data[j1n + j3] * eri * 0.5;
-                  //if (neigh->id_in_tree() !=  id_in_tree_) {
-                  //  out->element(j2, j3) += density_data[j0n + j1] * eri;
-                  //  out->element(j1, j3) -= density_data[j0n + j2] * eri * 0.5;
-                  //}
                 }
               }
             }

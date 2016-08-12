@@ -148,7 +148,7 @@ void RHF::compute() {
     } else {
       //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
       shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
-      previous_fock = make_shared<const Matrix>(*tmp + *hcore);
+      previous_fock = make_shared<const Matrix>(*tmp + *hcore_);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
