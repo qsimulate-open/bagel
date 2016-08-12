@@ -27,7 +27,7 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
-//#include <src/periodic/fmm.h>
+#include <src/periodic/fmm.h>
 
 using namespace bagel;
 using namespace std;
