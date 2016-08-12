@@ -77,6 +77,8 @@ void FMM::init() {
 
 void FMM::get_boxes() {
 
+  Timer fmminit;
+
   const int ns2 = pow(2, ns_);
 
   // find out unempty leaves
@@ -89,7 +91,7 @@ void FMM::get_boxes() {
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
-      idxbox[i] = (int) floor((coordinates_[isp][i] + maxxyz_[i])/unitsize_);
+      idxbox[i] = (int) floor(coordinates_[isp][i]/unitsize_) + ns_-1;
       assert(idxbox[i] < ns2);
     }
 
@@ -177,9 +179,9 @@ void FMM::get_boxes() {
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << endl;
-  for (int i = ns_; i != 0; --i)
-    print_boxes(i);
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
+
+  fmminit.tick_print("fmm initialisation");
 
 }
 
@@ -216,11 +218,13 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density, 
 
 void FMM::print_boxes(const int i) const {
 
+  int ib = 0;
   for (auto& b : box_) {
     if (b->rank() == i) {
-      cout << "Rank = " << i << " *** nsp = " << b->nsp() << endl;
+      cout << "Box " << ib << " rank = " << i << " *** nchild = " << b->nchild() << " *** nsp = " << b->nsp() << " *** Shell pairs at:" << endl;
       for (int i = 0; i != b->nsp(); ++i)
         cout << setprecision(5) << b->sp(i)->centre(0) << "  " << b->sp(i)->centre(1) << "  " << b->sp(i)->centre(2) << endl;
+      ++ib;
     }
     if (b->rank() > i) break;
   }
