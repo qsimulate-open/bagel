@@ -85,8 +85,8 @@ void FMM::get_boxes() {
   vector<array<int, 3>> boxid; // max dimension 2**(ns+1)-1
   vector<int> ibox(nsp_);
 
-  map<array<int, 3>, int> leafmap;
-  assert(leafmap.empty());
+  map<array<int, 3>, int> treemap;
+  assert(treemap.empty());
   int nleaf = 0;
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
@@ -95,12 +95,12 @@ void FMM::get_boxes() {
       assert(idxbox[i] < ns2);
     }
 
-    map<array<int, 3>,int>::iterator box = leafmap.find(idxbox);
-    const bool box_found = (box != leafmap.end());
+    map<array<int, 3>,int>::iterator box = treemap.find(idxbox);
+    const bool box_found = (box != treemap.end());
     if (box_found) {
-      ibox[isp] = leafmap.find(idxbox)->second;
+      ibox[isp] = treemap.find(idxbox)->second;
     } else {
-      leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
+      treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
       ibox[isp] = nleaf;
       boxid.resize(nleaf+1);
       boxid[nleaf] = idxbox;
@@ -148,23 +148,23 @@ void FMM::get_boxes() {
           idxp[2] = (int) floor(0.5*(k+1)) + icntp;
 
           array<int, 3> idxc = {{i+icntc, j+icntc, k+icntc}};
-          map<array<int, 3>,int>::iterator child = leafmap.find(idxc);
-          const bool child_found = (child != leafmap.end());
+          map<array<int, 3>,int>::iterator child = treemap.find(idxc);
+          const bool child_found = (child != treemap.end());
 
           if (child_found) {
-            const int ichild = leafmap.find(idxc)->second;
-            map<array<int, 3>,int>::iterator parent = leafmap.find(idxp);
-            const bool parent_found = (parent != leafmap.end());
+            const int ichild = treemap.find(idxc)->second;
+            map<array<int, 3>,int>::iterator parent = treemap.find(idxp);
+            const bool parent_found = (parent != treemap.end());
 
             if (!parent_found) {
               auto newbox = make_shared<Box>(nss-1, nbox, idxp, lmax_, box_[ichild]->sp());
               box_.insert(box_.end(), newbox);
-              leafmap.insert(leafmap.end(), pair<array<int, 3>,int>(idxp, nbox));
+              treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
               box_[nbox]->insert_child(box_[ichild]);
               ++nbox;
               ++nbranch;
             } else {
-              const int ibox = leafmap.find(idxp)->second;
+              const int ibox = treemap.find(idxp)->second;
               box_[ibox]->insert_child(box_[ichild]);
               box_[ibox]->insert_sp(box_[ichild]->sp());
             }
