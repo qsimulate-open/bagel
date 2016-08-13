@@ -44,7 +44,6 @@ class FCI_base : public Method {
     int nguess_;
     double thresh_;
     double print_thresh_;
-    bool store_half_ints_;
 
     int nelea_;
     int neleb_;
@@ -82,6 +81,9 @@ class FCI_base : public Method {
     // restart
     bool restart_;
     bool restarted_;
+
+    // integral reuse
+    bool store_half_ints_;
 
     // functions related to natural orbitals
     void update_rdms(std::shared_ptr<const Matrix> coeff);

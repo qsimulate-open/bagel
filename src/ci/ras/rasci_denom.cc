@@ -98,7 +98,7 @@ void RASCI::update(shared_ptr<const Coeff> c) {
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
   // Same Jop as used in FCI
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, /*store*/false, "HZ");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
