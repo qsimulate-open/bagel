@@ -349,35 +349,9 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  shared_ptr<Reference> out;
-  if (nact_) {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                 fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
-    // TODO
-    // compute one-body operators
-    shared_ptr<Matrix> f;
-    shared_ptr<Matrix> fact, factp, gaa;
-    shared_ptr<RotFile>  denom;
-    one_body_operators(f, fact, factp, gaa, denom);
-    if (natocc_) print_natocc();
-
-    *f *= 2.0;
-
-    for (int i = 0; i != nmo_; ++i)
-      for (int j = 0; j != nmo_; ++j) {
-        if (i < nocc_ && j < nocc_) continue;
-        f->element(j,i) = 0.0;
-      }
-    for (int j = 0; j != nact_; ++j)
-      for (int i = 0; i != nocc_; ++i)
-        f->element(i,j+nclosed_) = fact->element(i,j);
-
-    auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
-    out->set_erdm1(erdm);
-  } else {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
-  }
-  return out;
+ return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
+              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
 }
 
 

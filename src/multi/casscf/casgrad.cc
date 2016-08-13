@@ -23,6 +23,7 @@
 //
 
 
+#include <src/scf/hf/fock.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casbfgs.h>
@@ -67,33 +68,47 @@ void GradEval<CASSCF>::init() {
 
 template<>
 shared_ptr<GradFile> GradEval<CASSCF>::compute() {
+  const int nclosed = ref_->nclosed();
+  const int nocc = ref_->nocc();
+  const int nact = ref_->nact();
+  shared_ptr<const Coeff> coeff = ref_->coeff();
+  assert(task_->coeff() == coeff);
+  const MatView ocoeff = ref_->coeff()->slice(0, nocc);
+  const MatView acoeff = ref_->coeff()->slice(nclosed, nocc);
+
   Timer timer;
   shared_ptr<GradFile> gradient;
   // if single state calculation, we use specialized code
   if (ref_->nstate() == 1) {
     //- One ELECTRON PART -//
-    const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
-    shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat() ^ coeff_occ);
-    shared_ptr<const Matrix> erdm1 = ref_->erdm1();
+    shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(ocoeff * *ref_->rdm1_mat() ^ ocoeff);
+
+    // overlap derivative
+    shared_ptr<const Matrix> cfock_ao = ref_->hcore();
+    if (nclosed)
+      // TODO one can remove this half transformation...
+      cfock_ao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff->slice(0,nclosed), /*store*/false, /*rhf*/true);
+    shared_ptr<const Matrix> afock_ao = nact ? task_->compute_active_fock(acoeff, ref_->rdm1_av()) : cfock_ao->clone();
+    Matrix f = (ocoeff % (*cfock_ao + *afock_ao) * ocoeff) * 2.0;
+    if (nact) {
+      shared_ptr<const DFHalfDist> ahalf = geom_->df()->compute_half_transform(acoeff);
+      shared_ptr<const Qvec> qxr = make_shared<Qvec>(coeff->mdim(), nact, coeff, nclosed, ahalf, ref_->rdm2_av());
+      f.copy_block(0, nclosed, nocc, nact, ocoeff % *cfock_ao * acoeff * *ref_->rdm1_av()->rdm1_mat(0));
+      f.add_block(1.0, 0, nclosed, nocc, nact, qxr->cut(0, nocc));
+    }
+    shared_ptr<const Matrix> erdm1 = make_shared<Matrix>(ocoeff * f ^ ocoeff);
 
     //- TWO ELECTRON PART -//
-    shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
-    shared_ptr<const DFFullDist> qij  = half->compute_second_transform(coeff_occ)->apply_JJ();
-    shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), ref_->nclosed(), ref_->nact());
+    shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(ocoeff);
+    shared_ptr<const DFFullDist> qij  = half->compute_second_transform(ocoeff)->apply_JJ();
+    shared_ptr<const DFFullDist> qijd = qij->apply_2rdm(*ref_->rdm2(0), *ref_->rdm1(0), nclosed, nact);
     shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
-    shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
+    shared_ptr<const DFDist> qrs = qijd->back_transform(ocoeff)->back_transform(ocoeff);
 
     gradient = contract_gradient(rdm1, erdm1, qrs, qq);
 
   } else {
-    shared_ptr<const Coeff> coeff = ref_->coeff();
-    assert(task_->coeff() == coeff);
 
-    const int nclosed = ref_->nclosed();
-    const int nact = ref_->nact();
-    const int nocc = ref_->nocc();
-
-    const MatView ocoeff = ref_->coeff()->slice(0,nocc);
 
     // state-averaged density matrices
     shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
