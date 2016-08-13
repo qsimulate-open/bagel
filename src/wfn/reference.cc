@@ -205,12 +205,6 @@ void Reference::set_eig(const VectorB& eig) {
 }
 
 
-void Reference::set_erdm1(const shared_ptr<const Matrix> o) {
-  mpi__->broadcast(const_pointer_cast<Matrix>(o)->data(), o->size(), 0);
-  erdm1_ = o;
-}
-
-
 void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<const Coeff> b) {
   mpi__->broadcast(const_pointer_cast<Coeff>(a)->data(), a->size(), 0);
   mpi__->broadcast(const_pointer_cast<Coeff>(b)->data(), b->size(), 0);

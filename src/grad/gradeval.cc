@@ -71,8 +71,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
   //- One ELECTRON PART -//
   const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
-  shared_ptr<const Matrix> erdm1 = ref_->erdm1();
-  assert(erdm1 != nullptr);
+  shared_ptr<const Matrix> erdm1 = task_->compute_erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);
@@ -96,8 +95,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   //- One ELECTRON PART -//
   const MatView coeff_occ = ref_->coeff()->slice(0,ref_->nocc());
   shared_ptr<const Matrix> rdm1 = make_shared<Matrix>(coeff_occ * *ref_->rdm1_mat(0) ^ coeff_occ);
-  shared_ptr<const Matrix> erdm1 = ref_->erdm1();
-  assert(erdm1 != nullptr);
+  shared_ptr<const Matrix> erdm1 = task_->compute_erdm1();
 
   //- TWO ELECTRON PART -//
   shared_ptr<const DFHalfDist> half = geom_->df()->compute_half_transform(coeff_occ);

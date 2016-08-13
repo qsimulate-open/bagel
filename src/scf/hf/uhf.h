@@ -77,6 +77,7 @@ class UHF : public SCF_base {
     std::tuple<std::shared_ptr<Coeff>, int, std::shared_ptr<VecRDM<1>>> natural_orbitals() const;
 
     std::shared_ptr<const Matrix> aodensity() const { return aodensity_; }
+    std::shared_ptr<const Matrix> compute_erdm1() const;
 };
 
 }
