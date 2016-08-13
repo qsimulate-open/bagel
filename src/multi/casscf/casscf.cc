@@ -134,7 +134,7 @@ void CASSCF::common_init() {
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
   }
   resume_stdcout();
 

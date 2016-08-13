@@ -44,6 +44,7 @@ class FCI_base : public Method {
     int nguess_;
     double thresh_;
     double print_thresh_;
+    bool store_half_ints_;
 
     int nelea_;
     int neleb_;
@@ -116,8 +117,8 @@ class FCI_base : public Method {
   public:
     // this constructor is ugly... to be fixed some day...
     FCI_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> r,
-             const int ncore = -1, const int norb = -1, const int nstate = -1)
-      : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
+             const int ncore = -1, const int norb = -1, const int nstate = -1, const bool store = false)
+      : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false), store_half_ints_(store) {
     }
 
     FCI_base() { }

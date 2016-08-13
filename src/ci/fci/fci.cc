@@ -32,8 +32,9 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(FCI)
 
-FCI::FCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : FCI_base(idat, g, r, ncore, norb, nstate) {
+FCI::FCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r,
+         const int ncore, const int norb, const int nstate, const bool store)
+ : FCI_base(idat, g, r, ncore, norb, nstate, store) {
  common_init();
 }
 

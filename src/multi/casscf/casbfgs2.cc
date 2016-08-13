@@ -69,7 +69,7 @@ void CASBFGS2::compute() {
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
+    shared_ptr<const Matrix> cfockao = nact_ ? fci_->jop()->core_fock() : make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
     shared_ptr<const Matrix> afock;

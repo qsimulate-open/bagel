@@ -41,7 +41,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
   const bool do_df = geom_->df().get();
   if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
-  hz_ = (method=="HZ");
+  hz_ = method == "HZ";
 }
 
 
@@ -51,18 +51,18 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Mat
   const bool do_df = geom_->df().get();
   if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
-  hz_ = (method=="HZ");
+  hz_ = method == "HZ";
 }
 
 
-void MOFile::init(const int nstart, const int nfence) {
+void MOFile::init(const int nstart, const int nfence, const bool store) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
 
   // core energy is set here
   if (nstart != 0) {
-    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/false, /*rhf*/true);
+    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/store, /*rhf*/true);
     shared_ptr<const Matrix> den = coeff_->form_density_rhf(nstart);
     core_energy_ = (*den * (*ref_->hcore()+*core_fock_)).trace() * 0.5;
   } else {

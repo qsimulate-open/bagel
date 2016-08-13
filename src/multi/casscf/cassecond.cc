@@ -51,7 +51,7 @@ void CASSecond::compute() {
       energy_ = fci_->energy();
     }
 
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nclosed_), /*store*/true, /*rhf*/true) : hcore_;
+    shared_ptr<const Matrix> cfockao = fci_->jop()->core_fock();
     shared_ptr<const Matrix> afockao = compute_active_fock(coeff_->slice(nclosed_, nocc_), fci_->rdm1_av());
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     shared_ptr<const Matrix> afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
