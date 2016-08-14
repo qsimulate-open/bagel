@@ -247,14 +247,6 @@ void ZCASSCF::resume_stdcout() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
-  assert(fci_);
-  shared_ptr<const ZMatrix> out = fci_->rdm1_av();
-  assert(out->ndim() == 2*nact_ && out->mdim() == 2*nact_);
-  return out;
-}
-
-
 pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
 
   // input should be 1rdm in kramers format
@@ -380,36 +372,21 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm1_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm1) const {
-  shared_ptr<ZMatrix> out = rdm1->clone();
-  const complex<double>* start = coeff->data();
-  int ndim = coeff->ndim();
-  unique_ptr<complex<double>[]> buf(new complex<double>[ndim*ndim]);
-  zgemm3m_("N", "N", ndim, ndim, ndim, 1.0, rdm1->data(), ndim, start, ndim, 0.0, buf.get(), ndim);
-  zgemm3m_("C", "N", ndim, ndim, ndim, 1.0, start, ndim, buf.get(), ndim, 0.0, out->data(), ndim);
-  return out;
-}
-
-
 shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
   shared_ptr<ZMatrix> out = rdm2->clone();
-  auto start = make_shared<const ZMatrix>(*coeff);
-  shared_ptr<const ZMatrix> start_conjg = start->get_conjg();
-  int ndim  = coeff->ndim();
-  int ndim2 = rdm2->ndim();
-  unique_ptr<complex<double>[]> buf(new complex<double>[ndim2*ndim2]);
-  // first half transformation
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, rdm2->data(), ndim2*ndim, start->data(), ndim, 0.0, buf.get(), ndim2*ndim);
-  for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, buf.get()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, out->data()+i*ndim2*ndim, ndim2);
-  // then tranpose
-  blas::transpose(out->data(), ndim2, ndim2, buf.get());
-  // and do it again
-  zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, buf.get(), ndim2*ndim, start->data(), ndim, 0.0, out->data(), ndim2*ndim);
-  for (int i = 0; i != ndim; ++i)
-    zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, out->data()+i*ndim2*ndim, ndim2, start_conjg->data(), ndim, 0.0, buf.get()+i*ndim2*ndim, ndim2);
-  // to make sure for non-symmetric density matrices (and anyway this should be cheap).
-  blas::transpose(buf.get(), ndim2, ndim2, out->data());
+  shared_ptr<ZMatrix> buf = rdm2->clone();
+  shared_ptr<const ZMatrix> coeff_conjg = coeff->get_conjg();
+  const int ndim  = nact_*2;
+  const int ndim2 = ndim*ndim;;
+  auto half_trans = [&](shared_ptr<const ZMatrix> a, shared_ptr<ZMatrix> b, shared_ptr<ZMatrix> c) {
+    zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, coeff->data(), ndim, 0.0, b->data(), ndim2*ndim);
+    for (int i = 0; i != ndim; ++i)
+      zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, coeff_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
+  };
+  half_trans(rdm2, buf, out);
+  blas::transpose(out->data(), ndim2, ndim2, buf->data());
+  half_trans(buf, out, buf);
+  blas::transpose(buf->data(), ndim2, ndim2, out->data());
   return out;
 }
 
@@ -417,31 +394,19 @@ shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatri
 shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
   auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
-  int n    = natorb->ndim();
-  int nbas = cold->ndim();
-  zgemm3m_("N", "N", nbas, n, n, 1.0, cold->data()+nbas*nclosed_*2, nbas, natorb->get_conjg()->data(), n,
-                   0.0, cnew->data()+nbas*nclosed_*2, nbas);
+  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, cold->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
   return cnew;
 }
 
 
 shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, shared_ptr<const ZMatrix> natorb) const {
-  auto qnew = make_shared<ZMatrix>(*qold);
-  int n    = natorb->ndim();
-  int nbas = qold->ndim();
-  // first transformation
-  zgemm3m_("N", "N", nbas, n, n, 1.0, qold->data(), nbas, natorb->data(), n, 0.0, qnew->data(), nbas);
-  // second transformation for the active-active block
-  auto qtmp = qnew->get_submatrix(nclosed_*2, 0, n, n)->copy();
-  *qtmp = *natorb % *qtmp;
-  qnew->copy_block(nclosed_*2, 0, n, n, qtmp->data());
+  auto qnew = make_shared<ZMatrix>(*qold * *natorb);
+  qnew->copy_block(nclosed_*2, 0, nact_*2, nact_*2, *natorb % *qnew->get_submatrix(nclosed_*2, 0, nact_*2, nact_*2));
   return qnew;
 }
 
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-  // store both pos and neg energy states, only thing saved thus far
-  // TODO : modify to be more like CASSCF than dirac, will need to add FCI stuff
   auto out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
                                        fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
   return out;
@@ -460,66 +425,50 @@ void ZCASSCF::print_natocc() const {
 
 
 shared_ptr<ZRotFile> ZCASSCF::copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  int nr_nvirt = nvirt_ - nneg_/2;
+  const int nr_nvirt = nvirt_ - nneg_/2;
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2);
-  if (nr_nvirt != 0) {
-    for (int i = 0; i != nclosed_; ++i) {
-      for (int j = 0; j != nr_nvirt;   ++j) {
-        out->ele_vc(j, i) = rot->ele_vc(j, i);
-        out->ele_vc(j + nr_nvirt, i) = rot->ele_vc(j + nvirt_, i);
-        out->ele_vc(j, i + nclosed_) = rot->ele_vc(j, i + nclosed_);
-        out->ele_vc(j + nr_nvirt, i + nclosed_) = rot->ele_vc(j + nvirt_, i + nclosed_);
-      }
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nr_nvirt;   ++j) {
+      out->ele_vc(j, i) = rot->ele_vc(j, i);
+      out->ele_vc(j + nr_nvirt, i) = rot->ele_vc(j + nvirt_, i);
+      out->ele_vc(j, i + nclosed_) = rot->ele_vc(j, i + nclosed_);
+      out->ele_vc(j + nr_nvirt, i + nclosed_) = rot->ele_vc(j + nvirt_, i + nclosed_);
     }
-    if (nact_ != 0) {
-      for (int i = 0; i != nact_; ++i) {
-        for (int j = 0; j != nr_nvirt;   ++j) {
-          out->ele_va(j, i) = rot->ele_va(j, i);
-          out->ele_va(j + nr_nvirt, i) = rot->ele_va(j + nvirt_, i);
-          out->ele_va(j, i + nact_) = rot->ele_va(j, i + nact_);
-          out->ele_va(j + nr_nvirt, i + nact_) = rot->ele_va(j + nvirt_, i + nact_);
-        }
-      }
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nr_nvirt;   ++j) {
+      out->ele_va(j, i) = rot->ele_va(j, i);
+      out->ele_va(j + nr_nvirt, i) = rot->ele_va(j + nvirt_, i);
+      out->ele_va(j, i + nact_) = rot->ele_va(j, i + nact_);
+      out->ele_va(j + nr_nvirt, i + nact_) = rot->ele_va(j + nvirt_, i + nact_);
     }
-  }
-  if (nclosed_ != 0) {
-    for (int i = 0; i != nact_;   ++i) {
-      for (int j = 0; j != nclosed_; ++j) {
-        out->ele_ca(j, i) = rot->ele_ca(j, i);
-        out->ele_ca(j + nclosed_, i) = rot->ele_ca(j + nclosed_, i);
-        out->ele_ca(j, i + nact_) = rot->ele_ca(j, i + nact_);
-        out->ele_ca(j + nclosed_, i + nact_) = rot->ele_ca(j + nclosed_, i + nact_);
-      }
+  for (int i = 0; i != nact_;   ++i)
+    for (int j = 0; j != nclosed_; ++j) {
+      out->ele_ca(j, i) = rot->ele_ca(j, i);
+      out->ele_ca(j + nclosed_, i) = rot->ele_ca(j + nclosed_, i);
+      out->ele_ca(j, i + nact_) = rot->ele_ca(j, i + nact_);
+      out->ele_ca(j + nclosed_, i + nact_) = rot->ele_ca(j + nclosed_, i + nact_);
     }
-  }
-
   return out;
 }
 
 
 shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  int nvirtnr = nvirt_ - nneg_/2;
+  const int nvirtnr = nvirt_ - nneg_/2;
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_);
-  if (nclosed_ != 0) {
-    for (int i = 0; i != nclosed_; ++i) {
-      for (int j = 0; j != nneg_/2;   ++j) {
-        out->ele_vc(j, i) = rot->ele_vc(j + nvirtnr, i);
-        out->ele_vc(j, i + nclosed_) = rot->ele_vc(j + nvirtnr, i + nclosed_);
-        out->ele_vc(j + nneg_/2, i)  = rot->ele_vc(j + nvirt_ + nvirtnr, i);
-        out->ele_vc(j + nneg_/2, i + nclosed_) = rot->ele_vc(j + nvirt_ + nvirtnr, i + nclosed_);
-      }
+  for (int i = 0; i != nclosed_; ++i)
+    for (int j = 0; j != nneg_/2;   ++j) {
+      out->ele_vc(j, i) = rot->ele_vc(j + nvirtnr, i);
+      out->ele_vc(j, i + nclosed_) = rot->ele_vc(j + nvirtnr, i + nclosed_);
+      out->ele_vc(j + nneg_/2, i)  = rot->ele_vc(j + nvirt_ + nvirtnr, i);
+      out->ele_vc(j + nneg_/2, i + nclosed_) = rot->ele_vc(j + nvirt_ + nvirtnr, i + nclosed_);
     }
-  }
-  if (nact_ != 0) {
-    for (int i = 0; i != nact_; ++i) {
-      for (int j = 0; j != nneg_/2;   ++j) {
-        out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
-        out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
-        out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
-        out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
-      }
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nneg_/2;   ++j) {
+      out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
+      out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
+      out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
+      out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
     }
-  }
   return out;
 }
 

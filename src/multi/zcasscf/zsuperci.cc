@@ -218,7 +218,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
 
   // calculate 1RDM in an original basis set
-  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? fci_->rdm1_av() : nullptr;
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
@@ -227,7 +227,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     natorb_coeff = natorb_tmp.first;
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
-    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+    rdm1 = make_shared<ZMatrix>(*natorb_coeff % *rdm1 * *natorb_coeff);
   }
 
   shared_ptr<const ZMatrix> cfock;

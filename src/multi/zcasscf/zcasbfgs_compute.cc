@@ -88,7 +88,7 @@ void ZCASBFGS::compute() {
     // TODO : make one body operators function to simplify the driver ; could combine with super-CI, but will take some work
     Timer onebody(0);
     // calculate 1RDM in an original basis set
-    shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+    shared_ptr<const ZMatrix> rdm1 = nact_ ? fci_->rdm1_av() : nullptr;
 
     // closed Fock operator
     shared_ptr<const ZMatrix> cfock;
