@@ -36,8 +36,8 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
+ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
@@ -56,9 +56,6 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   nstate_ = 0;
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
-
-  // if nstate was specified on construction, it should match
-  assert(nstate == nstate_ || nstate == -1);
 
   gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
   breit_ = idata_->get<bool>("breit", rr->breit());

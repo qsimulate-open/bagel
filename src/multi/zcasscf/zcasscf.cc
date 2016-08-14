@@ -150,17 +150,6 @@ void ZCASSCF::init() {
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
 
-  { // TODO This is repeated in ZFCI; can reduce redundancy
-    vector<int> states = idata_->get_vector<int>("state", 0);
-    nstate_ = 0;
-    for (int i = 0; i != states.size(); ++i)
-      nstate_ += states[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
-  }
-
-#if 0
-  // get istate from the input (for geometry optimization)
-  istate_ = idata_->get<int>("istate", 0);
-#endif
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
@@ -200,9 +189,9 @@ void ZCASSCF::init() {
 
   mute_stdcout();
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
-  if (nact_) {
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, nstate_, coeff_, /*restricted*/true);
-  }
+  if (nact_)
+    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*restricted*/true);
+  nstate_ = nact_ ? fci_->nstate() : 1;
   resume_stdcout();
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
