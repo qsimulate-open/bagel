@@ -72,9 +72,6 @@ class RelMOFile {
     RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge,
               const bool gaunt, const bool breit, const bool tsymm);
 
-    // static function
-    static std::shared_ptr<Kramers<1,ZMatrix>> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
-
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
     template<typename T>
