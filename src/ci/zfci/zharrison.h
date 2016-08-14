@@ -109,7 +109,7 @@ class ZHarrison : public Method {
       ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff_input();
+      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff();
       ar << coeff;
     }
     template<class Archive>
@@ -207,8 +207,6 @@ class ZHarrison : public Method {
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
-    std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
-    std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
 
     // functions related to RDMs
     void compute_rdm12();

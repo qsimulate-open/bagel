@@ -67,6 +67,7 @@ class RelMOFile {
     // half transformed integrals for CASSCF
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb_;
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_breit_;
 
   public:
     RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge,
@@ -86,18 +87,11 @@ class RelMOFile {
 
     double core_energy() const { return core_energy_; }
 
-    std::shared_ptr<const ZMatrix> kramers_coeff(const int i) const { return kramers_coeff_->at(i); }
-    std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return kramers_coeff_; }
-    std::shared_ptr<const ZMatrix> coeff() const {
-      auto coeff_tot = std::make_shared<ZMatrix>(kramers_coeff_->at(0)->ndim(), nocc_*2);
-      coeff_tot->copy_block(0,     0, kramers_coeff_->at(0)->ndim(), nocc_, kramers_coeff_->at(0));
-      coeff_tot->copy_block(0, nocc_, kramers_coeff_->at(1)->ndim(), nocc_, kramers_coeff_->at(1));
-      return coeff_tot;
-    }
-    std::shared_ptr<const RelCoeff_Block> coeff_input() const { return coeff_; }
+    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
+
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; }
-
+    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_breit() const { return half_complex_breit_; }
 
     static std::tuple<std::list<std::shared_ptr<RelDFHalf>>, std::list<std::shared_ptr<RelDFHalf>>>
       compute_half(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit);

@@ -31,25 +31,6 @@ using namespace std;
 using namespace bagel;
 
 void ZCASSecond::compute() {
-// TODO debug code
-auto remove_pos = [&,this](shared_ptr<ZRotFile> rot) {
-  const int nr_nvirt = nvirt_ - nneg_/2;
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = nr_nvirt; j != nvirt_;   ++j) {
-      rot->ele_vc(j, i) = 0.0;
-      rot->ele_vc(j + nvirt_, i) = 0.0; 
-      rot->ele_vc(j, i + nclosed_) = 0.0;
-      rot->ele_vc(j + nvirt_, i + nclosed_) = 0.0;
-    }
-  for (int i = 0; i != nact_; ++i)
-    for (int j = nr_nvirt; j != nvirt_;   ++j) {
-      rot->ele_va(j, i) = 0.0;
-      rot->ele_va(j + nvirt_, i) = 0.0;
-      rot->ele_va(j, i + nact_) = 0.0;
-      rot->ele_va(j + nvirt_, i + nact_) = 0.0;
-    }
-};
-
   assert(nvirt_ && nact_);
   Timer timer;
 
@@ -78,7 +59,7 @@ auto remove_pos = [&,this](shared_ptr<ZRotFile> rot) {
     shared_ptr<ZRotFile> grad = compute_gradient(cfock, afock, qxr);
 
     // DEBUG CODE *************************
-    remove_pos(grad); 
+    zero_positronic_elements(grad); 
     shared_ptr<RelDFHalf> half, halfa;
     // DEBUG CODE *************************
 

@@ -110,7 +110,7 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   if (nspin_ > 0) {
 
     // Computes spin, orbital angular momentum, Hamiltonian, and time-reversal operators in the basis of ZFCI eigenstates
-    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff_input()->active_part());
+    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff()->active_part());
 
     // Compute G and diagonalize to give main magnetic axes, but allow the user to quantify spin along some other axis
     pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
