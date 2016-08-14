@@ -42,6 +42,7 @@
 #include <src/multi/casscf/casnoopt.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
+#include <src/multi/zcasscf/zcassecond.h>
 #include <src/multi/zcasscf/zcashybrid.h>
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/smith/smith.h>
@@ -118,6 +119,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "superci" || algorithm == "")
         out = make_shared<ZSuperCI>(itree, geom, ref);
+      else if (algorithm == "second")
+        out = make_shared<ZCASSecond>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<ZCASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
