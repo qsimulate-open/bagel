@@ -48,6 +48,7 @@ class DFock : public ZMatrix {
     // when gradient is requested, we store half-transformed integrals
     bool store_half_;
     std::list<std::shared_ptr<RelDFHalf>> half_;
+    std::list<std::shared_ptr<RelDFHalf>> half2_;
 
     // if true, do not use bra-ket symmetry in the exchange build (only useful for breit when accurate orbitals are needed).
     bool robust_;
@@ -85,6 +86,7 @@ class DFock : public ZMatrix {
                                                                    std::array<std::shared_ptr<const Matrix>,4>);
 
     std::list<std::shared_ptr<RelDFHalf>> half() const { assert(store_half_); return half_; }
+    std::list<std::shared_ptr<RelDFHalf>> half2() const { assert(store_half_); return half2_; }
 
 };
 

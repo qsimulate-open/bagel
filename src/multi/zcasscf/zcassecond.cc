@@ -58,7 +58,7 @@ auto remove_pos = [&,this](shared_ptr<ZRotFile> rot) {
 
     // first perform CASCI to obtain RDMs
     {   
-      if (iter) fci_->update(coeff_, /*restricted*/true);
+      if (iter) fci_->update(coeff_);
       Timer fci_time(0);
       fci_->compute();
       fci_->compute_rdm12();

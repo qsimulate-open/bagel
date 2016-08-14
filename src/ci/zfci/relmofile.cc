@@ -43,7 +43,7 @@ RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const Rel
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-void RelMOFile::init(const int nstart, const int nfence, const bool restricted) {
+void RelMOFile::init(const int nstart, const int nfence, const bool store) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
@@ -59,7 +59,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, store, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();

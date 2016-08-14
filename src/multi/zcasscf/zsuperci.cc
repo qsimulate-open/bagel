@@ -65,7 +65,7 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      if (iter) fci_->update(coeff_, /*restricted*/true);
+      if (iter) fci_->update(coeff_);
       Timer fci_time(0);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
@@ -189,7 +189,7 @@ void ZSuperCI::compute() {
   // the following is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
-    fci_->update(coeff_, /*restricted*/true);
+    fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
   }

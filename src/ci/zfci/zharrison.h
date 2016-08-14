@@ -90,6 +90,9 @@ class ZHarrison : public Method {
 
     std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
 
+    // integral reuse
+    bool store_half_ints_;
+
     // restart
     bool restart_;
     bool restarted_;
@@ -175,15 +178,13 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool restricted = false);
+              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
-    void update(std::shared_ptr<const RelCoeff_Block> coeff, const bool restricted = false) {
+    void update(std::shared_ptr<const RelCoeff_Block> coeff) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
-
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, tsymm_, store_half_ints_);
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
     }

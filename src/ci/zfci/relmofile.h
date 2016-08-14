@@ -51,7 +51,7 @@ class RelMOFile {
     bool tsymm_;
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nfence, const bool restricted = false);
+    void init(const int nstart, const int nfence, const bool store);
 
     // hamiltoniam data
     std::shared_ptr<Kramers<2,ZMatrix>> mo1e_;
@@ -69,7 +69,8 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge, const bool gaunt, const bool breit, const bool tsymm);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge,
+              const bool gaunt, const bool breit, const bool tsymm);
 
     // static function
     static std::shared_ptr<Kramers<1,ZMatrix>> kramers(std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> overlap, std::shared_ptr<const ZMatrix> eig);
@@ -114,8 +115,8 @@ class RelJop : public RelMOFile {
 
   public:
     RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff, const int charge,
-      const bool gaunt, const bool breit, const bool restricted = false, const bool tsymm = true)
-      : RelMOFile(geom, coeff, charge, gaunt, breit, tsymm) { init(nstart, nfence, restricted); }
+      const bool gaunt, const bool breit, const bool tsymm = true, const bool store = false)
+      : RelMOFile(geom, coeff, charge, gaunt, breit, tsymm) { init(nstart, nfence, store); }
 };
 
 }
