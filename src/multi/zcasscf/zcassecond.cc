@@ -50,7 +50,7 @@ void ZCASSecond::compute() {
     }
 
     shared_ptr<const ZMatrix> cfockao = fci_->jop()->core_fock();
-    shared_ptr<const ZMatrix> afockao = compute_active_fock(coeff_->slice(nclosed_, nocc_), fci_->rdm1_av());
+    shared_ptr<const ZMatrix> afockao = compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
     shared_ptr<const ZMatrix> cfock = make_shared<ZMatrix>(*coeff_ % *cfockao * *coeff_);
     shared_ptr<const ZMatrix> afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
     shared_ptr<const ZMatrix> qxr = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
@@ -111,10 +111,3 @@ shared_ptr<ZRotFile> ZCASSecond::compute_gradient(shared_ptr<const ZMatrix> cfoc
 }
 
 
-shared_ptr<ZMatrix> ZCASSecond::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1) const {
-  // calculate S^-1/2 of rdm1
-  ZMatrix s(*rdm1);
-  s.inverse_half();
-  ZMatrix acoeff(coeff_->slice(nclosed_*2, nocc_*2) * s);
-  return make_shared<DFock>(geom_, hcore_->clone(), acoeff, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
-}

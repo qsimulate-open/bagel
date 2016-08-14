@@ -244,7 +244,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock();
+      shared_ptr<const ZMatrix> afockao = compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), rdm1);
       afock = make_shared<ZMatrix>(*coeff_elec % *afockao * *coeff_elec);
     } else {
       afock = cfock->clone();

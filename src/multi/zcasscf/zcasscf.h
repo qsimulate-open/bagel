@@ -77,8 +77,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void resume_stdcout() const;
 
     std::shared_ptr<ZHarrison> fci_;
-    // compute F^{A} matrix ; see Eq. (18) in Roos IJQC 1980
-    std::shared_ptr<const ZMatrix> active_fock(std::shared_ptr<const ZMatrix> transform = nullptr, const bool with_hcore = false, const bool bfgs = false) const;
+    // Fock matrix with active 1RDM
+    std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1) const;
     // transform RDM from bitset representation in ZFCI to CAS format
     std::shared_ptr<const ZMatrix> transform_rdm1() const;
 

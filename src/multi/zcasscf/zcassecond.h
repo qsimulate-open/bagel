@@ -48,8 +48,6 @@ class ZCASSecond : public ZCASSCF {
 
     void compute() override;
 
-    // TODO move to the base
-    std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1) const;
 };
 
 }

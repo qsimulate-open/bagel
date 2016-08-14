@@ -255,33 +255,6 @@ shared_ptr<const ZMatrix> ZCASSCF::transform_rdm1() const {
 }
 
 
-shared_ptr<const ZMatrix> ZCASSCF::active_fock(shared_ptr<const ZMatrix> transform, const bool with_hcore, const bool bfgs) const {
-   // natural orbitals required
-   shared_ptr<ZMatrix> natorb;
-   if (!bfgs) {
-     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2));
-   } else {
-     natorb = make_shared<ZMatrix>(coeff_->slice(nclosed_*2, nocc_*2) * *transform);
-   }
-   if (natocc_) print_natocc();
-
-   // scale using occupation numbers
-   for (int i = 0; i != nact_*2; ++i) {
-     assert(occup_[i] >= -1.0e-14);
-     const double fac = occup_[i] > 0.0 ? sqrt(occup_[i]) : 0.0;
-     for_each(natorb->element_ptr(0, i), natorb->element_ptr(0, i+1), [&fac](complex<double>& a) { a *= fac; });
-   }
-
-  shared_ptr<ZMatrix> zero;
-  if (!with_hcore) {
-    zero = make_shared<ZMatrix>(geom_->nbasis()*4, geom_->nbasis()*4);
-  } else {
-    zero = hcore_->copy();
-  }
-  return make_shared<const DFock>(geom_, zero, natorb, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
-}
-
-
 pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
 
   // input should be 1rdm in kramers format
@@ -550,3 +523,10 @@ shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFil
   return out;
 }
 
+
+shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1) const {
+  // calculate S^1/2 of rdm1
+  ZMatrix s(*rdm1);
+  s.sqrt();
+  return make_shared<DFock>(geom_, hcore_->clone(), coeff * s, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+}
