@@ -37,6 +37,15 @@ class ZCASSecond : public ZCASSCF {
     // compute orbital gradient
     std::shared_ptr<ZRotFile> compute_gradient(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
 
+    // diagonal Hessian
+    std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
+                                            std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
+    // compute H*t (Hessian times trial vector)
+    std::shared_ptr<ZRotFile> compute_hess_trial(std::shared_ptr<const ZRotFile> trot, std::shared_ptr<const RelDFHalf> half, std::shared_ptr<const RelDFHalf> halfa,
+                                                 std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
+    // apply denominator in microiterations
+    std::shared_ptr<ZRotFile> apply_denom(std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> denom, const double shift, const double scale) const;
+
   public:
     ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
        : ZCASSCF(idat, geom, ref) {

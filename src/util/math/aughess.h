@@ -37,6 +37,10 @@ namespace bagel {
 
 template<typename T>
 class AugHess {
+  public:
+    using DataType = typename T::data_type;
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type; 
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type; 
 
   protected:
     std::list<std::shared_ptr<const T>> c_;
@@ -47,19 +51,19 @@ class AugHess {
     const std::shared_ptr<const T> grad_;
 
     // contains
-    std::shared_ptr<Matrix> mat_;
-    VectorB prod_;
-    VectorB vec_;
+    std::shared_ptr<MatType> mat_;
+    VecType prod_;
+    VecType vec_;
     // an eigenvector
     VectorB eig_;
 
     // for convenience below
-    double& mat(int i, int j) { return mat_->element(i,j); }
+    DataType& mat(int i, int j) { return mat_->element(i,j); }
 
     const double maxstepsize = 1.0;
 
     // carbon copy from ORZ ((c) Yanatech)
-    std::tuple<double,double> compute_lambda(const Matrix& mat1, const Matrix& mat2) const {
+    std::tuple<double,double> compute_lambda(const MatType& mat1, const MatType& mat2) const {
       const int nlast = mat1.ndim();
       VectorB v(nlast);
       assert(nlast > 1);
@@ -69,10 +73,10 @@ class AugHess {
       double stepsize = 0.0;
       int iok = 0;
       for (int i = 0; i < 10; ++i) {
-        Matrix scr = mat1 + mat2 * (1.0/lambda_test);
+        MatType scr = mat1 + mat2 * (1.0/lambda_test);
         scr.diagonalize(v);
 
-        if (std::fabs(scr(nlast-1,0)) < 0.1)
+        if (std::abs(scr(nlast-1,0)) < 0.1)
           std::cout << "*** [aughess.cc] warning : you may have convergence issue due to very small : " << scr(nlast-1,0) << std::endl;
 
         blas::scale_n(1.0/scr(nlast-1,0), scr.data(), nlast-1);
@@ -111,10 +115,10 @@ class AugHess {
 
   public:
     AugHess(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad),
-      mat_(std::make_shared<Matrix>(ndim+1,ndim+1)), prod_(ndim), vec_(ndim), eig_(ndim) {
+      mat_(std::make_shared<MatType>(ndim+1,ndim+1)), prod_(ndim), vec_(ndim), eig_(ndim) {
     }
 
-    std::tuple<std::shared_ptr<T>,double,double,double> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
+    std::tuple<std::shared_ptr<T>,double,double,double> compute_residual(std::shared_ptr<const T> c, std::shared_ptr<const T> s) {
 
       if (size_+1 == max_) throw std::runtime_error("max size reached in AugHess");
       // register new vectors
@@ -126,26 +130,29 @@ class AugHess {
       auto citer = c_.begin();
       auto siter = sigma_.begin();
       for (int i = 0; i != size_; ++i, ++citer, ++siter) {
-        mat(i,size_-1) = mat(size_-1,i) = 0.5*(s->dot_product(**citer) + c->dot_product(**siter));
+        mat(size_-1,i) = 0.5*(s->dot_product(**citer) + c->dot_product(**siter));
+        mat(i,size_-1) = detail::conj(mat(size_-1,i));
       }
       prod_(size_-1) = c->dot_product(*grad_);
 
       // set to scr1
-      Matrix scr1(size_+1, size_+1);
-      const Matrix scr2 = *mat_->get_submatrix(0, 0, size_+1, size_+1);
+      MatType scr1(size_+1, size_+1);
+      const MatType scr2 = *mat_->get_submatrix(0, 0, size_+1, size_+1);
       // adding (1,0) vector as an additional basis function
-      for (int i = 0; i != size_; ++i)
-        scr1(size_, i) = scr1(i, size_) = prod_(i);
+      for (int i = 0; i != size_; ++i) {
+        scr1(size_, i) = prod_(i);
+        scr1(i, size_) = detail::conj(prod_(i));
+      }
 
       double lambda, stepsize;
       std::tie(lambda, stepsize) = compute_lambda(scr1, scr2);
-      Matrix scr = scr1 + scr2 * (1.0/lambda);
+      MatType scr = scr1 + scr2 * (1.0/lambda);
       scr.diagonalize(eig_);
 
       // find the best vector ((c) Yanatech)
       int ivec = -1;
       for (int i = 0; i != size_+1; ++i)
-        if (std::fabs(scr.element(size_,i)) <= 1.1 && std::fabs(scr.element(size_,i)) > 0.1) {
+        if (std::abs(scr.element(size_,i)) <= 1.1 && std::abs(scr.element(size_,i)) > 0.1) {
           ivec = i;
           break;
         }
