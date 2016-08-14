@@ -184,7 +184,7 @@ class ZHarrison : public Method {
 
     void update(std::shared_ptr<const RelCoeff_Block> coeff) {
       Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, tsymm_, store_half_ints_);
+      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, tsymm_, store_half_ints_);
       std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
       const_denom();
     }

@@ -38,7 +38,6 @@ class RelMOFile {
   protected:
     int nocc_;
     int nbasis_;
-    int charge_;
     double core_energy_;
 
     std::shared_ptr<const Geometry> geom_;
@@ -70,7 +69,7 @@ class RelMOFile {
     std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_breit_;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>, const int charge,
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>,
               const bool gaunt, const bool breit, const bool tsymm);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
@@ -83,7 +82,6 @@ class RelMOFile {
     const std::complex<double>& mo1e(const T& b, const size_t i, const size_t j) const { return mo1e(b)->element(i,j); }
     template<typename T>
     const std::complex<double>& mo2e(const T& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e(b)->element(i+nocc_*j, k+nocc_*l); }
-    std::shared_ptr<const Kramers<4,ZMatrix>> mo2e() const { return mo2e_; }
 
     double core_energy() const { return core_energy_; }
 
@@ -105,9 +103,9 @@ class RelJop : public RelMOFile {
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
 
   public:
-    RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff, const int charge,
+    RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff,
       const bool gaunt, const bool breit, const bool tsymm = true, const bool store = false)
-      : RelMOFile(geom, coeff, charge, gaunt, breit, tsymm) { init(nstart, nfence, store); }
+      : RelMOFile(geom, coeff, gaunt, breit, tsymm) { init(nstart, nfence, store); }
 };
 
 }
