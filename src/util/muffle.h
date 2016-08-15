@@ -32,15 +32,19 @@
 namespace bagel {
 
 // Hides cout and restores it when the object is destroyed
+// If split_nodes is set to true, then each node prints to a different file
 class Muffle {
   private:
     std::shared_ptr<std::ostream> redirect_;
     std::streambuf* saved_;
 
   public:
-    Muffle(std::string filename = "", const bool append = false) {
+    Muffle(std::string filename = "", const bool append = false, const bool split_nodes = false) {
       saved_ = std::cout.rdbuf();
-      if ( (mpi__->rank() == 0) && filename != "")
+      if (split_nodes)
+        filename += ("_" + std::to_string(mpi__->rank()));
+
+      if (filename != "" && (mpi__->rank() == 0 || split_nodes))
         redirect_ = append ? std::make_shared<std::ofstream>(filename, std::ios::app) : std::make_shared<std::ofstream>(filename);
       else
         redirect_ = std::make_shared<std::ostringstream>();
@@ -52,32 +56,5 @@ class Muffle {
       std::cout.rdbuf(saved_);
     }
 };
-
-
-// Redirects cout to file, with each node writing to a different file
-class ParallelMuffle {
-  private:
-    std::shared_ptr<std::ostream> redirect_;
-    std::streambuf* saved_;
-
-  public:
-    ParallelMuffle(std::string filename = "", const bool append = false) {
-      saved_ = std::cout.rdbuf();
-      if (filename != "") {
-        filename += ("_" + std::to_string(mpi__->rank()));
-        redirect_ = append ? std::make_shared<std::ofstream>(filename, std::ios::app) : std::make_shared<std::ofstream>(filename);
-      } else {
-        redirect_ = std::make_shared<std::ostringstream>();
-      }
-
-      std::cout.rdbuf(redirect_->rdbuf());
-    }
-
-    ~ParallelMuffle() {
-      std::cout.rdbuf(saved_);
-    }
-};
-
-}
 
 #endif
