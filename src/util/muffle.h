@@ -57,4 +57,6 @@ class Muffle {
     }
 };
 
+}
+
 #endif
