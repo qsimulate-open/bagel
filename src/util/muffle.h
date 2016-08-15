@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <src/util/parallel/mpi_interface.h>
 
 namespace bagel {
 
@@ -48,6 +49,31 @@ class Muffle {
     }
 
     ~Muffle() {
+      std::cout.rdbuf(saved_);
+    }
+};
+
+
+// Redirects cout to file, with each node writing to a different file
+class ParallelMuffle {
+  private:
+    std::shared_ptr<std::ostream> redirect_;
+    std::streambuf* saved_;
+
+  public:
+    ParallelMuffle(std::string filename = "", const bool append = false) {
+      saved_ = std::cout.rdbuf();
+      if (filename != "") {
+        filename += ("_" + std::to_string(mpi__->rank()));
+        redirect_ = append ? std::make_shared<std::ofstream>(filename, std::ios::app) : std::make_shared<std::ofstream>(filename);
+      } else {
+        redirect_ = std::make_shared<std::ostringstream>();
+      }
+
+      std::cout.rdbuf(redirect_->rdbuf());
+    }
+
+    ~ParallelMuffle() {
       std::cout.rdbuf(saved_);
     }
 };
