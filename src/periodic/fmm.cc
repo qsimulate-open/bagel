@@ -51,10 +51,12 @@ void FMM::init() {
 
   nsp_ = geom_->nshellpair();
 
-  double minext = geom_->shellpair(0)->extent();
+  double maxext = 0;
   for (int i = 1; i != nsp_; ++i)
-    if (minext > geom_->shellpair(i)->extent())
-      minext = geom_->shellpair(i)->extent();
+    if (maxext < geom_->shellpair(i)->extent())
+      maxext = geom_->shellpair(i)->extent();
+  const int maxws = maxext / ws_;
+  if (maxws > ns2) throw runtime_error("maxws > 2**ns");
 
   coordinates_.resize(nsp_);
   maxxyz_ = {{0, 0, 0}};
@@ -69,7 +71,7 @@ void FMM::init() {
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
 
-  //if (minext > unitsize_) throw runtime_error("Too small partitions: need smaller NS");
+  cout << "boxsize = " << boxsize_ << " unitsize = " << unitsize_ << " maxxyz = " << maxxyz_[0] << " " << maxxyz_[1] << " " << maxxyz_[2] << endl;
 
   get_boxes();
 }
@@ -123,7 +125,7 @@ void FMM::get_boxes() {
     vector<shared_ptr<const ShellPair>> sp;
     for (int i = 0; i != leaves[il].size(); ++i)
       sp.insert(sp.end(), geom_->shellpair(i));
-    auto newbox = make_shared<Box>(ns_, il, boxid[il], lmax_, sp);
+    auto newbox = make_shared<Box>(0, il, boxid[il], lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -132,7 +134,7 @@ void FMM::get_boxes() {
   int icntp = ns2;
   nbranch_.resize(ns_+1);
   nbranch_[0] = 1;
-  nbranch_[ns_] = nleaf;
+  nbranch_[0] = nleaf;
 
   for (int nss = ns_; nss != 0; --nss) {
     int nbranch = 0;
@@ -157,7 +159,7 @@ void FMM::get_boxes() {
             const bool parent_found = (parent != treemap.end());
 
             if (!parent_found) {
-              auto newbox = make_shared<Box>(nss-1, nbox, idxp, lmax_, box_[ichild]->sp());
+              auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
               box_.insert(box_.end(), newbox);
               treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
               box_[nbox]->insert_child(box_[ichild]);
@@ -175,11 +177,23 @@ void FMM::get_boxes() {
     }
     icntc = icntp;
     icntp += nss2;
-    nbranch_[nss-1] = nbranch;
+    nbranch_[ns_-nss+1] = nbranch;
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
   cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
+
+  int ib = 0;
+  for (int ir = 0; ir != ns_; ++ir) {
+    vector<shared_ptr<Box>>::const_iterator start = box_.begin() + ib;
+    vector<shared_ptr<Box>>::const_iterator end   = box_.begin() + ib + nbranch_[ir];
+    vector<shared_ptr<Box>> tmpbox(start, end);
+    for (auto& b : tmpbox) {
+      b->init();
+      b->get_neigh(tmpbox, ws_);
+    }
+    ib += nbranch_[ir];
+  }
 
   fmminit.tick_print("fmm initialisation");
 

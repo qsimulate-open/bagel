@@ -45,7 +45,6 @@ class Box {
     std::vector<std::shared_ptr<const Box>> neigh_;
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
-    bool is_leaf_;
     double thresh_, extent_;
     int nbasis0_, nbasis1_;
 
@@ -54,12 +53,13 @@ class Box {
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
     void get_parent(std::shared_ptr<const Box> = NULL);
     void insert_child(std::shared_ptr<const Box> = NULL);
-    bool is_neigh(std::shared_ptr<const Box> b, const int ws);
+    bool is_neigh(std::shared_ptr<const Box> b, const int ws = 2) const;
     void insert_neigh(std::shared_ptr<const Box> b, const bool is_neigh = false, const int ws = 2);
+    void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
 
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
-    void compute_multipoles();
+    void compute_multipoles(const bool is_leaf);
     void compute_local_expansions(std::shared_ptr<const Matrix> density);
     std::shared_ptr<const ZMatrix> compute_node_energy(const int dim, std::shared_ptr<const Matrix> density, std::vector<double> max_den, const bool dodf = false, const double schwarz_thresh = 0.0);
 
@@ -79,7 +79,6 @@ class Box {
     int nchild() const { return child_.size(); }
     int nneigh() const { return neigh_.size(); }
     int ninter() const { return inter_.size(); }
-    bool is_leaf() const { return is_leaf_; }
     double extent() const { return extent_; }
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }

@@ -35,6 +35,35 @@ using namespace std;
 
 static const double pisq__ = pi__ * pi__;
 
+void Box::init() {
+
+  extent_ = 0;
+  if (rank_ == 0) {
+    for (auto& i : sp_) {
+      centre_[0] += i->centre(0);
+      centre_[1] += i->centre(1);
+      centre_[2] += i->centre(2);
+      if (extent_ < i->extent()) extent_ = i->extent();
+    }
+    centre_[0] /= nsp();
+    centre_[1] /= nsp();
+    centre_[2] /= nsp();
+  } else {
+    assert (!child_.empty());
+    for (int i = 0; i != nchild(); ++i) {
+      shared_ptr<const Box> c = child(i);
+      centre_[0] += c->centre(0);
+      centre_[1] += c->centre(1);
+      centre_[2] += c->centre(2);
+      if (extent_ < c->extent()) extent_ = c->extent();
+    }
+    centre_[0] /= nchild();
+    centre_[1] /= nchild();
+    centre_[2] /= nchild();
+  }
+}
+
+
 void Box::insert_sp(vector<shared_ptr<const ShellPair>> sp) {
 
   const int nsp = sp_.size();
@@ -52,4 +81,31 @@ void Box::insert_child(shared_ptr<const Box> child) {
     child_.resize(nchild + 1);
     child_[nchild] = child;
   }
+}
+
+
+void Box::get_neigh(vector<shared_ptr<Box>> box, const int ws) {
+
+  neigh_.resize(box.size());
+  int nn = 0;
+  for (auto& b : box) {
+    if (b->rank() == rank_) {
+      if (is_neigh(b)) {
+        neigh_[nn] = b;
+        ++nn;
+      }
+    }
+  }
+  neigh_.resize(nn);
+}
+
+
+bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
+
+  double rr = 0;
+  for (int i = 0; i != 3; ++i)
+    rr += pow(centre_[i] - box->centre(i), 2);
+
+  const bool out = (sqrt(rr) > (1+ws)*(extent_ + box->extent()));
+  return out;
 }
