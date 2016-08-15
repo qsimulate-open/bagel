@@ -60,7 +60,6 @@ void ZCASSecond::compute() {
 
     // DEBUG CODE *************************
     zero_positronic_elements(grad); 
-    shared_ptr<RelDFHalf> half, halfa;
     // DEBUG CODE *************************
 
     // check gradient and break if converged
@@ -75,6 +74,23 @@ void ZCASSecond::compute() {
       break;
     }
 
+    // half-transformed integrals (with JJ)
+    list<shared_ptr<RelDFHalf>> halfc_1j, halfg_1j, halfb_1j;
+    if (nclosed_) {
+      halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
+      halfg_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_gaunt();
+      halfb_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_breit();
+    }
+    list<shared_ptr<const RelDFHalf>> halfc, halfg, halfb;
+    for (auto& i : halfc_1j)
+      halfc.push_back(i->apply_J());
+    for (auto& i : halfg_1j)
+      halfg.push_back(i->apply_J());
+    for (auto& i : halfb_1j)
+      halfb.push_back(i->apply_J());
+
+//  shared_ptr<const DFHalfDist> halfa = fci_->jop()->mo2e_1ext()->apply_JJ();
+
     // compute denominator...
     shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qxr, fci_->rdm1_av());
 
@@ -85,7 +101,7 @@ void ZCASSecond::compute() {
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
-      shared_ptr<const ZRotFile> sigma = compute_hess_trial(trot, half, halfa, cfock, afock, qxr);
+      shared_ptr<const ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, cfock, afock, qxr);
       shared_ptr<const ZRotFile> residual;
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
@@ -121,7 +137,9 @@ shared_ptr<ZRotFile> ZCASSecond::apply_denom(shared_ptr<const ZRotFile> grad, sh
 }
 
 
-shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> trot, shared_ptr<const RelDFHalf> half, shared_ptr<const RelDFHalf> halfa,
+shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> trot,
+                                                    list<shared_ptr<const RelDFHalf>> halfc, list<shared_ptr<const RelDFHalf>> halfg, list<shared_ptr<const RelDFHalf>> halfb,
+//                                                  list<shared_ptr<const RelDFHalf>> halfac, list<shared_ptr<const RelDFHalf>> halfag, list<shared_ptr<const RelDFHalf>> halfab,
                                                     shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr) const {
   return nullptr;
 }

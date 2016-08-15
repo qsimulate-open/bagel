@@ -3,7 +3,7 @@
 // Filename: zcassecond.h
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -41,8 +41,10 @@ class ZCASSecond : public ZCASSCF {
     std::shared_ptr<ZRotFile> compute_denom(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock,
                                             std::shared_ptr<const ZMatrix> qxr, std::shared_ptr<const ZMatrix> rdm1) const;
     // compute H*t (Hessian times trial vector)
-    std::shared_ptr<ZRotFile> compute_hess_trial(std::shared_ptr<const ZRotFile> trot, std::shared_ptr<const RelDFHalf> half, std::shared_ptr<const RelDFHalf> halfa,
-                                                 std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
+    std::shared_ptr<ZRotFile> compute_hess_trial(std::shared_ptr<const ZRotFile> trot,
+       std::list<std::shared_ptr<const RelDFHalf>> halfc, std::list<std::shared_ptr<const RelDFHalf>> halfg, std::list<std::shared_ptr<const RelDFHalf>> halfb,
+//     std::list<std::shared_ptr<const RelDFHalf>> halfac, std::list<std::shared_ptr<const RelDFHalf>> halfag, std::list<std::shared_ptr<const RelDFHalf>> halfab,
+       std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
     // apply denominator in microiterations
     std::shared_ptr<ZRotFile> apply_denom(std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> denom, const double shift, const double scale) const;
 

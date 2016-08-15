@@ -300,11 +300,16 @@ void DFock::driver(array<shared_ptr<const Matrix>,4> rocoeff,  array<shared_ptr<
 
   // this is for gradient calculations
   if (store_half_) {
-    assert(!gaunt_);
     for (auto& i : half_complex_exch)
       i->discard_sum_diff();
-    half_ = half_complex_exch;
-    if (breit)
-      half2_ = half_complex_exch2;
+    if (!gaunt)
+      half_coulomb_ = half_complex_exch;
+    else
+      half_gaunt_ = half_complex_exch;
+    if (breit) {
+      for (auto& i : half_complex_exch2)
+        i->discard_sum_diff();
+      half_breit_ = half_complex_exch2;
+    }
   }
 }
