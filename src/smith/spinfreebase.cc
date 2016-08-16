@@ -196,9 +196,9 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
       tie(krdm1, ignore) = info_->rdm12(jst, ist);
       shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
       // then assign the dot product: fmn=fij rdm1
-      fmn(ist, jst) = blas::dot_product_noconj(fockact_->data(), fockact_->size(), rdm1->data());
+      fmn(jst, ist) = blas::dot_product_noconj(fockact_->data(), fockact_->size(), rdm1->data());
       assert(fockact_->size() == rdm1->size());
-      fmn(jst, ist) = std::conj(fmn(ist, jst));
+      fmn(ist, jst) = std::conj(fmn(jst, ist));
 #ifndef NDEBUG
       tie(krdm1, ignore) = info_->rdm12(ist, jst);
       rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
