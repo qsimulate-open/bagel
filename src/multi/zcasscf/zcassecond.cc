@@ -84,12 +84,27 @@ void ZCASSecond::compute() {
     list<shared_ptr<const RelDFHalf>> halfc, halfg, halfb;
     for (auto& i : halfc_1j)
       halfc.push_back(i->apply_J());
+    // caution... Breit cases are done with one J.
     for (auto& i : halfg_1j)
-      halfg.push_back(i->apply_J());
+      halfg.push_back(breit_ ? i : i->apply_J());
     for (auto& i : halfb_1j)
-      halfb.push_back(i->apply_J());
+      halfb.push_back(i);
 
-//  shared_ptr<const DFHalfDist> halfa = fci_->jop()->mo2e_1ext()->apply_JJ();
+    list<shared_ptr<RelDFHalf>> halfac_0j, halfag_0j, halfab_0j;
+    shared_ptr<const ZMatrix> acoeff = coeff_->slice_copy(nclosed_*2, nocc_*2);
+    tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, acoeff, false, false);
+    if (gaunt_)
+      tie(halfag_0j, halfab_0j) = RelMOFile::compute_half(geom_, acoeff, gaunt_, breit_);
+
+    list<shared_ptr<const RelDFHalf>> halfac, halfag, halfab;
+    for (auto& i : halfac_0j)
+      halfac.push_back(i->apply_JJ());
+    // caution... Breit cases are done with J. Breit has picked up J in compute_half
+    for (auto& i : halfag_0j)
+      halfag.push_back(breit_ ? i->apply_J() : i->apply_JJ());
+
+    assert(gaunt_ || (halfg.empty() && halfag.empty()));
+    assert(breit_ || (halfb.empty() && halfab.empty()));
 
     // compute denominator...
     shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qxr, fci_->rdm1_av());
@@ -101,7 +116,7 @@ void ZCASSecond::compute() {
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
-      shared_ptr<const ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, cfock, afock, qxr);
+      shared_ptr<const ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
       shared_ptr<const ZRotFile> residual;
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
@@ -123,7 +138,6 @@ void ZCASSecond::compute() {
       }
     }
 grad->print();
-throw logic_error("STOP!");
   }
 }
 
@@ -139,8 +153,9 @@ shared_ptr<ZRotFile> ZCASSecond::apply_denom(shared_ptr<const ZRotFile> grad, sh
 
 shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> trot,
                                                     list<shared_ptr<const RelDFHalf>> halfc, list<shared_ptr<const RelDFHalf>> halfg, list<shared_ptr<const RelDFHalf>> halfb,
-//                                                  list<shared_ptr<const RelDFHalf>> halfac, list<shared_ptr<const RelDFHalf>> halfag, list<shared_ptr<const RelDFHalf>> halfab,
+                                                    list<shared_ptr<const RelDFHalf>> halfac, list<shared_ptr<const RelDFHalf>> halfag, list<shared_ptr<const RelDFHalf>> halfab,
                                                     shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr) const {
+throw logic_error("STOP!");
   return nullptr;
 }
 
