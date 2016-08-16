@@ -93,7 +93,7 @@ void FMM::get_boxes() {
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
-      idxbox[i] = (int) floor(coordinates_[isp][i]/unitsize_) + ns_-1;
+      idxbox[i] = (int) floor(coordinates_[isp][i]/unitsize_) + ns2/2;
       assert(idxbox[i] < ns2);
     }
 
@@ -124,7 +124,7 @@ void FMM::get_boxes() {
   for (int il = 0; il != nleaf; ++il) {
     vector<shared_ptr<const ShellPair>> sp;
     for (int i = 0; i != leaves[il].size(); ++i)
-      sp.insert(sp.end(), geom_->shellpair(i));
+      sp.insert(sp.end(), geom_->shellpair(leaves[il][i]));
     auto newbox = make_shared<Box>(0, il, boxid[il], lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
@@ -132,11 +132,11 @@ void FMM::get_boxes() {
 
   int icntc = 0;
   int icntp = ns2;
-  nbranch_.resize(ns_+1);
+  nbranch_.resize(ns_+2);
   nbranch_[0] = 1;
   nbranch_[0] = nleaf;
 
-  for (int nss = ns_; nss != 0; --nss) {
+  for (int nss = ns_; nss > -1; --nss) {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
 
@@ -184,7 +184,7 @@ void FMM::get_boxes() {
   cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
 
   int ib = 0;
-  for (int ir = 0; ir != ns_; ++ir) {
+  for (int ir = 0; ir != ns_+1; ++ir) {
     vector<shared_ptr<Box>>::const_iterator start = box_.begin() + ib;
     vector<shared_ptr<Box>>::const_iterator end   = box_.begin() + ib + nbranch_[ir];
     vector<shared_ptr<Box>> tmpbox(start, end);
