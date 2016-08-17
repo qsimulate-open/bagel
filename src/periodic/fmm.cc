@@ -133,7 +133,6 @@ void FMM::get_boxes() {
   int icntc = 0;
   int icntp = ns2;
   nbranch_.resize(ns_+2);
-  nbranch_[0] = 1;
   nbranch_[0] = nleaf;
 
   for (int nss = ns_; nss > -1; --nss) {
@@ -183,16 +182,17 @@ void FMM::get_boxes() {
   nbox_ = nbox;
   cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
 
-  int ib = 0;
+  for (auto& b : box_)
+    b->init();
+
+  int icnt = 0;
   for (int ir = 0; ir != ns_+1; ++ir) {
-    vector<shared_ptr<Box>>::const_iterator start = box_.begin() + ib;
-    vector<shared_ptr<Box>>::const_iterator end   = box_.begin() + ib + nbranch_[ir];
-    vector<shared_ptr<Box>> tmpbox(start, end);
-    for (auto& b : tmpbox) {
-      b->init();
+    vector<shared_ptr<Box>> tmpbox(nbranch_[ir]);
+    for (int ib = 0; ib != nbranch_[ir]; ++ib)
+      tmpbox[ib] = box_[icnt + ib];
+    for (auto& b : tmpbox)
       b->get_neigh(tmpbox, ws_);
-    }
-    ib += nbranch_[ir];
+    icnt += nbranch_[ir];
   }
 
   fmminit.tick_print("fmm initialisation");

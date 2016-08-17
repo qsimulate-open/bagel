@@ -53,7 +53,7 @@ class Box {
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
     void get_parent(std::shared_ptr<const Box> = NULL);
     void insert_child(std::shared_ptr<const Box> = NULL);
-    bool is_neigh(std::shared_ptr<const Box> b, const int ws = 2) const;
+    bool is_neigh(std::shared_ptr<const Box> b, const int ws) const;
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
@@ -73,7 +73,7 @@ class Box {
 
     int rank() const { return rank_; }
     int boxid() const { return boxid_; }
-    std::array<int, 3> tvec() const { return tvec(); }
+    std::array<int, 3> tvec() const { return tvec_; }
 
     int nsp() const { return sp_.size(); }
     int nchild() const { return child_.size(); }

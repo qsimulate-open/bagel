@@ -54,7 +54,7 @@ class FMM {
     void get_boxes();
 
   public:
-    FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 2);
+    FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 0);
     ~FMM() { }
 
     std::array<double, 3> centre() const { return centre_; }

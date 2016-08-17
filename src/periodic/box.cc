@@ -85,11 +85,9 @@ void Box::get_neigh(vector<shared_ptr<Box>> box, const int ws) {
   neigh_.resize(box.size());
   int nn = 0;
   for (auto& b : box) {
-    if (b->rank() == rank_) {
-      if (is_neigh(b)) {
-        neigh_[nn] = b;
-        ++nn;
-      }
+    if (b->rank() == rank_ && is_neigh(b, ws)) {
+      neigh_[nn] = b;
+      ++nn;
     }
   }
   neigh_.resize(nn);
@@ -112,11 +110,9 @@ void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
   inter_.resize(box.size());
   int ni = 0;
   for (auto& b : box) {
-    if (b->rank() == rank_) {
-      if (!is_neigh(b) && parent_->is_neigh(b)) {
-        inter_[ni] = b;
-        ++ni;
-      }
+    if (b->rank() == rank_ && !is_neigh(b, ws) && parent_->is_neigh(b, ws)) {
+      inter_[ni] = b;
+      ++ni;
     }
   }
   inter_.resize(ni);
