@@ -51,12 +51,14 @@ void FMM::init() {
 
   nsp_ = geom_->nshellpair();
 
+#if 0
   double maxext = 0;
   for (int i = 1; i != nsp_; ++i)
     if (maxext < geom_->shellpair(i)->extent())
       maxext = geom_->shellpair(i)->extent();
   const int maxws = maxext / ws_;
   if (maxws > ns2) throw runtime_error("maxws > 2**ns");
+#endif
 
   coordinates_.resize(nsp_);
   maxxyz_ = {{0, 0, 0}};
@@ -186,23 +188,35 @@ void FMM::get_boxes() {
     b->init();
 
   int icnt = 0;
-  for (int ir = 0; ir != ns_+1; ++ir) {
+  for (int ir = ns_+1; ir > -1; --ir) {
     vector<shared_ptr<Box>> tmpbox(nbranch_[ir]);
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
-      tmpbox[ib] = box_[icnt + ib];
-    for (auto& b : tmpbox)
+      tmpbox[ib] = box_[nbox_-icnt-nbranch_[ir]+ib];
+    for (auto& b : tmpbox) {
       b->get_neigh(tmpbox, ws_);
+      b->get_inter(tmpbox, ws_);
+    }
     icnt += nbranch_[ir];
   }
 
-  fmminit.tick_print("fmm initialisation");
+  int i = 0;
+  for (auto& b : box_) {
+    cout << i << " rank = " << b->rank() << " extent = " << b->extent()
+         << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " ninter = " << b->ninter()
+         << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2) << endl;
+    ++i;
+  }
 
+  fmminit.tick_print("fmm initialisation");
 }
 
 
 void FMM::M2M() {
 
   Timer m2mtime;
+  for (auto& b : box_)
+    b->compute_multipoles();
+
   m2mtime.tick_print("Upward M2M pass");
 }
 

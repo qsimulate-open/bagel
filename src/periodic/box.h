@@ -51,17 +51,16 @@ class Box {
 
     void init();
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
-    void get_parent(std::shared_ptr<const Box> = NULL);
     void insert_child(std::shared_ptr<const Box> = NULL);
     bool is_neigh(std::shared_ptr<const Box> b, const int ws) const;
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
+    void compute_multipoles();
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
-    void compute_multipoles(const bool is_leaf);
     void compute_local_expansions(std::shared_ptr<const Matrix> density);
-    std::shared_ptr<const ZMatrix> compute_node_energy(const int dim, std::shared_ptr<const Matrix> density, std::vector<double> max_den, const bool dodf = false, const double schwarz_thresh = 0.0);
+    std::shared_ptr<const ZMatrix> compute_node_energy(const int dim, std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0);
 
 
   public:
