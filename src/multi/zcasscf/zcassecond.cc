@@ -65,7 +65,7 @@ void ZCASSecond::compute() {
     // check gradient and break if converged
     const double gradient = grad->rms();
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, energy_, gradient, timer.tick());
     mute_stdcout();
     if (gradient < thresh_) {
       resume_stdcout();
@@ -122,11 +122,12 @@ void ZCASSecond::compute() {
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
       const double err = residual->norm() / lambda;
       resume_stdcout();
-      cout << "         residual: " << setw(10) << setprecision(3) << scientific << err
-           <<         " lambda  : " << setw(10) << setprecision(3) << scientific << lambda
-           <<         " epsilon : " << setw(10) << setprecision(3) << scientific << epsilon
-           <<         " stepsize: " << setw(10) << setprecision(3) << scientific << stepsize
-           << setw(6) << fixed << setprecision(2) << mtimer.tick() << endl;
+      if (!miter) cout << endl;
+      cout << "         res : " << setw(8) << setprecision(2) << scientific << err
+           <<       "   lamb: " << setw(8) << setprecision(2) << scientific << lambda
+           <<       "   eps : " << setw(8) << setprecision(2) << scientific << epsilon
+           <<       "   step: " << setw(8) << setprecision(2) << scientific << stepsize
+           << setw(8) << fixed << setprecision(2) << mtimer.tick() << endl;
       mute_stdcout();
       if (err < max(thresh_micro_, stepsize*thresh_microstep_))
         break;

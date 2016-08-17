@@ -69,7 +69,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     VectorB occup_;
 
     void print_header() const;
-    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
+    void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
 
     void init();
 

@@ -196,7 +196,7 @@ void ZCASBFGS::compute() {
 
     // print energy
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, energy_, gradient, timer.tick());
 
     // Set logic flags based upon convergence criteria and switch optimization subspaces accordingly
     if (!optimize_electrons) {

@@ -111,7 +111,7 @@ void ZSuperCI::compute() {
     if (gradient < thresh_) {
       resume_stdcout();
       // print out...
-      print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+      print_iteration(iter, energy_, gradient, timer.tick());
       rms_grad_ = gradient;
       cout << endl;
       // output energy change for last cycle
@@ -166,7 +166,7 @@ void ZSuperCI::compute() {
 
     // print out...
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, energy_, gradient, timer.tick());
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;
       cout << " " << endl;
