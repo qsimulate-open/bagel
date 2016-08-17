@@ -102,10 +102,12 @@ void ShellPair::init() {
 
   // extent
   extent_ = 0;
+  const double tol = 20.0 / log10(exp(1));
   for (auto& expi0 : exp0) {
     for (auto& expi1 : exp1) {
       const double cxp_inv = 1.0 / (expi0 + expi1);
       const double expi01 = expi0 * expi1;
+      if (expi01*rsq*cxp_inv > tol) continue;
       const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
       //const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
       //const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
