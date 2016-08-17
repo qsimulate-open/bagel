@@ -54,8 +54,8 @@ class Box {
     void get_parent(std::shared_ptr<const Box> = NULL);
     void insert_child(std::shared_ptr<const Box> = NULL);
     bool is_neigh(std::shared_ptr<const Box> b, const int ws = 2) const;
-    void insert_neigh(std::shared_ptr<const Box> b, const bool is_neigh = false, const int ws = 2);
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
+    void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_

@@ -37,29 +37,25 @@ static const double pisq__ = pi__ * pi__;
 
 void Box::init() {
 
+  centre_ = {{0, 0, 0}};
+  for (auto& i : sp_) {
+    centre_[0] += i->centre(0);
+    centre_[1] += i->centre(1);
+    centre_[2] += i->centre(2);
+  }
+  centre_[0] /= nsp();
+  centre_[1] /= nsp();
+  centre_[2] /= nsp();
+
   extent_ = 0;
-  if (rank_ == 0) {
-    for (auto& i : sp_) {
-      centre_[0] += i->centre(0);
-      centre_[1] += i->centre(1);
-      centre_[2] += i->centre(2);
-      if (extent_ < i->extent()) extent_ = i->extent();
-    }
-    centre_[0] /= nsp();
-    centre_[1] /= nsp();
-    centre_[2] /= nsp();
-  } else {
-    assert (!child_.empty());
-    for (int i = 0; i != nchild(); ++i) {
-      shared_ptr<const Box> c = child(i);
-      centre_[0] += c->centre(0);
-      centre_[1] += c->centre(1);
-      centre_[2] += c->centre(2);
-      if (extent_ < c->extent()) extent_ = c->extent();
-    }
-    centre_[0] /= nchild();
-    centre_[1] /= nchild();
-    centre_[2] /= nchild();
+  for (auto& i : sp_) {
+    if (i->schwarz() < 1e-15) continue;
+    double tmp = 0;
+    for (int j = 0; j != 3; ++j)
+      tmp += pow(i->centre(j)-centre_[j], 2.0);
+    const double ei = sqrt(tmp) + i->extent();
+    assert(ei > 0);
+    if (extent_ < ei) extent_ = ei;
   }
 }
 
@@ -106,6 +102,22 @@ bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - box->centre(i), 2);
 
-  const bool out = (sqrt(rr) > (1+ws)*(extent_ + box->extent()));
+  const bool out = (sqrt(rr) < (1+ws)*(extent_ + box->extent()));
   return out;
+}
+
+
+void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
+
+  inter_.resize(box.size());
+  int ni = 0;
+  for (auto& b : box) {
+    if (b->rank() == rank_) {
+      if (!is_neigh(b) && parent_->is_neigh(b)) {
+        inter_[ni] = b;
+        ++ni;
+      }
+    }
+  }
+  inter_.resize(ni);
 }
