@@ -85,14 +85,8 @@ void ZCASSCF::init() {
   tsymm_ = !geom_->magnetism();
 
   // coefficient parameters
-        bool mvo = idata_->get<bool>("generate_mvo", false);
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
-  const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
-  const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
-  if (mvo && ncore_mvo == 2*relref->relcoeff_full()->nocc()) {
-    cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
-    mvo = false;
-  }
+
   nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
@@ -172,8 +166,6 @@ void ZCASSCF::init() {
   // initialize coefficient to enforce kramers symmetry
   if (!kramers_coeff)
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
-
-  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
