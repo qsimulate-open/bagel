@@ -29,6 +29,7 @@
 #include <src/periodic/multipolebatch.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/periodic/localexpansion.h>
+#include <src/integral/rys/eribatch.h>
 
 using namespace bagel;
 using namespace std;
@@ -174,4 +175,85 @@ void Box::compute_multipoles() {
 
   for (int i = 0; i != nmult; ++i)
     multipole_[i] = multipole[i];
+}
+
+
+shared_ptr<const ZMatrix> Box::compute_node_energy(const int dim, shared_ptr<const Matrix> density, vector<double> max_den, const double schwarz_thresh) {
+
+  assert(nchild() == 0);
+  auto out = make_shared<ZMatrix>(dim, dim);
+  out->zero();
+
+  // NF: 4c integrals
+  if (density) {
+    const double* density_data = density->data();
+    const int nsh = sqrt(max_den.size());
+
+    for (auto& v01 : sp_) {
+      shared_ptr<const Shell> b0 = v01->shell(0);
+      const int i0 = v01->shell_ind(0);
+      const int b0offset = v01->offset(0);
+      const int b0size = b0->nbasis();
+
+      shared_ptr<const Shell> b1 = v01->shell(1);
+      const int i1 = v01->shell_ind(1);
+      const int b1offset = v01->offset(1);
+      const int b1size = b1->nbasis();
+
+      const int i01 = i0 * density->ndim() + i1;
+      const double density_01 = max_den[i01] * 4.0;
+
+      for (auto& neigh : neigh_) {
+        for (auto& v23 : neigh->sp()) {
+          shared_ptr<const Shell> b2 = v23->shell(0);
+          const int i2 = v23->shell_ind(0);
+          const int b2offset = v23->offset(0);
+          const int b2size = b2->nbasis();
+
+          shared_ptr<const Shell> b3 = v23->shell(1);
+          const int i3 = v23->shell_ind(1);
+          const int b3offset = v23->offset(1);
+          const int b3size = b3->nbasis();
+
+          const int i23 = i2 * density->ndim() + i3;
+
+          const double density_23 = max_den[i23] * 4.0;
+          const double density_02 = max_den[i0 * nsh + i2];
+          const double density_03 = max_den[i0 * nsh + i3];
+          const double density_12 = max_den[i1 * nsh + i2];
+          const double density_13 = max_den[i1 * nsh + i3];
+
+          const double mulfactor = max(max(max(density_01, density_02),
+                                           max(density_03, density_12)),
+                                           max(density_13, density_23));
+          const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+          const bool skip_schwarz = integral_bound < schwarz_thresh;
+          if (skip_schwarz) continue;
+
+          array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+          ERIBatch eribatch(input, mulfactor);
+          eribatch.compute();
+          const double* eridata = eribatch.data();
+
+          for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+            for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+              const int j1n = j1 * density->ndim();
+              for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                const int j2n = j2 * density->ndim();
+                for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+
+                  double eri = *eridata;
+                  out->element(j0, j1) += density_data[j2n + j3] * eri;
+                  out->element(j0, j2) -= density_data[j1n + j3] * eri * 0.5;
+                }
+              }
+            }
+          }
+
+        }
+      }
+    }
+  }
+
+  return out;
 }

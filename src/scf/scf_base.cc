@@ -58,8 +58,12 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   // FMM
   dofmm_   = geom_->dofmm();
   if (dofmm_) {
-    fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height", 21), idata_->get<int>("contract", true), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
-    fmmtree_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
+    const bool dodf = idata_->get<bool>("df", true);
+    if (dodf) throw runtime_error("FMM only works without DF now");
+    fmm_ = make_shared<const FMM>(geom, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
+                                        idata_->get<int>("ws", 0));
+    ///////fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height", 21), idata_->get<int>("contract", true), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
+    ///////fmmtree_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
     //fmmtree_sp_ = make_shared<const TreeSP>(geom_, idata_->get<int>("height", 21), idata_->get<int>("l_max", 21), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
     //fmmtree_sp_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
   }

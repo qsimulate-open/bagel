@@ -33,6 +33,7 @@
 #include <src/wfn/method.h>
 #include <src/periodic/tree.h>
 #include <src/periodic/tree_sp.h>
+#include <src/periodic/fmm.h>
 
 namespace bagel {
 
@@ -75,6 +76,7 @@ class SCF_base_ : public Method {
     // FMM
     std::shared_ptr<const Tree> fmmtree_;
     std::shared_ptr<const TreeSP> fmmtree_sp_;
+    std::shared_ptr<const FMM> fmm_;
 
     bool restart_;
 

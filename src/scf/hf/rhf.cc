@@ -27,7 +27,6 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
-#include <src/periodic/fmm.h>
 
 using namespace bagel;
 using namespace std;
@@ -80,7 +79,8 @@ void RHF::compute() {
           }
         } else {
           //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aden, dodf_)->get_real_part();
-          shared_ptr<const Matrix> tmp = fmmtree_->fmm(aden, dodf_)->get_real_part();
+          ///////shared_ptr<const Matrix> tmp = fmmtree_->fmm(aden, dodf_)->get_real_part();
+          shared_ptr<const Matrix> tmp = fmm_->compute_energy(aden)->get_real_part();
           focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
         fock = focka->distmatrix();
@@ -100,7 +100,8 @@ void RHF::compute() {
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
         //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
-        shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
+        /////shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
+        shared_ptr<const Matrix> tmp = fmm_->compute_energy(aodensity_)->get_real_part();
         focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
@@ -147,7 +148,7 @@ void RHF::compute() {
       }
     } else {
       //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
-      shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmm_->compute_energy(aodensity_)->get_real_part();
       previous_fock = make_shared<const Matrix>(*tmp + *hcore_);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
