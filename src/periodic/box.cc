@@ -53,7 +53,7 @@ void Box::init() {
 
   extent_ = 0;
   for (auto& i : sp_) {
-    if (i->schwarz() < 1e-15) continue;
+    if (i->schwarz() < 1e-20) continue;
     double tmp = 0;
     for (int j = 0; j != 3; ++j)
       tmp += pow(i->centre(j)-centre_[j], 2.0);
@@ -184,20 +184,23 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(const int dim, shared_ptr<con
   auto out = make_shared<ZMatrix>(dim, dim);
   out->zero();
 
+  int ninteg = 0;
   // NF: 4c integrals
+  const int shift = sizeof(int) * 4;
   if (density) {
     const double* density_data = density->data();
     const int nsh = sqrt(max_den.size());
 
     for (auto& v01 : sp_) {
-      shared_ptr<const Shell> b0 = v01->shell(0);
-      const int i0 = v01->shell_ind(0);
-      const int b0offset = v01->offset(0);
+      shared_ptr<const Shell> b0 = v01->shell(1);
+      const int i0 = v01->shell_ind(1);
+      const int b0offset = v01->offset(1);
       const int b0size = b0->nbasis();
 
-      shared_ptr<const Shell> b1 = v01->shell(1);
-      const int i1 = v01->shell_ind(1);
-      const int b1offset = v01->offset(1);
+      shared_ptr<const Shell> b1 = v01->shell(0);
+      const int i1 = v01->shell_ind(0);
+      if (i1 < i0) continue;
+      const int b1offset = v01->offset(0);
       const int b1size = b1->nbasis();
 
       const int i01 = i0 * density->ndim() + i1;
@@ -205,17 +208,20 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(const int dim, shared_ptr<con
 
       for (auto& neigh : neigh_) {
         for (auto& v23 : neigh->sp()) {
-          shared_ptr<const Shell> b2 = v23->shell(0);
-          const int i2 = v23->shell_ind(0);
-          const int b2offset = v23->offset(0);
+          shared_ptr<const Shell> b2 = v23->shell(1);
+          const int i2 = v23->shell_ind(1);
+          if (i2 < i0) continue;
+          const int b2offset = v23->offset(1);
           const int b2size = b2->nbasis();
 
-          shared_ptr<const Shell> b3 = v23->shell(1);
-          const int i3 = v23->shell_ind(1);
-          const int b3offset = v23->offset(1);
+          shared_ptr<const Shell> b3 = v23->shell(0);
+          const int i3 = v23->shell_ind(0);
+          if (i3 < i2) continue;
+          const int b3offset = v23->offset(0);
           const int b3size = b3->nbasis();
 
           const int i23 = i2 * density->ndim() + i3;
+          if (i23 < i01) continue;
 
           const double density_23 = max_den[i23] * 4.0;
           const double density_02 = max_den[i0 * nsh + i2];
@@ -230,21 +236,41 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(const int dim, shared_ptr<con
           const bool skip_schwarz = integral_bound < schwarz_thresh;
           if (skip_schwarz) continue;
 
+          ++ninteg;
           array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
           ERIBatch eribatch(input, mulfactor);
           eribatch.compute();
           const double* eridata = eribatch.data();
 
           for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+            const int j0n = j0 * density->ndim();
             for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+              if (j1 < j0) {
+                eridata += b2size * b3size;
+                continue;
+              }
               const int j1n = j1 * density->ndim();
+              const unsigned int nj01 = (j0 << shift) + j1;
+              const double scale01 = (j0 == j1) ? 0.5 : 1.0;
               for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                 const int j2n = j2 * density->ndim();
                 for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                  if (j3 < j2) continue;
+                  const int j3n = j3 * density->ndim();
+                  const unsigned int nj23 = (j2 << shift) + j3;
+                  if (nj23 < nj01 && i01 == i23) continue;
+                  const double scale23 = (j2 == j3) ? 0.5 : 1.0;
+                  const double scale = (nj01 == nj23) ? 0.25 : 0.5;
 
-                  double eri = *eridata;
-                  out->element(j0, j1) += density_data[j2n + j3] * eri;
-                  out->element(j0, j2) -= density_data[j1n + j3] * eri * 0.5;
+                  const double eri = *eridata;
+                  const double intval = eri * scale * scale01 * scale23;
+                  const double intval4 = 4.0 * intval;
+                  out->element(j1, j0) += density_data[j2n + j3] * intval4;
+                  out->element(j3, j2) += density_data[j0n + j1] * intval4;
+                  out->element(j2, j0) -= density_data[j1n + j3] * intval;
+                  out->element(j3, j0) -= density_data[j1n + j2] * intval;
+                  out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
+                  out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
                 }
               }
             }
@@ -254,6 +280,7 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(const int dim, shared_ptr<con
       }
     }
   }
+  cout << "ninteg = " << ninteg << endl;
 
   return out;
 }
