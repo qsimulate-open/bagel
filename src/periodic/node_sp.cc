@@ -477,7 +477,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
       const int b1offset = v01->offset(1);
       const int b1size = b1->nbasis();
 
-      const int i01 = i0 * density->ndim() + i1;
+      const int i01 = i0 * nsh + i1;
       const double density_01 = max_den[i01] * 4.0;
 
       for (auto& neigh : neigh_) {
@@ -494,7 +494,7 @@ shared_ptr<const ZMatrix> NodeSP::compute_Coulomb(const int dim, shared_ptr<cons
           const int b3offset = v23->offset(1);
           const int b3size = b3->nbasis();
 
-          const int i23 = i2 * density->ndim() + i3;
+          const int i23 = i2 * nsh + i3;
 
           const double density_23 = max_den[i23] * 4.0;
           const double density_02 = max_den[i0 * nsh + i2];
