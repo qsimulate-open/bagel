@@ -60,7 +60,7 @@ class Box {
     void compute_multipoles();
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
     void compute_local_expansions(std::shared_ptr<const Matrix> density);
-    std::shared_ptr<const ZMatrix> compute_node_energy(const int dim, std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0);
+    std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
 
 
   public:

@@ -78,8 +78,6 @@ void RHF::compute() {
             focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aden, dodf_)->get_real_part();
-          ///////shared_ptr<const Matrix> tmp = fmmtree_->fmm(aden, dodf_)->get_real_part();
           shared_ptr<const Matrix> tmp = fmm_->compute_energy(aden)->get_real_part();
           focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
@@ -99,8 +97,6 @@ void RHF::compute() {
         }
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
-        /////shared_ptr<const Matrix> tmp = fmmtree_->fmm(aodensity_, dodf_)->get_real_part();
         shared_ptr<const Matrix> tmp = fmm_->compute_energy(aodensity_)->get_real_part();
         focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
@@ -147,7 +143,6 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      //shared_ptr<const Matrix> tmp = fmmtree_sp_->fmm(aodensity_, dodf_)->get_real_part();
       shared_ptr<const Matrix> tmp = fmm_->compute_energy(aodensity_)->get_real_part();
       previous_fock = make_shared<const Matrix>(*tmp + *hcore_);
     }

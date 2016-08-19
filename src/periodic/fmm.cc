@@ -240,33 +240,38 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
   Timer nftime;
   const size_t nbasis = geom_->nbasis();
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
+  out->zero();
 
-  vector<double> maxden(nsp_);
-  const double* density_data = density->data();
-  for (int i01 = 0; i01 != nsp_; ++i01) {
-    shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(0);
-    const int offset0 = geom_->shellpair(i01)->offset(0);
-    const int size0 = sh0->nbasis();
+  if (density) {
+    assert(nbasis == density->ndim());
+    vector<double> maxden(nsp_);
+    const double* density_data = density->data();
+    for (int i01 = 0; i01 != nsp_; ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
+      const int size0 = sh0->nbasis();
 
-    shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(1);
-    const int offset1 = geom_->shellpair(i01)->offset(1);
-    const int size1 = sh0->nbasis();
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
+      const int size1 = sh0->nbasis();
 
-    double denmax = 0.0;
-    for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
-      const int i0n = i0 * density->ndim();
-      for (int i1 = offset1; i1 != offset1 + size1; ++i1)
-        denmax = max(denmax, fabs(density_data[i0n + i1]));
+      double denmax = 0.0;
+      for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
+        const int i0n = i0 * density->ndim();
+        for (int i1 = offset1; i1 != offset1 + size1; ++i1)
+          denmax = max(denmax, fabs(density_data[i0n + i1]));
+      }
+      maxden[i01] = denmax;
     }
-    maxden[i01] = denmax;
-  }
 
-  for (int i = 0; i != nbranch_[0]; ++i) {
-    auto ei = box_[i]->compute_node_energy(nbasis, density, maxden, geom_->schwarz_thresh());
-    *out += *ei;
+    for (int i = 0; i != nbranch_[0]; ++i) {
+      auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
+      *out += *ei;
+    }
+
+    for (int i = 0; i != nbasis; ++i) out->element(i, i) *= 2.0;
+    out->fill_upper();
   }
-  for (int i = 0; i != nbasis; ++i) out->element(i, i) *= 2.0;
-  out->fill_upper();
 
   nftime.tick_print(" Near-field integration");
   return out;
