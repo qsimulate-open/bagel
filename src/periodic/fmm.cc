@@ -235,12 +235,11 @@ void FMM::L2L() {
 }
 
 
-shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) const {
 
   Timer nftime;
   const size_t nbasis = geom_->nbasis();
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
-  cout << " ***** SWCHWARZ THRESH = " << setprecision(20) << scientific << schwarz_thresh << endl;
 
   vector<double> maxden(nsp_);
   const double* density_data = density->data();
@@ -263,11 +262,8 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density, 
   }
 
   for (int i = 0; i != nbranch_[0]; ++i) {
-    Timer itn;
-    auto ei = box_[i]->compute_node_energy(nbasis, density, maxden, schwarz_thresh);
+    auto ei = box_[i]->compute_node_energy(nbasis, density, maxden, geom_->schwarz_thresh());
     *out += *ei;
-    cout << " #sp = " << box_[i]->nsp() << endl;
-    itn.tick_print("      One node done");
   }
   for (int i = 0; i != nbasis; ++i) out->element(i, i) *= 2.0;
   out->fill_upper();

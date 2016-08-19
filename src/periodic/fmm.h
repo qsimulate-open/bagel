@@ -62,7 +62,7 @@ class FMM {
     void M2M();
     void M2L();
     void L2L();
-    std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr, const double schwarz_thresh = 1e-12) const;
+    std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
     void print_boxes(const int i) const;
 };
 
