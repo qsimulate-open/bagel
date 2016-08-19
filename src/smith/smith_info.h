@@ -110,6 +110,7 @@ class SMITH_Info {
     std::shared_ptr<const MatType> coeff() const { assert(false); }
 
     // TODO When multi-state relativistic CASPT2 is implemented, we should be able to remove this function
+    std::shared_ptr<const Reference> extract_ref(const std::vector<int> rdm_states) const;
     std::shared_ptr<const Reference> extract_ref(const int istate, const std::vector<int> rdm_states) const;
 };
 
@@ -125,11 +126,13 @@ template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::hcore() const;
 template<> std::shared_ptr<const RDM<1>>  SMITH_Info<double>::rdm1_av() const;
 template<> std::shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int istate, const std::vector<int>) const;
+template<> std::shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const std::vector<int>) const;
 template<> std::shared_ptr<const RelCIWfn>SMITH_Info<std::complex<double>>::ciwfn() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::coeff() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::hcore() const;
 template<> std::shared_ptr<const ZRDM<1>> SMITH_Info<std::complex<double>>::rdm1_av() const;
 template<> std::shared_ptr<const Reference>  SMITH_Info<std::complex<double>>::extract_ref(const int istate, const std::vector<int>) const;
+template<> std::shared_ptr<const Reference>  SMITH_Info<std::complex<double>>::extract_ref(const std::vector<int>) const;
 
 extern template class SMITH_Info<double>;
 extern template class SMITH_Info<std::complex<double>>;

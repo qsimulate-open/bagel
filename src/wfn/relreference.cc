@@ -147,6 +147,30 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
 }
 
 
+shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const {
+  ZFCI_bare fci(ciwfn_);
+  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
+  cout << " * Extracting CI coefficients from RelReference object for state the following states: ";
+  for (int i = 0; i != input.size(); ++i)
+    cout << input[i] << " ";
+  cout << endl;
+
+  vector<double> newenergies(input.size());
+  for (int i = 0; i != input.size(); ++i) 
+    newenergies[i] = energy_[input[i]];
+
+  // Construct a RelCIWfn with only CI coefficients for the desired state
+  auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), input.size(), newenergies,
+                                        ciwfn_->civectors()->extract_state(input),
+                                        make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
+
+  // Use extract_average_rdm(...) to get desired RDMs and prepare output
+  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(input));
+  return make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+}
+
+
 shared_ptr<Reference> RelReference::extract_state(const int istate, const vector<int> input) const {
   ZFCI_bare fci(ciwfn_);
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;

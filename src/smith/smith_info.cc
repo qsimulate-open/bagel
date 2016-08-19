@@ -54,12 +54,12 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   if (ciwfn()->nstates() > 1)
     cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
 
-  if (!do_ms_ && !do_xms_ && ref_->nstate() != 1) {
-    vector<int> rdm_states;
-    if (idata->get<bool>("extract_average_rdms", false)) {
-      rdm_states = idata->get_vector<int>("rdm_state");
+  if (idata->get<bool>("extract_average_rdms", false) && ref_->nstate() != 1) {
+    vector<int> rdm_states = idata->get_vector<int>("rdm_state");
+    if (idata->get<bool>("extract_single_state", false))
       ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
-    }
+    else
+      ref_ = extract_ref(rdm_states);
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
@@ -168,10 +168,24 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
 
 
 template<>
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> dummy2) const {
+  return ref_;
+}
+
+
+template<>
 shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, const vector<int> dummy2) const {
   return ref_;
 }
 
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> rdm_states) const {
+  shared_ptr<const Reference> out = ref_;
+  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
+  out = ref_->extract_state(rdm_states);
+  return out;
+}
 
 template<>
 shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {

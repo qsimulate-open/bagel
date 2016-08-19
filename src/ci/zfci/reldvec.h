@@ -77,6 +77,13 @@ class RelDvector {
     std::shared_ptr<RelDvector<DataType>> clone() const { return std::make_shared<RelDvector<DataType>>(space_, dvecs_.begin()->second->ij()); }
     std::shared_ptr<RelDvector<DataType>> copy() const { return std::make_shared<RelDvector<DataType>>(*this); }
 
+    std::shared_ptr<RelDvector<DataType>> extract_state(const std::vector<int> input) const {
+      std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> newdvec;
+      for (auto& i : dvecs_)
+        newdvec.emplace(i.first, i.second->extract_state(input));
+      return std::make_shared<RelDvector<DataType>>(newdvec, space_);
+    }
+
     std::shared_ptr<RelDvector<DataType>> extract_state(const int istate) const {
       std::map<std::pair<int, int>, std::shared_ptr<Dvector<DataType>>> newdvec;
       for (auto& i : dvecs_)
