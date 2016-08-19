@@ -40,6 +40,9 @@ FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const do
  : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws) {
 
   init();
+
+  if (do_ff_)
+    M2M();
 }
 
 
@@ -76,6 +79,10 @@ void FMM::init() {
   cout << "boxsize = " << boxsize_ << " unitsize = " << unitsize_ << " maxxyz = " << maxxyz_[0] << " " << maxxyz_[1] << " " << maxxyz_[2] << endl;
 
   get_boxes();
+
+  do_ff_ = false;
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (box_[i]->ninter() != 0) do_ff_ = true;
 }
 
 
@@ -237,7 +244,6 @@ void FMM::L2L() {
 
 shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) const {
 
-  Timer nftime;
   const size_t nbasis = geom_->nbasis();
   auto out = make_shared<ZMatrix>(nbasis, nbasis);
   out->zero();
@@ -273,7 +279,6 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
     out->fill_upper();
   }
 
-  nftime.tick_print(" Near-field integration");
   return out;
 }
 

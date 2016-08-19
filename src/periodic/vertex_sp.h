@@ -36,10 +36,11 @@ class VertexSP {
   protected:
     std::bitset<64> key_;
     std::shared_ptr<const ShellPair> sp_;
+    std::vector<std::shared_ptr<const ZMatrix>> multipole_;
 
   public:
     VertexSP(std::bitset<64> key, std::shared_ptr<const ShellPair> sp)
-     : key_(key), sp_(sp) { }
+     : key_(key), sp_(sp) { multipole_ = sp_->multipoles(); }
     ~VertexSP() { }
 
     std::bitset<64> key() const { return key_; }
@@ -64,8 +65,8 @@ class VertexSP {
     double extent() const { return sp_->extent(); }
     int nbasis0() const { return sp_->nbasis0(); }
     int nbasis1() const { return sp_->nbasis1(); }
-    std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return sp_->multipoles(); }
-    int nmult() const { return sp_->nmult(); }
+    std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return multipole_; }
+    int nmult() const { return multipole_.size(); }
     double schwarz() const { return sp_->schwarz(); }
 };
 

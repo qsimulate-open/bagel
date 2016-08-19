@@ -136,11 +136,12 @@ void Box::compute_multipoles() {
     size_t offset0 = 0;
     size_t offset1 = 0;
     for (auto& v : sp_) {
+      vector<shared_ptr<const ZMatrix> vmult(nmult) = v->multipoles(lmax_);
       array<double, 3> r12;
       r12[0] = centre_[0] - v->centre(0);
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
-      LocalExpansion shift(r12, v->multipoles(), lmax_);
+      LocalExpansion shift(r12, vmult, lmax_);
       vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
       for (int i = 0; i != nmult; ++i)
@@ -178,11 +179,19 @@ void Box::compute_multipoles() {
 }
 
 
+void Box::compute_local_expansions(std::shared_ptr<const Matrix> density) {
+
+}
+
+
 shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> density, vector<double> max_den, const double schwarz_thresh) const {
 
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->ndim());
   out->zero();
+
+
+  // FF: add local expansions
 
   int ninteg = 0;
   // NF: 4c integrals

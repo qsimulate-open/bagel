@@ -40,6 +40,7 @@ class FMM {
     int ns_;
     int lmax_;
     int nbox_, nsp_, nleaf_, nbasis_;
+    bool do_ff_;
     std::vector<std::array<double, 3>> coordinates_;
     std::array<double, 3> centre_;
     std::array<double, 3> maxxyz_;

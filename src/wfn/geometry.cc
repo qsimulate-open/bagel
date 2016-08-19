@@ -572,15 +572,13 @@ void Geometry::get_shellpairs() {
     basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
   }
   const int nsh = basis.size();
-  int fmm_lmax = -1;
-  if (dofmm_) fmm_lmax = 10;
 
   shellpairs_.resize(nsh * nsh);
   for (int i0 = 0; i0 != nsh; ++i0) {
     for (int i1 = 0; i1 != nsh; ++i1) {
       const int i01 = i0 * nsh + i1;
       shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), fmm_lmax);
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0));
     }
   }
 }

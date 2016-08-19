@@ -32,29 +32,31 @@ using namespace bagel;
 
 const static double pisq__ = pi__ * pi__;
 
-ShellPair::ShellPair(array<shared_ptr<const Shell>, 2> sh, array<int, 2> ofs, pair<int, int> ind, const int l, const double thr)
- : shells_(sh), offset_(ofs), shell_ind_(ind), lmax_(l), thresh_(thr) {
+ShellPair::ShellPair(array<shared_ptr<const Shell>, 2> sh, array<int, 2> ofs, pair<int, int> ind, const double thr)
+ : shells_(sh), offset_(ofs), shell_ind_(ind), thresh_(thr) {
   init();
-  if (l>=0) compute_multipoles();
 }
 
 
-void ShellPair::compute_multipoles() {
+vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax) const {
 
-  nmult_ =  (lmax_ + 1) * (lmax_ + 1);
-  multipoles_.resize(nmult_);
+  const int nmult =  (lmax + 1) * (lmax + 1);
+  vector<shared_ptr<const ZMatrix>> mult(nmult);
+
   const int isize = shells_[0]->nbasis();
   const int jsize = shells_[1]->nbasis();
 
   {
-    MultipoleBatch mpole(shells_, centre_, lmax_);
+    MultipoleBatch mpole(shells_, centre_, lmax);
     mpole.compute();
     ZMatrix tmp(jsize, isize);
-    for (int im = 0; im != nmult_; ++im) {
+    for (int im = 0; im != nmult; ++im) {
       tmp.copy_block(0, 0, jsize, isize, mpole.data(im));
-      multipoles_[im] = make_shared<const ZMatrix>(tmp);
+      mult[im] = make_shared<const ZMatrix>(tmp);
     }
   }
+
+  return mult;
 }
 
 
