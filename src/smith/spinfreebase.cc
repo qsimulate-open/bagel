@@ -202,7 +202,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
 #ifndef NDEBUG
       tie(krdm1, ignore) = info_->rdm12(ist, jst);
       rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
-      assert(std::abs(fmn(jst, ist) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
+      assert(std::abs(fmn(ist, jst) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
 #endif
     }
   }
@@ -230,18 +230,6 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
   map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
 
-//  map<pair<int, int>, vector<shared_ptr<Civector<complex<double>>>>> civecs;
-//  map<pair<int, int>, vector<shared_ptr<Civector<complex<double>>>>> new_civecs;
-//  for (auto& i: dvecs)
-//    civecs.emplace(i.first, i.second->dvec());
-//  for (auto& i: new_dvecs)
-//    new_civecs.emplace(i.first, i.second->dvec());
-
-//  for (int jst =0; jst != nstates; ++jst) {
-//    for (int ist =0; ist != nstates; ++ist)
-//      for (auto& i: new_civecs)
-//        i.second[jst]->ax_plus_y(fmn(ist,jst), civecs.at(i.first)[ist]);
-//  }
   for (auto& i: dvecs) {
     vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
     vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
