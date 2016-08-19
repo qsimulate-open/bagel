@@ -75,6 +75,15 @@ shared_ptr<RelDvector<DataType>> RelDvector<DataType>::extract_state(const int i
 
 
 template<typename DataType>
+shared_ptr<RelDvector<DataType>> RelDvector<DataType>::extract_state(const vector<int> input) const {
+  MapType newdvec;
+  for (auto& i : dvecs_)
+    newdvec.emplace(i.first, i.second->extract_state(input));
+  return make_shared<RelDvector<DataType>>(newdvec, space_);
+}
+
+
+template<typename DataType>
 void RelDvector<DataType>::set_data(const int istate, shared_ptr<const RelDvector<DataType>> o) {
   assert(space_ == o->space_ || o->dvecs_.begin()->second->ij() == 1);
   auto j = o->dvecs_.begin();

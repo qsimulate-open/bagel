@@ -46,77 +46,6 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
 }
 
 
-void FCI::compute_rdm12() {
-  // Needs initialization here because we use daxpy.
-  // For nstate_ == 1, rdm1_av_ = rdm1_->at(0).
-  if (rdm1_av_ == nullptr && nstate_ > 1) {
-    rdm1_av_ = make_shared<RDM<1>>(norb_);
-    rdm2_av_ = make_shared<RDM<2>>(norb_);
-  } else if (nstate_ > 1) {
-    rdm1_av_->zero();
-    rdm2_av_->zero();
-  }
-  // we need expanded lists
-  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
-  cc_->set_det(detex);
-
-  for (int i = 0; i != nstate_; ++i)
-    compute_rdm12(i);
-
-  // calculate state averaged RDMs
-  if (nstate_ != 1) {
-    for (int ist = 0; ist != nstate_; ++ist) {
-      rdm1_av_->ax_plus_y(weight_[ist], rdm1_->at(ist));
-      rdm2_av_->ax_plus_y(weight_[ist], rdm2_->at(ist));
-    }
-  } else {
-    rdm1_av_ = rdm1_->at(0,0);
-    rdm2_av_ = rdm2_->at(0,0);
-  }
-
-  cc_->set_det(det_);
-}
-
-
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
-  FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
-
-  const int nri = dbra->lena()*dbra->lenb();
-  const int ij  = norb_*norb_;
-
-  if (nri != dket->lena()*dket->lenb())
-    throw logic_error("FCI::compute_rdm12_last_step called with inconsistent RI spaces");
-
-  // 1RDM
-  // c^dagger <I|\hat{E}|0>
-  auto rdm1 = make_shared<RDM<1>>(norb_);
-  dgemv_("T", nri, ij, 1.0, dket->data(0)->data(), nri, cibra->data(), 1, 0.0, rdm1->data(), 1);
-  // 2RDM
-  // \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
-  auto rdm2 = make_shared<RDM<2>>(norb_);
-  dgemm_("T", "N", ij, ij, nri, 1.0, dbra->data(0)->data(), nri, dket->data(0)->data(), nri, 0.0, rdm2->data(), ij);
-
-  // sorting... a bit stupid but cheap anyway
-  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
-  unique_ptr<double[]> buf(new double[norb_*norb_]);
-  for (int i = 0; i != norb_; ++i) {
-    for (int k = 0; k != norb_; ++k) {
-      copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
-      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
-    }
-  }
-
-  // put in diagonal into 2RDM
-  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
-  for (int i = 0; i != norb_; ++i)
-    for (int k = 0; k != norb_; ++k)
-      for (int j = 0; j != norb_; ++j)
-        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
-
-  return tie(rdm1, rdm2);
-}
-
-
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
@@ -136,57 +65,6 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   }
 
   return compute_rdm12_last_step(dbra, dket, cbra);
-}
-
-
-tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
-  FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
-
-  if (o != nullptr) {
-    dbra->set_det(o);
-    dket->set_det(o);
-  }
-
-  auto rdm1 = make_shared<RDM<1>>(norb_);
-  auto rdm2 = make_shared<RDM<2>>(norb_);
-
-  assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
-
-  for (int i = 0; i != dbra->ij(); ++i) {
-    shared_ptr<RDM<1>> r1;
-    shared_ptr<RDM<2>> r2;
-    tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
-    rdm1->ax_plus_y(weight_[i], r1);
-    rdm2->ax_plus_y(weight_[i], r2);
-  }
-
-  if (o != nullptr) {
-    dbra->set_det(det_);
-    dket->set_det(det_);
-  }
-
-  return tie(rdm1, rdm2);
-}
-
-
-void FCI::compute_rdm12(const int ist, const int jst) {
-  if (det_->compress()) {
-    auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
-    cc_->set_det(detex);
-  }
-
-  shared_ptr<Civec> ccbra = cc_->data(ist);
-  shared_ptr<Civec> ccket = cc_->data(jst);
-
-  shared_ptr<RDM<1>> rdm1;
-  shared_ptr<RDM<2>> rdm2;
-  tie(rdm1, rdm2) = compute_rdm12_from_civec(ccbra, ccket);
-
-  // setting to private members.
-  rdm1_->emplace(ist, jst, rdm1);
-  rdm2_->emplace(ist, jst, rdm2);
-
-  cc_->set_det(det_);
 }
 
 
@@ -425,32 +303,3 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
   return make_tuple(rdm3, frdm4);
 }
 #endif
-
-
-// note that this does not transform internal integrals (since it is not needed in CASSCF).
-pair<shared_ptr<Matrix>, VectorB> FCI::natorb_convert() {
-  assert(rdm1_av_ != nullptr);
-  const bool occ_sort = idata_->get<bool>("occ_sort", false);
-  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals(occ_sort);
-  update_rdms(natorb.first);
-  jop_->update_1ext_ints(natorb.first);
-  for (auto& i : natorb.second)
-    if (i < numerical_zero__) i = 0.0;
-  return natorb;
-}
-
-
-void FCI::update_rdms(const shared_ptr<Matrix>& coeff) {
-  for (auto& i : *rdm1_)
-    i.second->transform(coeff);
-  for (auto& i : *rdm2_)
-    i.second->transform(coeff);
-
-  // Only when #state > 1, this is needed.
-  // Actually rdm1_av_ points to the same object as rdm1_ in 1 state runs. Therefore if you do twice, you get wrong.
-  if (rdm1_->size() > 1) rdm1_av_->transform(coeff);
-  if (rdm2_->size() > 1) rdm2_av_->transform(coeff);
-  assert(rdm1_->size() > 1 || rdm1_->at(0) == rdm1_av_);
-  assert(rdm2_->size() > 1 || rdm2_->at(0) == rdm2_av_);
-}
-
