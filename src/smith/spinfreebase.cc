@@ -640,9 +640,11 @@ template<typename DataType>
 DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const MultiTensor_<DataType>> r, shared_ptr<const MultiTensor_<DataType>> t2) const {
   assert(r->nref() == t2->nref());
   DataType out = 0.0;
-  for (int i = 0; i != r->nref(); ++i)
-    out += detail::conj(r->fac(i)) * t2->fac(i)
-         + dot_product_transpose(r->at(i), t2->at(i));
+  for (int i = 0; i != r->nref(); ++i) {
+    out += detail::conj(r->fac(i)) * t2->fac(i);
+    if (r->at(i) && t2->at(i))
+      out += dot_product_transpose(r->at(i), t2->at(i));
+  }
   return out;
 }
 

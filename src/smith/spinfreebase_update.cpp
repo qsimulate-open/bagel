@@ -48,30 +48,33 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
   for (int ist = 0; ist != nst; ++ist) {
     t->fac(ist) = 0.0;
-    const double e0loc = e0all_[ist] - e0_;
-    for (auto& i3 : virt_) {
-      for (auto& i2 : closed_) {
-        for (auto& i1 : virt_) {
-          for (auto& i0 : closed_) {
-            // if this block is not included in the current wave function, skip it
-            if (!t->at(ist)->is_local(i0, i1, i2, i3) || !r->at(ist)->get_size(i0, i1, i2, i3)) continue;
-            unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i0, i1, i2, i3);
 
-            // this is an inverse of the overlap.
-            if (is_same<DataType,double>::value) {
-              const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
-              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-            } else {
-              blas::scale_n(0.25, data0.get(), r->at(ist)->get_size(i0, i1, i2, i3));
+    if (t->at(ist)) {
+      const double e0loc = e0all_[ist] - e0_;
+      for (auto& i3 : virt_) {
+        for (auto& i2 : closed_) {
+          for (auto& i1 : virt_) {
+            for (auto& i0 : closed_) {
+              // if this block is not included in the current wave function, skip it
+              if (!t->at(ist)->is_local(i0, i1, i2, i3) || !r->at(ist)->get_size(i0, i1, i2, i3)) continue;
+              unique_ptr<DataType[]>       data0 = r->at(ist)->get_block(i0, i1, i2, i3);
+
+              // this is an inverse of the overlap.
+              if (is_same<DataType,double>::value) {
+                const unique_ptr<DataType[]> data1 = r->at(ist)->get_block(i0, i3, i2, i1);
+                sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+              } else {
+                blas::scale_n(0.25, data0.get(), r->at(ist)->get_size(i0, i1, i2, i3));
+              }
+              size_t iall = 0;
+              for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                      // note that e0 is cancelled by another term
+                      data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
+              t->at(ist)->add_block(data0, i0, i1, i2, i3);
             }
-            size_t iall = 0;
-            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    // note that e0 is cancelled by another term
-                    data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
-            t->at(ist)->add_block(data0, i0, i1, i2, i3);
           }
         }
       }
@@ -79,6 +82,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
     // not the best structure, but I am assuming that this does not take too much time...
     for (int jst = 0; jst != nst; ++jst) {
+      if (!t->at(jst) || !r->at(ist)) continue;
 
       for (auto& i2 : active_) {
       for (auto& i0 : active_) {

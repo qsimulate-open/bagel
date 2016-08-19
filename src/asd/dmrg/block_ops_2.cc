@@ -1386,7 +1386,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_aa(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1619,7 +1619,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_bb(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -1857,7 +1857,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::Q_ab(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -2033,7 +2033,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_aa(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -2164,7 +2164,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_bb(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 
@@ -2295,7 +2295,7 @@ shared_ptr<BlockSparseMatrix> BlockOperators2::P_ab(BlockKey bk, const int i, co
   const size_t max_intermediate = max(max_L_intermediate, max_R_intermediate);
   unique_ptr<double[]> scratch(new double[max_intermediate]);
 
-  const size_t max_coulomb_size = lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
+  const size_t max_coulomb_size = rnorb*lnorb; // lnorb < rnorb ? rnorb*lnorb : lnorb*rnorb;
   unique_ptr<double[]> coulomb(new double[max_coulomb_size]);
   map<pair<size_t, size_t>, shared_ptr<Matrix>> out;
 

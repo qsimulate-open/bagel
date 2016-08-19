@@ -36,7 +36,12 @@ class Qvec : public Matrix {
 
   public:
     Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed,
-         std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm);
+         std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm)
+     : Qvec(n, m, c, nclosed, fci->jop()->mo2e_1ext(), rdm) { }
+
+    Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed,
+         std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const RDM<2>> rdm);
+
     Qvec(const Matrix& a) : Matrix(a) {}
 
 };

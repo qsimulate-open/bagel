@@ -94,24 +94,10 @@ void Force::compute() {
     force->compute();
 
   } else if (method == "casscf") {
-    string algorithm = cinput->get<string>("algorithm", "");
-    // in case of SS-CASSCF
-    if (cinput->get<int>("nstate", 1) == 1) {
-      if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCI>>(cinput, geom_, ref_, target);
-        force->compute();
-      } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
-      }
-    // in case of SA-CASSCF
-    } else {
-      if (algorithm == "superci" || algorithm == "") {
-        auto force = make_shared<GradEval<SuperCIGrad>>(cinput, geom_, ref_, target);
-        force->compute();
-      } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
-      }
-    }
+
+    auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
+    force->compute();
+
   } else if (method == "caspt2") {
 
     auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);

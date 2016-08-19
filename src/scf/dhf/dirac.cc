@@ -231,7 +231,6 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   } else if (dynamic_pointer_cast<const ZReference>(ref_)) {
     // Non-relativistic, GIAO-based reference
     auto zref = dynamic_pointer_cast<const ZReference>(ref_);
-    const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
     assert(geom_->magnetism());
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;

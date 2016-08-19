@@ -155,7 +155,7 @@ void RysIntegral<DataType,IntType>::allocate_arrays(const size_t ps) {
   weights_ = pointer; pointer += rank_ * ps;
   if (tenno_) {
     coeffy_ = pointer;pointer += ps;
-    U_ = pointer;     pointer += ps;
+    U_ = pointer; //  pointer += ps;
   }
 }
 

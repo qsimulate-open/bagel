@@ -298,6 +298,26 @@ shared_ptr<Matrix> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullD
 }
 
 
+shared_ptr<Matrix> DFFullDist::form_4index_diagonal() const {
+  // TODO needs more work
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = block_[0]->form_4index_diagonal();
+  if (!serial_)
+    out->allreduce();
+  return out;
+}
+
+
+shared_ptr<Matrix> DFFullDist::form_4index_diagonal_part() const {
+  // TODO needs more work
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = block_[0]->form_4index_diagonal_part();
+  if (!serial_)
+    out->allreduce();
+  return out;
+}
+
+
 shared_ptr<DFFullDist> DFFullDist::swap() const {
   auto out = make_shared<DFFullDist>(shared_from_this(), nocc2(), nocc1());
   for (auto& i : block_)

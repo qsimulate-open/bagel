@@ -25,7 +25,6 @@
 
 #include <src/grad/cpcasscf.h>
 #include <src/util/math/linearRM.h>
-#include <src/util/math/bfgs.h>
 #include <src/scf/hf/fock.h>
 
 using namespace std;
@@ -165,9 +164,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate
   }
 
-  // BFGS update of the denominator above
-  auto bfgs = make_shared<BFGS<PairFile<Matrix, Dvec>>>(denom, /*debug*/true);
-
   // gradient Y and y
   auto source = make_shared<PairFile<Matrix, Dvec>>(*grad_);
   // divide by weight
@@ -189,17 +185,33 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   }
   // antisymmetrize
   source->first()->antisymmetrize();
-  source->first()->purify_redrotation(nclosed, nact, nvirt);
+
+  // set zero to redundant rotation
+  auto purify = [](Matrix& mat, const int nc, const int na, const int nv) {
+    for (int g = 0; g != nc; ++g)
+      for (int h = 0; h != nc; ++h)
+        mat(h, g) = 0.0;
+    for (int g = 0; g != na; ++g)
+      for (int h = 0; h != na; ++h)
+        mat(h+nc, g+nc) = 0.0;
+    for (int g = 0; g != nv; ++g)
+      for (int h = 0; h != nv; ++h)
+        mat(h+nc+na, g+nc+na) = 0.0;
+  };
+  purify(*source->first(), nclosed, nact, nvirt);
 
   // project out Civector from the gradient
   source->second()->project_out(civector_);
+
+  const double lambda = max(sqrt(static_cast<double>(source->second()->size()) / source->first()->size()), 1.0);
+  source->second()->scale(1.0/lambda);
+  denom->second()->scale(1.0/(lambda*lambda));
+
   auto solver = make_shared<LinearRM<PairFile<Matrix, Dvec>>>(zmaxiter, source);
 
   // initial guess
-  shared_ptr<PairFile<Matrix, Dvec>> z = source->clone();
-  z->zero();
-
-  z = bfgs->extrapolate(source, z);
+  shared_ptr<PairFile<Matrix, Dvec>> z = source->copy();
+  *z /= *denom;
   z->second()->project_out(civector_);
 
   // inverse matrix of C
@@ -213,22 +225,24 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     solver->orthog(z);
 
     // given z, computes sigma (before anti-symmetrization)
-    shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true);
+    shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true, lambda);
     sigma->first()->antisymmetrize();
-    sigma->first()->purify_redrotation(nclosed, nact, nvirt);
+    purify(*sigma->first(), nclosed, nact, nvirt);
     sigma->second()->project_out(civector_);
 
     z = solver->compute_residual(z, sigma);
 
-    z = bfgs->extrapolate(z, solver->civec());
-    z->second()->project_out(civector_);
+    cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->first()->rms()
+                                     << setw(17) << z->second()->rms()*lambda  << setw(10) << setprecision(2) << timer.tick() << endl;
+    if (z->first()->rms()+z->second()->rms()*lambda < zthresh) break;
 
-    cout << setw(10) <<  iter << " " << setw(17) << setprecision(10) << z->rms() << setw(10) << setprecision(2) << timer.tick() << endl;
-    if (z->rms() < zthresh) break;
+    *z /= *denom; 
+    z->second()->project_out(civector_);
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
-  shared_ptr<Matrix> xmat = form_sigma(result, fullb, detex, cinv, /*antisym*/false)->first();
+  result->second()->scale(1.0/lambda);
+  shared_ptr<Matrix> xmat = form_sigma(result, fullb, detex, cinv, /*antisym*/false, 1.0)->first();
 
   *xmat += *grad_->first();
   if (zcore)
@@ -242,7 +256,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 shared_ptr<PairFile<Matrix,Dvec>>
   CPCASSCF::form_sigma(shared_ptr<const PairFile<Matrix,Dvec>> z,
                        shared_ptr<const DFFullDist> fullb, shared_ptr<const Determinants> detex, shared_ptr<const Matrix> cinv,
-                       const bool antisym) const {
+                       const bool antisym, const double lambda) const {
 
   const size_t nmobasis = coeff_->mdim();
   const size_t nocca = ref_->nocc();
@@ -256,6 +270,7 @@ shared_ptr<PairFile<Matrix,Dvec>>
 
   // orbital part that depends on ci-z
   shared_ptr<Matrix> sigmaorb = nact ? compute_amat(z1, civector_, detex) : make_shared<Matrix>(nmobasis,nmobasis);
+  sigmaorb->scale(1.0/lambda);
 
   // computation of Atilde.
   auto cz0 = make_shared<Matrix>(*coeff_ * *z0);
@@ -330,12 +345,13 @@ shared_ptr<PairFile<Matrix,Dvec>>
 
     if (nact) {
       sigmaci = fci_->form_sigma(civector_, top, tmp);
+      sigmaci->scale(lambda);
       *sigmaci += *fci_->form_sigma(z1, fci_->jop(), tmp);
 
       const double core_energy = geom_->nuclear_repulsion() + fci_->core_energy();
       for (int i = 0; i != z1->ij(); ++i)
         blas::ax_plus_y_n(-(fci_->energy(i)-core_energy), z1->data(i)->data(), z1->data(i)->size(), sigmaci->data(i)->data());
-
+      sigmaci->scale(1.0/(lambda*lambda));
       sigmaci->project_out(civector_);
     } else {
       sigmaci = civector_->clone(); // always zero when nact=0

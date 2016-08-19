@@ -55,7 +55,7 @@ class CPCASSCF {
 
     std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFFullDist>,
                                                       std::shared_ptr<const Determinants> det, std::shared_ptr<const Matrix>,
-                                                      const bool antisym) const;
+                                                      const bool antisym, const double lambda) const;
 
     std::shared_ptr<Matrix> compute_amat(std::shared_ptr<const Dvec> z1, std::shared_ptr<const Dvec> c1, std::shared_ptr<const Determinants>) const;
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>> compute_orb_denom_and_fock() const;

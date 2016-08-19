@@ -30,7 +30,7 @@ using namespace bagel;
 
 DimerJop::DimerJop(const shared_ptr<const Reference> ref, const int nstart, const int nfenceA, const int nfenceB,
   const shared_ptr<const Coeff> coeff)
-: Jop(ref, nstart, nfenceB, coeff, string("HZ")) {
+: Jop(ref, nstart, nfenceB, coeff, false, string("HZ")) {
 
   const int norbA = nfenceA - nstart;
   const int norbB = nfenceB - nfenceA;

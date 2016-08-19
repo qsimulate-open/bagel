@@ -38,8 +38,6 @@ Multipole::Multipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, c
 vector<double> Multipole::compute() const {
   vector<double> out;
 
-  const vector<vector<int>> offsets = geom_->offsets();
-
   // TODO perhaps we could reduce operation by a factor of 2
   auto o0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {

@@ -41,7 +41,7 @@ namespace bagel {
       shared_ptr<const RASDeterminants> det_;
       unordered_map<bitset<nbit__>, size_t>* lexicalmap_;
 
-      SpinTask(const std::bitset<nbit__> t, const RASCivecView* th, RASCivecView* o, shared_ptr<const RASDeterminants> d, unordered_map<bitset<nbit__>, size_t>* lex) :
+      SpinTask(const std::bitset<nbit__>& t, const RASCivecView* th, RASCivecView* o, shared_ptr<const RASDeterminants> d, unordered_map<bitset<nbit__>, size_t>* lex) :
         target_(t), this_(th), out_(o), det_(d), lexicalmap_(lex) {}
 
       void compute() {

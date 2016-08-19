@@ -121,11 +121,11 @@ void SuperCIMicro::sigma_at_at_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
   const int nocc = casscf_->nocc();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nact || !nvirt) return;
 
   dgemm_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gaa_->data(), nact, 1.0, sigma->ptr_va(), nvirt);
-  dgemm_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
+  dgemm_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nmo, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
 }
 
 
@@ -134,11 +134,11 @@ void SuperCIMicro::sigma_ai_ai_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   const int nclosed = casscf_->nclosed();
   const int nvirt = casscf_->nvirt();
   const int nocc = casscf_->nocc();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nclosed || !nvirt) return;
 
-  dgemm_("N", "N", nvirt, nclosed, nclosed, -1.0, cc->ptr_vc(), nvirt, fock_->data(), nbasis, 1.0, sigma->ptr_vc(), nvirt);
-  dgemm_("N", "N", nvirt, nclosed, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_vc(), nvirt, 1.0, sigma->ptr_vc(), nvirt);
+  dgemm_("N", "N", nvirt, nclosed, nclosed, -1.0, cc->ptr_vc(), nvirt, fock_->data(), nmo, 1.0, sigma->ptr_vc(), nvirt);
+  dgemm_("N", "N", nvirt, nclosed, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nmo, cc->ptr_vc(), nvirt, 1.0, sigma->ptr_vc(), nvirt);
 }
 
 
@@ -184,7 +184,7 @@ void SuperCIMicro::sigma_ai_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
 void SuperCIMicro::sigma_ti_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nact || !nclosed) return;
   Matrix tmp(nact, nact);
   for (int i = 0; i != nact; ++i) {
@@ -194,6 +194,6 @@ void SuperCIMicro::sigma_ti_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
     }
   }
   dgemm_("N", "N", nclosed, nact, nact, 1.0, cc->ptr_ca(), nclosed, tmp.data(), nact, 1.0, sigma->ptr_ca(), nclosed);
-  dgemm_("N", "N", nclosed, nact, nclosed, -1.0, fock_->data(), nbasis, cc->ptr_ca(), nclosed, 1.0, sigma->ptr_ca(), nclosed);
+  dgemm_("N", "N", nclosed, nact, nclosed, -1.0, fock_->data(), nmo, cc->ptr_ca(), nclosed, 1.0, sigma->ptr_ca(), nclosed);
 }
 

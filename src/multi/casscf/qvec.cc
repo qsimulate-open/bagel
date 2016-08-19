@@ -29,13 +29,11 @@ using namespace std;
 using namespace bagel;
 
 
-Qvec::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed, shared_ptr<const FCI> fci, shared_ptr<const RDM<2>> rdm)
+Qvec::Qvec(const int n, const int m, shared_ptr<const Matrix> coeff, const size_t nclosed,
+           shared_ptr<const DFHalfDist> half, shared_ptr<const RDM<2>> rdm)
  : Matrix(n,m) {
 
   assert(n == coeff->mdim());
-
-  // one index transformed integrals (active)
-  shared_ptr<const DFHalfDist> half = fci->jop()->mo2e_1ext();
 
   // J^{-1}(D|xy)
   // TODO : DFDistT needs to be modified to handle cases where number of nodes is larger than half->nocc() * cdata.mdim()

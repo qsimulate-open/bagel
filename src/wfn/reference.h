@@ -68,9 +68,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<1>> rdm1_av_;
     std::shared_ptr<const RDM<2>> rdm2_av_;
 
-    // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
-    std::shared_ptr<const Matrix> erdm1_;
-
   private:
     // serialization
     friend class boost::serialization::access;
@@ -78,7 +75,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
-         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
+         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
     }
 
   public:
@@ -111,8 +108,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     void set_eig(const VectorB& eig);
     const VectorB& eig() const { return eig_; }
-    void set_erdm1(const std::shared_ptr<const Matrix> o);
-    std::shared_ptr<const Matrix> erdm1() const { return erdm1_; }
 
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }

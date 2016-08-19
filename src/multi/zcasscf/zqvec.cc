@@ -34,7 +34,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
  : ZMatrix(nbasis, nact*2) {
 
   assert(gaunt || !breit);
-  assert((*acoeff - *fci->jop()->coeff()).rms() < 1.0e-15);
   assert(nbasis == rcoeff->mdim());
 
   auto compute = [&acoeff, &rcoeff, &geom, &fci, &nact] (const bool gaunt, const bool breit) {

@@ -113,7 +113,7 @@ void SuperCI::compute() {
     }
 
     // unitary matrix
-    shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
+    shared_ptr<Matrix> rot = cc->unpack()->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
@@ -122,8 +122,8 @@ void SuperCI::compute() {
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix> tmp = rot->copy();
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb.first->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
-                                                                          tmp->element_ptr(nclosed_, 0), nbasis_);
+      dgemm_("N", "N", nact_, nmo_, nact_, 1.0, natorb.first->data(), nact_, rot->element_ptr(nclosed_, 0), nmo_,
+                                           0.0, tmp->element_ptr(nclosed_, 0), nmo_);
       shared_ptr<const Matrix> tmp2 = tailor_rotation(tmp)->copy();
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = make_shared<const Coeff>(*mcc);

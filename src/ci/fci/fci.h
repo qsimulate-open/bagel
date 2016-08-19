@@ -26,95 +26,27 @@
 #define __BAGEL_FCI_FCI_H
 
 #include <src/ci/fci/dvec.h>
-#include <src/ci/fci/mofile.h>
 #include <src/ci/fci/properties.h>
-#include <src/wfn/ciwfn.h>
-#include <src/wfn/method.h>
-#include <src/util/math/davidson.h>
+#include <src/ci/fci/fci_base.h>
 
 namespace bagel {
 
-class FCI : public Method {
-
+class FCI : public FCI_base<Civec,Dvec> {
   protected:
-    // max #iteration
-    int max_iter_;
-    int davidson_subspace_;
-    int nguess_;
-    // threshold for variants
-    double thresh_;
-    double print_thresh_;
-
-    // numbers of electrons
-    int nelea_;
-    int neleb_;
-    int ncore_;
-    int norb_;
-
-    // number of states
-    int nstate_;
-
     // properties to be calculated
     std::vector<std::shared_ptr<CIProperties>> properties_;
-
-    // total energy
-    std::vector<double> energy_;
-
-    // CI vector
-    std::shared_ptr<Dvec> cc_;
-
-    // RDMs; should be resized in constructors
-    std::shared_ptr<VecRDM<1>> rdm1_;
-    std::shared_ptr<VecRDM<2>> rdm2_;
-    // state averaged RDM
-    std::vector<double> weight_;
-    std::shared_ptr<RDM<1>> rdm1_av_;
-    std::shared_ptr<RDM<2>> rdm2_av_;
-
-    // MO integrals
-    std::shared_ptr<MOFile> jop_;
-
-    // Determinant space
-    std::shared_ptr<const Determinants> det_;
-
-    // davidson
-    std::shared_ptr<DavidsonDiag<Civec>> davidson_;
-    // denominator
-    std::shared_ptr<Civec> denom_;
-
-    // restart
-    bool restart_;
-    bool restarted_;
 
   private:
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version) {
-      boost::serialization::split_member(ar, *this, version);
-    }
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << davidson_subspace_ << nguess_ << thresh_ << print_thresh_
-         << nelea_ << neleb_ << ncore_ << norb_ << nstate_ << properties_
-         << energy_ << cc_ << rdm1_ << rdm2_ << weight_ << rdm1_av_ << rdm2_av_
-         << det_ << davidson_;
-    }
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      // jop_ and denom_ will be constructed in derived classes
-      ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
-         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> properties_
-         >> energy_ >> cc_ >> rdm1_ >> rdm2_ >> weight_ >> rdm1_av_ >> rdm2_av_
-         >> det_ >> davidson_;
-      restarted_ = true;
+      ar & boost::serialization::base_object<FCI_base<Civec,Dvec>>(*this) & properties_;
     }
 
   protected:
     // some init functions
-    void common_init(); // may end up unnecessary
+    void common_init();
     void create_Jiiii();
     // obtain determinants for guess generation
     void generate_guess(const int nspin, const int nstate, std::shared_ptr<Dvec>);
@@ -124,108 +56,47 @@ class FCI : public Method {
 
     /* Virtual functions -- these MUST be defined in the derived class*/
     // denominator
-    virtual void const_denom() = 0;
-
-    // functions related to natural orbitals
-    void update_rdms(const std::shared_ptr<Matrix>& coeff);
-
-    // internal function for RDM1 and RDM2 computations
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
+    virtual void const_denom() override = 0;
 
     // print functions
-    void print_header() const;
+    void print_header() const override;
 
   public:
     FCI() { }
 
     // this constructor is ugly... to be fixed some day...
     FCI(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1);
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, const bool store = false);
 
     virtual ~FCI() { }
-
     virtual void compute() override;
-
     virtual void update(std::shared_ptr<const Matrix>) = 0;
-
-    // returns members
-    int norb() const { return norb_; }
-    int nelea() const { return nelea_; }
-    int neleb() const { return neleb_; }
-    int ncore() const { return ncore_; }
-    double core_energy() const { return jop_->core_energy(); }
-
-    virtual int nij() const { return norb_*(norb_+1)/2; }
-
-    double weight(const int i) const { return weight_[i]; }
 
     // virtual application of Hamiltonian
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
 
-    // rdms
-    void compute_rdm12(); // compute all states at once + averaged rdm
-    void compute_rdm12(const int ist) { compute_rdm12(ist, ist); }
-    void compute_rdm12(const int ist, const int jst);
     // compute 3 and 4 RDMs
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst);
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
     // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...
-    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst);
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const Civec>, std::shared_ptr<const Civec>) const;
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const;
-
-    std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
-    std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }
-    std::shared_ptr<RDM<1>> rdm1(const int i) { return rdm1(i, i); }
-    std::shared_ptr<RDM<2>> rdm2(const int i) { return rdm2(i, i); }
-    std::shared_ptr<RDM<1>> rdm1(const int i, const int j) { return rdm1_->at(i, j); }
-    std::shared_ptr<RDM<2>> rdm2(const int i, const int j) { return rdm2_->at(i, j); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i) const { return rdm1(i, i); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i) const { return rdm2(i, i); }
-    std::shared_ptr<const RDM<1>> rdm1(const int i, const int j) const { return rdm1_->at(i, j); }
-    std::shared_ptr<const RDM<2>> rdm2(const int i, const int j) const { return rdm2_->at(i, j); }
-    std::shared_ptr<RDM<1>> rdm1_av() { return rdm1_av_; }
-    std::shared_ptr<RDM<2>> rdm2_av() { return rdm2_av_; }
-    std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
-    std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
+      compute_rdm12_from_civec(std::shared_ptr<const Civec> cbra, std::shared_ptr<const Civec> cket) const override;
 
     // rdm ci derivatives
-    std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
-    std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
+    std::shared_ptr<Dvec> rdm2deriv(const int istate) const override;
     // 4RDM derivative is precontracted by an Fock operator
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
-
-    // move to natural orbitals
-    std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();
-
-    const std::shared_ptr<const Geometry> geom() const { return geom_; }
-
-    std::shared_ptr<const Determinants> det() const { return det_; }
-
-    // returns integral files
-    std::shared_ptr<const MOFile> jop() const { return jop_; }
-
-    // returns a denominator
-    std::shared_ptr<const Civec> denom() const { return denom_; }
-
-    // returns total energy
-    std::vector<double> energy() const { return energy_; }
-    double energy(const int i) const { return energy_.at(i); }
-
-    // returns CI vectors
-    std::shared_ptr<Dvec> civectors() const { return cc_; }
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
 
     // functions for RDM computation
     void sigma_2a1(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
     void sigma_2a2(std::shared_ptr<const Civec> cc, std::shared_ptr<Dvec> d) const;
 
-    std::shared_ptr<const CIWfn> conv_to_ciwfn() const;
+    std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 };
 

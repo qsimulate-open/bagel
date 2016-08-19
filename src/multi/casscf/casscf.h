@@ -31,6 +31,7 @@
 #define __BAGEL_CASSCF_CASSCF_H
 
 #include <src/wfn/reference.h>
+#include <src/util/muffle.h>
 #include <src/ci/fci/knowles.h>
 #include <src/multi/casscf/rotfile.h>
 
@@ -44,8 +45,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int nclosed_;
     int nact_;
     int nvirt_;
-    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing.
-    int nbasis_;
+    int nmo_;
     int nstate_;
     int max_iter_;
     int max_micro_iter_;
@@ -77,6 +77,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // properties
     bool do_hyperfine_;
+    std::shared_ptr<Muffle> ofs_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
@@ -95,7 +96,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
     int nvirt() const { return nvirt_; }
-    int nbasis() const { return nbasis_; }
+    int nmo() const { return nmo_; }
     int nstate() const { return nstate_; }
     int max_iter() const { return max_iter_; }
     int max_micro_iter() const { return max_micro_iter_; }
@@ -109,6 +110,8 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double energy_av() const { return blas::average(energy_); }
     const std::vector<double>& energy() const { return energy_; }
     double rms_grad() const { return rms_grad_; }
+
+    std::shared_ptr<Matrix> compute_active_fock(const MatView acoeff, std::shared_ptr<const RDM<1>> rdm1) const;
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,

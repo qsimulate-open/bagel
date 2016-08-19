@@ -88,26 +88,8 @@ class DFBlock : public btas::Tensor3<double> {
 
 
     // some math functions
-    DFBlock& operator=(const DFBlock& o) {
-      btas::Tensor3<double>::operator=(o);
-      adist_shell_ = o.adist_shell_;
-      adist_ = o.adist_;
-      averaged_ = o.averaged_;
-      astart_ = o.astart_;
-      b1start_ = o.b1start_;
-      b2start_ = o.b2start_;
-      return *this;
-    }
-    DFBlock& operator=(DFBlock&& o) {
-      btas::Tensor3<double>::operator=(std::move(o));
-      adist_shell_ = o.adist_shell_;
-      adist_ = o.adist_;
-      averaged_ = o.averaged_;
-      astart_ = o.astart_;
-      b1start_ = o.b1start_;
-      b2start_ = o.b2start_;
-      return *this;
-    }
+    DFBlock& operator=(const DFBlock& o);
+    DFBlock& operator=(DFBlock&& o);
     DFBlock& operator+=(const DFBlock& o) { btas::Tensor3<double>::operator+=(o); return *this; }
     DFBlock& operator-=(const DFBlock& o) { btas::Tensor3<double>::operator-=(o); return *this; }
 
@@ -121,35 +103,12 @@ class DFBlock : public btas::Tensor3<double> {
     void zero() { std::fill_n(data(), size(), 0.0); }
 
     // symmetrize b1 and b2 (assuming b1size() == b2size())
-    void symmetrize() {
-      if (b1size() != b2size()) throw std::logic_error("illegal call of DFBlock::symmetrize()");
-      const int n = b1size();
-      for (int i = 0; i != n; ++i)
-        for (int j = i; j != n; ++j) {
-          blas::ax_plus_y_n(1.0, data()+asize()*(j+n*i), asize(), data()+asize()*(i+n*j));
-          std::copy_n(data()+asize()*(i+n*j), asize(), data()+asize()*(j+n*i));
-        }
-    }
+    void symmetrize();
 
-    void copy_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset) {
-      assert(o->size() == asize()*jdim);
-      std::copy_n(o->data(), asize()*jdim, data()+offset);
-    }
-
-    void copy_block(MatView o, const int jdim, const size_t offset) {
-      assert(o.size() == asize()*jdim);
-      std::copy_n(o.data(), asize()*jdim, data()+offset);
-    }
-
-    void add_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac = 1.0) {
-      assert(o->size() == asize()*jdim);
-      blas::ax_plus_y_n(fac, o->data(), asize()*jdim, data()+offset);
-    }
-
-    void add_block(MatView o, const int jdim, const size_t offset, const double fac = 1.0) {
-      assert(o.size() == asize()*jdim);
-      blas::ax_plus_y_n(fac, o.data(), asize()*jdim, data()+offset);
-    }
+    void copy_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset);
+    void copy_block(MatView o, const int jdim, const size_t offset);
+    void add_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac = 1.0);
+    void add_block(MatView o, const int jdim, const size_t offset, const double fac = 1.0);
 
     // average the asize between MPI processes (block will be described by dist_)
     void average();
@@ -180,6 +139,8 @@ class DFBlock : public btas::Tensor3<double> {
     std::shared_ptr<Matrix> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
     // slowest index of o is fixed to n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
+    std::shared_ptr<Matrix> form_4index_diagonal() const;
+    std::shared_ptr<Matrix> form_4index_diagonal_part() const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
     std::shared_ptr<VectorB> form_vec(const std::shared_ptr<const Matrix> den) const;

@@ -92,9 +92,9 @@ void Smith::compute() {
 }
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
+#ifdef COMPILE_SMITH
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
-#ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 

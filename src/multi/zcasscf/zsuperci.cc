@@ -65,7 +65,7 @@ void ZSuperCI::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      if (iter) fci_->update(coeff_, /*restricted*/true);
+      if (iter) fci_->update(coeff_);
       Timer fci_time(0);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       fci_->compute();
@@ -135,7 +135,7 @@ void ZSuperCI::compute() {
     }
 
     // orbital rotation matrix
-    shared_ptr<ZMatrix> amat = cc->unpack<ZMatrix>();
+    shared_ptr<ZMatrix> amat = cc->unpack();
     if (tsymm_)
       kramers_adapt(amat, nvirtnr_);
     // multiply -i to make amat hermite (will be compensated), sqrt(2) to recover non-rel limit
@@ -189,7 +189,7 @@ void ZSuperCI::compute() {
   // the following is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   if (nact_) {
-    fci_->update(coeff_, /*restricted*/true);
+    fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
   }
@@ -218,7 +218,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
   }
 
   // calculate 1RDM in an original basis set
-  shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+  shared_ptr<const ZMatrix> rdm1 = nact_ ? fci_->rdm1_av() : nullptr;
   // make natural orbitals, update coeff_ and transform rdm1
   shared_ptr<ZMatrix> natorb_coeff;
   if (nact_) {
@@ -227,7 +227,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     natorb_coeff = natorb_tmp.first;
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
-    rdm1 = natorb_rdm1_transform(natorb_coeff, rdm1);
+    rdm1 = make_shared<ZMatrix>(*natorb_coeff % *rdm1 * *natorb_coeff);
   }
 
   shared_ptr<const ZMatrix> cfock;
@@ -244,7 +244,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      shared_ptr<const ZMatrix> afockao = active_fock();
+      shared_ptr<const ZMatrix> afockao = compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), rdm1);
       afock = make_shared<ZMatrix>(*coeff_elec % *afockao * *coeff_elec);
     } else {
       afock = cfock->clone();

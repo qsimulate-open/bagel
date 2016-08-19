@@ -202,17 +202,6 @@ int Molecule::num_count_ncore_only() const {
 }
 
 
-int Molecule::num_count_full_valence_nocc() const {
-  int out = 0;
-  for (auto& it : atoms_) {
-    if (it->atom_number() < 2) out += 1;
-    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 5;
-    if (it->atom_number() > 10) throw logic_error("needs to modify Molecule::num_count_full_valence_nocc for atoms beyond Ne"); // TODO
-  }
-  return out;
-};
-
-
 bool Molecule::operator==(const Molecule& o) const {
   bool out = true;
   out &= spherical_ == o.spherical_;

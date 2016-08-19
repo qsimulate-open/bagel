@@ -43,7 +43,7 @@ void CASBFGS1::compute() {
   // ============================
   Timer timer;
 
-  auto x = make_shared<Matrix>(nbasis_, nbasis_);
+  auto x = make_shared<Matrix>(nmo_, nmo_);
   x->unit();
   shared_ptr<const Matrix> xstart;
   vector<double> evals;
@@ -83,21 +83,13 @@ void CASBFGS1::compute() {
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
+    shared_ptr<const Matrix> cfockao = nact_ ? fci_->jop()->core_fock() : make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
-    // first make a weighted coefficient
-    shared_ptr<Matrix> acoeff;
-    if (nact_) {
-      acoeff = coeff_->slice_copy(nclosed_, nocc_);
-      for (int i = 0; i != nact_; ++i)
-        blas::scale_n(sqrt(occup_[i]/2.0), acoeff->element_ptr(0, i), acoeff->ndim());
-    }
-    // then make a AO density matrix
     shared_ptr<const Matrix> afock;
     if (nact_) {
-      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
-      afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
+      auto afockao = compute_active_fock(coeff_->slice(nclosed_, nocc_), fci_->rdm1_av());
+      afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
     } else {
       afock = cfock->clone();
     }
@@ -149,7 +141,7 @@ void CASBFGS1::compute() {
     cout << " " << endl;
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = a->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = a->unpack();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 

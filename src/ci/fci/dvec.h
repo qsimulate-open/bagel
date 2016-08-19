@@ -190,6 +190,7 @@ class Dvector : public btas::Tensor3<DataType> {
     }
 
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return norm() / std::sqrt(size()); }
 
     void scale(const DataType& a) {
       std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
@@ -206,10 +207,9 @@ class Dvector : public btas::Tensor3<DataType> {
     }
 
     void project_out(std::shared_ptr<const Dvector<DataType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("Dvec::project_out called inconsistently");
-      auto j = o->dvec().begin();
-      // simply project out each CI vector
-      for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
+      for (auto& i : dvec())
+        for (auto& j : o->dvec())
+          i->project_out(j);
     }
 
     void synchronize() {

@@ -125,7 +125,6 @@ class Molecule {
     const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
 
     int num_count_ncore_only() const; // also set nfrc_
-    int num_count_full_valence_nocc() const;
 
     void print_atoms() const;
 

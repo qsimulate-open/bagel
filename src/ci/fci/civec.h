@@ -113,6 +113,7 @@ class Civector {
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
+    size_t asize() const { return lena_; }
 
     // some functions for convenience
     void ax_plus_y(DataType a, const Civector<DataType>& other) {

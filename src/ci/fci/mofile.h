@@ -58,7 +58,7 @@ class MOFile {
     int address_(int i, int j) const { assert(i <= j); return i+((j*(j+1))>>1); }
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nfence);
+    void init(const int nstart, const int nfence, const bool store);
 
     // this sets mo1e_
     virtual std::shared_ptr<const Matrix> compute_mo1e(const int, const int) = 0;
@@ -121,8 +121,8 @@ class Jop : public MOFile {
     std::shared_ptr<const Matrix> compute_mo1e(const int, const int) override;
     std::shared_ptr<const Matrix> compute_mo2e(const int, const int) override;
   public:
-    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> e, const std::string f = std::string("KH"))
-      : MOFile(b,e,f) { init(c, d); }
+    Jop(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> e, const bool store, const std::string f = "KH")
+      : MOFile(b,e,f) { init(c, d, store); }
     Jop(const std::shared_ptr<CSymMatrix> mo1e, const std::shared_ptr<Matrix> mo2e) : MOFile(mo1e, mo2e) {}
 };
 
@@ -139,7 +139,8 @@ class Htilde : public MOFile {
   public:
     Htilde(const std::shared_ptr<const Reference> b, const int c, const int d, std::shared_ptr<const Matrix> h1, std::shared_ptr<const Matrix> h2)
       : MOFile(b), h1_tmp_(h1), h2_tmp_(h2) {
-      init(c, d);
+      assert(c == 0); // otherwise there will be an unnecessary computation
+      init(c, d, false);
     }
 };
 

@@ -73,7 +73,7 @@ void ZCASBFGS::compute() {
 
     // first perform CASCI to obtain RDMs
     if (nact_) {
-      if (iter) fci_->update(coeff_, /*restricted*/true);
+      if (iter) fci_->update(coeff_);
       cout << " Executing FCI calculation in Cycle " << iter << endl;
       Timer fci_time(0);
       fci_->compute();
@@ -88,7 +88,7 @@ void ZCASBFGS::compute() {
     // TODO : make one body operators function to simplify the driver ; could combine with super-CI, but will take some work
     Timer onebody(0);
     // calculate 1RDM in an original basis set
-    shared_ptr<const ZMatrix> rdm1 = nact_ ? transform_rdm1() : nullptr;
+    shared_ptr<const ZMatrix> rdm1 = nact_ ? fci_->rdm1_av() : nullptr;
 
     // closed Fock operator
     shared_ptr<const ZMatrix> cfock;
@@ -104,9 +104,7 @@ void ZCASBFGS::compute() {
     // active Fock operator
     shared_ptr<const ZMatrix> afock;
     if (nact_) {
-      pair<shared_ptr<ZMatrix>, VectorB> natorb_tmp = make_natural_orbitals(rdm1);
-      occup_ = natorb_tmp.second;
-      shared_ptr<const ZMatrix> afockao = active_fock(natorb_tmp.first->get_conjg(), /*with_hcore*/false, /*bfgs*/true);
+      shared_ptr<const ZMatrix> afockao = compute_active_fock(coeff_->slice(nclosed_*2,nocc_*2), rdm1);
       afock = make_shared<ZMatrix>(*coeff_ % *afockao * *coeff_);
     } else {
       afock = make_shared<ZMatrix>(nbasis_*2, nbasis_*2);
@@ -244,7 +242,7 @@ void ZCASBFGS::compute() {
   // update construct Jop from scratch
   resume_stdcout();
   if (nact_) {
-    fci_->update(coeff_, /*restricted*/true);
+    fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
   }

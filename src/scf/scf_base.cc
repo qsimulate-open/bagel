@@ -58,7 +58,6 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   thresh_scf_ = idata_->get<double>("thresh", 1.0e-8);
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
-  string dd = idata_->get<string>("diis", "gradient");
 
   multipole_print_ = idata_->get<int>("multipole", 1);
 

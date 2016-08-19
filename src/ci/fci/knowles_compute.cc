@@ -23,7 +23,6 @@
 //
 
 #include <src/ci/fci/knowles.h>
-#include <src/util/math/davidson.h>
 
 // toggle for timing print out.
 static const bool tprint = false;

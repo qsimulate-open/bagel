@@ -170,6 +170,17 @@ tuple<shared_ptr<Coeff>, int, shared_ptr<VecRDM<1>>> UHF::natural_orbitals() con
 }
 
 
+shared_ptr<const Matrix> UHF::compute_erdm1() const {
+  // compute an energy weighted 1RDM and store
+  const VecView ea = eig_.slice(0, nocc_);
+  const VecView eb = eigB_.slice(0, noccB_);
+  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
+  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
+  *erdm *= 0.5;
+  return erdm;
+}
+
+
 shared_ptr<const Reference> UHF::conv_to_ref() const {
   shared_ptr<Coeff> natorb;
   int nocc;
@@ -180,14 +191,6 @@ shared_ptr<const Reference> UHF::conv_to_ref() const {
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
   out->set_nocc(nocc_, noccB_);
-
-  // compute an energy weighted 1RDM and store
-  const VecView ea = eig_.slice(0, nocc_);
-  const VecView eb = eigB_.slice(0, nocc_);
-  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
-  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
-  *erdm *= 0.5;
-  out->set_erdm1(erdm);
 
   // this is just dummy...
   out->set_eig(eig_);

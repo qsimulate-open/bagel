@@ -105,7 +105,6 @@ class DFDist_ints : public DFDist {
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
-          // TODO careful
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
@@ -228,7 +227,12 @@ class DFFullDist : public ParallelDF {
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 
+    // returns the 4-index integrals with fixed index n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
+    // returns the diagonal part of the 4-index integrals [o1v0] = (o1v0|g)(g|o1v0)
+    std::shared_ptr<Matrix> form_4index_diagonal() const;
+    // returns the diagonal part of the 4-index integrals [o1o2v0] = (o1v0|g)(g|o2v0)
+    std::shared_ptr<Matrix> form_4index_diagonal_part() const;
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;

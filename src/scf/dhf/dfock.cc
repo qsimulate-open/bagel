@@ -304,5 +304,7 @@ void DFock::driver(array<shared_ptr<const Matrix>,4> rocoeff,  array<shared_ptr<
     for (auto& i : half_complex_exch)
       i->discard_sum_diff();
     half_ = half_complex_exch;
+    if (breit)
+      half2_ = half_complex_exch2;
   }
 }

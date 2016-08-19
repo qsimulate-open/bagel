@@ -86,6 +86,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out -= o; return out; }
 
     void zero() { this->fill(0.0); }
+    void allreduce() { mpi__->allreduce(data(), size()); }
 
     void ax_plus_y(const DataType a, const btas::TensorN<DataType,N>& o) { btas::axpy(a, o, *this); }
     void ax_plus_y(const DataType& a, const std::shared_ptr<const btas::TensorN<DataType,N>>& o) { this->ax_plus_y(a, *o); }
@@ -110,7 +111,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return std::pair<std::shared_ptr<Matrix>, VectorB>();
     }
 
-    void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
+    void transform(std::shared_ptr<const Matrix> coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
 
     std::vector<DataType> diag() const {
       throw std::logic_error("RDM<N>::diag() should not be called with N>1");
@@ -160,8 +161,8 @@ template<> std::vector<double> RDM<1,double>::diag() const;
 
 template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals(const bool occ_sort) const;
 
-template<> void RDM<1,double>::transform(const std::shared_ptr<Matrix>& coeff);
-template<> void RDM<2,double>::transform(const std::shared_ptr<Matrix>& coeff);
+template<> void RDM<1,double>::transform(std::shared_ptr<const Matrix> coeff);
+template<> void RDM<2,double>::transform(std::shared_ptr<const Matrix> coeff);
 
 template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, const bool all) const;
 

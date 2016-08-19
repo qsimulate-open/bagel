@@ -80,7 +80,7 @@ vector<mpreal> chebft(int n) {
   return out;
 }
 
-void complex_get_C (const complex<mpreal>& Tbase, const mpreal Rstride, const mpreal Istride, const int rank, const int RGRID, const int IGRID, vector<vector<double>>& cxr, vector<vector<double>>& cxi, vector<vector<double>>& cwr, vector<vector<double>>& cwi){
+void complex_get_C (const complex<mpreal>& Tbase, const mpreal& Rstride, const mpreal& Istride, const int rank, const int RGRID, const int IGRID, vector<vector<double>>& cxr, vector<vector<double>>& cxi, vector<vector<double>>& cwr, vector<vector<double>>& cwi){
   mpfr::mpreal::set_default_prec(GMPPREC); 
   using namespace std;
   cout << "TBase = " << Tbase << ", " << rank << " roots needed.  Using " << RGRID << " by " << IGRID << " gridpoints." << endl;

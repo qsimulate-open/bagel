@@ -34,12 +34,6 @@
 #include <src/util/archive.h>
 #include <src/util/io/moldenout.h>
 
-// debugging
-extern void test_solvers(std::shared_ptr<bagel::Geometry>);
-extern void test_mp2f12();
-
-// function (TODO will be moved to an appropriate place)
-
 using namespace std;
 using namespace bagel;
 

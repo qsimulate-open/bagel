@@ -25,11 +25,9 @@
 #ifndef __SRC_DIMER_DIMER_H
 #define __SRC_DIMER_DIMER_H
 
-#include <src/ci/fci/distfci.h>
 #include <src/ci/fci/knowles.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/ras/rasci.h>
-#include <src/ci/ras/distrasci.h>
 #include <src/asd/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
 #include <src/util/muffle.h>
@@ -196,11 +194,6 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-#if 0
-      // TODO this block does not compile
-      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
-        results.push_back(std::make_shared<VecType>(embedded_ci<DistFCI, DistDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
-#endif
       else
         throw std::runtime_error("Unrecognized FCI type algorithm");
 

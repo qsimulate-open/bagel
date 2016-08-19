@@ -69,23 +69,13 @@ void CASBFGS2::compute() {
     // * preparation
     const MatView ccoeff = coeff_->slice(0, nclosed_);
     // * core Fock operator
-    shared_ptr<const Matrix> cfockao = nclosed_ ? make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true) : hcore_;
+    shared_ptr<const Matrix> cfockao = nact_ ? fci_->jop()->core_fock() : make_shared<const Fock<1>>(geom_, hcore_, nullptr, ccoeff, /*store*/false, /*rhf*/true);
     shared_ptr<const Matrix> cfock = make_shared<Matrix>(*coeff_ % *cfockao * *coeff_);
     // * active Fock operator
-    // first make a weighted coefficient
-    shared_ptr<Matrix> acoeff;
-    if (nact_) {
-      Matrix rdm1av(nact_, nact_);
-      copy_n(fci_->rdm1_av()->data(), nact_*nact_, rdm1av.data());
-      rdm1av.sqrt();
-      rdm1av.scale(sqrt(1.0/2.0));
-      acoeff = make_shared<Matrix>(coeff_->slice(nclosed_, nocc_) * rdm1av);
-    }
-    // then make a AO density matrix
     shared_ptr<const Matrix> afock;
     if (nact_) {
-      auto afockao = make_shared<Fock<1>>(geom_, hcore_, nullptr, acoeff, /*store*/false, /*rhf*/true);
-      afock = make_shared<Matrix>(*coeff_ % (*afockao - *hcore_) * *coeff_);
+      auto afockao = compute_active_fock(coeff_->slice(nclosed_, nocc_), fci_->rdm1_av());
+      afock = make_shared<Matrix>(*coeff_ % *afockao * *coeff_);
     } else {
       afock = cfock->clone();
     }
@@ -118,7 +108,7 @@ void CASBFGS2::compute() {
     arot = bfgs->extrapolate(sigma, arot, blas::average(energy_));
 
     // restore the matrix from RotFile
-    shared_ptr<const Matrix> amat = arot->unpack<Matrix>();
+    shared_ptr<const Matrix> amat = arot->unpack();
     shared_ptr<Matrix> expa = amat->exp(100);
     expa->purify_unitary();
 

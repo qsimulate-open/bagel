@@ -115,8 +115,8 @@ void CASSCF::common_init() {
   }
   nocc_ = nclosed_ + nact_;
 
-  nbasis_ = coeff_->mdim();
-  nvirt_ = nbasis_ - nocc_;
+  nmo_ = coeff_->mdim();
+  nvirt_ = nmo_ - nocc_;
   if (nvirt_ < 0) throw runtime_error("It appears that nvirt < 0. Check the nocc value");
 
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
@@ -124,7 +124,7 @@ void CASSCF::common_init() {
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
 
-  const int idel = geom_->nbasis() - nbasis_;
+  const int idel = geom_->nbasis() - nmo_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
@@ -134,7 +134,7 @@ void CASSCF::common_init() {
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_); // nstate does not need to be specified as it is in idata_...
+    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
   }
   resume_stdcout();
 
@@ -169,19 +169,17 @@ void CASSCF::print_iteration(int iter, int miter, int tcount, const vector<doubl
   }
 }
 
-static streambuf* backup_stream_;
-static ofstream* ofs_;
+
+static bool append__ = false;
 
 void CASSCF::mute_stdcout() {
-  ofstream* ofs(new ofstream("casscf.log",(backup_stream_ ? ios::app : ios::trunc)));
-  ofs_ = ofs;
-  backup_stream_ = cout.rdbuf(ofs->rdbuf());
+  ofs_ = make_shared<Muffle>("casscf.log", append__);
+  append__ = true;
 }
 
 
 void CASSCF::resume_stdcout() {
-  cout.rdbuf(backup_stream_);
-  delete ofs_;
+  ofs_.reset();
 }
 
 
@@ -201,6 +199,14 @@ shared_ptr<Matrix> CASSCF::ao_rdm1(shared_ptr<const RDM<1>> rdm1, const bool ina
   return make_shared<Matrix>(*coeff_ * *mo_rdm1 ^ *coeff_);
 }
 
+
+std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared_ptr<const RDM<1>> rdm1) const {
+  Matrix dkl(nact_, nact_);
+  copy_n(rdm1->data(), nact_*nact_, dkl.data());
+  dkl.sqrt();
+  dkl.scale(1.0/sqrt(2.0));
+  return make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * dkl, /*store*/false, /*rhf*/true);
+}
 
 
 void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
@@ -227,9 +233,9 @@ void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact,
   }
   {
     // active-x Fock operator Dts finact_sx + Qtx
-    fact = qxr->copy();// nbasis_ runs first
+    fact = qxr->copy();// nmo_ runs first
     for (int i = 0; i != nact_; ++i)
-      daxpy_(nbasis_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nbasis_, 1);
+      daxpy_(nmo_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nmo_, 1);
   }
 
   {
@@ -306,11 +312,11 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   rdm1mat->scale(1.0/sqrt(2.0));
   auto ocoeff = coeff_->slice(0, nclosed_);
   auto acoeff = coeff_->slice(nclosed_, nocc_);
-  auto vcoeff = coeff_->slice(nocc_, nbasis_);
+  auto vcoeff = coeff_->slice(nocc_, nmo_);
 
   VectorB eig(coeff_->mdim());
   Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
-  Matrix trans(nbasis_, nbasis_);
+  Matrix trans(nmo_, nmo_);
   trans.unit();
   if (nclosed_) {
     Matrix ofock = ocoeff % fock * ocoeff;
@@ -343,39 +349,9 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  shared_ptr<Reference> out;
-  if (nact_) {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                 fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
-    // TODO
-    // compute one-body operators
-    shared_ptr<Matrix> f;
-    shared_ptr<Matrix> fact, factp, gaa;
-    shared_ptr<RotFile>  denom;
-    one_body_operators(f, fact, factp, gaa, denom);
-    if (natocc_) print_natocc();
-
-    *f *= 2.0;
-
-    for (int i = 0; i != nbasis_; ++i) {
-      for (int j = 0; j != nbasis_; ++j) {
-        if (i < nocc_ && j < nocc_) continue;
-        f->element(j,i) = 0.0;
-      }
-    }
-    for (int j = 0; j != nact_; ++j) {
-      for (int i = 0; i != nocc_; ++i) {
-        f->element(i,j+nclosed_) = fact->element(i,j);
-      }
-    }
-
-    auto erdm = make_shared<Matrix>(*coeff_ * *f ^ *coeff_);
-
-    out->set_erdm1(erdm);
-  } else {
-    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
-  }
-  return out;
+ return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
+              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
 }
 
 

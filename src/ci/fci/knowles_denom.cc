@@ -91,7 +91,7 @@ void KnowlesHandy::update(shared_ptr<const Matrix> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "KH");
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, store_half_ints_, "KH");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;

@@ -36,20 +36,14 @@
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
-  common_init();
 
+void DistFCI::common_init() {
 #ifndef HAVE_MPI_H
   throw logic_error("DistFCI can be used only with MPI");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  update(ref_->coeff());
-}
-
-void DistFCI::common_init() {
   print_header();
 
   const bool frozen = idata_->get<bool>("frozen", false);
@@ -91,11 +85,10 @@ void DistFCI::common_init() {
 
   // TODO allow for zero electron (quick return)
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  weight_ = vector<double>(nstate_, 1.0/static_cast<double>(nstate_));
 
-  // resizing rdm vectors (with null pointers)
-  //rdm1_.resize(nstate_);
-  //rdm2_.resize(nstate_);
+  rdm1_ = make_shared<VecRDM<1>>();
+  rdm2_ = make_shared<VecRDM<2>>();
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
@@ -324,7 +317,7 @@ void DistFCI::update(shared_ptr<const Matrix> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, store_half_ints_, "HZ");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
@@ -364,6 +357,7 @@ void DistFCI::const_denom() {
   denom_->accumulate_buffer(1.0, buf);
   denom_t.tick_print("denom");
 }
+
 
 void DistFCI::compute() {
   Timer pdebug(3);
@@ -476,4 +470,14 @@ void DistFCI::compute() {
                    << ", E = " << setw(17) << fixed << setprecision(8) << energy_[ist] << endl;
     cc_->data(ist)->print(print_thresh_);
   }
+}
+
+
+shared_ptr<const CIWfn> DistFCI::conv_to_ciwfn() const {
+  // convert DistDvec to Dvec
+  vector<shared_ptr<Civec>> vec; 
+  for (auto& i : cc_->dvec())
+    vec.push_back(i->civec());
+  auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc, cc->det());
 }

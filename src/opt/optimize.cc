@@ -86,26 +86,11 @@ void Optimize::compute() {
     geom_ = opt->geometry();
 
   } else if (method == "casscf") {
-    string algorithm = lastmethod->get<string>("algorithm", "");
-    // in case of SS-CASSCF
-    if (lastmethod->get<int>("nstate", 1) == 1) {
-      if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCI>>(idata_, methodblock, geom_, ref_);
-        opt->compute();
-        geom_ = opt->geometry();
-      } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
-      }
-    // in case of SA-CASSCF
-    } else {
-      if (algorithm == "superci" || algorithm == "") {
-        auto opt = make_shared<Opt<SuperCIGrad>>(idata_, methodblock, geom_, ref_);
-        opt->compute();
-        geom_ = opt->geometry();
-      } else {
-        throw runtime_error("unknown CASSCF algorithm specified.");
-      }
-    }
+
+    auto opt = make_shared<Opt<CASSCF>>(idata_, methodblock, geom_, ref_);
+    opt->compute();
+    geom_ = opt->geometry();
+
   } else if (method == "caspt2") {
 
     auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_, ref_);
