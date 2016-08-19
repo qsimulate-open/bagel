@@ -83,7 +83,7 @@ void CASPT2::CASPT2::solve() {
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
 
-  vector<complex<double>> shift_correction(nstates_*nstates_);
+  vector<double> shift_correction(nstates_*nstates_);
   for (int istate = 0; istate != nstates_; ++istate) {
     if (info_->shift() == 0.0) {
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
@@ -95,7 +95,7 @@ void CASPT2::CASPT2::solve() {
       for (int jstate = 0; jstate != nstates_; ++jstate) {
         if (istate != jstate && info_->shift_diag())
           continue;
-        complex<double> nn = 0.0;
+        double nn = 0.0;
         for (int jst = 0; jst != nstates_; ++jst) { // bra
           for (int ist = 0; ist != nstates_; ++ist) { // ket
             if (info_->sssr() && (jst != istate || ist != istate))
