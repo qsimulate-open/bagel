@@ -26,6 +26,7 @@
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/dhf/population_analysis.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/prop/hyperfine.h>
 
@@ -197,5 +198,17 @@ void CASBFGS1::compute() {
   if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
     HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
     hfcc.compute();
+  }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
+    mute_stdcout();
+    auto ovl = make_shared<Overlap>(geom_);
+    population_analysis(geom_, *coeff_, ovl);
+    resume_stdcout();
+    pop_timer.tick_print("population analysis");
   }
 }
