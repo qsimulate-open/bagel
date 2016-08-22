@@ -38,8 +38,7 @@
 namespace bagel {
 namespace {
 
-void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView coeff, std::shared_ptr<const ZMatrix> overlap,
-                         const bool paired, const int nclosed = 0, const int nact = 0) {
+void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView coeff, std::shared_ptr<const ZMatrix> overlap, const bool paired) {
 
   const ZMatrix right = *overlap * coeff;
   const ZMatView left = coeff;
@@ -121,8 +120,7 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
 
 
 // Non-relativistic analogue...  Designed for RHF; needs to be adjusted for use w/ UHF, etc.
-void population_analysis(std::shared_ptr<const Geometry> geom, const MatView coeff, std::shared_ptr<const Matrix> overlap,
-                         const int nclosed = 0, const int nact = 0) {
+void population_analysis(std::shared_ptr<const Geometry> geom, const MatView coeff, std::shared_ptr<const Matrix> overlap) {
 
   const Matrix right = *overlap * coeff;
   const MatView left = coeff;
