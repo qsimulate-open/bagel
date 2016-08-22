@@ -155,7 +155,6 @@ void ZCASSCF::init() {
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
 
-  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
@@ -193,6 +192,7 @@ void ZCASSCF::init() {
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
   resume_stdcout();
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
