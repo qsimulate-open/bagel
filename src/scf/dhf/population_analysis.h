@@ -119,6 +119,49 @@ void population_analysis(std::shared_ptr<const Geometry> geom, const ZMatView co
 
 }
 
+
+// Non-relativistic analogue...  Designed for RHF; needs to be adjusted for use w/ UHF, etc.
+void population_analysis(std::shared_ptr<const Geometry> geom, const MatView coeff, std::shared_ptr<const Matrix> overlap,
+                         const int nclosed = 0, const int nact = 0) {
+
+  const Matrix right = *overlap * coeff;
+  const MatView left = coeff;
+
+  const int nbasis = geom->nbasis();
+  assert(nbasis == coeff.ndim());
+
+  for (int i = 0; i < nbasis; ++i) {
+
+    double total = 0.0;
+    const double* left_ptr1 = left.element_ptr(0,i);
+    const double* right_ptr1 = right.element_ptr(0,i);
+
+    std::map<std::string, int> element_count;
+    int current_ao = 0;
+    for (auto& atom : geom->atoms()) {
+      std::stringstream base_name;
+      base_name << "spatial MO " << i + 1 << " " << atom->name() << "_" << element_count[atom->name()]++;
+      for (auto& shell : atom->shells()) {
+        if (!shell->dummy()) {
+          std::stringstream ss;
+          AtomMap am;
+          ss << base_name.str() << ":" << am.angular_string(shell->angular_number());
+
+          double val = blas::dot_product(left_ptr1+current_ao, shell->nbasis(), right_ptr1+current_ao);
+
+          std::cout << std::setw(8) << ss.str() << std::setw(16) << std::setprecision(8) << val << std::endl;
+          current_ao += shell->nbasis();
+          total += val;
+        }
+      }
+    }
+    std::cout << std::endl;
+    std::cout << "spatial MO " << i + 1 << " basis functions: " << total << std::endl;
+    std::cout << std::endl;
+  }
+
+}
+
 }
 }
 
