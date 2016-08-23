@@ -26,7 +26,7 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 
-#if defined(__GNUC__) && __GNUC__ >= 4 && __GNUC_MINOR__ >= 9
+#if defined(__GNUC__) && ((__GNUC__ == 4 && __GNUC_MINOR__ >= 9) || __GNUC__ > 4) 
 #include <regex>
 #else
 #include <boost/regex.hpp>
