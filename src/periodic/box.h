@@ -29,6 +29,7 @@
 
 #include <src/util/constants.h>
 #include <src/molecule/shellpair.h>
+#include <src/util/parallel/resources.h>
 
 namespace bagel {
 
@@ -47,6 +48,7 @@ class Box {
 
     double thresh_, extent_;
     int nbasis0_, nbasis1_;
+    int nmult_;
 
 
     void init();
@@ -56,16 +58,24 @@ class Box {
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
+    size_t size_alloc_;
+    std::complex<double>* stack_save_;
+
+    std::complex<double>* data_;
+    bool allocated_here_;
+    std::shared_ptr<StackMem> stack_;
+
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
     void compute_multipoles();
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
-    void compute_local_expansions(std::shared_ptr<const Matrix> density);
+    std::vector<double> compute_local_expansions(std::array<double, 3> r12, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
 
 
   public:
-    Box(int n, int id, std::array<int, 3> v, const int lmax = 10, std::vector<std::shared_ptr<const ShellPair>> sp = std::vector<std::shared_ptr<const ShellPair>>()) : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
-    ~Box() { }
+    Box(int n, int id, std::array<int, 3> v, const int lmax = 10, std::vector<std::shared_ptr<const ShellPair>> = std::vector<std::shared_ptr<const ShellPair>>(), std::shared_ptr<StackMem> = nullptr);
+
+    ~Box();
 
     std::array<double, 3> centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
@@ -95,7 +105,9 @@ class Box {
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion() const { return local_expansion_; }
     std::shared_ptr<const ZMatrix> local_expansion(const int i) const { return local_expansion_[i]; }
 
-    void print_node() const;
+    std::complex<double>* data() { return data_; }
+
+    void print_box() const;
 };
 
 }
