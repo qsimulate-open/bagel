@@ -218,7 +218,7 @@ void FMM::get_boxes() {
 }
 
 
-void FMM::M2M() {
+void FMM::M2M() const {
 
   Timer m2mtime;
   for (auto& b : box_)

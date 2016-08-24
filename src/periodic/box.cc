@@ -37,33 +37,6 @@ using namespace std;
 static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
 
-
-Box::Box(int n, int id, array<int, 3> v, const int lmax, vector<shared_ptr<const ShellPair>> sp, shared_ptr<StackMem> stack)
- : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), stack_(stack) {
-  nmult_ = (lmax_ + 1) * (lmax_ + 1);
-  size_alloc_ = nmult_ * nbasis0_ * nbasis1_;
-
-  if (stack == nullptr) {
-    stack_ = resources__->get();
-    allocated_here_ = true;
-  } else {
-    stack_ = stack;
-    allocated_here_ = false;
-  }
-
-  // allocate multipole storage
-  stack_save_ = stack_->get<complex<double>>(size_alloc_);
-  data_ = stack_save_;
-  fill_n(data_, size_alloc_, 0.0);
-}
-
-
-Box::~Box() {
-  stack_->release(size_alloc_, stack_save_);
-  if (allocated_here_) resources__->release(stack_);
-}
-
-
 void Box::init() {
 
   centre_ = {{0, 0, 0}};
@@ -89,6 +62,9 @@ void Box::init() {
     assert(ei > 0);
     if (extent_ < ei) extent_ = ei;
   }
+
+  nmult_ = (lmax_ + 1) * (lmax_ + 1);
+  multipole_.resize(nmult_);
 }
 
 
@@ -153,6 +129,10 @@ void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
 
 void Box::compute_multipoles() {
 
+  vector<shared_ptr<ZMatrix>> multipole(nmult_);
+  for (auto& m : multipole)
+    m = make_shared<ZMatrix>(nbasis0_, nbasis1_);
+
   if (nchild() == 0) { // leaf = shift sp's multipoles
     int offset0 = 0;
     int offset1 = 0;
@@ -165,18 +145,14 @@ void Box::compute_multipoles() {
       LocalExpansion shift(r12, vmult, lmax_);
       vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
-      for (int i = 0; i != nmult_; ++i) {
-        for (int j = 0; j != v->nbasis1(); ++j) {
-          for (int k = 0; k != v->nbasis0(); ++k) {
-            const int pos = i * nbasis1_ * nbasis0_ + (j + offset1) * nbasis0_ + k + offset0;
-            assert(pos < size_alloc_);
-            data_[pos] = moment[i]->element(j, k);
-          }
-        }
-      }
+      for (int i = 0; i != nmult_; ++i)
+        multipole[i]->copy_block(offset0, offset1, v->nbasis0(), v->nbasis1(), moment[i]->data());
+
       offset0 += v->nbasis0();
       offset1 += v->nbasis1();
     }
+    assert(offset0 == nbasis0_);
+    assert(offset1 == nbasis1_);
   } else { // shift children's multipoles
     int offset0 = 0;
     int offset1 = 0;
@@ -189,19 +165,18 @@ void Box::compute_multipoles() {
       LocalExpansion shift(r12, c->multipole(), lmax_);
       vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
 
-      for (int i = 0; i != nmult_; ++i) {
-        for (int j = 0; j != c->nbasis1(); ++j) {
-          for (int k = 0; k != c->nbasis0(); ++k) {
-            const int pos = i * nbasis1_ * nbasis0_ + (j + offset1) * nbasis0_ + k + offset0;
-            assert(pos < size_alloc_);
-            data_[pos] = moment[i]->element(j, k);
-          }
-        }
-      }
+      for (int i = 0; i != nmult_; ++i)
+        multipole[i]->copy_block(offset0, offset1, c->nbasis0(), c->nbasis1(), moment[i]->data());
+
       offset0 += c->nbasis0();
       offset1 += c->nbasis1();
     }
+    assert(offset0 == nbasis0_);
+    assert(offset1 == nbasis1_);
   }
+
+  for (int i = 0; i != nmult_; ++i)
+    multipole_[i] = multipole[i];
 }
 
 
@@ -339,7 +314,7 @@ void Box::print_box() const {
 }
 
 
-vector<double> Box::compute_local_expansions(array<double, 3> r12, shared_ptr<const Matrix> den) const {
+vector<double> Box::get_Mlm(array<double, 3> r12, shared_ptr<const Matrix> den) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
@@ -351,7 +326,7 @@ vector<double> Box::compute_local_expansions(array<double, 3> r12, shared_ptr<co
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      ZMatrix local(nbasis1_, nbasis0_);
+      ZMatrix local(nbasis0_, nbasis1_);
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -369,8 +344,7 @@ vector<double> Box::compute_local_expansions(array<double, 3> r12, shared_ptr<co
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
 
-          complex<double>* const mult = data_ + i2 * nbasis1_ * nbasis0_;
-          zaxpy_(nbasis0_ * nbasis1_, coeff, mult, 1, local.data(), 1);
+          zaxpy_(nbasis0_ * nbasis1_, coeff, multipole_[i2]->data(), 1, local.data(), 1);
         }
       }
       assert(i2 == nmult_);

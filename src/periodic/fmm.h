@@ -60,7 +60,7 @@ class FMM {
 
     std::array<double, 3> centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
-    void M2M();
+    void M2M() const;
     void M2L();
     void L2L();
     std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
