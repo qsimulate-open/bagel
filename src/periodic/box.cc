@@ -40,6 +40,7 @@ const static Legendre plm;
 void Box::init() {
 
   centre_ = {{0, 0, 0}};
+  ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
   for (auto& i : sp_) {
     centre_[0] += i->centre(0);
@@ -47,6 +48,7 @@ void Box::init() {
     centre_[2] += i->centre(2);
     nbasis0_ += i->nbasis0();
     nbasis1_ += i->nbasis1();
+    ndim_ += i->nbasis0() * i->nbasis1();
   }
   centre_[0] /= nsp();
   centre_[1] /= nsp();
@@ -63,8 +65,25 @@ void Box::init() {
     if (extent_ < ei) extent_ = ei;
   }
 
+#if 0
+  ndim_ = 0;
+  if (nchild() == 0) {
+    for (auto& i : sp_)
+      ndim_ += i->nbasis0() * i->nbasis1();
+  } else {
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> c = child(n);
+      ndim_ += c->ndim();
+    }
+  }
+#endif
+
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   multipole_.resize(nmult_);
+  offset0_.resize(nsp());
+  fill_n(offset0_.begin(), nsp(), 0);
+  offset1_.resize(nsp());
+  fill_n(offset1_.begin(), nsp(), 0);
 }
 
 
@@ -129,13 +148,9 @@ void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
 
 void Box::compute_multipoles() {
 
-  vector<shared_ptr<ZMatrix>> multipole(nmult_);
-  for (auto& m : multipole)
-    m = make_shared<ZMatrix>(nbasis0_, nbasis1_);
-
   if (nchild() == 0) { // leaf = shift sp's multipoles
-    int offset0 = 0;
-    int offset1 = 0;
+    int isp = 1;
+    int offset = 0;
     for (auto& v : sp_) {
       vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_);
       array<double, 3> r12;
@@ -143,40 +158,43 @@ void Box::compute_multipoles() {
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
       LocalExpansion shift(r12, vmult, lmax_);
-      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
+      vector<shared_ptr<const ZMatrix>> smoment = shift.compute_shifted_multipoles();
 
-      for (int i = 0; i != nmult_; ++i)
-        multipole[i]->copy_block(offset0, offset1, v->nbasis0(), v->nbasis1(), moment[i]->data());
+      for (int i = 0; i != nmult_; ++i) {
+        multipole_[i].resize(ndim_);
 
-      offset0 += v->nbasis0();
-      offset1 += v->nbasis1();
+        for (int j = 0; j != v->nbasis0(); ++j)
+          for (int k = 0; k != v->nbasis1(); ++k) {
+            const int pos = offset + j * v->nbasis1() + k;
+            multipole_[i][pos] = smoment[i]->element(j, k);
+          }
+      }
+
+      offset0_[isp] = offset0_[isp-1] + v->nbasis0();
+      offset1_[isp] = offset1_[isp-1] + v->nbasis1();
+      offset += v->nbasis0() * v->nbasis1();
+      ++isp;
     }
-    assert(offset0 == nbasis0_);
-    assert(offset1 == nbasis1_);
+    assert(multipole_[0].size() == ndim_);
   } else { // shift children's multipoles
-    int offset0 = 0;
-    int offset1 = 0;
+    int ich = 1;
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
       array<double, 3> r12;
       r12[0] = centre_[0] - c->centre(0);
       r12[1] = centre_[1] - c->centre(1);
       r12[2] = centre_[2] - c->centre(2);
-      LocalExpansion shift(r12, c->multipole(), lmax_);
-      vector<shared_ptr<const ZMatrix>> moment = shift.compute_shifted_multipoles();
+      vector<vector<complex<double>>> smoment = shift_multipoles(c->multipole(), r12);
 
       for (int i = 0; i != nmult_; ++i)
-        multipole[i]->copy_block(offset0, offset1, c->nbasis0(), c->nbasis1(), moment[i]->data());
+        multipole_[i].insert(multipole_[i].end(), smoment[i].begin(), smoment[i].end());
 
-      offset0 += c->nbasis0();
-      offset1 += c->nbasis1();
+      offset0_[ich] = offset0_[ich-1] + c->nbasis0();
+      offset1_[ich] = offset1_[ich-1] + c->nbasis1();
+      ++ich;
     }
-    assert(offset0 == nbasis0_);
-    assert(offset1 == nbasis1_);
+    assert(multipole_[0].size() == ndim_);
   }
-
-  for (int i = 0; i != nmult_; ++i)
-    multipole_[i] = multipole[i];
 }
 
 
@@ -314,6 +332,7 @@ void Box::print_box() const {
 }
 
 
+#if 0
 vector<double> Box::get_Mlm(array<double, 3> r12, shared_ptr<const Matrix> den) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
@@ -354,4 +373,50 @@ vector<double> Box::get_Mlm(array<double, 3> r12, shared_ptr<const Matrix> den) 
   }
 
   return out;
+}
+#endif
+
+
+// given O(a) and R(b-a) get O(b)
+vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<double>>> oa, array<double, 3> rab) const {
+
+  const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
+  const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
+  const double phi = atan2(rab[1], rab[0]);
+
+  vector<vector<complex<double>>> ob(nmult_);
+
+  int i1 = 0;
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+
+      vector<complex<double>> ob_lm(oa[0].size());
+      int i2 = 0;
+      for (int j = 0; j <= lmax_; ++j) {
+        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+
+          const int a = l - j;
+          const int b = m - l - k + j;
+          if (abs(b) <= a && a >= 0) {
+            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double ft = 1.0;
+            for (int i = 1; i <= a + abs(b); ++i) {
+              prefactor /= ft;
+              ++ft;
+            }
+            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
+            const double imag = prefactor * sin(abs(b) * phi);
+            const complex<double> coeff(real, imag);
+
+            if (abs(coeff) > numerical_zero__)
+              for (int ib = 0; ib != ob_lm.size(); ++ib)
+                ob_lm[ib] = coeff * oa[i2][ib];
+          }
+        }
+      }
+      ob[i1] = ob_lm;
+    }
+  }
+
+  return ob;
 }

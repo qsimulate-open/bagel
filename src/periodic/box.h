@@ -47,7 +47,7 @@ class Box {
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
     double thresh_, extent_;
-    int nbasis0_, nbasis1_;
+    int nbasis0_, nbasis1_, ndim_;
     int nmult_;
 
 
@@ -58,8 +58,10 @@ class Box {
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
-    std::vector<std::shared_ptr<const ZMatrix>> multipole_;
+    std::vector<std::vector<std::complex<double>>> multipole_;
+    std::vector<int> offset0_, offset1_;
     void compute_multipoles();
+    std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
     std::vector<double> get_Mlm(std::array<double, 3> r12, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
@@ -84,6 +86,7 @@ class Box {
     double extent() const { return extent_; }
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
+    int ndim() const { return ndim_; }
 
     std::shared_ptr<const Box> parent() const { return parent_; }
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
@@ -93,8 +96,8 @@ class Box {
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     std::array<std::shared_ptr<const Shell>, 2> shells(const int i) const { return sp_[i]->shells(); }
 
-    std::vector<std::shared_ptr<const ZMatrix>> multipole() const { return multipole_; }
-    std::shared_ptr<const ZMatrix> multipole(const int i) const { return multipole_[i]; }
+    std::vector<std::vector<std::complex<double>>> multipole() const { return multipole_; }
+    std::vector<std::complex<double>> multipole(const int i) const { return multipole_[i]; }
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion() const { return local_expansion_; }
     std::shared_ptr<const ZMatrix> local_expansion(const int i) const { return local_expansion_[i]; }
 
