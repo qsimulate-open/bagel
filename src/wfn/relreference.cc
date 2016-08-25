@@ -178,24 +178,6 @@ shared_ptr<Reference> RelReference::extract_state(const vector<int> input, const
 }
 
 
-shared_ptr<Reference> RelReference::extract_state(const int istate, const vector<int> input) const {
-  ZFCI_bare fci(ciwfn_);
-  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
-  cout << " * Extracting CI coefficients from RelReference object for state " << istate << "." << endl;
-
-  // Construct a RelCIWfn with only CI coefficients for the desired state
-  auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
-                                        ciwfn_->civectors()->extract_state(istate),
-                                        make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
-
-  // Use extract_average_rdm(...) to get desired RDMs and prepare output
-  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(rdm_state));
-  return make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
-}
-
-
 // TODO Cleanup or remove?  Body is mostly the same as ZHarrison::rdm12()
 shared_ptr<Reference> RelReference::extract_average_rdm(const vector<int> rdm_state) const {
   ZFCI_bare fci(ciwfn_);

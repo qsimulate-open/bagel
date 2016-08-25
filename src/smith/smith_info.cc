@@ -57,10 +57,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   if (ref_->nstate() != 1) {
     if (idata->get<bool>("extract_civectors", false)) {
       vector<int> states = idata->get_vector<int>("extract_state");
-      if (idata->get<bool>("extract_single_state", false))
-        ref_ = extract_ref(idata->get<int>("istate",0), states);
-      else
-        ref_ = extract_ref(states, idata->get<bool>("extract_average_rdms", true));
+      ref_ = extract_ref(states, idata->get<bool>("extract_average_rdms", true));
     } else if (idata->get<bool>("extract_average_rdms", false)) {
       vector<int> states = idata->get_vector<int>("extract_state");
       ref_ = ref_->extract_average_rdm(states);
@@ -179,28 +176,12 @@ shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> d
 
 
 template<>
-shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, const vector<int> dummy2) const {
-  return ref_;
-}
-
-
-template<>
 shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> states, const bool extract_rdm) const {
   shared_ptr<const Reference> out = ref_;
   cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
   out = ref_->extract_state(states, extract_rdm);
   return out;
 }
-
-template<>
-shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {
-  shared_ptr<const Reference> out = ref_;
-  const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-  cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
-  out = ref_->extract_state(istate, rdm_states);
-  return out;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
