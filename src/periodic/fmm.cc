@@ -244,12 +244,11 @@ void FMM::L2L() {
 
 shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) const {
 
-  const size_t nbasis = geom_->nbasis();
-  auto out = make_shared<ZMatrix>(nbasis, nbasis);
+  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
 
   if (density) {
-    assert(nbasis == density->ndim());
+    assert(nbasis_ == density->ndim());
     vector<double> maxden(nsp_);
     const double* density_data = density->data();
     for (int i01 = 0; i01 != nsp_; ++i01) {
@@ -275,7 +274,7 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
       *out += *ei;
     }
 
-    for (int i = 0; i != nbasis; ++i) out->element(i, i) *= 2.0;
+    for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
   }
 
