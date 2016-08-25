@@ -63,7 +63,7 @@ class Box {
     void compute_multipoles();
     std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
     std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
-    std::vector<double> get_Mlm(std::array<double, 3> r12, std::shared_ptr<const Matrix> den) const;
+    std::vector<std::complex<double>> get_Mlm(std::array<double, 3> r12, std::vector<double> den) const;
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
 
 

@@ -332,20 +332,19 @@ void Box::print_box() const {
 }
 
 
-#if 0
-vector<double> Box::get_Mlm(array<double, 3> r12, shared_ptr<const Matrix> den) const {
+vector<complex<double>> Box::get_Mlm(array<double, 3> r12, vector<double> den) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
 
-  vector<double> out(nmult_);
+  vector<complex<double>> out(nmult_);
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      ZMatrix local(nbasis0_, nbasis1_);
+      vector<complex<double>> local(ndim_);
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -363,18 +362,19 @@ vector<double> Box::get_Mlm(array<double, 3> r12, shared_ptr<const Matrix> den) 
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
 
-          zaxpy_(nbasis0_ * nbasis1_, coeff, multipole_[i2]->data(), 1, local.data(), 1);
+          transform(multipole_[i2].begin(), multipole_[i2].end(), local.begin(), bind1st(multiplies<complex<double>>(), coeff));
         }
       }
-      assert(i2 == nmult_);
-      assert(local.get_imag_part()->rms() < 1e-15);
-      out[i1] = local.get_real_part()->dot_product(*den);
+      assert(local.size() == den.size());
+      //out[i1] = inner_product(local.begin(), local.end(), den.begin(), 0);
+      out[i1] = 0;
+      for (int i = 0; i != ndim_; ++i)
+        out[i1] += local[i]*den[i];
     }
   }
 
   return out;
 }
-#endif
 
 
 // given O(a) and R(b-a) get O(b)
