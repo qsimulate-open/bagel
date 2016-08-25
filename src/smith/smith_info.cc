@@ -54,12 +54,17 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   if (ciwfn()->nstates() > 1)
     cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
 
-  if (idata->get<bool>("extract_average_rdms", false) && ref_->nstate() != 1) {
-    vector<int> rdm_states = idata->get_vector<int>("rdm_state");
-    if (idata->get<bool>("extract_single_state", false))
-      ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
-    else
-      ref_ = extract_ref(rdm_states);
+  if (ref_->nstate() != 1) {
+    if (idata->get<bool>("extract_civectors", false)) {
+      vector<int> states = idata->get_vector<int>("extract_state");
+      if (idata->get<bool>("extract_single_state", false))
+        ref_ = extract_ref(idata->get<int>("istate",0), states);
+      else
+        ref_ = extract_ref(states, idata->get<bool>("extract_average_rdms", true));
+    } else if (idata->get<bool>("extract_average_rdms", false)) {
+      vector<int> states = idata->get_vector<int>("extract_state");
+      ref_ = ref_->extract_average_rdm(states);
+    }
   }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
@@ -168,7 +173,7 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
 
 
 template<>
-shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> dummy2) const {
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> dummy2, const bool dummy) const {
   return ref_;
 }
 
@@ -180,10 +185,10 @@ shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, co
 
 
 template<>
-shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> rdm_states) const {
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> states, const bool extract_rdm) const {
   shared_ptr<const Reference> out = ref_;
   cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
-  out = ref_->extract_state(rdm_states);
+  out = ref_->extract_state(states, extract_rdm);
   return out;
 }
 
