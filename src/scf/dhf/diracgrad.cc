@@ -45,13 +45,13 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
   // density matrix
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, 2*ref->nocc());
+  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, 2*ref->nclosed() + ref->nact());
   auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
 
   // energy-weighted density matrix
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
   const VectorB& eig = ref->eig();
-  for (int i = 0; i != 2*ref->nocc(); ++i)
+  for (int i = 0; i != 2*ref->nclosed() + ref->nact(); ++i)
     zscal_(ecoeff->ndim(), eig(i), ecoeff->element_ptr(0, i), 1);
   auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
 
@@ -136,7 +136,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     array<shared_ptr<const Matrix>, 4> trocoeff;
     array<shared_ptr<const Matrix>, 4> tiocoeff;
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), 2*ref->nocc());
+      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), 2*ref->nclosed() + ref->nact());
       rocoeff[i] = ocoeff->get_real_part();
       iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();
