@@ -60,12 +60,14 @@ class RelDvector {
     std::shared_ptr<RelDvector<DataType>> copy() const;
 
     std::shared_ptr<RelDvector<DataType>> extract_state(const int istate) const;
+    std::shared_ptr<RelDvector<DataType>> extract_state(const std::vector<int> input) const;
 
     std::shared_ptr<Dvector<DataType>> find(int a, int b) { return dvecs_.at({a, b}); }
     std::shared_ptr<const Dvector<DataType>> find(int a, int b) const { return dvecs_.at({a, b}); }
 
     std::shared_ptr<const Space_base> space() const { return space_; }
     MapType dvecs() { return dvecs_; }
+    const MapType dvecs() const { return dvecs_; }
 
     void set_data(const int istate, std::shared_ptr<const RelDvector<DataType>> o);
 

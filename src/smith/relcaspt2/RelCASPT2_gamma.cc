@@ -26,7 +26,7 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 #include <src/smith/relcaspt2/RelCASPT2.h>
-#include <src/smith/relcaspt2/RelCASPT2_tasks1.h>
+#include <src/smith/relcaspt2/RelCASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;
@@ -186,22 +186,22 @@ shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma32_() {
   return make_shared<FutureTensor>(*Gamma32, task16);
 }
 
-shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma34_() {
-  vector<IndexRange> Gamma34_index = {active_, active_, active_, active_};
-  auto Gamma34 = make_shared<Tensor>(Gamma34_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma34, rdm1_, rdm2_, rdm3_, f1_};
-  auto task17 = make_shared<Task17>(tensor17, pindex);
-  return make_shared<FutureTensor>(*Gamma34, task17);
-}
-
 shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma35_() {
   vector<IndexRange> Gamma35_index = {active_, active_, active_, active_};
   auto Gamma35 = make_shared<Tensor>(Gamma35_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma35, rdm1_, rdm2_};
+  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma35, rdm1_, rdm2_};
+  auto task17 = make_shared<Task17>(tensor17, pindex);
+  return make_shared<FutureTensor>(*Gamma35, task17);
+}
+
+shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma34_() {
+  vector<IndexRange> Gamma34_index = {active_, active_, active_, active_};
+  auto Gamma34 = make_shared<Tensor>(Gamma34_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma34, rdm1_, rdm2_, rdm3_, f1_};
   auto task18 = make_shared<Task18>(tensor18, pindex);
-  return make_shared<FutureTensor>(*Gamma35, task18);
+  return make_shared<FutureTensor>(*Gamma34, task18);
 }
 
 shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma37_() {
@@ -294,13 +294,13 @@ shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma90_() {
   return make_shared<FutureTensor>(*Gamma90, task28);
 }
 
-shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma109_() {
-  vector<IndexRange> Gamma109_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma109 = make_shared<Tensor>(Gamma109_index);
+shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma143_() {
+  vector<IndexRange> Gamma143_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma143 = make_shared<Tensor>(Gamma143_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma109, rdm1_, rdm2_, rdm3_};
+  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma143, rdm1_, rdm2_, rdm3_};
   auto task29 = make_shared<Task29>(tensor29, pindex);
-  return make_shared<FutureTensor>(*Gamma109, task29);
+  return make_shared<FutureTensor>(*Gamma143, task29);
 }
 
 #endif

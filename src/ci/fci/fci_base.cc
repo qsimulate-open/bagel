@@ -176,7 +176,8 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
 template<class CivecType, class DvecType>
 pair<shared_ptr<Matrix>, VectorB> FCI_base<CivecType,DvecType>::natorb_convert() {
   assert(rdm1_av_ != nullptr);
-  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals();
+  const bool occ_sort = idata_->get<bool>("occ_sort", false);
+  pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals(occ_sort);
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
   for (auto& i : natorb.second)

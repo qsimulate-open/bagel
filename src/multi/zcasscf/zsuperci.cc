@@ -200,7 +200,7 @@ void ZSuperCI::compute() {
     cout << " " << endl;
     cout << "    * Printing out population analysis of super-CI optimized orbitals to casscf.log" << endl;
     mute_stdcout();
-    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_, nclosed_, nact_);
+    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
     resume_stdcout();
     pop_timer.tick_print("population analysis");
   }

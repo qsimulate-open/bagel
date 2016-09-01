@@ -40,9 +40,11 @@ mrci/MRCI_gen7.cc mrci/MRCI_gen8.cc mrci/MRCI_gen9.cc mrci/MRCI_gen10.cc mrci/MR
 mrci/MRCI_gen13.cc mrci/MRCI_gen14.cc mrci/MRCI_gen15.cc mrci/MRCI_gen16.cc mrci/MRCI_gen17.cc mrci/MRCI_gen18.cc \
 mrci/MRCI_gen19.cc mrci/MRCI_gen20.cc \
 \
-relcaspt2/RelCASPT2.cc relcaspt2/RelCASPT2_gamma.cc relcaspt2/RelCASPT2_residualq.cc relcaspt2/RelCASPT2_sourceq.cc \
+relcaspt2/RelCASPT2.cc relcaspt2/RelCASPT2_gamma.cc relcaspt2/RelCASPT2_residualq.cc relcaspt2/RelCASPT2_normq.cc relcaspt2/RelCASPT2_sourceq.cc \
 relcaspt2/RelCASPT2_gen1.cc relcaspt2/RelCASPT2_gen2.cc relcaspt2/RelCASPT2_gen3.cc relcaspt2/RelCASPT2_gen4.cc relcaspt2/RelCASPT2_gen5.cc \
+relcaspt2/RelCASPT2_gen6.cc \
 relcaspt2/RelCASPT2_tasks1.cc relcaspt2/RelCASPT2_tasks2.cc relcaspt2/RelCASPT2_tasks3.cc relcaspt2/RelCASPT2_tasks4.cc relcaspt2/RelCASPT2_tasks5.cc \
+relcaspt2/RelCASPT2_tasks6.cc \
 \
 relmrci/RelMRCI.cc relmrci/RelMRCI_gamma.cc relmrci/RelMRCI_sourceq.cc relmrci/RelMRCI_normq.cc \
 relmrci/RelMRCI_residualq1.cc relmrci/RelMRCI_residualq2.cc relmrci/RelMRCI_residualq3.cc \

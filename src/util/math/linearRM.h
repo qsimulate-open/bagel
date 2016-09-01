@@ -35,7 +35,7 @@
 
 namespace bagel {
 
-template<typename T>
+template<typename T, typename MatType = Matrix>
 class LinearRM {
 
   protected:
@@ -47,14 +47,14 @@ class LinearRM {
     const std::shared_ptr<const T> grad_;
 
     // contains
-    std::shared_ptr<Matrix> mat_;
-    std::shared_ptr<Matrix> vec_;
-    std::shared_ptr<Matrix> prod_;
+    std::shared_ptr<MatType> mat_;
+    std::shared_ptr<MatType> vec_;
+    std::shared_ptr<MatType> prod_;
 
   public:
     LinearRM(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad) {
-      mat_ = std::make_shared<Matrix>(max_, max_);
-      prod_ = std::make_shared<Matrix>(max_, 1);
+      mat_ = std::make_shared<MatType>(max_, max_);
+      prod_ = std::make_shared<MatType>(max_, 1);
     }
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {

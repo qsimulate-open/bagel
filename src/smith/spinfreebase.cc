@@ -171,7 +171,7 @@ void SpinFreeMethod<double>::rotate_xms() {
 
   // construct Reference
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
-                                        info_->nvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
+                                        info_->nvirt() + info_->nfrozenvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
 
   // construct SMITH_info
@@ -185,7 +185,80 @@ void SpinFreeMethod<double>::rotate_xms() {
 
 template<>
 void SpinFreeMethod<complex<double>>::rotate_xms() {
-  assert(false);
+  assert(fockact_);
+  const int nstates = info_->ciwfn()->nstates();
+  ZMatrix fmn(nstates, nstates);
+
+  for (int ist = 0; ist != nstates; ++ist) {
+    for (int jst = 0; jst <= ist; ++jst) {
+      // first compute 1RDM
+      shared_ptr<const Kramers<2,ZRDM<1>>> krdm1;
+      tie(krdm1, ignore) = info_->rdm12(jst, ist);
+      shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
+      // then assign the dot product: fmn=fij rdm1
+      fmn(jst, ist) = blas::dot_product_noconj(fockact_->data(), fockact_->size(), rdm1->data());
+      assert(fockact_->size() == rdm1->size());
+      fmn(ist, jst) = std::conj(fmn(jst, ist));
+#ifndef NDEBUG
+      tie(krdm1, ignore) = info_->rdm12(ist, jst);
+      rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
+      assert(std::abs(fmn(ist, jst) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
+#endif
+    }
+  }
+
+  // diagonalize fmn
+  VectorB eig(nstates);
+  fmn.diagonalize(eig);
+
+  cout << endl;
+  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl;
+  cout << "      Rotation matrix:";
+  for (int ist = 0; ist != nstates; ++ist) {
+    cout << endl << "      ";
+    for (int jst = 0; jst != nstates; ++jst)
+      cout << setw(20) << setprecision(10) << fmn(ist, jst);
+  }
+  cout << endl << endl;
+
+  // construct CIWfn
+  // TODO:  Verify this chunk of code carefully
+  shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
+  shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
+  shared_ptr<RelZDvec> new_dvec = dvec->clone();
+
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
+
+  for (auto& i: dvecs) {
+    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
+    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
+    for (int jst =0; jst != nstates; ++jst)
+      for (int ist =0; ist != nstates; ++ist)
+        new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(ciwfn->nstates());
+  for (int i = 0; i != ciwfn->nstates(); ++i)
+    energies[i] = ciwfn->energy(i);
+  auto new_ciwfn = make_shared<RelCIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
+                                         energies, new_dvec, ciwfn->det());
+
+  // construct Reference
+  auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
+  auto relcoeff = dynamic_pointer_cast<const RelCoeff_Block>(info_->coeff());
+  assert(relref && relcoeff);
+  auto new_ref = make_shared<RelReference>(info_->geom(), relcoeff->striped_format(), relref->energy(),
+                                           relref->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(), 
+                                           info_->gaunt(), info_->breit(), /*kramers*/true,
+                                           relref->rdm1_av(), relref->rdm2_av(), new_ciwfn);
+
+  // construct SMITH_info
+  info_ = make_shared<SMITH_Info<complex<double>>>(new_ref, info_);
+
+  // update eref_
+  eref_ = make_shared<ZMatrix>(fmn % (*eref_) *fmn);
+  xmsmat_ = make_shared<ZMatrix>(move(fmn));
 }
 
 

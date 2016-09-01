@@ -26,6 +26,7 @@
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/qvec.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/dhf/population_analysis.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/prop/hyperfine.h>
 
@@ -110,9 +111,8 @@ void CASBFGS1::compute() {
     if (iter == 0) {
       // BFGS and DIIS should start at the same time
       shared_ptr<const RotFile> denom = compute_denom(cfock, afock, qxr);
-      bfgs = make_shared<SRBFGS<RotFile>>(denom);
       const double trust_rad = idata_->get<double>("trust_radius", 0.4);
-      bfgs->initiate_trust_radius(trust_rad);
+      bfgs = make_shared<SRBFGS<RotFile>>(denom, trust_rad);
     }
     onebody.tick_print("One body operators");
 
@@ -198,5 +198,17 @@ void CASBFGS1::compute() {
   if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
     HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
     hfcc.compute();
+  }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
+    mute_stdcout();
+    auto ovl = make_shared<Overlap>(geom_);
+    population_analysis(geom_, *coeff_, ovl);
+    resume_stdcout();
+    pop_timer.tick_print("population analysis");
   }
 }

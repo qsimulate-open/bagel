@@ -60,16 +60,16 @@ class SRBFGS {
     double rk_;
     double level_shift_;
     double prev_level_shift_;
-    const bool debug_;
     const int hebden_iter_ = 75;
-    const int maxiter_ = 300;
     // default convergence parameters taken from JSY
+    const double alpha_ = 1.3;
     const double rmin_ = 0.6;
     const double rgood_ = 0.85;
-    const double alpha_ = 1.3;
+    const bool debug_;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
+    SRBFGS(std::shared_ptr<const T> _denom, const double rad = 0.4, const int _hebden_iter = 75, const double _alpha = 1.3, 
+           const bool _debug = false) : denom_(_denom), trust_radius_(rad), hebden_iter_(_hebden_iter), alpha_(_alpha), debug_(_debug) {}
 
     std::shared_ptr<const T> denom() const { return denom_; }
     std::vector<std::shared_ptr<const T>> delta() { return delta_; }
@@ -82,11 +82,6 @@ class SRBFGS {
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
     double level_shift() const { return level_shift_; }
     double prev_level_shift() const { return prev_level_shift_; }
-
-    void initiate_trust_radius(const double rad = 0.4) {
-      trust_radius_ = rad;
-    }
-
 
     // returns Hessian * value as part of the restricted step procedure ; should be called after extrapolate
     std::shared_ptr<T> interpolate_hessian(std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift, const bool update = false) {
@@ -446,11 +441,7 @@ class SRBFGS {
       // to make sure, inputs are copied
       auto grad  = std::make_shared<const T>(*_grad);
       auto value  = std::make_shared<const T>(*_value);
-
-      // initialize trust radius
-      if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius();
-      }
+      assert(trust_radius_ != 0.0);
 
       // compute Newton step and compare norm to trust radius
       auto acopy = two_loop_inverse_hessian(grad);
@@ -487,10 +478,7 @@ class SRBFGS {
       // to be sure; inputs are copied
       auto grad  = std::make_shared<T>(*_grad);
       auto value  = std::make_shared<T>(*_value);
-
-      if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius();
-      }
+      assert(trust_radius_ != 0.0);
 
       auto p = two_loop_inverse_hessian(grad);
       p->scale(-1.0);

@@ -26,6 +26,8 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
+#include <src/scf/dhf/population_analysis.h>
+#include <src/util/muffle.h>
 
 using namespace bagel;
 using namespace std;
@@ -176,6 +178,13 @@ void RHF::compute() {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
+  }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    cout << "    * Printing out population analysis to rhf.log" << endl;
+    Muffle muf ("rhf.log");
+    population_analysis(geom_, *coeff_, overlap_);
   }
 }
 

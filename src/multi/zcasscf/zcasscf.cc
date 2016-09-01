@@ -128,7 +128,7 @@ void ZCASSCF::init() {
 
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)
-    throw runtime_error("two many closed orbitals in the input");
+    throw runtime_error("too many closed orbitals in the input");
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
@@ -155,7 +155,6 @@ void ZCASSCF::init() {
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
 
-  cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
   cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
@@ -193,6 +192,7 @@ void ZCASSCF::init() {
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
   resume_stdcout();
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
@@ -245,7 +245,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
 #ifndef NDEBUG
     // Failures here can sometimes be fixed by using a tighter convergence threshold in the FCI part
     auto quatrdm = static_pointer_cast<const QuatMatrix>(tmp);
-    assert(quatrdm->is_t_symmetric());
+    assert(quatrdm->is_t_symmetric(1.0e-6));
 #endif
   } else {
     tmp = make_shared<ZMatrix>(*rdm1);
@@ -288,9 +288,10 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
         for (int i = 0; i != tmp->ndim()/2; ++i) {
           // first find the source column
           tuple<int, double> max = make_tuple(-1, 0.0);
-          for (int j = 0; j != tmp->ndim()/2; ++j)
+          for (int j = 0; j != tmp->ndim(); ++j) {
             if (std::abs(tmp->element(i,j)) > get<1>(max))
               max = make_tuple(j, std::abs(tmp->element(i,j)));
+          }
 
           // register to emap
           if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
