@@ -53,7 +53,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double thresh_micro_;
     bool conv_ignore_;
     bool natocc_;
-    bool occ_sort_;
+    bool sort_by_coeff_;
 
     VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;

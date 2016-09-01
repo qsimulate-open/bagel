@@ -44,7 +44,7 @@ void CASSecond::compute() {
       Timer fci_time(0);
       fci_->compute();
       fci_->compute_rdm12();
-      auto natorb = fci_->natorb_convert(occ_sort_);
+      auto natorb = fci_->natorb_convert(sort_by_coeff_);
       coeff_ = update_coeff(coeff_, natorb.first);
       occup_ = natorb.second;
       fci_time.tick_print("FCI and RDMs");

@@ -110,8 +110,8 @@ void ZCASSCF::init() {
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc",false);
-  // sorting algorithm used for natural orbitals (occupation number of orbital coefficients)
-  occ_sort_ = idata_->get<bool>("occ_sort", false);
+  // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
+  sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -268,21 +268,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     out = tmp->clone();
 
     if (tsymm_) {
-      if (occ_sort_) {
-        // sort by natural orbital occupation numbers
-        int b2n = out->ndim();
-        for (int i = 0; i != out->mdim()/2; ++i) {
-          copy_n(tmp->element_ptr(0, out->mdim()/2-1-i), b2n, out->element_ptr(0, i));
-          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i+b2n/2));
-          vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
-          vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
-        }
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          if (real(out->element(i,i)) < 0.0)
-            blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
-        }
-      } else {
+      if (sort_by_coeff_) {
         // sort eigenvectors so that buf is close to a unit matrix
         // assumes quaternion symmetry - only the top-left quarter is checked
         // target column
@@ -305,28 +291,24 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
           vec2[i] = vec[get<0>(max)];
           vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
         }
-
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          if (real(out->element(i,i)) < 0.0)
-          blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
+      } else {
+        // sort by natural orbital occupation numbers
+        int b2n = out->ndim();
+        for (int i = 0; i != out->mdim()/2; ++i) {
+          copy_n(tmp->element_ptr(0, out->mdim()/2-1-i), b2n, out->element_ptr(0, i));
+          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i+b2n/2));
+          vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
+          vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
         }
+      }
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        if (real(out->element(i,i)) < 0.0)
+        blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
       }
     } else {
       // assumes no particular symmetry - the full matrix is checked
-      if (occ_sort_) {
-        // sort by natural orbital occupation numbers
-        int b2n = out->ndim();
-        for (int i = 0; i != out->mdim(); ++i) {
-          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i));
-          vec2[b2n-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
-        }
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          const double phase = std::arg(out->element(i,i));
-          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
-        }
-      } else {
+      if (sort_by_coeff_) {
         // target column
         for (int i = 0; i != tmp->ndim(); ++i) {
           // first find the source column
@@ -344,12 +326,18 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
           copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
           vec2[i] = vec[get<0>(max)];
         }
-
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          const double phase = std::arg(out->element(i,i));
-          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
+      } else {
+        // sort by natural orbital occupation numbers
+        int b2n = out->ndim();
+        for (int i = 0; i != out->mdim(); ++i) {
+          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i));
+          vec2[b2n-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
         }
+      }
+      // fix the phase
+      for (int i = 0; i != tmp->ndim(); ++i) {
+        const double phase = std::arg(out->element(i,i));
+        blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
       }
     }
 

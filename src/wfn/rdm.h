@@ -106,7 +106,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return nullptr;
     }
 
-    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals(const bool occ_sort = false) const {
+    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals(const bool sort_by_coeff = true) const {
       throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
       return std::pair<std::shared_ptr<Matrix>, VectorB>();
     }

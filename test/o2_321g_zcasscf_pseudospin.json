@@ -24,7 +24,7 @@
 {
   "title" : "zcasscf",
   "algorithm" : "bfgs",
-  "occ_sort" : "true",
+  "sort_by_coeff" : "false",
   "charge" : "-1",
   "state" : [0,4,0,1],
   "maxiter" : 80,

@@ -19,7 +19,7 @@
 {
   "title" : "zcasscf",
   "algorithm" : "hybrid",
-  "occ_sort" : "true",
+  "sort_by_coeff" : "false",
   "breit" : true,
   "gaunt" : true,
   "state" : [0,0,1],
