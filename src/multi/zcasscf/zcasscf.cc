@@ -110,6 +110,8 @@ void ZCASSCF::init() {
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc",false);
+  // sorting algorithm used for natural orbitals (occupation number of orbital coefficients)
+  occ_sort_ = idata_->get<bool>("occ_sort", false);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -265,9 +267,8 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
     map<int,int> emap;
     out = tmp->clone();
 
-    const bool occ_sort = idata_->get<bool>("occ_sort",false);
     if (tsymm_) {
-      if (occ_sort) {
+      if (occ_sort_) {
         // sort by natural orbital occupation numbers
         int b2n = out->ndim();
         for (int i = 0; i != out->mdim()/2; ++i) {
@@ -313,7 +314,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<con
       }
     } else {
       // assumes no particular symmetry - the full matrix is checked
-      if (occ_sort) {
+      if (occ_sort_) {
         // sort by natural orbital occupation numbers
         int b2n = out->ndim();
         for (int i = 0; i != out->mdim(); ++i) {

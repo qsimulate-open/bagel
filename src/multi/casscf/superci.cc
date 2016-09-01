@@ -70,7 +70,7 @@ void SuperCI::compute() {
     energy_ = fci_->energy();
 
     // here make a natural orbitals and update the coefficients
-    const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert();
+    const pair<shared_ptr<Matrix>, VectorB> natorb = fci_->natorb_convert(occ_sort_);
     coeff_ = update_coeff(coeff_, natorb.first);
     occup_ = natorb.second;
     if (natocc_) print_natocc();

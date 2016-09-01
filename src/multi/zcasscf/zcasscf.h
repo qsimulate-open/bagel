@@ -48,6 +48,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool gaunt_;
     bool breit_;
     bool natocc_;
+    bool occ_sort_;
 
     // enforce time-reversal symmetry
     bool tsymm_;
