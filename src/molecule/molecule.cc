@@ -381,9 +381,6 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   // debug output
   const int primsize = out.size();
   const int cartsize = 3*natom();
-  int ninternal = max(cartsize-6,1);
-  if (primsize < ninternal)
-    throw runtime_error("Too few internal coordinates were identified.  (Note that the transformation to internal coordinates currently cannot handle noncovalent clusters.)");
 
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
@@ -403,6 +400,7 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
+  int ninternal = max(cartsize-6,1);
   for (int i = 0; i != ninternal; ++i) {
     eig(i) *= -1.0;
     if (eig(i) < 1.0e-10)
