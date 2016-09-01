@@ -37,6 +37,7 @@ using namespace bagel;
 
 template<>
 shared_ptr<GradFile> GradEval<Dirac>::compute() {
+  assert(ref_->nact() == 0);
   geom_ = task_->geom();
 
   Timer timer;
