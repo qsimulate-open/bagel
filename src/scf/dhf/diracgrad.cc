@@ -47,6 +47,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
   shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, 2*ref->nocc());
   auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
+  if (ref->gaunt())
+    throw runtime_error("Dirac--Hartree--Fock gradients are currently unavailable with the Gaunt or full Breit interaction.");
 
   // energy-weighted density matrix
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
