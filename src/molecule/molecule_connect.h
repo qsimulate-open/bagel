@@ -77,6 +77,39 @@ static double adf_rho(std::shared_ptr<const Node> i, std::shared_ptr<const Node>
   return std::exp(- i->atom()->distance(j->atom()) / (i->atom()->cov_radius()+j->atom()->cov_radius()) + 1.0);
 }
 
+
+bool is_one_molecule(std::list<std::shared_ptr<Node>> nodes)  {
+  std::list<std::shared_ptr<Node>> disconnected = nodes;
+  std::list<std::shared_ptr<Node>> connected;
+  std::list<std::shared_ptr<Node>> newly_added;
+  connected.push_back(*nodes.begin());
+  newly_added.push_back(*nodes.begin());
+  disconnected.erase(disconnected.begin());
+  bool done = false;
+
+  auto add_connected = [&connected, &disconnected, &newly_added, &done] () {
+    std::list<std::shared_ptr<Node>> added;
+    done = true;
+    for (auto i = newly_added.begin(); i != newly_added.end(); ++i) {
+      for (auto j = disconnected.begin(); j != disconnected.end(); ++j) {
+        if ((*i)->connected_with(*j)) {
+          done = false;
+          added.push_back(*j);
+          connected.push_back(*j);
+          disconnected.erase(j);
+        }
+      }
+    }
+    newly_added = added;
+  };
+
+  while (!done) {
+    add_connected();
+  }
+
+  return (disconnected.size() == 0);
+}
+
 }
 }
 

@@ -298,9 +298,8 @@ void DFock::driver(array<shared_ptr<const Matrix>,4> rocoeff,  array<shared_ptr<
     timer.tick_print(printtag + ": J operator");
   }
 
-  // this is for gradient calculations
+  // Save half-transformed integrals if they will be needed again (e.g., for gradients or 2nd-order CASSCF)
   if (store_half_) {
-    assert(!gaunt_);
     for (auto& i : half_complex_exch)
       i->discard_sum_diff();
     half_ = half_complex_exch;
