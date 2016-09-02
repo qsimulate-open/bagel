@@ -71,6 +71,13 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
 
+  if (nele_ % 2 != 0) {
+    if (geom_->nonzero_magnetic_field())
+      cout << "   ***  Dirac--Hartree--Fock is not recommended for odd electron counts.  State-averaged CASSCF can better handle near-degeneracies.  ***" << endl;
+    else
+      throw runtime_error("Dirac--Hartree--Fock should not be used for odd electron counts, due to ground state degeneracy.  State-averaged CASSCF is recommended.");
+  }
+
   multipole_print_ = idata->get<int>("multipole", 1);
 
   if (!geom_->magnetism()) {

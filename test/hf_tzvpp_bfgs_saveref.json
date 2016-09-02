@@ -40,7 +40,7 @@
   "algorithm" : "bfgs",
   "load_ref" : "true",
   "ref_in" : "zcas_test",
-  "occ_sort" : "true",
+  "sort_by_coeff" : "false",
   "only_electrons" : "true",
   "state" : [1],
   "thresh" : 5.0e-7,

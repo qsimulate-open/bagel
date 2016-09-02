@@ -174,9 +174,8 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
 
 // note that this does not transform internal integrals (since it is not needed in CASSCF).
 template<class CivecType, class DvecType>
-pair<shared_ptr<Matrix>, VectorB> FCI_base<CivecType,DvecType>::natorb_convert() {
+pair<shared_ptr<Matrix>, VectorB> FCI_base<CivecType,DvecType>::natorb_convert(const bool occ_sort) {
   assert(rdm1_av_ != nullptr);
-  const bool occ_sort = idata_->get<bool>("occ_sort", false);
   pair<shared_ptr<Matrix>, VectorB> natorb = rdm1_av_->generate_natural_orbitals(occ_sort);
   update_rdms(natorb.first);
   jop_->update_1ext_ints(natorb.first);
