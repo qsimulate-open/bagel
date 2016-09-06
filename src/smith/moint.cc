@@ -310,6 +310,7 @@ void MOFock<complex<double>>::init() {
   auto newcoeff = coeff_->copy();
   if (nclosed > 1) {
     auto fcl = make_shared<QuatMatrix>(*forig.get_submatrix(0, 0, (ncore+nclosed)*2, (ncore+nclosed)*2));
+    assert(fcl->is_t_symmetric(1.0e-6));
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
   }
@@ -317,7 +318,9 @@ void MOFock<complex<double>>::init() {
   const int nvirtall = nvirt+info_->nfrozenvirt();
   if (nvirtall > 1) {
     auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirtall*2, nvirtall*2));
+    assert(fvirt->is_t_symmetric(1.0e-6));
     fvirt->diagonalize(eig);
+
     const ZMatrix crot = coeff_->slice(nocc*2, (nocc+nvirtall)*2) * *fvirt;
     newcoeff->copy_block(0, nocc*2,       newcoeff->ndim(), nvirt, crot.slice(0, nvirt));
     newcoeff->copy_block(0, nocc*2+nvirt, newcoeff->ndim(), nvirt, crot.slice(nvirtall, nvirtall+nvirt));
