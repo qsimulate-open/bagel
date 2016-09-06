@@ -107,6 +107,8 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (nstates > 1 && info_->do_xms())
     rotate_xms();
 
+  eref_->print("Reference energies in XMS basis");
+
   // rdms.
   if (info_->ciwfn()) {
     feed_rdm_denom();
@@ -136,6 +138,8 @@ void SpinFreeMethod<double>::rotate_xms() {
       fmn(jst, ist) = fmn(ist, jst);
     }
   }
+
+  fmn.print("State-averaged Fock matrix over basis states");
 
   // diagonalize fmn
   VectorB eig(nstates);
@@ -207,6 +211,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
     }
   }
 
+  fmn.print("State-averaged Fock matrix over basis states");
   // diagonalize fmn
   VectorB eig(nstates);
   fmn.diagonalize(eig);
