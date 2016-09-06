@@ -123,14 +123,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // used in SA-CASSCF
     int nstate() const { return energy_.size(); }
 
-    // To get a single-state reference from multi-state CASSCF - for running single-state CASPT2
-    virtual std::shared_ptr<Reference> extract_state(const int istate, const std::vector<int> rdm_state = std::vector<int>()) const {
-      throw std::runtime_error("Reference::extract_state(...) has only been implemented for relativistic wavefunctions.");
-      return nullptr;
-    }
-
     // To extract some states from the reference, and get RDMs averaged over all the retained states
-    virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state = std::vector<int>()) const {
+    virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state, const bool extract_rdm) const {
       throw std::runtime_error("Reference::extract_state(...) has only been implemented for relativistic wavefunctions.");
       return nullptr;
     }
