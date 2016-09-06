@@ -62,8 +62,11 @@ class Box {
     std::vector<int> offset0_, offset1_;
     void compute_multipoles();
     std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
-    std::vector<std::shared_ptr<const ZMatrix>> local_expansion_; // size = ninter_
+    std::vector<std::complex<double>> Mlm_;
+    std::vector<std::vector<std::complex<double>>> Mlmts_;
     std::vector<std::complex<double>> get_Mlm(std::array<double, 3> r12, std::vector<double> den) const;
+    std::vector<std::vector<std::complex<double>>> get_Mlmts(std::array<double, 3> r12, std::vector<double> den) const;
+    void compute_local_expansions(std::shared_ptr<const Matrix> density);
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
 
 
@@ -87,6 +90,8 @@ class Box {
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
     int ndim() const { return ndim_; }
+    std::vector<int> offset0() const { return offset0_; }
+    std::vector<int> offset1() const { return offset1_; }
 
     std::shared_ptr<const Box> parent() const { return parent_; }
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
@@ -98,8 +103,8 @@ class Box {
 
     std::vector<std::vector<std::complex<double>>> multipole() const { return multipole_; }
     std::vector<std::complex<double>> multipole(const int i) const { return multipole_[i]; }
-    std::vector<std::shared_ptr<const ZMatrix>> local_expansion() const { return local_expansion_; }
-    std::shared_ptr<const ZMatrix> local_expansion(const int i) const { return local_expansion_[i]; }
+    std::vector<std::complex<double>> Mlm() const { return Mlm_; }
+    std::vector<std::vector<std::complex<double>>> Mlmts() const { return Mlmts_; }
 
     void print_box() const;
 };
