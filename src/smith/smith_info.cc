@@ -178,7 +178,7 @@ shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> d
 template<>
 shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> states, const bool extract_rdm) const {
   shared_ptr<const Reference> out = ref_;
-  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
+  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "MS " : "") << method_ << " for all retained states from a multi-state reference." << endl;
   out = ref_->extract_state(states, extract_rdm);
   return out;
 }
