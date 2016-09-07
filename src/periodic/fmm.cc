@@ -102,8 +102,9 @@ void FMM::get_boxes() {
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
-      idxbox[i] = (int) floor(coordinates_[isp][i]/unitsize_) + ns2/2;
-      assert(idxbox[i] < ns2);
+      const int sign = (coordinates_[isp][i] >= 0) ? 1.0 : -1.0;
+      idxbox[i] = sign * (int) floor(abs(coordinates_[isp][i])/unitsize_) + ns2/2;
+      assert(idxbox[i] <= ns2 && idxbox[i] >= 0);
     }
 
     map<array<int, 3>,int>::iterator box = treemap.find(idxbox);
@@ -148,9 +149,9 @@ void FMM::get_boxes() {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
 
-    for (int i = 0; i != nss2; ++i) {
-      for (int j = 0; j != nss2; ++j) {
-        for (int k = 0; k != nss2; ++k) {
+    for (int i = 0; i != nss2+1; ++i) {
+      for (int j = 0; j != nss2+1; ++j) {
+        for (int k = 0; k != nss2+1; ++k) {
           vector<shared_ptr<const ShellPair>> sp;
           array<int, 3> idxp;
           idxp[0] = (int) floor(0.5*(i+1)) + icntp;
@@ -171,12 +172,14 @@ void FMM::get_boxes() {
               box_.insert(box_.end(), newbox);
               treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
               box_[nbox]->insert_child(box_[ichild]);
+              box_[ichild]->insert_parent(box_[nbox]);
               ++nbox;
               ++nbranch;
             } else {
               const int ibox = treemap.find(idxp)->second;
               box_[ibox]->insert_child(box_[ichild]);
               box_[ibox]->insert_sp(box_[ichild]->sp());
+              box_[ichild]->insert_parent(box_[ibox]);
             }
           }
 

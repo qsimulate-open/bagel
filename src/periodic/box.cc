@@ -103,6 +103,13 @@ void Box::insert_child(shared_ptr<const Box> child) {
 }
 
 
+void Box::insert_parent(shared_ptr<const Box> parent) {
+
+  assert(!parent_);
+  parent_ = parent;
+}
+
+
 void Box::get_neigh(vector<shared_ptr<Box>> box, const int ws) {
 
   neigh_.resize(box.size());
