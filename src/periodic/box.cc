@@ -205,24 +205,24 @@ void Box::compute_multipoles() { // M2M
 }
 
 
-#if 1
 void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + L2L
 
-  // from parent
-  int ip = 0;
-  for (int i = 0; i != parent_->nchild(); ++i) {
-    shared_ptr<const Box> b = parent_->child(i);
-    cout << i << "    " << b->boxid() << "   " << boxid_ << endl;
-    if (b->boxid() == boxid_) {
-      ip = i;
-      break;
-    }
+  // from parent L2L
+  vector<complex<double>> local0;
+  if (parent_ && (parent_->ninter() != 0)) {
+    array<double, 3> rb;
+    rb[0] = parent_->centre(0) - centre_[0];
+    rb[1] = parent_->centre(1) - centre_[1];
+    rb[2] = parent_->centre(2) - centre_[2];
+    local0 = shift_local(parent_->localJ(), rb);
+  } else {
+    local0.resize(nmult_);
+    fill_n(local0.begin(), nmult_, 0);
   }
-  cout << "  ***  " << ip << endl;
 
 
-#if 0
-  // from interaction list
+  // from interaction list M2L
+  vector<complex<double>> local1;
   for (auto& it : inter_) {
     array<double, 3> r12;
     r12[0] = centre_[0] - it->centre(0);
@@ -230,12 +230,25 @@ void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + 
     r12[2] = centre_[2] - it->centre(2);
 
     //TODO: get subden here
+    vector<double> subden;
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> c = child(n);
+      for (auto& i : c->sp()) {
+        shared_ptr<const Matrix> den = density->get_submatrix(i->offset(0), i->offset(1), i->nbasis0(), i->nbasis1());
+        const size_t size = i->nbasis0()*i->nbasis1();
+        vector<double> tmp(size);
+        fill_n(tmp.begin(), size, *den->data());
+        subden.insert(subden.end(), tmp.begin(), tmp.end());
+      }
+    }
+    assert(subden.size() == ndim_);
+    //vector<complex<double>> tmp = get_Mlm_M2L(it->multipole(), r12, subden);
+    //std::transform(local1.begin(), local1.end(), tmp.begin(), local1.begin(), std::plus<complex<double>>);
 
-    //vector<complex<double>> taylor = get_Mlm(r12, subden);
   }
-#endif
+
 }
-#endif
+
 
 shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> density, vector<double> max_den, const double schwarz_thresh) const {
 
@@ -358,7 +371,7 @@ void Box::print_box() const {
 }
 
 
-vector<complex<double>> Box::get_Mlm(array<double, 3> r12, vector<double> den) const { // M2L (P2P) for J
+vector<complex<double>> Box::get_Mlm_M2L(vector<vector<complex<double>>> olm, array<double, 3> r12, vector<double> den) const { // M2L (P2P) for J
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
@@ -388,7 +401,7 @@ vector<complex<double>> Box::get_Mlm(array<double, 3> r12, vector<double> den) c
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
 
-          transform(multipole_[i2].begin(), multipole_[i2].end(), local.begin(), bind1st(multiplies<complex<double>>(), coeff));
+          transform(olm[i2].begin(), olm[i2].end(), local.begin(), bind1st(multiplies<complex<double>>(), coeff));
         }
       }
       assert(local.size() == den.size());
@@ -449,7 +462,7 @@ vector<vector<complex<double>>> Box::get_Mlmts(array<double, 3> r12, vector<doub
 #endif
 
 
-// given O(a) and R(b-a) get O(b)
+// M2M: given O(a) and R(b-a) get O(b)
 vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<double>>> oa, array<double, 3> rab) const {
 
   const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
@@ -491,4 +504,48 @@ vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<doub
   }
 
   return ob;
+}
+
+
+// M2M: given M(r) and R(b) get O(r-b)
+vector<complex<double>> Box::shift_local(vector<complex<double>> mr, array<double, 3> rb) const {
+
+  const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
+  const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
+  const double phi = atan2(rb[1], rb[0]);
+
+  vector<complex<double>> mrb(nmult_);
+
+  int i1 = 0;
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+
+      complex<double> mrb_lm = 0.0;
+      int i2 = 0;
+      for (int j = 0; j <= lmax_; ++j) {
+        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+
+          const int a = j - l;
+          const int b = k - j - m + l;
+          if (abs(b) <= a && a >= 0) {
+            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double ft = 1.0;
+            for (int i = 1; i <= a + abs(b); ++i) {
+              prefactor /= ft;
+              ++ft;
+            }
+            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
+            const double imag = prefactor * sin(abs(b) * phi);
+            const complex<double> coeff(real, imag);
+
+            if (abs(coeff) > numerical_zero__)
+              mrb_lm += coeff * mr[i2];
+          }
+        }
+      }
+      mrb[i1] = mrb_lm;
+    }
+  }
+
+  return mrb;
 }

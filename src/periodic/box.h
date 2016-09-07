@@ -60,12 +60,12 @@ class Box {
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
     std::vector<std::vector<std::complex<double>>> multipole_;
+    std::vector<std::complex<double>> localJ_;
     std::vector<int> offset0_, offset1_;
     void compute_multipoles();
     std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
-    std::vector<std::complex<double>> Mlm_;
-    std::vector<std::vector<std::complex<double>>> Mlmts_;
-    std::vector<std::complex<double>> get_Mlm(std::array<double, 3> r12, std::vector<double> den) const;
+    std::vector<std::complex<double>> shift_local(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
+    std::vector<std::complex<double>> get_Mlm_M2L(std::vector<std::vector<std::complex<double>>> olm, std::array<double, 3> r12, std::vector<double> den) const;
     std::vector<std::vector<std::complex<double>>> get_Mlmts(std::array<double, 3> r12, std::vector<double> den) const;
     void compute_local_expansions(std::shared_ptr<const Matrix> density);
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
@@ -104,8 +104,7 @@ class Box {
 
     std::vector<std::vector<std::complex<double>>> multipole() const { return multipole_; }
     std::vector<std::complex<double>> multipole(const int i) const { return multipole_[i]; }
-    std::vector<std::complex<double>> Mlm() const { return Mlm_; }
-    std::vector<std::vector<std::complex<double>>> Mlmts() const { return Mlmts_; }
+    std::vector<std::complex<double>> localJ() const { return localJ_; }
 
     void print_box() const;
 };

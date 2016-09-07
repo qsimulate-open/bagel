@@ -41,7 +41,7 @@ FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const do
 
   init();
 
-  if (do_ff_)
+  //if (do_ff_)
     M2M();
 }
 
@@ -53,6 +53,14 @@ void FMM::init() {
   const int ns2 = pow(2, ns_);
 
   nsp_ = geom_->nshellpair();
+  cout << "*** NBAS = " << nbasis_ << endl;
+  int ndim = 0;
+  int mdim = 0;
+  for (auto& sp : geom_->shellpairs()) {
+    ndim += sp->nbasis0();
+    mdim += sp->nbasis1();
+  }
+  cout << "N x M = " << ndim << " X " << mdim << endl;
 
 #if 0
   double maxext = 0;
@@ -211,9 +219,11 @@ void FMM::get_boxes() {
 
   int i = 0;
   for (auto& b : box_) {
+    const bool ipar = (b->parent()) ? true : false;
     cout << i << " rank = " << b->rank() << " extent = " << b->extent()
          << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " ninter = " << b->ninter()
-         << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2) << endl;
+         << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
+         << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
     ++i;
   }
 
@@ -249,6 +259,9 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
+
+  for (auto& b : box_)
+    b->compute_local_expansions(density);
 
   if (density) {
     assert(nbasis_ == density->ndim());
