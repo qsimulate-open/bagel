@@ -149,8 +149,25 @@ void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
 }
 
 
+void Box::sort_sp() {
+
+  if (nchild() == 0) return;
+
+  assert(nchild() > 0);
+  vector<shared_ptr<const ShellPair>> newsp;
+  for (int n = 0; n != nchild(); ++n) {
+    shared_ptr<const Box> c = child(n);
+    const vector<shared_ptr<const ShellPair>> csp = c->sp();
+    newsp.insert(newsp.end(), csp.begin(), csp.end());
+  }
+  assert(newsp.size() == nsp());
+  sp_ = newsp;
+}
+
+
 void Box::compute_multipoles() { // M2M
 
+  sort_sp();
   if (nchild() == 0) { // leaf = shift sp's multipoles
     int isp = 1;
     int offset = 0;
@@ -208,45 +225,37 @@ void Box::compute_multipoles() { // M2M
 void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + L2L
 
   // from parent L2L
-  vector<complex<double>> local0;
   if (parent_ && (parent_->ninter() != 0)) {
     array<double, 3> rb;
     rb[0] = parent_->centre(0) - centre_[0];
     rb[1] = parent_->centre(1) - centre_[1];
     rb[2] = parent_->centre(2) - centre_[2];
-    local0 = shift_local(parent_->localJ(), rb);
+    localJ_ = shift_local(parent_->localJ(), rb);
   } else {
-    local0.resize(nmult_);
-    fill_n(local0.begin(), nmult_, 0);
+    localJ_.resize(nmult_);
+    fill_n(localJ_.begin(), nmult_, 0);
   }
 
 
   // from interaction list M2L
-  vector<complex<double>> local1;
   for (auto& it : inter_) {
     array<double, 3> r12;
     r12[0] = centre_[0] - it->centre(0);
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
 
-    //TODO: get subden here
     vector<double> subden;
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> c = child(n);
-      for (auto& i : c->sp()) {
-        shared_ptr<const Matrix> den = density->get_submatrix(i->offset(0), i->offset(1), i->nbasis0(), i->nbasis1());
-        const size_t size = i->nbasis0()*i->nbasis1();
-        vector<double> tmp(size);
-        fill_n(tmp.begin(), size, *den->data());
-        subden.insert(subden.end(), tmp.begin(), tmp.end());
-      }
+    for (auto& i : sp_) {
+      shared_ptr<const Matrix> den = density->get_submatrix(i->offset(0), i->offset(1), i->nbasis0(), i->nbasis1());
+      const size_t size = i->nbasis0()*i->nbasis1();
+      vector<double> tmp(size);
+      fill_n(tmp.begin(), size, *den->data());
+      subden.insert(subden.end(), tmp.begin(), tmp.end());
     }
     assert(subden.size() == ndim_);
-    //vector<complex<double>> tmp = get_Mlm_M2L(it->multipole(), r12, subden);
-    //std::transform(local1.begin(), local1.end(), tmp.begin(), local1.begin(), std::plus<complex<double>>);
-
+    vector<complex<double>> tmp = get_Mlm_M2L(it->multipole(), r12, subden);
+    transform(localJ_.begin(), localJ_.end(), tmp.begin(), localJ_.begin(), std::plus<complex<double>>());
   }
-
 }
 
 
@@ -258,6 +267,19 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
 
 
   // FF: add local expansions
+  vector<complex<double>> ff(ndim_);
+  for (int i = 0; i != nmult_; ++i)
+    transform(multipole_[i].begin(), multipole_[i].end(), ff.begin(), bind1st(multiplies<complex<double>>(), localJ_[i]));
+
+  int pos = 0;
+  for (auto& sp : sp_) {
+    const size_t o0 = sp->offset(0);
+    const size_t o1 = sp->offset(1);
+    for (int i = o0; i != o0+sp->nbasis0(); ++i)
+      for (int j = o1; j != o1+sp->nbasis1(); ++j, ++pos)
+         out->element(i, j) = ff[pos];
+  }
+  assert(pos == ndim_);
 
   int ninteg = 0;
   // NF: 4c integrals

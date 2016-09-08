@@ -63,6 +63,7 @@ class Box {
     std::vector<std::complex<double>> localJ_;
     std::vector<int> offset0_, offset1_;
     void compute_multipoles();
+    void sort_sp();
     std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
     std::vector<std::complex<double>> shift_local(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
     std::vector<std::complex<double>> get_Mlm_M2L(std::vector<std::vector<std::complex<double>>> olm, std::array<double, 3> r12, std::vector<double> den) const;
