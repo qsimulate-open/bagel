@@ -171,8 +171,6 @@ void Box::compute_multipoles() { // M2M
   if (nchild() == 0) { // leaf = shift sp's multipoles
     int isp = 1;
     int offset = 0;
-    offset0_.resize(nsp());  fill_n(offset0_.begin(), nsp(), 0);
-    offset1_.resize(nsp());  fill_n(offset1_.begin(), nsp(), 0);
     for (auto& v : sp_) {
       vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_);
       array<double, 3> r12;
@@ -191,9 +189,6 @@ void Box::compute_multipoles() { // M2M
             multipole_[i][pos] = smoment[i]->element(j, k);
           }
       }
-
-      offset0_[isp] = offset0_[isp-1] + v->nbasis0();
-      offset1_[isp] = offset1_[isp-1] + v->nbasis1();
       offset += v->nbasis0() * v->nbasis1();
       ++isp;
     }
@@ -209,13 +204,6 @@ void Box::compute_multipoles() { // M2M
 
       for (int i = 0; i != nmult_; ++i)
         multipole_[i].insert(multipole_[i].end(), smoment[i].begin(), smoment[i].end());
-
-      vector<int> offset0(c->offset0());
-      vector<int> offset1(c->offset1());
-      transform(offset0.begin(), offset0.end(), offset0.begin(), bind2nd(std::plus<int>(), c->nbasis0()));
-      transform(offset1.begin(), offset1.end(), offset1.begin(), bind2nd(std::plus<int>(), c->nbasis1()));
-      offset0_.insert(offset0_.end(), offset0.begin(), offset0.end());
-      offset1_.insert(offset1_.end(), offset1.begin(), offset1.end());
     }
     assert(multipole_[0].size() == ndim_);
   }
@@ -265,7 +253,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
   auto out = make_shared<ZMatrix>(density->ndim(), density->ndim());
   out->zero();
 
-
   // FF: add local expansions
   vector<complex<double>> ff(ndim_);
   for (int i = 0; i != nmult_; ++i)
@@ -281,7 +268,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
   }
   assert(pos == ndim_);
 
-  int ninteg = 0;
   // NF: 4c integrals
   const int shift = sizeof(int) * 4;
   const double* density_data = density->data();
@@ -333,8 +319,8 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
         const bool skip_schwarz = integral_bound < schwarz_thresh;
         if (skip_schwarz) continue;
 
-        ++ninteg;
         array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
         ERIBatch eribatch(input, mulfactor);
         eribatch.compute();
         const double* eridata = eribatch.data();
@@ -353,7 +339,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
               const int j2n = j2 * density->ndim();
               for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                 if (j3 < j2) continue;
-                const int j3n = j3 * density->ndim();
                 const unsigned int nj23 = (j2 << shift) + j3;
                 if (nj23 < nj01 && i01 == i23) continue;
                 const double scale23 = (j2 == j3) ? 0.5 : 1.0;
@@ -376,7 +361,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
       }
     }
   }
-  //cout << "ninteg = " << ninteg << endl;
 
   return out;
 }

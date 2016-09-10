@@ -285,10 +285,14 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
       maxden[i01] = denmax;
     }
 
+    int u = 0;
     for (int i = 0; i != nbranch_[0]; ++i) {
-      auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
-      *out += *ei;
+      if (u++ % mpi__->size() == mpi__->rank()) {
+        auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
+        *out += *ei;
+      }
     }
+    out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
