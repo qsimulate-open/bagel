@@ -53,6 +53,9 @@ class FMM {
 
     void init();
     void get_boxes();
+    void M2M() const;
+    void M2L(std::shared_ptr<const Matrix> density) const;
+    void L2L() const;
 
   public:
     FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 0);
@@ -60,9 +63,6 @@ class FMM {
 
     std::array<double, 3> centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
-    void M2M() const;
-    void M2L();
-    void L2L();
     std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
     void print_boxes(const int i) const;
 };

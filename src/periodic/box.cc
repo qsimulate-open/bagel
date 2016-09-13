@@ -192,7 +192,6 @@ void Box::compute_multipoles() { // M2M
       offset += v->nbasis0() * v->nbasis1();
       ++isp;
     }
-    assert(multipole_[0].size() == ndim_);
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -210,9 +209,9 @@ void Box::compute_multipoles() { // M2M
 }
 
 
-void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + L2L
+void Box::compute_L2L() {
 
-  // from parent L2L
+  // from parent
   if (parent_ && (parent_->ninter() != 0)) {
     array<double, 3> rb;
     rb[0] = parent_->centre(0) - centre_[0];
@@ -223,9 +222,14 @@ void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + 
     localJ_.resize(nmult_);
     fill_n(localJ_.begin(), nmult_, 0);
   }
+}
 
 
-  // from interaction list M2L
+void Box::compute_M2L(shared_ptr<const Matrix> density) {
+
+  // from interaction list
+   if (!density || inter_.empty()) return;
+
   for (auto& it : inter_) {
     array<double, 3> r12;
     r12[0] = centre_[0] - it->centre(0);
@@ -233,14 +237,14 @@ void Box::compute_local_expansions(shared_ptr<const Matrix> density) { // M2L + 
     r12[2] = centre_[2] - it->centre(2);
 
     vector<double> subden;
-    for (auto& i : sp_) {
+    for (auto& i : it->sp()) {
       shared_ptr<const Matrix> den = density->get_submatrix(i->offset(0), i->offset(1), i->nbasis0(), i->nbasis1());
       const size_t size = i->nbasis0()*i->nbasis1();
       vector<double> tmp(size);
       fill_n(tmp.begin(), size, *den->data());
       subden.insert(subden.end(), tmp.begin(), tmp.end());
     }
-    assert(subden.size() == ndim_);
+    assert(subden.size() == it->ndim());
     vector<complex<double>> tmp = get_Mlm_M2L(it->multipole(), r12, subden);
     transform(localJ_.begin(), localJ_.end(), tmp.begin(), localJ_.begin(), std::plus<complex<double>>());
   }
@@ -384,12 +388,13 @@ vector<complex<double>> Box::get_Mlm_M2L(vector<vector<complex<double>>> olm, ar
   const double phi = atan2(r12[1], r12[0]);
 
   vector<complex<double>> out(nmult_);
+  assert(den.size() == olm[0].size());
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      vector<complex<double>> local(ndim_);
+      vector<complex<double>> local(den.size());
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -410,7 +415,6 @@ vector<complex<double>> Box::get_Mlm_M2L(vector<vector<complex<double>>> olm, ar
           transform(olm[i2].begin(), olm[i2].end(), local.begin(), bind1st(multiplies<complex<double>>(), coeff));
         }
       }
-      assert(local.size() == den.size());
       //out[i1] = inner_product(local.begin(), local.end(), den.begin(), 0);
       out[i1] = 0;
       for (int i = 0; i != ndim_; ++i)

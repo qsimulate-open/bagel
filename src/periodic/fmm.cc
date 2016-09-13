@@ -234,24 +234,49 @@ void FMM::get_boxes() {
 void FMM::M2M() const {
 
   Timer m2mtime;
-  for (auto& b : box_)
-    b->compute_multipoles();
+  int u = 0;
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (u++ % mpi__->size() == mpi__->rank())
+      box_[i]->compute_multipoles();
+  m2mtime.tick_print("shift sp");
+
+  u = 0;
+  int icnt = nbranch_[0];
+  for (int i = 1; i != ns_+2; ++i)
+    if (u++ % mpi__->size() == mpi__->rank())
+      for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
+        box_[icnt]->compute_multipoles();
+
+  assert(icnt == nbox_);
 
   m2mtime.tick_print("Upward M2M pass");
 }
 
 
-void FMM::M2L() {
+void FMM::M2L(shared_ptr<const Matrix> density) const {
 
-  Timer dtime;
-  dtime.tick_print("M2L pass");
+  Timer m2ltime;
+
+  for (auto& b : box_)
+    b->compute_M2L(density);
+
+  m2ltime.tick_print("M2L pass");
 }
 
 
-void FMM::L2L() {
+void FMM::L2L() const {
 
-  Timer dtime;
-  dtime.tick_print("Downward L2L pass");
+  Timer l2ltime;
+
+  int icnt = 0;
+  for (int ir = ns_+1; ir > -1; --ir) {
+    for (int ib = 0; ib != nbranch_[ir]; ++ib)
+      box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L();
+
+    icnt += nbranch_[ir];
+  }
+
+  l2ltime.tick_print("L2L pass");
 }
 
 
@@ -259,9 +284,9 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
-
-  for (auto& b : box_)
-    b->compute_local_expansions(density);
+ 
+  L2L();
+  M2L(density);
 
   if (density) {
     assert(nbasis_ == density->ndim());
