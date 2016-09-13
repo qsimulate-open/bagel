@@ -52,7 +52,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   sssr_    = idata->get<bool>("sssr", false);
   shift_diag_  = idata->get<bool>("shift_diag", true);
   if (ciwfn()->nstates() > 1)
-    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
 
   if (idata->get<bool>("extract_average_rdms", false) && ref_->nstate() != 1) {
     vector<int> rdm_states = idata->get_vector<int>("rdm_state");
