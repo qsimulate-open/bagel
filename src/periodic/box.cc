@@ -30,6 +30,8 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/periodic/localexpansion.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/util/taskqueue.h>
+#include <mutex>
 
 using namespace bagel;
 using namespace std;
@@ -274,9 +276,15 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
 
   // NF: 4c integrals
   const int shift = sizeof(int) * 4;
-  const double* density_data = density->data();
+//  const double* density_data = density->data();
   const int nsh = sqrt(max_den.size());
   assert (nsh*nsh == max_den.size());
+
+  int nsp1 = 0;
+  for (auto& neigh : neigh_)
+    nsp1 += neigh->nsp();
+  TaskQueue<function<void(void)>> tasks(nsp() * nsp1);
+  mutex jmutex;
 
   for (auto& v01 : sp_) {
     shared_ptr<const Shell> b0 = v01->shell(1);
@@ -325,46 +333,56 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
 
         array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
 
-        ERIBatch eribatch(input, mulfactor);
-        eribatch.compute();
-        const double* eridata = eribatch.data();
+        tasks.emplace_back(
+          [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex] () {
 
-        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-          const int j0n = j0 * density->ndim();
-          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-            if (j1 < j0) {
-              eridata += b2size * b3size;
-              continue;
-            }
-            const int j1n = j1 * density->ndim();
-            const unsigned int nj01 = (j0 << shift) + j1;
-            const double scale01 = (j0 == j1) ? 0.5 : 1.0;
-            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-              const int j2n = j2 * density->ndim();
-              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                if (j3 < j2) continue;
-                const unsigned int nj23 = (j2 << shift) + j3;
-                if (nj23 < nj01 && i01 == i23) continue;
-                const double scale23 = (j2 == j3) ? 0.5 : 1.0;
-                const double scale = (nj01 == nj23) ? 0.25 : 0.5;
+            ERIBatch eribatch(input, mulfactor);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
 
-                const double eri = *eridata;
-                const double intval = eri * scale * scale01 * scale23;
-                const double intval4 = 4.0 * intval;
-                out->element(j1, j0) += density_data[j2n + j3] * intval4;
-                out->element(j3, j2) += density_data[j0n + j1] * intval4;
-                out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
-                out->element(j3, j0) -= density_data[j1n + j2] * intval;
-                out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
-                out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+            const double* density_data = density->data();
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              const int j0n = j0 * density->ndim();
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                if (j1 < j0) {
+                  eridata += b2size * b3size;
+                  continue;
+                }
+                const int j1n = j1 * density->ndim();
+                const unsigned int nj01 = (j0 << shift) + j1;
+                const double scale01 = (j0 == j1) ? 0.5 : 1.0;
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  const int j2n = j2 * density->ndim();
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    if (j3 < j2) continue;
+                    const unsigned int nj23 = (j2 << shift) + j3;
+                    if (nj23 < nj01 && i01 == i23) continue;
+                    const double scale23 = (j2 == j3) ? 0.5 : 1.0;
+                    const double scale = (nj01 == nj23) ? 0.25 : 0.5;
+
+                    const double eri = *eridata;
+                    const double intval = eri * scale * scale01 * scale23;
+                    const double intval4 = 4.0 * intval;
+                    out->element(j1, j0) += density_data[j2n + j3] * intval4;
+                    out->element(j3, j2) += density_data[j0n + j1] * intval4;
+                    out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
+                    out->element(j3, j0) -= density_data[j1n + j2] * intval;
+                    out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
+                    out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+                  }
+                }
               }
             }
+
           }
-        }
+        );
 
       }
     }
   }
+
+  tasks.compute();
 
   return out;
 }
