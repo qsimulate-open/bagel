@@ -276,7 +276,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
 
   // NF: 4c integrals
   const int shift = sizeof(int) * 4;
-//  const double* density_data = density->data();
   const int nsh = sqrt(max_den.size());
   assert (nsh*nsh == max_den.size());
 
@@ -334,7 +333,7 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
         array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
 
         tasks.emplace_back(
-          [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex] () {
+          [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
 
             ERIBatch eribatch(input, mulfactor);
             eribatch.compute();
