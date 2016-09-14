@@ -50,7 +50,6 @@ class Box {
     int nbasis0_, nbasis1_, ndim_;
     int nmult_;
 
-
     void init();
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
     void insert_child(std::shared_ptr<const Box> = NULL);
@@ -59,16 +58,15 @@ class Box {
     void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
     void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
 
-    std::vector<std::vector<std::complex<double>>> multipole_;
+    std::vector<std::complex<double>> multipole_;
     std::vector<std::complex<double>> localJ_;
     std::vector<int> offset0_, offset1_;
-    void compute_multipoles();
+    void compute_M2M(std::shared_ptr<const Matrix> density);
     void sort_sp();
-    std::vector<std::vector<std::complex<double>>> shift_multipoles(std::vector<std::vector<std::complex<double>>> oa, std::array<double, 3> rab) const;
-    std::vector<std::complex<double>> shift_local(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
-    std::vector<std::complex<double>> get_Mlm_M2L(std::vector<std::vector<std::complex<double>>> olm, std::array<double, 3> r12, std::vector<double> den) const;
-    std::vector<std::vector<std::complex<double>>> get_Mlmts(std::array<double, 3> r12, std::vector<double> den) const;
-    void compute_M2L(std::shared_ptr<const Matrix> density);
+    std::vector<std::complex<double>> shift_multipoles(std::vector<std::complex<double>> oa, std::array<double, 3> rab) const;
+    std::vector<std::complex<double>> shift_localL(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
+    std::vector<std::complex<double>> shift_localM(std::vector<std::complex<double>> olm, std::array<double, 3> r12) const;
+    void compute_M2L();
     void compute_L2L();
     std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
 
@@ -104,9 +102,10 @@ class Box {
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     std::array<std::shared_ptr<const Shell>, 2> shells(const int i) const { return sp_[i]->shells(); }
 
-    std::vector<std::vector<std::complex<double>>> multipole() const { return multipole_; }
-    std::vector<std::complex<double>> multipole(const int i) const { return multipole_[i]; }
+    std::vector<std::complex<double>> multipole() const { return multipole_; }
     std::vector<std::complex<double>> localJ() const { return localJ_; }
+    double energy_ff() const;
+
 
     void print_box() const;
 };

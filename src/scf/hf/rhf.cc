@@ -149,6 +149,7 @@ void RHF::compute() {
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
+    if (dofmm_) energy_ += fmm_->energy_ff();
 
     pdebug.tick_print("Fock build");
 

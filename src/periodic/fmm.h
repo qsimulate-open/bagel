@@ -53,8 +53,8 @@ class FMM {
 
     void init();
     void get_boxes();
-    void M2M() const;
-    void M2L(std::shared_ptr<const Matrix> density) const;
+    void M2M(std::shared_ptr<const Matrix> density) const;
+    void M2L() const;
     void L2L() const;
 
   public:
@@ -64,6 +64,7 @@ class FMM {
     std::array<double, 3> centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
     std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
+    double energy_ff() const;
     void print_boxes(const int i) const;
 };
 

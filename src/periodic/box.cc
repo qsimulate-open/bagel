@@ -167,32 +167,27 @@ void Box::sort_sp() {
 }
 
 
-void Box::compute_multipoles() { // M2M
+void Box::compute_M2M(shared_ptr<const Matrix> density) { // M2M
 
   sort_sp();
+  fill_n(multipole_.begin(), nmult_, 0);
   if (nchild() == 0) { // leaf = shift sp's multipoles
-    int isp = 1;
-    int offset = 0;
     for (auto& v : sp_) {
       vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_);
+      shared_ptr<const Matrix> den = density->get_submatrix(v->offset(0), v->offset(1), v->nbasis0(), v->nbasis1());
+      vector<complex<double>> olm(nmult_);
+      for (int i = 0; i != nmult_; ++i) {
+        const double real = den->dot_product(*(vmult[i]->get_real_part()));
+        const double imag = den->dot_product(*(vmult[i]->get_imag_part()));
+        olm[i] = complex<double>(real, imag);
+      }
+
       array<double, 3> r12;
       r12[0] = centre_[0] - v->centre(0);
       r12[1] = centre_[1] - v->centre(1);
       r12[2] = centre_[2] - v->centre(2);
-      LocalExpansion shift(r12, vmult, lmax_);
-      vector<shared_ptr<const ZMatrix>> smoment = shift.compute_shifted_multipoles();
-
-      for (int i = 0; i != nmult_; ++i) {
-        multipole_[i].resize(ndim_);
-
-        for (int j = 0; j != v->nbasis0(); ++j)
-          for (int k = 0; k != v->nbasis1(); ++k) {
-            const int pos = offset + j * v->nbasis1() + k;
-            multipole_[i][pos] = smoment[i]->element(j, k);
-          }
-      }
-      offset += v->nbasis0() * v->nbasis1();
-      ++isp;
+      vector<complex<double>> smoment = shift_multipoles(olm, r12);
+      transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
     }
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
@@ -201,12 +196,9 @@ void Box::compute_multipoles() { // M2M
       r12[0] = centre_[0] - c->centre(0);
       r12[1] = centre_[1] - c->centre(1);
       r12[2] = centre_[2] - c->centre(2);
-      vector<vector<complex<double>>> smoment = shift_multipoles(c->multipole(), r12);
-
-      for (int i = 0; i != nmult_; ++i)
-        multipole_[i].insert(multipole_[i].end(), smoment[i].begin(), smoment[i].end());
+      vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
+      transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
     }
-    assert(multipole_[0].size() == ndim_);
   }
 }
 
@@ -219,7 +211,7 @@ void Box::compute_L2L() {
     rb[0] = parent_->centre(0) - centre_[0];
     rb[1] = parent_->centre(1) - centre_[1];
     rb[2] = parent_->centre(2) - centre_[2];
-    localJ_ = shift_local(parent_->localJ(), rb);
+    localJ_ = shift_localL(parent_->localJ(), rb);
   } else {
     localJ_.resize(nmult_);
     fill_n(localJ_.begin(), nmult_, 0);
@@ -227,28 +219,17 @@ void Box::compute_L2L() {
 }
 
 
-void Box::compute_M2L(shared_ptr<const Matrix> density) {
+void Box::compute_M2L() {
 
   // from interaction list
-   if (!density || inter_.empty()) return;
-
   for (auto& it : inter_) {
     array<double, 3> r12;
     r12[0] = centre_[0] - it->centre(0);
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
 
-    vector<double> subden;
-    for (auto& i : it->sp()) {
-      shared_ptr<const Matrix> den = density->get_submatrix(i->offset(0), i->offset(1), i->nbasis0(), i->nbasis1());
-      const size_t size = i->nbasis0()*i->nbasis1();
-      vector<double> tmp(size);
-      fill_n(tmp.begin(), size, *den->data());
-      subden.insert(subden.end(), tmp.begin(), tmp.end());
-    }
-    assert(subden.size() == it->ndim());
-    vector<complex<double>> tmp = get_Mlm_M2L(it->multipole(), r12, subden);
-    transform(localJ_.begin(), localJ_.end(), tmp.begin(), localJ_.begin(), std::plus<complex<double>>());
+    vector<complex<double>> slocal = shift_localM(it->multipole(), r12);
+    transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
   }
 }
 
@@ -258,21 +239,6 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->ndim());
   out->zero();
-
-  // FF: add local expansions
-  vector<complex<double>> ff(ndim_);
-  for (int i = 0; i != nmult_; ++i)
-    transform(multipole_[i].begin(), multipole_[i].end(), ff.begin(), bind1st(multiplies<complex<double>>(), localJ_[i]));
-
-  int pos = 0;
-  for (auto& sp : sp_) {
-    const size_t o0 = sp->offset(0);
-    const size_t o1 = sp->offset(1);
-    for (int i = o0; i != o0+sp->nbasis0(); ++i)
-      for (int j = o1; j != o1+sp->nbasis1(); ++j, ++pos)
-         out->element(i, j) = ff[pos];
-  }
-  assert(pos == ndim_);
 
   // NF: 4c integrals
   const int shift = sizeof(int) * 4;
@@ -398,20 +364,19 @@ void Box::print_box() const {
 }
 
 
-vector<complex<double>> Box::get_Mlm_M2L(vector<vector<complex<double>>> olm, array<double, 3> r12, vector<double> den) const { // M2L (P2P) for J
+// M2L: given O(b) and R(a-b) get M(a)
+vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<double, 3> r12) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
 
-  vector<complex<double>> out(nmult_);
-  assert(den.size() == olm[0].size());
+  vector<complex<double>> mb(nmult_);
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      vector<complex<double>> local(den.size());
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -428,81 +393,29 @@ vector<complex<double>> Box::get_Mlm_M2L(vector<vector<complex<double>>> olm, ar
           const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
-
-          transform(olm[i2].begin(), olm[i2].end(), local.begin(), bind1st(multiplies<complex<double>>(), coeff));
+          mb[i1] += coeff * olm[i2];
         }
       }
-      //out[i1] = inner_product(local.begin(), local.end(), den.begin(), 0);
-      out[i1] = 0;
-      for (int i = 0; i != ndim_; ++i)
-        out[i1] += local[i]*den[i];
     }
   }
 
-  return out;
+  return mb;
 }
-
-
-#if 0
-vector<vector<complex<double>>> Box::get_Mlmts(array<double, 3> r12, vector<double> den_su) const { // M2L (P2P) for K
-
-  const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
-  const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
-  const double phi = atan2(r12[1], r12[0]);
-
-  vector<vector<complex<double>>> out(nmult_);
-
-  int i1 = 0;
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m, ++i1) {
-
-      vector<complex<double>> local_tu(ndim_);
-      int i2 = 0;
-      for (int j = 0; j <= lmax_; ++j) {
-        for (int k = 0; k <= 2 * j; ++k, ++i2) {
-
-          const int a = l + j;
-          const int b = m - l + k - j;
-
-          double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
-          double ft = 1.0;
-          for (int i = 1; i <= a - abs(b); ++i) {
-            prefactor *= ft;
-            ++ft;
-          }
-          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
-          const double imag = prefactor * sin(abs(b) * phi);
-          const complex<double> coeff(real, imag);
-
-          transform(multipole_[i2].begin(), multipole_[i2].end(), local_tu.begin(), bind1st(multiplies<complex<double>>(), coeff));
-        }
-      }
-      assert(local_tu.size() == den_su.size());
-      out[i1].resize(ndim_);
-      for (int i = 0; i != ndim_; ++i)
-        out[i1] += local[i]*den[i];
-    }
-  }
-
-  return out;
-}
-#endif
 
 
 // M2M: given O(a) and R(b-a) get O(b)
-vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<double>>> oa, array<double, 3> rab) const {
+vector<complex<double>> Box::shift_multipoles(vector<complex<double>> oa, array<double, 3> rab) const {
 
   const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
   const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
   const double phi = atan2(rab[1], rab[0]);
 
-  vector<vector<complex<double>>> ob(nmult_);
+  vector<complex<double>> ob(nmult_, 0);
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      vector<complex<double>> ob_lm(oa[0].size());
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -521,12 +434,11 @@ vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<doub
             const complex<double> coeff(real, imag);
 
             if (abs(coeff) > numerical_zero__)
-              for (int ib = 0; ib != ob_lm.size(); ++ib)
-                ob_lm[ib] = coeff * oa[i2][ib];
+                ob[i1] += coeff * oa[i2];
           }
+
         }
       }
-      ob[i1] = ob_lm;
     }
   }
 
@@ -534,20 +446,19 @@ vector<vector<complex<double>>> Box::shift_multipoles(vector<vector<complex<doub
 }
 
 
-// M2M: given M(r) and R(b) get O(r-b)
-vector<complex<double>> Box::shift_local(vector<complex<double>> mr, array<double, 3> rb) const {
+// L2L: given M(r) and R(b) get M(r-b)
+vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<double, 3> rb) const {
 
   const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
   const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
   const double phi = atan2(rb[1], rb[0]);
 
-  vector<complex<double>> mrb(nmult_);
+  vector<complex<double>> mrb(nmult_, 0);
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m, ++i1) {
 
-      complex<double> mrb_lm = 0.0;
       int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
         for (int k = 0; k <= 2 * j; ++k, ++i2) {
@@ -566,13 +477,23 @@ vector<complex<double>> Box::shift_local(vector<complex<double>> mr, array<doubl
             const complex<double> coeff(real, imag);
 
             if (abs(coeff) > numerical_zero__)
-              mrb_lm += coeff * mr[i2];
+              mrb[i1] += coeff * mr[i2];
           }
+
         }
       }
-      mrb[i1] = mrb_lm;
     }
   }
 
   return mrb;
+}
+
+
+double Box::energy_ff() const {
+
+  assert(multipole_.size() == localJ_.size());
+  complex<double> en = inner_product(multipole_.begin(), multipole_.end(), localJ_.begin(), complex<double>(0, 0));
+  assert(abs(en.imag()) < 1e-10);
+  const double out = en.real();
+  return out;
 }
