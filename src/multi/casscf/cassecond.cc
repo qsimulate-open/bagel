@@ -347,10 +347,10 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
   // terms with Qvec
   {
     shared_ptr<const Matrix> qaa = qxr->cut(nclosed_, nocc_);
-    shared_ptr<const Matrix> qva = qxr->cut(nocc_, nocc_+nvirt_);
     sigma->ax_plus_y_va(-2.0, *va ^ *qaa);
     sigma->ax_plus_y_va(-2.0, *va * *qaa);
     if (nclosed_) {
+      shared_ptr<const Matrix> qva = qxr->cut(nocc_, nocc_+nvirt_);
       shared_ptr<const Matrix> qca = qxr->cut(0, nclosed_);
       sigma->ax_plus_y_vc(-2.0, *va ^ *qca);
       sigma->ax_plus_y_va(-2.0, *vc * *qca);

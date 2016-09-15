@@ -156,8 +156,138 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
                                                     list<shared_ptr<const RelDFHalf>> halfc, list<shared_ptr<const RelDFHalf>> halfg, list<shared_ptr<const RelDFHalf>> halfb,
                                                     list<shared_ptr<const RelDFHalf>> halfac, list<shared_ptr<const RelDFHalf>> halfag, list<shared_ptr<const RelDFHalf>> halfab,
                                                     shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr) const {
-throw logic_error("STOP!");
-  return nullptr;
+  shared_ptr<ZRotFile> sigma = trot->clone();
+
+  shared_ptr<const ZMatrix> va = trot->va_mat();
+  shared_ptr<const ZMatrix> ca = nclosed_ ? trot->ca_mat() : nullptr;
+  shared_ptr<const ZMatrix> vc = nclosed_ ? trot->vc_mat() : nullptr;
+
+  shared_ptr<const ZMatrix> fcaa = cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2);
+  shared_ptr<const ZMatrix> faaa = afock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2);
+  shared_ptr<const ZMatrix> fcva = cfock->get_submatrix(nocc_*2, nclosed_*2, nvirt_*2, nact_*2);
+  shared_ptr<const ZMatrix> fava = afock->get_submatrix(nocc_*2, nclosed_*2, nvirt_*2, nact_*2);
+  shared_ptr<const ZMatrix> fcvv = cfock->get_submatrix(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2);
+  shared_ptr<const ZMatrix> favv = afock->get_submatrix(nocc_*2, nocc_*2, nvirt_*2, nvirt_*2);
+  shared_ptr<const ZMatrix> fccc = nclosed_ ? cfock->get_submatrix(0, 0, nclosed_*2, nclosed_*2) : nullptr;
+  shared_ptr<const ZMatrix> facc = nclosed_ ? afock->get_submatrix(0, 0, nclosed_*2, nclosed_*2) : nullptr;
+  shared_ptr<const ZMatrix> fcca = nclosed_ ? cfock->get_submatrix(0, nclosed_*2, nclosed_*2, nact_*2) : nullptr;
+  shared_ptr<const ZMatrix> faca = nclosed_ ? afock->get_submatrix(0, nclosed_*2, nclosed_*2, nact_*2) : nullptr;
+  shared_ptr<const ZMatrix> fcvc = nclosed_ ? cfock->get_submatrix(nocc_, 0, nvirt_*2, nclosed_*2) : nullptr;
+  shared_ptr<const ZMatrix> favc = nclosed_ ? afock->get_submatrix(nocc_, 0, nvirt_*2, nclosed_*2) : nullptr;
+
+  shared_ptr<const ZMatrix> ccoeff = coeff_->slice_copy(0, nclosed_*2);
+  shared_ptr<const ZMatrix> acoeff = coeff_->slice_copy(nclosed_*2, nocc_*2);
+  shared_ptr<const ZMatrix> vcoeff = coeff_->slice_copy(nocc_*2, (nocc_+nvirt_)*2);
+
+  ZMatrix rdm1(nact_*2, nact_*2);
+  copy_n(fci_->rdm1_av()->data(), rdm1.size(), rdm1.data());
+  blas::conj_n(rdm1.data(), rdm1.size());
+
+#if 0
+  // lambda for computing g(D)
+  auto compute_gd = [&,this](shared_ptr<const DFHalfDist> halft, shared_ptr<const DFHalfDist> halfjj, const MatView pcoeff) {
+    shared_ptr<const Matrix> pcoefft = make_shared<Matrix>(pcoeff)->transpose();
+    shared_ptr<Matrix> gd = geom_->df()->compute_Jop(halft, pcoefft);
+    shared_ptr<Matrix> ex0 = halfjj->form_2index(halft, 1.0);
+    ex0->symmetrize();
+    gd->ax_plus_y(-0.5, ex0);
+    return gd; 
+  };  
+
+  // g(t_vc) operator and g(t_ac) operator
+  if (nclosed_) {
+    const Matrix tcoeff = vcoeff * *vc + acoeff * *ca->transpose();
+    auto halft = geom_->df()->compute_half_transform(tcoeff);
+    const Matrix gt = *compute_gd(halft, half, ccoeff);
+    sigma->ax_plus_y_ca(32.0, ccoeff % gt * acoeff);
+    sigma->ax_plus_y_vc(32.0, vcoeff % gt * ccoeff);
+    sigma->ax_plus_y_va(16.0, vcoeff % gt * acoeff * rdm1);
+    sigma->ax_plus_y_ca(-16.0, ccoeff % gt * acoeff * rdm1);
+  }
+#endif
+  // g(t_va - t_ca)
+  auto tcoeff = make_shared<ZMatrix>(nclosed_ ? (*vcoeff * *va - *ccoeff * *ca) : *vcoeff * *va);
+  list<shared_ptr<RelDFHalf>> halftac;
+  tie(halftac, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
+#if 0
+  if (nclosed_) {
+    shared_ptr<DFHalfDist> halftad = halfta->copy();
+    halftad->rotate_occ(make_shared<Matrix>(rdm1));
+    const Matrix gt = *compute_gd(halftad, halfa, acoeff);
+    sigma->ax_plus_y_ca(16.0, ccoeff % gt * acoeff);
+    sigma->ax_plus_y_vc(16.0, vcoeff % gt * ccoeff);
+  }
+  // terms with Qvec
+#endif
+  {
+    shared_ptr<const ZMatrix> qaa = qxr->cut(nclosed_*2, nocc_*2);
+    sigma->ax_plus_y_va(-2.0, *va ^ *qaa);
+    sigma->ax_plus_y_va(-2.0, *va * *qaa);
+#if 0
+    if (nclosed_) {
+      shared_ptr<const Matrix> qva = qxr->cut(nocc_*2, nocc_+nvirt_*2);
+      shared_ptr<const Matrix> qca = qxr->cut(0, nclosed_);
+      sigma->ax_plus_y_vc(-2.0, *va ^ *qca);
+      sigma->ax_plus_y_va(-2.0, *vc * *qca);
+      sigma->ax_plus_y_ca(-2.0, *vc % *qva);
+      sigma->ax_plus_y_vc(-2.0, *qva ^ *ca);
+      sigma->ax_plus_y_ca(-2.0, *ca ^ *qaa);
+      sigma->ax_plus_y_ca(-2.0, *ca * *qaa);
+    }   
+#endif
+  }
+  // compute Q' and Q''
+  {
+    shared_ptr<const ListRelDFFull> fullaa = RelMOFile::compute_full(acoeff, halfac,  /*apply_j*/false);
+    shared_ptr<      ListRelDFFull> fullta = RelMOFile::compute_full(acoeff, halftac, /*apply_j*/false);
+    shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
+    shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
+    shared_ptr<const ListRelDFFull> fulltas = fullta->swap();
+    fullta->ax_plus_y(1.0, fulltas);
+
+    shared_ptr<const ListRelDFFull> fullaaD = fullaa->apply_2rdm(fci_->rdm2_av());
+    shared_ptr<const ListRelDFFull> fulltaD = fullta->apply_2rdm(fci_->rdm2_av());
+    shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0);
+    shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0);
+
+    sigma->ax_plus_y_va( 4.0, *qp + *qpp);
+#if 0
+    if (nclosed_)
+      sigma->ax_plus_y_ca(-4.0, ccoeff % (*qp + *qpp));
+#endif
+  }
+
+  // next 1-electron contribution...
+  {
+    sigma->ax_plus_y_va( 4.0, *fcvv * *va * rdm1);
+    sigma->ax_plus_y_va(-2.0, *va * (rdm1 % *fcaa + *fcaa * rdm1));
+#if 0
+    if (nclosed_) {
+      sigma->ax_plus_y_ca( 8.0, *ca * (*fcaa + *faaa));
+      sigma->ax_plus_y_ca( 8.0, *vc % (*fcva + *fava));
+      sigma->ax_plus_y_vc(-8.0, *vc * (*fccc + *facc));
+      sigma->ax_plus_y_va(-4.0, *vc * (*fcca + *faca));
+      sigma->ax_plus_y_vc(-4.0, *va ^ (*fcca + *faca));
+      sigma->ax_plus_y_ca(-2.0, *ca * (rdm1 * *fcaa + *fcaa * rdm1));
+      sigma->ax_plus_y_vc( 8.0, (*fcvv + *favv) * *vc);
+      sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
+      sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
+      sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
+      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
+      sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
+      sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
+      sigma->ax_plus_y_vc(-2.0, *fcva * rdm1 ^ *ca);
+      sigma->ax_plus_y_vc(-2.0, *va * rdm1 ^ *fcca);
+      sigma->ax_plus_y_ca(-2.0, *vc % *fcva * rdm1);
+      sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
+    }   
+#endif
+  }
+  sigma->scale(0.5);
+assert(false);
+  return sigma;
 }
 
 
