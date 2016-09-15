@@ -138,7 +138,23 @@ void ZCASSecond::compute() {
         if (norm > 0.25) break;
       }
     }
-grad->print();
+
+    shared_ptr<ZRotFile> sol = solver.civec();
+    // DEBUG CODE *************************
+    zero_positronic_elements(sol); 
+    // DEBUG CODE *************************
+
+    shared_ptr<ZMatrix> a = sol->unpack();
+    a->scale(complex<double>(0.0,-1.0));
+    VectorB eig(a->ndim());
+    a->diagonalize(eig);
+    auto atmp = a->copy();
+    for (int i = 0; i != a->mdim(); ++i) {
+      const complex<double> fac = exp(complex<double>(0.0,eig(i)));
+      blas::scale_n(fac, a->element_ptr(0,i), a->ndim());
+    }
+    const ZMatrix R = *a ^ *atmp;
+    coeff_ = make_shared<RelCoeff_Block>(*coeff_ * R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
   }
 }
 
@@ -172,8 +188,8 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   shared_ptr<const ZMatrix> facc = nclosed_ ? afock->get_submatrix(0, 0, nclosed_*2, nclosed_*2) : nullptr;
   shared_ptr<const ZMatrix> fcca = nclosed_ ? cfock->get_submatrix(0, nclosed_*2, nclosed_*2, nact_*2) : nullptr;
   shared_ptr<const ZMatrix> faca = nclosed_ ? afock->get_submatrix(0, nclosed_*2, nclosed_*2, nact_*2) : nullptr;
-  shared_ptr<const ZMatrix> fcvc = nclosed_ ? cfock->get_submatrix(nocc_, 0, nvirt_*2, nclosed_*2) : nullptr;
-  shared_ptr<const ZMatrix> favc = nclosed_ ? afock->get_submatrix(nocc_, 0, nvirt_*2, nclosed_*2) : nullptr;
+  shared_ptr<const ZMatrix> fcvc = nclosed_ ? cfock->get_submatrix(nocc_*2, 0, nvirt_*2, nclosed_*2) : nullptr;
+  shared_ptr<const ZMatrix> favc = nclosed_ ? afock->get_submatrix(nocc_*2, 0, nvirt_*2, nclosed_*2) : nullptr;
 
   shared_ptr<const ZMatrix> ccoeff = coeff_->slice_copy(0, nclosed_*2);
   shared_ptr<const ZMatrix> acoeff = coeff_->slice_copy(nclosed_*2, nocc_*2);
@@ -240,15 +256,15 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   {
     shared_ptr<const ListRelDFFull> fullaa = RelMOFile::compute_full(acoeff, halfac,  /*apply_j*/false);
     shared_ptr<      ListRelDFFull> fullta = RelMOFile::compute_full(acoeff, halftac, /*apply_j*/false);
-    shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
-    shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
     shared_ptr<const ListRelDFFull> fulltas = fullta->swap();
     fullta->ax_plus_y(1.0, fulltas);
 
     shared_ptr<const ListRelDFFull> fullaaD = fullaa->apply_2rdm(fci_->rdm2_av());
     shared_ptr<const ListRelDFFull> fulltaD = fullta->apply_2rdm(fci_->rdm2_av());
-    shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0);
-    shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0);
+    shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
+    shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
+    shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0, false)->get_conjg();
+    shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0, false)->get_conjg();
 
     sigma->ax_plus_y_va( 4.0, *qp + *qpp);
 #if 0
@@ -286,7 +302,6 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
 #endif
   }
   sigma->scale(0.5);
-assert(false);
   return sigma;
 }
 

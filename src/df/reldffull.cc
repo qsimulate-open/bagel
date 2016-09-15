@@ -107,6 +107,7 @@ shared_ptr<RelDFFull> RelDFFull::clone() const {
 
 shared_ptr<RelDFFull> RelDFFull::swap() const {
   array<shared_ptr<DFFullDist>,2> a{{dffull_[0]->swap(), dffull_[1]->swap()}};
+  a[1]->scale(-1.0);
   return make_shared<RelDFFull>(a, cartesian_, basis_);
 }
 

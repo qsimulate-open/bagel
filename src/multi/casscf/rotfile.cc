@@ -160,7 +160,7 @@ RotationMatrix<DataType>& RotationMatrix<DataType>::operator=(const RotationMatr
 template<typename DataType>
 double RotationMatrix<DataType>::orthog(list<shared_ptr<const RotationMatrix<DataType>>> c) {
   for (auto iter = c.begin(); iter != c.end(); ++iter)
-    this->ax_plus_y(- this->dot_product(**iter), **iter);
+    this->ax_plus_y(- detail::conj(this->dot_product(**iter)), **iter);
   return normalize();
 }
 
