@@ -237,16 +237,16 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
       box_[i]->compute_M2M(density);
   m2mtime.tick_print("shift sp");
 
-  u = 0;
+  //u = 0;
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+2; ++i)
-    if (u++ % mpi__->size() == mpi__->rank())
+  //  if (u++ % mpi__->size() == mpi__->rank())
       for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
         box_[icnt]->compute_M2M(density);
 
   assert(icnt == nbox_);
 
-  m2mtime.tick_print("Upward M2M pass");
+  m2mtime.tick_print("M2M pass");
 }
 
 
@@ -279,12 +279,13 @@ void FMM::L2L() const {
 
 shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) const {
 
+  Timer nftime;
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
  
   M2M(density);
-  L2L();
   M2L();
+  L2L();
 
   if (density) {
     assert(nbasis_ == density->ndim());
@@ -321,6 +322,7 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
     out->fill_upper();
   }
 
+  nftime.tick_print("near-field");
   return out;
 }
 
