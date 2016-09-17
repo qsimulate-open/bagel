@@ -346,7 +346,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_gradient(shared_ptr<const ZMatrix> cfoc
 // TODO this is an approximate denominator. We will replace this with exact diagonal.
 shared_ptr<ZRotFile> ZCASSecond::compute_denom(shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr, shared_ptr<const ZMatrix> rdm1) const {
   auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nvirt_*2);
-  auto cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1);
+  auto cfockd = make_shared<ZMatrix>(*cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2) * *rdm1->get_conjg());
 
   // ia part (4.7a)
   if (nvirt_ && nclosed_) {
