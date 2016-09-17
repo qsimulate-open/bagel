@@ -75,7 +75,7 @@ void DFock::add_Jop_block(shared_ptr<const RelDF> dfdata, list<shared_ptr<const 
 }
 
 
-void DFock::add_Exop_block(shared_ptr<RelDFHalf> dfc1, shared_ptr<RelDFHalf> dfc2, const double scale, const bool diag) {
+void DFock::add_Exop_block(shared_ptr<const RelDFHalf> dfc1, shared_ptr<const RelDFHalf> dfc2, const double scale, const bool diag) {
 
   // minus from -1 in the definition of exchange
   shared_ptr<Matrix> r, i;
@@ -260,6 +260,15 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
 
 void DFock::build_jk(list<shared_ptr<RelDFHalf>> half_complex_exch, list<shared_ptr<RelDFHalf>> half_complex_exch2, shared_ptr<const ZMatrix> coeff,
                      const bool gaunt, const bool breit, const double scale_exchange, const double scale_coulomb) {
+  list<shared_ptr<const RelDFHalf>> tmp1, tmp2;
+  for (auto& i : half_complex_exch)  tmp1.push_back(i);
+  for (auto& i : half_complex_exch2) tmp2.push_back(i);
+  build_jk(tmp1, tmp2, coeff, gaunt, breit, scale_exchange, scale_coulomb);
+}
+
+
+void DFock::build_jk(list<shared_ptr<const RelDFHalf>> half_complex_exch, list<shared_ptr<const RelDFHalf>> half_complex_exch2, shared_ptr<const ZMatrix> coeff,
+                     const bool gaunt, const bool breit, const double scale_exchange, const double scale_coulomb) {
   Timer timer(0);
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
   // will use the zgemm3m-like algorithm
@@ -314,4 +323,8 @@ void DFock::build_jk(list<shared_ptr<RelDFHalf>> half_complex_exch, list<shared_
     timer.tick_print(printtag + ": J operator");
   }
 
+  for (auto& i : half_complex_exch)
+    i->discard_sum_diff();
+  for (auto& i : half_complex_exch2)
+    i->discard_sum_diff();
 }

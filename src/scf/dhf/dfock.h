@@ -40,7 +40,7 @@ class DFock : public ZMatrix {
 
 
     void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const RelCDMatrix>>, const double scale);
-    void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
+    void add_Exop_block(std::shared_ptr<const RelDFHalf>, std::shared_ptr<const RelDFHalf>, const double scale, const bool diag = false);
     void driver(std::shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, const double scale_exchange, const double scale_coulomb);
 
     // when gradient is requested, we store half-transformed integrals
@@ -87,6 +87,8 @@ class DFock : public ZMatrix {
     std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_); return half_breit_; }
 
     void build_jk(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
+                  const bool gaunt, const bool breit, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
+    void build_jk(std::list<std::shared_ptr<const RelDFHalf>> half1, std::list<std::shared_ptr<const RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
                   const bool gaunt, const bool breit, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
 };
 

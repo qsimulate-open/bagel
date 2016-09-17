@@ -105,7 +105,7 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_JJ() const {
 }
 
 
-void RelDFHalf::set_sum_diff() {
+void RelDFHalf::set_sum_diff() const {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->ax_plus_y(1.0, dfhalf_[1]);
   df2_[1] = dfhalf_[0]->copy();
