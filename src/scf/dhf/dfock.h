@@ -54,17 +54,18 @@ class DFock : public ZMatrix {
 
   public:
     DFock(std::shared_ptr<const Geometry> a,  std::shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0)
-     : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
-
-       assert(breit ? gaunt : true);
-       two_electron_part(coeff, scale_exch, scale_coulomb);
-    }
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
     // same as above
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
           const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0)
      : DFock(a, hc, *coeff, gaunt, breit, store_half, robust, scale_exch, scale_coulomb) {
     }
+    // DFock from half-transformed integrals
+    DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
+          std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
+          std::list<std::shared_ptr<const RelDFHalf>> int1g, std::list<std::shared_ptr<const RelDFHalf>> int2g,
+          std::list<std::shared_ptr<const RelDFHalf>> int1b, std::list<std::shared_ptr<const RelDFHalf>> int2b,
+          const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
 
     // Utility functions. They are static so that it could be used from gradient codes
 
