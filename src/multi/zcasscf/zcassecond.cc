@@ -57,6 +57,7 @@ void ZCASSecond::compute() {
     shared_ptr<const ZMatrix> qxr = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
 
     shared_ptr<ZRotFile> grad = compute_gradient(cfock, afock, qxr);
+    kramers_adapt(grad, nclosed_, nact_, nvirt_);
 
     // DEBUG CODE *************************
     zero_positronic_elements(grad); 
@@ -112,14 +113,20 @@ void ZCASSecond::compute() {
     AugHess<ZRotFile> solver(max_micro_iter_, grad);
     // initial trial vector
     shared_ptr<ZRotFile> trot = apply_denom(grad, denom, 0.001, 1.0);
+    kramers_adapt(trot, nclosed_, nact_, nvirt_);
     trot->normalize();
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
-      shared_ptr<const ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
-      shared_ptr<const ZRotFile> residual;
+      shared_ptr<ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
+      kramers_adapt(sigma, nclosed_, nact_, nvirt_);
+      // DEBUG CODE *************************
+      zero_positronic_elements(sigma); 
+      // DEBUG CODE *************************
+      shared_ptr<ZRotFile> residual;
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
+      kramers_adapt(residual, nclosed_, nact_, nvirt_);
       const double err = residual->norm() / lambda;
       resume_stdcout();
       if (!miter) cout << endl;
@@ -133,6 +140,7 @@ void ZCASSecond::compute() {
         break;
 
       trot = apply_denom(residual, denom, -epsilon, 1.0/lambda);
+      kramers_adapt(trot, nclosed_, nact_, nvirt_);
       for (int i = 0; i != 10; ++i) {
         const double norm = solver.orthog(trot);
         if (norm > 0.25) break;
@@ -140,9 +148,7 @@ void ZCASSecond::compute() {
     }
 
     shared_ptr<ZRotFile> sol = solver.civec();
-    // DEBUG CODE *************************
-    zero_positronic_elements(sol); 
-    // DEBUG CODE *************************
+    kramers_adapt(sol, nclosed_, nact_, nvirt_);
 
     shared_ptr<ZMatrix> a = sol->unpack();
     a->scale(complex<double>(0.0,-1.0));
