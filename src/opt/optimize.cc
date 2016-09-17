@@ -79,12 +79,6 @@ void Optimize::compute() {
     opt->compute();
     geom_ = opt->geometry();
 
-  } else if (method == "dmp2") {
-
-    auto opt = make_shared<Opt<DMP2Grad>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
   } else if (method == "casscf") {
 
     auto opt = make_shared<Opt<CASSCF>>(idata_, methodblock, geom_, ref_);
