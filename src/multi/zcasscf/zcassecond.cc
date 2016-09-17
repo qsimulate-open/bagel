@@ -161,7 +161,13 @@ void ZCASSecond::compute() {
     }
     const ZMatrix R = *a ^ *atmp;
     coeff_ = make_shared<RelCoeff_Block>(*coeff_ * R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
+
+    resume_stdcout();
+    if (iter == max_iter_-1)
+      cout << endl << "    * Max iteration reached during the second optimization. *     " << endl << endl;
+    mute_stdcout();
   }
+  resume_stdcout();
 }
 
 
