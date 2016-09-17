@@ -159,7 +159,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
       // (2) first-transform
-      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff->slice_copy(0, 2*ref->nocc()));
 
       // (3) split and factorize
       for (auto& i : half_complex) {

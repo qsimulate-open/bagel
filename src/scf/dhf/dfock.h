@@ -41,9 +41,7 @@ class DFock : public ZMatrix {
 
     void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const RelCDMatrix>>, const double scale);
     void add_Exop_block(std::shared_ptr<RelDFHalf>, std::shared_ptr<RelDFHalf>, const double scale, const bool diag = false);
-    void driver(std::array<std::shared_ptr<const Matrix>,4> rocoeff,  std::array<std::shared_ptr<const Matrix>,4> iocoeff,
-                std::array<std::shared_ptr<const Matrix>,4> trocoeff, std::array<std::shared_ptr<const Matrix>,4>tiocoeff, bool gaunt, bool breit,
-                const double scale_exchange, const double scale_coulomb);
+    void driver(std::shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, const double scale_exchange, const double scale_coulomb);
 
     // when gradient is requested, we store half-transformed integrals
     bool store_half_;
@@ -83,13 +81,13 @@ class DFock : public ZMatrix {
     }
     static std::list<std::shared_ptr<RelDF>> make_dfdists(std::vector<std::shared_ptr<const DFDist>>, bool);
     static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::shared_ptr<const ZMatrix>);
-    static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::array<std::shared_ptr<const Matrix>,4>,
-                                                                   std::array<std::shared_ptr<const Matrix>,4>);
 
     std::list<std::shared_ptr<RelDFHalf>> half_coulomb() const { assert(store_half_); return half_coulomb_; }
     std::list<std::shared_ptr<RelDFHalf>> half_gaunt() const { assert(store_half_); return half_gaunt_; }
     std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_); return half_breit_; }
 
+    void build_jk(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
+                  const bool gaunt, const bool breit, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
 };
 
 }
