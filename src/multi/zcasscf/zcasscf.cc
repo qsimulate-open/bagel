@@ -456,5 +456,5 @@ shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_pt
   // calculate S^1/2 of rdm1
   ZMatrix s(*rdm1);
   s.sqrt();
-  return make_shared<DFock>(geom_, hcore_->clone(), coeff * s, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+  return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), gaunt_, breit_, /*store half*/false, /*robust*/breit_);
 }
