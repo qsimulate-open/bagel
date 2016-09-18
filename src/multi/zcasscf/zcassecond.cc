@@ -59,8 +59,9 @@ void ZCASSecond::compute() {
     shared_ptr<ZRotFile> grad = compute_gradient(cfock, afock, qxr);
     kramers_adapt(grad, nclosed_, nact_, nvirt_);
 
+    shared_ptr<ZRotFile> gradele = grad->copy();
+    zero_positronic_elements(gradele);
     // DEBUG CODE *************************
-    zero_positronic_elements(grad); 
     // DEBUG CODE *************************
 
     // check gradient and break if converged
@@ -110,7 +111,10 @@ void ZCASSecond::compute() {
     // compute denominator...
     shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qxr, fci_->rdm1_av());
 
+    // augmented Hessian solver
     AugHess<ZRotFile> solver(max_micro_iter_, grad);
+    // dummy solver to computer lamda
+    AugHess<ZRotFile> solverele(max_micro_iter_, grad);
     // initial trial vector
     shared_ptr<ZRotFile> trot = apply_denom(grad, denom, 0.001, 1.0);
     kramers_adapt(trot, nclosed_, nact_, nvirt_);
@@ -120,12 +124,21 @@ void ZCASSecond::compute() {
       Timer mtimer;
       shared_ptr<ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
       kramers_adapt(sigma, nclosed_, nact_, nvirt_);
+
+      shared_ptr<ZRotFile> trotele = trot->copy();
+      shared_ptr<ZRotFile> sigmaele = sigma->copy();
+      zero_positronic_elements(trotele); 
+      zero_positronic_elements(sigmaele); 
+      const double scal = trotele->normalize();
+      sigmaele->scale(1.0/scal);
+
+      solverele.update(trotele, sigmaele);
+      tuple<double,double> lam = solverele.compute_lambda();
       // DEBUG CODE *************************
-      zero_positronic_elements(sigma); 
       // DEBUG CODE *************************
       shared_ptr<ZRotFile> residual;
       double lambda, epsilon, stepsize;
-      tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
+      tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma, lam);
       kramers_adapt(residual, nclosed_, nact_, nvirt_);
       const double err = residual->norm() / lambda;
       resume_stdcout();

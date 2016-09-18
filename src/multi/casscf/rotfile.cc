@@ -156,7 +156,7 @@ RotationMatrix<DataType>& RotationMatrix<DataType>::operator=(const RotationMatr
 }
 
 
-// orthogonalize to the liset of RotationMatrix's
+// orthogonalize to the list of RotationMatrix's
 template<typename DataType>
 double RotationMatrix<DataType>::orthog(list<shared_ptr<const RotationMatrix<DataType>>> c) {
   for (auto iter = c.begin(); iter != c.end(); ++iter)

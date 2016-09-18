@@ -63,7 +63,7 @@ class AugHess {
     const double maxstepsize = 1.0;
 
     // carbon copy from ORZ ((c) Yanatech)
-    std::tuple<double,double> compute_lambda(const MatType& mat1, const MatType& mat2) const {
+    std::tuple<double,double> compute_lambda_(const MatType& mat1, const MatType& mat2) const {
       const int nlast = mat1.ndim();
       VectorB v(nlast);
       assert(nlast > 1);
@@ -118,8 +118,7 @@ class AugHess {
       mat_(std::make_shared<MatType>(ndim+1,ndim+1)), prod_(ndim), vec_(ndim), eig_(ndim) {
     }
 
-    std::tuple<std::shared_ptr<T>,double,double,double> compute_residual(std::shared_ptr<const T> c, std::shared_ptr<const T> s) {
-
+    void update(std::shared_ptr<const T> c, std::shared_ptr<const T> s) {
       if (size_+1 == max_) throw std::runtime_error("max size reached in AugHess");
       // register new vectors
       assert(std::fabs(c->norm()-1.0) < 1.0e-8);
@@ -134,6 +133,27 @@ class AugHess {
         mat(i,size_-1) = detail::conj(mat(size_-1,i));
       }
       prod_(size_-1) = c->dot_product(*grad_);
+    }
+
+    std::tuple<double,double> compute_lambda() const {
+      // set to scr1
+      MatType scr1(size_+1, size_+1);
+      const MatType scr2 = *mat_->get_submatrix(0, 0, size_+1, size_+1);
+      // adding (1,0) vector as an additional basis function
+      for (int i = 0; i != size_; ++i) {
+        scr1(size_, i) = prod_(i);
+        scr1(i, size_) = detail::conj(prod_(i));
+      }
+      return compute_lambda_(scr1, scr2);
+    }
+
+    std::tuple<std::shared_ptr<T>,double,double,double> compute_residual(std::shared_ptr<const T> c, std::shared_ptr<const T> s,
+                                                                         std::tuple<double,double> lam = std::make_tuple(0.0, 0.0)) {
+      update(c, s);
+      double lambda = std::get<0>(lam);
+      double stepsize = std::get<1>(lam);
+      if (lambda == 0.0)
+        std::tie(lambda, stepsize) = compute_lambda();
 
       // set to scr1
       MatType scr1(size_+1, size_+1);
@@ -144,8 +164,6 @@ class AugHess {
         scr1(i, size_) = detail::conj(prod_(i));
       }
 
-      double lambda, stepsize;
-      std::tie(lambda, stepsize) = compute_lambda(scr1, scr2);
       MatType scr = scr1 + scr2 * (1.0/lambda);
       scr.diagonalize(eig_);
 
