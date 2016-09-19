@@ -50,14 +50,6 @@ void FMM::init() {
   const int ns2 = pow(2, ns_);
 
   nsp_ = geom_->nshellpair();
-  cout << "*** NBAS = " << nbasis_ << endl;
-  int ndim = 0;
-  int mdim = 0;
-  for (auto& sp : geom_->shellpairs()) {
-    ndim += sp->nbasis0();
-    mdim += sp->nbasis1();
-  }
-  cout << "N x M = " << ndim << " X " << mdim << endl;
 
 #if 0
   double maxext = 0;
@@ -109,7 +101,7 @@ void FMM::get_boxes() {
     for (int i = 0; i != 3; ++i) {
       const int sign = (coordinates_[isp][i] >= 0) ? 1.0 : -1.0;
       idxbox[i] = sign * (int) floor(abs(coordinates_[isp][i])/unitsize_) + ns2/2;
-      assert(idxbox[i] <= ns2 && idxbox[i] >= 0);
+      assert(idxbox[i] < ns2 && idxbox[i] >= 0);
     }
 
     map<array<int, 3>,int>::iterator box = treemap.find(idxbox);
@@ -147,16 +139,15 @@ void FMM::get_boxes() {
 
   int icntc = 0;
   int icntp = ns2;
-  nbranch_.resize(ns_+2);
-  nbranch_[0] = nleaf;
+  nbranch_.resize(ns_+1);
 
   for (int nss = ns_; nss > -1; --nss) {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
 
-    for (int i = 0; i != nss2+1; ++i) {
-      for (int j = 0; j != nss2+1; ++j) {
-        for (int k = 0; k != nss2+1; ++k) {
+    for (int i = 1; i != nss2+1; ++i) {
+      for (int j = 1; j != nss2+1; ++j) {
+        for (int k = 1; k != nss2+1; ++k) {
           vector<shared_ptr<const ShellPair>> sp;
           array<int, 3> idxp;
           idxp[0] = (int) floor(0.5*(i+1)) + icntp;
@@ -173,18 +164,21 @@ void FMM::get_boxes() {
             const bool parent_found = (parent != treemap.end());
 
             if (!parent_found) {
-              auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
-              box_.insert(box_.end(), newbox);
-              treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
-              box_[nbox]->insert_child(box_[ichild]);
-              box_[ichild]->insert_parent(box_[nbox]);
-              ++nbox;
+              if (nss != 0) {
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
+                box_.insert(box_.end(), newbox);
+                treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
+                box_[nbox]->insert_child(box_[ichild]);
+                box_[ichild]->insert_parent(box_[nbox]);
+                ++nbox;
+              }
               ++nbranch;
             } else {
               const int ibox = treemap.find(idxp)->second;
               box_[ibox]->insert_child(box_[ichild]);
               box_[ibox]->insert_sp(box_[ichild]->sp());
               box_[ichild]->insert_parent(box_[ibox]);
+              ++nbranch;
             }
           }
 
@@ -193,7 +187,7 @@ void FMM::get_boxes() {
     }
     icntc = icntp;
     icntp += nss2;
-    nbranch_[ns_-nss+1] = nbranch;
+    nbranch_[ns_-nss] = nbranch;
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
@@ -203,7 +197,7 @@ void FMM::get_boxes() {
     b->init();
 
   int icnt = 0;
-  for (int ir = ns_+1; ir > -1; --ir) {
+  for (int ir = ns_; ir > -1; --ir) {
     vector<shared_ptr<Box>> tmpbox(nbranch_[ir]);
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
       tmpbox[ib] = box_[nbox_-icnt-nbranch_[ir]+ib];
@@ -217,7 +211,7 @@ void FMM::get_boxes() {
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
-    cout << i << " rank = " << b->rank() << " extent = " << b->extent()
+    cout << i << " rank = " << b->rank() << " extent = " << b->extent() << " nsp = " << b->nsp()
          << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " ninter = " << b->ninter()
          << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
          << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
@@ -239,7 +233,7 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
 
   //u = 0;
   int icnt = nbranch_[0];
-  for (int i = 1; i != ns_+2; ++i)
+  for (int i = 1; i != ns_+1; ++i)
   //  if (u++ % mpi__->size() == mpi__->rank())
       for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
         box_[icnt]->compute_M2M(density);
@@ -266,7 +260,7 @@ void FMM::L2L() const {
   Timer l2ltime;
 
   int icnt = 0;
-  for (int ir = ns_+1; ir > -1; --ir) {
+  for (int ir = ns_; ir > -1; --ir) {
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
       box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L();
 
