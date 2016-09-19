@@ -100,8 +100,9 @@ void FMM::get_boxes() {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
       const int sign = (coordinates_[isp][i] >= 0) ? 1.0 : -1.0;
-      idxbox[i] = sign * (int) floor(abs(coordinates_[isp][i])/unitsize_) + ns2/2;
-      assert(idxbox[i] < ns2 && idxbox[i] >= 0);
+      const int shift = (ns2 == 1) ? 1 : ns2/2;
+      idxbox[i] = sign * (int) floor(abs(coordinates_[isp][i])/unitsize_) + shift;
+      assert(idxbox[i] <= ns2 && idxbox[i] > 0);
     }
 
     map<array<int, 3>,int>::iterator box = treemap.find(idxbox);

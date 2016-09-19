@@ -133,7 +133,8 @@ bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - box->centre(i), 2);
 
-  const bool out = (sqrt(rr) < (1+ws)*(extent_ + box->extent()));
+  const bool out = (sqrt(rr) <= (1+ws)*(extent_ + box->extent()));
+
   return out;
 }
 
@@ -143,13 +144,8 @@ void Box::get_inter(vector<shared_ptr<Box>> box, const int ws) {
   inter_.resize(box.size());
   int ni = 0;
   for (auto& b : box) {
-    if (b->rank() == rank_ && !is_neigh(b, ws) && (!parent_ || parent_->is_neigh(b->parent(), ws))) {
+    if ((b->rank() == rank_) && (!is_neigh(b, ws)) && (!parent_ || parent_->is_neigh(b->parent(), ws))) {
       inter_[ni] = b;
-      array<double, 3> d = {{0, 0, 0}};
-      d[0] = b->centre(0) - centre_[0];
-      d[1] = b->centre(1) - centre_[1];
-      d[2] = b->centre(2) - centre_[2];
-      cout << "INTER DISTANCE" << sqrt(d[0]*d[0]+d[1]*d[1]+d[2]*d[2]) << endl;
       ++ni;
     }
   }
