@@ -134,8 +134,6 @@ void ZCASSecond::compute() {
 
       solverele.update(trotele, sigmaele);
       tuple<double,double> lam = solverele.compute_lambda();
-      // DEBUG CODE *************************
-      // DEBUG CODE *************************
       shared_ptr<ZRotFile> residual;
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma, lam);
@@ -224,50 +222,59 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   copy_n(fci_->rdm1_av()->data(), rdm1.size(), rdm1.data());
   blas::conj_n(rdm1.data(), rdm1.size());
 
-#if 0
   // lambda for computing g(D)
-  auto compute_gd = [&,this](shared_ptr<const DFHalfDist> halft, shared_ptr<const DFHalfDist> halfjj, const MatView pcoeff) {
-    shared_ptr<const Matrix> pcoefft = make_shared<Matrix>(pcoeff)->transpose();
-    shared_ptr<Matrix> gd = geom_->df()->compute_Jop(halft, pcoefft);
-    shared_ptr<Matrix> ex0 = halfjj->form_2index(halft, 1.0);
-    ex0->symmetrize();
-    gd->ax_plus_y(-0.5, ex0);
-    return gd; 
-  };  
+  auto compute_gd = [&,this](list<shared_ptr<const RelDFHalf>> halftc, list<shared_ptr<const RelDFHalf>> halfjjc, shared_ptr<const ZMatrix> pcoeff,
+                             const bool gaunt, const bool breit) {
+    // TODO to be updated
+    list<shared_ptr<const RelDFHalf>> dum;
+    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, gaunt, breit, halfjjc, halftc, dum, dum, dum, dum, /*robust*/breit);
+    dfock->hermite(); 
+    return dfock;
+  };
 
   // g(t_vc) operator and g(t_ac) operator
   if (nclosed_) {
-    const Matrix tcoeff = vcoeff * *vc + acoeff * *ca->transpose();
-    auto halft = geom_->df()->compute_half_transform(tcoeff);
-    const Matrix gt = *compute_gd(halft, half, ccoeff);
-    sigma->ax_plus_y_ca(32.0, ccoeff % gt * acoeff);
-    sigma->ax_plus_y_vc(32.0, vcoeff % gt * ccoeff);
-    sigma->ax_plus_y_va(16.0, vcoeff % gt * acoeff * rdm1);
-    sigma->ax_plus_y_ca(-16.0, ccoeff % gt * acoeff * rdm1);
+    auto tcoeff = make_shared<ZMatrix>(*vcoeff * *vc + *acoeff * *ca->transpose());
+    list<shared_ptr<RelDFHalf>> tmp;
+    tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
+    list<shared_ptr<const RelDFHalf>> halftc;
+    for (auto& i : tmp)
+      halftc.push_back(i);
+    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, false, false);
+    sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
+    sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
+    sigma->ax_plus_y_va(4.0, *vcoeff % gt * *acoeff * rdm1);
+    sigma->ax_plus_y_ca(-4.0, *ccoeff % gt * *acoeff * rdm1);
   }
-#endif
+
   // g(t_va - t_ca)
   auto tcoeff = make_shared<ZMatrix>(nclosed_ ? (*vcoeff * *va - *ccoeff * *ca) : *vcoeff * *va);
-  list<shared_ptr<RelDFHalf>> halftac;
-  tie(halftac, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
-#if 0
+  list<shared_ptr<RelDFHalf>> tmp;
+  tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
+  list<shared_ptr<const RelDFHalf>> halftac;
+  for (auto& i : tmp)
+    halftac.push_back(i);
   if (nclosed_) {
-    shared_ptr<DFHalfDist> halftad = halfta->copy();
-    halftad->rotate_occ(make_shared<Matrix>(rdm1));
-    const Matrix gt = *compute_gd(halftad, halfa, acoeff);
-    sigma->ax_plus_y_ca(16.0, ccoeff % gt * acoeff);
-    sigma->ax_plus_y_vc(16.0, vcoeff % gt * ccoeff);
+    list<shared_ptr<const RelDFHalf>> halftacd;
+    shared_ptr<const ZMatrix> rdm1p = rdm1.get_conjg();
+    for (auto& i : halftac) {
+       shared_ptr<RelDFHalf> tmp = i->copy();
+       tmp->rotate_occ(rdm1p);
+       halftacd.push_back(tmp); 
+    }
+    const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, false, false);
+    sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
+    sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
   }
+#if 1
   // terms with Qvec
-#endif
   {
     shared_ptr<const ZMatrix> qaa = qxr->cut(nclosed_*2, nocc_*2);
     sigma->ax_plus_y_va(-2.0, *va ^ *qaa);
     sigma->ax_plus_y_va(-2.0, *va * *qaa);
-#if 0
     if (nclosed_) {
-      shared_ptr<const Matrix> qva = qxr->cut(nocc_*2, nocc_+nvirt_*2);
-      shared_ptr<const Matrix> qca = qxr->cut(0, nclosed_);
+      shared_ptr<const ZMatrix> qva = qxr->cut(nocc_*2, (nocc_+nvirt_)*2);
+      shared_ptr<const ZMatrix> qca = qxr->cut(0, nclosed_*2);
       sigma->ax_plus_y_vc(-2.0, *va ^ *qca);
       sigma->ax_plus_y_va(-2.0, *vc * *qca);
       sigma->ax_plus_y_ca(-2.0, *vc % *qva);
@@ -275,7 +282,6 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       sigma->ax_plus_y_ca(-2.0, *ca ^ *qaa);
       sigma->ax_plus_y_ca(-2.0, *ca * *qaa);
     }   
-#endif
   }
   // compute Q' and Q''
   {
@@ -286,36 +292,39 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
 
     shared_ptr<const ListRelDFFull> fullaaD = fullaa->apply_2rdm(fci_->rdm2_av());
     shared_ptr<const ListRelDFFull> fulltaD = fullta->apply_2rdm(fci_->rdm2_av());
-    shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
-    shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
-    shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0, false)->get_conjg();
-    shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0, false)->get_conjg();
-
-    sigma->ax_plus_y_va( 4.0, *qp + *qpp);
-#if 0
-    if (nclosed_)
-      sigma->ax_plus_y_ca(-4.0, ccoeff % (*qp + *qpp));
-#endif
+    {
+      shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
+      shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0, false)->get_conjg();
+      shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0, false)->get_conjg();
+      sigma->ax_plus_y_va( 4.0, *qp + *qpp);
+    }
+    if (nclosed_) {
+      shared_ptr<const ListRelDFFull> fullca  = RelMOFile::compute_full(ccoeff, halfac,  /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullcta = RelMOFile::compute_full(ccoeff, halftac, /*apply_j*/false);
+      shared_ptr<const ZMatrix> qp  = fullca->form_2index(fulltaD, 1.0, false)->get_conjg();
+      shared_ptr<const ZMatrix> qpp = fullcta->form_2index(fullaaD, 1.0, false)->get_conjg();
+      sigma->ax_plus_y_ca(-4.0, *qp + *qpp);
+    }
   }
 
   // next 1-electron contribution...
   {
     sigma->ax_plus_y_va( 4.0, *fcvv * *va * rdm1);
-    sigma->ax_plus_y_va(-2.0, *va * (rdm1 % *fcaa + *fcaa * rdm1));
-#if 0
+    sigma->ax_plus_y_va(-2.0, *va * (rdm1 * *fcaa + *fcaa * rdm1));
     if (nclosed_) {
-      sigma->ax_plus_y_ca( 8.0, *ca * (*fcaa + *faaa));
-      sigma->ax_plus_y_ca( 8.0, *vc % (*fcva + *fava));
-      sigma->ax_plus_y_vc(-8.0, *vc * (*fccc + *facc));
-      sigma->ax_plus_y_va(-4.0, *vc * (*fcca + *faca));
-      sigma->ax_plus_y_vc(-4.0, *va ^ (*fcca + *faca));
+      sigma->ax_plus_y_ca( 4.0, *ca * (*fcaa + *faaa));
+      sigma->ax_plus_y_ca( 4.0, *vc % (*fcva + *fava));
+      sigma->ax_plus_y_vc(-4.0, *vc * (*fccc + *facc));
+      sigma->ax_plus_y_va(-2.0, *vc * (*fcca + *faca));
+      sigma->ax_plus_y_vc(-2.0, *va ^ (*fcca + *faca));
       sigma->ax_plus_y_ca(-2.0, *ca * (rdm1 * *fcaa + *fcaa * rdm1));
-      sigma->ax_plus_y_vc( 8.0, (*fcvv + *favv) * *vc);
-      sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
-      sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
-      sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
-      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
-      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_vc( 4.0, (*fcvv + *favv) * *vc);
+      sigma->ax_plus_y_ca(-4.0, (*fccc + *facc) * *ca);
+      sigma->ax_plus_y_va( 2.0, (*fcvc + *favc) * *ca);
+      sigma->ax_plus_y_ca( 2.0, (*fcvc + *favc) % *va);
+      sigma->ax_plus_y_vc( 2.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_vc( 2.0, (*fcva + *fava) ^ *ca);
       sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
       sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
       sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
@@ -323,9 +332,9 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       sigma->ax_plus_y_vc(-2.0, *va * rdm1 ^ *fcca);
       sigma->ax_plus_y_ca(-2.0, *vc % *fcva * rdm1);
       sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
-    }   
-#endif
+    }
   }
+#endif
   sigma->scale(0.5);
   return sigma;
 }
