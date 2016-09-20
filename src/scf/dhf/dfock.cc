@@ -55,7 +55,7 @@ DFock::DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> h
   for (auto& i : int2c)
     i->set_sum_diff();
 
-  build_j(int1c, int2c, coeff, false, false, scale_coulomb*2.0, /*only_once_in_j*/false, /*make_real*/true);
+  build_j(int1c, int2c, coeff, false, false, scale_coulomb*2.0, /*only_once_in_j*/false);
   build_k(int1c, int2c, coeff, false, false, scale_exch);
   build_k(int2c, int1c, coeff, false, false, scale_exch);
 
@@ -317,11 +317,11 @@ void DFock::build_k(list<shared_ptr<RelDFHalf>> half_complex_exch, list<shared_p
 
 
 void DFock::build_j(list<shared_ptr<RelDFHalf>> half_complex_exch, list<shared_ptr<RelDFHalf>> half_complex_exch2, shared_ptr<const ZMatrix> coeff,
-                    const bool gaunt, const bool breit, const double scale_coulomb, const bool only_once_in_j, const bool make_real) {
+                    const bool gaunt, const bool breit, const double scale_coulomb, const bool only_once_in_j) {
   list<shared_ptr<const RelDFHalf>> tmp1, tmp2;
   for (auto& i : half_complex_exch)  tmp1.push_back(i);
   for (auto& i : half_complex_exch2) tmp2.push_back(i);
-  build_j(tmp1, tmp2, coeff, gaunt, breit, scale_coulomb, only_once_in_j, make_real);
+  build_j(tmp1, tmp2, coeff, gaunt, breit, scale_coulomb, only_once_in_j);
 }
 
 
@@ -349,7 +349,7 @@ void DFock::build_k(list<shared_ptr<const RelDFHalf>> half_complex_exch, list<sh
 
 
 void DFock::build_j(list<shared_ptr<const RelDFHalf>> half_complex_exch, list<shared_ptr<const RelDFHalf>> half_complex_exch2, shared_ptr<const ZMatrix> coeff,
-                    const bool gaunt, const bool breit, const double scale_coulomb, const bool only_once_in_j, const bool make_real) {
+                    const bool gaunt, const bool breit, const double scale_coulomb, const bool only_once_in_j) {
   Timer timer(0);
   const string printtag = !gaunt ? "Coulomb" : "Gaunt";
   const double gscale = gaunt ? (breit ? -0.5 : -1.0) : 1.0;
@@ -376,7 +376,7 @@ void DFock::build_j(list<shared_ptr<const RelDFHalf>> half_complex_exch, list<sh
     // compute J operators
     for (auto& j : half_complex_exch2)
       for (auto& i : j->basis())
-        cd.push_back(make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), only_once_in_j, make_real));
+        cd.push_back(make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), only_once_in_j));
     for (auto& i : dfdists)
       add_Jop_block(i, cd, gscale);
     timer.tick_print(printtag + ": J operator");

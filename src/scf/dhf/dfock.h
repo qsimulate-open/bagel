@@ -88,9 +88,9 @@ class DFock : public ZMatrix {
     std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_); return half_breit_; }
 
     void build_j(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
-                 const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const bool only_once_in_j = true, const bool make_real = false);
+                 const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const bool only_once_in_j = true);
     void build_j(std::list<std::shared_ptr<const RelDFHalf>> half1, std::list<std::shared_ptr<const RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
-                 const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const bool only_once_in_j = true, const bool make_real = false);
+                 const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const bool only_once_in_j = true);
     void build_k(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
                  const bool gaunt, const bool breit, const double scale_exch = 1.0);
     void build_k(std::list<std::shared_ptr<const RelDFHalf>> half1, std::list<std::shared_ptr<const RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
