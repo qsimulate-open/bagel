@@ -104,10 +104,10 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   for (int i = 0; i != nstates; ++i)
     eref_->element(i, i) = info_->ciwfn()->energy(i);
 
-  if (nstates > 1 && info_->do_xms())
+  if (nstates > 1 && info_->do_xms()) {
     rotate_xms();
-
-  eref_->print("Reference energies in XMS basis");
+    eref_->print("Reference energies in XMS basis");
+  }
 
   // rdms.
   if (info_->ciwfn()) {
