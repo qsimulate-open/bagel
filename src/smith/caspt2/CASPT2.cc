@@ -204,7 +204,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor>>(30, s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();

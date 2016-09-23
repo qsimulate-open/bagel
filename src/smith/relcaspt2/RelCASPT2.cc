@@ -223,7 +223,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_li
       update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(30, s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
