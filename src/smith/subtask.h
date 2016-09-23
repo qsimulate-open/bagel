@@ -59,10 +59,12 @@ class SubTask_ {
 };
 
 namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace CASA { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MSCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace SPCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MRCI   { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace RelCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
+namespace RelCASA { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 namespace RelMRCI   { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 
 extern template class SubTask_<1,1,double>;

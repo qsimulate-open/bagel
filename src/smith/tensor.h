@@ -128,10 +128,12 @@ extern template class Tensor_<double>;
 extern template class Tensor_<std::complex<double>>;
 
 namespace CASPT2 { using Tensor = Tensor_<double>; }
+namespace CASA { using Tensor = Tensor_<double>; }
 namespace SPCASPT2 { using Tensor = Tensor_<double>; }
 namespace MSCASPT2 { using Tensor = Tensor_<double>; }
 namespace MRCI   { using Tensor = Tensor_<double>; }
 namespace RelCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
+namespace RelCASA { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelSPCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelMSCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelMRCI   { using Tensor = Tensor_<std::complex<double>>; }
