@@ -3,8 +3,8 @@
 {
   "title" : "molecule",
   "symmetry" : "C1",
-  "basis" : "tzvpp",
-  "df_basis" : "tzvpp-jkfit",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
   "angstrom" : true,
   "geometry" : [
     { "atom" : "N",  "xyz" : [   -0.000000,     -0.000000,       1.0362]},
