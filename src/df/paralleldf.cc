@@ -134,7 +134,7 @@ shared_ptr<Matrix> ParallelDF::compute_Jop_from_cd(shared_ptr<const VectorB> tmp
 }
 
 
-shared_ptr<VectorB> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const bool onlyonce) const {
+shared_ptr<VectorB> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, shared_ptr<const Matrix> dat2, const int number_of_j) const {
   if (!dat2 && !data2_) throw logic_error("ParallelDF::compute_cd was called without 2-index integrals");
   if (!dat2) dat2 = data2_;
 
@@ -148,9 +148,12 @@ shared_ptr<VectorB> ParallelDF::compute_cd(const shared_ptr<const Matrix> den, s
   if (!serial_)
     tmp0->allreduce();
 
-  *tmp0 = *dat2 * *tmp0;
-  if (!onlyonce)
+  if (number_of_j == 1)
     *tmp0 = *dat2 * *tmp0;
+  else if (number_of_j == 2)
+    *tmp0 = *dat2 * (*dat2 * *tmp0);
+  else if (number_of_j != 0)
+    throw logic_error("wrong number of J in ParallelDF::compute_cd");
   return tmp0;
 }
 

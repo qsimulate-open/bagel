@@ -112,6 +112,9 @@ class ListRelDFFull {
     int nocc2() const { assert(!data_.empty()); return data_.front()->nocc2(); }
 
     void ax_plus_y(const std::complex<double>& a, std::shared_ptr<const ListRelDFFull> o);
+
+    std::shared_ptr<ListRelDFFull> copy() const;
+    std::shared_ptr<ListRelDFFull> clone() const;
     std::shared_ptr<ListRelDFFull> swap() const;
     std::shared_ptr<ListRelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
     std::shared_ptr<ListRelDFFull> apply_2rdm(std::shared_ptr<const ZMatrix>) const;

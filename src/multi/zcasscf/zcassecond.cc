@@ -61,8 +61,6 @@ void ZCASSecond::compute() {
 
     shared_ptr<ZRotFile> gradele = grad->copy();
     zero_positronic_elements(gradele);
-    // DEBUG CODE *************************
-    // DEBUG CODE *************************
 
     // check gradient and break if converged
     const double gradient = grad->rms();
@@ -127,8 +125,8 @@ void ZCASSecond::compute() {
 
       shared_ptr<ZRotFile> trotele = trot->copy();
       shared_ptr<ZRotFile> sigmaele = sigma->copy();
-      zero_positronic_elements(trotele); 
-      zero_positronic_elements(sigmaele); 
+      zero_positronic_elements(trotele);
+      zero_positronic_elements(sigmaele);
       const double scal = trotele->normalize();
       sigmaele->scale(1.0/scal);
 
@@ -198,7 +196,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   shared_ptr<ZRotFile> sigma = trot->clone();
 
   shared_ptr<const ZMatrix> va = trot->va_mat();
-  shared_ptr<const ZMatrix> ca = nclosed_ ? trot->ca_mat() : nullptr;
+  shared_ptr<      ZMatrix> ca = nclosed_ ? trot->ca_mat()->get_conjg() : nullptr; // CAUTION!
   shared_ptr<const ZMatrix> vc = nclosed_ ? trot->vc_mat() : nullptr;
 
   shared_ptr<const ZMatrix> fcaa = cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2);
@@ -223,24 +221,26 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   blas::conj_n(rdm1.data(), rdm1.size());
 
   // lambda for computing g(D)
-  auto compute_gd = [&,this](list<shared_ptr<const RelDFHalf>> halftc, list<shared_ptr<const RelDFHalf>> halfjjc, shared_ptr<const ZMatrix> pcoeff,
+  auto compute_gd = [&,this](list<shared_ptr<const RelDFHalf>> halftc, list<shared_ptr<const RelDFHalf>> halfjjc,
+                             shared_ptr<const ZMatrix> pcoeff, shared_ptr<const ZMatrix> tpcoeff,
                              const bool gaunt, const bool breit) {
     // TODO to be updated
     list<shared_ptr<const RelDFHalf>> dum;
-    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, gaunt, breit, halfjjc, halftc, dum, dum, dum, dum, /*robust*/breit);
-    dfock->hermite(); 
+    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, tpcoeff,
+                                     gaunt, breit, halfjjc, halftc, dum, dum, dum, dum, /*robust*/breit);
+    dfock->hermite();
     return dfock;
   };
 
   // g(t_vc) operator and g(t_ac) operator
   if (nclosed_) {
-    auto tcoeff = make_shared<ZMatrix>(*vcoeff * *vc + *acoeff * *ca->transpose());
+    auto tcoeff = make_shared<ZMatrix>(*vcoeff * *vc + *acoeff * *ca->transpose_conjg());
     list<shared_ptr<RelDFHalf>> tmp;
     tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
     list<shared_ptr<const RelDFHalf>> halftc;
     for (auto& i : tmp)
       halftc.push_back(i);
-    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, false, false);
+    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, tcoeff, false, false);
     sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
     sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
     sigma->ax_plus_y_va(4.0, *vcoeff % gt * *acoeff * rdm1);
@@ -260,13 +260,12 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
     for (auto& i : halftac) {
        shared_ptr<RelDFHalf> tmp = i->copy();
        tmp->rotate_occ(rdm1p);
-       halftacd.push_back(tmp); 
+       halftacd.push_back(tmp);
     }
-    const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, false, false);
+    const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, make_shared<ZMatrix>(*tcoeff * rdm1), false, false);
     sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
     sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
   }
-#if 1
   // terms with Qvec
   {
     shared_ptr<const ZMatrix> qaa = qxr->cut(nclosed_*2, nocc_*2);
@@ -281,7 +280,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       sigma->ax_plus_y_vc(-2.0, *qva ^ *ca);
       sigma->ax_plus_y_ca(-2.0, *ca ^ *qaa);
       sigma->ax_plus_y_ca(-2.0, *ca * *qaa);
-    }   
+    }
   }
   // compute Q' and Q''
   {
@@ -334,7 +333,8 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       sigma->ax_plus_y_va(-2.0, *vc * *fcca * rdm1);
     }
   }
-#endif
+
+  blas::conj_n(sigma->ptr_ca(), nclosed_*nact_*4);
   sigma->scale(0.5);
   return sigma;
 }

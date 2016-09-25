@@ -179,9 +179,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += RelCDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half /* false = multiply J^{-1} */);
+          *cd += RelCDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half ? 1 : 2);
         } else {
-          cd = make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half);
+          cd = make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half ? 1 : 2);
         }
       }
     }

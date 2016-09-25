@@ -31,10 +31,11 @@ using namespace bagel;
 // Also, C and D matrices are either real (for Coulomb) or purely imaginary (for Gaunt and Breit) due to symmetry. We are not taking advantage of it.
 
 RelCDMatrix::RelCDMatrix(shared_ptr<const RelDFHalf> dfhc, shared_ptr<const SpinorInfo> abc, array<shared_ptr<const Matrix>, 4> trcoeff,
-                         array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const bool onlyonce)
- : ZVectorB(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)-*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce),
-            *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, onlyonce)+*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, onlyonce)),
+                         array<shared_ptr<const Matrix>, 4> ticoeff, shared_ptr<const Matrix> dat2, const int number_of_j)
+ : ZVectorB(*dfhc->get_real()->compute_cd(trcoeff[abc->basis(1)], dat2, number_of_j)-*dfhc->get_imag()->compute_cd(ticoeff[abc->basis(1)], dat2, number_of_j),
+            *dfhc->get_real()->compute_cd(ticoeff[abc->basis(1)], dat2, number_of_j)+*dfhc->get_imag()->compute_cd(trcoeff[abc->basis(1)], dat2, number_of_j)),
    alpha_comp_(abc->alpha_comp()) {
 
   btas::scal(abc->fac(dfhc->cartesian()), *this);
+
 }

@@ -247,6 +247,22 @@ void ListRelDFFull::ax_plus_y(const complex<double>& a, shared_ptr<const ListRel
 }
 
 
+shared_ptr<ListRelDFFull> ListRelDFFull::copy() const {
+  auto out = make_shared<ListRelDFFull>();
+  for (auto& i : data_)
+    out->push_back(i->copy());
+  return out;
+}
+
+
+shared_ptr<ListRelDFFull> ListRelDFFull::clone() const {
+  auto out = make_shared<ListRelDFFull>();
+  for (auto& i : data_)
+    out->push_back(i->clone());
+  return out;
+}
+
+
 shared_ptr<ListRelDFFull> ListRelDFFull::swap() const {
   auto out = make_shared<ListRelDFFull>();
   for (auto& i : data_)
