@@ -3,7 +3,7 @@
 // Filename: zcassecond.cc
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -317,7 +317,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       sigma->ax_plus_y_vc(-4.0, *vc * (*fccc + *facc));
       sigma->ax_plus_y_va(-2.0, *vc * (*fcca + *faca));
       sigma->ax_plus_y_vc(-2.0, *va ^ (*fcca + *faca));
-      sigma->ax_plus_y_ca(-2.0, *ca * (rdm1 * *fcaa + *fcaa * rdm1));
+      sigma->ax_plus_y_ca(-2.0, *ca * (rdm1 % *fcaa + *fcaa * rdm1));
       sigma->ax_plus_y_vc( 4.0, (*fcvv + *favv) * *vc);
       sigma->ax_plus_y_ca(-4.0, (*fccc + *facc) * *ca);
       sigma->ax_plus_y_va( 2.0, (*fcvc + *favc) * *ca);
@@ -412,11 +412,10 @@ shared_ptr<ZRotFile> ZCASSecond::compute_denom(shared_ptr<const ZMatrix> cfock, 
     }
   }
 
-  const double thresh = 1.0e-8;
+  const double thresh = 1.0e-15;
   for (int i = 0; i != out->size(); ++i)
-    if (fabs(out->data(i)) < thresh) {
-      out->data(i) = 1.0e10;
-    }
+    if (abs(out->data(i)) < thresh)
+      out->data(i) = 1.0;
   return out;
 }
 
