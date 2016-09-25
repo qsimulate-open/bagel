@@ -165,7 +165,7 @@ shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const Matrix> den) c
 
 shared_ptr<Matrix> ParallelDF::compute_Jop(const shared_ptr<const ParallelDF> o, const shared_ptr<const Matrix> den, const bool onlyonce) const {
   // first compute |E*) = d_rs (D|rs) J^{-1}_DE
-  shared_ptr<const VectorB> tmp0 = o->compute_cd(den, data2_, onlyonce);
+  shared_ptr<const VectorB> tmp0 = o->compute_cd(den, data2_, onlyonce ? 1 : 2);
   // then compute J operator J_{rs} = |E*) (E|rs)
   return compute_Jop_from_cd(tmp0);
 }
