@@ -47,7 +47,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     shared_ptr<ListRelDFFull> fullr2 = !breit ? fullr : RelMOFile::compute_full(rcoeff, half2, false);
 
     // form (rs|tu)*G(vs,tu) where r runs fastest
-    shared_ptr<const ZRDM<2>> rdm2_av = expand_kramers(fci->rdm2_av_kramers(), nact);
+    shared_ptr<const ZMatrix> rdm2_av = fci->rdm2_av();
 
     auto full_d = make_shared<ListRelDFFull>();
     for (auto& ii : *full)

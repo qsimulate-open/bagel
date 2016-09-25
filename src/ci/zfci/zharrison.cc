@@ -25,6 +25,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
+#include <src/util/math/quatmatrix.h>
 #include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
@@ -413,3 +414,45 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 }
 
 
+// CAUTION, this only updates rdm1_av_expanded_ and rdm2_av_expanded_ for CASSCF...
+pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
+  assert(rdm1_av_expanded_ != nullptr);
+  // first make natural orbitals
+  VectorB occup(norb_*2); 
+  shared_ptr<ZMatrix> natorb;
+  {
+    auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
+    copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
+    natorb = make_shared<QuatMatrix>(*rdm1);
+    natorb->diagonalize(occup);
+    for (int i = 0; i != norb_; ++i)
+      occup[i+norb_] = occup[i];
+  }
+  // update rdm1_av_expanded_
+  {
+    ZMatrix tmp(norb_*2, norb_*2);
+    copy_n(rdm1_av_expanded_->data(), tmp.size(), tmp.data());
+    tmp = *natorb % tmp * *natorb;
+    copy_n(tmp.data(), tmp.size(), rdm1_av_expanded_->data());
+  }
+  // update rdm2_av_expanded_
+  {
+    shared_ptr<ZRDM<2>> buf = rdm2_av_expanded_->clone();
+    shared_ptr<const ZMatrix> natorb_conjg = natorb->get_conjg();
+    const int ndim  = norb_*2;
+    const int ndim2 = ndim*ndim;;
+    auto half_trans = [&](shared_ptr<const ZRDM<2>> a, shared_ptr<ZRDM<2>> b, shared_ptr<ZRDM<2>> c) {
+      zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, natorb->data(), ndim, 0.0, b->data(), ndim2*ndim);
+      for (int i = 0; i != ndim; ++i)
+        zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, natorb_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
+    };  
+    half_trans(rdm2_av_expanded_, buf, rdm2_av_expanded_);
+    blas::transpose(rdm2_av_expanded_->data(), ndim2, ndim2, buf->data());
+    half_trans(buf, rdm2_av_expanded_, buf);
+    blas::transpose(buf->data(), ndim2, ndim2, rdm2_av_expanded_->data());
+  }
+
+  for (auto& i : occup)
+    if (i < numerical_zero__) i = 0.0;
+  return make_pair(natorb, move(occup));
+}

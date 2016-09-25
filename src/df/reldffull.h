@@ -88,6 +88,7 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+    std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZMatrix>) const;
 
 };
 

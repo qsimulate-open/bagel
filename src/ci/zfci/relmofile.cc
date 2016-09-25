@@ -174,14 +174,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
     for (int k = 0; k != 2; ++k)
       tie(half_complex_exch[k], half_complex_exch2[k]) = compute_half(geom_, coeff->at(k), gaunt, breit);
 
-    if (!gaunt)
-      half_complex_coulomb_ = half_complex_exch;
-    else
-      half_complex_gaunt_ = half_complex_exch;
-
-    if (breit)
-      half_complex_breit_ = half_complex_exch2;
-
     // (4) compute (gamma|ii)
     auto full = make_shared<Kramers<2,ListRelDFFull>>();
     full->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch[0], true));

@@ -34,18 +34,20 @@ void ZCASSecond::compute() {
   assert(nvirt_ && nact_);
   Timer timer;
 
+  const bool only_electrons = idata_->get<bool>("only_electrons", false);
+
   mute_stdcout();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
-    {   
+    {
       if (iter) fci_->update(coeff_);
       Timer fci_time(0);
       fci_->compute();
       fci_->compute_rdm12();
-//    auto natorb = fci_->natorb_convert();
-//    coeff_ = update_coeff(coeff_, natorb.first);
-//    occup_ = natorb.second;
+      auto natorb = fci_->natorb_convert();
+      coeff_ = update_coeff(coeff_, natorb.first);
+      occup_ = natorb.second;
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -57,6 +59,8 @@ void ZCASSecond::compute() {
     shared_ptr<const ZMatrix> qxr = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, gaunt_, breit_)->get_conjg();
 
     shared_ptr<ZRotFile> grad = compute_gradient(cfock, afock, qxr);
+    if (only_electrons)
+      zero_positronic_elements(grad);
     kramers_adapt(grad, nclosed_, nact_, nvirt_);
 
     shared_ptr<ZRotFile> gradele = grad->copy();
@@ -121,6 +125,8 @@ void ZCASSecond::compute() {
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
       shared_ptr<ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
+      if (only_electrons)
+        zero_positronic_elements(sigma);
       kramers_adapt(sigma, nclosed_, nact_, nvirt_);
 
       shared_ptr<ZRotFile> trotele = trot->copy();
@@ -168,8 +174,9 @@ void ZCASSecond::compute() {
       const complex<double> fac = exp(complex<double>(0.0,eig(i)));
       blas::scale_n(fac, a->element_ptr(0,i), a->ndim());
     }
-    const ZMatrix R = *a ^ *atmp;
-    coeff_ = make_shared<RelCoeff_Block>(*coeff_ * R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
+    auto R = make_shared<ZMatrix>(*a ^ *atmp);
+    kramers_adapt(R, nvirt_);
+    coeff_ = make_shared<RelCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
 
     resume_stdcout();
     if (iter == max_iter_-1)
