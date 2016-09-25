@@ -30,6 +30,7 @@
 #include <src/multi/casscf/rotfile.h>
 #include <src/mat1e/hcore.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/dhf/population_analysis.h>
 #include <src/util/f77.h>
 #include <src/util/math/davidson.h>
 #include <src/util/math/bfgs.h>
@@ -166,6 +167,19 @@ void SuperCI::compute() {
     HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
     hfcc.compute();
   }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of SuperCI optimized orbitals to casscf.log" << endl;
+    mute_stdcout();
+    auto ovl = make_shared<Overlap>(geom_);
+    population_analysis(geom_, *coeff_, ovl);
+    resume_stdcout();
+    pop_timer.tick_print("population analysis");
+  }
+
 }
 
 

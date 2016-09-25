@@ -45,6 +45,7 @@
 #include <src/multi/zcasscf/zcassecond.h>
 #include <src/multi/zcasscf/zcashybrid.h>
 #include <src/multi/zcasscf/zsuperci.h>
+#include <src/multi/zcasscf/zcasnoopt.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/prop/current.h>
@@ -125,6 +126,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         out = make_shared<ZCASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<ZCASBFGS>(itree, geom, ref);
+      else if (algorithm == "noopt")
+        out = make_shared<ZCASNoopt>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");

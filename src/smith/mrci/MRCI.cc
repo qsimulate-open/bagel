@@ -206,8 +206,14 @@ void MRCI::MRCI::solve() {
     vector<double> energy_q(nstates_);
     vector<shared_ptr<Amplitude<double>>> ci = davidson.civec();
     for (int i = 0; i != nstates_; ++i) {
-      const double c = norm(ci[i]->tensor()->fac(i));
-      const double eref = info_->ciwfn()->energy(i);
+      double c = 0.0;
+      double eref = 0.0;
+      for (int j = 0; j != nstates_; ++j) {
+        const double cn = norm(ci[i]->tensor()->fac(j));
+        c += cn;
+        eref += cn * info_->ciwfn()->energy(j);
+      }
+      eref /= c;
       const double eq = energy_[i]+core_nuc + (energy_[i]+core_nuc-eref)*(1.0-c)/c;
       print_iteration(0, eq, 0.0, 0.0, i);
     }

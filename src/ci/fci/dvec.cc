@@ -25,6 +25,22 @@
 #include <stdexcept>
 #include <src/ci/fci/dvec.h>
 
+template <typename DataType>
+std::shared_ptr<bagel::Dvector<DataType>> bagel::Dvector<DataType>::extract_state(const std::vector<int> input) const {
+  auto out = std::make_shared<bagel::Dvector<DataType>>(det(), input.size());
+
+  for (int i = 0; i != input.size(); ++i)
+    std::copy_n(data(input[i])->data(), lenb_*lena_, out->data(i)->data());
+    //out->data(i) = data(input[i])->copy();
+  return out;
+}
+
+template <typename DataType>
+std::shared_ptr<bagel::Dvector<DataType>> bagel::Dvector<DataType>::extract_state(const int istate) const {
+  auto out = std::make_shared<bagel::Dvector<DataType>>(dvec_[istate], 1);
+  return out;
+}
+
 template class bagel::Dvector<double>;
 template class bagel::Dvector<std::complex<double>>;
 

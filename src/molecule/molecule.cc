@@ -272,6 +272,9 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
+  if (!molecule_details::is_one_molecule(nodes))
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule.");
+
   // then bond angles A-O-B (A<B)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     auto j = i;

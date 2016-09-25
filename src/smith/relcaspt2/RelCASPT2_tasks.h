@@ -33,6 +33,7 @@
 #include <src/smith/relcaspt2/RelCASPT2_tasks3.h>
 #include <src/smith/relcaspt2/RelCASPT2_tasks4.h>
 #include <src/smith/relcaspt2/RelCASPT2_tasks5.h>
+#include <src/smith/relcaspt2/RelCASPT2_tasks6.h>
 
 #endif
 #endif
