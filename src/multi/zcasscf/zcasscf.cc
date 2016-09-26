@@ -85,14 +85,8 @@ void ZCASSCF::init() {
   tsymm_ = !geom_->magnetism();
 
   // coefficient parameters
-        bool mvo = idata_->get<bool>("generate_mvo", false);
   const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
-  const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
-  const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
-  if (mvo && ncore_mvo == 2*relref->relcoeff_full()->nocc()) {
-    cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
-    mvo = false;
-  }
+
   nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
@@ -163,8 +157,8 @@ void ZCASSCF::init() {
 
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
-  cout << "    * Correlation of " << geom_->nele() - charge_ - nclosed_*2 << " active electrons in " << nact_ << " orbitals."  << endl;
-  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
+  cout << "    * active space: " << geom_->nele() - charge_ - nclosed_*2 << " electrons in " << nact_ << " orbitals" << endl;
+  cout << "    * time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
@@ -173,8 +167,6 @@ void ZCASSCF::init() {
   // initialize coefficient to enforce kramers symmetry
   if (!kramers_coeff)
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
-
-  if (mvo) scoeff = scoeff->generate_mvo(geom_, overlap_, hcore_, ncore_mvo, relref->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
@@ -208,14 +200,12 @@ void ZCASSCF::print_header() const {
 }
 
 
-void ZCASSCF::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
+void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
   for (auto& e : energy) {
-    cout << "     " << setw(5) << iter << setw(4) << i << " " << setw(4) << miter << setw(4) << tcount
-               << setw(20) << fixed << setprecision(8) << e << "   "
-               << setw(10) << scientific << setprecision(4) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
-               << time << endl;
+    cout << "     " << setw(5) << iter << setw(4) << i << " " << setw(19) << fixed << setprecision(8) << e << "   "
+                    << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
     ++i;
   }
 }
@@ -452,9 +442,11 @@ shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFil
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1, const bool coulomb_only) const {
   // calculate S^1/2 of rdm1
   ZMatrix s(*rdm1);
   s.sqrt();
-  return make_shared<DFock>(geom_, hcore_->clone(), coeff * s, gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+  const bool do_gaunt = !coulomb_only && gaunt_;
+  const bool do_breit = !coulomb_only && breit_;
+  return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), do_gaunt, do_breit, /*store half*/false, /*robust*/do_breit);
 }

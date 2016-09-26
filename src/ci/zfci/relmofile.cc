@@ -174,14 +174,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
     for (int k = 0; k != 2; ++k)
       tie(half_complex_exch[k], half_complex_exch2[k]) = compute_half(geom_, coeff->at(k), gaunt, breit);
 
-    if (!gaunt)
-      half_complex_coulomb_ = half_complex_exch;
-    else
-      half_complex_gaunt_ = half_complex_exch;
-
-    if (breit)
-      half_complex_breit_ = half_complex_exch2;
-
     // (4) compute (gamma|ii)
     auto full = make_shared<Kramers<2,ListRelDFFull>>();
     full->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch[0], true));
@@ -263,6 +255,14 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 
 
 shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
+  list<shared_ptr<const RelDFHalf>> halfc;
+  for (auto& i : half)
+    halfc.push_back(i);
+  return compute_full(coeff, halfc, appj);
+}
+
+
+shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<const RelDFHalf>> half, const bool appj) {
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
   if (!transform_with_full && appj) {

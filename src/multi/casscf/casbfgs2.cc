@@ -120,7 +120,7 @@ void CASBFGS2::compute() {
     // setting error of macro iteration
     const double gradient = sigma->rms();
     resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) {
       rms_grad_ = gradient;

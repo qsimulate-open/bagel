@@ -158,15 +158,13 @@ void CASSCF::print_header() const {
   cout << "  ---------------------------" << endl << endl;
 }
 
-void CASSCF::print_iteration(int iter, int miter, int tcount, const vector<double> energy, const double error, const double time) const {
+void CASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
   if (energy.size() != 1 && iter) cout << endl;
 
   int i = 0;
   for (auto& e : energy) {
-    cout << "  " << setw(5) << iter << setw(3) << i << setw(4) << miter << setw(4) << tcount
-                 << setw(16) << fixed << setprecision(8) << e << "   "
-                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2)
-                 << time << endl;
+    cout << "  " << setw(5) << iter << setw(3) << i << setw(19) << fixed << setprecision(8) << e << "   "
+                 << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
     ++i;
   }
 }

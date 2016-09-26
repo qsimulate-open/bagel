@@ -35,7 +35,8 @@ template<typename DataType>
 class RotationMatrix {
   public:
     using data_type = DataType;
-    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using MatType  = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using ViewType = typename std::conditional<std::is_same<DataType,double>::value, MatView, ZMatView>::type;
 
   protected:
     const int nclosed_;
@@ -115,9 +116,9 @@ class RotationMatrix {
     const DataType* ptr_va() const { return data() + nclosed_*nact_; }
     const DataType* ptr_vc() const { return data() + (nclosed_+nvirt_)*nact_; }
 
-    void ax_plus_y_ca(const double a, const MatView mat);
-    void ax_plus_y_va(const double a, const MatView mat);
-    void ax_plus_y_vc(const double a, const MatView mat);
+    void ax_plus_y_ca(const DataType a, const ViewType mat);
+    void ax_plus_y_va(const DataType a, const ViewType mat);
+    void ax_plus_y_vc(const DataType a, const ViewType mat);
 
     std::shared_ptr<MatType> ca_mat() const;
     std::shared_ptr<MatType> va_mat() const;

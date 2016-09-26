@@ -118,9 +118,9 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
+      if (algorithm == "superci")
         out = make_shared<ZSuperCI>(itree, geom, ref);
-      else if (algorithm == "second")
+      else if (algorithm == "second" || algorithm == "")
         out = make_shared<ZCASSecond>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<ZCASHybrid>(itree, geom, ref);

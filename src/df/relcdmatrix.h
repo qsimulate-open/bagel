@@ -39,7 +39,7 @@ class RelCDMatrix : public ZVectorB {
 
   public:
     RelCDMatrix(std::shared_ptr<const RelDFHalf> dfhc, std::shared_ptr<const SpinorInfo> abc, std::array<std::shared_ptr<const Matrix>, 4> trcoeff,
-                std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const bool onlyonce = true);
+                std::array<std::shared_ptr<const Matrix>, 4> ticoeff, std::shared_ptr<const Matrix> dat2, const int number_of_j);
     RelCDMatrix(const ZVectorB& o, const int acomp) : ZVectorB(o), alpha_comp_(acomp) { }
 
     int alpha_comp() const { return alpha_comp_; }

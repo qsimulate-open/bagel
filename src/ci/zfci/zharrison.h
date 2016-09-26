@@ -87,6 +87,8 @@ class ZHarrison : public Method {
     // state averaged RDMs
     std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1_av_;
     std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2_av_;
+    std::shared_ptr<ZRDM<1>> rdm1_av_expanded_;
+    std::shared_ptr<ZRDM<2>> rdm2_av_expanded_;
 
     std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
 
@@ -224,6 +226,8 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
+
+    std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
 };
 
 

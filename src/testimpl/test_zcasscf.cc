@@ -26,6 +26,7 @@
 #include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zcashybrid.h>
+#include <src/multi/zcasscf/zcassecond.h>
 
 double relcas_energy(std::string inp) {
 
@@ -81,8 +82,13 @@ double relcas_energy(std::string inp) {
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
+      if (algorithm == "superci") {
         auto zcas = std::make_shared<ZSuperCI>(itree, geom, ref);
+        zcas->compute();
+        ref = zcas->conv_to_ref();
+        energy = ref->energy(ref->nstate()-1);
+      } else if (algorithm == "second" || algorithm == "") {
+        auto zcas = std::make_shared<ZCASSecond>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
         energy = ref->energy(ref->nstate()-1);
@@ -115,12 +121,13 @@ BOOST_AUTO_TEST_SUITE(TEST_RELCAS)
 
 BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931815));
-  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
+  BOOST_CHECK(compare(relcas_energy("hf_svp_superci_coulomb"),  -99.90025083));
+  BOOST_CHECK(compare(relcas_energy("hf_svp_second_coulomb"),   -99.90025083));
 #ifndef HAVE_MPI_H
   BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
 #endif
-  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281524));
-  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647946));
+  BOOST_CHECK(compare(relcas_energy("nh_svp_triplet_gaunt"),    -54.93378556));
+  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),   -149.56647946));
 #ifndef DISABLE_SERIALIZATION
 //BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
 #endif

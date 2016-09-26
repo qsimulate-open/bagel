@@ -63,11 +63,6 @@ class RelMOFile {
     virtual std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
     virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
 
-    // half transformed integrals for CASSCF
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb_;
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt_;
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_breit_;
-
   public:
     RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>,
               const bool gaunt, const bool breit, const bool tsymm);
@@ -87,13 +82,10 @@ class RelMOFile {
 
     std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
 
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_coulomb() const { return half_complex_coulomb_; }
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_gaunt() const { return half_complex_gaunt_; }
-    std::array<std::list<std::shared_ptr<RelDFHalf>>,2> half_complex_breit() const { return half_complex_breit_; }
-
     static std::tuple<std::list<std::shared_ptr<RelDFHalf>>, std::list<std::shared_ptr<RelDFHalf>>>
       compute_half(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit);
     static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<RelDFHalf>> half, const bool appj);
+    static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<const RelDFHalf>> half, const bool appj);
 };
 
 

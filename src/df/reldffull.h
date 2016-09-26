@@ -63,8 +63,8 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<RelDFFull> swap() const;
 
     // zaxpy
-    void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFFull> o) { ax_plus_y(a, *o); }
-    void ax_plus_y(std::complex<double> a, const RelDFFull& o);
+    void ax_plus_y(const std::complex<double>& a, std::shared_ptr<const RelDFFull> o) { ax_plus_y(a, *o); }
+    void ax_plus_y(const std::complex<double>& a, const RelDFFull& o);
     void scale(std::complex<double> a);
 
     RelDFFull& operator+=(const RelDFFull& o) { ax_plus_y(1.0, o); return *this; }
@@ -88,6 +88,7 @@ class RelDFFull : public RelDFBase {
     std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const RelDFFull>, const double fac, const int i) const;
 
     std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+    std::shared_ptr<RelDFFull> apply_2rdm(std::shared_ptr<const ZMatrix>) const;
 
 };
 
@@ -111,57 +112,17 @@ class ListRelDFFull {
     int nocc1() const { assert(!data_.empty()); return data_.front()->nocc1(); }
     int nocc2() const { assert(!data_.empty()); return data_.front()->nocc2(); }
 
-    std::shared_ptr<ListRelDFFull> swap() const {
-      auto out = std::make_shared<ListRelDFFull>();
-      for (auto& i : data_)
-        out->push_back(i->swap());
-      return out;
-    }
+    void ax_plus_y(const std::complex<double>& a, std::shared_ptr<const ListRelDFFull> o);
 
-    std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const {
-      std::shared_ptr<ZMatrix> out;
-      for (auto& ii : data_)
-        for (auto& jj : o->data_)
-          if (ii->alpha_matches(jj)) {
-            if (out) {
-              *out += *ii->form_4index(jj, fac);
-            } else {
-              out = ii->form_4index(jj, fac);
-            }
-          }
-      assert(out);
-      return out;
-    }
+    std::shared_ptr<ListRelDFFull> copy() const;
+    std::shared_ptr<ListRelDFFull> clone() const;
+    std::shared_ptr<ListRelDFFull> swap() const;
+    std::shared_ptr<ListRelDFFull> apply_2rdm(std::shared_ptr<const ZRDM<2>>) const;
+    std::shared_ptr<ListRelDFFull> apply_2rdm(std::shared_ptr<const ZMatrix>) const;
 
-    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const ListRelDFFull> o, const double fac, const int i) const {
-      std::shared_ptr<ZMatrix> out;
-      for (auto& ii : data_)
-        for (auto& jj : o->data_)
-          if (ii->alpha_matches(jj)) {
-            if (out) {
-              *out += *ii->form_4index_1fixed(jj, fac, i);
-            } else {
-              out = ii->form_4index_1fixed(jj, fac, i);
-            }
-          }
-      assert(out);
-      return out;
-    }
-
-    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left = true) const {
-      std::shared_ptr<ZMatrix> out;
-      for (auto& ii : data_)
-        for (auto& jj : o->data_)
-          if (ii->alpha_matches(jj)) {
-            if (out) {
-              *out += *ii->form_2index(jj, fac, conjugate_left);
-            } else {
-              out = ii->form_2index(jj, fac, conjugate_left);
-            }
-          }
-      assert(out);
-      return out;
-    }
+    std::shared_ptr<ZMatrix> form_4index(std::shared_ptr<const ListRelDFFull> o, const double fac) const;
+    std::shared_ptr<ZMatrix> form_4index_1fixed(std::shared_ptr<const ListRelDFFull> o, const double fac, const int i) const;
+    std::shared_ptr<ZMatrix> form_2index(std::shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left = true) const;
 };
 
 }

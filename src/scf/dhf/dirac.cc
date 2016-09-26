@@ -152,7 +152,10 @@ void Dirac::compute() {
     if (error < thresh_scf_ && iter > 0) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       // when computing gradient, we store half-transform integrals to avoid recomputation
-      if (do_grad_) half_ = fock->half();
+      if (do_grad_) {
+        assert(!gaunt_);
+        half_ = fock->half_coulomb();
+      }
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;

@@ -88,11 +88,6 @@ void Force::compute() {
     auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
     force->compute();
 
-  } else if (method == "dmp2") {
-
-    auto force = make_shared<GradEval<DMP2Grad>>(cinput, geom_, ref_, target);
-    force->compute();
-
   } else if (method == "casscf") {
 
     auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);

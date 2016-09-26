@@ -27,7 +27,6 @@
 using namespace std;
 using namespace bagel;
 
-//using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
 
 template<typename DataType>
 RotationMatrix<DataType>::RotationMatrix(const int iclos, const int iact, const int ivirt)
@@ -157,11 +156,11 @@ RotationMatrix<DataType>& RotationMatrix<DataType>::operator=(const RotationMatr
 }
 
 
-// orthogonalize to the liset of RotationMatrix's
+// orthogonalize to the list of RotationMatrix's
 template<typename DataType>
 double RotationMatrix<DataType>::orthog(list<shared_ptr<const RotationMatrix<DataType>>> c) {
   for (auto iter = c.begin(); iter != c.end(); ++iter)
-    this->ax_plus_y(- this->dot_product(**iter), **iter);
+    this->ax_plus_y(- detail::conj(this->dot_product(**iter)), **iter);
   return normalize();
 }
 
@@ -183,21 +182,21 @@ void RotationMatrix<DataType>::synchronize() {
 
 
 template<typename DataType>
-void RotationMatrix<DataType>::ax_plus_y_ca(const double a, const MatView mat) {
+void RotationMatrix<DataType>::ax_plus_y_ca(const DataType a, const ViewType mat) {
   assert(mat.ndim() == nclosed_ && mat.mdim() == nact_);
   blas::ax_plus_y_n(a, mat.data(), nclosed_*nact_, ptr_ca());
 }
 
 
 template<typename DataType>
-void RotationMatrix<DataType>::ax_plus_y_va(const double a, const MatView mat) {
+void RotationMatrix<DataType>::ax_plus_y_va(const DataType a, const ViewType mat) {
   assert(mat.ndim() == nvirt_ && mat.mdim() == nact_);
   blas::ax_plus_y_n(a, mat.data(), nvirt_*nact_,  ptr_va());
 }
 
 
 template<typename DataType>
-void RotationMatrix<DataType>::ax_plus_y_vc(const double a, const MatView mat) {
+void RotationMatrix<DataType>::ax_plus_y_vc(const DataType a, const ViewType mat) {
   assert(mat.ndim() == nvirt_ && mat.mdim() == nclosed_);
   blas::ax_plus_y_n(a, mat.data(), nvirt_*nclosed_, ptr_vc());
 }

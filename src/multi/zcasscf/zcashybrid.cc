@@ -64,7 +64,6 @@ void ZCASHybrid::compute() {
     idata->erase("active"); // coefficient should be in proper order so active is removed to prevent a second reordering
     idata->erase("kramers_coeff");
     idata->put("kramers_coeff", true); // input coefficient should be time-reversal symmetric by construction
-    idata->erase("generate_mvo");
     active_method = make_shared<ZCASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();

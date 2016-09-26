@@ -31,7 +31,6 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/multi/casscf/casscf.h>
 #include <src/pt2/mp2/mp2grad.h>
-#include <src/pt2/dmp2/dmp2grad.h>
 #include <src/grad/gradeval_base.h>
 #include <src/smith/caspt2grad.h>
 
@@ -88,7 +87,6 @@ template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<KS>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
-template<> std::shared_ptr<GradFile> GradEval<DMP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();
 
 // CASSCF is slightly more complicated. These functions are implemented in casgrad.cc

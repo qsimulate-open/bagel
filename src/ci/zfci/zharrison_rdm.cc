@@ -470,6 +470,10 @@ void ZHarrison::compute_rdm12() {
     rdm1_av_ = rdm1_.front();
     rdm2_av_ = rdm2_.front();
   }
+
+  // set expanded
+  rdm1_av_expanded_ = expand_kramers<1,complex<double>>(rdm1_av_, norb_);
+  rdm2_av_expanded_ = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
 }
 
 
@@ -488,17 +492,14 @@ vector<shared_ptr<const ZMatrix>> ZHarrison::rdm1_matrix() const {
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
-  // RDM transform as D_rs = C*_ri D_ij (C*_rj)^+
-  shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(rdm1_av_, norb_);
   auto out = make_shared<ZMatrix>(norb_*2, norb_*2);
-  copy_n(tmp->data(), tmp->size(), out->data());
+  copy_n(rdm1_av_expanded_->data(), out->size(), out->data());
   return out;
 }
 
 
 shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
-  shared_ptr<const ZRDM<2>> rdm2 = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
-  copy_n(rdm2->data(), rdm2->size(), out->data());
+  copy_n(rdm2_av_expanded_->data(), out->size(), out->data());
   return out;
 }

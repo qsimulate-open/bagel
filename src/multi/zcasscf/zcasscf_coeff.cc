@@ -29,38 +29,24 @@ using namespace bagel;
 
 
 void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
-  // function to enforce time-reversal symmetry
-  //    for a complex matrix o, that is SYMMETRIC under time reversal
+  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim());
 
-  auto kramers_adapt_block = [this](shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff, int nvirt) {
-    // function to enforce time-reversal symmetry for a given block of a complex matrix o.
-    // tfac                 symmetry factor under time-reversal (symmetric : t=1, antisymm : t=-1)
-    // nq1, nq2             nclosed_, nact_, nvirt
-    // ioff, joff           column and row offsets, respectively
-    assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim() );
-    assert( tfac == 1 || tfac == -1);
-    const double t = tfac == 1 ? 1.0 : -1.0;
-    for (int i = 0; i != nq2; ++i) {
-      for (int j = 0; j != nq1; ++j) {
-        // Diagonal contributions : "A" matrices in notation of T. Suae thesis
-        o->element(joff+j, ioff+i) = ( o->element(joff+j, ioff+i) + conj(o->element(joff+j+nq1, ioff+i+nq2)) ) * 0.5;
-        o->element(joff+j+nq1,ioff+i+nq2) = t * conj(o->element(joff+j,ioff+i));
+  auto kramers_adapt_block = [this,&nvirt,&o](const int jst, const int ist, const int joff, const int ioff) {
+    for (int i = 0; i != ist; ++i)
+      for (int j = 0; j != jst; ++j) {
+        o->element(joff+j, ioff+i) = 0.5*(o->element(joff+j, ioff+i) + conj(o->element(joff+j+jst, ioff+i+ist)));
+        o->element(joff+j+jst,ioff+i+ist) = conj(o->element(joff+j,ioff+i));
 
-        // Diagonal contributions : "B" matrices in notation of T. Suae thesis
-        o->element(joff+nq1+j, ioff+i) = ( o->element(joff+nq1+j, ioff+i) - conj(o->element(joff+j, ioff+nq2+i)) ) * 0.5;
-        o->element(joff+j, ioff+nq2+i) = -t * conj(o->element(joff+nq1+j,ioff+i));
+        o->element(joff+jst+j, ioff+i) = 0.5*(o->element(joff+jst+j, ioff+i) - conj(o->element(joff+j, ioff+ist+i)));
+        o->element(joff+j, ioff+ist+i) = - conj(o->element(joff+jst+j, ioff+i));
       }
-    }
   };
 
-  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim());
-  const array<int,3> a0 {{nclosed_, nact_, nvirt}};
-  const array<int,3> a1 {{0, 2*nclosed_, 2*nocc_}};
-  for (int ii = 0; ii !=3; ++ii) {
-    for (int jj = 0; jj !=3; ++jj) {
-      kramers_adapt_block(o,1,a0[jj],a0[ii],a1[jj],a1[ii],nvirt);
-    }
-  }
+  const array<int,3> stride{{nclosed_, nact_, nvirt}};
+  const array<int,3> offset{{0, 2*nclosed_, 2*nocc_}};
+  for (int ii = 0; ii != 3; ++ii)
+    for (int jj = 0; jj != 3; ++jj)
+      kramers_adapt_block(stride[jj], stride[ii], offset[jj], offset[ii]);
 }
 
 

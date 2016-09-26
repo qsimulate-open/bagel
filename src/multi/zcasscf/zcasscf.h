@@ -70,7 +70,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     VectorB occup_;
 
     void print_header() const;
-    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
+    void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
 
     void init();
 
@@ -79,7 +79,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     std::shared_ptr<ZHarrison> fci_;
     // Fock matrix with active 1RDM
-    std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1) const;
+    std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1, const bool coulomb_only = false) const;
 
     // energy
     std::vector<double> energy_;

@@ -56,7 +56,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     cout << "    * Off-diagonal shift corrections are only available with MS-MR parametrization." << endl;
   }
   if (ciwfn()->nstates() > 1)
-    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used in " << (do_xms_ ? "X" : "") << "MS-CASPT2 calculation" << endl;
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
 
   if (ref_->nstate() != 1) {
     if (idata->get<bool>("extract_civectors", false)) {

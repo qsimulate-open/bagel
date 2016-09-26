@@ -38,8 +38,10 @@ class RelDF;
 class RelDFHalf : public RelDFBase {
   protected:
     std::array<std::shared_ptr<DFHalfDist>,2> dfhalf_;
-    std::array<std::shared_ptr<DFHalfDist>,2> df2_;
     bool split_;
+
+    // for efficiency... blame use of mutable
+    mutable std::array<std::shared_ptr<DFHalfDist>,2> df2_;
 
   public:
     RelDFHalf(std::shared_ptr<const RelDF>, std::vector<std::shared_ptr<const SpinorInfo>> bas,
@@ -63,12 +65,12 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<RelDFHalf> apply_J() const;
     std::shared_ptr<RelDFHalf> apply_JJ() const;
 
-    // zaxpy
     void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
+    void rotate_occ(std::shared_ptr<const ZMatrix> rdm1);
 
     // for the zgemm3m-like algorithm
-    void set_sum_diff();
-    void discard_sum_diff() { df2_ = std::array<std::shared_ptr<DFHalfDist>,2>(); }
+    void set_sum_diff() const;
+    void discard_sum_diff() const { df2_ = std::array<std::shared_ptr<DFHalfDist>,2>(); }
     std::shared_ptr<DFHalfDist> sum() const { return df2_[0]; }
     std::shared_ptr<DFHalfDist> diff() const { return df2_[1]; }
 
