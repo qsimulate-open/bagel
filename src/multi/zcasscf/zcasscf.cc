@@ -453,9 +453,11 @@ shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFil
 }
 
 
-shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1) const {
+shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_ptr<const ZMatrix> rdm1, const bool coulomb_only) const {
   // calculate S^1/2 of rdm1
   ZMatrix s(*rdm1);
   s.sqrt();
-  return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), gaunt_, breit_, /*store half*/false, /*robust*/breit_);
+  const bool do_gaunt = !coulomb_only && gaunt_;
+  const bool do_breit = !coulomb_only && breit_;
+  return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), do_gaunt, do_breit, /*store half*/false, /*robust*/do_breit);
 }

@@ -62,11 +62,8 @@ class DFock : public ZMatrix {
     }
     // DFock from half-transformed integrals
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
-          const bool gaunt, const bool breit,
           std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
-          std::list<std::shared_ptr<const RelDFHalf>> int1g, std::list<std::shared_ptr<const RelDFHalf>> int2g,
-          std::list<std::shared_ptr<const RelDFHalf>> int1b, std::list<std::shared_ptr<const RelDFHalf>> int2b,
-          const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
+          const double scale_exch = 1.0, const double scale_coulomb = 1.0);
 
     // Utility functions. They are static so that it could be used from gradient codes
 

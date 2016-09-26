@@ -79,39 +79,31 @@ void ZCASSecond::compute() {
     }
 
     // half-transformed integrals (with JJ)
-    list<shared_ptr<RelDFHalf>> halfc_1j, halfg_1j, halfb_1j;
-    if (nclosed_) {
+    list<shared_ptr<RelDFHalf>> halfc_1j;
+    if (nclosed_)
       halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
-      halfg_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_gaunt();
-      halfb_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_breit();
-    }
-    list<shared_ptr<const RelDFHalf>> halfc, halfg, halfb;
+    list<shared_ptr<const RelDFHalf>> halfc;
     for (auto& i : halfc_1j)
       halfc.push_back(i->apply_J());
-    // caution... Breit cases are done with one J.
-    for (auto& i : halfg_1j)
-      halfg.push_back(breit_ ? i : i->apply_J());
-    for (auto& i : halfb_1j)
-      halfb.push_back(i);
 
-    list<shared_ptr<RelDFHalf>> halfac_0j, halfag_0j, halfab_0j;
-    shared_ptr<const ZMatrix> acoeff = coeff_->slice_copy(nclosed_*2, nocc_*2);
-    tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, acoeff, false, false);
-    if (gaunt_)
-      tie(halfag_0j, halfab_0j) = RelMOFile::compute_half(geom_, acoeff, gaunt_, breit_);
-
-    list<shared_ptr<const RelDFHalf>> halfac, halfag, halfab;
+    list<shared_ptr<RelDFHalf>> halfac_0j;
+    tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
+    list<shared_ptr<const RelDFHalf>> halfac;
     for (auto& i : halfac_0j)
       halfac.push_back(i->apply_JJ());
-    // caution... Breit cases are done with J. Breit has picked up J in compute_half
-    for (auto& i : halfag_0j)
-      halfag.push_back(breit_ ? i->apply_J() : i->apply_JJ());
 
-    assert(gaunt_ || (halfg.empty() && halfag.empty()));
-    assert(breit_ || (halfb.empty() && halfab.empty()));
+    // Fock and Q vector with Coulomb only
+    shared_ptr<const ZMatrix> cfock_c = cfock;
+    shared_ptr<const ZMatrix> afock_c = afock;
+    shared_ptr<const ZMatrix> qxr_c = qxr;
+    if (gaunt_) {
+      cfock_c = make_shared<ZMatrix>(*coeff_ % DFock(geom_, hcore_, coeff_->slice(0, nclosed_*2), false, false, false, false) * *coeff_);
+      afock_c = make_shared<ZMatrix>(*coeff_ % *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av(), /*coulomb only*/true) * *coeff_);
+      qxr_c = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, false, false)->get_conjg();
+    }
 
     // compute denominator...
-    shared_ptr<const ZRotFile> denom = compute_denom(cfock, afock, qxr, fci_->rdm1_av());
+    shared_ptr<const ZRotFile> denom = compute_denom(cfock_c, afock_c, qxr_c, fci_->rdm1_av());
 
     // augmented Hessian solver
     AugHess<ZRotFile> solver(max_micro_iter_, grad);
@@ -124,7 +116,7 @@ void ZCASSecond::compute() {
 
     for (int miter = 0; miter != max_micro_iter_; ++miter) {
       Timer mtimer;
-      shared_ptr<ZRotFile> sigma = compute_hess_trial(trot, halfc, halfg, halfb, halfac, halfag, halfab, cfock, afock, qxr);
+      shared_ptr<ZRotFile> sigma = compute_hess_trial(trot, halfc, halfac, cfock_c, afock_c, qxr_c);
       if (only_electrons)
         zero_positronic_elements(sigma);
       kramers_adapt(sigma, nclosed_, nact_, nvirt_);
@@ -196,14 +188,12 @@ shared_ptr<ZRotFile> ZCASSecond::apply_denom(shared_ptr<const ZRotFile> grad, sh
 }
 
 
-shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> trot,
-                                                    list<shared_ptr<const RelDFHalf>> halfc, list<shared_ptr<const RelDFHalf>> halfg, list<shared_ptr<const RelDFHalf>> halfb,
-                                                    list<shared_ptr<const RelDFHalf>> halfac, list<shared_ptr<const RelDFHalf>> halfag, list<shared_ptr<const RelDFHalf>> halfab,
+shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> trot, list<shared_ptr<const RelDFHalf>> halfc, list<shared_ptr<const RelDFHalf>> halfac,
                                                     shared_ptr<const ZMatrix> cfock, shared_ptr<const ZMatrix> afock, shared_ptr<const ZMatrix> qxr) const {
   shared_ptr<ZRotFile> sigma = trot->clone();
 
   shared_ptr<const ZMatrix> va = trot->va_mat();
-  shared_ptr<      ZMatrix> ca = nclosed_ ? trot->ca_mat()->get_conjg() : nullptr; // CAUTION!
+  shared_ptr<const ZMatrix> ca = nclosed_ ? trot->ca_mat()->get_conjg() : nullptr; // CAUTION!
   shared_ptr<const ZMatrix> vc = nclosed_ ? trot->vc_mat() : nullptr;
 
   shared_ptr<const ZMatrix> fcaa = cfock->get_submatrix(nclosed_*2, nclosed_*2, nact_*2, nact_*2);
@@ -227,14 +217,10 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   copy_n(fci_->rdm1_av()->data(), rdm1.size(), rdm1.data());
   blas::conj_n(rdm1.data(), rdm1.size());
 
-  // lambda for computing g(D)
+  // lambda for computing g(D) - only Coulomb
   auto compute_gd = [&,this](list<shared_ptr<const RelDFHalf>> halftc, list<shared_ptr<const RelDFHalf>> halfjjc,
-                             shared_ptr<const ZMatrix> pcoeff, shared_ptr<const ZMatrix> tpcoeff,
-                             const bool gaunt, const bool breit) {
-    // TODO to be updated
-    list<shared_ptr<const RelDFHalf>> dum;
-    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, tpcoeff,
-                                     gaunt, breit, halfjjc, halftc, dum, dum, dum, dum, /*robust*/breit);
+                             shared_ptr<const ZMatrix> pcoeff, shared_ptr<const ZMatrix> tpcoeff) {
+    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, tpcoeff, halfjjc, halftc);
     dfock->hermite();
     return dfock;
   };
@@ -247,7 +233,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
     list<shared_ptr<const RelDFHalf>> halftc;
     for (auto& i : tmp)
       halftc.push_back(i);
-    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, tcoeff, false, false);
+    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, tcoeff);
     sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
     sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
     sigma->ax_plus_y_va(4.0, *vcoeff % gt * *acoeff * rdm1);
@@ -269,7 +255,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
        tmp->rotate_occ(rdm1p);
        halftacd.push_back(tmp);
     }
-    const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, make_shared<ZMatrix>(*tcoeff * rdm1), false, false);
+    const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, make_shared<ZMatrix>(*tcoeff * rdm1));
     sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
     sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
   }

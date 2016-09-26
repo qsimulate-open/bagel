@@ -40,15 +40,11 @@ DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const 
 
 
 // Constructing DFock from half-transformed integrals. It is assumed that int1 is multiplied by JJ, int2 is not multplied by J.
+// CAUTION! This only does Dirac-Coulomb
 DFock::DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
-             const bool gaunt, const bool breit,
              std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
-             std::list<std::shared_ptr<const RelDFHalf>> int1g, std::list<std::shared_ptr<const RelDFHalf>> int2g,
-             std::list<std::shared_ptr<const RelDFHalf>> int1b, std::list<std::shared_ptr<const RelDFHalf>> int2b,
-             const bool robust, const double scale_exch, const double scale_coulomb)
-  : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(false), robust_(robust) {
-
-  assert(breit ? gaunt : true);
+             const double scale_exch, const double scale_coulomb)
+  : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), robust_(false) {
 
   // will use the zgemm3m-like algorithm
   for (auto& i : int1c)
