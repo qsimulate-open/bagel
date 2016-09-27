@@ -31,6 +31,7 @@
 #include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
+#include <src/util/exception.h>
 #include <src/util/archive.h>
 #include <src/util/io/moldenout.h>
 
@@ -228,7 +229,11 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (const exception &e) {
+  } catch (const Termination& e) {
+    cout << "  -- Termination requested --" << endl; 
+    cout << "  message: " << e.what() << endl;
+    print_footer();
+  } catch (const exception& e) {
     resources__->proc()->cout_on();
     cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
     resources__->proc()->cout_off();
