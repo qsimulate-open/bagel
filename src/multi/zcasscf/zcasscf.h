@@ -28,6 +28,7 @@
 #include <src/ci/zfci/zharrison.h>
 #include <src/multi/casscf/rotfile.h>
 #include <src/wfn/method.h>
+#include <src/util/muffle.h>
 #include <src/util/math/bfgs.h>
 #include <src/util/math/step_restrict_bfgs.h>
 
@@ -73,8 +74,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     void init();
 
-    void mute_stdcout() const;
-    void resume_stdcout() const;
+    // hides some outputs
+    mutable std::shared_ptr<Muffle> muffle_;
 
     std::shared_ptr<ZHarrison> fci_;
     // Fock matrix with active 1RDM

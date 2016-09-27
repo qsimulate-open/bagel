@@ -46,7 +46,7 @@ void ZSuperCI::compute() {
   double gradient = 1.0e10;
 
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
-  mute_stdcout();
+  muffle_->mute();
   double orthonorm;
   {
     auto unit = coeff_->clone(); unit->unit();
@@ -109,7 +109,7 @@ void ZSuperCI::compute() {
     // setting error of macro iteration
     gradient = grad->rms();
     if (gradient < thresh_) {
-      resume_stdcout();
+      muffle_->unmute();
       // print out...
       print_iteration(iter, energy_, gradient, timer.tick());
       rms_grad_ = gradient;
@@ -118,7 +118,7 @@ void ZSuperCI::compute() {
       cout << "    * State averaged energy change from last cycle = " << setprecision(6) << scientific
            << blas::average(prev_energy_) - blas::average(energy_) << endl;
       cout << "    * Super CI optimization converged. *    " << endl << endl;
-      mute_stdcout();
+      muffle_->mute();
       break;
     }
 
@@ -165,7 +165,7 @@ void ZSuperCI::compute() {
     mpi__->broadcast(const_pointer_cast<RelCoeff_Block>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
-    resume_stdcout();
+    muffle_->unmute();
     print_iteration(iter, energy_, gradient, timer.tick());
     if (iter == max_iter_-1) {
       rms_grad_ = gradient;
@@ -179,10 +179,10 @@ void ZSuperCI::compute() {
       if (orthonorm2 / orthonorm > 1.0e+01)
         throw logic_error("should not happen");
     }
-    mute_stdcout();
+    muffle_->mute();
 
   }
-  resume_stdcout();
+  muffle_->unmute();
 
   // TODO : block diagonalize coeff_ in nclosed and nvirt
 
@@ -199,9 +199,9 @@ void ZSuperCI::compute() {
     Timer pop_timer;
     cout << " " << endl;
     cout << "    * Printing out population analysis of super-CI optimized orbitals to casscf.log" << endl;
-    mute_stdcout();
+    muffle_->mute();
     population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
-    resume_stdcout();
+    muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
 }

@@ -68,7 +68,7 @@ void ZCASBFGS::compute() {
 
   prev_energy_ = vector<double>(nstate_, 0.0);
   cout << "     See casscf.log for further information on FCI output " << endl << endl;
-  mute_stdcout();
+  muffle_->mute();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
@@ -195,7 +195,7 @@ void ZCASBFGS::compute() {
     mpi__->broadcast(const_pointer_cast<RelCoeff_Block>(coeff_)->data(), coeff_->size(), 0);
 
     // print energy
-    resume_stdcout();
+    muffle_->unmute();
     print_iteration(iter, energy_, gradient, timer.tick());
 
     // Set logic flags based upon convergence criteria and switch optimization subspaces accordingly
@@ -217,7 +217,7 @@ void ZCASBFGS::compute() {
            << blas::average(prev_energy_) - blas::average(energy_) << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
       rms_grad_ = gradient;
-      mute_stdcout();
+      muffle_->mute();
       break;
     }
     if (iter == max_iter_-1) {
@@ -232,7 +232,7 @@ void ZCASBFGS::compute() {
       if (orthonorm2 / orthonorm > 1.0e+01)
         throw logic_error("Coefficient has lost orthonormality during optimization");
     }
-    mute_stdcout();
+    muffle_->mute();
     prev_energy_ = energy_;
   }
   if (energy_.size() == 0)
@@ -240,7 +240,7 @@ void ZCASBFGS::compute() {
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
-  resume_stdcout();
+  muffle_->unmute();
   if (nact_) {
     fci_->update(coeff_);
     fci_->compute();
@@ -252,9 +252,9 @@ void ZCASBFGS::compute() {
     Timer pop_timer;
     cout << " " << endl;
     cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
-    mute_stdcout();
+    muffle_->mute();
     population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
-    resume_stdcout();
+    muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
 

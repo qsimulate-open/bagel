@@ -49,7 +49,7 @@ void SuperCI::compute() {
   // macro iteration from here
   // ============================
   double gradient = 1.0e100;
-  mute_stdcout();
+  muffle_->mute();
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -97,10 +97,9 @@ void SuperCI::compute() {
     gradient = grad->rms();
     if (iter > 2 && gradient < thresh_) {
       rms_grad_ = gradient;
-      resume_stdcout();
+      muffle_->unmute();
       cout << " " << endl;
       cout << "    * Super CI optimization converged. *    " << endl << endl;
-      mute_stdcout();
       break;
     }
 
@@ -134,10 +133,10 @@ void SuperCI::compute() {
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
-    resume_stdcout();
     print_iteration(iter, energy_, gradient, timer.tick());
 
     if (iter == max_iter_-1) {
+      muffle_->unmute();
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
@@ -145,13 +144,11 @@ void SuperCI::compute() {
       if (!conv_ignore_)
         throw runtime_error("CASSCF SuperCI did not converge");
     }
-    mute_stdcout();
-
   }
   // ============================
   // macro iteration to here
   // ============================
-  resume_stdcout();
+  muffle_->unmute();
 
   // block diagonalize coeff_ in nclosed and nvirt
   coeff_ = semi_canonical_orb();
@@ -173,10 +170,10 @@ void SuperCI::compute() {
     Timer pop_timer;
     cout << " " << endl;
     cout << "    * Printing out population analysis of SuperCI optimized orbitals to casscf.log" << endl;
-    mute_stdcout();
+    muffle_->mute();
     auto ovl = make_shared<Overlap>(geom_);
     population_analysis(geom_, *coeff_, ovl);
-    resume_stdcout();
+    muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
 

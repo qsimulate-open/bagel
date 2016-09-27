@@ -35,7 +35,7 @@ void CASSecond::compute() {
   assert(nvirt_ && nact_);
   Timer timer;
 
-  mute_stdcout();
+  muffle_->mute();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
@@ -61,13 +61,10 @@ void CASSecond::compute() {
 
     // check gradient and break if converged
     const double gradient = grad->rms();
-    resume_stdcout();
     print_iteration(iter, energy_, gradient, timer.tick());
-    mute_stdcout();
     if (gradient < thresh_) {
-      resume_stdcout();
+      muffle_->unmute();
       cout << endl << "    * Second-order optimization converged. *   " << endl << endl;
-      mute_stdcout();
       break;
     }
 
@@ -91,14 +88,14 @@ void CASSecond::compute() {
       double lambda, epsilon, stepsize;
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
       const double err = residual->norm() / lambda;
-      resume_stdcout();
+      muffle_->unmute();
       if (!miter) cout << endl;
       cout << "         res : " << setw(8) << setprecision(2) << scientific << err
            <<       "   lamb: " << setw(8) << setprecision(2) << scientific << lambda
            <<       "   eps : " << setw(8) << setprecision(2) << scientific << epsilon
            <<       "   step: " << setw(8) << setprecision(2) << scientific << stepsize
            << setw(8) << fixed << setprecision(2) << mtimer.tick() << endl;
-      mute_stdcout();
+      muffle_->mute();
       if (err < max(thresh_micro_, stepsize*thresh_microstep_))
         break;
 
@@ -125,12 +122,10 @@ void CASSecond::compute() {
 
     coeff_ = make_shared<Coeff>(*coeff_ * R);
 
-    resume_stdcout();
     if (iter == max_iter_-1)
-      cout << endl << "    * Max iteration reached during the second optimization. *     " << endl << endl;
-    mute_stdcout();
+      throw runtime_error("Max iteration reached during the second optimization.");
   }
-  resume_stdcout();
+  muffle_->unmute();
 
   // block diagonalize coeff_ in nclosed and nvirt
   coeff_ = semi_canonical_orb();

@@ -178,12 +178,12 @@ void ZCASSCF::init() {
 
   coeff_ = scoeff->block_format();
 
-  mute_stdcout();
+  muffle_ = make_shared<Muffle>("casscf.log");
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_)
     fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
-  resume_stdcout();
+  muffle_->unmute();
   cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
@@ -199,6 +199,7 @@ void ZCASSCF::print_header() const {
 
 
 void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
+  muffle_->unmute();
   if (energy.size() != 1 && iter) cout << endl;
   int i = 0;
   for (auto& e : energy) {
@@ -206,23 +207,7 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
                     << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
     ++i;
   }
-}
-
-
-static streambuf* backup_stream_;
-static ofstream* ofs_;
-
-void ZCASSCF::mute_stdcout() const {
-  string filename = "casscf.log";
-  ofstream* ofs(new ofstream(filename,(backup_stream_ ? ios::app : ios::trunc)));
-  ofs_ = ofs;
-  backup_stream_ = cout.rdbuf(ofs->rdbuf());
-}
-
-
-void ZCASSCF::resume_stdcout() const {
-  cout.rdbuf(backup_stream_);
-  delete ofs_;
+  muffle_->mute();
 }
 
 

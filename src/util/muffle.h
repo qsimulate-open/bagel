@@ -55,6 +55,9 @@ class Muffle {
     ~Muffle() {
       std::cout.rdbuf(saved_);
     }
+
+    void unmute() { std::cout.rdbuf(saved_); }
+    void mute()   { std::cout.rdbuf(redirect_->rdbuf()); }
 };
 
 }

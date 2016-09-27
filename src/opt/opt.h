@@ -215,30 +215,35 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   cinput->put("gradient", true);
 
   // then calculate gradients
-  GradEval<T> eval(cinput, current_, ref, target_state_);
-  if (iter_ == 0) {
-    print_header();
-    mute_stdcout();
+  double rms;
+  {
+    GradEval<T> eval(cinput, current_, ref, target_state_);
+    if (iter_ == 0) {
+      print_header();
+      mute_stdcout();
+    }
+    // current geom and grad in the cartesian coordinate
+    std::shared_ptr<const GradFile> cgrad = eval.compute();
+    if (internal_)
+      cgrad = cgrad->transform(bmat_[1], true);
+
+    assert(size_ == grad.length());
+    std::copy_n(cgrad->data(), size_, grad.getcontent());
+
+    prev_ref_ = eval.ref();
+    en = eval.energy(); 
+
+    // current geometry in a molden file
+    MoldenOut mfs("opt.molden");
+    mfs << current_;
+    rms = cgrad->rms();
   }
-  // current geom and grad in the cartesian coordinate
-  std::shared_ptr<const GradFile> cgrad = eval.compute();
-  if (internal_)
-    cgrad = cgrad->transform(bmat_[1], true);
 
-  assert(size_ == grad.length());
-  std::copy_n(cgrad->data(), size_, grad.getcontent());
-
-  resume_stdcout();
-
-  prev_ref_ = eval.ref();
   ++iter_;
   // returns energy
-  en = eval.energy(); 
 
-  // current geometry in a molden file
-  MoldenOut mfs("opt.molden");
-  mfs << current_;
-  print_iteration(en, cgrad->rms(), timer_.tick());
+  resume_stdcout();
+  print_iteration(en, rms, timer_.tick());
 }
 
 
