@@ -63,7 +63,7 @@ class ShellPair {
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
 
-    std::vector<std::shared_ptr<const ZMatrix>> multipoles(const int lmax = 10) const;
+    std::vector<std::shared_ptr<const ZMatrix>> multipoles(int lmax = 10, std::array<double, 3> Qcentre = {{0,0,0}}) const;
 };
 
 }

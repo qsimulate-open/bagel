@@ -29,6 +29,7 @@
 #include <src/util/parallel/mpi_interface.h>
 #include <src/periodic/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
+#include <src/periodic/jexpansion.h>
 
 using namespace bagel;
 using namespace std;
@@ -46,10 +47,11 @@ FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const do
 void FMM::init() {
 
   centre_ = geom_->charge_center();
+  cout << "**** CHARGE CENTRE " << setprecision(9) << centre_[0] << "  " << centre_[1] << "   " << centre_[2] << endl;
   nbasis_ = geom_->nbasis();
   const int ns2 = pow(2, ns_);
 
-  nsp_ = geom_->nshellpair();
+  const int nsp = geom_->nshellpair();
 
 #if 0
   double maxext = 0;
@@ -60,18 +62,29 @@ void FMM::init() {
   if (maxws > ns2) throw runtime_error("maxws > 2**ns");
 #endif
 
-  coordinates_.resize(nsp_);
   maxxyz_ = {{0, 0, 0}};
   double rad = 0;
-  for (int j = 0; j != 3; ++j) {
-    for (int i = 0; i != nsp_; ++i) {
-      coordinates_[i][j] = geom_->shellpair(i)->centre(j);
-      if (abs(coordinates_[i][j]) > maxxyz_[j]) maxxyz_[j] = abs(coordinates_[i][j]);
+  int isp = 0;
+  for (int i = 0; i != nsp; ++i) {
+    if (geom_->shellpair(i)->extent() < numerical_zero__) continue;
+    isp_.push_back(i);
+    ++isp;
+    for (int j = 0; j != 3; ++j) {
+      const double jco = geom_->shellpair(i)->centre(j);
+      if (abs(jco) > maxxyz_[j]) maxxyz_[j] = abs(jco);
+      if (maxxyz_[j] > rad) rad = maxxyz_[j];
     }
-    if (maxxyz_[j] > rad) rad = maxxyz_[j];
   }
+  assert(isp_.size() == isp);
+  nsp_ = isp;
+  coordinates_.resize(nsp_);
+  for (int i = 0; i != nsp_; ++i)
+    coordinates_[i] = geom_->shellpair(isp_[i])->centre();
+
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
+  coordinates_.resize(nsp_);
+  isp_.resize(nsp_);
 
   cout << "boxsize = " << boxsize_ << " unitsize = " << unitsize_ << " maxxyz = " << maxxyz_[0] << " " << maxxyz_[1] << " " << maxxyz_[2] << endl;
 
@@ -99,9 +112,8 @@ void FMM::get_boxes() {
   for (int isp = 0; isp != nsp_; ++isp) {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
-      const int sign = (coordinates_[isp][i] >= 0) ? 1.0 : -1.0;
-      const int shift = (ns2 == 1) ? 1 : ns2/2;
-      idxbox[i] = sign * (int) floor(abs(coordinates_[isp][i])/unitsize_) + shift;
+      const double coi = coordinates_[isp][i]-centre_[i];
+      idxbox[i] = (int) floor(coi/unitsize_) + ns2/2 + 1;
       assert(idxbox[i] <= ns2 && idxbox[i] > 0);
     }
 
@@ -124,15 +136,16 @@ void FMM::get_boxes() {
   for (int isp = 0; isp != nsp_; ++isp) {
     const int n = ibox[isp];
     assert(n < nleaf);
-    leaves[n].insert(leaves[n].end(), isp);
+    const int ingeom = isp_[isp];
+    leaves[n].insert(leaves[n].end(), ingeom);
   }
 
   // get all unempty boxes
   int nbox = 0;
   for (int il = 0; il != nleaf; ++il) {
     vector<shared_ptr<const ShellPair>> sp;
-    for (int i = 0; i != leaves[il].size(); ++i)
-      sp.insert(sp.end(), geom_->shellpair(leaves[il][i]));
+    for (auto& isp : leaves[il])
+      sp.insert(sp.end(), geom_->shellpair(isp));
     auto newbox = make_shared<Box>(0, il, boxid[il], lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
@@ -284,9 +297,9 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
 
   if (density) {
     assert(nbasis_ == density->ndim());
-    vector<double> maxden(nsp_);
+    vector<double> maxden(geom_->nshellpair());
     const double* density_data = density->data();
-    for (int i01 = 0; i01 != nsp_; ++i01) {
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
       shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
       const int offset0 = geom_->shellpair(i01)->offset(1);
       const int size0 = sh0->nbasis();
@@ -317,7 +330,29 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
     out->fill_upper();
   }
 
+///// DEBUG
+#if 0
+  out->get_real_part()->print("NEAR FIELD J");
+
+  shared_ptr<const Shell> b0 = box_[0]->sp(0)->shell(0);
+  shared_ptr<const Shell> b1 = box_[0]->sp(0)->shell(1);
+  shared_ptr<const Shell> b2 = box_[1]->sp(0)->shell(0);
+  shared_ptr<const Shell> b3 = box_[1]->sp(0)->shell(1);
+  array<shared_ptr<const Shell>, 4> shells = {{b0, b1, b2, b3}};
+  auto jexp = make_shared<JExpansion>(shells, lmax_, 1);
+  shared_ptr<const Matrix> den = density->get_submatrix(box_[1]->sp(0)->offset(0), box_[1]->sp(0)->offset(0),
+                                                        box_[1]->sp(0)->nbasis0(), box_[1]->sp(0)->nbasis1());
+  den->print("SUB DENSITY");
+
+  shared_ptr<const ZMatrix> tmp = jexp->compute(den);
+  tmp->get_real_part()->print("J MATRIX FROM EXPANSION");
+  const double ffen = 0.5 * density->dot_product(*tmp->get_real_part());
+  cout << "FF ENERGY FROM JEXPANSION " << ffen << endl;
+#endif
+///// END DEBUG
+
   nftime.tick_print("near-field");
+
   return out;
 }
 
@@ -325,8 +360,10 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
 double FMM::energy_ff() const {
 
   double out = 0;
-  for (int i = 0; i != nbranch_[0]; ++i)
+  for (int i = 0; i != nbranch_[0]; ++i) {
+    box_[i]->compute_energy_ff();
     out += box_[i]->energy_ff();
+  }
 
   return out;
 }

@@ -39,8 +39,8 @@ class VertexSP {
     std::vector<std::shared_ptr<const ZMatrix>> multipole_;
 
   public:
-    VertexSP(std::bitset<64> key, std::shared_ptr<const ShellPair> sp)
-     : key_(key), sp_(sp) { multipole_ = sp_->multipoles(); }
+    VertexSP(std::bitset<64> key, std::shared_ptr<const ShellPair> sp, const int lmax = 10)
+     : key_(key), sp_(sp) { multipole_ = sp_->multipoles(lmax); }
     ~VertexSP() { }
 
     std::bitset<64> key() const { return key_; }

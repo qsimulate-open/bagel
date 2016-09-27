@@ -172,6 +172,9 @@ void Box::sort_sp() {
 void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
   sort_sp();
+  fill(multipole_.begin(), multipole_.end(), 0);
+  fill(localJ_.begin(), localJ_.end(), 0);
+
   if (nchild() == 0) { // leaf = shift sp's multipoles
 //    TaskQueue<function<void(void)>> tasks(nsp());
     for (auto& v : sp_) {
@@ -179,7 +182,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), v->nbasis1(), v->nbasis0());
 //      tasks.emplace_back(
 //        [this, &v, &den]() {
-      vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_);
+      vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_, v->centre());
       assert((vmult[0]->ndim() == den->ndim()) && (vmult[0]->mdim() == den->mdim()));
       vector<complex<double>> olm(nmult_);
       for (int i = 0; i != nmult_; ++i) {
@@ -198,6 +201,8 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 //      );
     }
 //    tasks.compute();
+
+#if 1
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -208,6 +213,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
       transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
     }
+#endif
   }
 }
 
@@ -216,11 +222,11 @@ void Box::compute_L2L() {
 
   // from parent
   if (parent_ && (parent_->ninter() != 0)) {
-    array<double, 3> rb;
-    rb[0] = parent_->centre(0) - centre_[0];
-    rb[1] = parent_->centre(1) - centre_[1];
-    rb[2] = parent_->centre(2) - centre_[2];
-    vector<complex<double>> slocal = shift_localL(parent_->localJ(), rb);
+    array<double, 3> r12;
+    r12[0] = parent_->centre(0) - centre_[0];
+    r12[1] = parent_->centre(1) - centre_[1];
+    r12[2] = parent_->centre(2) - centre_[2];
+    vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
     transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
   }
 }
@@ -372,15 +378,14 @@ void Box::print_box() const {
 }
 
 
-// M2L: given O(b) and R(a-b) get M(a)
+// M2L: given O(a) and R(a-b) get M(b)
 vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<double, 3> r12) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
-  assert(r > 1e-5);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
 
-  vector<complex<double>> mb(nmult_);
+  vector<complex<double>> mb(nmult_, 0);
 
   int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
@@ -395,14 +400,14 @@ vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<dou
 
           double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
           double ft = 1.0;
-          for (int i = 1; i <= abs(a - b); ++i) {
+          for (int i = 1; i <= a - abs(b); ++i) {
             prefactor *= ft;
             ++ft;
           }
           const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
           const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
-          mb[i1] += coeff * olm[i2];
+          mb[i1] += pow(-1.0, l) * coeff * olm[i2];
         }
       }
     }
@@ -498,13 +503,10 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
 }
 
 
-double Box::energy_ff() const {
+void Box::compute_energy_ff() {
 
   assert(multipole_.size() == localJ_.size());
   complex<double> en = inner_product(multipole_.begin(), multipole_.end(), localJ_.begin(), complex<double>(0, 0));
-  //assert(abs(en.imag()) < 1e-10);
-  if (abs(en.imag()) >= 1e-10)
-     cout << "Warning: enff is not real!!!     " << setprecision(15) << en.imag() << endl;
-  const double out = en.real();
-  return out;
+  assert(abs(en.imag()) < 1e-10);
+  energy_ff_ = 0.5 * en.real();
 }

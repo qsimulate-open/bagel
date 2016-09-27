@@ -38,7 +38,7 @@ ShellPair::ShellPair(array<shared_ptr<const Shell>, 2> sh, array<int, 2> ofs, pa
 }
 
 
-vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax) const {
+vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, array<double, 3> Q) const {
 
   const int nmult =  (lmax + 1) * (lmax + 1);
   vector<shared_ptr<const ZMatrix>> mult(nmult);
@@ -47,7 +47,7 @@ vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax) const {
   const int jsize = shells_[1]->nbasis();
 
   {
-    MultipoleBatch mpole(shells_, centre_, lmax);
+    MultipoleBatch mpole(shells_, Q, lmax);
     mpole.compute();
     ZMatrix tmp(jsize, isize);
     for (int im = 0; im != nmult; ++im) {
@@ -110,17 +110,23 @@ void ShellPair::init() {
       const double cxp_inv = 1.0 / (expi0 + expi1);
       const double expi01 = expi0 * expi1;
       if (expi01*rsq*cxp_inv > tol) continue;
-      const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
-      //const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
-      //const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
+      //const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
+      const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
+      const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
 
-      array<double, 3> tmp;
-      tmp[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - centre_[0];
-      tmp[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - centre_[1];
-      tmp[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - centre_[2];
+      array<double, 3> r0;
+      r0[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - b0->position(0);
+      r0[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - b0->position(1);
+      r0[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - b0->position(2);
+      const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
 
-      const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
-      //const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + r01;
+      array<double, 3> r1;
+      r1[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - b1->position(0);
+      r1[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - b1->position(1);
+      r1[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - b1->position(2);
+      const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
+      //const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+      const double extent01 = (d0 < d1) ? (r01 + d0) : (r01 + d1);
       if (extent01 > extent_) extent_ = extent01;
     }
   }
