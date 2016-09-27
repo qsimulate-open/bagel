@@ -228,6 +228,9 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
     std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
+
+    // interface functions
+    void dump_ints() const;
 };
 
 

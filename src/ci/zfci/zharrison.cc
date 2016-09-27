@@ -24,6 +24,7 @@
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
+#include <src/util/exception.h>
 #include <src/util/math/comb.h>
 #include <src/util/math/quatmatrix.h>
 #include <src/prop/pseudospin/pseudospin.h>
@@ -133,6 +134,14 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   }
 
   update(coeff);
+
+  // if integral dump is requested, do it here, and throw Termination
+  if (idata_->get<bool>("only_ints", false)) {
+    OArchive ar("relcoeff");
+    ar << coeff;
+    dump_ints();
+    throw Termination("Relativistic MO integrals are dumped on a file.");
+  }
 }
 
 
