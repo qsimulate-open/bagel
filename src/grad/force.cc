@@ -105,6 +105,83 @@ void Force::compute() {
     auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
     force->compute();
 
+  } else {
+
+      numerical_ = 1;
+      cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
+
+    }
+  }
+
+  if (numerical_ == 1) {
+    if (jobtitle == "force") {
+
+      // Refer to the optimization code, opt/opt.h 
+      cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
+     
+      auto displ = std::make_shared<XYZFile>(geom_->natom());
+      auto gradient = std::make_shared<GradFile>(geom_->natom());
+
+      double energy_plus, energy_minus, energy_ref;
+     
+      displ->scale(0.0);
+     
+      shared_ptr<Method> energy_method;
+     
+      energy_method = construct_method(method, cinput, geom_, ref);
+      energy_method->compute();
+      ref = energy_method->conv_to_ref();
+      energy_ref = ref->energy(target);
+     
+      cout << "  Reference energy is " << energy_ref << endl;
+     
+      for (int i = 0; i != geom_->natom(); ++i) {
+        for (int j = 0; j != 3; ++j) {
+          displ->element(j,i) = 0.0001;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_->print_atoms();
+
+          if (method == "casscf" || method == "zcasscf" || method == "nevpt2" || method == "dnevpt2") {
+            // when there is possibility of multiple minima, drop the reference and do it over again
+            ref = nullptr;
+          }
+     
+          energy_method = construct_method(method, cinput, geom_, ref);
+          energy_method->compute();
+          ref = energy_method->conv_to_ref();
+          energy_plus = ref->energy(target);
+     
+          displ->element(j,i) = -0.0002;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_->print_atoms();
+
+          if (method == "casscf" || method == "zcasscf" || method == "nevpt2" || method == "dnevpt2") {
+            ref = nullptr;
+          }
+          
+          energy_method = construct_method(method, cinput, geom_, ref);
+          energy_method->compute();
+          ref = energy_method->conv_to_ref();
+          energy_minus = ref->energy(target);
+     
+          gradient->element(j,i) = (energy_plus - energy_minus) / 0.0002;      // Hartree / bohr
+          
+          // to the original position
+
+          displ->element(j,i) = 0.0001;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+
+          displ->element(j,i) = 0.0;
+        }
+      }
+
+      gradient->print(": Calculated with finite difference", 0);
+
+    } else if (jobtitle == "nacme" ){
+
+      throw logic_error ("NACME with finite difference not implemented yet");
+
+    }
   }
 
 }

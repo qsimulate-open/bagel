@@ -104,6 +104,7 @@ class Geometry : public Molecule {
     Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, std::shared_ptr<const PTree> o);
     Geometry(const Geometry& o, std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
     Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
+    Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>);
 

@@ -273,6 +273,33 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
+// suitable for geometry updates in numerical differentiation; do not care about molecular frame
+Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ)
+  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
+
+  // Members of Molecule
+  spherical_ = o.spherical_;
+  aux_merged_ = o.aux_merged_;
+  basisfile_ = o.basisfile_;
+  auxfile_ = o.auxfile_;
+  symmetry_ = o.symmetry_;
+  gamma_ = o.gamma_;
+  external_ = o.external_;
+  magnetic_field_ = o.magnetic_field_;
+
+  // first construct atoms using displacements
+  int iat = 0;
+  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, ++iat) {
+    array<double,3> cdispl = {{displ->element(0,iat), displ->element(1,iat), displ->element(2,iat)}};
+    atoms_.push_back(make_shared<Atom>(**i, cdispl));
+    aux_atoms_.push_back(make_shared<Atom>(**j, cdispl));
+  }
+
+  common_init1();
+  common_init2(false, overlap_thresh_);
+  if (o.magnetism())
+    throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
+}
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
