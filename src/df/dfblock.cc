@@ -305,8 +305,8 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM_tr(const Tensor4<double>& rdm, const Ten
     for (int i0 = 0; i0 != nact; ++i0)
       for (int i1 = 0; i1 != nact; ++i1)
         for (int j = 0; j != nclosed; ++j) {
-	  blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(j+b1size()*(i1+nclosed)), asize(), out->data()+asize()*(j+b1size()*(i0+nclosed)));
-	  blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(j+b1size()*(i0+nclosed)), asize(), out->data()+asize()*(i1+nclosed+b1size()*j));
+          blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(j+b1size()*(i1+nclosed)), asize(), out->data()+asize()*(j+b1size()*(i0+nclosed)));
+          blas::ax_plus_y_n(-rdm1(i1, i0), data()+asize()*(j+b1size()*(i0+nclosed)), asize(), out->data()+asize()*(i1+nclosed+b1size()*j));
         }
   }
   return out;

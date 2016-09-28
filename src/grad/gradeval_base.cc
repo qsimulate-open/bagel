@@ -62,7 +62,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
 shared_ptr<GradFile> GradEval_base::contract_nacme   (const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
-						      const shared_ptr<const Matrix> v,
+                                                      const shared_ptr<const Matrix> v,
                                                       const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
 
   vector<shared_ptr<GradTask>> task  = contract_grad2e(o);			// two-electron part from qrs
