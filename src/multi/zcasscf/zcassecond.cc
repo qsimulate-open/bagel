@@ -185,7 +185,7 @@ void ZCASSecond::compute() {
   if (idata_->get<bool>("pop", false)) {
     Timer pop_timer;
     cout << " " << endl;
-    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
+    cout << "    * Printing out population analysis to casscf.log" << endl;
     muffle_->mute();
     population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
     muffle_->unmute();
