@@ -38,6 +38,8 @@ Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared
 void Force::compute() {
   auto input = idata_->get_child("method");
   const int target = idata_->get<int>("target", 0);
+  const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
+  const int target2= idata_->get<int>("target2", 1);
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -86,6 +88,11 @@ void Force::compute() {
   } else if (method == "mp2") {
 
     auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
+    force->compute();
+
+  } else if (method == "casscf" && jobtitle == "nacme") {
+    
+    auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2);
     force->compute();
 
   } else if (method == "casscf") {

@@ -226,6 +226,8 @@ class DFFullDist : public ParallelDF {
     std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
+    // general case with closed orbitals, transition case
+    std::shared_ptr<DFFullDist> apply_2rdm_tr(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
 
     // returns the 4-index integrals with fixed index n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;

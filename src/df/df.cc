@@ -281,6 +281,13 @@ shared_ptr<DFFullDist> DFFullDist::apply_2rdm(const btas::Tensor4<double>& rdm) 
   return out;
 }
 
+shared_ptr<DFFullDist> DFFullDist::apply_2rdm_tr(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const {
+  auto out = make_shared<DFFullDist>(df_, nindex1_, nindex2_);
+  for (auto& i : block_)
+    out->add_block(i->apply_2RDM_tr(rdm, rdm1, nclosed, nact));
+  return out;
+}
+
 
 shared_ptr<Matrix> DFFullDist::form_aux_2index_apply_J(const shared_ptr<const DFFullDist> o, const double a) const {
   shared_ptr<Matrix> tmp = ParallelDF::form_aux_2index(o, a);
