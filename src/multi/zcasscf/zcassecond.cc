@@ -49,6 +49,7 @@ void ZCASSecond::compute() {
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
       occup_ = natorb.second;
+      if (natocc_) print_natocc();
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
