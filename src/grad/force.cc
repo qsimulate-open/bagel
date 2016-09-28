@@ -58,58 +58,68 @@ void Force::compute() {
   auto cinput = make_shared<PTree>(**m);
   cinput->put("gradient", true);
 
+  const string numerical = idata_->get<string>("numerical", "");
+  if (numerical == "true" || numerical == "yes") {
+    numerical_ = 1;
+    cout << "  The gradients will be computed with finite difference" << endl;
+  } else if (numerical == "false" || numerical == "no" || numerical == "") {
+    numerical_ = 0;
+    cout << "  The gradients will be computed analytically" << endl;
+  }
+
   const string method = to_lower(cinput->get<string>("title", ""));
 
-  if (method == "uhf") {
-
-    auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "rohf") {
-
-    auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "hf") {
-
-    auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "ks") {
-
-    auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "dhf") {
-
-    auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "mp2") {
-
-    auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "casscf" && jobtitle == "nacme") {
-    
-    auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2);
-    force->compute();
-
-  } else if (method == "casscf") {
-
-    auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else if (method == "caspt2") {
-
-    auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
-    force->compute();
-
-  } else {
-
-      numerical_ = 1;
-      cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
-
+  if (numerical_ == 0) {
+    if (method == "uhf") {
+ 
+      auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "rohf") {
+ 
+      auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "hf") {
+ 
+      auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "ks") {
+ 
+      auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "dhf") {
+ 
+      auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "mp2") {
+ 
+      auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "casscf" && jobtitle == "nacme") {
+      
+      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2);
+      force->compute();
+ 
+    } else if (method == "casscf") {
+ 
+      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else if (method == "caspt2") {
+ 
+      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
+      force->compute();
+ 
+    } else {
+ 
+        numerical_ = 1;
+        cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
+ 
     }
   }
 
