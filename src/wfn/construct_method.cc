@@ -40,11 +40,7 @@
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/casnoopt.h>
-#include <src/multi/zcasscf/zcasscf.h>
-#include <src/multi/zcasscf/zcasbfgs.h>
 #include <src/multi/zcasscf/zcassecond.h>
-#include <src/multi/zcasscf/zcashybrid.h>
-#include <src/multi/zcasscf/zsuperci.h>
 #include <src/multi/zcasscf/zcasnoopt.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
@@ -118,14 +114,8 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci")
-        out = make_shared<ZSuperCI>(itree, geom, ref);
-      else if (algorithm == "second" || algorithm == "")
+      if (algorithm == "second" || algorithm == "")
         out = make_shared<ZCASSecond>(itree, geom, ref);
-      else if (algorithm == "hybrid")
-        out = make_shared<ZCASHybrid>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = make_shared<ZCASBFGS>(itree, geom, ref);
       else if (algorithm == "noopt")
         out = make_shared<ZCASNoopt>(itree, geom, ref);
       else
@@ -141,13 +131,10 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "zfci")       out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
-        out = make_shared<ZSuperCI>(itree, geom, ref);
-      else if (algorithm == "hybrid")
-        out = make_shared<ZCASHybrid>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = make_shared<ZCASBFGS>(itree, geom, ref);
-      else
+      if (algorithm == "second" || algorithm == "") {
+        throw logic_error("Relativistic CASSCF with magnetic fields is currently broken");
+        out = make_shared<ZCASSecond>(itree, geom, ref);
+      } else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "moprint") { out = make_shared<MOPrint>(itree, geom, ref);
     } else if (title == "molecule") {

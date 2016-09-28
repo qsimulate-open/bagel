@@ -26,8 +26,8 @@
 #include <src/scf/hf/fock.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
-#include <src/multi/casscf/superci.h>
-#include <src/multi/zcasscf/zcashybrid.h>
+#include <src/multi/casscf/cassecond.h>
+#include <src/multi/zcasscf/zcassecond.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
@@ -76,7 +76,7 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 template<>
 void NEVPT2<double>::init_reference() {
   if (!ref_ || ref_->nact() == 0) {
-    auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
+    auto casscf = make_shared<CASSecond>(idata_, geom_, ref_);
     casscf->compute();
     ref_ = casscf->conv_to_ref();
   }
@@ -89,7 +89,7 @@ void NEVPT2<double>::init_reference() {
 template<>
 void NEVPT2<complex<double>>::init_reference() {
   if (!dynamic_pointer_cast<const RelReference>(ref_) || ref_->nact() == 0) {
-    auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
+    auto casscf = make_shared<ZCASSecond>(idata_, geom_, ref_);
     casscf->compute();
     ref_ = casscf->conv_to_ref();
   }

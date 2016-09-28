@@ -13,16 +13,10 @@
 
 {
   "title" : "zcasscf",
-  "algorithm" : "bfgs",
   "thresh" : 5.0e-7,
-  "thresh_fci"  : 5.0e-8,
-  "thresh_scf"  : 1.0e-8,
   "state"  : [1],
   "nact_cas"      : 2,
-  "nclosed"   : 0,
-  "maxiter" : 35,
-  "maxiter_scf" : 50,
-  "maxiter_fci" : 100
+  "nclosed"   : 0
 }
 
 ]}

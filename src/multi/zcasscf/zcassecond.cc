@@ -26,6 +26,7 @@
 #include <src/scf/dhf/dfock.h>
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zcassecond.h>
+#include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
 using namespace bagel;
@@ -170,7 +171,26 @@ void ZCASSecond::compute() {
     if (iter == max_iter_-1)
       throw runtime_error("Max iteration reached during the second optimization.");
   }
+
+  // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
   muffle_->unmute();
+  if (nact_) {
+    fci_->update(coeff_);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
+    muffle_->mute();
+    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
+    muffle_->unmute();
+    pop_timer.tick_print("population analysis");
+  }
 }
 
 
