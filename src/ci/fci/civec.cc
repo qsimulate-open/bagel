@@ -250,20 +250,30 @@ void Civector<complex<double>>::spin_decontaminate(const double thresh) {
 
 
 template<typename DataType>
-void Civector<DataType>::print(const double thr) const {
+void Civector<DataType>::print(const double thr, const bool sort) const {
   const DataType* i = cc();
   // multimap sorts elements so that they will be shown in the descending order in magnitude
-  multimap<double, tuple<DataType, bitset<nbit__>, bitset<nbit__>>> tmp;
-  for (auto& ia : det_->string_bits_a()) {
-    for (auto& ib : det_->string_bits_b()) {
-      if (abs(*i) > thr)
-        tmp.emplace(-abs(*i), make_tuple(*i, ia, ib));
-      ++i;
+  if (sort) {
+    multimap<double, tuple<DataType, bitset<nbit__>, bitset<nbit__>>> tmp;
+    for (auto& ia : det_->string_bits_a()) {
+      for (auto& ib : det_->string_bits_b()) {
+        if (abs(*i) > thr)
+          tmp.emplace(-abs(*i), make_tuple(*i, ia, ib));
+        ++i;
+      }
+    }
+    for (auto& iter : tmp)
+      cout << "       " << print_bit(get<1>(iter.second), get<2>(iter.second), det()->norb())
+           << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
+  } else {
+    for (auto& ia : det_->string_bits_a()) {
+      for (auto& ib : det_->string_bits_b()) {
+        cout << "       " << print_bit(ia, ib, det()->norb())
+             << "  " << setprecision(10) << setw(15) << *i << endl;
+        ++i;
+      }
     }
   }
-  for (auto& iter : tmp)
-    cout << "       " << print_bit(get<1>(iter.second), get<2>(iter.second), det()->norb())
-         << "  " << setprecision(10) << setw(15) << get<0>(iter.second) << endl;
 }
 
 

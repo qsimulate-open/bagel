@@ -142,43 +142,49 @@ void Force::compute() {
       energy_method->compute();
       ref = energy_method->conv_to_ref();
       energy_ref = ref->energy(target);
+
+      // TODO when we start CASSCF calculation with an initial guess from reference geometry,
+      // it should be scientifically better than doing the calculation all over again; but it doesn't work
+      // Currently the code "works", but in a silly way (for all DOFs, it does SCF again).
+      // I didn't delete the part for doing CASSCF calculation starting from reference...
+      // this is why the code at current stage is with the total stupidness...
+      shared_ptr<const Reference> refgrad_plus;
+      shared_ptr<const Reference> refgrad_minus;
      
       cout << "  Reference energy is " << energy_ref << endl;
      
       for (int i = 0; i != geom_->natom(); ++i) {
         for (int j = 0; j != 3; ++j) {
-          displ->element(j,i) = 0.0001;
+
+          displ->element(j,i) = 0.01;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
 
-          if (method == "casscf" || method == "zcasscf" || method == "nevpt2" || method == "dnevpt2") {
-            // when there is possibility of multiple minima, drop the reference and do it over again
-            ref = nullptr;
-          }
-     
-          energy_method = construct_method(method, cinput, geom_, ref);
+          refgrad_plus = make_shared<Reference> (*ref, nullptr);
+          refgrad_plus = nullptr;
+
+          energy_method = construct_method(method, cinput, geom_, refgrad_plus);
           energy_method->compute();
-          ref = energy_method->conv_to_ref();
-          energy_plus = ref->energy(target);
-     
-          displ->element(j,i) = -0.0002;
+          refgrad_plus = energy_method->conv_to_ref();
+          energy_plus = refgrad_plus->energy(target);
+
+          displ->element(j,i) = -0.02;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
+          
+          refgrad_minus = make_shared<Reference> (*ref, nullptr);
+          refgrad_minus = nullptr;
 
-          if (method == "casscf" || method == "zcasscf" || method == "nevpt2" || method == "dnevpt2") {
-            ref = nullptr;
-          }
-          
-          energy_method = construct_method(method, cinput, geom_, ref);
+          energy_method = construct_method(method, cinput, geom_, refgrad_minus);
           energy_method->compute();
-          ref = energy_method->conv_to_ref();
-          energy_minus = ref->energy(target);
+          refgrad_minus = energy_method->conv_to_ref();
+          energy_minus = refgrad_minus->energy(target);
      
-          gradient->element(j,i) = (energy_plus - energy_minus) / 0.0002;      // Hartree / bohr
-          
+          gradient->element(j,i) = (energy_plus - energy_minus) / 0.02;      // Hartree / bohr
+
           // to the original position
 
-          displ->element(j,i) = 0.0001;
+          displ->element(j,i) = 0.01;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
 
           displ->element(j,i) = 0.0;
@@ -187,7 +193,7 @@ void Force::compute() {
 
       gradient->print(": Calculated with finite difference", 0);
 
-    } else if (jobtitle == "nacme" ){
+    } else if (jobtitle == "nacme") {
 
       throw logic_error ("NACME with finite difference not implemented yet");
 

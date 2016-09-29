@@ -226,6 +226,16 @@ class Dvector : public btas::Tensor3<DataType> {
         iter->print(thresh);
       }
     }
+    
+    void print(const bool sort) const {
+      int j = 0;
+      for (auto& iter : dvec_) {
+        std::cout << std::endl << "     * ci vector, state " << std::setw(3) << j++;
+        if (typeid(DataType) == typeid(double)) std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
+        std::cout << std::endl;
+        iter->print(0.0, false);
+      }
+    }
 };
 
 using Dvec = Dvector<double>;
