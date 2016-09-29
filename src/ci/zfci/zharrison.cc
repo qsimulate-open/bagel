@@ -406,17 +406,6 @@ void ZHarrison::compute() {
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coeffin) const {
-  auto out = coeffin->clone();
-  const int n = coeffin->ndim();
-  const int m = coeffin->mdim()/2;
-  assert(n % 4 == 0 && m % 2 == 0 && m * 2 == coeffin->mdim());
-  out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
-  out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
-  return out;
-}
-
-
 shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));

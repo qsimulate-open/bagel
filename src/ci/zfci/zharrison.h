@@ -136,9 +136,6 @@ class ZHarrison : public Method {
 
     void const_denom();
 
-    // just to move negative energy states into the virtual space
-    std::shared_ptr<const ZMatrix> swap_pos_neg(std::shared_ptr<const ZMatrix> coeffin) const;
-
     // run-time functions.
     // aaaa and bbbb
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
