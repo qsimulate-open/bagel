@@ -421,10 +421,15 @@ pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
   {
     auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
     copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
+    rdm1->scale(-1.0);
+    for (int i = 0; i != norb_; ++i)
+      rdm1->element(i,i) += 1.0;
     natorb = make_shared<QuatMatrix>(*rdm1);
     natorb->diagonalize(occup);
-    for (int i = 0; i != norb_; ++i)
+    for (int i = 0; i != norb_; ++i) {
+      occup[i] = 1.0-occup[i];
       occup[i+norb_] = occup[i];
+    }
   }
   // update rdm1_av_expanded_
   {
