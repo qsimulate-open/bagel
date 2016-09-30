@@ -195,8 +195,7 @@ class Civector {
 
     void project_out(std::shared_ptr<const Civector<DataType>> o) { ax_plus_y(-detail::conj(dot_product(*o)), *o); }
 
-    void print(const double thr) const { print (thr, true); }
-    void print(const double thr, const bool sort) const;
+    void print(const double thr, const bool sort = true) const;
 
     void synchronize(const int root = 0) {
       mpi__->broadcast(cc_ptr_, size(), root);
