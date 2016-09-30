@@ -236,6 +236,20 @@ class Dvector : public btas::Tensor3<DataType> {
         iter->print(0.0, false);
       }
     }
+    
+    template<typename T = DataType, 
+             class = typename std::enable_if<std::is_same<T, double>::value>::type
+            >
+    void match (std::shared_ptr<const Dvector<double>>& ref);
+    
+    template<typename T = DataType, 
+             class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type
+            >
+    void match (std::shared_ptr<const Dvector<std::complex<double>>>& ref) {  }
+
+    void match (std::shared_ptr<const Dvector<DataType>>& ref) {
+      match<DataType, void> (ref);
+    }
 };
 
 using Dvec = Dvector<double>;

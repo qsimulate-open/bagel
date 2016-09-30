@@ -41,6 +41,45 @@ std::shared_ptr<bagel::Dvector<DataType>> bagel::Dvector<DataType>::extract_stat
   return out;
 }
 
+template<typename DataType>
+template<typename T, class>
+void bagel::Dvector<DataType>::match(std::shared_ptr<const bagel::Dvector<double>>& ref) {
+  // It matches the signs of CI coefficient.
+  // applying it for degenerate states is not a good idea, actually...
+  // should find a better way
+
+  assert(data(0)->size() == ref->data(0)->size());
+  assert(dvec().size() == ref->dvec().size());
+
+  const size_t detsize = ref->data(0)->size();
+  const size_t detnumb = dvec().size();
+
+  std::vector<int> horizontal(detsize);
+
+  for (size_t i = 0; i != detsize; ++i) {
+    double comp = data(0)->data(i) * ref->data(0)->data(i);
+    if (comp < 0.0) horizontal[i] = -1;
+    else horizontal[i] = 1;
+  }
+
+  // for all determinants, do "horizontal matching"
+
+  for (auto& iter : dvec_) 
+    for (size_t i = 0; i != detsize; ++i)
+      iter->data(i) = iter->data(i) * double(horizontal[i]);
+  
+  // then "vertical matching" at one shot
+
+  for (size_t i = 0; i != detnumb; ++i) {
+    double comp = 0.0;
+    for (size_t j = 0; j != detsize; ++j) {
+      comp += data(i)->data(j) * ref->data(i)->data(j);
+    }
+    if (comp < 0.0) data(i)->scale(-1.0);
+  }
+
+}
+
 template class bagel::Dvector<double>;
 template class bagel::Dvector<std::complex<double>>;
 

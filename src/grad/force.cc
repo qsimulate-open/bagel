@@ -58,14 +58,12 @@ void Force::compute() {
   auto cinput = make_shared<PTree>(**m);
   cinput->put("gradient", true);
 
-  const string numerical = idata_->get<string>("numerical", "");
-  if (numerical == "true" || numerical == "yes") {
-    numerical_ = 1;
+  numerical_ = idata_->get<bool>("numerical", false);
+  if (numerical_ == 1)
     cout << "  The gradients will be computed with finite difference" << endl;
-  } else if (numerical == "false" || numerical == "no" || numerical == "") {
-    numerical_ = 0;
+  else
     cout << "  The gradients will be computed analytically" << endl;
-  }
+
 
   const string method = to_lower(cinput->get<string>("title", ""));
 
@@ -195,7 +193,78 @@ void Force::compute() {
 
     } else if (jobtitle == "nacme") {
 
-      throw logic_error ("NACME with finite difference not implemented yet");
+      if (method != "casscf") 
+        throw logic_error ("  Numerical NACME with the methods != CASSCF not implemented yet");
+
+      cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
+     
+      auto displ = std::make_shared<XYZFile>(geom_->natom());
+      auto gradient = std::make_shared<GradFile>(geom_->natom());
+
+      displ->scale(0.0);
+     
+      shared_ptr<Method> energy_method;
+     
+      energy_method = construct_method(method, cinput, geom_, ref);
+      energy_method->compute();
+      ref = energy_method->conv_to_ref();
+      shared_ptr<const Dvec> civ_ref = ref->civectors();
+      civ_ref->print (false);
+
+      shared_ptr<const Reference> refgrad_plus;
+      shared_ptr<const Reference> refgrad_minus;
+      shared_ptr<Dvec> civ_plus;
+      shared_ptr<Dvec> civ_minus;
+      shared_ptr<Dvec> civ_diff;
+     
+      for (int i = 0; i != geom_->natom(); ++i) {
+        for (int j = 0; j != 3; ++j) {
+          displ->element(j,i) = 0.01;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_->print_atoms();
+
+          refgrad_plus = make_shared<Reference> (*ref, nullptr);
+          refgrad_plus = nullptr;
+     
+          energy_method = construct_method(method, cinput, geom_, refgrad_plus);
+          energy_method->compute();
+          refgrad_plus = energy_method->conv_to_ref();
+
+          civ_plus = refgrad_plus->civectors()->copy();
+          // match the CI vectors to reference (not good for degenerates...)
+          civ_plus->match(civ_ref);
+
+          displ->element(j,i) = -0.02;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_->print_atoms();
+
+          refgrad_minus = make_shared<Reference> (*ref, nullptr);
+          refgrad_minus = nullptr;
+          
+          energy_method = construct_method(method, cinput, geom_, refgrad_minus);
+          energy_method->compute();
+          refgrad_minus = energy_method->conv_to_ref();
+
+          civ_minus = refgrad_minus->civectors()->copy();
+          civ_minus->match(civ_ref);
+
+          civ_diff = civ_plus->copy();
+          *civ_diff -= *civ_minus;
+          civ_diff->scale(1.0 / 0.02);
+          civ_diff->print(/*sort=*/false);
+     
+          displ->element(j,i) = 0.01;
+          geom_ = std::make_shared<Geometry>(*geom_, displ);
+
+          displ->element(j,i) = 0.0;
+
+          gradient->element(j,i) = civ_ref->data(target)->dot_product(civ_diff->data(target2));
+        }
+      }
+      // TODO CSF term
+
+
+      gradient->print(": NACME calculated with finite difference, CI term only", 0);
 
     }
   }
