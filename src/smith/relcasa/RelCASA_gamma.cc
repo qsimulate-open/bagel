@@ -34,363 +34,363 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::RelCASA;
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma0_() {
-  vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};
+  vector<IndexRange> Gamma0_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma0 = make_shared<Tensor>(Gamma0_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor0 = vector<shared_ptr<Tensor>>{Gamma0, rdm0_, rdm1_, rdm2_};
+  auto tensor0 = vector<shared_ptr<Tensor>>{Gamma0, rdm1_, rdm2_, rdm3_};
   auto task0 = make_shared<Task0>(tensor0, pindex);
   return make_shared<FutureTensor>(*Gamma0, task0);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma1_() {
-  vector<IndexRange> Gamma1_index = {active_, active_, active_, active_, active_, active_};
+  vector<IndexRange> Gamma1_index = {active_, active_, active_, active_};
   auto Gamma1 = make_shared<Tensor>(Gamma1_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor1 = vector<shared_ptr<Tensor>>{Gamma1, rdm1_, rdm2_, rdm3_};
+  auto tensor1 = vector<shared_ptr<Tensor>>{Gamma1, rdm0_, rdm1_, rdm2_};
   auto task1 = make_shared<Task1>(tensor1, pindex);
   return make_shared<FutureTensor>(*Gamma1, task1);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma2_() {
-  vector<IndexRange> Gamma2_index = {active_, active_, active_, active_};
+  vector<IndexRange> Gamma2_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma2 = make_shared<Tensor>(Gamma2_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor2 = vector<shared_ptr<Tensor>>{Gamma2, rdm0_, rdm1_, rdm2_};
+  auto tensor2 = vector<shared_ptr<Tensor>>{Gamma2, rdm1_, rdm2_, rdm3_};
   auto task2 = make_shared<Task2>(tensor2, pindex);
   return make_shared<FutureTensor>(*Gamma2, task2);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma3_() {
-  vector<IndexRange> Gamma3_index = {active_, active_, active_, active_, active_, active_};
+  vector<IndexRange> Gamma3_index = {active_, active_, active_, active_};
   auto Gamma3 = make_shared<Tensor>(Gamma3_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor3 = vector<shared_ptr<Tensor>>{Gamma3, rdm1_, rdm2_, rdm3_};
+  auto tensor3 = vector<shared_ptr<Tensor>>{Gamma3, rdm1_, rdm2_};
   auto task3 = make_shared<Task3>(tensor3, pindex);
   return make_shared<FutureTensor>(*Gamma3, task3);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma4_() {
-  vector<IndexRange> Gamma4_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma4 = make_shared<Tensor>(Gamma4_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor4 = vector<shared_ptr<Tensor>>{Gamma4, rdm1_, rdm2_, rdm3_};
-  auto task4 = make_shared<Task4>(tensor4, pindex);
-  return make_shared<FutureTensor>(*Gamma4, task4);
-}
-
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma5_() {
-  vector<IndexRange> Gamma5_index = {active_, active_, active_, active_};
+  vector<IndexRange> Gamma5_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma5 = make_shared<Tensor>(Gamma5_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor5 = vector<shared_ptr<Tensor>>{Gamma5, rdm1_, rdm2_};
+  auto tensor4 = vector<shared_ptr<Tensor>>{Gamma5, rdm1_, rdm2_, rdm3_};
+  auto task4 = make_shared<Task4>(tensor4, pindex);
+  return make_shared<FutureTensor>(*Gamma5, task4);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma6_() {
+  vector<IndexRange> Gamma6_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma6 = make_shared<Tensor>(Gamma6_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor5 = vector<shared_ptr<Tensor>>{Gamma6, rdm1_, rdm2_, rdm3_};
   auto task5 = make_shared<Task5>(tensor5, pindex);
-  return make_shared<FutureTensor>(*Gamma5, task5);
+  return make_shared<FutureTensor>(*Gamma6, task5);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma70_() {
+  vector<IndexRange> Gamma70_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma70 = make_shared<Tensor>(Gamma70_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor6 = vector<shared_ptr<Tensor>>{Gamma70, rdm1_, rdm2_, rdm3_, rdm4_, h1_};
+  auto task6 = make_shared<Task6>(tensor6, pindex);
+  return make_shared<FutureTensor>(*Gamma70, task6);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma71_() {
+  vector<IndexRange> Gamma71_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma71 = make_shared<Tensor>(Gamma71_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor7 = vector<shared_ptr<Tensor>>{Gamma71, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task7 = make_shared<Task7>(tensor7, pindex);
+  return make_shared<FutureTensor>(*Gamma71, task7);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma7_() {
-  vector<IndexRange> Gamma7_index = {active_, active_, active_, active_, active_, active_};
+  vector<IndexRange> Gamma7_index = {active_, active_, active_, active_};
   auto Gamma7 = make_shared<Tensor>(Gamma7_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor6 = vector<shared_ptr<Tensor>>{Gamma7, rdm1_, rdm2_, rdm3_};
-  auto task6 = make_shared<Task6>(tensor6, pindex);
-  return make_shared<FutureTensor>(*Gamma7, task6);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma82_() {
-  vector<IndexRange> Gamma82_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma82 = make_shared<Tensor>(Gamma82_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor7 = vector<shared_ptr<Tensor>>{Gamma82, rdm1_, rdm2_, rdm3_, rdm4_, h1_};
-  auto task7 = make_shared<Task7>(tensor7, pindex);
-  return make_shared<FutureTensor>(*Gamma82, task7);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma83_() {
-  vector<IndexRange> Gamma83_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma83 = make_shared<Tensor>(Gamma83_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor8 = vector<shared_ptr<Tensor>>{Gamma83, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto tensor8 = vector<shared_ptr<Tensor>>{Gamma7, rdm1_, rdm2_};
   auto task8 = make_shared<Task8>(tensor8, pindex);
-  return make_shared<FutureTensor>(*Gamma83, task8);
+  return make_shared<FutureTensor>(*Gamma7, task8);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma9_() {
-  vector<IndexRange> Gamma9_index = {active_, active_};
+  vector<IndexRange> Gamma9_index = {active_, active_, active_, active_};
   auto Gamma9 = make_shared<Tensor>(Gamma9_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor9 = vector<shared_ptr<Tensor>>{Gamma9, rdm0_, rdm1_};
+  auto tensor9 = vector<shared_ptr<Tensor>>{Gamma9, rdm1_, rdm2_};
   auto task9 = make_shared<Task9>(tensor9, pindex);
   return make_shared<FutureTensor>(*Gamma9, task9);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma13_() {
-  vector<IndexRange> Gamma13_index = {active_, active_, active_, active_};
+  vector<IndexRange> Gamma13_index = {active_, active_};
   auto Gamma13 = make_shared<Tensor>(Gamma13_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor10 = vector<shared_ptr<Tensor>>{Gamma13, rdm1_, rdm2_};
+  auto tensor10 = vector<shared_ptr<Tensor>>{Gamma13, rdm0_, rdm1_};
   auto task10 = make_shared<Task10>(tensor10, pindex);
   return make_shared<FutureTensor>(*Gamma13, task10);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma15_() {
-  vector<IndexRange> Gamma15_index = {active_, active_, active_, active_};
-  auto Gamma15 = make_shared<Tensor>(Gamma15_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma72_() {
+  vector<IndexRange> Gamma72_index = {active_, active_};
+  auto Gamma72 = make_shared<Tensor>(Gamma72_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor11 = vector<shared_ptr<Tensor>>{Gamma15, rdm1_, rdm2_};
+  auto tensor11 = vector<shared_ptr<Tensor>>{Gamma72, rdm0_, rdm1_, rdm2_, h1_};
   auto task11 = make_shared<Task11>(tensor11, pindex);
-  return make_shared<FutureTensor>(*Gamma15, task11);
+  return make_shared<FutureTensor>(*Gamma72, task11);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma84_() {
-  vector<IndexRange> Gamma84_index = {active_, active_};
-  auto Gamma84 = make_shared<Tensor>(Gamma84_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma74_() {
+  vector<IndexRange> Gamma74_index = {active_, active_};
+  auto Gamma74 = make_shared<Tensor>(Gamma74_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor12 = vector<shared_ptr<Tensor>>{Gamma84, rdm0_, rdm1_, rdm2_, h1_};
+  auto tensor12 = vector<shared_ptr<Tensor>>{Gamma74, rdm0_, rdm1_, rdm2_, rdm3_, v2_};
   auto task12 = make_shared<Task12>(tensor12, pindex);
-  return make_shared<FutureTensor>(*Gamma84, task12);
+  return make_shared<FutureTensor>(*Gamma74, task12);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma86_() {
-  vector<IndexRange> Gamma86_index = {active_, active_};
-  auto Gamma86 = make_shared<Tensor>(Gamma86_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma18_() {
+  vector<IndexRange> Gamma18_index = {active_, active_, active_, active_};
+  auto Gamma18 = make_shared<Tensor>(Gamma18_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor13 = vector<shared_ptr<Tensor>>{Gamma86, rdm0_, rdm1_, rdm2_, rdm3_, v2_};
+  auto tensor13 = vector<shared_ptr<Tensor>>{Gamma18, rdm1_, rdm2_};
   auto task13 = make_shared<Task13>(tensor13, pindex);
-  return make_shared<FutureTensor>(*Gamma86, task13);
+  return make_shared<FutureTensor>(*Gamma18, task13);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma20_() {
+  vector<IndexRange> Gamma20_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma20 = make_shared<Tensor>(Gamma20_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor14 = vector<shared_ptr<Tensor>>{Gamma20, rdm2_, rdm3_};
+  auto task14 = make_shared<Task14>(tensor14, pindex);
+  return make_shared<FutureTensor>(*Gamma20, task14);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma21_() {
+  vector<IndexRange> Gamma21_index = {active_, active_};
+  auto Gamma21 = make_shared<Tensor>(Gamma21_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor15 = vector<shared_ptr<Tensor>>{Gamma21, rdm1_};
+  auto task15 = make_shared<Task15>(tensor15, pindex);
+  return make_shared<FutureTensor>(*Gamma21, task15);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma23_() {
+  vector<IndexRange> Gamma23_index = {active_, active_, active_, active_};
+  auto Gamma23 = make_shared<Tensor>(Gamma23_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor16 = vector<shared_ptr<Tensor>>{Gamma23, rdm1_, rdm2_};
+  auto task16 = make_shared<Task16>(tensor16, pindex);
+  return make_shared<FutureTensor>(*Gamma23, task16);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma24_() {
   vector<IndexRange> Gamma24_index = {active_, active_, active_, active_};
   auto Gamma24 = make_shared<Tensor>(Gamma24_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor14 = vector<shared_ptr<Tensor>>{Gamma24, rdm1_, rdm2_};
-  auto task14 = make_shared<Task14>(tensor14, pindex);
-  return make_shared<FutureTensor>(*Gamma24, task14);
+  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma24, rdm1_, rdm2_};
+  auto task17 = make_shared<Task17>(tensor17, pindex);
+  return make_shared<FutureTensor>(*Gamma24, task17);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma25_() {
-  vector<IndexRange> Gamma25_index = {active_, active_, active_, active_};
+  vector<IndexRange> Gamma25_index = {active_, active_, active_, active_, active_, active_};
   auto Gamma25 = make_shared<Tensor>(Gamma25_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor15 = vector<shared_ptr<Tensor>>{Gamma25, rdm1_, rdm2_};
-  auto task15 = make_shared<Task15>(tensor15, pindex);
-  return make_shared<FutureTensor>(*Gamma25, task15);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma26_() {
-  vector<IndexRange> Gamma26_index = {active_, active_, active_, active_};
-  auto Gamma26 = make_shared<Tensor>(Gamma26_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor16 = vector<shared_ptr<Tensor>>{Gamma26, rdm1_, rdm2_};
-  auto task16 = make_shared<Task16>(tensor16, pindex);
-  return make_shared<FutureTensor>(*Gamma26, task16);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma28_() {
-  vector<IndexRange> Gamma28_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma28 = make_shared<Tensor>(Gamma28_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma28, rdm2_, rdm3_};
-  auto task17 = make_shared<Task17>(tensor17, pindex);
-  return make_shared<FutureTensor>(*Gamma28, task17);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma29_() {
-  vector<IndexRange> Gamma29_index = {active_, active_};
-  auto Gamma29 = make_shared<Tensor>(Gamma29_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma29, rdm1_};
+  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma25, rdm1_, rdm2_, rdm3_};
   auto task18 = make_shared<Task18>(tensor18, pindex);
-  return make_shared<FutureTensor>(*Gamma29, task18);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma33_() {
-  vector<IndexRange> Gamma33_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma33 = make_shared<Tensor>(Gamma33_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor19 = vector<shared_ptr<Tensor>>{Gamma33, rdm1_, rdm2_, rdm3_};
-  auto task19 = make_shared<Task19>(tensor19, pindex);
-  return make_shared<FutureTensor>(*Gamma33, task19);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma100_() {
-  vector<IndexRange> Gamma100_index = {active_, active_, active_, active_};
-  auto Gamma100 = make_shared<Tensor>(Gamma100_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor20 = vector<shared_ptr<Tensor>>{Gamma100, rdm1_, rdm2_, rdm3_, h1_};
-  auto task20 = make_shared<Task20>(tensor20, pindex);
-  return make_shared<FutureTensor>(*Gamma100, task20);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma101_() {
-  vector<IndexRange> Gamma101_index = {active_, active_, active_, active_};
-  auto Gamma101 = make_shared<Tensor>(Gamma101_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor21 = vector<shared_ptr<Tensor>>{Gamma101, rdm1_, rdm2_, rdm3_, h1_};
-  auto task21 = make_shared<Task21>(tensor21, pindex);
-  return make_shared<FutureTensor>(*Gamma101, task21);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma104_() {
-  vector<IndexRange> Gamma104_index = {active_, active_, active_, active_};
-  auto Gamma104 = make_shared<Tensor>(Gamma104_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor22 = vector<shared_ptr<Tensor>>{Gamma104, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
-  auto task22 = make_shared<Task22>(tensor22, pindex);
-  return make_shared<FutureTensor>(*Gamma104, task22);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma105_() {
-  vector<IndexRange> Gamma105_index = {active_, active_, active_, active_};
-  auto Gamma105 = make_shared<Tensor>(Gamma105_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor23 = vector<shared_ptr<Tensor>>{Gamma105, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
-  auto task23 = make_shared<Task23>(tensor23, pindex);
-  return make_shared<FutureTensor>(*Gamma105, task23);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma40_() {
-  vector<IndexRange> Gamma40_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma40 = make_shared<Tensor>(Gamma40_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor24 = vector<shared_ptr<Tensor>>{Gamma40, rdm2_, rdm3_};
-  auto task24 = make_shared<Task24>(tensor24, pindex);
-  return make_shared<FutureTensor>(*Gamma40, task24);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma48_() {
-  vector<IndexRange> Gamma48_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma48 = make_shared<Tensor>(Gamma48_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor25 = vector<shared_ptr<Tensor>>{Gamma48, rdm2_, rdm3_};
-  auto task25 = make_shared<Task25>(tensor25, pindex);
-  return make_shared<FutureTensor>(*Gamma48, task25);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma49_() {
-  vector<IndexRange> Gamma49_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma49 = make_shared<Tensor>(Gamma49_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor26 = vector<shared_ptr<Tensor>>{Gamma49, rdm2_, rdm3_};
-  auto task26 = make_shared<Task26>(tensor26, pindex);
-  return make_shared<FutureTensor>(*Gamma49, task26);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma50_() {
-  vector<IndexRange> Gamma50_index = {active_, active_, active_, active_};
-  auto Gamma50 = make_shared<Tensor>(Gamma50_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor27 = vector<shared_ptr<Tensor>>{Gamma50, rdm2_};
-  auto task27 = make_shared<Task27>(tensor27, pindex);
-  return make_shared<FutureTensor>(*Gamma50, task27);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma52_() {
-  vector<IndexRange> Gamma52_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma52 = make_shared<Tensor>(Gamma52_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor28 = vector<shared_ptr<Tensor>>{Gamma52, rdm2_, rdm3_};
-  auto task28 = make_shared<Task28>(tensor28, pindex);
-  return make_shared<FutureTensor>(*Gamma52, task28);
+  return make_shared<FutureTensor>(*Gamma25, task18);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma88_() {
-  vector<IndexRange> Gamma88_index = {active_, active_, active_, active_, active_, active_};
+  vector<IndexRange> Gamma88_index = {active_, active_, active_, active_};
   auto Gamma88 = make_shared<Tensor>(Gamma88_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma88, rdm2_, rdm3_, rdm4_, h1_};
-  auto task29 = make_shared<Task29>(tensor29, pindex);
-  return make_shared<FutureTensor>(*Gamma88, task29);
+  auto tensor19 = vector<shared_ptr<Tensor>>{Gamma88, rdm1_, rdm2_, rdm3_, h1_};
+  auto task19 = make_shared<Task19>(tensor19, pindex);
+  return make_shared<FutureTensor>(*Gamma88, task19);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma89_() {
-  vector<IndexRange> Gamma89_index = {active_, active_, active_, active_, active_, active_};
+  vector<IndexRange> Gamma89_index = {active_, active_, active_, active_};
   auto Gamma89 = make_shared<Tensor>(Gamma89_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor30 = vector<shared_ptr<Tensor>>{Gamma89, rdm2_, rdm3_, rdm4_, v2_};
-  auto task30 = make_shared<Task30>(tensor30, pindex);
-  return make_shared<FutureTensor>(*Gamma89, task30);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma94_() {
-  vector<IndexRange> Gamma94_index = {active_, active_};
-  auto Gamma94 = make_shared<Tensor>(Gamma94_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor31 = vector<shared_ptr<Tensor>>{Gamma94, rdm1_, rdm2_, h1_};
-  auto task31 = make_shared<Task31>(tensor31, pindex);
-  return make_shared<FutureTensor>(*Gamma94, task31);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma96_() {
-  vector<IndexRange> Gamma96_index = {active_, active_};
-  auto Gamma96 = make_shared<Tensor>(Gamma96_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor32 = vector<shared_ptr<Tensor>>{Gamma96, rdm1_, rdm2_, rdm3_, v2_};
-  auto task32 = make_shared<Task32>(tensor32, pindex);
-  return make_shared<FutureTensor>(*Gamma96, task32);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma80_() {
-  vector<IndexRange> Gamma80_index = {active_, active_, active_, active_};
-  auto Gamma80 = make_shared<Tensor>(Gamma80_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor33 = vector<shared_ptr<Tensor>>{Gamma80, rdm0_, rdm1_, rdm2_, rdm3_, h1_};
-  auto task33 = make_shared<Task33>(tensor33, pindex);
-  return make_shared<FutureTensor>(*Gamma80, task33);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma81_() {
-  vector<IndexRange> Gamma81_index = {active_, active_, active_, active_};
-  auto Gamma81 = make_shared<Tensor>(Gamma81_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor34 = vector<shared_ptr<Tensor>>{Gamma81, rdm0_, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
-  auto task34 = make_shared<Task34>(tensor34, pindex);
-  return make_shared<FutureTensor>(*Gamma81, task34);
-}
-
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma90_() {
-  vector<IndexRange> Gamma90_index;
-  auto Gamma90 = make_shared<Tensor>(Gamma90_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor35 = vector<shared_ptr<Tensor>>{Gamma90, rdm1_, h1_};
-  auto task35 = make_shared<Task35>(tensor35, pindex);
-  return make_shared<FutureTensor>(*Gamma90, task35);
+  auto tensor20 = vector<shared_ptr<Tensor>>{Gamma89, rdm1_, rdm2_, rdm3_, h1_};
+  auto task20 = make_shared<Task20>(tensor20, pindex);
+  return make_shared<FutureTensor>(*Gamma89, task20);
 }
 
 shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma92_() {
-  vector<IndexRange> Gamma92_index;
+  vector<IndexRange> Gamma92_index = {active_, active_, active_, active_};
   auto Gamma92 = make_shared<Tensor>(Gamma92_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor36 = vector<shared_ptr<Tensor>>{Gamma92, rdm1_, rdm2_, v2_};
+  auto tensor21 = vector<shared_ptr<Tensor>>{Gamma92, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task21 = make_shared<Task21>(tensor21, pindex);
+  return make_shared<FutureTensor>(*Gamma92, task21);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma93_() {
+  vector<IndexRange> Gamma93_index = {active_, active_, active_, active_};
+  auto Gamma93 = make_shared<Tensor>(Gamma93_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor22 = vector<shared_ptr<Tensor>>{Gamma93, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task22 = make_shared<Task22>(tensor22, pindex);
+  return make_shared<FutureTensor>(*Gamma93, task22);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma30_() {
+  vector<IndexRange> Gamma30_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma30 = make_shared<Tensor>(Gamma30_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor23 = vector<shared_ptr<Tensor>>{Gamma30, rdm2_, rdm3_};
+  auto task23 = make_shared<Task23>(tensor23, pindex);
+  return make_shared<FutureTensor>(*Gamma30, task23);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma38_() {
+  vector<IndexRange> Gamma38_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma38 = make_shared<Tensor>(Gamma38_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor24 = vector<shared_ptr<Tensor>>{Gamma38, rdm2_, rdm3_};
+  auto task24 = make_shared<Task24>(tensor24, pindex);
+  return make_shared<FutureTensor>(*Gamma38, task24);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma39_() {
+  vector<IndexRange> Gamma39_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma39 = make_shared<Tensor>(Gamma39_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor25 = vector<shared_ptr<Tensor>>{Gamma39, rdm2_, rdm3_};
+  auto task25 = make_shared<Task25>(tensor25, pindex);
+  return make_shared<FutureTensor>(*Gamma39, task25);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma40_() {
+  vector<IndexRange> Gamma40_index = {active_, active_, active_, active_};
+  auto Gamma40 = make_shared<Tensor>(Gamma40_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor26 = vector<shared_ptr<Tensor>>{Gamma40, rdm2_};
+  auto task26 = make_shared<Task26>(tensor26, pindex);
+  return make_shared<FutureTensor>(*Gamma40, task26);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma42_() {
+  vector<IndexRange> Gamma42_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma42 = make_shared<Tensor>(Gamma42_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor27 = vector<shared_ptr<Tensor>>{Gamma42, rdm2_, rdm3_};
+  auto task27 = make_shared<Task27>(tensor27, pindex);
+  return make_shared<FutureTensor>(*Gamma42, task27);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma76_() {
+  vector<IndexRange> Gamma76_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma76 = make_shared<Tensor>(Gamma76_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor28 = vector<shared_ptr<Tensor>>{Gamma76, rdm2_, rdm3_, rdm4_, h1_};
+  auto task28 = make_shared<Task28>(tensor28, pindex);
+  return make_shared<FutureTensor>(*Gamma76, task28);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma77_() {
+  vector<IndexRange> Gamma77_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma77 = make_shared<Tensor>(Gamma77_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma77, rdm2_, rdm3_, rdm4_, v2_};
+  auto task29 = make_shared<Task29>(tensor29, pindex);
+  return make_shared<FutureTensor>(*Gamma77, task29);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma82_() {
+  vector<IndexRange> Gamma82_index = {active_, active_};
+  auto Gamma82 = make_shared<Tensor>(Gamma82_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor30 = vector<shared_ptr<Tensor>>{Gamma82, rdm1_, rdm2_, h1_};
+  auto task30 = make_shared<Task30>(tensor30, pindex);
+  return make_shared<FutureTensor>(*Gamma82, task30);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma84_() {
+  vector<IndexRange> Gamma84_index = {active_, active_};
+  auto Gamma84 = make_shared<Tensor>(Gamma84_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor31 = vector<shared_ptr<Tensor>>{Gamma84, rdm1_, rdm2_, rdm3_, v2_};
+  auto task31 = make_shared<Task31>(tensor31, pindex);
+  return make_shared<FutureTensor>(*Gamma84, task31);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma68_() {
+  vector<IndexRange> Gamma68_index = {active_, active_, active_, active_};
+  auto Gamma68 = make_shared<Tensor>(Gamma68_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor32 = vector<shared_ptr<Tensor>>{Gamma68, rdm0_, rdm1_, rdm2_, rdm3_, h1_};
+  auto task32 = make_shared<Task32>(tensor32, pindex);
+  return make_shared<FutureTensor>(*Gamma68, task32);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma69_() {
+  vector<IndexRange> Gamma69_index = {active_, active_, active_, active_};
+  auto Gamma69 = make_shared<Tensor>(Gamma69_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor33 = vector<shared_ptr<Tensor>>{Gamma69, rdm0_, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task33 = make_shared<Task33>(tensor33, pindex);
+  return make_shared<FutureTensor>(*Gamma69, task33);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma78_() {
+  vector<IndexRange> Gamma78_index;
+  auto Gamma78 = make_shared<Tensor>(Gamma78_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor34 = vector<shared_ptr<Tensor>>{Gamma78, rdm1_, h1_};
+  auto task34 = make_shared<Task34>(tensor34, pindex);
+  return make_shared<FutureTensor>(*Gamma78, task34);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma80_() {
+  vector<IndexRange> Gamma80_index;
+  auto Gamma80 = make_shared<Tensor>(Gamma80_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor35 = vector<shared_ptr<Tensor>>{Gamma80, rdm1_, rdm2_, v2_};
+  auto task35 = make_shared<Task35>(tensor35, pindex);
+  return make_shared<FutureTensor>(*Gamma80, task35);
+}
+
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma86_() {
+  vector<IndexRange> Gamma86_index = {active_, active_, active_, active_};
+  auto Gamma86 = make_shared<Tensor>(Gamma86_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor36 = vector<shared_ptr<Tensor>>{Gamma86, rdm2_, rdm3_, h1_};
   auto task36 = make_shared<Task36>(tensor36, pindex);
-  return make_shared<FutureTensor>(*Gamma92, task36);
+  return make_shared<FutureTensor>(*Gamma86, task36);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma98_() {
-  vector<IndexRange> Gamma98_index = {active_, active_, active_, active_};
-  auto Gamma98 = make_shared<Tensor>(Gamma98_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma87_() {
+  vector<IndexRange> Gamma87_index = {active_, active_, active_, active_};
+  auto Gamma87 = make_shared<Tensor>(Gamma87_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor37 = vector<shared_ptr<Tensor>>{Gamma98, rdm2_, rdm3_, h1_};
+  auto tensor37 = vector<shared_ptr<Tensor>>{Gamma87, rdm2_, rdm3_, rdm4_, v2_};
   auto task37 = make_shared<Task37>(tensor37, pindex);
-  return make_shared<FutureTensor>(*Gamma98, task37);
+  return make_shared<FutureTensor>(*Gamma87, task37);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma99_() {
-  vector<IndexRange> Gamma99_index = {active_, active_, active_, active_};
-  auto Gamma99 = make_shared<Tensor>(Gamma99_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma96_() {
+  vector<IndexRange> Gamma96_index = {active_, active_, active_, active_};
+  auto Gamma96 = make_shared<Tensor>(Gamma96_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor38 = vector<shared_ptr<Tensor>>{Gamma99, rdm2_, rdm3_, rdm4_, v2_};
+  auto tensor38 = vector<shared_ptr<Tensor>>{Gamma96, rdm0_, rdm1_, rdm2_};
   auto task38 = make_shared<Task38>(tensor38, pindex);
-  return make_shared<FutureTensor>(*Gamma99, task38);
+  return make_shared<FutureTensor>(*Gamma96, task38);
 }
 
-shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma109_() {
-  vector<IndexRange> Gamma109_index = {active_, active_, active_, active_, active_, active_};
-  auto Gamma109 = make_shared<Tensor>(Gamma109_index);
+shared_ptr<FutureTensor> RelCASA::RelCASA::Gamma97_() {
+  vector<IndexRange> Gamma97_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma97 = make_shared<Tensor>(Gamma97_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor39 = vector<shared_ptr<Tensor>>{Gamma109, rdm1_, rdm2_, rdm3_};
+  auto tensor39 = vector<shared_ptr<Tensor>>{Gamma97, rdm1_, rdm2_, rdm3_};
   auto task39 = make_shared<Task39>(tensor39, pindex);
-  return make_shared<FutureTensor>(*Gamma109, task39);
+  return make_shared<FutureTensor>(*Gamma97, task39);
 }
 
 #endif
