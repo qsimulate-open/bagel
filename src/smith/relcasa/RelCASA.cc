@@ -93,8 +93,6 @@ void RelCASA::RelCASA::solve() {
       assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
       cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
     } else {
-      throw runtime_error("Level shift is not available for CAS/A.");
-/*
       // TODO How would we compute off-diagonal shift corrections with SS-SR?  Currently they do not play nice...
       assert(!info_->sssr() || info_->shift_diag());
 
@@ -127,7 +125,6 @@ void RelCASA::RelCASA::solve() {
       cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
       cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
       cout <<endl;
-*/
     }
   }
 

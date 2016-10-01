@@ -46,7 +46,7 @@ relcaspt2/RelCASPT2_gen6.cc \
 relcaspt2/RelCASPT2_tasks1.cc relcaspt2/RelCASPT2_tasks2.cc relcaspt2/RelCASPT2_tasks3.cc relcaspt2/RelCASPT2_tasks4.cc relcaspt2/RelCASPT2_tasks5.cc \
 relcaspt2/RelCASPT2_tasks6.cc \
 \
-relcasa/RelCASA.cc relcasa/RelCASA_gamma.cc relcasa/RelCASA_residualq.cc relcasa/RelCASA_sourceq.cc \
+relcasa/RelCASA.cc relcasa/RelCASA_gamma.cc relcasa/RelCASA_residualq.cc relcasa/RelCASA_normq.cc relcasa/RelCASA_sourceq.cc \
 relcasa/RelCASA_gen1.cc relcasa/RelCASA_gen2.cc relcasa/RelCASA_gen3.cc relcasa/RelCASA_gen4.cc relcasa/RelCASA_gen5.cc \
 relcasa/RelCASA_gen6.cc \
 relcasa/RelCASA_tasks1.cc relcasa/RelCASA_tasks2.cc relcasa/RelCASA_tasks3.cc relcasa/RelCASA_tasks4.cc relcasa/RelCASA_tasks5.cc \
