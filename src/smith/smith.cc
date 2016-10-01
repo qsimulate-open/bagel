@@ -32,6 +32,7 @@
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/caspt2/SPCASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
+#include <src/smith/casa/CASA.h>
 #include <src/smith/relcasa/RelCASA.h>
 using namespace bagel::SMITH;
 #endif
@@ -48,7 +49,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
   } else if (method == "casa") {
-    throw runtime_error("For the moment, CAS/A is only available in the relativistic framework.");
+    algo_ = make_shared<CASA::CASA>(info);
   } else if (method == "mrci") {
     algo_ = make_shared<MRCI::MRCI>(info);
   } else {
