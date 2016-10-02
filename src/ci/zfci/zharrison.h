@@ -198,8 +198,6 @@ class ZHarrison : public Method {
     double core_energy() const { return jop_->core_energy(); }
     std::shared_ptr<const RelZDvec> cc() const { return cc_; }
 
-    int nij() const { return norb_*norb_; }
-
     std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 

@@ -136,8 +136,6 @@ class FCI_base : public Method {
     double core_energy() const { return jop_->core_energy(); }
     double weight(const int i) const { return weight_.at(i); }
 
-    int nij() const { return (norb_*(norb_+1))/2; }
-
     virtual void update(std::shared_ptr<const Matrix>) = 0;
 
     std::shared_ptr<const Determinants> det() const { return det_; }
