@@ -546,27 +546,22 @@ void SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
   const size_t nstates = info_->ciwfn()->nstates();
   e0all_.resize(nstates);
-  if (info_->method() == "casa") {
-   for (int ist = 0; ist != nstates; ++ist)
-     e0all_[ist] = info_->ref()->energy(ist);
-  } else {
-   for (int ist = 0; ist != nstates; ++ist) {
-      DataType sum = 0.0;
-      set_rdm(ist, ist);
-      assert(!!rdm1_);
-      for (auto& i1 : active_) {
-        for (auto& i0 : active_) {
-          if (f1_->is_local(i0, i1)) {
-            const size_t size = i0.size() * i1.size();
-            unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
-            unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-            sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
-          }
+  for (int ist = 0; ist != nstates; ++ist) {
+    DataType sum = 0.0;
+    set_rdm(ist, ist);
+    assert(!!rdm1_);
+    for (auto& i1 : active_) {
+      for (auto& i0 : active_) {
+        if (f1_->is_local(i0, i1)) {
+          const size_t size = i0.size() * i1.size();
+          unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
+          unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
+          sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
         }
       }
-      mpi__->allreduce(&sum, 1);
-      e0all_[ist] = detail::real(sum);
     }
+    mpi__->allreduce(&sum, 1);
+    e0all_[ist] = detail::real(sum);
   }
   // printout
   cout << endl;

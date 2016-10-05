@@ -65,6 +65,10 @@ void RelCASA::RelCASA::solve() {
   Timer timer;
   print_iteration();
 
+  e0f_ = e0all_;
+  for (int ist = 0; ist != nstates_; ++ist)
+    e0all_[ist] = info_->ref()->energy(ist);
+
   // <proj_jst|H|0_K> set to sall in ms-caspt2
   for (int istate = 0; istate != nstates_; ++istate) { //K states
     t2all_[istate]->fac(istate) = 0.0;
@@ -220,7 +224,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
-      update_amplitude(t[i], s[i]);
+      update_amplitude_casa(t[i], s[i], i);
     }
 
     auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
@@ -264,7 +268,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       // compute delta t2 and update amplitude
       if (!conv) {
         t[i]->zero();
-        update_amplitude(t[i], rall_[i]);
+        update_amplitude_casa(t[i], rall_[i], i);
       }
       if (conv) break;
     }
@@ -273,6 +277,21 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
   }
   print_iteration(!converged);
   return t;
+}
+
+
+// Update_amplitude is hard-coded to use the Fock matrix, so we substitute in RelCASPT2 e0 here
+void RelCASA::RelCASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r, const int istate) {
+  vector<double> e0allsave = e0all_;
+  double e0save = e0_;
+
+  e0all_ = e0f_;
+  e0_ = e0all_[istate] - info_->shift();
+
+  update_amplitude(t, r);
+
+  e0all_ = e0allsave;
+  e0_ = e0save;
 }
 
 

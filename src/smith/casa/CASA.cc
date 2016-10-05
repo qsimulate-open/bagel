@@ -188,6 +188,11 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
+
+  e0f_ = e0all_;
+  for (int ist = 0; ist != nstates_; ++ist)
+    e0all_[ist] = info_->ref()->energy(ist);
+
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
     double error = 0.0;
@@ -200,7 +205,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
-      update_amplitude(t[i], s[i]);
+      update_amplitude_casa(t[i], s[i], i);
     }
 
     auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
@@ -245,7 +250,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
       // compute delta t2 and update amplitude
       if (!conv) {
         t[i]->zero();
-        update_amplitude(t[i], rall_[i]);
+        update_amplitude_casa(t[i], rall_[i], i);
       }
       if (conv) break;
     }
@@ -256,6 +261,20 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
   return t;
 }
 
+
+// Update_amplitude is hard-coded to use the Fock matrix, so we substitute in CASPT2 e0 here
+void CASA::CASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r, const int istate) {
+  vector<double> e0allsave = e0all_;
+  double e0save = e0_;
+
+  e0all_ = e0f_;
+  e0_ = e0all_[istate] - info_->shift();
+
+  update_amplitude(t, r);
+
+  e0all_ = e0allsave;
+  e0_ = e0save;
+}
 
 void CASA::CASA::solve_deriv() {
   throw runtime_error("Gradients are not implemented for CAS/A.");

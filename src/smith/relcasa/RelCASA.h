@@ -48,6 +48,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<Tensor> n;
 
     int nstates_;
+    std::vector<double> e0f_;
     std::vector<double> err_;
     std::vector<double> pt2energy_;
     std::shared_ptr<ZMatrix> heff_;
@@ -58,6 +59,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
+    void update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r, const int istate);
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma1_();
