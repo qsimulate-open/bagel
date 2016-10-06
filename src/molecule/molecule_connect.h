@@ -91,12 +91,14 @@ bool is_one_molecule(std::list<std::shared_ptr<Node>> nodes)  {
     std::list<std::shared_ptr<Node>> added;
     done = true;
     for (auto i = newly_added.begin(); i != newly_added.end(); ++i) {
-      for (auto j = disconnected.begin(); j != disconnected.end(); ++j) {
+      for (auto j = disconnected.begin(); j != disconnected.end(); ) {
         if ((*i)->connected_with(*j)) {
           done = false;
           added.push_back(*j);
           connected.push_back(*j);
-          disconnected.erase(j);
+          j = disconnected.erase(j);
+        } else {
+          ++j;
         }
       }
     }
