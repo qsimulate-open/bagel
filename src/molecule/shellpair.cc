@@ -80,6 +80,7 @@ void ShellPair::init() {
   nbasis0_ = b0->nbasis();
   nbasis1_ = b1->nbasis();
 
+  #if 1
   // centre
   centre_ = {{0.0, 0.0, 0.0}};
   for (auto& expi0 : exp0) {
@@ -94,6 +95,7 @@ void ShellPair::init() {
   centre_[0] /= denom;
   centre_[1] /= denom;
   centre_[2] /= denom;
+  #endif
 
   array<double, 3> AB;
   AB[0] = b0->position(0) - b1->position(0);
@@ -110,7 +112,6 @@ void ShellPair::init() {
       const double cxp_inv = 1.0 / (expi0 + expi1);
       const double expi01 = expi0 * expi1;
       if (expi01*rsq*cxp_inv > tol) continue;
-      //const double lda_kl = sqrt(abs(- lnthresh - expi01 * rsq * cxp_inv + 0.75 * log(4.0 * expi01 / pisq__)) * cxp_inv);
       const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
       const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
 
@@ -125,7 +126,7 @@ void ShellPair::init() {
       r1[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - b1->position(1);
       r1[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - b1->position(2);
       const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
-      //const double extent01 = sqrt(tmp[0] * tmp[0] + tmp[1] * tmp[1] + tmp[2] * tmp[2]) + lda_kl;
+
       const double extent01 = (d0 < d1) ? (r01 + d0) : (r01 + d1);
       if (extent01 > extent_) extent_ = extent01;
     }

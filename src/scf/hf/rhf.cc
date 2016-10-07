@@ -154,6 +154,7 @@ void RHF::compute() {
       enff += fmm_->energy_ff();
       energy_ += enff;
     }
+    cout << "CONTRIBUTION TO FF ENERGY = " << setprecision(10) << enff << endl;
 
     pdebug.tick_print("Fock build");
 

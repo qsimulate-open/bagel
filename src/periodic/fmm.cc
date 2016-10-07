@@ -30,11 +30,13 @@
 #include <src/periodic/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
 #include <src/periodic/jexpansion.h>
+#include <boost/math/special_functions/erf.hpp>
 
 using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
+static const double tolgd__ = 1e-9;
 const static Legendre plm;
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws)
@@ -51,7 +53,13 @@ void FMM::init() {
   nbasis_ = geom_->nbasis();
   const int ns2 = pow(2, ns_);
 
+  int nsh = 0;
+  for (auto& a : geom_->atoms())
+    nsh += a->shells().size();
+  cout << "******** NSHELL = " << nsh << " *********** " << endl;
+
   const int nsp = geom_->nshellpair();
+  base_extent_ = sqrt(2.0) * boost::math::erf_inv(1.0-tolgd__);
 
 #if 0
   double maxext = 0;
@@ -146,7 +154,12 @@ void FMM::get_boxes() {
     vector<shared_ptr<const ShellPair>> sp;
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
-    auto newbox = make_shared<Box>(0, il, boxid[il], lmax_, sp);
+    array<int, 3> id = boxid[il];
+    array<double, 3> bcentre;
+    bcentre[0] = (id[0]-0.5)*unitsize_- boxsize_/2.0;
+    bcentre[1] = (id[1]-0.5)*unitsize_- boxsize_/2.0;
+    bcentre[2] = (id[2]-0.5)*unitsize_- boxsize_/2.0;
+    auto newbox = make_shared<Box>(0, il, bcentre, id, lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -179,7 +192,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, array<double, 3>{{}}, idxp, lmax_, box_[ichild]->sp());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -295,6 +308,7 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
   M2L();
   L2L();
 
+  double exactff = 0;
   if (density) {
     assert(nbasis_ == density->ndim());
     vector<double> maxden(geom_->nshellpair());
@@ -323,12 +337,14 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
         auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
         *out += *ei;
       }
+      exactff += box_[i]->compute_exact_energy_ff(density);
     }
     out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
   }
+  cout << setprecision(9) << "EXACT FF ENERGY = " << exactff << endl;
 
 ///// DEBUG
 #if 0
@@ -350,6 +366,35 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
   cout << "FF ENERGY FROM JEXPANSION " << ffen << endl;
 #endif
 ///// END DEBUG
+
+#if 0
+  double mind = 10000.0;
+  int is0 = -1;
+  int is3 = -1;
+
+  cout << "NSHELL OF BOX 0 = " << box_[0]->nsp() << "  NSHELL OF BOX 3 = " << box_[2]->nsp() << endl;
+  int isp0 = 0;
+  for (auto& sp0 : box_[0]->sp()) {
+    int isp3 = 0;
+    for (auto& sp3 : box_[1]->sp()) {
+      array<double, 3> r;
+      r[0] = sp0->centre(0) - sp3->centre(0);
+      r[1] = sp0->centre(1) - sp3->centre(2);
+      r[2] = sp0->centre(2) - sp3->centre(1);
+      const double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
+      if (d < mind) {
+        mind = d;
+        is0 = isp0;
+        is3 = isp3;
+      }
+      ++isp3;
+    }
+    ++isp0;
+  }
+  assert(is0>=0 && is3>=0);
+  cout << "MIN DISTANCE SHELL PAIR = " << setprecision(2) <<  mind << endl;
+  cout << "EXTENTS OF MIN DISTANCE SHELL PAIR = " << box_[0]->sp(is0)->extent() << "  AND  " << box_[1]->sp(is3)->extent() << endl;
+#endif
 
   nftime.tick_print("near-field");
 

@@ -41,6 +41,24 @@ const static Legendre plm;
 
 void Box::init() {
 
+  ndim_ = 0;
+  nbasis0_ = 0;   nbasis1_ = 0;
+ 
+#if 0
+  if (rank_ != 0) {
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> c = child(n);
+      centre_[0] += c->centre(0);
+      centre_[1] += c->centre(1);
+      centre_[2] += c->centre(2);
+    }
+    centre_[0] /= nchild();
+    centre_[1] /= nchild();
+    centre_[2] /= nchild();
+  }
+#endif
+
+#if 1
   centre_ = {{0, 0, 0}};
   ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
@@ -55,10 +73,12 @@ void Box::init() {
   centre_[0] /= nsp();
   centre_[1] /= nsp();
   centre_[2] /= nsp();
+#endif
 
+  cout << setprecision(9) << "*** BOX CENTRE " << centre_[0] << "  " << centre_[1] << "  " << centre_[2] << endl;
   extent_ = 0;
   for (auto& i : sp_) {
-    if (i->schwarz() < 1e-20) continue;
+    if (i->schwarz() < 1e-15) continue;
     double tmp = 0;
     for (int j = 0; j != 3; ++j)
       tmp += pow(i->centre(j)-centre_[j], 2.0);
@@ -129,11 +149,23 @@ void Box::get_neigh(vector<shared_ptr<Box>> box, const int ws) {
 
 bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
 
+#if 1
   double rr = 0;
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - box->centre(i), 2);
 
   const bool out = (sqrt(rr) <= (1+ws)*(extent_ + box->extent()));
+#endif
+
+#if 0
+  bool out = false;
+  for (auto& v : sp_)
+    for (auto& v1 : box->sp())
+      if (v1->is_neighbour(v, ws)) {
+        out = true;
+        return out;
+      }
+#endif
 
   return out;
 }
@@ -180,6 +212,14 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
       shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), v->nbasis1(), v->nbasis0());
+#if 0
+      OverlapBatch obatch(v->shells());
+      obatch.compute();
+      Matrix o(v->nbasis1(), v->nbasis0());
+      o.copy_block(0, 0, v->nbasis1(), v->nbasis0(), obatch.data());
+      if (den->dot_product(o) < 1e-15) continue;
+#endif
+
 //      tasks.emplace_back(
 //        [this, &v, &den]() {
       vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_, v->centre());
@@ -192,9 +232,9 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       }
 
       array<double, 3> r12;
-      r12[0] = centre_[0] - v->centre(0);
-      r12[1] = centre_[1] - v->centre(1);
-      r12[2] = centre_[2] - v->centre(2);
+      r12[0] = v->centre(0) - centre_[0];
+      r12[1] = v->centre(1) - centre_[1];
+      r12[2] = v->centre(2) - centre_[2];
       vector<complex<double>> smoment = shift_multipoles(olm, r12);
       transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
 //        }
@@ -207,9 +247,9 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
       array<double, 3> r12;
-      r12[0] = centre_[0] - c->centre(0);
-      r12[1] = centre_[1] - c->centre(1);
-      r12[2] = centre_[2] - c->centre(2);
+      r12[0] = c->centre(0) - centre_[0];
+      r12[1] = c->centre(1) - centre_[1];
+      r12[2] = c->centre(2) - centre_[2];
       vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
       transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
     }
@@ -221,11 +261,12 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 void Box::compute_L2L() {
 
   // from parent
-  if (parent_ && (parent_->ninter() != 0)) {
+  if (parent_) {
     array<double, 3> r12;
     r12[0] = parent_->centre(0) - centre_[0];
     r12[1] = parent_->centre(1) - centre_[1];
     r12[2] = parent_->centre(2) - centre_[2];
+    //vector<complex<double>> slocal = shift_localL(parent_->localJ(), centre_);
     vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
     transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
   }
@@ -507,6 +548,63 @@ void Box::compute_energy_ff() {
 
   assert(multipole_.size() == localJ_.size());
   complex<double> en = inner_product(multipole_.begin(), multipole_.end(), localJ_.begin(), complex<double>(0, 0));
-  assert(abs(en.imag()) < 1e-10);
+//  assert(abs(en.imag()) < 1e-10);
+  if (abs(en.imag()) > 1e-10) cout << "*** Warning: en.imag() = " << setprecision(13) << en.imag() << endl;
   energy_ff_ = 0.5 * en.real();
+}
+
+
+double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //for debug
+  
+  auto jff = make_shared<Matrix>(density->ndim(), density->ndim());
+  jff->zero();
+  const double* density_data = density->data();
+
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < 1e-15) continue;
+    shared_ptr<const Shell> b0 = v01->shell(1);
+    const int b0offset = v01->offset(1);
+    const int b0size = b0->nbasis();
+
+    shared_ptr<const Shell> b1 = v01->shell(0);
+    const int b1offset = v01->offset(0);
+    const int b1size = b1->nbasis();
+
+    for (auto& inter : inter_) {
+      for (auto& v23 : inter->sp()) {
+        if (v23->schwarz() < 1e-15) continue;
+        shared_ptr<const Shell> b2 = v23->shell(1);
+        const int b2offset = v23->offset(1);
+        const int b2size = b2->nbasis();
+
+        shared_ptr<const Shell> b3 = v23->shell(0);
+        const int b3offset = v23->offset(0);
+        const int b3size = b3->nbasis();
+
+        array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+        ERIBatch eribatch(input, 0.0);
+        eribatch.compute();
+        const double* eridata = eribatch.data();
+
+        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+            const int j1n = j1 * density->ndim();
+            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+              const int j2n = j2 * density->ndim();
+              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                const double eri = *eridata;
+                jff->element(j1, j0) += density_data[j2n + j3] * eri;
+                jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
+              }
+            }
+          }
+        }
+
+      }
+    }
+  }
+
+  const double out = 0.5*jff->dot_product(*density);
+  return out;
 }

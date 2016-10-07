@@ -51,6 +51,7 @@ class FMM {
     std::vector<std::shared_ptr<Box>> box_;
     double thresh_;
     int ws_;
+    double base_extent_;
 
     void init();
     void get_boxes();
