@@ -181,12 +181,7 @@ class ZHarrison : public Method {
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const RelCoeff_Block> coeff) {
-      Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, tsymm_, store_half_ints_);
-      std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
-      const_denom();
-    }
+    void update(std::shared_ptr<const RelCoeff_Block> coeff);
 
     virtual void compute() override;
 
