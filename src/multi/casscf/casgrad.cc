@@ -394,7 +394,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
   gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
-  gradient->scale(1.0/egap);
+  gradient->scale(-1.0/egap);
 
   gradient->print(": Nonadiabatic coupling vector", 0);
 
