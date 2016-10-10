@@ -131,6 +131,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute() {
     shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(target_state_);
     assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
     g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
+
     // 2) two-electron contribution
     shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
     shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(target_state_), *ref_->rdm1(target_state_), nclosed, nact);
@@ -234,6 +235,7 @@ void NacmEval<CASSCF>::init() {
   
   const string nacmtype = idata_out->get<string>("nacmtype", "");
 
+
   if (algorithm == "superci")
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
@@ -246,15 +248,6 @@ void NacmEval<CASSCF>::init() {
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
     throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
-
-  if (nacmtype == "ci")
-    nacmtype_ = 1;
-  else if (nacmtype == "det" || nacmtype == "csf")		// doesn't work well
-    nacmtype_ = 2;
-  else if (nacmtype == "all" || nacmtype == "")
-    nacmtype_ = 0;
-  else
-    throw runtime_error("unknown NACME type specified: " + nacmtype);
 
   task_->compute();
   ref_  = task_->conv_to_ref();
@@ -275,7 +268,6 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<const Coeff> coeff = ref_->coeff();
   assert(task_->coeff() == coeff);
   const MatView ocoeff = ref_->coeff()->slice(0, nocc);
-  const MatView acoeff = ref_->coeff()->slice(nclosed, nocc);
 
   Timer timer;
   shared_ptr<GradFile> gradient;
@@ -306,37 +298,26 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
   // 1) one-electron contribution
   auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * ocoeff);
+
   shared_ptr<Matrix> rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
+  shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1_tr);
+  rdms->symmetrize();
 
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
-  if (nacmtype_ != 2)
-    g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
-#if 0
-  double Ezero = 0.0;
-  shared_ptr<Matrix> rdm1_test = rdm1->resize(nmobasis, nmobasis);
-  for (int i = 0; i != nmobasis; ++i) 
-    for (int j = 0; j != nmobasis; ++j)
-      Ezero += rdm1_test->element(i, j) * hmo->element(i, j);
-#endif
-  
-  // 2-1) f^CSF in Z-vector for NACME
-  if (nacmtype_ != 1)
-    g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
-  // 2) two-electron contribution
+  // 1-1) CI term in Lagrangian: RDM1 is symmetrized here
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
+  
+  // 2-1) f^CSF in Z-vector for NACME: RDM1 is not symmetrized here
+  g0->add_block(-egap, 0, 0, nocc, nocc, *rdm1);
+ 
+  // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tr (look for gamma)
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tr(*rdm2_tr, *rdm1_tr, nclosed, nact);
-  shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
+  auto buf = make_shared<Matrix>(*half->form_2index(fulld, 0.5) + *half->form_2index(fulld->swap(), 0.5));
 
-#if 0				// This is for testing 2RDM
-  for (int i = 0; i != nmobasis; ++i) 
-    for (int j = 0; j != nocc; ++j)
-      Ezero += ref_->coeff()->element(i, j) * buf->element (i, j) * .5;
-  cout << "Ezero = " << Ezero << endl;
-#endif
-  if (nacmtype_ != 2)
-    g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
-  
+  g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+
   // Recalculate the CI vectors (which can be avoided... TODO)
   shared_ptr<const Dvec> civ = task_->fci()->civectors();
 
@@ -346,7 +327,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   // compute unrelaxed transition dipole...
-  shared_ptr<Matrix> dtot = rdm1->resize(nmobasis, nmobasis);
+  shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
   {
     Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), "Transition dipole moment");
     dipole.compute();
@@ -361,7 +342,6 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
   auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
-
   dtot->ax_plus_y(1.0, dm);
 
   // form zdensity
@@ -371,29 +351,20 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec, civ, detex);
 
   shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
-  zrdm1_mat->symmetrize();
   dtot->ax_plus_y(1.0, zrdm1_mat);
 
-  // here dtot is the relaxed 1RDM in the MO basis
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
 
-  // compute relaxed dipole moment (TODO is this meaningful?)
+  // compute relaxed dipole moment (TODO is this meaningful in this case?)
   {
-    Dipole dipole(geom_, dtotao, "Relaxed");
+    Dipole dipole(geom_, dtotao, "Relaxed transition");
     dipole.compute();
   }
 
   shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
+  qxmat->scale(-egap);
 
-  if (nacmtype_ == 1) {
-    qxmat->scale(0.0);			// this makes only CI part remain
-  }
-  else {
-    qxmat->scale(egap * 0.5);		// due to convention (Xmat is generated and then factorized by 0.5)
-  }
-
-  auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat + *qxmat) ^ *ref_->coeff());
-  qxmat->scale(-2.0);
+  auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
   auto qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());
 
   //- TWO ELECTRON PART -//
@@ -405,7 +376,6 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
     {
       RDM<2> D(*rdm2_tr+*zrdm2);
       RDM<1> dd(*rdm1_tr+*zrdm1);
-      // symetrize dd (zrdm1 needs symmetrization)
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
@@ -424,16 +394,9 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
   gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
-  gradient->scale(1.0 / egap);
+  gradient->scale(1.0/egap);
 
-  if (nacmtype_ == 0)
-    gradient->print(": Nonadiabatic coupling vector", 0);
-  else if (nacmtype_ == 1)
-    gradient->print(": Nonadiabatic coupling vector, only CI", 0);
-  else if (nacmtype_ == 2)
-    gradient->print(": Nonadiabatic coupling vector, only det", 0);
-  else
-    throw runtime_error("No nonadiabatic coupling vector appropriately calculated");
+  gradient->print(": Nonadiabatic coupling vector", 0);
 
   cout << setw(50) << left << "  * NACME computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
