@@ -49,6 +49,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
+  if (do_xms_ && (method_ == "casa" || method_ == "mrci")) {
+    cout << "    * XMS rotation is only appropriate for CASPT2, and will not be used with " << method_ << endl;
+    do_xms_ = false;
+  }
+
   sssr_    = idata->get<bool>("sssr", false);
   shift_diag_  = idata->get<bool>("shift_diag", true);
   if (sssr_ && !shift_diag_) {
