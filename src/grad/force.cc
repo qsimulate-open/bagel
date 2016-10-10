@@ -59,7 +59,7 @@ void Force::compute() {
   cinput->put("gradient", true);
 
   numerical_ = idata_->get<bool>("numerical", false);
-  if (numerical_ == 1)
+  if (numerical_ == true)
     cout << "  The gradients will be computed with finite difference" << endl;
   else
     cout << "  The gradients will be computed analytically" << endl;
@@ -67,7 +67,7 @@ void Force::compute() {
 
   const string method = to_lower(cinput->get<string>("title", ""));
 
-  if (numerical_ == 0) {
+  if (numerical_ == false) {
     if (method == "uhf") {
  
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
@@ -115,17 +115,22 @@ void Force::compute() {
  
     } else {
  
-        numerical_ = 1;
+        numerical_ = true;
         cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
  
     }
   }
 
-  if (numerical_ == 1) {
+  if (numerical_ == true) {
+
+    const int diffsize = idata_->get<int>("diffsize", 3);
+    const double dx = pow(0.1, static_cast<double>(diffsize));
+
     if (jobtitle == "force") {
 
       // Refer to the optimization code, opt/opt.h 
       cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
+      cout << "  Finite difference size (dx) is " << setprecision(8) << dx << " Bohr" << endl;
      
       auto displ = std::make_shared<XYZFile>(geom_->natom());
       auto gradient = std::make_shared<GradFile>(geom_->natom());
@@ -154,7 +159,7 @@ void Force::compute() {
       for (int i = 0; i != geom_->natom(); ++i) {
         for (int j = 0; j != 3; ++j) {
 
-          displ->element(j,i) = 0.01;
+          displ->element(j,i) = dx;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
 
@@ -166,7 +171,7 @@ void Force::compute() {
           refgrad_plus = energy_method->conv_to_ref();
           energy_plus = refgrad_plus->energy(target);
 
-          displ->element(j,i) = -0.02;
+          displ->element(j,i) = -2.0 * dx;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
           
@@ -178,11 +183,11 @@ void Force::compute() {
           refgrad_minus = energy_method->conv_to_ref();
           energy_minus = refgrad_minus->energy(target);
      
-          gradient->element(j,i) = (energy_plus - energy_minus) / 0.02;      // Hartree / bohr
+          gradient->element(j,i) = (energy_plus - energy_minus) / (dx * 2.0);      // Hartree / bohr
 
           // to the original position
 
-          displ->element(j,i) = 0.01;
+          displ->element(j,i) = dx;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
 
           displ->element(j,i) = 0.0;
@@ -197,30 +202,51 @@ void Force::compute() {
         throw logic_error ("  Numerical NACME with the methods != CASSCF not implemented yet");
 
       cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
+      cout << "  Finite difference size (dx) is " << setprecision(8) << dx << " Bohr(s)" << endl;
      
       auto displ = std::make_shared<XYZFile>(geom_->natom());
+      auto gradient_ci = std::make_shared<GradFile>(geom_->natom());
       auto gradient = std::make_shared<GradFile>(geom_->natom());
 
       displ->scale(0.0);
+      
+      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref, target, target2);
+      ref = nullptr;
      
       shared_ptr<Method> energy_method;
-     
       energy_method = construct_method(method, cinput, geom_, ref);
       energy_method->compute();
       ref = energy_method->conv_to_ref();
       shared_ptr<const Dvec> civ_ref = ref->civectors();
-      civ_ref->print (false);
-
+      int nclosed = ref->nclosed();
+      int nocc = ref->nocc();
+      shared_ptr<const Matrix> acoeff_ref;
+      acoeff_ref = make_shared<Matrix>(ref->coeff()->slice(nclosed, nocc));
+      acoeff_ref->print("acoeff_ref = ");
+      civ_ref->print (/*sort=*/false);
+      
       shared_ptr<const Reference> refgrad_plus;
       shared_ptr<const Reference> refgrad_minus;
       shared_ptr<Dvec> civ_plus;
       shared_ptr<Dvec> civ_minus;
       shared_ptr<Dvec> civ_diff;
+      shared_ptr<Matrix> acoeff_plus;
+      shared_ptr<Matrix> acoeff_minus;
+      shared_ptr<Matrix> acoeff_diff;
+
+      auto Smn = make_shared<Overlap>(geom_);
+      const int norb = civ_ref->det()->norb();
+      const int lena = civ_ref->det()->lena();
+      const int lenb = civ_ref->det()->lenb();
+      auto gmo = make_shared<Matrix>(norb, norb);
+      gmo->zero();
+      
+      assert(norb==(nocc-nclosed));
      
       for (int i = 0; i != geom_->natom(); ++i) {
         for (int j = 0; j != 3; ++j) {
-          displ->element(j,i) = 0.01;
-          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          displ->element(j,i) = dx;
+          geom_ = make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
 
           refgrad_plus = make_shared<Reference> (*ref, nullptr);
@@ -229,13 +255,18 @@ void Force::compute() {
           energy_method = construct_method(method, cinput, geom_, refgrad_plus);
           energy_method->compute();
           refgrad_plus = energy_method->conv_to_ref();
+          acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
+          for (int im = 0; im != acoeff_ref->mdim(); ++im) {
+            double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
+            if (dmatch < 0.0) 
+              blas::scale_n(-1.0, acoeff_plus->element_ptr(0, im), acoeff_ref->ndim());
+          }
 
           civ_plus = refgrad_plus->civectors()->copy();
-          // match the CI vectors to reference (not good for degenerates...)
           civ_plus->match(civ_ref);
 
-          displ->element(j,i) = -0.02;
-          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          displ->element(j,i) = -2.0 * dx;
+          geom_ = make_shared<Geometry>(*geom_, displ);
           geom_->print_atoms();
 
           refgrad_minus = make_shared<Reference> (*ref, nullptr);
@@ -244,29 +275,75 @@ void Force::compute() {
           energy_method = construct_method(method, cinput, geom_, refgrad_minus);
           energy_method->compute();
           refgrad_minus = energy_method->conv_to_ref();
+          acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
+          for (int im = 0; im != acoeff_ref->mdim(); ++im) {
+            double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
+            if (dmatch < 0.0) 
+              blas::scale_n(-1.0, acoeff_minus->element_ptr(0, im), acoeff_ref->ndim());
+          }
 
           civ_minus = refgrad_minus->civectors()->copy();
           civ_minus->match(civ_ref);
 
           civ_diff = civ_plus->copy();
           *civ_diff -= *civ_minus;
-          civ_diff->scale(1.0 / 0.02);
+          civ_diff->scale(1.0 / (2.0 * dx));
           civ_diff->print(/*sort=*/false);
+          acoeff_diff = make_shared<Matrix>(*acoeff_plus - *acoeff_minus);
+          acoeff_diff->scale(1.0 / (2.0 * dx));
      
-          displ->element(j,i) = 0.01;
+          displ->element(j,i) = dx;
           geom_ = std::make_shared<Geometry>(*geom_, displ);
 
           displ->element(j,i) = 0.0;
 
           gradient->element(j,i) = civ_ref->data(target)->dot_product(civ_diff->data(target2));
+          gradient_ci->element(j,i) = gradient->element(j,i);
+
+          auto Kfactor = make_shared<Matrix>(*acoeff_ref % *Smn * *acoeff_diff);
+          for (int ii = 0; ii != norb; ++ii) {
+            for (int ij = 0; ij != norb; ++ij) {
+              if (ii != ij) {
+                for (auto& iter : civ_ref->det()->phia(ii, ij)) {
+                  size_t iaA = iter.source;
+                  size_t iaB = iter.target;
+                  double sign = static_cast<double>(iter.sign);
+
+                  for (size_t ib = 0; ib != lenb; ++ib) {                    
+                    double factor = civ_ref->data(target)->data(ib+iaB*lenb) * civ_ref->data(target2)->data(ib+iaA*lenb) * sign;
+                    gradient->element(j,i) += factor * Kfactor->element(ij, ii);
+                    if ((i + j * 3) == 0)
+                      gmo->element(ij, ii) += factor;
+                  }
+                }
+                for (size_t ia = 0; ia != lena; ++ia) {
+                  for (auto& iter : civ_ref->det()->phib(ii, ij)) {
+                    size_t ibA = iter.source;
+                    size_t ibB = iter.target;
+                    double sign = static_cast<double>(iter.sign);
+                    double factor = civ_ref->data(target)->data(ibB+ia*lenb) * civ_ref->data(target2)->data(ibA+ia*lenb) * sign;
+                    gradient->element(j,i) += factor * Kfactor->element(ij, ii);
+                    if ((i + j * 3) == 0)
+                      gmo->element(ij, ii) += factor;
+                  }
+                }
+              }
+            }
+          }
+
         }
       }
-      // TODO CSF term
+      auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
+      auto grad_basis = std::make_shared<GradFile>(geom_->natom());
+      grad_basis = force->contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
+      gradient_ci->print(": CI term", 0);
+      gradient->print(": All symmetric terms", 0);
+      grad_basis->print(": Basis set derivative (analytically calculated)", 0);
 
-      gradient->print(": NACME calculated with finite difference, CI term only", 0);
+      *gradient += *grad_basis;
+      gradient->print(": NACME calculated with finite difference", 0);
 
     }
   }
-
 }

@@ -62,24 +62,31 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
 shared_ptr<GradFile> GradEval_base::contract_nacme   (const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
-                                                      const shared_ptr<const Matrix> v,
+						      const shared_ptr<const Matrix> v, const bool numerical,
                                                       const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
 
-  vector<shared_ptr<GradTask>> task  = contract_grad2e(o);			// two-electron part from qrs
-  vector<shared_ptr<GradTask>> task2 = contract_grad1e(d, w);			// one-electron part
-  vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);		// two-electron part from qq
-  vector<shared_ptr<GradTask>> task4 = contract_grad1e_sigma(v);		// one-electron part from basis function derivative
-  task.insert(task.end(), task2.begin(), task2.end());
-  task.insert(task.end(), task3.begin(), task3.end());
-  task.insert(task.end(), task4.begin(), task4.end());
+  if (!numerical) {
+    vector<shared_ptr<GradTask>> task  = contract_grad2e(o);			// two-electron part from qrs
+    vector<shared_ptr<GradTask>> task2 = contract_grad1e(d, w);			// one-electron part
+    vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);		// two-electron part from qq
+    vector<shared_ptr<GradTask>> task4 = contract_grad1e_sigma(v);		// one-electron part from basis function derivative
+    task.insert(task.end(), task2.begin(), task2.end());
+    task.insert(task.end(), task3.begin(), task3.end());
+    task.insert(task.end(), task4.begin(), task4.end());
 
-  TaskQueue<shared_ptr<GradTask>> tq(move(task));
-  tq.compute();
+    TaskQueue<shared_ptr<GradTask>> tq(move(task));
+    tq.compute();
+
+  } else {
+    vector<shared_ptr<GradTask>> task  = contract_grad1e_sigma(v);		// one-electron part only
+
+    TaskQueue<shared_ptr<GradTask>> tq(move(task));
+    tq.compute();
+  }
 
   grad_->allreduce();
   return grad_;
 }
-
 
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
   return contract_grad1e(d, d, w);
