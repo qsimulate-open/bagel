@@ -150,7 +150,7 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
 shared_ptr<Reference> RelReference::extract_state(const vector<int> input, const bool update_rdms) const {
   ZFCI_bare fci(ciwfn_);
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  cout << " * Extracting CI coefficients from RelReference object for state the following states: ";
+  cout << " * Extracting CI coefficients from RelReference object for the following states: ";
   for (int i = 0; i != input.size(); ++i)
     cout << input[i] << " ";
   cout << endl;

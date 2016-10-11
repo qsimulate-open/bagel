@@ -124,16 +124,10 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int nstate() const { return energy_.size(); }
 
     // To extract some states from the reference, and get RDMs averaged over all the retained states
-    virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state, const bool extract_rdm) const {
-      throw std::runtime_error("Reference::extract_state(...) has only been implemented for relativistic wavefunctions.");
-      return nullptr;
-    }
+    virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state, const bool extract_rdm) const;
 
     // To get a multi-state reference with RDMs averaged only over a subset of the relevant states (e.g., ground spin manifold)
-    virtual std::shared_ptr<Reference> extract_average_rdm(const std::vector<int> rdm_state) const {
-      throw std::runtime_error("Reference::extract_average_rdm(...) has only been implemented for relativistic wavefunctions.");
-      return nullptr;
-    }
+    virtual std::shared_ptr<Reference> extract_average_rdm(const std::vector<int> rdm_state) const;
 
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);

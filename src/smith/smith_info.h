@@ -124,12 +124,10 @@ template<> std::shared_ptr<const CIWfn>   SMITH_Info<double>::ciwfn() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::hcore() const;
 template<> std::shared_ptr<const RDM<1>>  SMITH_Info<double>::rdm1_av() const;
-template<> std::shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const std::vector<int>, const bool) const;
 template<> std::shared_ptr<const RelCIWfn>SMITH_Info<std::complex<double>>::ciwfn() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::coeff() const;
 template<> std::shared_ptr<const ZMatrix> SMITH_Info<std::complex<double>>::hcore() const;
 template<> std::shared_ptr<const ZRDM<1>> SMITH_Info<std::complex<double>>::rdm1_av() const;
-template<> std::shared_ptr<const Reference>  SMITH_Info<std::complex<double>>::extract_ref(const std::vector<int>, const bool) const;
 
 extern template class SMITH_Info<double>;
 extern template class SMITH_Info<std::complex<double>>;
