@@ -59,7 +59,7 @@ void Force::compute() {
   cinput->put("gradient", true);
 
   numerical_ = idata_->get<bool>("numerical", false);
-  if (numerical_ == true)
+  if (numerical_)
     cout << "  The gradients will be computed with finite difference" << endl;
   else
     cout << "  The gradients will be computed analytically" << endl;
@@ -67,7 +67,7 @@ void Force::compute() {
 
   const string method = to_lower(cinput->get<string>("title", ""));
 
-  if (numerical_ == false) {
+  if (!numerical_) {
     if (method == "uhf") {
  
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
@@ -107,13 +107,14 @@ void Force::compute() {
  
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
       force->compute();
- 
+
     } else if (method == "caspt2") {
  
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
       force->compute();
  
-    } else {
+    } 
+    else {
  
         numerical_ = true;
         cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
@@ -121,7 +122,7 @@ void Force::compute() {
     }
   }
 
-  if (numerical_ == true) {
+  if (numerical_) {
 
     const int diffsize = idata_->get<int>("diffsize", 3);
     const double dx = pow(0.1, static_cast<double>(diffsize));
@@ -188,7 +189,7 @@ void Force::compute() {
           // to the original position
 
           displ->element(j,i) = dx;
-          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_ = make_shared<Geometry>(*geom_, displ);
 
           displ->element(j,i) = 0.0;
         }
@@ -204,9 +205,9 @@ void Force::compute() {
       cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
       cout << "  Finite difference size (dx) is " << setprecision(8) << dx << " Bohr(s)" << endl;
      
-      auto displ = std::make_shared<XYZFile>(geom_->natom());
+      auto displ = make_shared<XYZFile>(geom_->natom());
       auto gradient_ci = std::make_shared<GradFile>(geom_->natom());
-      auto gradient = std::make_shared<GradFile>(geom_->natom());
+      auto gradient = make_shared<GradFile>(geom_->natom());
 
       displ->scale(0.0);
       
@@ -293,7 +294,7 @@ void Force::compute() {
           acoeff_diff->scale(1.0 / (2.0 * dx));
      
           displ->element(j,i) = dx;
-          geom_ = std::make_shared<Geometry>(*geom_, displ);
+          geom_ = make_shared<Geometry>(*geom_, displ);
 
           displ->element(j,i) = 0.0;
 
@@ -334,7 +335,7 @@ void Force::compute() {
         }
       }
       auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
-      auto grad_basis = std::make_shared<GradFile>(geom_->natom());
+      auto grad_basis = make_shared<GradFile>(geom_->natom());
       grad_basis = force->contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
       gradient_ci->print(": CI term", 0);
