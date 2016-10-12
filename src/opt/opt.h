@@ -49,6 +49,9 @@ class Opt {
     std::shared_ptr<const Geometry> current_;
     std::shared_ptr<const Reference> prev_ref_;
     int target_state_;
+    // "energy", "transition (not coded yet)" and "conical"
+    std::string opttype_;
+    int target_state2_;
 
     int iter_;
 
@@ -87,6 +90,19 @@ class Opt {
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 5.0e-5);
       algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
+      opttype_ = idat->get<std::string>("opttype", "energy");
+      if (opttype_ == "conical") {
+        target_state2_ = idat->get<int>("target2", 1);
+        if (target_state2_ > target_state_) {
+          int tmpstate = target_state_;
+          target_state_ = target_state2_;
+          target_state2_ = tmpstate;
+        }
+      }
+      else if (opttype_ == "transition")
+        throw std::runtime_error("We cannot do saddle point optimization now, wait for Hessian comes up...");
+      else if (opttype_ != "energy")
+        throw std::runtime_error("Optimization type should be: \"energy\", \"transition\" or \"conical\"");
     }
 
     ~Opt() {
@@ -223,7 +239,51 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
       mute_stdcout();
     }
     // current geom and grad in the cartesian coordinate
-    std::shared_ptr<const GradFile> cgrad = eval.compute();
+    std::shared_ptr<GradFile> cgrad = eval.compute();
+    if (opttype_ == "conical") {
+      GradEval<T> eval2(cinput, current_, ref, target_state2_);
+      std::shared_ptr<const GradFile> cgrad2 = eval2.compute();
+      NacmEval<T> evaln(cinput, current_, ref, target_state2_, target_state_);
+      std::shared_ptr<const GradFile> x2 = evaln.compute();
+
+      auto x1 = std::make_shared<GradFile>(current_->natom());
+      auto xf = std::make_shared<GradFile>(current_->natom());
+      auto xg = std::make_shared<GradFile>(current_->natom());
+      double x1norm = 0.0, x2norm = 0.0;
+      const double en2 = eval.energy();
+      const double en1 = eval2.energy();
+
+      for (int iatom = 0; iatom != current_->natom(); ++iatom) {
+        x1->element(0, iatom) = cgrad2->element(0, iatom) - cgrad->element(0, iatom);
+        x1->element(1, iatom) = cgrad2->element(1, iatom) - cgrad->element(1, iatom);
+        x1->element(2, iatom) = cgrad2->element(2, iatom) - cgrad->element(2, iatom);
+
+        x1norm += x1->element(0, iatom) * x1->element(0, iatom) + x1->element(1, iatom) * x1->element(1, iatom) + x1->element(2, iatom) * x1->element(2, iatom);
+        x2norm += x2->element(0, iatom) * x2->element(0, iatom) + x2->element(1, iatom) * x2->element(1, iatom) + x2->element(2, iatom) * x2->element(2, iatom);
+      }
+
+      x1norm = sqrt(x1norm);
+      x2norm = sqrt(x2norm);
+      std::cout << "  Norm = " << std::setprecision(10) << x1norm << " and " << x2norm << std::endl;
+
+      for (int iatom = 0; iatom != current_->natom(); ++iatom) {
+        xf->element(0, iatom) = 2.0 * (en1 - en2) * x1->element(0, iatom) / x1norm;
+        xf->element(1, iatom) = 2.0 * (en1 - en2) * x1->element(1, iatom) / x1norm;
+        xf->element(2, iatom) = 2.0 * (en1 - en2) * x1->element(2, iatom) / x1norm;
+
+        xg->element(0, iatom) = cgrad->element(0, iatom) * (1.0 - x1->element(0, iatom) / x1norm - x2->element(0, iatom) / x2norm);
+        xg->element(1, iatom) = cgrad->element(1, iatom) * (1.0 - x1->element(1, iatom) / x1norm - x2->element(1, iatom) / x2norm);
+        xg->element(2, iatom) = cgrad->element(2, iatom) * (1.0 - x1->element(2, iatom) / x1norm - x2->element(2, iatom) / x2norm);
+
+        cgrad->element(0, iatom) = xf->element(0, iatom) + xg->element(0, iatom);
+        cgrad->element(1, iatom) = xf->element(1, iatom) + xg->element(1, iatom);
+        cgrad->element(2, iatom) = xf->element(2, iatom) + xg->element(2, iatom);
+      }
+
+      cgrad->print (": resulting gradient");
+
+      en = en2 - en1;
+    }
     if (internal_)
       cgrad = cgrad->transform(bmat_[1], true);
 
@@ -231,7 +291,8 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
     std::copy_n(cgrad->data(), size_, grad.getcontent());
 
     prev_ref_ = eval.ref();
-    en = eval.energy(); 
+    if (opttype_ != "conical") 
+      en = eval.energy(); 
 
     // current geometry in a molden file
     MoldenOut mfs("opt.molden");
