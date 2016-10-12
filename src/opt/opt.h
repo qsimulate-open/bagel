@@ -247,8 +247,8 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
       std::shared_ptr<GradFile> x2 = evaln.compute();
 
       auto x1 = std::make_shared<GradFile>(*cgrad2 - *cgrad);
-      auto xf = std::make_shared<GradFile>(*x1->copy());
-      auto xg = std::make_shared<GradFile>(*cgrad->copy());
+      auto xf = std::make_shared<GradFile>(*x1);
+      auto xg = std::make_shared<GradFile>(*cgrad);
       double x1norm = 0.0, x2norm = 0.0;
       const double en2 = eval.energy();
       const double en1 = eval2.energy();
