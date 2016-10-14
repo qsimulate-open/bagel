@@ -44,21 +44,6 @@ void Box::init() {
   ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
  
-#if 0
-  if (rank_ != 0) {
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> c = child(n);
-      centre_[0] += c->centre(0);
-      centre_[1] += c->centre(1);
-      centre_[2] += c->centre(2);
-    }
-    centre_[0] /= nchild();
-    centre_[1] /= nchild();
-    centre_[2] /= nchild();
-  }
-#endif
-
-#if 1
   centre_ = {{0, 0, 0}};
   ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
@@ -73,9 +58,7 @@ void Box::init() {
   centre_[0] /= nsp();
   centre_[1] /= nsp();
   centre_[2] /= nsp();
-#endif
 
-  cout << setprecision(9) << "*** BOX CENTRE " << centre_[0] << "  " << centre_[1] << "  " << centre_[2] << endl;
   extent_ = 0;
   for (auto& i : sp_) {
     if (i->schwarz() < 1e-15) continue;
@@ -212,13 +195,6 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
       shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), v->nbasis1(), v->nbasis0());
-#if 0
-      OverlapBatch obatch(v->shells());
-      obatch.compute();
-      Matrix o(v->nbasis1(), v->nbasis0());
-      o.copy_block(0, 0, v->nbasis1(), v->nbasis0(), obatch.data());
-      if (den->dot_product(o) < 1e-15) continue;
-#endif
 
 //      tasks.emplace_back(
 //        [this, &v, &den]() {
@@ -242,7 +218,6 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
     }
 //    tasks.compute();
 
-#if 1
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -253,7 +228,6 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
       transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
     }
-#endif
   }
 }
 
@@ -263,10 +237,9 @@ void Box::compute_L2L() {
   // from parent
   if (parent_) {
     array<double, 3> r12;
-    r12[0] = parent_->centre(0) - centre_[0];
-    r12[1] = parent_->centre(1) - centre_[1];
-    r12[2] = parent_->centre(2) - centre_[2];
-    //vector<complex<double>> slocal = shift_localL(parent_->localJ(), centre_);
+    r12[0] = centre_[0] - parent_->centre(0);
+    r12[1] = centre_[1] - parent_->centre(1);
+    r12[2] = centre_[2] - parent_->centre(2);
     vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
     transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
   }

@@ -155,11 +155,7 @@ void FMM::get_boxes() {
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
     array<int, 3> id = boxid[il];
-    array<double, 3> bcentre;
-    bcentre[0] = (id[0]-0.5)*unitsize_- boxsize_/2.0;
-    bcentre[1] = (id[1]-0.5)*unitsize_- boxsize_/2.0;
-    bcentre[2] = (id[2]-0.5)*unitsize_- boxsize_/2.0;
-    auto newbox = make_shared<Box>(0, il, bcentre, id, lmax_, sp);
+    auto newbox = make_shared<Box>(0, il, id, lmax_, sp);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -192,7 +188,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, array<double, 3>{{}}, idxp, lmax_, box_[ichild]->sp());
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -308,7 +304,6 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
   M2L();
   L2L();
 
-  double exactff = 0;
   if (density) {
     assert(nbasis_ == density->ndim());
     vector<double> maxden(geom_->nshellpair());
@@ -337,64 +332,12 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
         auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
         *out += *ei;
       }
-      exactff += box_[i]->compute_exact_energy_ff(density);
     }
     out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
   }
-  cout << setprecision(9) << "EXACT FF ENERGY = " << exactff << endl;
-
-///// DEBUG
-#if 0
-  out->get_real_part()->print("NEAR FIELD J");
-
-  shared_ptr<const Shell> b0 = box_[0]->sp(0)->shell(0);
-  shared_ptr<const Shell> b1 = box_[0]->sp(0)->shell(1);
-  shared_ptr<const Shell> b2 = box_[1]->sp(0)->shell(0);
-  shared_ptr<const Shell> b3 = box_[1]->sp(0)->shell(1);
-  array<shared_ptr<const Shell>, 4> shells = {{b0, b1, b2, b3}};
-  auto jexp = make_shared<JExpansion>(shells, lmax_, 1);
-  shared_ptr<const Matrix> den = density->get_submatrix(box_[1]->sp(0)->offset(0), box_[1]->sp(0)->offset(0),
-                                                        box_[1]->sp(0)->nbasis0(), box_[1]->sp(0)->nbasis1());
-  den->print("SUB DENSITY");
-
-  shared_ptr<const ZMatrix> tmp = jexp->compute(den);
-  tmp->get_real_part()->print("J MATRIX FROM EXPANSION");
-  const double ffen = 0.5 * density->dot_product(*tmp->get_real_part());
-  cout << "FF ENERGY FROM JEXPANSION " << ffen << endl;
-#endif
-///// END DEBUG
-
-#if 0
-  double mind = 10000.0;
-  int is0 = -1;
-  int is3 = -1;
-
-  cout << "NSHELL OF BOX 0 = " << box_[0]->nsp() << "  NSHELL OF BOX 3 = " << box_[2]->nsp() << endl;
-  int isp0 = 0;
-  for (auto& sp0 : box_[0]->sp()) {
-    int isp3 = 0;
-    for (auto& sp3 : box_[1]->sp()) {
-      array<double, 3> r;
-      r[0] = sp0->centre(0) - sp3->centre(0);
-      r[1] = sp0->centre(1) - sp3->centre(2);
-      r[2] = sp0->centre(2) - sp3->centre(1);
-      const double d = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-      if (d < mind) {
-        mind = d;
-        is0 = isp0;
-        is3 = isp3;
-      }
-      ++isp3;
-    }
-    ++isp0;
-  }
-  assert(is0>=0 && is3>=0);
-  cout << "MIN DISTANCE SHELL PAIR = " << setprecision(2) <<  mind << endl;
-  cout << "EXTENTS OF MIN DISTANCE SHELL PAIR = " << box_[0]->sp(is0)->extent() << "  AND  " << box_[1]->sp(is3)->extent() << endl;
-#endif
 
   nftime.tick_print("near-field");
 
