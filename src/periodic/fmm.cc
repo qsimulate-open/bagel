@@ -330,7 +330,7 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
     for (int i = 0; i != nbranch_[0]; ++i) {
       if (u++ % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
-        *out += *ei;
+        out->add_block(1.0, 0, 0, nbasis_, nbasis_, ei->data());
       }
     }
     out->allreduce();

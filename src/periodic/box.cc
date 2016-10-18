@@ -271,10 +271,45 @@ shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> dens
   const int nsh = sqrt(max_den.size());
   assert (nsh*nsh == max_den.size());
 
-  int nsp1 = 0;
-  for (auto& neigh : neigh_)
-    nsp1 += neigh->nsp();
-  TaskQueue<function<void(void)>> tasks(nsp() * nsp1);
+  int ntask = 0;
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < 1e-15) continue;
+    const int i0 = v01->shell_ind(1);
+
+    const int i1 = v01->shell_ind(0);
+    if (i1 < i0) continue;
+
+    const int i01 = i0 * nsh + i1;
+    const double density_01 = max_den[i01] * 4.0;
+
+    for (auto& neigh : neigh_) {
+      for (auto& v23 : neigh->sp()) {
+        if (v23->schwarz() < 1e-15) continue;
+        const int i2 = v23->shell_ind(1);
+        if (i2 < i0) continue;
+        const int i3 = v23->shell_ind(0);
+        if (i3 < i2) continue;
+        const int i23 = i2 * nsh + i3;
+        if (i23 < i01) continue;
+
+        const double density_23 = max_den[i23] * 4.0;
+        const double density_02 = max_den[i0 * nsh + i2];
+        const double density_03 = max_den[i0 * nsh + i3];
+        const double density_12 = max_den[i1 * nsh + i2];
+        const double density_13 = max_den[i1 * nsh + i3];
+
+        const double mulfactor = max(max(max(density_01, density_02),
+                                         max(density_03, density_12)),
+                                         max(density_13, density_23));
+        const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+        const bool skip_schwarz = integral_bound < schwarz_thresh;
+        if (skip_schwarz) continue;
+        ++ntask;
+      }
+    }
+  }
+
+  TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 
   for (auto& v01 : sp_) {
