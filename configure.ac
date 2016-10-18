@@ -174,5 +174,6 @@ AC_CONFIG_FILES([Makefile
                  src/mat1e/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
+                 src/dkh/Makefile
                  src/basis/Makefile])
 AC_OUTPUT
