@@ -24,13 +24,9 @@
 
 
 #include <src/dkh/dkhcore.h>
+#include <src/util/math/matrix.h>
 #include <src/integral/os/kineticbatch.h>
-#include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
-#include <src/integral/rys/eribatch.h>
-#include <src/integral/rys/r0batch.h>
-#include <src/integral/rys/r1batch.h>
-#include <src/integral/rys/r2batch.h>
 #include <src/integral/libint/libint.h>
 
 using namespace std;
@@ -38,42 +34,27 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
 
-DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix1e(mol) {
+DKHcore::DKHcore(shared_ptr<const Molecule> mol) {
 
   init(mol);
-  cout << "Using DKH" << endl;
   fill_upper();
 }
 
-void DKHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
+void DKHcore::computebatch0(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1) {
 
-  // input = [b1, b0]
   assert(input.size() == 2);
   const int dimb1 = input[0]->nbasis();
   const int dimb0 = input[1]->nbasis();
 
-  {
-    KineticBatch kinetic(input);
-    kinetic.compute();
-
-    copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
-  }
-  
-  {
-    if (mol->natom() < nucleus_blocksize__) {
-      NAIBatch nai(input, mol);
-      nai.compute();
-      add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
-    } else {
-      const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
-      for (auto& current_mol : atom_subsets) {
-        NAIBatch nai(input, current_mol);
-        nai.compute();
-        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
-      }
-    }
-  }
-
 }
 
+void DKHcore::init(shared_ptr<const Molecule> mol) {
+  
+  Kinetic kinetic_(mol);
+  eig_(mol->nbasis());
+  kinetic_.diagonalize(eig());
+  NAI nai_(mol);
 
+  //loop computebatch0();
+
+}

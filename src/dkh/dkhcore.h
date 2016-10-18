@@ -23,29 +23,27 @@
 //
 
 
-#ifndef __SRC_MAT1E_DKHCORE_H
-#define __SRC_MAT1E_DKHCORE_H
+#ifndef __SRC_DKH_DKHCORE_H
+#define __SRC_DKH_DKHCORE_H
 
-#include <src/mat1e/matrix1e.h>
+#include <src/util/math/matrix.h>
+#include <src/mat1e/kinetic.h>
+#include <src/mat1e/nai.h>
 
 namespace bagel {
 
-class DKHcore : public Matrix1e {
-  
+class DKHcore : public Matrix {
   protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
+    void init(std::shared_ptr<const Molecule>);
+    void computebatch0(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
+    VectorB eig_;
 
   private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Matrix1e>(*this);
-    }
 
   public:
     DKHcore() { }
     DKHcore(std::shared_ptr<const Molecule>);
+    VectorB& eig() { return eig_; }
 };
 
 }
