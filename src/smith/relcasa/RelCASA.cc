@@ -88,7 +88,7 @@ void RelCASA::RelCASA::solve() {
   // solve linear equation for t amplitudes
   t2all_ = solve_linear(sall_, t2all_);
 
-  // print out energies
+  // Compute and print energy (with shift correction)
   vector<complex<double>> shift_correction(nstates_*nstates_);
   cout << endl;
   for (int istate = 0; istate != nstates_; ++istate) {
@@ -245,11 +245,13 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
           r = rall_[i]->at(jst);
 
           // compute residuals named r for each K
-          e0_ = e0all_[i] - info_->shift();
+          const double e0save = e0_;
+          e0_ = e0all_[i] - e0all_[ist];
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
           diagonal(r, t2, jst == ist);
+          e0_ = e0save;
         }
       }
       // solve using subspace updates

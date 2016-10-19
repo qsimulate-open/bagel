@@ -82,6 +82,7 @@ void CASA::CASA::solve() {
   timer.tick_print("CASA energy evaluation");
   cout << endl;
 
+  // Compute and print energy (with shift correction)
   for (int istate = 0; istate != nstates_; ++istate) {
     if (info_->shift() == 0.0) {
       pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
@@ -227,11 +228,13 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
           r = rall_[i]->at(jst);
 
           // compute residuals named r for each K
-          e0_ = e0all_[i] - info_->shift();
+          const double e0save = e0_;
+          e0_ = e0all_[i] - e0all_[ist];
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
           diagonal(r, t2, jst == ist);
+          e0_ = e0save;
         }
       }
       // solve using subspace updates
