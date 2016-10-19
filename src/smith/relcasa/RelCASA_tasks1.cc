@@ -42,7 +42,7 @@ void Task0::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(x0, x3, x1, x2), 0.0);
   {
     // rdm0 non-merged case
-    if (x0 == x2 && x1 == x3) {
+    if (x1 == x3 && x0 == x2) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -66,7 +66,7 @@ void Task0::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x1 == x2 && x0 == x3) {
+    if (x0 == x3 && x1 == x2) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -147,7 +147,7 @@ void Task1::Task_local::compute() {
     }
   }
   {
-    if (x1 == x4 && x0 == x2) {
+    if (x0 == x2 && x1 == x4) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x5, x3);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -226,7 +226,7 @@ void Task1::Task_local::compute() {
     }
   }
   {
-    if (x1 == x2 && x0 == x4) {
+    if (x0 == x4 && x1 == x2) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x5, x3);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -908,7 +908,7 @@ void Task7::Task_local::compute() {
   const Index x0 = b(5);
   const Index x4 = b(6);
   const Index x3 = b(7);
-  // tensor label: Gamma82
+  // tensor label: Gamma94
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x7, x6, x2, x5, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x7, x6, x2, x5, x1, x0), 0.0);
   // associated with merged
@@ -1094,12 +1094,12 @@ void Task7::Task_local::compute() {
       }
     }
   }
-  if (x2 == x3 && x4 == x6 && x1 == x5) {
+  if (x4 == x6 && x2 == x3 && x1 == x5) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x7, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i7 = 0; i7 != x7.size(); ++i7) {
-        for (int i3 = 0; i3 != x3.size(); ++i3) {
-          for (int i6 = 0; i6 != x6.size(); ++i6) {
+        for (int i6 = 0; i6 != x6.size(); ++i6) {
+          for (int i3 = 0; i3 != x3.size(); ++i3) {
             for (int i5 = 0; i5 != x5.size(); ++i5) {
               odata[i7+x7.size()*(i6+x6.size()*(i3+x2.size()*(i5+x5.size()*(i5+x1.size()*(i0)))))]
                 += (1.0) * i0data[i7+x7.size()*(i0)] * fdata[i6+x4.size()*(i3)];
@@ -1278,7 +1278,7 @@ void Task8::Task_local::compute() {
   const Index x5 = b(7);
   const Index x4 = b(8);
   const Index x3 = b(9);
-  // tensor label: Gamma83
+  // tensor label: Gamma95
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x9, x8, x2, x7, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x9, x8, x2, x7, x1, x0), 0.0);
   // associated with merged
@@ -1978,15 +1978,15 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x2 == x7 && x4 == x8 && x1 == x5) {
+  if (x2 == x7 && x1 == x5 && x4 == x8) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x3, x6, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i6 = 0; i6 != x6.size(); ++i6) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
             for (int i7 = 0; i7 != x7.size(); ++i7) {
-              for (int i8 = 0; i8 != x8.size(); ++i8) {
-                for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i5 = 0; i5 != x5.size(); ++i5) {
+                for (int i8 = 0; i8 != x8.size(); ++i8) {
                   odata[i9+x9.size()*(i8+x8.size()*(i7+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                     += (-1.0) * i0data[i9+x9.size()*(i3+x3.size()*(i6+x6.size()*(i0)))] * fdata[i6+x6.size()*(i5+x5.size()*(i8+x4.size()*(i3)))];
                 }
@@ -2267,15 +2267,15 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x6 == x8 && x2 == x5 && x1 == x3) {
+  if (x2 == x5 && x1 == x3 && x6 == x8) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x7, x4, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
-            for (int i8 = 0; i8 != x8.size(); ++i8) {
-              for (int i5 = 0; i5 != x5.size(); ++i5) {
-                for (int i3 = 0; i3 != x3.size(); ++i3) {
+            for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i3 = 0; i3 != x3.size(); ++i3) {
+                for (int i8 = 0; i8 != x8.size(); ++i8) {
                   odata[i9+x9.size()*(i8+x8.size()*(i5+x2.size()*(i7+x7.size()*(i3+x1.size()*(i0)))))]
                     += (1.0) * i0data[i9+x9.size()*(i7+x7.size()*(i4+x4.size()*(i0)))] * fdata[i8+x6.size()*(i5+x5.size()*(i4+x4.size()*(i3)))];
                 }
@@ -2358,14 +2358,14 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x6 == x7 && x4 == x5 && x1 == x3) {
+  if (x4 == x5 && x6 == x7 && x1 == x3) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x8, x2, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i8 = 0; i8 != x8.size(); ++i8) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
-            for (int i7 = 0; i7 != x7.size(); ++i7) {
-              for (int i5 = 0; i5 != x5.size(); ++i5) {
+            for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i7 = 0; i7 != x7.size(); ++i7) {
                 for (int i3 = 0; i3 != x3.size(); ++i3) {
                   odata[i9+x9.size()*(i8+x8.size()*(i2+x2.size()*(i7+x7.size()*(i3+x1.size()*(i0)))))]
                     += (1.0) * i0data[i9+x9.size()*(i8+x8.size()*(i2+x2.size()*(i0)))] * fdata[i7+x6.size()*(i5+x5.size()*(i5+x4.size()*(i3)))];
@@ -2518,14 +2518,14 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x6 == x8 && x4 == x7 && x2 == x3 && x1 == x5) {
+  if (x6 == x8 && x1 == x5 && x2 == x3 && x4 == x7) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x9, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i9 = 0; i9 != x9.size(); ++i9) {
         for (int i8 = 0; i8 != x8.size(); ++i8) {
-          for (int i7 = 0; i7 != x7.size(); ++i7) {
+          for (int i5 = 0; i5 != x5.size(); ++i5) {
             for (int i3 = 0; i3 != x3.size(); ++i3) {
-              for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i7 = 0; i7 != x7.size(); ++i7) {
                 odata[i9+x9.size()*(i8+x8.size()*(i3+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                   += (-1.0) * i0data[i9+x9.size()*(i0)] * fdata[i8+x6.size()*(i5+x5.size()*(i7+x4.size()*(i3)))];
               }
@@ -2535,15 +2535,15 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x4 == x7 && x2 == x3 && x1 == x5) {
+  if (x1 == x5 && x2 == x3 && x4 == x7) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x8, x6, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i6 = 0; i6 != x6.size(); ++i6) {
         for (int i8 = 0; i8 != x8.size(); ++i8) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
-            for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i5 = 0; i5 != x5.size(); ++i5) {
               for (int i3 = 0; i3 != x3.size(); ++i3) {
-                for (int i5 = 0; i5 != x5.size(); ++i5) {
+                for (int i7 = 0; i7 != x7.size(); ++i7) {
                   odata[i9+x9.size()*(i8+x8.size()*(i3+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                     += (-1.0) * i0data[i9+x9.size()*(i8+x8.size()*(i6+x6.size()*(i0)))] * fdata[i6+x6.size()*(i5+x5.size()*(i7+x4.size()*(i3)))];
                 }
@@ -2554,14 +2554,14 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x6 == x7 && x4 == x8 && x2 == x3 && x1 == x5) {
+  if (x6 == x7 && x4 == x8 && x1 == x5 && x2 == x3) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x9, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i9 = 0; i9 != x9.size(); ++i9) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i8 = 0; i8 != x8.size(); ++i8) {
-            for (int i3 = 0; i3 != x3.size(); ++i3) {
-              for (int i5 = 0; i5 != x5.size(); ++i5) {
+            for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i3 = 0; i3 != x3.size(); ++i3) {
                 odata[i9+x9.size()*(i8+x8.size()*(i3+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                   += (1.0) * i0data[i9+x9.size()*(i0)] * fdata[i7+x6.size()*(i5+x5.size()*(i8+x4.size()*(i3)))];
               }
@@ -2571,15 +2571,15 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x4 == x8 && x2 == x3 && x1 == x5) {
+  if (x4 == x8 && x1 == x5 && x2 == x3) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x7, x6, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i6 = 0; i6 != x6.size(); ++i6) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
             for (int i8 = 0; i8 != x8.size(); ++i8) {
-              for (int i3 = 0; i3 != x3.size(); ++i3) {
-                for (int i5 = 0; i5 != x5.size(); ++i5) {
+              for (int i5 = 0; i5 != x5.size(); ++i5) {
+                for (int i3 = 0; i3 != x3.size(); ++i3) {
                   odata[i9+x9.size()*(i8+x8.size()*(i3+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                     += (1.0) * i0data[i9+x9.size()*(i7+x7.size()*(i6+x6.size()*(i0)))] * fdata[i6+x6.size()*(i5+x5.size()*(i8+x4.size()*(i3)))];
                 }
@@ -2746,7 +2746,7 @@ void Task8::Task_local::compute() {
       }
     }
   }
-  if (x1 == x5 && x6 == x7) {
+  if (x6 == x7 && x1 == x5) {
     std::unique_ptr<std::complex<double>[]> i0data = in(2)->get_block(x9, x8, x4, x3, x2, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
@@ -2754,8 +2754,8 @@ void Task8::Task_local::compute() {
           for (int i4 = 0; i4 != x4.size(); ++i4) {
             for (int i8 = 0; i8 != x8.size(); ++i8) {
               for (int i9 = 0; i9 != x9.size(); ++i9) {
-                for (int i5 = 0; i5 != x5.size(); ++i5) {
-                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                for (int i7 = 0; i7 != x7.size(); ++i7) {
+                  for (int i5 = 0; i5 != x5.size(); ++i5) {
                     odata[i9+x9.size()*(i8+x8.size()*(i2+x2.size()*(i7+x7.size()*(i5+x1.size()*(i0)))))]
                       += (1.0) * i0data[i9+x9.size()*(i8+x8.size()*(i4+x4.size()*(i3+x3.size()*(i2+x2.size()*(i0)))))] * fdata[i7+x6.size()*(i5+x5.size()*(i4+x4.size()*(i3)))];
                   }
@@ -3628,7 +3628,7 @@ void Task12::Task_local::compute() {
   const Index x3 = b(1);
   const Index x2 = b(2);
   const Index x1 = b(3);
-  // tensor label: Gamma84
+  // tensor label: Gamma96
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x0, x3)]);
   std::fill_n(odata.get(), out()->get_size(x0, x3), 0.0);
   // associated with merged
@@ -3663,7 +3663,7 @@ void Task13::Task_local::compute() {
   const Index x3 = b(3);
   const Index x2 = b(4);
   const Index x1 = b(5);
-  // tensor label: Gamma86
+  // tensor label: Gamma98
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x0, x5)]);
   std::fill_n(odata.get(), out()->get_size(x0, x5), 0.0);
   // associated with merged
@@ -4060,7 +4060,7 @@ void Task20::Task_local::compute() {
   const Index x4 = b(3);
   const Index x3 = b(4);
   const Index x2 = b(5);
-  // tensor label: Gamma100
+  // tensor label: Gamma112
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x5, x0, x1, x4)]);
   std::fill_n(odata.get(), out()->get_size(x5, x0, x1, x4), 0.0);
   // associated with merged
@@ -4131,7 +4131,7 @@ void Task21::Task_local::compute() {
   const Index x0 = b(3);
   const Index x3 = b(4);
   const Index x2 = b(5);
-  // tensor label: Gamma101
+  // tensor label: Gamma113
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x5, x4, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x5, x4, x1, x0), 0.0);
   // associated with merged
@@ -4204,7 +4204,7 @@ void Task22::Task_local::compute() {
   const Index x4 = b(5);
   const Index x3 = b(6);
   const Index x2 = b(7);
-  // tensor label: Gamma104
+  // tensor label: Gamma116
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x7, x0, x1, x6)]);
   std::fill_n(odata.get(), out()->get_size(x7, x0, x1, x6), 0.0);
   // associated with merged
@@ -4311,14 +4311,14 @@ void Task22::Task_local::compute() {
       }
     }
   }
-  if (x7 == x2 && x3 == x4) {
+  if (x3 == x4 && x7 == x2) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x5, x0, x1, x6);
     for (int i6 = 0; i6 != x6.size(); ++i6) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i0 = 0; i0 != x0.size(); ++i0) {
           for (int i5 = 0; i5 != x5.size(); ++i5) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
-              for (int i4 = 0; i4 != x4.size(); ++i4) {
+            for (int i4 = 0; i4 != x4.size(); ++i4) {
+              for (int i2 = 0; i2 != x2.size(); ++i2) {
                 odata[i2+x7.size()*(i0+x0.size()*(i1+x1.size()*(i6)))]
                   += (-1.0) * i0data[i5+x5.size()*(i0+x0.size()*(i1+x1.size()*(i6)))] * fdata[i5+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
               }
@@ -4364,14 +4364,14 @@ void Task22::Task_local::compute() {
       }
     }
   }
-  if (x1 == x4 && x3 == x6) {
+  if (x3 == x6 && x1 == x4) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x7, x0, x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i0 = 0; i0 != x0.size(); ++i0) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i4 = 0; i4 != x4.size(); ++i4) {
-              for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
+              for (int i4 = 0; i4 != x4.size(); ++i4) {
                 odata[i7+x7.size()*(i0+x0.size()*(i4+x1.size()*(i6)))]
                   += (1.0) * i0data[i7+x7.size()*(i0+x0.size()*(i5+x5.size()*(i2)))] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
               }
@@ -4400,13 +4400,13 @@ void Task22::Task_local::compute() {
       }
     }
   }
-  if (x5 == x6 && x1 == x2 && x3 == x4) {
+  if (x5 == x6 && x3 == x4 && x1 == x2) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x7, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i7 = 0; i7 != x7.size(); ++i7) {
         for (int i6 = 0; i6 != x6.size(); ++i6) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
-            for (int i4 = 0; i4 != x4.size(); ++i4) {
+          for (int i4 = 0; i4 != x4.size(); ++i4) {
+            for (int i2 = 0; i2 != x2.size(); ++i2) {
               odata[i7+x7.size()*(i0+x0.size()*(i2+x1.size()*(i6)))]
                 += (-1.0) * i0data[i7+x7.size()*(i0)] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
             }
@@ -4415,14 +4415,14 @@ void Task22::Task_local::compute() {
       }
     }
   }
-  if (x5 == x6 && x1 == x2) {
+  if (x1 == x2 && x5 == x6) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x7, x0, x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i0 = 0; i0 != x0.size(); ++i0) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
-              for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i2 = 0; i2 != x2.size(); ++i2) {
+              for (int i6 = 0; i6 != x6.size(); ++i6) {
                 odata[i7+x7.size()*(i0+x0.size()*(i2+x1.size()*(i6)))]
                   += (1.0) * i0data[i7+x7.size()*(i0+x0.size()*(i3+x3.size()*(i4)))] * fdata[i6+x5.size()*(i4+x4.size()*(i3+x3.size()*(i2)))];
               }
@@ -4497,7 +4497,7 @@ void Task23::Task_local::compute() {
   const Index x4 = b(5);
   const Index x3 = b(6);
   const Index x2 = b(7);
-  // tensor label: Gamma105
+  // tensor label: Gamma117
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x7, x6, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x7, x6, x1, x0), 0.0);
   // associated with merged
@@ -4708,14 +4708,14 @@ void Task23::Task_local::compute() {
       }
     }
   }
-  if (x1 == x2 && x5 == x6) {
+  if (x5 == x6 && x1 == x2) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x7, x4, x3, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i2 = 0; i2 != x2.size(); ++i2) {
-              for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
+              for (int i2 = 0; i2 != x2.size(); ++i2) {
                 odata[i7+x7.size()*(i6+x6.size()*(i2+x1.size()*(i0)))]
                   += (-1.0) * i0data[i7+x7.size()*(i4+x4.size()*(i3+x3.size()*(i0)))] * fdata[i6+x5.size()*(i4+x4.size()*(i3+x3.size()*(i2)))];
               }
@@ -4742,14 +4742,14 @@ void Task23::Task_local::compute() {
       }
     }
   }
-  if (x3 == x4 && x5 == x6) {
+  if (x5 == x6 && x3 == x4) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x7, x2, x1, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           for (int i7 = 0; i7 != x7.size(); ++i7) {
-            for (int i4 = 0; i4 != x4.size(); ++i4) {
-              for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
+              for (int i4 = 0; i4 != x4.size(); ++i4) {
                 odata[i7+x7.size()*(i6+x6.size()*(i1+x1.size()*(i0)))]
                   += (-1.0) * i0data[i7+x7.size()*(i2+x2.size()*(i1+x1.size()*(i0)))] * fdata[i6+x5.size()*(i4+x4.size()*(i4+x3.size()*(i2)))];
               }
@@ -4992,7 +4992,7 @@ void Task29::Task_local::compute() {
   const Index x1 = b(5);
   const Index x4 = b(6);
   const Index x3 = b(7);
-  // tensor label: Gamma88
+  // tensor label: Gamma100
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x7, x0, x6, x5, x2, x1)]);
   std::fill_n(odata.get(), out()->get_size(x7, x0, x6, x5, x2, x1), 0.0);
   // associated with merged
@@ -5119,7 +5119,7 @@ void Task30::Task_local::compute() {
   const Index x5 = b(7);
   const Index x4 = b(8);
   const Index x3 = b(9);
-  // tensor label: Gamma89
+  // tensor label: Gamma101
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x9, x0, x8, x7, x2, x1)]);
   std::fill_n(odata.get(), out()->get_size(x9, x0, x8, x7, x2, x1), 0.0);
   // associated with merged
@@ -5609,15 +5609,15 @@ void Task30::Task_local::compute() {
       }
     }
   }
-  if (x2 == x3 && x4 == x5 && x6 == x7) {
+  if (x6 == x7 && x4 == x5 && x2 == x3) {
     std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x9, x0, x8, x1);
     for (int i1 = 0; i1 != x1.size(); ++i1) {
       for (int i8 = 0; i8 != x8.size(); ++i8) {
         for (int i0 = 0; i0 != x0.size(); ++i0) {
           for (int i9 = 0; i9 != x9.size(); ++i9) {
-            for (int i3 = 0; i3 != x3.size(); ++i3) {
+            for (int i7 = 0; i7 != x7.size(); ++i7) {
               for (int i5 = 0; i5 != x5.size(); ++i5) {
-                for (int i7 = 0; i7 != x7.size(); ++i7) {
+                for (int i3 = 0; i3 != x3.size(); ++i3) {
                   odata[i9+x9.size()*(i0+x0.size()*(i8+x8.size()*(i7+x7.size()*(i3+x2.size()*(i1)))))]
                     += (-1.0) * i0data[i9+x9.size()*(i0+x0.size()*(i8+x8.size()*(i1)))] * fdata[i7+x6.size()*(i5+x5.size()*(i5+x4.size()*(i3)))];
                 }
@@ -5628,7 +5628,7 @@ void Task30::Task_local::compute() {
       }
     }
   }
-  if (x2 == x3 && x6 == x7) {
+  if (x6 == x7 && x2 == x3) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x9, x0, x8, x5, x4, x1);
     for (int i1 = 0; i1 != x1.size(); ++i1) {
       for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -5636,8 +5636,8 @@ void Task30::Task_local::compute() {
           for (int i8 = 0; i8 != x8.size(); ++i8) {
             for (int i0 = 0; i0 != x0.size(); ++i0) {
               for (int i9 = 0; i9 != x9.size(); ++i9) {
-                for (int i3 = 0; i3 != x3.size(); ++i3) {
-                  for (int i7 = 0; i7 != x7.size(); ++i7) {
+                for (int i7 = 0; i7 != x7.size(); ++i7) {
+                  for (int i3 = 0; i3 != x3.size(); ++i3) {
                     odata[i9+x9.size()*(i0+x0.size()*(i8+x8.size()*(i7+x7.size()*(i3+x2.size()*(i1)))))]
                       += (-1.0) * i0data[i9+x9.size()*(i0+x0.size()*(i8+x8.size()*(i5+x5.size()*(i4+x4.size()*(i1)))))] * fdata[i7+x6.size()*(i5+x5.size()*(i4+x4.size()*(i3)))];
                   }
@@ -5722,7 +5722,7 @@ void Task31::Task_local::compute() {
   const Index x0 = b(1);
   const Index x2 = b(2);
   const Index x1 = b(3);
-  // tensor label: Gamma94
+  // tensor label: Gamma106
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x3, x0)]);
   std::fill_n(odata.get(), out()->get_size(x3, x0), 0.0);
   // associated with merged
@@ -5748,7 +5748,7 @@ void Task32::Task_local::compute() {
   const Index x3 = b(3);
   const Index x2 = b(4);
   const Index x1 = b(5);
-  // tensor label: Gamma96
+  // tensor label: Gamma108
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x5, x0)]);
   std::fill_n(odata.get(), out()->get_size(x5, x0), 0.0);
   // associated with merged
@@ -5806,7 +5806,7 @@ void Task33::Task_local::compute() {
   const Index x4 = b(3);
   const Index x3 = b(4);
   const Index x2 = b(5);
-  // tensor label: Gamma80
+  // tensor label: Gamma92
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x0, x5, x1, x4)]);
   std::fill_n(odata.get(), out()->get_size(x0, x5, x1, x4), 0.0);
   // associated with merged
@@ -6001,7 +6001,7 @@ void Task34::Task_local::compute() {
   const Index x4 = b(5);
   const Index x3 = b(6);
   const Index x2 = b(7);
-  // tensor label: Gamma81
+  // tensor label: Gamma93
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x0, x7, x1, x6)]);
   std::fill_n(odata.get(), out()->get_size(x0, x7, x1, x6), 0.0);
   // associated with merged
@@ -6021,13 +6021,13 @@ void Task34::Task_local::compute() {
       }
     }
   }
-  if (x1 == x7 && x0 == x2 && x3 == x6) {
+  if (x3 == x6 && x1 == x7 && x0 == x2) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x5, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
+        for (int i6 = 0; i6 != x6.size(); ++i6) {
+          for (int i7 = 0; i7 != x7.size(); ++i7) {
+            for (int i2 = 0; i2 != x2.size(); ++i2) {
               odata[i2+x0.size()*(i7+x7.size()*(i7+x1.size()*(i6)))]
                 += (1.0) * i0data[i5+x5.size()*(i4)] * fdata[i5+x5.size()*(i4+x4.size()*(i6+x3.size()*(i2)))];
             }
@@ -6036,13 +6036,13 @@ void Task34::Task_local::compute() {
       }
     }
   }
-  if (x3 == x7 && x0 == x4 && x1 == x6) {
+  if (x3 == x7 && x1 == x6 && x0 == x4) {
     std::unique_ptr<std::complex<double>[]> i0data = in(1)->get_block(x5, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i5 = 0; i5 != x5.size(); ++i5) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i6 = 0; i6 != x6.size(); ++i6) {
+          for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i4 = 0; i4 != x4.size(); ++i4) {
               odata[i4+x0.size()*(i7+x7.size()*(i6+x1.size()*(i6)))]
                 += (1.0) * i0data[i5+x5.size()*(i2)] * fdata[i5+x5.size()*(i4+x4.size()*(i7+x3.size()*(i2)))];
             }
@@ -6644,14 +6644,14 @@ void Task34::Task_local::compute() {
       }
     }
   }
-  if (x0 == x4 && x5 == x6) {
+  if (x5 == x6 && x0 == x4) {
     std::unique_ptr<std::complex<double>[]> i0data = in(2)->get_block(x1, x7, x3, x2);
     for (int i2 = 0; i2 != x2.size(); ++i2) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
         for (int i7 = 0; i7 != x7.size(); ++i7) {
           for (int i1 = 0; i1 != x1.size(); ++i1) {
-            for (int i4 = 0; i4 != x4.size(); ++i4) {
-              for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
+              for (int i4 = 0; i4 != x4.size(); ++i4) {
                 odata[i4+x0.size()*(i7+x7.size()*(i1+x1.size()*(i6)))]
                   += (-1.0) * i0data[i1+x1.size()*(i7+x7.size()*(i3+x3.size()*(i2)))] * fdata[i6+x5.size()*(i4+x4.size()*(i3+x3.size()*(i2)))];
               }
@@ -7269,7 +7269,7 @@ void Task35::Task_local::compute() {
   const Index x1 = b(0);
   const Index x0 = b(1);
   // scalar
-  // tensor label: Gamma90
+  // tensor label: Gamma102
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size()]);
   std::fill_n(odata.get(), out()->get_size(), 0.0);
   // associated with merged
@@ -7283,7 +7283,7 @@ void Task36::Task_local::compute() {
   const Index x1 = b(2);
   const Index x0 = b(3);
   // scalar
-  // tensor label: Gamma92
+  // tensor label: Gamma104
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size()]);
   std::fill_n(odata.get(), out()->get_size(), 0.0);
   // associated with merged
@@ -7298,7 +7298,7 @@ void Task37::Task_local::compute() {
   const Index x1 = b(3);
   const Index x3 = b(4);
   const Index x2 = b(5);
-  // tensor label: Gamma98
+  // tensor label: Gamma110
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x5, x0, x4, x1)]);
   std::fill_n(odata.get(), out()->get_size(x5, x0, x4, x1), 0.0);
   // associated with merged
@@ -7345,7 +7345,7 @@ void Task38::Task_local::compute() {
   const Index x4 = b(5);
   const Index x3 = b(6);
   const Index x2 = b(7);
-  // tensor label: Gamma99
+  // tensor label: Gamma111
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x7, x0, x6, x1)]);
   std::fill_n(odata.get(), out()->get_size(x7, x0, x6, x1), 0.0);
   // associated with merged
@@ -7504,7 +7504,7 @@ void Task39::Task_local::compute() {
   const Index x3 = b(3);
   const Index x1 = b(4);
   const Index x0 = b(5);
-  // tensor label: Gamma109
+  // tensor label: Gamma121
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x2, x5, x4, x3, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x2, x5, x4, x3, x1, x0), 0.0);
   {
@@ -7523,7 +7523,7 @@ void Task39::Task_local::compute() {
     }
   }
   {
-    if (x2 == x3 && x1 == x5) {
+    if (x1 == x5 && x2 == x3) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x4, x0);
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
