@@ -99,10 +99,13 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   fockact_ = fockact->get_conjg();
 
   // set Eref
-  const int nstates = info_->ciwfn()->nstates();
+  const int nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
   eref_ = make_shared<MatType>(nstates, nstates);
-  for (int i = 0; i != nstates; ++i)
-    eref_->element(i, i) = info_->ciwfn()->energy(i);
+  if (info_->nact())
+    for (int i = 0; i != nstates; ++i)
+      eref_->element(i, i) = info_->ciwfn()->energy(i);
+  else
+    eref_->element(0, 0) = info_->ref()->energy(0);
 
   if (nstates > 1 && info_->do_xms()) {
     rotate_xms();
@@ -504,16 +507,18 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<doubl
 
 template<typename DataType>
 void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
-  // ist is bra, jst is ket.
-  // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
-  rdm0_ = rdm0all_->at(jst, ist);
-  rdm1_ = rdm1all_->at(jst, ist);
-  rdm2_ = rdm2all_->at(jst, ist);
-  rdm3_ = rdm3all_->at(jst, ist);
-  rdm4_ = rdm4all_->at(jst, ist);
+  if (info_->nact()) {
+    // ist is bra, jst is ket.
+    // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
+    rdm0_ = rdm0all_->at(jst, ist);
+    rdm1_ = rdm1all_->at(jst, ist);
+    rdm2_ = rdm2all_->at(jst, ist);
+    rdm3_ = rdm3all_->at(jst, ist);
+    rdm4_ = rdm4all_->at(jst, ist);
 
-  // ensure that get_block calls are done after RDMs are set in every node
-  mpi__->barrier();
+    // ensure that get_block calls are done after RDMs are set in every node
+    mpi__->barrier();
+  }
 }
 
 
@@ -544,24 +549,28 @@ void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
 template<typename DataType>
 void SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
-  const size_t nstates = info_->ciwfn()->nstates();
+  const size_t nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
   e0all_.resize(nstates);
-  for (int ist = 0; ist != nstates; ++ist) {
-    DataType sum = 0.0;
-    set_rdm(ist, ist);
-    assert(!!rdm1_);
-    for (auto& i1 : active_) {
-      for (auto& i0 : active_) {
-        if (f1_->is_local(i0, i1)) {
-          const size_t size = i0.size() * i1.size();
-          unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
-          unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-          sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+  if (info_->nact()) {
+    for (int ist = 0; ist != nstates; ++ist) {
+      DataType sum = 0.0;
+      set_rdm(ist, ist);
+      assert(!!rdm1_);
+      for (auto& i1 : active_) {
+        for (auto& i0 : active_) {
+          if (f1_->is_local(i0, i1)) {
+            const size_t size = i0.size() * i1.size();
+            unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
+            unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
+            sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+          }
         }
       }
+      mpi__->allreduce(&sum, 1);
+      e0all_[ist] = detail::real(sum);
     }
-    mpi__->allreduce(&sum, 1);
-    e0all_[ist] = detail::real(sum);
+  } else {
+    e0all_[0] = 0.0;
   }
   // printout
   cout << endl;

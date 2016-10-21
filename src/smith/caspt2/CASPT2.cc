@@ -38,7 +38,7 @@ using namespace bagel::SMITH;
 
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   eig_ = f1_->diag();
-  nstates_ = ref->ciwfn()->nstates();
+  nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
 
   // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {

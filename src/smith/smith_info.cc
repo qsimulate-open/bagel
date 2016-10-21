@@ -60,7 +60,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     shift_diag_ = true;
     cout << "    * Off-diagonal shift corrections are only available with MS-MR parametrization." << endl;
   }
-  if (ciwfn()->nstates() > 1)
+
+  // check nact() because ciwfn() is nullptr with zero active orbitals
+  if (nact() && ciwfn()->nstates() > 1)
     cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
 
   if (ref_->nstate() != 1) {
