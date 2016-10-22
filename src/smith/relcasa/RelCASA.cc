@@ -34,7 +34,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 RelCASA::RelCASA::RelCASA(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
-  nstates_ = ref->ciwfn()->nstates();
+  nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
   auto eig = f1_->diag();
   eig_.resize(eig.size());
   for (int i = 0; i != eig.size(); ++i)

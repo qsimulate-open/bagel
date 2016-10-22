@@ -34,7 +34,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
-  nstates_ = ref->ciwfn()->nstates();
+  nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
   auto eig = f1_->diag();
   eig_.resize(eig.size());
   for (int i = 0; i != eig.size(); ++i)
