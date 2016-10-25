@@ -97,9 +97,6 @@ void RelCASA::RelCASA::solve() {
       assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
       cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
     } else {
-      // TODO How would we compute off-diagonal shift corrections with SS-SR?  Currently they do not play nice...
-      assert(!info_->sssr() || info_->shift_diag());
-
       // will be used in normq
       n = init_residual();
       complex<double> norm = 0.0;
@@ -109,7 +106,7 @@ void RelCASA::RelCASA::solve() {
         complex<double> nn = 0.0;
         for (int jst = 0; jst != nstates_; ++jst) { // bra
           for (int ist = 0; ist != nstates_; ++ist) { // ket
-            if (info_->sssr() && (jst != istate || ist != istate))
+            if (info_->sssr() && (jst != istate || ist != jstate))
               continue;
             set_rdm(jst, ist);
             t2 = t2all_[jstate]->at(ist);

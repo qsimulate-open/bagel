@@ -56,10 +56,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   sssr_    = idata->get<bool>("sssr", false);
   shift_diag_  = idata->get<bool>("shift_diag", true);
-  if (sssr_ && !shift_diag_) {
-    shift_diag_ = true;
-    cout << "    * Off-diagonal shift corrections are only available with MS-MR parametrization." << endl;
-  }
 
   // check nact() because ciwfn() is nullptr with zero active orbitals
   if (nact() && ciwfn()->nstates() > 1)

@@ -113,7 +113,7 @@ void CASPT2::CASPT2::solve() {
 
   // TODO Implement off-diagonal shift correction for nonrelativistic energy + nuclear gradients
   if (info_->shift() && info_->do_ms() && !info_->shift_diag())
-    cout << "    Applying levelshift correction to diagonal elements of the Hamiltonian only.  (Off-diagonals have only been implemented for relativistic CASPT2.)" << endl << endl;
+    cout << "    Applying levelshift correction to diagonal elements of the Hamiltonian only.  (Off-diagonals have not been implemented for non-relativistic CASPT2.)" << endl << endl;
 
   // MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
