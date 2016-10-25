@@ -97,6 +97,8 @@ void Smith::compute() {
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
+  if (!dynamic_pointer_cast<const RelReference>(r))
+    throw runtime_error("Relativistic correlation methods require a fully relativistic reference wavefunction.");
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
