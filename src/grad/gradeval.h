@@ -93,6 +93,33 @@ template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();
 template<> void GradEval<CASSCF>::init();
 template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute();
 
+
+class FiniteGrad : public GradEval_base {
+  protected:
+    std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const Reference> ref_;
+
+
+    double energy_;
+
+    int target_state_;
+    double dx_;
+    std::string method_;
+
+  public:
+    // Constructor does nothing here
+    FiniteGrad(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx) 
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), method_(method) {
+    }
+
+    // compute() computes effective density matrices and perform gradient contractions
+    std::shared_ptr<GradFile> compute();
+
+    double energy() const { return energy_; }
+
+    std::shared_ptr<const Reference> ref() const { return ref_; }
+};
+
 }
 
 
@@ -111,13 +138,12 @@ class NacmEval : public GradEval_base {
     int target_state1_;
     int target_state2_;
 
-    int nacmtype_;		// 0: default, 1: only CI, 2: only Determinants
-
     void init() {
       if (geom_->external())
         throw std::logic_error("Gradients with external fields have not been implemented.");
       auto idata_out = std::make_shared<PTree>(*idata_);
       idata_out->put("_target", target_state1_);
+      idata_out->put("_target2", target_state2_);
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
       task_->compute();
       ref_  = task_->conv_to_ref();
@@ -145,6 +171,37 @@ class NacmEval : public GradEval_base {
 // CASSCF code for NACME is basically same to the gradient one, but little different due to some additional terms...
 template<> void NacmEval<CASSCF>::init();
 template<> std::shared_ptr<GradFile> NacmEval<CASSCF>::compute();
+
+template<typename T>
+class FiniteNacm : public GradEval_base {
+  protected:
+    std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const Reference> ref_;
+
+    double energy1_;
+    double energy2_;
+
+    int target_state1_;
+    int target_state2_;
+    double dx_;
+    std::string method_;
+
+  public:
+    // Constructor does nothing here
+    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx) 
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
+    }
+
+    // compute() computes effective density matrices and perform gradient contractions
+    std::shared_ptr<GradFile> compute() { throw std::logic_error("NACME for this method has not been implemented"); }
+
+    double energy1 () const { return energy1_; }
+    double energy2 () const { return energy2_; }
+
+    std::shared_ptr<const Reference> ref() const { return ref_; }
+};
+
+template<> std::shared_ptr<GradFile> FiniteNacm<CASSCF>::compute();
 
 }
 
