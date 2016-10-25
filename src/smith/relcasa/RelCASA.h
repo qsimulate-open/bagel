@@ -45,7 +45,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<Tensor> t2;
     std::shared_ptr<Tensor> r;
     std::shared_ptr<Tensor> s;
-    std::shared_ptr<Tensor> n;
 
     int nstates_;
     std::vector<double> e0f_;
@@ -103,7 +102,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::shared_ptr<FutureTensor> Gamma121_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 
     std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>>
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> s, std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> t);

@@ -89,52 +89,16 @@ void RelCASA::RelCASA::solve() {
   t2all_ = solve_linear(sall_, t2all_);
 
   // Compute and print energy (with shift correction)
-  vector<complex<double>> shift_correction(nstates_*nstates_);
   cout << endl;
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0.0) {
-      pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate));
-      assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
-      cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
-    } else {
-      // will be used in normq
-      n = init_residual();
-      complex<double> norm = 0.0;
-      for (int jstate = 0; jstate != nstates_; ++jstate) {
-        if (istate != jstate && info_->shift_diag())
-          continue;
-        complex<double> nn = 0.0;
-        for (int jst = 0; jst != nstates_; ++jst) { // bra
-          for (int ist = 0; ist != nstates_; ++ist) { // ket
-            if (info_->sssr() && (jst != istate || ist != jstate))
-              continue;
-            set_rdm(jst, ist);
-            t2 = t2all_[jstate]->at(ist);
-            shared_ptr<Queue> normq = make_normq(true, jst == ist);
-            while (!normq->done())
-              normq->next_compute();
-            nn += conj(dot_product_transpose(n, t2all_[istate]->at(jst)));
-          }
-        }
-        shift_correction[istate + nstates_*jstate] = nn;
-        if (jstate == istate) norm = nn;
-      }
-
-      pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate)) - info_->shift()*std::real(norm);
-      assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
-      assert(std::abs(std::imag(norm)) < 1.0e-8);
-      cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
-      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout <<endl;
-    }
+    pt2energy_[istate] = energy_[istate] + std::real((*eref_)(istate,istate));
+    assert(std::abs(std::imag((*eref_)(istate,istate))) < 1.0e-8);
+    cout << "    * RelCASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
   }
 
   // MS-CASA
   if (info_->do_ms() && nstates_ > 1) {
     heff_ = make_shared<ZMatrix>(nstates_, nstates_);
-
-    if (info_->shift())
-      cout << "    MS-RelCASA:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
 
     for (int ist = 0; ist != nstates_; ++ist) {
       auto sist = make_shared<MultiTensor>(nstates_);
@@ -159,8 +123,6 @@ void RelCASA::RelCASA::solve() {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
           (*heff_)(jst, ist) = std::conj(dot_product_transpose(sist, t2all_[jst])) + (*eref_)(jst, ist);
-          if (!info_->shift_diag())
-            (*heff_)(jst, ist) -= shift_correction[jst+nstates_*ist]*info_->shift();
         }
       }
     }

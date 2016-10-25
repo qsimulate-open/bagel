@@ -82,38 +82,11 @@ void CASA::CASA::solve() {
   timer.tick_print("CASA energy evaluation");
   cout << endl;
 
-  // Compute and print energy (with shift correction)
+  // Compute and print energy
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0.0) {
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
-      cout << "    * CASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
-    } else {
-      // will be used in normq
-      n = init_residual();
-      double norm = 0.0;
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
-        }
-      }
-
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
-      cout << "    * CASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
-      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout <<endl;
-    }
+    pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
+    cout << "    * CASA energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
   }
-
-  // TODO Implement off-diagonal shift correction for nonrelativistic energy + nuclear gradients
-  if (info_->shift() && info_->do_ms() && !info_->shift_diag())
-    cout << "    Applying levelshift correction to diagonal elements of the Hamiltonian only.  (Off-diagonals have not been implemented for non-relativistic CASA.)" << endl << endl;
 
   // MS-CASA
   if (info_->do_ms() && nstates_ > 1) {
