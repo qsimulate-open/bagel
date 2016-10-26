@@ -25,6 +25,7 @@
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/force.h>
+#include <src/grad/hess.h>
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
@@ -138,6 +139,11 @@ int main(int argc, char** argv) {
         auto opt = make_shared<Force>(itree, geom, ref);
         opt->compute();
 
+      } else if (title == "hessian") {
+
+        auto opt = make_shared<Hess>(itree, geom, ref);
+        opt->compute();
+
       } else if (title == "nacme") {
 
         auto opt = make_shared<Force>(itree, geom, ref);
@@ -235,7 +241,7 @@ int main(int argc, char** argv) {
     print_footer();
 
   } catch (const Termination& e) {
-    cout << "  -- Termination requested --" << endl; 
+    cout << "  -- Termination requested --" << endl;
     cout << "  message: " << e.what() << endl;
     print_footer();
   } catch (const exception& e) {

@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: force.h
+// Filename: hess.h
 // Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -22,26 +22,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_GRAD_FORCE_H
-#define __SRC_GRAD_FORCE_H
+#ifndef __SRC_GRAD_HESS_H
+#define __SRC_GRAD_HESS_H
 
 #include <src/wfn/reference.h>
+#include <src/grad/force.h>
 
 namespace bagel {
 
-class Force {
+class Hess {
   protected:
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
-    std::shared_ptr<const GradFile> grad_;
 
-    bool numerical_;		// numerical or analytical gradient?
+    bool numhess_;
 
   public:
-    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+    Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    std::shared_ptr<const GradFile> grad() const { return grad_; }
     void compute();
 
 };

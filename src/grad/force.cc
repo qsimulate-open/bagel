@@ -66,52 +66,53 @@ void Force::compute() {
 
 
   const string method = to_lower(cinput->get<string>("title", ""));
+  grad_ = std::make_shared<GradFile>(geom_->natom());
 
   if (!numerical_) {
     if (method == "uhf") {
  
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "rohf") {
  
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "hf") {
  
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "ks") {
  
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "dhf") {
  
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "mp2") {
  
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "casscf" && jobtitle == "nacme") {
       
       auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2);
-      force->compute();
+      grad_ = force->compute();
  
     } else if (method == "casscf") {
  
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
 
     } else if (method == "caspt2") {
  
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
-      force->compute();
+      grad_ = force->compute();
  
     } 
     else {
@@ -130,14 +131,14 @@ void Force::compute() {
     if (jobtitle == "force") {
 
       auto force = make_shared<FiniteGrad>(method, cinput, geom_, ref_, target, dx);
-      force->compute();
+      grad_ = force->compute();
 
     } else if (jobtitle == "nacme") {
 
       if (method == "casscf") {
 
         auto force = make_shared<FiniteNacm<CASSCF>>(method, cinput, geom_, ref_, target, target2, dx);
-        force->compute();
+        grad_ = force->compute();
 
       }
     }
