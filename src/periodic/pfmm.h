@@ -64,8 +64,8 @@ class PFMM {
     // far-field FMM
     bool doewald_;
 
-    double dot(std::array<double, 3> b, std::array<double, 3> c) { return b[0]*c[0]+b[1]*c[1]+b[2]*c[2]; }
-    std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0) {
+    double dot(const std::array<double, 3>& b, const std::array<double, 3>& c) { return b[0]*c[0]+b[1]*c[1]+b[2]*c[2]; }
+    std::array<double, 3> cross(const std::array<double, 3>& b, const std::array<double, 3>& c, double s = 1.0) {
       std::array<double, 3> out;
       out[0] = (b[1]*c[2] - b[2]*c[1]) * s;
       out[1] = (b[2]*c[0] - b[0]*c[2]) * s;
@@ -88,7 +88,7 @@ class PFMM {
     std::vector<std::shared_ptr<const ZMatrix>> compute_multipoles(std::shared_ptr<const Geometry>, std::shared_ptr<const Geometry>) const;
 
   public:
-    PFMM(std::shared_ptr<const Lattice>, const std::tuple<int, int, double, bool, int> fmm_param, const bool dodf = true, std::shared_ptr<StackMem> stack = nullptr);
+    PFMM(std::shared_ptr<const Lattice>, const std::tuple<int, int, double, bool, int>& fmm_param, const bool dodf = true, std::shared_ptr<StackMem> stack = nullptr);
     ~PFMM() { }
 
     static bool sort_vector(std::array<int, 3> v1, std::array<int, 3> v2) {

@@ -33,7 +33,7 @@ using namespace bagel;
 const static Legendre plm;
 const static Factorial f;
 
-SphMultipole::SphMultipole(const array<double, 3> c, const bool do_complex, const int l) : centre_(c), do_complex_(do_complex), lmax_(l) {
+SphMultipole::SphMultipole(const array<double, 3>& c, const bool do_complex, const int l) : centre_(c), do_complex_(do_complex), lmax_(l) {
 
   num_multipoles_ = (lmax_ + 1) * (lmax_ + 1);
   if (do_complex_) {
@@ -81,13 +81,13 @@ complex<double> SphMultipole::multipole(const int l, const int m) const {
 
 
 
-vector<std::complex<double>> SphMultipole::multipoles(const int l) {
+vector<std::complex<double>> SphMultipole::multipoles(const int l) const {
   assert (l <= lmax_);
   vector<std::complex<double>> out(2 * l + 1);
   const int i0 = (l + 1) * (l + 1);
   for (int i = 0; i != 2 * l + 1; ++i) out[i] = multipole_[i + i0];
 
-  return out;
+  return move(out);
 }
 
 

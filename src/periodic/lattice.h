@@ -57,8 +57,8 @@ class Lattice {
     int num_lattice_kvectors_;
     int gamma_point_;
 
-    double dot(std::array<double, 3> b, std::array<double, 3> c) const;
-    std::array<double, 3> cross(std::array<double, 3> b, std::array<double, 3> c, double s = 1.0) const;
+    double dot(const std::array<double, 3>& b, const std::array<double, 3>& c) const;
+    std::array<double, 3> cross(const std::array<double, 3>& b, const std::array<double, 3>& c, double s = 1.0) const;
 
     int nele_;
 
@@ -79,7 +79,8 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int k_parameter, const int extent = 0, const bool dofmm = false, std::tuple<int, int, bool, bool, double> fmmp = std::tuple<int, int, bool, bool, double>());
+    Lattice(const std::shared_ptr<const Geometry> g, const int k_parameter, const int extent = 0, const bool dofmm = false, 
+            const std::tuple<int, int, bool, bool, double>& fmmp = std::tuple<int, int, bool, bool, double>());
     virtual ~Lattice() { }
 
     int ndim() const { return ndim_; }
@@ -89,17 +90,17 @@ class Lattice {
     int num_lattice_kvectors() const { return num_lattice_kvectors_; }
 
     std::shared_ptr<const Geometry> primitive_cell() const { return primitive_cell_; }
-    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
-    std::array<double, 3> lattice_vectors(const int i) const { return lattice_vectors_[i]; }
+    const std::vector<std::array<double, 3>>& lattice_vectors() const { return lattice_vectors_; }
+    const std::array<double, 3>& lattice_vectors(const int i) const { return lattice_vectors_[i]; }
 
     double nuclear_repulsion() const { return nuclear_repulsion_; };
     double volume() const { return volume_; }
     int nele() const { return nele_; }
 
-    std::vector<std::array<double, 3>> primitive_kvectors() const { return primitive_kvectors_; }
-    std::array<double, 3> primitive_kvectors(const int i) const { return primitive_kvectors_[i]; }
-    std::vector<std::array<double, 3>> lattice_kvectors() const { return lattice_kvectors_; }
-    std::array<double, 3> lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
+    const std::vector<std::array<double, 3>>& primitive_kvectors() const { return primitive_kvectors_; }
+    const std::array<double, 3>& primitive_kvectors(const int i) const { return primitive_kvectors_[i]; }
+    const std::vector<std::array<double, 3>>& lattice_kvectors() const { return lattice_kvectors_; }
+    const std::array<double, 3>& lattice_kvectors(const int i) const { return lattice_kvectors_[i]; }
     void generate_kpoints();
     int gamma_point() const { return gamma_point_; }
     int central_cell() const;
@@ -111,7 +112,7 @@ class Lattice {
     void print_lattice_kvectors() const;
     void print_lattice_coordinates() const; // write .XYZ file
     void print_atoms() const;
-    std::array<double, 3> centre() const { return primitive_cell_->charge_center(); }
+    std::array<double, 3> centre() const { return move(primitive_cell_->charge_center()); }
     double centre(const int i) const { return primitive_cell_->charge_center()[i]; }
     std::array<double, 3> cell_centre(const int icell) const;
     std::shared_ptr<const Geometry> supergeom() const { return supergeom_; }
@@ -121,9 +122,9 @@ class Lattice {
     std::shared_ptr<const PDFDist> form_df() const;
     // PFMM
     std::shared_ptr<const Tree> fmmtree() const { return fmmtree_; }
-    std::vector<double> schwarz() const { return schwarz_; }
+    const std::vector<double>& schwarz() const { return schwarz_; }
     double schwarz_thresh() const { return schwarz_thresh_; }
-    void build_tree(std::tuple<int, int, bool, bool, double> fmm_param);
+    void build_tree(const std::tuple<int, int, bool, bool, double>& fmm_param);
 };
 
 }

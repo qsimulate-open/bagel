@@ -31,7 +31,7 @@ using namespace bagel;
 
 const static Legendre plm;
 
-LocalExpansion::LocalExpansion(const array<double, 3> c, vector<shared_ptr<const ZMatrix>> m, const int lmax)
+LocalExpansion::LocalExpansion(const array<double, 3>& c, const vector<shared_ptr<const ZMatrix>>& m, const int lmax)
  : centre_(c), moments_(m), lmax_(lmax) {
 
   nbasis1_ = m.front()->ndim();
@@ -88,7 +88,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
     }
   }
 
-  return out;
+  return move(out);
 }
 
 
@@ -133,7 +133,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_multipoles() {
     }
   }
 
-  return out;
+  return move(out);
 }
 
 
@@ -178,5 +178,5 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_moments(
     }
   }
 
-  return out;
+  return move(out);
 }

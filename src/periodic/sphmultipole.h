@@ -51,20 +51,20 @@ class SphMultipole {
 
   public:
     SphMultipole() { }
-    SphMultipole(const std::array<double, 3> c, const bool do_complex = true, const int lmax = ANG_HRR_END);
+    SphMultipole(const std::array<double, 3>& c, const bool do_complex = true, const int lmax = ANG_HRR_END);
     ~SphMultipole() { }
 
-    std::array<double, 3> centre() const { return centre_; }
+    const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
 
     int num_multipoles() const { return num_multipoles_; }
 
-    std::vector<std::complex<double>> multipoles() { return multipole_; }
+    const std::vector<std::complex<double>>& multipoles() const { return multipole_; }
     std::complex<double> multipole(const int i) const { assert(i < num_multipoles_); return multipole_[i]; }
     std::complex<double> multipole(const int l, const int m) const;
-    std::vector<std::complex<double>> multipoles(const int l);
+    std::vector<std::complex<double>> multipoles(const int l) const;
 
-    std::vector<double> real_multipoles() { return real_multipole_; }
+    const std::vector<double>& real_multipoles() const { return real_multipole_; }
     double real_multipole(const int i) const { assert(i < num_multipoles_); return real_multipole_[i]; }
 
     void print_multipoles() const;

@@ -31,7 +31,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Lattice)
 
-Lattice::Lattice(const shared_ptr<const Geometry> g, const int k, const int n, const bool dofmm, const tuple<int, int, bool, bool, double> fmmp)
+Lattice::Lattice(const shared_ptr<const Geometry> g, const int k, const int n, const bool dofmm, const tuple<int, int, bool, bool, double>& fmmp)
  : primitive_cell_(g), k_parameter_(k), extent_(n) {
   assert(k_parameter_ % 2 == 1); // k odd st mesh is centred on gamma
   cout << "  Using Gamma-point-centred Monkhorst-Pack grids..." << endl;;
@@ -211,17 +211,17 @@ int Lattice::find_lattice_vector(const int i, const int j) const {
 }
 
 
-double Lattice::dot(array<double, 3> b, array<double, 3> c) const { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
+double Lattice::dot(const array<double, 3>& b, const array<double, 3>& c) const { return b[0] * c[0] + b[1] * c[1] + b[2] * c[2]; }
 
 
-array<double, 3> Lattice::cross(array<double, 3> b, array<double, 3> c, double s) const {
+array<double, 3> Lattice::cross(const array<double, 3>& b, const array<double, 3>& c, double s) const {
 
   array<double, 3> out;
   out[0] = (b[1] * c[2] - b[2] * c[1]) * s;
   out[1] = (b[2] * c[0] - b[0] * c[2]) * s;
   out[2] = (b[0] * c[1] - b[1] * c[0]) * s;
 
-  return out;
+  return move(out);
 }
 
 
@@ -383,7 +383,7 @@ array<double, 3> Lattice::cell_centre(const int icell) const {
   out[1] = centre(1) + displacement[1];
   out[2] = centre(2) + displacement[2];
 
-  return out;
+  return move(out);
 }
 
 
@@ -408,7 +408,7 @@ shared_ptr<const PDFDist> Lattice::form_df() const { /*form df object for all bl
 }
 
 
-void Lattice::build_tree(tuple<int, int, bool, bool, double> fmmp) {
+void Lattice::build_tree(const tuple<int, int, bool, bool, double>& fmmp) {
 
   Timer time;
   // Schwarz screening

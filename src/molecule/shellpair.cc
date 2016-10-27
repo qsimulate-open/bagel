@@ -32,13 +32,13 @@ using namespace bagel;
 
 const static double pisq__ = pi__ * pi__;
 
-ShellPair::ShellPair(array<shared_ptr<const Shell>, 2> sh, array<int, 2> ofs, pair<int, int> ind, const double thr)
+ShellPair::ShellPair(const array<shared_ptr<const Shell>, 2>& sh, const array<int, 2>& ofs, const pair<int, int>& ind, const double thr)
  : shells_(sh), offset_(ofs), shell_ind_(ind), thresh_(thr) {
   init();
 }
 
 
-vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, array<double, 3> Q) const {
+vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, const array<double, 3>& Q) const {
 
   const int nmult =  (lmax + 1) * (lmax + 1);
   vector<shared_ptr<const ZMatrix>> mult(nmult);
@@ -56,7 +56,7 @@ vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, array<do
     }
   }
 
-  return mult;
+  return move(mult);
 }
 
 

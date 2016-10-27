@@ -63,7 +63,7 @@ class FMM {
     FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 0);
     ~FMM() { }
 
-    std::array<double, 3> centre() const { return centre_; }
+    const std::array<double, 3>& centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
     std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
     double energy_ff() const;

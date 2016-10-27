@@ -64,10 +64,10 @@ class PDFDist {
             const std::vector<std::shared_ptr<const Atom>>& aux_atoms, const std::shared_ptr<const Geometry> cell0,
             const double thresh, const bool serial = false, const std::shared_ptr<Matrix> data2 = nullptr);
 
-    std::vector<std::array<double, 3>> lattice_vectors() const { return lattice_vectors_; }
+    const std::vector<std::array<double, 3>>& lattice_vectors() const { return lattice_vectors_; }
     int ncell() const { return lattice_vectors_.size(); }
 
-    std::vector<std::shared_ptr<PDFDist_ints>> dfdist() const { return dfdist_; }
+    const std::vector<std::shared_ptr<PDFDist_ints>>& dfdist() const { return dfdist_; }
     std::shared_ptr<PDFDist_ints> dfdist(const int L) const { return dfdist_[L]; }
 
     std::shared_ptr<const Matrix> data2() const { return data2_; }

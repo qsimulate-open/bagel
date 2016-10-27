@@ -75,16 +75,17 @@ class Box {
 
 
   public:
-    Box(int n, int id, std::array<int, 3> v, const int lmax = 10, std::vector<std::shared_ptr<const ShellPair>> sp = std::vector<std::shared_ptr<const ShellPair>>()) : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
+    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>())
+     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
 
     ~Box() { }
 
-    std::array<double, 3> centre() const { return centre_; }
+    const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
 
     int rank() const { return rank_; }
     int boxid() const { return boxid_; }
-    std::array<int, 3> tvec() const { return tvec_; }
+    const std::array<int, 3>& tvec() const { return tvec_; }
 
     int nsp() const { return sp_.size(); }
     int nchild() const { return child_.size(); }
@@ -94,19 +95,21 @@ class Box {
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
     int ndim() const { return ndim_; }
-    std::vector<int> offset0() const { return offset0_; }
-    std::vector<int> offset1() const { return offset1_; }
+    const std::vector<int>& offset0() const { return offset0_; }
+    const std::vector<int>& offset1() const { return offset1_; }
 
     std::shared_ptr<const Box> parent() const { return parent_; }
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
-    std::vector<std::shared_ptr<const Box>> neigh() const { return neigh_; }
-    std::vector<std::shared_ptr<const Box>> interaction_list() const { return inter_; }
-    std::vector<std::shared_ptr<const ShellPair>> sp() const { return sp_; }
+    const std::vector<std::shared_ptr<const Box>>& neigh() const { return neigh_; }
+    const std::vector<std::shared_ptr<const Box>>& interaction_list() const { return inter_; }
+    const std::vector<std::shared_ptr<const ShellPair>>& sp() const { return sp_; }
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
-    std::array<std::shared_ptr<const Shell>, 2> shells(const int i) const { return sp_[i]->shells(); }
+    const std::array<std::shared_ptr<const Shell>, 2>& shells(const int i) const { return sp_[i]->shells(); }
 
-    std::vector<std::complex<double>> multipole() const { return multipole_; }
-    std::vector<std::complex<double>> localJ() const { return localJ_; }
+    std::vector<std::complex<double>>& multipole() { return multipole_; }
+    const std::vector<std::complex<double>>& multipole() const { return multipole_; }
+    std::vector<std::complex<double>>& localJ() { return localJ_; }
+    const std::vector<std::complex<double>>& localJ() const { return localJ_; }
     double energy_ff() const { return energy_ff_; }
 
 

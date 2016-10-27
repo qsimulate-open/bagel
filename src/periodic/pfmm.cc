@@ -36,7 +36,7 @@ const static Gamma_scaled sgamma;
 
 const static double beta__ = sqrt(pi__); // convergence parameter
 
-PFMM::PFMM(shared_ptr<const Lattice> lattice, const tuple<int, int, double, bool, int> fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
+PFMM::PFMM(shared_ptr<const Lattice> lattice, const tuple<int, int, double, bool, int>& fmmp, const bool dodf, std::shared_ptr<StackMem> stack)
   : lattice_(lattice), dodf_(dodf), lmax_(get<0>(fmmp)), ws_(get<1>(fmmp)), beta_(get<2>(fmmp) * beta__) {
 
   scell_ = make_shared<const SimulationCell>(lattice->primitive_cell(), get<0>(fmmp));

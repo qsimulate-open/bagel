@@ -44,15 +44,15 @@ class LocalExpansion {
     int num_multipoles_;
 
   public:
-    LocalExpansion(const std::array<double, 3> centre, std::vector<std::shared_ptr<const ZMatrix>> moments,
+    LocalExpansion(const std::array<double, 3>& centre, const std::vector<std::shared_ptr<const ZMatrix>>& moments,
                    const int lmax = ANG_HRR_END);
     ~LocalExpansion() { }
 
     int lmax() const { return lmax_; }
-    std::array<double, 3> centre() const { return centre_; }
+    const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
 
-    std::vector<std::shared_ptr<const ZMatrix>> moments() const { return moments_; }
+    const std::vector<std::shared_ptr<const ZMatrix>>& moments() const { return moments_; }
     std::shared_ptr<const ZMatrix> moment(const int i) const { return moments_[i]; }
     std::shared_ptr<const ZMatrix> moment(const int l, const int m) const { return moments_[l * l + l + m]; }
 

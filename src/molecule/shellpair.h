@@ -47,23 +47,23 @@ class ShellPair {
 
   public:
     ShellPair() { }
-    ShellPair(std::array<std::shared_ptr<const Shell>, 2> shells, std::array<int, 2> offset, std::pair<int, int> shell_ind, const double thresh = 1e-10);
+    ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset, const std::pair<int, int>& shell_ind, const double thresh = 1e-10);
     bool is_neighbour(std::shared_ptr<const ShellPair> sp, const int ws) const;
 
-    std::array<std::shared_ptr<const Shell>, 2> shells() const { return shells_; }
+    const std::array<std::shared_ptr<const Shell>, 2>& shells() const { return shells_; }
     std::shared_ptr<const Shell> shell(const int i) const { assert(i==0 || i==1); return shells_[i]; }
-    std::array<int, 2> offset() const { return offset_; }
+    const std::array<int, 2>& offset() const { return offset_; }
     int offset(const int i) const { assert(i==0 || i==1); return offset_[i]; }
-    std::pair<int, int> shell_ind() const { return shell_ind_; }
+    const std::pair<int, int>& shell_ind() const { return shell_ind_; }
     int shell_ind(const int i) const { assert(i==0 || i==1); return (i == 0) ? shell_ind_.first : shell_ind_.second; }
     double schwarz() const { return schwarz_; }
-    std::array<double, 3> centre() const { return centre_; }
+    const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
     double extent() const { return extent_; }
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
 
-    std::vector<std::shared_ptr<const ZMatrix>> multipoles(int lmax = 10, std::array<double, 3> Qcentre = {{0,0,0}}) const;
+    std::vector<std::shared_ptr<const ZMatrix>> multipoles(int lmax = 10, const std::array<double, 3>& Qcentre = {{0,0,0}}) const;
 };
 
 }
