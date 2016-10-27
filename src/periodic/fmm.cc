@@ -227,6 +227,7 @@ void FMM::get_boxes() {
     for (auto& b : tmpbox) {
       b->get_neigh(tmpbox, ws_);
       b->get_inter(tmpbox, ws_);
+      b->sort_sp();
     }
     icnt += nbranch_[ir];
   }
@@ -248,18 +249,42 @@ void FMM::get_boxes() {
 void FMM::M2M(shared_ptr<const Matrix> density) const {
 
   Timer m2mtime;
-  int u = 0;
   for (int i = 0; i != nbranch_[0]; ++i)
-    if (u++ % mpi__->size() == mpi__->rank())
+    if (i % mpi__->size() == mpi__->rank())
       box_[i]->compute_M2M(density);
+
+  for (int i = 0; i != nbranch_[0]; ++i) {
+    mpi__->broadcast(box_[i]->multipole().data(), box_[i]->multipole().size(), i % mpi__->size());
+    mpi__->broadcast(box_[i]->localJ().data(), box_[i]->localJ().size(), i % mpi__->size());
+  }
+
+#if 0
+  const int nmult = (lmax_ + 1) * (lmax_ + 1);
+  resources__->proc()->cout_on();
+  for (int i = 0; i < mpi__->size(); ++i) {
+    if (i == mpi__->rank()) {
+      cout << "rank " << mpi__->rank() << " broadcast size " << box_[i]->multipole().size() << endl;
+      for (int i = 0; i != nbranch_[0]; ++i) {
+        cout << i << endl;
+        for (int j = 0; j != nmult; ++j)
+          if (box_[i]->multipole()[j].real() > 1e-10)
+          cout << setprecision(9) << box_[i]->multipole()[j] << endl;
+      }
+    }
+    mpi__->barrier();
+    this_thread::sleep_for(10 * sleeptime__);
+  }
+  resources__->proc()->cout_off();
+#endif
+
   m2mtime.tick_print("shift sp");
 
-  //u = 0;
   int icnt = nbranch_[0];
-  for (int i = 1; i != ns_+1; ++i)
-  //  if (u++ % mpi__->size() == mpi__->rank())
-      for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
+  for (int i = 1; i != ns_+1; ++i) {
+    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
+//      if (j % mpi__->size() == mpi__->rank())
         box_[icnt]->compute_M2M(density);
+  }
 
   assert(icnt == nbox_);
 
@@ -326,13 +351,11 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
       maxden[i01] = denmax;
     }
 
-    int u = 0;
-    for (int i = 0; i != nbranch_[0]; ++i) {
-      if (u++ % mpi__->size() == mpi__->rank()) {
+    for (int i = 0; i != nbranch_[0]; ++i)
+      if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
         out->add_block(1.0, 0, 0, nbasis_, nbasis_, ei->data());
       }
-    }
     out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;

@@ -186,7 +186,6 @@ void Box::sort_sp() {
 
 void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
-  sort_sp();
   fill(multipole_.begin(), multipole_.end(), 0);
   fill(localJ_.begin(), localJ_.end(), 0);
 
