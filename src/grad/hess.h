@@ -37,6 +37,7 @@ class Hess {
     std::shared_ptr<const Reference> ref_;
 
     bool numhess_;
+    std::shared_ptr<Matrix> hess_;
 
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

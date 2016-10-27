@@ -26,6 +26,7 @@
 #include <src/grad/hess.h>
 #include <src/wfn/construct_method.h>
 #include <src/grad/force.h>
+#include <src/util/math/xyzfile.h>
 
 using namespace std;
 using namespace bagel;
@@ -36,7 +37,6 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 
 void Hess::compute() {
   auto input = idata_->get_child("method");
-//  const int target = idata_->get<int>("target", 0);
   const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
 
   shared_ptr<const Reference> ref = ref_;
@@ -45,7 +45,7 @@ void Hess::compute() {
     const std::string title = to_lower((*m)->get<std::string>("title", ""));
     if (title != "molecule") {
       shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
-      if (!c) throw runtime_error("unknown method in hessian");
+      if (!c) throw runtime_error("unknown method in Hessian");
       c->compute();
       ref = c->conv_to_ref();
     } else {
@@ -66,43 +66,44 @@ void Hess::compute() {
     auto displ = std::make_shared<XYZFile>(geom_->natom());
     displ->scale(0.0);
 
-//Compute forces at reference geometry
-//TODO: Print out force_ref and check that they are right
+    double plus, minus;
+    hess_ = make_shared<Matrix>(3,geom_->natom());
 
-    auto force_method = make_shared<const Force>(cinput, geom_, ref_);
-    auto force_ref = force_method->grad();
-
-#if 0
-    for (int i = 0; i != geom_->natom(); ++i) {  // atom number
-      for (int j = 0; j != 3; ++j) {   // x y z
+    for (int i = 0; i != geom_->natom(); ++i) {
+      for (int j = 0; j != 3; ++j) {
         displ->element(j,i) = 0.0001;
         geom_ = std::make_shared<Geometry>(*geom_, displ);
         geom_->print_atoms();
 
-        auto force_plus = force_method->grad();
+        auto force_plus = make_shared<Force>(idata_, geom_, ref_);
+        force_plus->compute();
+        plus = force_plus->grad()->element(j,i);
 
-//move to -0.0001 from original position
         displ->element(j,i) = -0.0002;
         geom_ = std::make_shared<Geometry>(*geom_, displ);
         geom_->print_atoms();
 
-        auto force_minus = force_method->grad();
+        auto force_minus = make_shared<Force>(idata_, geom_, ref_);
+        force_minus->compute();
+        minus = force_minus->grad()->element(j,i);
 
-        auto hessian = make_shared<Matrix>(geom_->natom(),geom_->natom());
-        hessian->element(j,i) = (force_plus - force_minus) / 0.0002;      // Hartree / bohr
+        (*hess_)(j,i) = (plus - minus) / 0.0002;      // Hartree / bohr^2
 
-//back to original position
         displ->element(j,i) = 0.0001;
         geom_ = std::make_shared<Geometry>(*geom_, displ);
 
-//reset displ
         displ->element(j,i) = 0.0;
       }
     }
 
-// print hessian matrix
-//    hessian->print(": Calculated with finite difference", 0);
-#endif
+    cout << endl;
+    cout << "    * Numerical Hessian matrix";
+    for (int j = 0; j != 3; ++j) {
+      cout << endl << "      ";
+      for (int i = 0; i != geom_->natom(); ++i)
+        cout << setw(20) << setprecision(10) << (*hess_)(j,i);
+    }
+    cout << endl << endl;
 
   } else {
     cout << "  Analytical Hessian is not currently implemented" << endl;
