@@ -88,7 +88,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_local_moments() {
     }
   }
 
-  return move(out);
+  return out;
 }
 
 
@@ -133,7 +133,7 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_multipoles() {
     }
   }
 
-  return move(out);
+  return out;
 }
 
 
@@ -178,5 +178,5 @@ vector<shared_ptr<const ZMatrix>> LocalExpansion::compute_shifted_local_moments(
     }
   }
 
-  return move(out);
+  return out;
 }

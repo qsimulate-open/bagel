@@ -87,7 +87,7 @@ vector<std::complex<double>> SphMultipole::multipoles(const int l) const {
   const int i0 = (l + 1) * (l + 1);
   for (int i = 0; i != 2 * l + 1; ++i) out[i] = multipole_[i + i0];
 
-  return move(out);
+  return out;
 }
 
 

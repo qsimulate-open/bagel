@@ -221,7 +221,7 @@ array<double, 3> Lattice::cross(const array<double, 3>& b, const array<double, 3
   out[1] = (b[2] * c[0] - b[0] * c[2]) * s;
   out[2] = (b[0] * c[1] - b[1] * c[0]) * s;
 
-  return move(out);
+  return out;
 }
 
 
@@ -383,7 +383,7 @@ array<double, 3> Lattice::cell_centre(const int icell) const {
   out[1] = centre(1) + displacement[1];
   out[2] = centre(2) + displacement[2];
 
-  return move(out);
+  return out;
 }
 
 
