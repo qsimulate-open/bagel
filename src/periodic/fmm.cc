@@ -258,25 +258,6 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
     mpi__->broadcast(box_[i]->localJ().data(), box_[i]->localJ().size(), i % mpi__->size());
   }
 
-#if 0
-  const int nmult = (lmax_ + 1) * (lmax_ + 1);
-  resources__->proc()->cout_on();
-  for (int i = 0; i < mpi__->size(); ++i) {
-    if (i == mpi__->rank()) {
-      cout << "rank " << mpi__->rank() << " broadcast size " << box_[i]->multipole().size() << endl;
-      for (int i = 0; i != nbranch_[0]; ++i) {
-        cout << i << endl;
-        for (int j = 0; j != nmult; ++j)
-          if (box_[i]->multipole()[j].real() > 1e-10)
-          cout << setprecision(9) << box_[i]->multipole()[j] << endl;
-      }
-    }
-    mpi__->barrier();
-    this_thread::sleep_for(10 * sleeptime__);
-  }
-  resources__->proc()->cout_off();
-#endif
-
   m2mtime.tick_print("shift sp");
 
   int icnt = nbranch_[0];
