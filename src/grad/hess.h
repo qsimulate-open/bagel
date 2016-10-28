@@ -27,6 +27,7 @@
 
 #include <src/wfn/reference.h>
 #include <src/grad/force.h>
+#include <src/util/muffle.h>
 
 namespace bagel {
 
@@ -38,6 +39,10 @@ class Hess {
 
     bool numhess_;
     std::shared_ptr<Matrix> hess_;
+    double dstep_;
+
+    // mask some of the output
+    mutable std::shared_ptr<Muffle> muffle_;
 
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

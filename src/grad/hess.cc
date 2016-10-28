@@ -61,49 +61,54 @@ void Hess::compute() {
   numhess_ = idata_->get<bool>("numhess", false);
   if (numhess_) {
 
-    cout << "  The numerical Hessian will be computed from gradient calculations" << endl;
+  auto displ = std::make_shared<XYZFile>(geom_->natom());
+  displ->scale(0.0);
 
-    auto displ = std::make_shared<XYZFile>(geom_->natom());
-    displ->scale(0.0);
+  double plus, minus;
+  hess_ = make_shared<Matrix>(3,geom_->natom());
+  dstep_ = idata_->get<double>("dstep", 0.0001);
 
-    double plus, minus;
-    hess_ = make_shared<Matrix>(3,geom_->natom());
+  cout << "  The numerical Hessian will be computed from gradient calculations" << endl;
+  cout << "  Displacement of " <<setprecision(4) << dstep_ <<" bohr is used" << endl;
 
-    for (int i = 0; i != geom_->natom(); ++i) {
-      for (int j = 0; j != 3; ++j) {
-        displ->element(j,i) = 0.0001;
-        geom_ = std::make_shared<Geometry>(*geom_, displ);
-        geom_->print_atoms();
+  muffle_ = make_shared<Muffle>("freq.log");
 
-        auto force_plus = make_shared<Force>(idata_, geom_, ref_);
-        force_plus->compute();
-        plus = force_plus->grad()->element(j,i);
-
-        displ->element(j,i) = -0.0002;
-        geom_ = std::make_shared<Geometry>(*geom_, displ);
-        geom_->print_atoms();
-
-        auto force_minus = make_shared<Force>(idata_, geom_, ref_);
-        force_minus->compute();
-        minus = force_minus->grad()->element(j,i);
-
-        (*hess_)(j,i) = (plus - minus) / 0.0002;      // Hartree / bohr^2
-
-        displ->element(j,i) = 0.0001;
-        geom_ = std::make_shared<Geometry>(*geom_, displ);
-
-        displ->element(j,i) = 0.0;
-      }
-    }
-
-    cout << endl;
-    cout << "    * Numerical Hessian matrix";
+  for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
-      cout << endl << "      ";
-      for (int i = 0; i != geom_->natom(); ++i)
-        cout << setw(20) << setprecision(10) << (*hess_)(j,i);
+      displ->element(j,i) = dstep_;
+      geom_ = std::make_shared<Geometry>(*geom_, displ);
+      geom_->print_atoms();
+
+      auto force_plus = make_shared<Force>(idata_, geom_, ref_);
+      force_plus->compute();
+      plus = force_plus->grad()->element(j,i);
+
+      displ->element(j,i) = -2*dstep_;
+      geom_ = std::make_shared<Geometry>(*geom_, displ);
+      geom_->print_atoms();
+
+      auto force_minus = make_shared<Force>(idata_, geom_, ref_);
+      force_minus->compute();
+      minus = force_minus->grad()->element(j,i);
+
+      (*hess_)(j,i) = (plus - minus) / (2*dstep_);      // Hartree / bohr^2
+
+      displ->element(j,i) = dstep_;
+      geom_ = std::make_shared<Geometry>(*geom_, displ);
+
+      displ->element(j,i) = 0.0;
     }
-    cout << endl << endl;
+  }
+  muffle_->unmute();
+
+  cout << endl;
+  cout << "    * Numerical Hessian matrix";
+  for (int j = 0; j != 3; ++j) {
+    cout << endl << "      ";
+    for (int i = 0; i != geom_->natom(); ++i)
+      cout << setw(20) << setprecision(10) << (*hess_)(j,i);
+  }
+  cout << endl << endl;
 
   } else {
     cout << "  Analytical Hessian is not currently implemented" << endl;
