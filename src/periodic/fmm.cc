@@ -263,7 +263,6 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+1; ++i) {
     for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-//      if (j % mpi__->size() == mpi__->rank())
         box_[icnt]->compute_M2M(density);
   }
 

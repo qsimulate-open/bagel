@@ -84,8 +84,8 @@ void Box::init() {
 #endif
 
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
-  multipole_.resize(nmult_); fill_n(multipole_.begin(), nmult_, 0);
-  localJ_.resize(nmult_);    fill_n(localJ_.begin(), nmult_, 0);
+  multipole_.resize(nmult_); fill_n(multipole_.begin(), nmult_, 0.0);
+  localJ_.resize(nmult_);    fill_n(localJ_.begin(), nmult_, 0.0);
 }
 
 
@@ -186,8 +186,8 @@ void Box::sort_sp() {
 
 void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
-  fill(multipole_.begin(), multipole_.end(), 0);
-  fill(localJ_.begin(), localJ_.end(), 0);
+  fill(multipole_.begin(), multipole_.end(), 0.0);
+  fill(localJ_.begin(), localJ_.end(), 0.0);
 
   if (nchild() == 0) { // leaf = shift sp's multipoles
 //    TaskQueue<function<void(void)>> tasks(nsp());
