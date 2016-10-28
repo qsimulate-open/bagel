@@ -27,6 +27,9 @@
 #define BAGEL_FCI_DVEC_H
 
 #include <src/ci/fci/civec.h>
+#ifdef JWP
+#include <src/util/math/csymmatrix.h>
+#endif
 
 // I forgot why I named this class "Dvector"...
 // Basically Dvector is a vector of Civec, with some utility functions.
@@ -217,6 +220,27 @@ class Dvector : public btas::Tensor3<DataType> {
         i->synchronize();
     }
 
+#ifdef JWP
+    void rotate(std::shared_ptr<const Matrix> msrot) {
+      // now coded in somewhat un-efficient manner
+      Dvector<DataType> tmp(*this);
+      const size_t detnumb = dvec().size();
+      const size_t detsize = data(0)->size();
+      for (size_t i = 0; i != detnumb; ++i) {
+        for (size_t a = 0; a != detsize; ++a) {
+          data(i)->data(a) = 0.0;
+        }
+      }
+      for (size_t i = 0; i != detnumb; ++i) {
+        for (size_t k = 0; k != detnumb; ++k) {
+          for (size_t a = 0; a != detsize; ++a) {
+            data(i)->data(a) += msrot->element(k, i) * tmp.data(k)->data(a);
+          }
+        }
+      }
+    }
+#endif
+
     void print(const double thresh = 0.05) const {
       int j = 0;
       for (auto& iter : dvec_) {
@@ -240,14 +264,14 @@ class Dvector : public btas::Tensor3<DataType> {
     template<typename T = DataType, 
              class = typename std::enable_if<std::is_same<T, double>::value>::type
             >
-    void match (std::shared_ptr<const Dvector<double>>& ref);
+    void match (std::shared_ptr<Dvector<double>>& ref);
     
     template<typename T = DataType, 
              class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type
             >
-    void match (std::shared_ptr<const Dvector<std::complex<double>>>& ref) {  }
+    void match (std::shared_ptr<Dvector<std::complex<double>>>& ref) {  }
 
-    void match (std::shared_ptr<const Dvector<DataType>>& ref) {
+    void match (std::shared_ptr<Dvector<DataType>>& ref) {
       match<DataType, void> (ref);
     }
 };

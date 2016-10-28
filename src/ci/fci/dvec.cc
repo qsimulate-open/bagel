@@ -43,7 +43,7 @@ std::shared_ptr<bagel::Dvector<DataType>> bagel::Dvector<DataType>::extract_stat
 
 template<typename DataType>
 template<typename T, class>
-void bagel::Dvector<DataType>::match(std::shared_ptr<const bagel::Dvector<double>>& ref) {
+void bagel::Dvector<DataType>::match(std::shared_ptr<bagel::Dvector<double>>& ref) {
   // It matches the signs of CI coefficient.
   // applying it for degenerate states is not a good idea, actually...
   // should find a better way
