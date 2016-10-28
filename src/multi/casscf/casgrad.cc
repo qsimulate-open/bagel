@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: supercigrad.cc
+// Filename: casgrad.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -232,9 +232,7 @@ void NacmEval<CASSCF>::init() {
 
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
-  
   const string nacmtype = idata_out->get<string>("nacmtype", "");
-
 
   if (algorithm == "superci")
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
@@ -281,7 +279,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<const RDM<2>> rdm2_tr;
   const int ist = target_state1_;
   const int jst = target_state2_;
-  const double egap = energy1_ - energy2_;
+  const double egap = energy2_ - energy1_;
   tie(rdm1_tr, rdm2_tr) = ref_->rdm12(ist, jst);
 
   // related to denominators
@@ -309,7 +307,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
   
   // 2-1) f^CSF in Z-vector for NACME: RDM1 is not symmetrized here
-  g0->add_block(-egap, 0, 0, nocc, nocc, *rdm1);
+  g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
  
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tr (look for gamma)
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
@@ -362,7 +360,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   }
 
   shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
-  qxmat->scale(-egap);
+  qxmat->scale(egap);
 
   auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
   auto qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());
@@ -394,11 +392,46 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
   gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
-  gradient->scale(-1.0/egap);
-
+  gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
 
   cout << setw(50) << left << "  * NACME computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
   return gradient;
 }
+
+
+template<>
+void FiniteNacm<CASSCF>::init() {
+  if (geom_->external())
+    throw logic_error("Nonadiabatic couplings with external fields have not been implemented.");
+  // target has to be passed to T (for CASPT2, for instance)
+  auto idata_out = make_shared<PTree>(*idata_);
+  idata_out->put("_target", target_state1_);
+
+  const string algorithm = idata_out->get<string>("algorithm", "");
+  const string bfgstype = idata_out->get<string>("bfgstype", "");
+
+  if (algorithm == "superci")
+    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
+  else if (algorithm == "second" || algorithm == "")
+    task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
+  else if (algorithm == "bfgs" && bfgstype != "alglib")
+    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
+  else if (algorithm == "bfgs" && bfgstype == "alglib")
+    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
+  else if (algorithm == "noopt")
+    task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
+  else
+    throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
+
+  task_->compute();
+  ref_  = task_->conv_to_ref();
+  energy1_ = ref_->energy(target_state1_);
+  energy2_ = ref_->energy(target_state2_);
+  cout << "  === NACME evaluation === " << endl << endl;
+  cout << "    * NACME Target states: " << target_state1_ << " - " << target_state2_ << endl;
+  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * 27.21138602 << " eV" << endl << endl;
+  geom_ = ref_->geom();
+}
+
