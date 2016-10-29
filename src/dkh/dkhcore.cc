@@ -49,7 +49,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol) {
   transfer.diagonalize(eig);
   NAI nai(mol);
 
-  for(int i=0; i<en.size(); i++){
+  for (int i = 0; i < en.size(); ++i){
     en(i) = c__ * std::sqrt(2*eig(i)+c__*c__);
   }
 
