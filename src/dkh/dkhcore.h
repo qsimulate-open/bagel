@@ -26,22 +26,19 @@
 #ifndef __SRC_DKH_DKHCORE_H
 #define __SRC_DKH_DKHCORE_H
 
+#include <src/util/constants.h>
 #include <src/util/math/matrix.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
 class DKHcore : public Matrix {
   protected:
     void init(std::shared_ptr<const Molecule>);
-    void computebatch0(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int);
-    VectorB eig_;
-
-  private:
 
   public:
     DKHcore() { }
     DKHcore(std::shared_ptr<const Molecule>);
-    VectorB& eig() { return eig_; }
 };
 
 }
