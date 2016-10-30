@@ -337,7 +337,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
 
   separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), d1);
 
-  if (ncore)
+  if (smallz)
     separable_pair(smallz, d0sa);
 
   // back transform the rest
