@@ -339,8 +339,6 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-
-
   if (info_->block_diag_fock()) {
     cout << " Removing off-diagonal blocks of the relativistic Fock matrix" << endl;
     auto fsave = f->copy();
@@ -350,22 +348,7 @@ void MOFock<complex<double>>::init() {
     f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
     f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
     f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
-/**/
-    auto zero12 = make_shared<ZMatrix>(nc*info_->nclosed(), nc*info_->nact());
-    auto zero13 = make_shared<ZMatrix>(nc*info_->nclosed(), nc*info_->nvirt());
-    auto zero23 = make_shared<ZMatrix>(nc*info_->nact(), nc*info_->nvirt());
-    fsave->copy_block(0, nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), zero12);
-    fsave->copy_block(0, nc*info_->nocc(), nc*info_->nclosed(), nc*info_->nvirt(), zero13);
-    fsave->copy_block(nc*info_->nclosed(), nc*info_->nocc(), nc*info_->nact(), nc*info_->nvirt(), zero23);
-    fsave->copy_block(nc*info_->nclosed(), 0, nc*info_->nact(), nc*info_->nclosed(), zero12->transpose());
-    fsave->copy_block(nc*info_->nocc(), 0, nc*info_->nvirt(), nc*info_->nclosed(), zero13->transpose());
-    fsave->copy_block(nc*info_->nocc(), nc*info_->nclosed(), nc*info_->nvirt(), nc*info_->nact(), zero23->transpose());
-    if((*f - *fsave).rms() > 1.0e-14) (*f - *fsave).print("Disagreement between f and fsave - off-diagonal zeroing of Fock matrix", 20);
-    assert((*f - *fsave).rms() < 1.0e-12);
-/**/
   }
-
-
 
   data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
   h1_   = fill_block<2,complex<double>>(h1->get_conjg(), {0,0}, blocks_);
@@ -437,8 +420,6 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-
-
   if (info_->block_diag_fock()) {
     cout << " Removing off-diagonal blocks of the (nonrel) Fock matrix" << endl;
     auto fsave = f->copy();
@@ -448,22 +429,7 @@ void MOFock<double>::init() {
     f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
     f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
     f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
-/**/
-    auto zero12 = make_shared<Matrix>(nc*info_->nclosed(), nc*info_->nact());
-    auto zero13 = make_shared<Matrix>(nc*info_->nclosed(), nc*info_->nvirt());
-    auto zero23 = make_shared<Matrix>(nc*info_->nact(), nc*info_->nvirt());
-    fsave->copy_block(0, nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), zero12);
-    fsave->copy_block(0, nc*info_->nocc(), nc*info_->nclosed(), nc*info_->nvirt(), zero13);
-    fsave->copy_block(nc*info_->nclosed(), nc*info_->nocc(), nc*info_->nact(), nc*info_->nvirt(), zero23);
-    fsave->copy_block(nc*info_->nclosed(), 0, nc*info_->nact(), nc*info_->nclosed(), zero12->transpose());
-    fsave->copy_block(nc*info_->nocc(), 0, nc*info_->nvirt(), nc*info_->nclosed(), zero13->transpose());
-    fsave->copy_block(nc*info_->nocc(), nc*info_->nclosed(), nc*info_->nvirt(), nc*info_->nact(), zero23->transpose());
-    if((*f - *fsave).rms() > 1.0e-14) (*f - *fsave).print("Disagreement between f and fsave - off-diagonal zeroing of Fock matrix", 20);
-    assert((*f - *fsave).rms() < 1.0e-12);
-/**/
   }
-
-
 
   data_ = fill_block<2,double>(f, {0,0}, blocks_);
   h1_   = fill_block<2,double>(h1, {0,0}, blocks_);
