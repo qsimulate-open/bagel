@@ -56,6 +56,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   sssr_    = idata->get<bool>("sssr", false);
   shift_diag_  = idata->get<bool>("shift_diag", true);
+  block_diag_fock_ = idata->get<bool>("block_diag_fock", false);
 
   // check nact() because ciwfn() is nullptr with zero active orbitals
   if (nact() && ciwfn()->nstates() > 1)
