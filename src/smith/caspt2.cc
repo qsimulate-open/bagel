@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: finite.cc
-// Copyright (C) 2012 Toru Shiozaki
+// Filename: caspt2grad.cc
+// Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Jae Woo Park <jwpk1201@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,85 +22,78 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <bagel_config.h>
+
+#include <src/scf/hf/fock.h>
+#include <src/grad/cpcasscf.h>
 #include <src/grad/gradeval.h>
-#include <src/util/timer.h>
-#include <src/wfn/construct_method.h>
+#include <src/multi/casscf/cassecond.h>
+#include <src/multi/casscf/casnoopt.h>
+#include <src/multi/casscf/qvec.h>
+#include <src/smith/smith.h>
+#include <src/smith/caspt2grad.h>
+#include <src/prop/multipole.h>
+#include <src/prop/hyperfine.h>
+
 
 using namespace std;
 using namespace bagel;
 
-shared_ptr<GradFile> FiniteGrad::compute() {
-  cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
-  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
- 
-  auto displ = std::make_shared<XYZFile>(geom_->natom());
-  auto grad = std::make_shared<GradFile>(geom_->natom());
+CASPT2Ener::CASPT2Ener(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
+  : Method(inp, geom, ref) {
+#ifdef COMPILE_SMITH
+  Timer timer;
 
-  double energy_plus, energy_minus, energy_;
- 
-  displ->scale(0.0);
- 
-  shared_ptr<Method> energy_method;
- 
-  energy_method = construct_method(method_, idata_, geom_, ref_);
-  energy_method->compute();
-  ref_ = energy_method->conv_to_ref();
-  energy_ = ref_->energy(target_state_);
-
-  // TODO when we start CASSCF calculation with an initial guess from reference geometry,
-  // it should be scientifically better than doing the calculation all over again; but it doesn't work
-  // Currently the code "works", but in a silly way (for all DOFs, it does SCF again).
-  // I didn't delete the part for doing CASSCF calculation starting from reference...
-  // this is why the code at current stage is with the total stupidness...
-  shared_ptr<const Reference> refgrad_plus;
-  shared_ptr<const Reference> refgrad_minus;
- 
-  cout << "  Reference energy is " << energy_ << endl;
- 
-  for (int i = 0; i != geom_->natom(); ++i) {
-    for (int j = 0; j != 3; ++j) {
-
-      displ->element(j,i) = dx_;
-      geom_ = std::make_shared<Geometry>(*geom_, displ);
-      geom_->print_atoms();
-
-      refgrad_plus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_plus = nullptr;
-
-      energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
-      energy_method->compute();
-      refgrad_plus = energy_method->conv_to_ref();
-      energy_plus = refgrad_plus->energy(target_state_);
-
-      displ->element(j,i) = -2.0 * dx_;
-      geom_ = std::make_shared<Geometry>(*geom_, displ);
-      geom_->print_atoms();
-      
-      refgrad_minus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_minus = nullptr;
-
-      energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
-      energy_method->compute();
-      refgrad_minus = energy_method->conv_to_ref();
-      energy_minus = refgrad_minus->energy(target_state_);
- 
-      grad->element(j,i) = (energy_plus - energy_minus) / (dx_ * 2.0);      // Hartree / bohr
-
-      // to the original position
-
-      displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ);
-
-      displ->element(j,i) = 0.0;
-    }
+  // compute CASSCF first
+  if (inp->get<string>("algorithm", "") != "noopt") {
+    auto cas = make_shared<CASSecond>(inp, geom, ref);
+    cas->compute();
+    ref_ = cas->conv_to_ref();
+    fci_ = cas->fci();
+    thresh_ = cas->thresh();
+  } else {
+    auto cas = make_shared<CASNoopt>(inp, geom, ref);
+    cas->compute();
+    ref_ = cas->conv_to_ref();
+    fci_ = cas->fci();
+    thresh_ = cas->thresh();
   }
 
-  grad->print(": Calculated with finite difference", 0);
-  return grad;
+  // gradient/property calculation
+  do_hyperfine_ = inp->get<bool>("hyperfine", false);
+
+  timer.tick_print("Reference calculation");
+
+  cout << endl << "  === DF-CASPT2 calculation ===" << endl << endl;
+#else
+  throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
+#endif
+}
+
+
+// compute smith and set rdms and ci deriv to a member
+void CASPT2Ener::compute() {
+#ifdef COMPILE_SMITH
+//  const int nclosed = ref_->nclosed();
+//  const int nact = ref_->nact();
+//  const int nocc = ref_->nocc();
+
+  // construct SMITH here
+  shared_ptr<PTree> smithinput = idata_->get_child("smith");
+  smithinput->put("_grad", false);
+  smithinput->put("_hyperfine", do_hyperfine_);
+  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+  smith->compute();
+  
+  msrot_   = smith->msrot();
+  energy_  = smith->algo()->energyvec();
+  coeff_   = smith->coeff();
+#endif
 }
 
 template<>
-shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
+shared_ptr<GradFile> FiniteNacm<CASPT2Ener>::compute() {
+#ifdef COMPILE_SMITH
   cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr(s)" << endl;
   
@@ -110,13 +103,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
   displ->scale(0.0);
   
-  shared_ptr<Method> energy_method;
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   int nclosed = ref_->nclosed();
   int nocc = ref_->nocc();
   shared_ptr<const Matrix> acoeff_ref;
-  acoeff_ref = make_shared<Matrix>(ref_->coeff()->slice(nclosed, nocc));
+  acoeff_ref = make_shared<Matrix>(task_->coeff()->slice(nclosed, nocc));
   acoeff_ref->print("acoeff_ref = ");
+
+  civ_ref->rotate (task_->msrot());
   civ_ref->print (/*sort=*/false);
   
   shared_ptr<const Reference> refgrad_plus;
@@ -136,6 +130,10 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   gmo->zero();
   
   assert(norb==(nocc-nclosed));
+
+  auto idata_out = std::make_shared<PTree>(*idata_);
+  idata_out->put("_target", target_state1_);
+  idata_out->put("_target2", target_state2_);
   
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
@@ -145,11 +143,12 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
       refgrad_plus = make_shared<Reference> (*ref_, nullptr);
       refgrad_plus = nullptr;
-  
-      energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
-      energy_method->compute();
-      refgrad_plus = energy_method->conv_to_ref();
-      acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
+
+      task_ = std::make_shared<CASPT2Ener>(idata_out, geom_, refgrad_plus);
+      task_->compute();
+      refgrad_plus  = task_->conv_to_ref();
+
+      acoeff_plus = make_shared<Matrix>(task_->coeff()->slice(nclosed, nocc));
       for (int im = 0; im != acoeff_ref->mdim(); ++im) {
         double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
         if (dmatch < 0.0) 
@@ -157,6 +156,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       }
 
       civ_plus = refgrad_plus->civectors()->copy();
+      civ_plus->rotate (task_->msrot());
       civ_plus->match(civ_ref);
 
       displ->element(j,i) = -2.0 * dx_;
@@ -166,10 +166,11 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       refgrad_minus = make_shared<Reference> (*ref_, nullptr);
       refgrad_minus = nullptr;
       
-      energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
-      energy_method->compute();
-      refgrad_minus = energy_method->conv_to_ref();
-      acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
+      task_ = std::make_shared<CASPT2Ener>(idata_out, geom_, refgrad_minus);
+      task_->compute();
+      refgrad_minus  = task_->conv_to_ref();
+
+      acoeff_minus = make_shared<Matrix>(task_->coeff()->slice(nclosed, nocc));
       for (int im = 0; im != acoeff_ref->mdim(); ++im) {
         double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
         if (dmatch < 0.0) 
@@ -177,6 +178,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       }
 
       civ_minus = refgrad_minus->civectors()->copy();
+      civ_minus->rotate (task_->msrot());
       civ_minus->match(civ_ref);
 
       civ_diff = civ_plus->copy();
@@ -236,7 +238,12 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   grad_basis->print(": Basis set derivative (analytically calculated)", 0);
 
   *grad += *grad_basis;
-  grad->print(": NACME calculated with finite difference", 0);
+  grad->print(": NACME calculated with finite difference (only zero - zero)", 0);
 
   return grad;
+#else
+  return nullptr;
+#endif
 }
+
+// end

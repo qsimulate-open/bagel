@@ -27,9 +27,7 @@
 #define BAGEL_FCI_DVEC_H
 
 #include <src/ci/fci/civec.h>
-#ifdef JWP
 #include <src/util/math/csymmatrix.h>
-#endif
 
 // I forgot why I named this class "Dvector"...
 // Basically Dvector is a vector of Civec, with some utility functions.
@@ -220,7 +218,6 @@ class Dvector : public btas::Tensor3<DataType> {
         i->synchronize();
     }
 
-#ifdef JWP
     void rotate(std::shared_ptr<const Matrix> msrot) {
       // now coded in somewhat un-efficient manner
       Dvector<DataType> tmp(*this);
@@ -239,7 +236,6 @@ class Dvector : public btas::Tensor3<DataType> {
         }
       }
     }
-#endif
 
     void print(const double thresh = 0.05) const {
       int j = 0;

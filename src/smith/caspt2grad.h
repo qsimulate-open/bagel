@@ -109,6 +109,132 @@ class CASPT2Grad : public Method {
     std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
 };
 
+class CASPT2Nacm : public Method {
+  public:
+    using Tensor = SMITH::Tensor_<double>;
+  protected:
+    std::shared_ptr<const Matrix> coeff_;
+    // second-order density matrix
+    std::shared_ptr<Matrix> d1_;
+    // first-order density matrix
+    std::shared_ptr<const Matrix> d11_;
+    std::shared_ptr<const Tensor> d2_;
+    std::shared_ptr<Matrix> vd1_;
+    // XMS density if available
+    std::shared_ptr<Matrix> dcheck_;
+    // zeroth-order density matrix (mixed state)
+    std::shared_ptr<RDM<1>> d10ms_;
+    std::shared_ptr<RDM<2>> d20ms_;
+    // norm of the first-order wave function
+    std::vector<double> wf1norm_;
+
+    // second-order spin density matrix
+    std::shared_ptr<const Matrix> sd1_;
+    // first-order spin density matrix
+    std::shared_ptr<const Matrix> sd11_;
+    // rotation matrix in MS-CASPT2
+    std::shared_ptr<const Matrix> msrot_;
+    // XMS rotation matrix (i.e. Fock eigenvectors)
+    std::shared_ptr<const Matrix> xmsrot_;
+    // Heff rotation natrix (i.e. Heff eigenvectors)
+    std::shared_ptr<const Matrix> heffrot_;
+    // CI Eigenvalues
+    std::vector<double> cieig_;
+    // Fock Eigenvalues
+    std::vector<double> foeig_;
+
+    // y from SMITH code
+    std::shared_ptr<Dvec> cideriv_;
+    // FCI utility
+    std::shared_ptr<FCI> fci_;
+
+    // for gradient
+    int nstates_;
+    int target_state1_;
+    int target_state2_;
+    int ncore_;
+    double energy1_;
+    double energy2_;
+    double thresh_;
+
+    // properties
+    bool do_hyperfine_;
+
+    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
+
+  public:
+    CASPT2Nacm(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+
+    void compute() override;
+
+    const double& msrot(int i, int j) const { return msrot_->element(i, j); }
+    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
+    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
+    std::shared_ptr<const Matrix> msrot() const {return msrot_; }
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> d11() const { return d11_; }
+    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
+    std::shared_ptr<const Tensor> d2() const { return d2_; }
+    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
+    std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
+    std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
+
+    std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
+    std::shared_ptr<FCI> fci() const { return fci_; }
+
+    int nstates() const { return nstates_; }
+    int target1() const { return target_state1_; }
+    int target2() const { return target_state2_; }
+    int ncore() const { return ncore_; }
+    double energy1() const { return energy1_; }
+    double energy2() const { return energy2_; }
+    double thresh() const { return thresh_; }
+
+    bool do_hyperfine() const { return do_hyperfine_; }
+
+    std::vector<double> cieig() const { return cieig_; }
+    double cieig(const int i) const { return cieig_.at(i); }
+    double foeig(const int i) const { return foeig_.at(i); }
+
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
+
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
+      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj);
+
+    std::shared_ptr<Matrix> diagonal_D1() const;
+};
+
+// Single point calc.
+
+class CASPT2Ener : public Method {
+  public:
+    using Tensor = SMITH::Tensor_<double>;
+  protected:
+    std::shared_ptr<const Matrix> coeff_;
+    std::shared_ptr<const Matrix> msrot_;
+    std::vector<double> energy_;
+    std::shared_ptr<FCI> fci_;
+    double thresh_;
+
+    bool do_hyperfine_;
+
+  public:
+    CASPT2Ener(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+
+    void compute() override;
+
+    const double& msrot(int i, int j) const { return msrot_->element(i, j); }
+    std::shared_ptr<const Matrix> coeff() const { return coeff_; }
+    std::shared_ptr<const Matrix> msrot() const { return msrot_; }
+    double energy(const int i) const { return energy_[i]; }
+    const std::vector<double>& energy() const { return energy_; }
+    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
+};
+
+
 }
 
 #endif

@@ -70,6 +70,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Tensor> Den1_;
+    // for derivative coupling only
+    std::shared_ptr<const Matrix> vden1_;
 
     std::vector<double> correlated_norm_;
     std::shared_ptr<Tensor> deci;
@@ -178,11 +180,16 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     void solve();
     void solve_deriv();
+    void solve_nacme();
+
+    std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
+    std::shared_ptr<const Matrix> heffrot() const { return heff_; }
 
     std::shared_ptr<const Matrix> msrot() const { return xmsmat_ ? std::make_shared<Matrix>(*xmsmat_ * *heff_) : heff_; }
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
+    std::shared_ptr<const Matrix> vden1() const { return vden1_; }
 
     std::vector<double> correlated_norm() const { return correlated_norm_; }
 

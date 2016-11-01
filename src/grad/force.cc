@@ -108,6 +108,11 @@ void Force::compute() {
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
       force->compute();
 
+    } else if (method == "caspt2" && jobtitle == "nacme") {
+      
+      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2);
+      force->compute();
+
     } else if (method == "caspt2") {
  
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
@@ -137,6 +142,11 @@ void Force::compute() {
       if (method == "casscf") {
 
         auto force = make_shared<FiniteNacm<CASSCF>>(method, cinput, geom_, ref_, target, target2, dx);
+        force->compute();
+
+      } else if (method == "caspt2") {
+
+        auto force = make_shared<FiniteNacm<CASPT2Ener>>(method, cinput, geom_, ref_, target, target2, dx);
         force->compute();
 
       }

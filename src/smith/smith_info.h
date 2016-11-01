@@ -46,10 +46,12 @@ class SMITH_Info {
     double shift_;
     int maxiter_;
     int target_;
+    int target2_;
     int maxtile_;
     int davidson_subspace_;
 
     bool grad_;
+    bool nacm_;
 
     bool do_ms_;
     bool do_xms_;
@@ -81,8 +83,10 @@ class SMITH_Info {
     double shift() const {return shift_; }
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
+    int target2() const { return target2_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
+    bool nacm() const { return nacm_; }
     bool do_ms() const { return do_ms_; }
     bool do_xms() const { return do_xms_; }
     bool sssr() const { return sssr_; }

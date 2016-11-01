@@ -99,7 +99,6 @@ class FiniteGrad : public GradEval_base {
     std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Reference> ref_;
 
-
     double energy_;
 
     int target_state_;
@@ -167,6 +166,7 @@ class NacmEval : public GradEval_base {
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
+template<> std::shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute();
 
 // CASSCF code for NACME is basically same to the gradient one, but little different due to some additional terms...
 template<> void NacmEval<CASSCF>::init();
@@ -178,6 +178,8 @@ class FiniteNacm : public GradEval_base {
     std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Reference> ref_;
 
+    std::shared_ptr<T> task_;
+
     double energy1_;
     double energy2_;
 
@@ -186,10 +188,26 @@ class FiniteNacm : public GradEval_base {
     double dx_;
     std::string method_;
 
+    void init() {
+      if (geom_->external())
+        throw std::logic_error("Gradients with external fields have not been implemented.");
+      auto idata_out = std::make_shared<PTree>(*idata_);
+      idata_out->put("_target", target_state1_);
+      idata_out->put("_target2", target_state2_);
+      task_ = std::make_shared<T>(idata_out, geom_, ref_);
+      task_->compute();
+      ref_  = task_->conv_to_ref();
+      energy1_ = task_->energy(target_state1_);
+      energy2_ = task_->energy(target_state2_);
+      std::cout << std::setprecision(8) << "  Energy = " << energy1_ << " and " << energy2_ << std::endl;
+      geom_ = ref_->geom();
+    }
+
   public:
     // Constructor does nothing here
     FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx) 
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
+      init();
     }
 
     // compute() computes effective density matrices and perform gradient contractions
@@ -201,7 +219,9 @@ class FiniteNacm : public GradEval_base {
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
 
+template<> void FiniteNacm<CASSCF>::init();
 template<> std::shared_ptr<GradFile> FiniteNacm<CASSCF>::compute();
+template<> std::shared_ptr<GradFile> FiniteNacm<CASPT2Ener>::compute();
 
 }
 
