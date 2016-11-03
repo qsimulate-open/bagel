@@ -3,7 +3,7 @@
 // Filename: dkhcore.cc
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Raymond Wang <yiqunwang2021@u.northwestern.edu> 
+// Author: Raymond Wang <raymondwang@u.northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -26,87 +26,146 @@
 #include <src/dkh/dkhcore.h>
 #include <src/mat1e/kinetic.h>
 #include <src/mat1e/nai.h>
+#include <src/mat1e/rel/small1e.h>
+#include <src/mat1e/overlap.h>
 
 using namespace std;
 using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
 
-DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
+DKHcore::DKHcore(shared_ptr<const Geometry> geom) : Matrix(geom->nbasis(), geom->nbasis()) {
 
-  init(mol);
+  init(geom);
   cout<<endl;
   cout<<"  === Using DKHcore === "<<endl;
   cout<<endl;
 }
 
 
-void DKHcore::init(shared_ptr<const Molecule> mol) {
+void DKHcore::init(shared_ptr<const Geometry> geom) {
   
-  Kinetic transfer(mol); // we do not use kinetic matrix directly, transfer here is kinetic.
-  VectorB eig(mol->nbasis());
-  VectorB en(mol->nbasis());
+  geom_ = geom->relativistic(false, false);
+  
+  Kinetic kinetic(geom_);
+  Overlap overlap(geom_);
+  shared_ptr<const Matrix> tildex = overlap.tildex();
+  Matrix transfer(ndim(), mdim(), 0.0);
+  transfer = *tildex % kinetic * *tildex;
+  VectorB eig(geom_->nbasis());
+  VectorB ep_vec(geom_->nbasis());
   transfer.diagonalize(eig);
-  NAI nai(mol);
+  transfer = *tildex * transfer;
 
-  for (int i = 0; i < en.size(); ++i){
-    en(i) = c__ * std::sqrt(2*eig(i)+c__*c__);
+  NAI nai(geom_);
+  Small1e<NAIBatch> small1e(geom_);
+
+  for (int i = 0; i < eig.size(); ++i) { // Ep vector
+    ep_vec(i) = c__ * std::sqrt(2 * eig(i) + c__ * c__);
   }
 
-  Matrix A(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    A(i,i) = std::sqrt(0.5*(en(i)+c__*c__)/en(i));
-  }
-
-  Matrix P(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    P(i,i) = std::sqrt(2*eig(i));
+  Matrix Ep(ndim(), mdim(), 0.0); // Ep matrix
+  for (int i = 0; i != ndim(); ++i) {
+    Ep(i,i) = ep_vec(i);
   }
   
-  Matrix pK2(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    pK2(i,i) = pow((P(i,i)*c__/(en(i)+c__*c__)),2);
+  Matrix A(ndim(), mdim(), 0.0);
+  for (int i = 0; i != ndim(); ++i) {
+    A(i,i) = std::sqrt(0.5 * (ep_vec(i) + c__ * c__) / ep_vec(i));
   }
-
-  Matrix pK2_inv(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    pK2_inv(i,i) = 1 / pK2(i,i);
-  }
-
-  Matrix E(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    E(i,i) = en(i);
-  }
-
-  Matrix B(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    B(i,i) = A(i,i) * c__ / (en(i)+c__*c__);
-  }
-
-  Matrix V(ndim(),mdim(),0.0);
+  
+  Matrix V(ndim(), mdim(), 0.0); // V in p^2 basis
   V = transfer % nai * transfer;
-
-  Matrix Vp(ndim(),mdim(),0.0);
-  for(int i=0; i<ndim(); i++){
-    for(int j=0; j<mdim(); j++){
-      Vp(i,j) = V(i,j) / (en(i)+en(j));
+  
+  Matrix tildeV(ndim(), mdim(), 0.0);
+  for (int i = 0; i != ndim(); ++i) {
+    for (int j = 0; j != mdim(); ++j){
+      tildeV(i,j) = V(i,j) / (ep_vec(i) + ep_vec(j));
     }
   }
   
-  Matrix dkh(ndim(),mdim(),0.0);
-  for (int i=0; i<ndim(); i++){
-    dkh(i,i) = en(i) - c__*c__;
+  Matrix AVA(ndim(), mdim(), 0.0); // A * tildeV * A 
+  AVA = A * tildeV * A;
+
+  Matrix B(ndim(), mdim(), 0.0);
+  for (int i = 0; i != ndim(); ++i) {
+    B(i,i) = A(i,i) * c__ / (ep_vec(i) + c__ * c__);
   }
 
-  dkh += A*V*A + B*P*V*P*B;
+  Matrix smallnai(ndim(), mdim()); // pVp in p^2 basis
+  smallnai.copy_block(0, 0, ndim(), mdim(), small1e[0]);
+  smallnai = transfer % smallnai * transfer;
+  
+  Matrix BVB(ndim(), mdim(), 0.0); // A * R * tildeV * R * A
+  for(int i = 0; i != ndim(); ++i) {
+    for(int j = 0; j != mdim(); ++j) {
+      BVB(i,j) = smallnai(i,j) / (ep_vec(i) + ep_vec(j));
+    }
+  }
+  BVB = B * BVB * B;
 
-  dkh += (-1)*B*P*Vp*P*B*E*A*Vp*A - A*Vp*A*E*B*P*Vp*P*B + A*Vp*A*pK2*E*A*Vp*A + B*P*Vp*P*B*E*pK2_inv*B*P*Vp*P*B                //NWChem
-          -0.5*B*P*Vp*P*B*A*Vp*A*E -0.5*A*Vp*A*B*P*Vp*P*B*E + 0.5*A*Vp*A*pK2*A*Vp*A*E + 0.5*B*P*Vp*P*B*pK2_inv*B*P*Vp*P*B*E
-          -0.5*E*B*P*Vp*P*B*A*Vp*A -0.5*E*A*Vp*A*B*P*Vp*P*B + 0.5*E*A*Vp*A*pK2*A*Vp*A + 0.5*E*B*P*Vp*P*B*pK2_inv*B*P*Vp*P*B;
+  Matrix RI(ndim(), mdim(), 0.0); // used for RI terms
+  for (int i = 0; i != ndim(); ++i) {
+    RI(i,i) = 2 * eig(i) * pow((c__ / (ep_vec(i) + c__ * c__)), 2);
+  }
+ 
+  Matrix RI_inv(RI);
+  RI_inv.inverse();
 
-//  dkh += 0.5 * ((-1)*A*P*tildeV*P*A*A*V*A + A*P*tildeV*A*A*V*P*A + A*tildeV*A*P2*A*V*A - A*tildeV*A*A*P*V*P*A               //Reiher 
-//                 - A*P*V*P*A*A*tildeV*A + A*P*V*A*A*tildeV*P*A + A*V*A*P2*A*tildeV*A - A*V*A*A*P*tildeV*P*A);
+  Matrix smallx(ndim(), mdim()); // x component of (p x Vp)
+  smallx.copy_block(0, 0, ndim(), mdim(), small1e[2]);
+  smallx = transfer % smallx * transfer;
+  for (int i = 0; i != ndim(); ++i) {
+    for (int j = 0; j != mdim(); ++j) {
+      smallx(i,j) /= ep_vec(i) + ep_vec(j);
+    }
+  }
+
+  Matrix smally(ndim(), mdim()); // y component ...
+  smally.copy_block(0, 0, ndim(), mdim(), small1e[3]);
+  smally = transfer % smally * transfer;
+  for (int i = 0; i != ndim(); ++i) {
+    for (int j = 0; j != mdim(); ++j) {
+      smally(i,j) /= ep_vec(i) + ep_vec(j);
+    }
+  }
+  
+  Matrix smallz(ndim(), mdim()); // z component ...
+  smallz.copy_block(0, 0, ndim(), mdim(), small1e[1]);
+  smallz = transfer % smallz * transfer;
+  for (int i = 0; i != ndim(); ++i) {
+    for (int j = 0; j != mdim(); ++j) {
+      smallz(i,j) /= ep_vec(i) + ep_vec(j);
+    }
+  }
+
+  Matrix Xc(ndim(), mdim(), 0.0);
+  Xc = B * smallx * B;
+  
+  Matrix Yc(ndim(), mdim(), 0.0);
+  Yc = B * smally * B;
+  
+  Matrix Zc(ndim(), mdim(), 0.0);
+  Zc = B * smallz * B;
+   
+  Matrix dkh(ndim(), mdim(), 0.0);
+  for (int i = 0; i != ndim(); ++i) {
+    dkh(i,i) = ep_vec(i) - c__ * c__;  // DKH0
+  }
+  
+  dkh += A * V * A                    + B * smallnai * B  // DKH1
+       - BVB * Ep * AVA               - AVA * Ep * BVB                 + AVA * RI * Ep * AVA
+       + BVB * Ep * RI_inv * BVB      - 0.5 * BVB * AVA * Ep           - 0.5 * AVA * BVB * Ep
+       + 0.5 * AVA * RI * AVA * Ep    + 0.5 * BVB * RI_inv * BVB * Ep  - 0.5 * Ep * BVB * AVA
+       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB 
+       - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
+       - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
+       - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2
+
+  
+  transfer = overlap * transfer;
 
   dkh = transfer * dkh ^ transfer;
+
   copy_block(0,0,ndim(),mdim(),dkh);
 }
