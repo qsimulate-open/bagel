@@ -28,17 +28,18 @@
 
 #include <src/util/constants.h>
 #include <src/util/math/matrix.h>
-#include <src/molecule/molecule.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 
 class DKHcore : public Matrix {
   protected:
-    void init(std::shared_ptr<const Molecule>);
+    void init(std::shared_ptr<const Geometry>);
+    std::shared_ptr<const Geometry> geom_;
 
   public:
     DKHcore() { }
-    DKHcore(std::shared_ptr<const Molecule>);
+    DKHcore(std::shared_ptr<const Geometry>);
 };
 
 }
