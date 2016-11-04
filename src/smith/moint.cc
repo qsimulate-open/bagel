@@ -340,7 +340,9 @@ void MOFock<complex<double>>::init() {
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
   if (info_->block_diag_fock()) {
-    cout << " Removing off-diagonal blocks of the relativistic Fock matrix" << endl;
+    cout << "  * Removing off-diagonal blocks of the relativistic Fock matrix" << endl;
+    if (to_lower(info_->method()) == "casa")
+      cout << "    CAS/A with these blocks neglected is equivalent to partially contracted NEVPT2." << endl;
     auto fsave = f->copy();
     f->zero();
     const int nc = 2;
@@ -421,7 +423,9 @@ void MOFock<double>::init() {
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
   if (info_->block_diag_fock()) {
-    cout << " Removing off-diagonal blocks of the (nonrel) Fock matrix" << endl;
+    cout << "  * Removing off-diagonal blocks of the (nonrel) Fock matrix" << endl;
+    if (to_lower(info_->method()) == "casa")
+      cout << "    CAS/A with these blocks neglected is equivalent to partially contracted NEVPT2." << endl;
     auto fsave = f->copy();
     f->zero();
     const int nc = 1;
