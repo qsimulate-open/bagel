@@ -480,3 +480,19 @@ const vector<shared_ptr<const Molecule>> Molecule::split_atoms(const int max_ato
   }
   return out;
 }
+
+
+shared_ptr<Molecule> Molecule::uncontract() {
+  auto mol = make_shared<Molecule>(*this);
+  vector<shared_ptr<const Atom>> atom;
+  
+  for (unsigned int i = 0; i != natom(); ++i) {
+    auto at = make_shared<Atom>(*atoms(i));
+    at->uncont();
+    atom.push_back(at);
+  }
+
+  mol->atoms_ = atom;
+
+  return mol;
+}

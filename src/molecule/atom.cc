@@ -614,3 +614,16 @@ shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magneti
 
 double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
+
+
+shared_ptr<const Atom> Atom::uncont() {
+  auto atom = make_shared<Atom>(*this);
+  vector<shared_ptr<const Shell>> uncshells;
+  for (auto& i : shells_) {
+    auto tmp = make_shared<Shell>(*i);
+    tmp->kinetic_balance_uncont<0>();
+    uncshells.push_back(tmp);
+  }
+  atom->shells_ = uncshells;
+  return atom;
+}

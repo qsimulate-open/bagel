@@ -34,32 +34,33 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
 
-DKHcore::DKHcore(shared_ptr<const Geometry> geom) : Matrix(geom->nbasis(), geom->nbasis()) {
-
-  init(geom);
+DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
+  
+  init(mol);
   cout<<endl;
   cout<<"  === Using DKHcore === "<<endl;
   cout<<endl;
 }
 
 
-void DKHcore::init(shared_ptr<const Geometry> geom) {
+void DKHcore::init(shared_ptr<const Molecule> mol0) {
   
-  geom_ = geom->relativistic(false, false);
-  
-  Kinetic kinetic(geom_);
-  Overlap overlap(geom_);
+  auto mol = make_shared<Molecule>(*mol0);
+  mol = mol->uncontract();
+
+  Kinetic kinetic(mol);
+  Overlap overlap(mol);
   shared_ptr<const Matrix> tildex = overlap.tildex();
   Matrix transfer(ndim(), mdim(), 0.0);
   transfer = *tildex % kinetic * *tildex;
-  VectorB eig(geom_->nbasis());
-  VectorB ep_vec(geom_->nbasis());
+  VectorB eig(mol->nbasis());
+  VectorB ep_vec(mol->nbasis());
   transfer.diagonalize(eig);
   transfer = *tildex * transfer;
 
-  NAI nai(geom_);
-  Small1e<NAIBatch> small1e(geom_);
-
+  NAI nai(mol);
+  Small1e<NAIBatch> small1e(mol);
+  
   for (int i = 0; i < eig.size(); ++i) { // Ep vector
     ep_vec(i) = c__ * std::sqrt(2 * eig(i) + c__ * c__);
   }
@@ -166,6 +167,6 @@ void DKHcore::init(shared_ptr<const Geometry> geom) {
   transfer = overlap * transfer;
 
   dkh = transfer * dkh ^ transfer;
-
+  
   copy_block(0,0,ndim(),mdim(),dkh);
 }
