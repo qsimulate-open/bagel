@@ -620,10 +620,19 @@ shared_ptr<const Atom> Atom::uncont() {
   auto atom = make_shared<Atom>(*this);
   vector<shared_ptr<const Shell>> uncshells;
   for (auto& i : shells_) {
-    auto tmp = make_shared<Shell>(*i);
-    tmp->kinetic_balance_uncont<0>();
-    uncshells.push_back(tmp);
+    int j = 0;
+    for (auto e = i->exponents().begin(); e != i->exponents().end(); ++e, ++j) {
+      vector<vector<double>> conts;
+      vector<double> cont(i->exponents().size(), 0);
+      vector<pair<int, int>> ranges;
+      cont[j] = 1.0;
+      conts.push_back(cont);
+      ranges.push_back({j,j+1});
+      uncshells.push_back(make_shared<const Shell>(false, i->position(), i->angular_number(), i->exponents(), conts, ranges));
+    }
   }
   atom->shells_ = uncshells;
+  atom->common_init();
+  
   return atom;
 }

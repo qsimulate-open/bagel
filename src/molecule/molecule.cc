@@ -488,11 +488,16 @@ shared_ptr<Molecule> Molecule::uncontract() {
   
   for (unsigned int i = 0; i != natom(); ++i) {
     auto at = make_shared<Atom>(*atoms(i));
-    at->uncont();
-    atom.push_back(at);
+    atom.push_back(at->uncont());
   }
 
   mol->atoms_ = atom;
+  mol->common_init1();
+  
+  vector<shared_ptr<const Atom>> at; // Turn off relativistic
+  for (auto& i : atoms_)
+     at.push_back(i->relativistic());
+  mol->atoms_ = at;
 
   return mol;
 }

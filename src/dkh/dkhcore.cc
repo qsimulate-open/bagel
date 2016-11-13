@@ -47,6 +47,8 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   
   auto mol = make_shared<Molecule>(*mol0);
   mol = mol->uncontract();
+cout<<"mol0->nbasis: "<<mol0->nbasis()<<endl;
+cout<<"mol->nbasis: "<<mol->nbasis()<<endl;
 
   Kinetic kinetic(mol);
   Overlap overlap(mol);
