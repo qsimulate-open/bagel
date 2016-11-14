@@ -164,7 +164,7 @@ class Molecule {
     // To limit the memory requirement of integral evaluation
     const std::vector<std::shared_ptr<const Molecule>> split_atoms(const int max_atoms) const;
 
-    std::shared_ptr<Molecule> uncontract();
+    std::shared_ptr<Molecule> uncontract() const;
 
 };
 

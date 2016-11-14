@@ -482,22 +482,13 @@ const vector<shared_ptr<const Molecule>> Molecule::split_atoms(const int max_ato
 }
 
 
-shared_ptr<Molecule> Molecule::uncontract() {
-  auto mol = make_shared<Molecule>(*this);
+shared_ptr<Molecule> Molecule::uncontract() const {
   vector<shared_ptr<const Atom>> atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->uncont()->relativistic());
   
-  for (unsigned int i = 0; i != natom(); ++i) {
-    auto at = make_shared<Atom>(*atoms(i));
-    atom.push_back(at->uncont());
-  }
-
-  mol->atoms_ = atom;
+  auto mol = make_shared<Molecule>(atom, aux_atoms_);
   mol->common_init1();
   
-  vector<shared_ptr<const Atom>> at; // Turn off relativistic
-  for (auto& i : atoms_)
-     at.push_back(i->relativistic());
-  mol->atoms_ = at;
-
   return mol;
 }

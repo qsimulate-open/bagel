@@ -616,23 +616,14 @@ double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
 
 
-shared_ptr<const Atom> Atom::uncont() {
+shared_ptr<const Atom> Atom::uncont() const {
   auto atom = make_shared<Atom>(*this);
+
   vector<shared_ptr<const Shell>> uncshells;
-  for (auto& i : shells_) {
-    int j = 0;
-    for (auto e = i->exponents().begin(); e != i->exponents().end(); ++e, ++j) {
-      vector<vector<double>> conts;
-      vector<double> cont(i->exponents().size(), 0);
-      vector<pair<int, int>> ranges;
-      cont[j] = 1.0;
-      conts.push_back(cont);
-      ranges.push_back({j,j+1});
-      uncshells.push_back(make_shared<const Shell>(false, i->position(), i->angular_number(), i->exponents(), conts, ranges));
-    }
-  }
+  for (auto& i : shells_) 
+    uncshells.push_back(i->unc());
   atom->shells_ = uncshells;
   atom->common_init();
-  
+
   return atom;
 }
