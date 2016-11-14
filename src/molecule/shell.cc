@@ -385,7 +385,7 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
   }
 }
 
-shared_ptr<const Shell> Shell::unc() const {
+shared_ptr<const Shell> Shell::uncontract() const {
   int i = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;

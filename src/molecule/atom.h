@@ -150,7 +150,7 @@ class Atom {
     // initialize magnetic field calculations
     std::shared_ptr<const Atom> apply_magnetic_field(const std::array<double,3>& field, const bool london) const;
 
-    std::shared_ptr<const Atom> uncont() const;
+    std::shared_ptr<const Atom> uncontract() const;
 
 };
 

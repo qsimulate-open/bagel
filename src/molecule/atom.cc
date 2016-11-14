@@ -616,12 +616,12 @@ double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
 
 
-shared_ptr<const Atom> Atom::uncont() const {
+shared_ptr<const Atom> Atom::uncontract() const {
   auto atom = make_shared<Atom>(*this);
 
   vector<shared_ptr<const Shell>> uncshells;
   for (auto& i : shells_) 
-    uncshells.push_back(i->unc());
+    uncshells.push_back(i->uncontract());
   atom->shells_ = uncshells;
   atom->common_init();
 
