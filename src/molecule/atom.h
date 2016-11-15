@@ -152,6 +152,8 @@ class Atom {
 
     std::shared_ptr<const Atom> uncontract() const;
 
+    void reset_shells(std::vector<std::shared_ptr<const Shell>>);
+
 };
 
 }

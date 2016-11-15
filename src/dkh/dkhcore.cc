@@ -28,6 +28,8 @@
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
 #include <src/mat1e/overlap.h>
+#include <src/integral/os/overlapbatch.h>
+#include <src/mat1e/mixedbasis.h>
 
 using namespace std;
 using namespace bagel;
@@ -47,112 +49,111 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   
   auto mol = make_shared<Molecule>(*mol0);
   mol = mol->uncontract();
-cout<<"mol0->nbasis: "<<mol0->nbasis()<<endl;
-cout<<"mol->nbasis: "<<mol->nbasis()<<endl;
 
+  const int molbasis = mol->nbasis();
   Kinetic kinetic(mol);
   Overlap overlap(mol);
   shared_ptr<const Matrix> tildex = overlap.tildex();
-  Matrix transfer(ndim(), mdim(), 0.0);
+  Matrix transfer(molbasis, molbasis, 0.0);
   transfer = *tildex % kinetic * *tildex;
-  VectorB eig(mol->nbasis());
-  VectorB ep_vec(mol->nbasis());
+  VectorB eig(molbasis);
+  VectorB ep_vec(molbasis);
   transfer.diagonalize(eig);
   transfer = *tildex * transfer;
 
   NAI nai(mol);
   Small1e<NAIBatch> small1e(mol);
   
-  for (int i = 0; i < eig.size(); ++i) { // Ep vector
+  for (int i = 0; i < eig.size(); ++i) { 
     ep_vec(i) = c__ * std::sqrt(2 * eig(i) + c__ * c__);
   }
 
-  Matrix Ep(ndim(), mdim(), 0.0); // Ep matrix
-  for (int i = 0; i != ndim(); ++i) {
+  Matrix Ep(molbasis, molbasis, 0.0); 
+  for (int i = 0; i != molbasis; ++i) {
     Ep(i,i) = ep_vec(i);
   }
   
-  Matrix A(ndim(), mdim(), 0.0);
-  for (int i = 0; i != ndim(); ++i) {
+  Matrix A(molbasis, molbasis, 0.0);
+  for (int i = 0; i != molbasis; ++i) {
     A(i,i) = std::sqrt(0.5 * (ep_vec(i) + c__ * c__) / ep_vec(i));
   }
   
-  Matrix V(ndim(), mdim(), 0.0); // V in p^2 basis
+  Matrix V(molbasis, molbasis, 0.0);
   V = transfer % nai * transfer;
-  
-  Matrix tildeV(ndim(), mdim(), 0.0);
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != mdim(); ++j){
+
+  Matrix tildeV(molbasis, molbasis, 0.0);
+  for (int i = 0; i != molbasis; ++i) {
+    for (int j = 0; j != molbasis; ++j){
       tildeV(i,j) = V(i,j) / (ep_vec(i) + ep_vec(j));
     }
   }
-  
-  Matrix AVA(ndim(), mdim(), 0.0); // A * tildeV * A 
+
+  Matrix AVA(molbasis, molbasis, 0.0); 
   AVA = A * tildeV * A;
 
-  Matrix B(ndim(), mdim(), 0.0);
-  for (int i = 0; i != ndim(); ++i) {
+  Matrix B(molbasis, molbasis, 0.0);
+  for (int i = 0; i != molbasis; ++i) {
     B(i,i) = A(i,i) * c__ / (ep_vec(i) + c__ * c__);
   }
 
-  Matrix smallnai(ndim(), mdim()); // pVp in p^2 basis
-  smallnai.copy_block(0, 0, ndim(), mdim(), small1e[0]);
+  Matrix smallnai(molbasis, molbasis);
+  smallnai.copy_block(0, 0, molbasis, molbasis, small1e[0]);
   smallnai = transfer % smallnai * transfer;
   
-  Matrix BVB(ndim(), mdim(), 0.0); // A * R * tildeV * R * A
-  for(int i = 0; i != ndim(); ++i) {
-    for(int j = 0; j != mdim(); ++j) {
+  Matrix BVB(molbasis, molbasis, 0.0);
+  for(int i = 0; i != molbasis; ++i) {
+    for(int j = 0; j != molbasis; ++j) {
       BVB(i,j) = smallnai(i,j) / (ep_vec(i) + ep_vec(j));
     }
   }
   BVB = B * BVB * B;
 
-  Matrix RI(ndim(), mdim(), 0.0); // used for RI terms
-  for (int i = 0; i != ndim(); ++i) {
+  Matrix RI(molbasis, molbasis, 0.0); 
+  for (int i = 0; i != molbasis; ++i) {
     RI(i,i) = 2 * eig(i) * pow((c__ / (ep_vec(i) + c__ * c__)), 2);
   }
  
   Matrix RI_inv(RI);
   RI_inv.inverse();
 
-  Matrix smallx(ndim(), mdim()); // x component of (p x Vp)
-  smallx.copy_block(0, 0, ndim(), mdim(), small1e[2]);
+  Matrix smallx(molbasis, molbasis); 
+  smallx.copy_block(0, 0, molbasis, molbasis, small1e[2]);
   smallx = transfer % smallx * transfer;
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != mdim(); ++j) {
+  for (int i = 0; i != molbasis; ++i) {
+    for (int j = 0; j != molbasis; ++j) {
       smallx(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
 
-  Matrix smally(ndim(), mdim()); // y component ...
-  smally.copy_block(0, 0, ndim(), mdim(), small1e[3]);
+  Matrix smally(molbasis, molbasis); 
+  smally.copy_block(0, 0, molbasis, molbasis, small1e[3]);
   smally = transfer % smally * transfer;
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != mdim(); ++j) {
+  for (int i = 0; i != molbasis; ++i) {
+    for (int j = 0; j != molbasis; ++j) {
       smally(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
   
-  Matrix smallz(ndim(), mdim()); // z component ...
-  smallz.copy_block(0, 0, ndim(), mdim(), small1e[1]);
+  Matrix smallz(molbasis, molbasis); 
+  smallz.copy_block(0, 0, molbasis, molbasis, small1e[1]);
   smallz = transfer % smallz * transfer;
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != mdim(); ++j) {
+  for (int i = 0; i != molbasis; ++i) {
+    for (int j = 0; j != molbasis; ++j) {
       smallz(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
 
-  Matrix Xc(ndim(), mdim(), 0.0);
+  Matrix Xc(molbasis, molbasis, 0.0);
   Xc = B * smallx * B;
   
-  Matrix Yc(ndim(), mdim(), 0.0);
+  Matrix Yc(molbasis, molbasis, 0.0);
   Yc = B * smally * B;
   
-  Matrix Zc(ndim(), mdim(), 0.0);
+  Matrix Zc(molbasis, molbasis, 0.0);
   Zc = B * smallz * B;
    
-  Matrix dkh(ndim(), mdim(), 0.0);
-  for (int i = 0; i != ndim(); ++i) {
+  Matrix dkh(molbasis, molbasis, 0.0);
+  for (int i = 0; i != molbasis; ++i) {
     dkh(i,i) = ep_vec(i) - c__ * c__;  // DKH0
   }
   
@@ -160,15 +161,16 @@ cout<<"mol->nbasis: "<<mol->nbasis()<<endl;
        - BVB * Ep * AVA               - AVA * Ep * BVB                 + AVA * RI * Ep * AVA
        + BVB * Ep * RI_inv * BVB      - 0.5 * BVB * AVA * Ep           - 0.5 * AVA * BVB * Ep
        + 0.5 * AVA * RI * AVA * Ep    + 0.5 * BVB * RI_inv * BVB * Ep  - 0.5 * Ep * BVB * AVA
-       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB 
+       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB
        - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
        - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
        - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2
 
+  MixedBasis<OverlapBatch> mix(mol0, mol);
   
-  transfer = overlap * transfer;
+  transfer = transfer % mix;
+  
+  dkh = transfer % dkh * transfer;
 
-  dkh = transfer * dkh ^ transfer;
-  
   copy_block(0,0,ndim(),mdim(),dkh);
 }
