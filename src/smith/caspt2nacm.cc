@@ -49,14 +49,12 @@ CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
     cas->compute();
     ref_ = cas->conv_to_ref();
     fci_ = cas->fci();
-    cieig_ = cas->fci()->energy();
     thresh_ = cas->thresh();
   } else {
     auto cas = make_shared<CASNoopt>(inp, geom, ref);
     cas->compute();
     ref_ = cas->conv_to_ref();
     fci_ = cas->fci();
-    cieig_ = cas->fci()->energy();
     thresh_ = cas->thresh();
   }
 
@@ -90,6 +88,8 @@ void CASPT2Nacm::compute() {
   smith->compute();
 
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
+  energy_  = smith->algo()->energyvec();
+
   coeff_ = smith->coeff();
 
   cideriv_ = smith->cideriv()->copy();
@@ -141,33 +141,28 @@ void CASPT2Nacm::compute() {
   // zeroth order RDM
   d10ms_ = make_shared<RDM<1>>(nact);
   d20ms_ = make_shared<RDM<2>>(nact);
-  auto rdm10_rev = make_shared<RDM<1>>(nact);         // ket
   for (int ist = 0; ist != nstates_; ++ist) {
     const double ims = msrot(ist, target2());
-    const double irms = msrot(ist, target1());
     for (int jst = 0; jst != nstates_; ++jst) {       // bra
       const double jms = msrot(jst, target1());
-      const double jrms = msrot(jst, target2());
       shared_ptr<const RDM<1>> rdm1t;
       shared_ptr<const RDM<2>> rdm2t;
       tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
       d10ms_->ax_plus_y(ims*jms, *rdm1t);
       d20ms_->ax_plus_y(ims*jms, *rdm2t);
-      rdm10_rev->ax_plus_y(irms*jrms, *rdm1t);
     }
   }
-  shared_ptr<Matrix> qd10v = ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(), coeff_->mdim());
-  shared_ptr<Matrix> qx = ref_->rdm1_mat_tr(rdm10_rev)->resize(coeff_->mdim(), coeff_->mdim());
 
-  // JI - IJ
-  *vd1_ += (*qd10v - *qx) * 0.5;
-
-//  vd1_->scale(-1.0);
+  shared_ptr<Matrix> d10IJ = ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(), coeff_->mdim())->copy();
+  d10IJ->antisymmetrize();
+  *vd1_ += *d10IJ;
 
   d2_ = smith->dm2();
   energy1_ = smith->algo()->energy(target1());
   energy2_ = smith->algo()->energy(target2());
-  cout << "    * CASPT2 target state energies:  " << setprecision(12) << setw(15) << energy1_ << " and " << energy2_ << endl;
+
+  cout << "    * NACME Target states: " << target1() << " - " << target2() << endl;
+  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * 27.21138602 << " eV" << endl << endl;
 #endif
 }
 
@@ -180,7 +175,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   shared_ptr<const Reference> ref = task_->ref();
   shared_ptr<FCI> fci = task_->fci();
 
-  const double egap = energy2_ - energy1_;      // Note: This is VI - VJ (reversed)
+  const double egap = energy2_ - energy1_;
 
   const int nclosed = ref->nclosed();
   const int nact = ref->nact();
@@ -200,7 +195,6 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // d0, of course there are no core here
   auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
   d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
-
   d0ms->symmetrize();
 
   const MatView ocoeff = coeff->slice(0, nocc);
@@ -336,7 +330,6 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // compute gradients
   
   shared_ptr<GradFile> gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
-  
   gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
   timer.tick_print("NACME integral contraction");
@@ -357,41 +350,14 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
-  const int nmobasis = coeff_->mdim();
   const MatView ocoeff = coeff_->slice(0, nocc);
   const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
 
   const Matrix hmo(*coeff_ % *ref_->hcore() * ocoeff);
+  const int nmobasis = coeff_->mdim();
 
   // vd1_ term
   g0->add_block(egap, 0, 0, nmobasis, nmobasis, *vd1_);
-
-  // Derivative coupling from reference CASSCF function (Redundant with Heff terms? -- commented out for now)
-/*  for (int kst = 0; kst != nstates_; ++kst) {
-    for (int lst = 0; lst != nstates_; ++lst) {
-      const int jst = target1();
-      const int ist = target2();
-      const double fkji = msrot(kst, jst) * msrot(lst, ist) - msrot(kst, ist) * msrot(lst, jst);
-      const double elk  = fabs(cieig(lst) - cieig(kst)) > 1.0e-12 ? 0.5 * egap / (cieig(lst) - cieig(kst)) : 0.0;
-      if (kst != lst && (fabs(elk) > 1.0e-12) && (fabs(fkji) > 1.0e-12)) {
-        shared_ptr<const RDM<1>> rdm1t;
-        shared_ptr<const RDM<2>> rdm2t;
-
-        tie(rdm1t, rdm2t) = ref_->rdm12(kst, lst);
-        shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1t);
-        rdms->symmetrize();
-        g0->add_block(2.0*elk*fkji, 0, 0, nmobasis, nocc, hmo ^ *rdms);
-
-//        d0ms->add_block(elk*fkji, nclosed, nclosed, nact, nact, rdm1t);
-//        d10ms_->ax_plus_y(elk*fkji, *rdm1t);          // redundant
-//        d20ms_->ax_plus_y(elk*fkji, *rdm2t);
-
-        shared_ptr<const DFFullDist> fulld = halfj->compute_second_transform(ocoeff)->apply_2rdm_tr(*rdm2t, *rdm1t, nclosed, nact);
-        auto bufs = make_shared<Matrix>(*halfj->form_2index(fulld, 0.5) + *halfj->form_2index(fulld->swap(), 0.5));
-        g0->add_block(2.0*elk*fkji, 0, 0, nmobasis, nocc, *coeff_ % *bufs);
-      }
-    }
-  }*/
 
   // If XMS, coupling from Fock is also needed
   // Similar code with caspt2/CASPT2.cc is used here
@@ -534,5 +500,10 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
 #else
   return tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>();
 #endif
+}
+
+shared_ptr<const Reference> CASPT2Nacm::conv_to_ref() const {
+ return std::make_shared<Reference>(ref_->geom(), ref_->coeff(), ref_->nclosed(), ref_->nact(), ref_->nvirt(), energy_,
+                               fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
 

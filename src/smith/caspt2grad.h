@@ -138,10 +138,10 @@ class CASPT2Nacm : public Method {
     std::shared_ptr<const Matrix> xmsrot_;
     // Heff rotation natrix (i.e. Heff eigenvectors)
     std::shared_ptr<const Matrix> heffrot_;
-    // CI Eigenvalues
-    std::vector<double> cieig_;
     // Fock Eigenvalues
     std::vector<double> foeig_;
+    // Energies, vector
+    std::vector<double> energy_;
 
     // y from SMITH code
     std::shared_ptr<Dvec> cideriv_;
@@ -191,13 +191,13 @@ class CASPT2Nacm : public Method {
     double energy2() const { return energy2_; }
     double thresh() const { return thresh_; }
 
-    bool do_hyperfine() const { return do_hyperfine_; }
+    double energy(const int i) const { return energy_[i]; }
+    const std::vector<double>& energy() const { return energy_; }
 
-    std::vector<double> cieig() const { return cieig_; }
-    double cieig(const int i) const { return cieig_.at(i); }
+    bool do_hyperfine() const { return do_hyperfine_; }
     double foeig(const int i) const { return foeig_.at(i); }
 
-    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
@@ -215,9 +215,15 @@ class CASPT2Ener : public Method {
   protected:
     std::shared_ptr<const Matrix> coeff_;
     std::shared_ptr<const Matrix> msrot_;
+    std::shared_ptr<const Matrix> xmsrot_;
+    std::shared_ptr<const Matrix> heffrot_;
     std::vector<double> energy_;
     std::shared_ptr<FCI> fci_;
+    std::shared_ptr<Matrix> vd1_;
     double thresh_;
+    int target_state1_;
+    int target_state2_;
+    int ncore_;
 
     bool do_hyperfine_;
 
@@ -227,11 +233,20 @@ class CASPT2Ener : public Method {
     void compute() override;
 
     const double& msrot(int i, int j) const { return msrot_->element(i, j); }
+    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
+    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<const Matrix> msrot() const { return msrot_; }
+    std::shared_ptr<const Matrix> xmsrot() const { return xmsrot_; }
+    std::shared_ptr<const Matrix> heffrot() const { return heffrot_; }
+    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
+    int target1() const { return target_state1_; }
+    int target2() const { return target_state2_; }
+    int ncore() const { return ncore_; }
     double energy(const int i) const { return energy_[i]; }
     const std::vector<double>& energy() const { return energy_; }
-    std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override;
+
 };
 
 

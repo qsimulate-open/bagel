@@ -36,7 +36,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   auto displ = std::make_shared<XYZFile>(geom_->natom());
   auto grad = std::make_shared<GradFile>(geom_->natom());
 
-  double energy_plus, energy_minus, energy_;
+  double energy_plus, energy_minus;
  
   displ->scale(0.0);
  
@@ -116,7 +116,6 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   int nocc = ref_->nocc();
   shared_ptr<const Matrix> acoeff_ref;
   acoeff_ref = make_shared<Matrix>(ref_->coeff()->slice(nclosed, nocc));
-  acoeff_ref->print("acoeff_ref = ");
   civ_ref->print (/*sort=*/false);
   
   shared_ptr<const Reference> refgrad_plus;
@@ -182,7 +181,6 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       civ_diff = civ_plus->copy();
       *civ_diff -= *civ_minus;
       civ_diff->scale(1.0 / (2.0 * dx_));
-      civ_diff->print(/*sort=*/false);
       acoeff_diff = make_shared<Matrix>(*acoeff_plus - *acoeff_minus);
       acoeff_diff->scale(1.0 / (2.0 * dx_));
   
@@ -192,9 +190,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       displ->element(j,i) = 0.0;
 
       grad->element(j,i) = civ_ref->data(target_state1_)->dot_product(civ_diff->data(target_state2_));
-      grad_ci->element(j,i) = grad->element(j,i);
 
-      auto Kfactor = make_shared<Matrix>(*acoeff_ref % *Smn * *acoeff_diff);
+      auto Uij = make_shared<Matrix>(*acoeff_ref % *Smn * *acoeff_diff);
       for (int ii = 0; ii != norb; ++ii) {
         for (int ij = 0; ij != norb; ++ij) {
           if (ii != ij) {
@@ -205,9 +202,12 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
               for (size_t ib = 0; ib != lenb; ++ib) {                    
                 double factor = civ_ref->data(target_state1_)->data(ib+iaB*lenb) * civ_ref->data(target_state2_)->data(ib+iaA*lenb) * sign;
-                grad->element(j,i) += factor * Kfactor->element(ij, ii);
-                if ((i + j * 3) == 0)
-                  gmo->element(ij, ii) += factor;
+                grad->element(j,i) += factor * (Uij->element(ij, ii) - Uij->element(ii, ij)) * .5;
+                if ((i + j * 3) == 0) {
+                  gmo->element(ij, ii) += factor * .5;
+                  gmo->element(ii, ij) -= factor * .5;
+                }
+
               }
             }
             for (size_t ia = 0; ia != lena; ++ia) {
@@ -216,24 +216,25 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
                 size_t ibB = iter.target;
                 double sign = static_cast<double>(iter.sign);
                 double factor = civ_ref->data(target_state1_)->data(ibB+ia*lenb) * civ_ref->data(target_state2_)->data(ibA+ia*lenb) * sign;
-                grad->element(j,i) += factor * Kfactor->element(ij, ii);
-                if ((i + j * 3) == 0)
-                  gmo->element(ij, ii) += factor;
+                grad->element(j,i) += factor * (Uij->element(ij, ii) - Uij->element(ii, ij)) * .5;
+                if ((i + j * 3) == 0) {
+                  gmo->element(ij, ii) += factor * .5;
+                  gmo->element(ii, ij) -= factor * .5;
+                }
               }
             }
           }
         }
       }
-
+      grad_ci->element(j,i) = grad->element(j,i);
     }
   }
   auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
   auto grad_basis = make_shared<GradFile>(geom_->natom());
   grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
-  grad_ci->print(": CI term", 0);
-  grad->print(": All symmetric terms", 0);
-  grad_basis->print(": Basis set derivative (analytically calculated)", 0);
+  grad_ci->print(": CI term, <cJ|d/dXa cI>", 0);
+  grad_basis->print(": CSF term, basis set derivative (analytically calculated)", 0);
 
   *grad += *grad_basis;
   grad->print(": NACME calculated with finite difference", 0);

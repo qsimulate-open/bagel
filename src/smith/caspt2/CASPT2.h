@@ -181,6 +181,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     void solve();
     void solve_deriv();
     void solve_nacme();
+    void solve_dm();
 
     std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
     std::shared_ptr<const Matrix> heffrot() const { return heff_; }

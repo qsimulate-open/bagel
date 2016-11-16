@@ -63,6 +63,39 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm4all_ = cas.rdm4all_;
 }
 
+void MSCASPT2::MSCASPT2::solve_dm() {
+  {
+    const int nstates = info_->ciwfn()->nstates();
+    const int targetJ = info_->target();
+    const int targetI = info_->target2();
+
+    shared_ptr<Tensor> result = den1->clone();
+    shared_ptr<Tensor> resultv = den1->clone();
+    shared_ptr<Tensor> result2 = Den1->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && ist != istate)
+            continue;
+          const double isheffJ = (*heff_)(istate, targetJ);
+          const double isheffI = (*heff_)(istate, targetI);
+          const double ijvJI = (jheffJ*isheffI - jheffI*isheffJ) * 0.5;
+          l2 = t2all_[istate]->at(ist); // careful
+
+          shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+          resultv->ax_plus_y(ijvJI, den1);
+
+        }
+      }
+    }
+    vden1_ = resultv->matrix();
+  }
+}
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
   Timer timer;
@@ -294,6 +327,7 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
     vden1_ = resultv->matrix();
     Den1_ = result2;
   }
+
   // second-order contribution from the lambda terms
   {
     den2->zero();

@@ -257,6 +257,13 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   return t;
 }
 
+void CASPT2::CASPT2::solve_dm() {
+  {
+    MSCASPT2::MSCASPT2 ms(*this);
+    ms.solve_dm();
+    vden1_ = ms.vden1();
+  }
+}
 
 void CASPT2::CASPT2::solve_deriv() {
   Timer timer;
@@ -274,7 +281,7 @@ void CASPT2::CASPT2::solve_deriv() {
     auto source = make_shared<MultiTensor>(nstates_);
     for (auto& i : *source)
       i = init_residual(); 
-    for (int ist = 0; ist != nstates_; ++ist) {//K states
+    for (int ist = 0; ist != nstates_; ++ist) {//N states
       auto sist = make_shared<MultiTensor>(nstates_);
       for (int jst = 0; jst != nstates_; ++jst) {
         if (sall_[ist]->at(jst)) {
@@ -291,7 +298,7 @@ void CASPT2::CASPT2::solve_deriv() {
       source->ax_plus_y((*heff_)(ist, target), sist);
     }
 
-    for (int istate = 0; istate != nstates_; ++istate) { //K states
+    for (int istate = 0; istate != nstates_; ++istate) { //L states
       sall_[istate]->zero();
       for (int jst = 0; jst != nstates_; ++jst)
         if (!info_->sssr() || istate == jst)
@@ -453,7 +460,7 @@ void CASPT2::CASPT2::solve_deriv() {
     const int tst = info_->target();
     const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
     for (int ist = 0; ist != nstates_; ++ist)
-      for (int jst = 0; jst != nstates_; ++jst)
+      for (int jst = 0; jst != nstates_; ++jst) 
         ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,tst)*(*heff_)(jst,tst)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
   }
 
@@ -647,7 +654,8 @@ void CASPT2::CASPT2::solve_nacme() {
       for (int jst = 0; jst != nstates_; ++jst) {
         double urheff = (ur(ist,tstJ)*(*heff_)(jst,tstI) + ur(ist, tstI)*(*heff_)(jst,tstJ)) * ref->energy(ist);
         ci_deriv_->data(jst)->ax_plus_y(urheff, info_orig_->ciwfn()->civectors()->data(ist));
-      }
+      } 
+
   }
 
   // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and contribution to y
