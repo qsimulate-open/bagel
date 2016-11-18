@@ -127,7 +127,7 @@ class Opt {
           alglib::mincgstate state;
           alglib::mincgreport rep;
 
-          alglib::mincgcreate(x, state); 
+          alglib::mincgcreate(x, state);
           alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
           alglib::mincgsetstpmax(state, maxstep_);
 
@@ -241,8 +241,11 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
     // current geom and grad in the cartesian coordinate
     std::shared_ptr<GradFile> cgrad = eval.compute();
     if (opttype_ == "conical") {
+      ref = eval.ref();
       GradEval<T> eval2(cinput, current_, ref, target_state2_);
       std::shared_ptr<const GradFile> cgrad2 = eval2.compute();
+
+      ref = eval.ref();
       NacmEval<T> evaln(cinput, current_, ref, target_state2_, target_state_);
       std::shared_ptr<GradFile> x2 = evaln.compute();
 
@@ -253,6 +256,8 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
       const double en2 = eval.energy();
       const double en1 = eval2.energy();
       en = en2 - en1;
+
+      std::cout << "  Energy : " << std::setprecision(8) << en2 << "  " << en1 << "  " << en << std::endl;
 
       x1norm = x1->norm();
       x2norm = x2->norm();
@@ -266,8 +271,9 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
         xg->element(2, iatom) *= (1.0 - x1->element(2, iatom) - x2->element(2, iatom));
       }
 
-      *cgrad = *xf + *xg;
-      
+      *cgrad = (0.90 * *xf + 0.10 * *xg);       // Thiel TCA 2007: parameter 0.9 - 0.1. xg : grad (E2), xf : grad (E2-E1)
+      en = en * 0.90 + en2 * 0.10;              // Good target function will look like this 
+
       cgrad->print (": resulting gradient");
 
     }
