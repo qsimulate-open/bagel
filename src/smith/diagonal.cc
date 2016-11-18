@@ -179,7 +179,9 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
         for (auto& i1 : virt_) {
           for (auto& i0 : closed_) {
             // if this block is not included in the current wave function, skip it
-            if (i0.offset() < i2.offset() || i1.offset() < i3.offset()) continue;
+
+// Some pieces commented out to turn off use of permutation symmetry
+//            if (i0.offset() < i2.offset() || i1.offset() < i3.offset()) continue;
             if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
             const size_t tsize = r->get_size(i0, i1, i2, i3);
             unique_ptr<complex<double>[]> local(new complex<double>[tsize]);
@@ -188,7 +190,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
 
             for (auto& i3t : virt_) {
               for (auto& i1t : virt_) {
-                if (i1t.offset() < i3t.offset()) continue;
+//                if (i1t.offset() < i3t.offset()) continue;
 
                 unique_ptr<complex<double>[]> data0 = t->get_block(i0, i1t, i2, i3t);
                 unique_ptr<complex<double>[]> data1(new complex<double>[t->get_size(i0, i1t, i2, i3t)]);
@@ -198,10 +200,12 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
                 unique_ptr<complex<double>[]> data3(new complex<double>[v2_->get_size(i1t, i1, i3t, i3)]);
                 sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
 
+/*
                 if (i1t.offset() != i3t.offset()) {
                   unique_ptr<complex<double>[]> data2 = v2_->get_block(i1t, i3, i3t, i1);
                   sort_indices<0,2,3,1,1,1,-1,1>(data2, data3, i1t.size(), i3.size(), i3t.size(), i1.size());
                 }
+*/
 
                 zgemm3m_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
                          4.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
@@ -209,6 +213,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
             }
             sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
             r->add_block(local, i0, i1, i2, i3);
+/*
             if (i0.offset() != i2.offset()) {
               sort_indices<2,1,0,3,0,1,-1,1>(local, buf, i0.size(), i1.size(), i2.size(), i3.size());
               r->add_block(buf, i2, i1, i0, i3);
@@ -222,6 +227,7 @@ void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t
               sort_indices<0,3,2,1,0,1,-1,1>(local, buf, i0.size(), i1.size(), i2.size(), i3.size());
               r->add_block(buf, i0, i3, i2, i1);
             }
+*/
           }
         }
       }
