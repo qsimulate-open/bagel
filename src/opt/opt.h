@@ -60,6 +60,7 @@ class Opt {
     std::ofstream* ofs_;
 
     std::string algorithm_;
+    std::string cialgorithm_;
 
     int maxiter_;
     double thresh_;
@@ -75,7 +76,9 @@ class Opt {
     Timer timer_;
 
     void evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr);
+    void evallagr(const alglib::real_1d_array& x, alglib::real_1d_array& fi, alglib::real_2d_array& jac, void* ptr);
     using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
+    using eval_lagr_type = std::function<void(const alglib::real_1d_array&, alglib::real_1d_array&, alglib::real_2d_array&, void*)>;
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
@@ -92,6 +95,7 @@ class Opt {
       algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
       opttype_ = idat->get<std::string>("opttype", "energy");
       if (opttype_ == "conical") {
+        cialgorithm_ = idat->get<std::string>("cialgorithm", "gproj");
         target_state2_ = idat->get<int>("target2", 1);
         if (target_state2_ > target_state_) {
           int tmpstate = target_state_;
@@ -100,7 +104,7 @@ class Opt {
         }
       }
       else if (opttype_ == "transition")
-        throw std::runtime_error("We cannot do saddle point optimization now, wait for Hessian comes up...");
+        throw std::runtime_error("We cannot do saddle point optimization now, wait for Hessian coming up...");
       else if (opttype_ != "energy")
         throw std::runtime_error("Optimization type should be: \"energy\", \"transition\" or \"conical\"");
     }
@@ -120,10 +124,22 @@ class Opt {
 
       try {
         alglib::real_1d_array x;
-        x.setcontent(size_, displ->data()); 
+        x.setcontent(size_, displ->data());
         eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
-        if (algorithm_ == "cg") {
+        if (opttype_ == "conical" && cialgorithm_ == "conopt") {
+   eval_lagr_type elag = std::bind(&Opt<T>::evallagr, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+          alglib::minnlcstate state;
+          alglib::minnlcreport rep;
+
+          alglib::minnlccreate(x, state);
+          alglib::minnlcsetalgoaul(state, 1000, 5);
+          alglib::minnlcsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
+
+          alglib::minnlcsetnlc(state, 2, 0);
+
+          alglib::minnlcoptimize(state, elag);
+        } else if (algorithm_ == "cg") {
           alglib::mincgstate state;
           alglib::mincgreport rep;
 
@@ -132,6 +148,7 @@ class Opt {
           alglib::mincgsetstpmax(state, maxstep_);
 
           alglib::mincgoptimize(state, eval);
+
         } else if (algorithm_ == "lbfgs") {
           alglib::minlbfgsstate state;
           alglib::minlbfgsreport rep;
@@ -141,6 +158,7 @@ class Opt {
           alglib::minlbfgssetstpmax(state, maxstep_);
 
           alglib::minlbfgsoptimize(state, eval);
+
         } else {
           throw std::runtime_error("geometry optimization is implemented only with \"cg\" and \"lbfgs\"");
         }
@@ -298,6 +316,120 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
 
   resume_stdcout();
   print_iteration(en, rms, timer_.tick());
+}
+
+
+template<class T>
+void Opt<T>::evallagr(const alglib::real_1d_array& x, alglib::real_1d_array& fi, alglib::real_2d_array& jac, void* ptr) {
+  std::shared_ptr<const XYZFile> xyz = current_->xyz();
+
+  double en;
+  // first convert x to the geometry
+  auto displ = std::make_shared<XYZFile>(current_->natom());
+  assert(size_ == x.length());
+  std::copy_n(x.getcontent(), size_, displ->data()); 
+
+  if (internal_)
+    displ = displ->transform(bmat_[1], false);
+
+  *displ -= *xyz;
+
+  if (iter_ > 0) mute_stdcout();
+
+  // current Geometry
+  if (iter_ > 0) {
+    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
+    current_->print_atoms();
+    if (internal_)
+      bmat_ = current_->compute_internal_coordinate(bmat_[0]);
+  }
+
+  // first calculate reference (if needed)
+  std::shared_ptr<PTree> cinput; 
+  std::shared_ptr<const Reference> ref;
+  if (!prev_ref_ || scratch_) {
+    auto m = input_->begin();
+    for ( ; m != --input_->end(); ++m) {
+      const std::string title = to_lower((*m)->get<std::string>("title", ""));
+      if (title != "molecule") {
+        std::shared_ptr<Method> c = construct_method(title, *m, current_, ref);
+        if (!c) throw std::runtime_error("unknown method in optimization");
+        c->compute();
+        ref = c->conv_to_ref();
+      } else {
+        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        if (ref) ref = ref->project_coeff(current_);
+      }
+    }
+    cinput = std::make_shared<PTree>(**m);
+  } else {
+    ref = prev_ref_->project_coeff(current_);
+    cinput = std::make_shared<PTree>(**input_->rbegin());
+  }
+  cinput->put("gradient", true);
+
+  // then calculate gradients
+  double rms;
+  {
+    GradEval<T> eval(cinput, current_, ref, target_state_);
+    if (iter_ == 0) {
+      print_header();
+      mute_stdcout();
+    }
+    // current geom and grad in the cartesian coordinate
+    std::shared_ptr<const GradFile> cgrad = eval.compute();
+    ref = eval.ref();
+    GradEval<T> eval2(cinput, current_, ref, target_state2_);
+    std::shared_ptr<const GradFile> cgrad2 = eval2.compute();
+
+    ref = eval.ref();
+    NacmEval<T> evaln(cinput, current_, ref, target_state2_, target_state_);
+    std::shared_ptr<GradFile> x2 = evaln.compute();
+
+    auto x0 = std::make_shared<GradFile>(*cgrad);
+    auto x1 = std::make_shared<GradFile>(*cgrad - *cgrad2);
+    const double en2 = eval.energy();
+    const double en1 = eval2.energy();
+    en = en2 - en1;
+
+    std::cout << "  Energy : " << std::setprecision(8) << en2 << "  " << en1 << "  " << en << std::endl;
+
+    x0->scale(0.5);
+    
+    // function values
+    fi[0] = en2;
+    fi[1] = en;
+    fi[2] = 0.0;
+
+    // function gradients
+
+    x0->print (": Averaged energy gradient");
+    x1->print (": Gap energy gradient");
+
+    if (internal_) {
+      x0 = x0->transform(bmat_[1], true);
+      x1 = x1->transform(bmat_[1], true);
+      x2 = x2->transform(bmat_[1], true);
+    }
+    
+    assert(size_ == jac[0].length());
+    std::copy_n(x0->data(), size_, jac[0]);
+    std::copy_n(x1->data(), size_, jac[1]);
+    std::copy_n(x2->data(), size_, jac[2]);
+
+    prev_ref_ = eval.ref();
+
+    // current geometry in a molden file
+    MoldenOut mfs("opt.molden");
+    mfs << current_;
+    rms = x0->rms();
+  }
+
+  ++iter_;
+  // returns energy
+
+  resume_stdcout();
+  print_iteration(fi[1], rms, timer_.tick());
 }
 
 
