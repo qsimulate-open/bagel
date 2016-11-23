@@ -116,6 +116,19 @@ class Legendre_renorm {
         }
       }
     }
+
+
+    // should agree with Legendre's compute(l, am, x)
+    double compute_plm(const int l, const int am, const double x) const {
+      if (am < 0 || am > l || abs(x) > 1.0)
+        throw std::runtime_error("Legendre: bad arguments");
+
+      double coef = 1.0;
+      for (int j=l-am+1; j<=l+am; ++j)
+        coef *= j;
+
+      return sqrt(4.0*pi__*coef/(2*l+1)) * compute(l,am,x);
+    }
 };
 
 }

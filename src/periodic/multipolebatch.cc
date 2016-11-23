@@ -49,14 +49,15 @@ void MultipoleBatch::compute() {
 
   // First, do (ix, iy, iz; l; m) = (n|O_lm|0) using VRR
 
-  const int size_start = num_multipoles_ * asize_ * prim0_ * prim1_;
-  complex<double>* intermediate_p = stack_->get<complex<double>>(size_start);
+  complex<double>* intermediate_p = stack_->get<complex<double>>(size_alloc_);
+  const complex<double> imag = swap01_ ? complex<double>(0.0, -1.0) : complex<double>(0.0, 1.0);
 
   const int nmul = num_multipoles_;
+  vector<complex<double>*> bkup(nmul);
+  for (int imul = 0; imul != nmul; ++imul)
+    bkup[imul] = intermediate_p + imul * size_block_;
+
   for (int iprim = 0; iprim != prim0_ * prim1_; ++iprim) {
-    vector<complex<double>*> current_data(nmul);
-    for (int imul = 0; imul != nmul; ++imul)
-      current_data[imul] = intermediate_p + imul * asize_ * prim0_ * prim1_ + iprim * asize_;
 
     vector<complex<double>> workz(amax1_ * nmul); // (0, 0, iz, l, m)
 
@@ -84,7 +85,6 @@ void MultipoleBatch::compute() {
         }
       }
 
-
       vector<complex<double>> worky((amax1_ - iz) * nmul);
       for (int imul = 0; imul != nmul; ++imul)
         worky[imul] = workz[iz * nmul + imul];
@@ -101,9 +101,9 @@ void MultipoleBatch::compute() {
               if (l > 0) {
                 const int i1 = (l-1)*(l-1) + m - 1;
                 if (abs(m - l - 1) < l)
-                  worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1-1];
+                  worky[b * nmul + imul] -= imag * 0.5 * worky[(b-1)*nmul+i1-1];
                 if (abs(m - l + 1) < l)
-                  worky[b * nmul + imul] += complex<double>(0.0, 0.5) * worky[(b-1)*nmul+i1+1];
+                  worky[b * nmul + imul] -= imag * 0.5 * worky[(b-1)*nmul+i1+1];
               }
               worky[b * nmul + imul] *= 0.5 / xp_[iprim];
             }
@@ -138,11 +138,13 @@ void MultipoleBatch::compute() {
           int imul = 0;
           for (int l = 0; l <= lmax_; ++l) {
             for (int m = 0; m <= 2 * l; ++m, ++imul) {
+              complex<double>* current_data = bkup[imul] + iprim * asize_;
               const int pos = amapping_[ix + amax1_ * (iy + amax1_ * iz)];
               if (!swap01_) {
-                current_data[imul][pos] = workx[ix * nmul + imul];
+                current_data[pos] = workx[ix * nmul + imul];
               } else {
-                current_data[imul][pos] = conj(workx[ix * nmul + imul]);
+                //current_data[pos] = workx[ix * nmul + imul];
+                current_data[pos] = conj(workx[ix * nmul + imul]);
               }
             }
           }
@@ -159,43 +161,40 @@ void MultipoleBatch::compute() {
   fill_n(data_, size_alloc_, 0.0);
 
 
-  for (int imul = 0; imul != nmul; ++imul, data_start += prim0_ * prim1_ * asize_, data_final += size_block_) {
+  for (int imul = 0; imul != nmul; ++imul, data_start += size_block_, data_final += size_block_) {
 
-    const int size_intermediate = asize_ * cont0_ * cont1_;
-    complex<double>* const intermediate_c = stack_->get<complex<double>>(size_intermediate);
+    complex<double>* const intermediate_c = stack_->get<complex<double>>(size_block_);
     perform_contraction(asize_, data_start, prim0_, prim1_, intermediate_c,
                         basisinfo_[0]->contractions(), basisinfo_[0]->contraction_ranges(), cont0_,
                         basisinfo_[1]->contractions(), basisinfo_[1]->contraction_ranges(), cont1_);
 
-    const int size_final_car = cont0_ * cont1_ * asize_intermediate_;
-    complex<double>* const intermediate_fi = stack_->get<complex<double>>(size_final_car);
+    complex<double>* const intermediate_fi = stack_->get<complex<double>>(size_block_);
 
     // now get (a|O_lm|b) using HRR
     if (basisinfo_[1]->angular_number() != 0) {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, cont0_ * cont1_, intermediate_c, AB_, intermediate_fi);
     } else {
-      copy_n(intermediate_c, size_final_car, intermediate_fi);
+      copy_n(intermediate_c, size_block_, intermediate_fi);
     }
 
     if (spherical_) {
-      const int size_final_sph = cont0_ * cont1_ * asize_final_;
-      complex<double>* const intermediate_i = stack_->get<complex<double>>(size_final_sph);
+      complex<double>* const intermediate_i = stack_->get<complex<double>>(size_block_);
       const unsigned int carsph_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       carsphlist.carsphfunc_call(carsph_index, cont0_ * cont1_, intermediate_fi, intermediate_i);
 
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort.sortfunc_call(sort_index, data_final, intermediate_i, cont1_, cont0_, 1, swap01_);
-      stack_->release(size_final_sph, intermediate_i);
+      stack_->release(size_block_, intermediate_i);
     } else {
       const unsigned int sort_index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort.sortfunc_call(sort_index, data_final, intermediate_fi, cont1_, cont0_, 1, swap01_);
     }
 
-    stack_->release(size_final_car, intermediate_fi);
-    stack_->release(size_intermediate, intermediate_c);
+    stack_->release(size_block_, intermediate_fi);
+    stack_->release(size_block_, intermediate_c);
   } // end loop over multipoles
 
   // release resources
-  stack_->release(size_start, intermediate_p);
+  stack_->release(size_alloc_, intermediate_p);
 }

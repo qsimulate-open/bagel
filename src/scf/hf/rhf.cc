@@ -27,6 +27,7 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
+#include <src/prop/sphmultipole.h>
 
 using namespace bagel;
 using namespace std;
@@ -207,6 +208,8 @@ void RHF::compute() {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
+    SphMultipole smu(geom_, aodensity_, 2);
+    smu.compute();
   }
 }
 
