@@ -41,17 +41,18 @@ DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nb
   init(mol);
 }
 
-
 void DKHcore::init(shared_ptr<const Molecule> mol0) {
 
   auto mol = make_shared<Molecule>(*mol0);
   mol = mol->uncontract();
 
+  // build DKH Hamiltonian in uncontracted basis
   Kinetic kinetic(mol);
   Overlap overlap(mol);
   shared_ptr<const Matrix> tildex = overlap.tildex(1.0e-9);
+  assert(kinetic.ndim() == tildex->ndim()); // if it fails, check linear dependency
   Matrix transfer(*tildex % kinetic * *tildex);
-  int ndim = transfer.ndim(); int mdim = transfer.mdim(); 
+  int ndim = transfer.ndim(); 
   VectorB eig(ndim);
   VectorB ep_vec(ndim);
   transfer.diagonalize(eig);
@@ -63,31 +64,31 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
     ep_vec(i) = c__ * std::sqrt(2 * eig(i) + c__ * c__);
   }
 
-  Matrix Ep(ndim, mdim, 0.0); 
+  Matrix Ep(ndim, ndim, 0.0); 
   for (int i = 0; i != ndim; ++i) {
     Ep(i,i) = ep_vec(i);
   }
   
-  Matrix A(ndim, mdim, 0.0);
+  Matrix A(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
     A(i,i) = std::sqrt(0.5 * (ep_vec(i) + c__ * c__) / ep_vec(i));
   }
   
-  Matrix V(ndim, mdim, 0.0);
+  Matrix V(ndim, ndim, 0.0);
   V = transfer % nai * transfer;
 
-  Matrix tildeV(ndim, mdim, 0.0);
+  Matrix tildeV(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != mdim; ++j){
+    for (int j = 0; j != ndim; ++j){
       tildeV(i,j) = V(i,j) / (ep_vec(i) + ep_vec(j));
     }
   }
 
-  Matrix AVA(ndim, mdim, 0.0); 
+  Matrix AVA(ndim, ndim, 0.0); 
   AVA = A * tildeV * A;
 
-  Matrix B(ndim, mdim, 0.0);
-  for (int i = 0; i != mdim; ++i) {
+  Matrix B(ndim, ndim, 0.0);
+  for (int i = 0; i != ndim; ++i) {
     B(i,i) = A(i,i) * c__ / (ep_vec(i) + c__ * c__);
   }
 
@@ -95,26 +96,26 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   smallnai.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[0]);
   smallnai = transfer % smallnai * transfer;
 
-  Matrix BVB(ndim, mdim, 0.0);
+  Matrix BVB(ndim, ndim, 0.0);
   for(int i = 0; i != ndim; ++i) {
-    for(int j = 0; j != mdim; ++j) {
+    for(int j = 0; j != ndim; ++j) {
       BVB(i,j) = smallnai(i,j) / (ep_vec(i) + ep_vec(j));
     }
   }
   BVB = B * BVB * B;
 
-  Matrix RI(ndim, mdim, 0.0); 
-  Matrix RI_inv(ndim, mdim, 0.0); 
+  Matrix RI(ndim, ndim, 0.0); 
+  Matrix RI_inv(ndim, ndim, 0.0); 
   for (int i = 0; i != ndim; ++i) {
-    RI(i,i) = 2 * eig(i) * pow((c__ / (ep_vec(i) + c__ * c__)), 2);
-    RI_inv(i,i) = 1 / RI(i,i);
+    RI(i,i) = 2.0 * eig(i) * pow((c__ / (ep_vec(i) + c__ * c__)), 2);
+    RI_inv(i,i) = 1.0 / RI(i,i);
   }
  
   Matrix smallx(mol->nbasis(), mol->nbasis()); 
   smallx.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[2]);
   smallx = transfer % smallx * transfer;
   for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != mdim; ++j) {
+    for (int j = 0; j != ndim; ++j) {
       smallx(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
@@ -123,7 +124,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   smally.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[3]);
   smally = transfer % smally * transfer;
   for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != mdim; ++j) {
+    for (int j = 0; j != ndim; ++j) {
       smally(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
@@ -132,21 +133,21 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   smallz.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[1]);
   smallz = transfer % smallz * transfer;
   for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != mdim; ++j) {
+    for (int j = 0; j != ndim; ++j) {
       smallz(i,j) /= ep_vec(i) + ep_vec(j);
     }
   }
 
-  Matrix Xc(ndim, mdim, 0.0);
+  Matrix Xc(ndim, ndim, 0.0);
   Xc = B * smallx * B;
   
-  Matrix Yc(ndim, mdim, 0.0);
+  Matrix Yc(ndim, ndim, 0.0);
   Yc = B * smally * B;
   
-  Matrix Zc(ndim, mdim, 0.0);
+  Matrix Zc(ndim, ndim, 0.0);
   Zc = B * smallz * B;
    
-  Matrix dkh(ndim, mdim, 0.0);
+  Matrix dkh(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
     dkh(i,i) = c__ * c__ * 2 * eig(i) / (ep_vec(i) + c__ * c__);
   }
@@ -155,12 +156,11 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
        - BVB * Ep * AVA               - AVA * Ep * BVB                 + AVA * RI * Ep * AVA
        + BVB * Ep * RI_inv * BVB      - 0.5 * BVB * AVA * Ep           - 0.5 * AVA * BVB * Ep
        + 0.5 * AVA * RI * AVA * Ep    + 0.5 * BVB * RI_inv * BVB * Ep  - 0.5 * Ep * BVB * AVA
-       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB; // DKH2
+       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB // DKH2
 /*       - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
        - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
-       - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2FULL
-*/
-  
+       - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; */ // DKH2FULL
+
   MixedBasis<OverlapBatch> mix(mol0, mol);
 
   transfer = transfer % mix;
