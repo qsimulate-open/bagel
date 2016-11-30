@@ -622,7 +622,7 @@ shared_ptr<const Atom> Atom::uncontract() const {
   vector<shared_ptr<const Shell>> uncshells;
   for (auto& i : shells_) 
     uncshells.push_back(i->uncontract());
-    atom->reset_shells(uncshells);
+  atom->reset_shells(uncshells);
 
   return atom;
 }

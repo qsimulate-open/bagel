@@ -385,36 +385,27 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
   }
 }
 
+
 shared_ptr<const Shell> Shell::uncontract() const {
-  int i = 0;
+  int offset = 0;
   vector<vector<double>> conts;
   vector<pair<int, int>> ranges;
   for (auto& e : exponents_) {
-    vector<double> cont(i+1, 0.0);
-    cont[i] = 1.0;
+    vector<double> cont(offset, 0.0);
+    cont.insert(cont.end(),1.0);
     conts.push_back(cont);
-    ranges.push_back({i,i+1});
-    ++i;
+    ranges.push_back({offset,offset+1});
+    ++offset;
   }
-
-  auto citer = ranges.begin(); // this is to do with normalization
+  
+  auto citer = ranges.begin();
   for (auto iter = conts.begin(); iter != conts.end(); ++iter, ++citer) {
     auto eiter = exponents_.begin();
     double denom = 1.0;
     for (int ii = 2; ii <= angular_number_; ++ii) denom *= 2 * ii - 1;
     for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
       *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(angular_number_)) / sqrt(denom);
-
-    vector<vector<double>> cont2 {*iter};
-    vector<pair<int, int>> cran {*citer};
-    auto current = make_shared<const Shell>(spherical_, position_, angular_number_, exponents_, cont2, cran);
-    array<shared_ptr<const Shell>,2> cinp {{ current, current }}; 
-    OverlapBatch coverlap(cinp);
-    coverlap.compute();
-    const double scal = 1.0 / sqrt((coverlap.data())[0]);
-    for (auto& d : *iter) d *= scal;
-  }   
+  }
   
-  auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, conts, ranges);
-  return out;
+  return make_shared<Shell>(spherical_, position_, angular_number_, exponents_, conts, ranges);
 }
