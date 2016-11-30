@@ -45,12 +45,20 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
 
+  // DKH switch
+  dkh_ = idata_->get<bool>("dkh", false);
+  
   Timer scfb;
   overlap_ = make_shared<const OvlType>(geom);
   scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom);
-  scfb.tick_print("Hcore matrix");
-
+  if (!dkh_) {
+    hcore_ = make_shared<const HcType>(geom);
+    scfb.tick_print("Hcore matrix");
+  } else {
+    dkhcore_ = make_shared<const DKHcore>(geom);
+    scfb.tick_print("DKHcore matrix");
+  }
+  
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
   diis_start_ = idata_->get<int>("diis_start", 1);

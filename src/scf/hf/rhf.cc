@@ -52,11 +52,19 @@ RHF::RHF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
 void RHF::compute() {
   Timer scftime;
 
-  shared_ptr<const Matrix> previous_fock = hcore_;
+  shared_ptr<const Matrix> previous_fock;
+  if (!dkh_)
+    previous_fock = hcore_;
+  else
+    previous_fock = dkhcore_;
   shared_ptr<const Matrix> aodensity_;
 
   shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
-  shared_ptr<const DistMatrix> hcore = hcore_->distmatrix();
+  shared_ptr<const DistMatrix> hcore;
+  if (!dkh_)
+    hcore = hcore_->distmatrix();
+  else
+    hcore = dkhcore_->distmatrix();
   shared_ptr<const DistMatrix> overlap = overlap_->distmatrix();
   shared_ptr<const DistMatrix> coeff;
   shared_ptr<const DistMatrix> aodensity;
@@ -66,7 +74,11 @@ void RHF::compute() {
       shared_ptr<const DistMatrix> fock = hcore;
       if (dodf_ && geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
-        auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        shared_ptr<const Matrix> focka;
+        if (!dkh_)
+          focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        else
+          focka = make_shared<const Fock<1>>(geom_, dkhcore_, aden, schwarz_);
         fock = focka->distmatrix();
       }
       DistMatrix intermediate = *tildex % *fock * *tildex;
@@ -76,9 +88,15 @@ void RHF::compute() {
       shared_ptr<const Matrix> focka;
       if (!dodf_) {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+        if (!dkh_)
+          focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+        else
+          focka = make_shared<const Fock<0>>(geom_, dkhcore_, aodensity_, schwarz_);
       } else {
-        focka = make_shared<const Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        if (!dkh_)
+          focka = make_shared<const Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        else
+          focka = make_shared<const Fock<1>>(geom_, dkhcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -123,7 +141,10 @@ void RHF::compute() {
       previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
       mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
     } else {
-      previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      if (!dkh_)
+        previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      else
+        previous_fock = make_shared<Fock<1>>(geom_, dkhcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -134,7 +155,7 @@ void RHF::compute() {
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(12) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 
     if (error < thresh_scf_) {

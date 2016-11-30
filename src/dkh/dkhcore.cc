@@ -39,9 +39,6 @@ BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
 DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
   
   init(mol);
-  cout<<endl;
-  cout<<"  === Using DKHcore === "<<endl;
-  cout<<endl;
 }
 
 
