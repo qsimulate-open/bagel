@@ -144,4 +144,8 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
   }
 }
 
-
+shared_ptr<const Hcore> Hcore::reset_hcore(shared_ptr<const Matrix> mat) const{
+  auto out = make_shared<Hcore>(*this);
+  out->copy_block(0,0,mat->ndim(),mat->mdim(),mat);
+  return out;
+}

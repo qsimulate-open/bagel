@@ -28,7 +28,6 @@
 #include <src/mat1e/overlap.h>
 #include <src/mat1e/giao/zoverlap.h>
 #include <src/mat1e/hcore.h>
-#include <src/dkh/dkhcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
 
@@ -42,7 +41,6 @@ class SCF_base_ : public Method {
     std::shared_ptr<const MatType> tildex_;
     std::shared_ptr<const OvlType> overlap_;
     std::shared_ptr<const HcType> hcore_;
-    std::shared_ptr<const DKHcore> dkhcore_;
     std::shared_ptr<const Coeff_<MatType>> coeff_;
 
     int max_iter_;
