@@ -34,16 +34,19 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
+BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore_<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore_<std::complex<double>>)
 
-DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
+
+template<typename DataType>
+DKHcore_<DataType>::DKHcore_(shared_ptr<const Molecule> mol) : MatType(mol->nbasis(), mol->nbasis()) {
   
-  cout << "  === Using DKHcore ===" << endl;
-  cout << endl;
+  cout << "       - Using DKHcore" << endl;
   init(mol);
 }
 
-void DKHcore::init(shared_ptr<const Molecule> mol0) {
+template<>
+void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
 
   auto mol = make_shared<Molecule>(*mol0);
   mol = mol->uncontract();
@@ -76,8 +79,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
     A(i,i) = std::sqrt(0.5 * (ep_vec(i) + c__ * c__) / ep_vec(i));
   }
   
-  Matrix V(ndim, ndim, 0.0);
-  V = transfer % nai * transfer;
+  Matrix V(transfer % nai * transfer);
 
   Matrix tildeV(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
@@ -86,8 +88,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
     }
   }
 
-  Matrix AVA(ndim, ndim, 0.0); 
-  AVA = A * tildeV * A;
+  Matrix AVA(A * tildeV * A); 
 
   Matrix B(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
@@ -140,26 +141,25 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
     }
   }
 
-  Matrix Xc(ndim, ndim, 0.0);
-  Xc = B * smallx * B;
-  
-  Matrix Yc(ndim, ndim, 0.0);
-  Yc = B * smally * B;
-  
-  Matrix Zc(ndim, ndim, 0.0);
-  Zc = B * smallz * B;
+  const Matrix Xc(B * smallx * B);
+  const Matrix Yc(B * smally * B);
+  const Matrix Zc(B * smallz * B);
    
   Matrix dkh(ndim, ndim, 0.0);
   for (int i = 0; i != ndim; ++i) {
     dkh(i,i) = c__ * c__ * 2 * eig(i) / (ep_vec(i) + c__ * c__);
   }
   
-  dkh += A * V * A                    + B * smallnai * B  // DKH1
+#if 1
+  dkh += A * V * A                    + B * smallnai * B  // Free Particle Projection
        - BVB * Ep * AVA               - AVA * Ep * BVB                 + AVA * RI * Ep * AVA
        + BVB * Ep * RI_inv * BVB      - 0.5 * BVB * AVA * Ep           - 0.5 * AVA * BVB * Ep
        + 0.5 * AVA * RI * AVA * Ep    + 0.5 * BVB * RI_inv * BVB * Ep  - 0.5 * Ep * BVB * AVA
        - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB; // DKH2
-/*       - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
+#else
+   // new code
+#endif
+/*     - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
        - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
        - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; */ // DKH2FULL
 
@@ -171,3 +171,8 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
 
   copy_block(0,0,mol0->nbasis(),mol0->nbasis(),dkh);
 }
+
+
+template class DKHcore_<double>;
+template class DKHcore_<std::complex<double>>;
+

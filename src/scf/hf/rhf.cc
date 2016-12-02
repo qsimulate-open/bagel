@@ -28,7 +28,6 @@
 #include <src/prop/multipole.h>
 #include <src/scf/dhf/population_analysis.h>
 #include <src/util/muffle.h>
-#include <src/dkh/dkhcore.h>
 
 using namespace bagel;
 using namespace std;
@@ -52,11 +51,6 @@ RHF::RHF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
 
 void RHF::compute() {
   Timer scftime;
-
-  if (dkh_) {
-    auto dkhcore = make_shared<const DKHcore>(geom_);
-    hcore_ = hcore_->reset_hcore(dkhcore->matrix());
-  }
 
   shared_ptr<const Matrix> previous_fock = hcore_;
   shared_ptr<const Matrix> aodensity_;

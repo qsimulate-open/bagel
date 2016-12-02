@@ -46,11 +46,9 @@ class Hcore : public Matrix1e {
 
   public:
     Hcore() { }
-    Hcore(std::shared_ptr<const Molecule>);
+    Hcore(std::shared_ptr<const Molecule> mol, const bool initialize = true);
     
     std::shared_ptr<HSO> hso() const { return hso_; }
-  
-    std::shared_ptr<const Hcore> reset_hcore(std::shared_ptr<const Matrix>) const;
 };
 
 }

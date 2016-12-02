@@ -40,11 +40,13 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
-
-  init(mol);
-  fill_upper();
+Hcore::Hcore(shared_ptr<const Molecule> mol, const bool initialize) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
+  if (initialize) {
+    init(mol);
+    fill_upper();
+  }
 }
+
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
 
@@ -142,10 +144,4 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
       }
     }
   }
-}
-
-shared_ptr<const Hcore> Hcore::reset_hcore(shared_ptr<const Matrix> mat) const{
-  auto out = make_shared<Hcore>(*this);
-  out->copy_block(0,0,mat->ndim(),mat->mdim(),mat);
-  return out;
 }
