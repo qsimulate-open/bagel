@@ -31,7 +31,6 @@ using namespace std;
 using namespace bagel;
 
 const static Legendre plm;
-const static Factorial f;
 
 static const double pisqrt__ = sqrt(pi__);
 
