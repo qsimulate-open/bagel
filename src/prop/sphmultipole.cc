@@ -36,7 +36,6 @@ vector<complex<double>> SphMultipole::compute() const { // slow
   
   const size_t size = (rank_+1)*(rank_+1);
   vector<complex<double>> out(size);
-  density_->print("DENSITY MATRIX");
 
   auto o0 = geom_->offsets().begin();
   for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++o0) {
@@ -82,20 +81,37 @@ vector<complex<double>> SphMultipole::compute() const { // slow
                                                         << mpole10 << ") a.u." << endl << endl;
 
   if (rank_ >= 2) {
-    const double mpole22c = (out[8] + out[4]).real();
-    const double mpole22s = (out[8] - out[4]).imag();
-    const double mpole21c = (-1.0 * out[7] + out[5]).real();
-    const double mpole21s = (-1.0 * out[7] - out[5]).imag();
-    const double mpole20 = out[6].real();
-    for (int i = 4; i != 9; ++i)
-      cout << "QLM " << out[i] << endl;
+    // nuclear contribution
+    array<double,5> qm;
+    for (auto& a : geom_->atoms()) {
+      array<double, 3> rc;
+      double rr = 0.0;
+      for (int i = 0; i != 3; ++i) {
+        rc[i] = a->position(i) - geom_->charge_center()[i];
+        rr += rc[i]*rc[i];
+      }
+      qm[0] += a->atom_charge() * (1.5*rc[0]*rc[0] - 0.5*rr); //xx
+      qm[1] += a->atom_charge() * (1.5*rc[1]*rc[1] - 0.5*rr); //yy
+      qm[2] += a->atom_charge() * 1.5*rc[0]*rc[1];            //xy
+      qm[3] += a->atom_charge() * 1.5*rc[0]*rc[2];            //xz
+      qm[4] += a->atom_charge() * 1.5*rc[1]*rc[2];            //yz
+    }
+
+    // Stone's convention
+    const double sqrt3 = sqrt(3.0);
+    const double sqrt3inv = 1.0/sqrt3;
+    const double mpole22c = sqrt3inv*(qm[0]-qm[1]) - 2.0*sqrt3*(out[8] + out[4]).real();
+    const double mpole22s = 2.0*sqrt3inv*qm[2] - 2.0*sqrt3*(out[8] - out[4]).imag();
+    const double mpole21c = 2.0*sqrt3inv*qm[3] - sqrt3*(-1.0 * out[7] + out[5]).real();
+    const double mpole21s = 2.0*sqrt3inv*qm[4] - sqrt3*(-1.0 * out[7] - out[5]).imag();
+    const double mpole20 = -1.0*(qm[0]+qm[1]) - 2.0*out[6].real();
     cout << "    * Quadrupole moment:" << endl;
     cout << "           (" << setw(12) << setprecision(6);
     if (abs(mpole20)  > 1e-7) cout << "   Q20 = " << setw(11) << mpole20;
     if (abs(mpole21c) > 1e-7) cout << ", Q21c = " << setw(11) << mpole21c;
     if (abs(mpole21s) > 1e-7) cout << ", Q21s = " << setw(11) << mpole21s;
-    if (abs(mpole22s) > 1e-7) cout << ", Q22s = " << setw(11) << mpole22s;
-    if (abs(mpole22c) > 1e-7) cout << ", Q22c = " << setw(11) << mpole22c << ") a.u." << endl;
+    if (abs(mpole22c) > 1e-7) cout << ", Q22c = " << setw(11) << mpole22c;
+    if (abs(mpole22s) > 1e-7) cout << ", Q22s = " << setw(11) << mpole22s << ") a.u." << endl;
   }
 
   cout << "      about the centre of charge:      (" << geom_->charge_center()[0] << ", " << setw(12)

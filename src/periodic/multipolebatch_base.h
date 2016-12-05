@@ -45,6 +45,7 @@ class MultipoleBatch_base : public OSIntegral<std::complex<double>> {
     void compute_ss(const double thresh);
     int nblocks() const override { return num_multipoles_; }
     int nrank() const override { return 0; }
+    std::vector<std::complex<double>> compute_OlmPQ(const std::array<double, 3>& PQ);
 
   public:
     MultipoleBatch_base(const std::array<std::shared_ptr<const Shell>,2>& shells, const std::array<double, 3> centre,

@@ -25,10 +25,13 @@
 
 
 #include <src/periodic/multipolebatch_base.h>
-#include <src/periodic/sphmultipole.h>
+#include <src/util/math/legendre.h>
 
 using namespace std;
 using namespace bagel;
+
+const static Legendre plm;
+const static Factorial f;
 
 static const double pisqrt__ = sqrt(pi__);
 
@@ -68,18 +71,48 @@ void MultipoleBatch_base::compute_ss(const double thr) {
       PQ[1] = P[1] - centre_[1];
       PQ[2] = P[2] - centre_[2];
 
-      auto Mpq = make_shared<const SphMultipole>(PQ, true, lmax_);
-
+      vector<complex<double>> olm = compute_OlmPQ(PQ);
       const double coeff = pisqrt__ * pi__ * sqrt(cxp_inv) * cxp_inv;
 
       for (int i = 0; i != num_multipoles_; ++i) {
         const double rABsq = AB_[0] * AB_[0] + AB_[1] * AB_[1] + AB_[2] * AB_[2];
         const int index = iprim + i * prim0_ * prim1_;
         const double Sab = coeff * exp(- *e0 * *e1 * cxp_inv * rABsq);
-        multipole_[index] = Sab * Mpq->multipole(i);
+        multipole_[index] = Sab * olm[i];
         if (swap01_)
           multipole_[index] = conj(multipole_[index]);
       }
     }
   }
+}
+
+
+vector<complex<double>> MultipoleBatch_base::compute_OlmPQ(const array<double, 3>& PQ) {
+
+  const double r = sqrt(PQ[0]*PQ[0] + PQ[1]*PQ[1] + PQ[2]*PQ[2]);
+  const double ctheta = (r > numerical_zero__) ? PQ[2]/r : 0.0;
+  const double phi = atan2(PQ[1], PQ[0]);
+
+  vector<complex<double>> out(num_multipoles_);
+
+  out[0] = 1.0;
+  for (int l = 1; l <= lmax_; ++l) {
+    for (int mm = 0; mm <= 2 * l; ++mm) {
+      const int m = mm - l;
+      const int am = abs(m);
+
+      double coeff = pow(r, l) * plm.compute(l, am, ctheta);
+      double ft = 1.0;
+      for (int i = 1; i <= l + am; ++i) {
+        coeff /= ft;
+        ft += 1.0;
+      }
+
+      const double real = (m >=0) ? (coeff * cos(am * phi)) : (pow(-1.0, m) * coeff * cos(am * phi));
+      const double imag = coeff * sin(am * phi);
+      out[l*l+mm] = complex<double>(real, imag);
+    }
+  }
+
+  return out;
 }
