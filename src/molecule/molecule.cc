@@ -104,8 +104,8 @@ array<double,6> Molecule::quadrupole() const {
   for (auto& i : atoms_) {
     out[0] += i->atom_charge() * pow(i->position(0) - c[0], 2);
     out[1] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(1) - c[1]);
-    out[2] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(2) - c[2]);
-    out[3] += i->atom_charge() * pow(i->position(1) - c[1], 2);
+    out[2] += i->atom_charge() * pow(i->position(1) - c[1], 2);
+    out[3] += i->atom_charge() * (i->position(0) - c[0]) * (i->position(2) - c[2]);
     out[4] += i->atom_charge() * (i->position(1) - c[1]) * (i->position(2) - c[2]);
     out[5] += i->atom_charge() * pow(i->position(2) - c[2], 2);
   }
