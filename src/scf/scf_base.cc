@@ -68,6 +68,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
     //fmmtree_sp_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
+  dma_print_ = idata_->get<int>("dma", 0);
 
   Timer scfb;
   overlap_ = make_shared<const OvlType>(geom);

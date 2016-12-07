@@ -208,8 +208,10 @@ void RHF::compute() {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
-    SphMultipole smu(geom_, aodensity_, 2);
-    smu.compute();
+    if (dma_print_ > 0) {
+      SphMultipole smu(geom_, aodensity_, dma_print_);
+      smu.compute();
+    }
   }
 }
 

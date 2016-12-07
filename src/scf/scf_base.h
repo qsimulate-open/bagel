@@ -56,6 +56,7 @@ class SCF_base_ : public Method {
     double thresh_overlap_;
     double thresh_scf_;
     int multipole_print_;
+    int dma_print_;
 
     std::vector<double> schwarz_;
     void init_schwarz();
