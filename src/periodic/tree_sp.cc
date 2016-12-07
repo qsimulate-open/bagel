@@ -27,7 +27,7 @@
 #include <src/periodic/tree_sp.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
 
 using namespace bagel;

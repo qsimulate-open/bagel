@@ -27,7 +27,7 @@
 #ifndef __SRC_PERIODIC_JEXPANSION_H
 #define __SRC_PERIODIC_JEXPANSION_H
 
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
 
 namespace bagel {

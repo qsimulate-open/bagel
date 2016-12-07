@@ -26,7 +26,7 @@
 
 #include <src/util/f77.h>
 #include <src/periodic/box.h>
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/periodic/localexpansion.h>
 #include <src/integral/rys/eribatch.h>

@@ -25,7 +25,7 @@
 
 
 #include <src/periodic/pmultipole.h>
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 
 using namespace std;
 using namespace bagel;

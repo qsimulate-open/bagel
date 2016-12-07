@@ -29,7 +29,7 @@
 
 #include <src/wfn/geometry.h>
 #include <src/periodic/localexpansion.h>
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 
 namespace bagel {
 

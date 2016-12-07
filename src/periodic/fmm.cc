@@ -27,7 +27,7 @@
 #include <src/periodic/fmm.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 #include <src/periodic/localexpansion.h>
 #include <src/periodic/jexpansion.h>
 #include <boost/math/special_functions/erf.hpp>

@@ -27,7 +27,7 @@
 #ifndef __SRC_PROP_SPHMULTIPOLE_H
 #define __SRC_PROP_SPHMULTIPOLE_H
 
-#include <src/periodic/multipolebatch.h>
+#include <src/integral/os/multipolebatch.h>
 #include <src/wfn/geometry.h>
 
 namespace bagel {
