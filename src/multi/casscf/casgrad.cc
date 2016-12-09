@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: supercigrad.cc
+// Filename: casgrad.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
