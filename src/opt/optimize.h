@@ -37,7 +37,6 @@ class Optimize {
 
     int maxiter_;
     double thresh_;
-    bool alglib_;
 
   public:
     Optimize(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

@@ -29,12 +29,12 @@
 #include <string>
 #include <algorithm>
 #include <src/wfn/construct_method.h>
-#include <src/opt/geomopt.h>
+#include <src/opt/opt.h>
 
 using namespace std;
 using namespace bagel;
 
-shared_ptr<GradFile> GeomOpt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
 
   // Find conical intersection by gradient projection method (Schlegel)
 
@@ -77,68 +77,68 @@ shared_ptr<GradFile> GeomOpt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shar
     xg->element(2, iatom) *= (1.0 - x1->element(2, iatom) - x2->element(2, iatom));
   }
 
-  *out = 0.50 * *xf + 0.50 * *xg;
+  *out = *xf + *xg;
   en_ = en2;
   egap_ = en;
 
   return out;
 }
 
-shared_ptr<GradFile> GeomOpt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
   auto out = make_shared<GradFile>(current_->natom());
 
   if (method_ == "uhf") {
 
-    GradEval<UHF> eval (cinput, current_, ref, target_state_);
+    GradEval<UHF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "rohf") {
 
-    GradEval<ROHF> eval (cinput, current_, ref, target_state_);
+    GradEval<ROHF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "hf") {
 
-    GradEval<RHF> eval (cinput, current_, ref, target_state_);
+    GradEval<RHF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "ks") {
 
-    GradEval<KS> eval (cinput, current_, ref, target_state_);
+    GradEval<KS> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "dhf") {
 
-    GradEval<Dirac> eval (cinput, current_, ref, target_state_);
+    GradEval<Dirac> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "mp2") {
 
-    GradEval<MP2Grad> eval (cinput, current_, ref, target_state_);
+    GradEval<MP2Grad> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "casscf") {
 
-    GradEval<CASSCF> eval (cinput, current_, ref, target_state_);
+    GradEval<CASSCF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
     
   } else if (method_ == "caspt2") {
 
-    GradEval<CASPT2Grad> eval (cinput, current_, ref, target_state_);
+    GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
@@ -147,11 +147,11 @@ shared_ptr<GradFile> GeomOpt::get_grad_energy(shared_ptr<PTree> cinput, shared_p
   return out;
 }
 
-shared_ptr<GradFile> GeomOpt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+shared_ptr<GradFile> Opt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
   auto out = make_shared<GradFile>(current_->natom());
   
-  if (opttype_ == "conical") out = get_cigrad_bearpark (cinput, ref);
-  else out = get_grad_energy (cinput, ref);
+  if (opttype_ == "conical") out = get_cigrad_bearpark(cinput, ref);
+  else out = get_grad_energy(cinput, ref);
 
   return out;
 }
