@@ -107,8 +107,8 @@ vector<complex<double>> MultipoleBatch_base::compute_OlmPQ(const array<double, 3
         ft += 1.0;
       }
 
-      const double real = (m >=0) ? (coeff * cos(am * phi)) : (pow(-1.0, m) * coeff * cos(am * phi));
-      const double imag = coeff * sin(am * phi);
+      const double real = (m >= 0) ? (coeff * cos(am * phi)) : (pow(-1.0, m) * coeff * cos(am * phi));
+      const double imag = (m >= 0) ? (coeff * sin(am * phi)) : (pow(-1.0, m+1) * coeff * sin(am * phi));
       out[l*l+mm] = complex<double>(real, imag);
     }
   }
