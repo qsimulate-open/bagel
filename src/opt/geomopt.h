@@ -126,8 +126,8 @@ class GeomOpt {
           int tmpstate = target_state_;
           target_state_ = target_state2_;
           target_state2_ = tmpstate;
-          adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
         }
+        adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
       }
       else if (opttype_ == "transition")
         throw std::runtime_error("We cannot do saddle point optimization now, wait for Hessian coming up...");
