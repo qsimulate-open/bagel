@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: casgrad.cc
+// Filename: supercigrad.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -277,10 +277,10 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   // transition density matrix elements
   shared_ptr<const RDM<1>> rdm1_tr;
   shared_ptr<const RDM<2>> rdm2_tr;
-  const int ist = target_state1_;
-  const int jst = target_state2_;
+  const int jst = target_state1_;
+  const int ist = target_state2_;
   const double egap = energy2_ - energy1_;
-  tie(rdm1_tr, rdm2_tr) = ref_->rdm12(ist, jst);
+  tie(rdm1_tr, rdm2_tr) = ref_->rdm12(jst, ist);
 
   // related to denominators
   const int nmobasis = coeff->mdim();
@@ -297,18 +297,16 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   // 1) one-electron contribution
   auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * ocoeff);
 
-  shared_ptr<Matrix> rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
   shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1_tr);
+  shared_ptr<Matrix> rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
   rdms->symmetrize();
+  rdm1->antisymmetrize();
 
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
 
-  // 1-1) CI term in Lagrangian: RDM1 is symmetrized here
+  // 1) CI term in Lagrangian: RDM1 is symmetrized here
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
-  
-  // 2-1) f^CSF in Z-vector for NACME: RDM1 is not symmetrized here
-  g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
- 
+
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tr (look for gamma)
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tr(*rdm2_tr, *rdm1_tr, nclosed, nact);
@@ -359,6 +357,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
     dipole.compute();
   }
 
+  // f_CSF is only this when rdm1 is anti-symmetrized
   shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
   qxmat->scale(egap);
 

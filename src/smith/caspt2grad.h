@@ -209,7 +209,7 @@ class CASPT2Nacm : public Method {
 
 // Single point calc.
 
-class CASPT2Ener : public Method {
+class CASPT2Energy : public Method {
   public:
     using Tensor = SMITH::Tensor_<double>;
   protected:
@@ -228,7 +228,7 @@ class CASPT2Ener : public Method {
     bool do_hyperfine_;
 
   public:
-    CASPT2Ener(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+    CASPT2Energy(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
 

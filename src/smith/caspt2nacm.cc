@@ -138,12 +138,11 @@ void CASPT2Nacm::compute() {
   auto vd1tmp = make_shared<Matrix>(*smith->vd1());
   vd1_ = d1set(vd1tmp);
 
-  // zeroth order RDM
   d10ms_ = make_shared<RDM<1>>(nact);
   d20ms_ = make_shared<RDM<2>>(nact);
   for (int ist = 0; ist != nstates_; ++ist) {
     const double ims = msrot(ist, target2());
-    for (int jst = 0; jst != nstates_; ++jst) {       // bra
+    for (int jst = 0; jst != nstates_; ++jst) {
       const double jms = msrot(jst, target1());
       shared_ptr<const RDM<1>> rdm1t;
       shared_ptr<const RDM<2>> rdm2t;
@@ -153,7 +152,7 @@ void CASPT2Nacm::compute() {
     }
   }
 
-  shared_ptr<Matrix> d10IJ = ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(), coeff_->mdim())->copy();
+  auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
   d10IJ->antisymmetrize();
   *vd1_ += *d10IJ;
 
@@ -328,8 +327,8 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   timer.tick_print("Effective densities");
 
   // compute gradients
-  
   shared_ptr<GradFile> gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
+
   gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
   timer.tick_print("NACME integral contraction");
@@ -358,7 +357,7 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
 
   // vd1_ term
   g0->add_block(egap, 0, 0, nmobasis, nmobasis, *vd1_);
-
+  
   // If XMS, coupling from Fock is also needed
   // Similar code with caspt2/CASPT2.cc is used here
   if (xmsrot_) {
@@ -400,7 +399,8 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
         *dtilde += *rdms * wdkl(kst, lst);
       }
     }
-    // dtilde is added to dcheck, and later used for fock part evaluation
+
+    // dtilde is added to dcheck
     *dcheck_ += *dtilde;
     dtildq = dtilde->get_submatrix(nclosed, nclosed, nact, nact);
 
@@ -483,7 +483,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     fullks = contract_D1(full);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = nact ? fullo->apply_2rdm_tr(*d20ms_, *d10ms_, nclosed, nact) : fullo->apply_closed_2RDM();
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm_tr(*d20ms_, *d10ms_, nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 0.5));
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld->swap(), 0.5));
   }

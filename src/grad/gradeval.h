@@ -119,11 +119,6 @@ class FiniteGrad : public GradEval_base {
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
 
-}
-
-
-namespace bagel {
-
 template<typename T>
 class NacmEval : public GradEval_base {
   protected:
@@ -152,7 +147,6 @@ class NacmEval : public GradEval_base {
     }
 
   public:
-    // Here again, constructor performs energy calculation
     NacmEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2)
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2) {
       init();
@@ -204,7 +198,6 @@ class FiniteNacm : public GradEval_base {
     }
 
   public:
-    // Constructor does nothing here
     FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx) 
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
       init();
@@ -221,7 +214,7 @@ class FiniteNacm : public GradEval_base {
 
 template<> void FiniteNacm<CASSCF>::init();
 template<> std::shared_ptr<GradFile> FiniteNacm<CASSCF>::compute();
-template<> std::shared_ptr<GradFile> FiniteNacm<CASPT2Ener>::compute();
+template<> std::shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute();
 
 }
 

@@ -146,7 +146,7 @@ void Force::compute() {
 
       } else if (method == "caspt2") {
 
-        auto force = make_shared<FiniteNacm<CASPT2Ener>>(method, cinput, geom_, ref_, target, target2, dx);
+        auto force = make_shared<FiniteNacm<CASPT2Energy>>(method, cinput, geom_, ref_, target, target2, dx);
         force->compute();
 
       }

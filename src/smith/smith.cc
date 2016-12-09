@@ -85,8 +85,7 @@ void Smith::compute() {
       sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
       sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
     }
-  }
-  else if (algo_->info()->nacm()) {
+  } else if (algo_->info()->nacm()) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);
 
@@ -108,9 +107,14 @@ void Smith::compute() {
     coeff_ = algop->coeff();
   } else if (algo_->info()->method() == "caspt2") {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-
-    msrot_ = algop->msrot();
-    coeff_ = algop->coeff();
+    if (algo_->info()->target2() != -1) {
+      algop->solve_dm();
+      msrot_ = algop->msrot();
+      xmsrot_ = algop->xmsrot();
+      heffrot_ = algop->heffrot();
+      coeff_ = algop->coeff();
+      vd1_ = algop->vden1();
+    }
   }
 #else
   throw logic_error("You must enable SMITH during compilation for this method to be available.");

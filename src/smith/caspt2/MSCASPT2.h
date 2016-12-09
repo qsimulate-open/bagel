@@ -176,6 +176,7 @@ class MSCASPT2 {
 
     void solve_deriv();
     void solve_nacme();
+    void solve_dm();
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }

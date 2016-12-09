@@ -190,6 +190,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       displ->element(j,i) = 0.0;
 
       grad->element(j,i) = civ_ref->data(target_state1_)->dot_product(civ_diff->data(target_state2_));
+      grad_ci->element(j,i) = grad->element(j,i);
 
       auto Uij = make_shared<Matrix>(*acoeff_ref % *Smn * *acoeff_diff);
       for (int ii = 0; ii != norb; ++ii) {
@@ -226,14 +227,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           }
         }
       }
-      grad_ci->element(j,i) = grad->element(j,i);
     }
   }
+  grad_ci->print(": CI term without orbital relaxation, <cJ|d/dXa cI>", 0);
   auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
   auto grad_basis = make_shared<GradFile>(geom_->natom());
   grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
-  grad_ci->print(": CI term, <cJ|d/dXa cI>", 0);
+  grad->print(": CI term, <cJ|d/dXa cI>", 0);
   grad_basis->print(": CSF term, basis set derivative (analytically calculated)", 0);
 
   *grad += *grad_basis;
