@@ -46,109 +46,92 @@ DKHcore_<DataType>::DKHcore_(shared_ptr<const Molecule> mol) : MatType(mol->nbas
   init(mol);
 }
 
-const Matrix pre_scale(const VectorB& vec, const Matrix& mat) {
-  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
-  Matrix out(mat);
-  for (size_t i = 0; i != mat.ndim(); ++i) {
-    for (size_t j = 0; j != mat.mdim(); ++j)
-      out(j,i) = mat(j,i) * vec(j);
-  }
-  return out;
-}
-
-const Matrix post_scale(const Matrix& mat, const VectorB& vec) {
-  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
-  Matrix out(mat);
-  for (size_t i = 0; i != mat.ndim(); ++i) {
-    blas::scale_n(vec(i),out.element_ptr(0,i),mat.ndim());
-  } 
-  return out;
-}
 
 template<>
 void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
+
+  auto pre_scale = [](const VectorB& vec, const Matrix& mat) {
+    assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+    shared_ptr<Matrix> out = mat.clone();
+    for (int i = 0; i != mat.ndim(); ++i)
+      for (int j = 0; j != mat.mdim(); ++j)
+        (*out)(j,i) = mat(j,i) * vec(j);
+    return out;
+  };
+
+  auto post_scale = [](const Matrix& mat, const VectorB& vec) {
+    assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+    shared_ptr<Matrix> out = mat.copy();
+    for (int i = 0; i != mat.ndim(); ++i)
+      blas::scale_n(vec(i), out->element_ptr(0,i), mat.ndim());
+    return out;
+  };
 
   auto mol = make_shared<Molecule>(*mol0);
   mol = mol->uncontract();
 
   // build DKH Hamiltonian in uncontracted basis
-  const Kinetic kinetic(mol); // TODO assert declaration
-  const Overlap overlap(mol);
-  shared_ptr<const Matrix> tildex = overlap.tildex(1.0e-9);
-  assert(overlap.ndim() == tildex->ndim()); // if it fails, check linear dependency
-  Matrix transfer(*tildex % kinetic * *tildex);
-  const size_t ndim = transfer.ndim(); 
-  VectorB eig(ndim);
-  transfer.diagonalize(eig);
-  transfer = *tildex * transfer;
+  shared_ptr<const Matrix> transfer;
+  VectorB eig;
+  {
+    const Overlap overlap(mol);
+    shared_ptr<const Matrix> tildex = overlap.tildex();
+    const Kinetic kinetic(mol);
+    auto tmp = make_shared<Matrix>(*tildex % kinetic * *tildex);
+    eig = VectorB(tmp->ndim());
+    tmp->diagonalize(eig);
+    transfer = make_shared<Matrix>(*tildex * *tmp);
+  }
+
   const double c2 = c__ * c__;
-
-  VectorB Ep(ndim);
-  for (size_t i = 0; i != eig.size(); ++i) { 
+  const int nunc = eig.size();
+  VectorB Ep(nunc);
+  VectorB A(nunc);
+  VectorB B(nunc);
+  VectorB RI(nunc);
+  VectorB RI_inv(nunc);
+  for (int i = 0; i != nunc; ++i) { 
     Ep(i) = c__ * std::sqrt(2.0 * eig(i) + c2);
-  }
-
-  VectorB A(ndim);
-  for (size_t i = 0; i != ndim; ++i) {
     A(i) = std::sqrt(0.5 * (Ep(i) + c2) / Ep(i));
-  }
-  
-  const NAI nai(mol);
-  const Matrix V(transfer % nai * transfer);
-
-  Matrix AVA(V);
-  for (size_t i = 0; i != ndim; ++i) {
-    for (size_t j = 0; j != ndim; ++j){
-      AVA(j,i) = AVA(j,i) *A(j) * A(i) / (Ep(j) + Ep(i));
-    }
-  }
-
-  VectorB B(ndim);
-  for (size_t i = 0; i != ndim; ++i) {
     B(i) = A(i) * c__ / (Ep(i) + c2);
-  }
-
-  const Small1e<NAIBatch> small1e(mol);
-  const Matrix smallnai(transfer % small1e[0] * transfer);
-
-  Matrix BVB(smallnai);
-  for(size_t i = 0; i != ndim; ++i) {
-    for(size_t j = 0; j != ndim; ++j) {
-      BVB(j,i) = BVB(j,i) * B(j) * B(i) / (Ep(j) + Ep(i));
-    }
-  }
-
-  VectorB RI(ndim);
-  VectorB RI_inv(ndim);
-  for (size_t i = 0; i != ndim; ++i) {
     RI(i) = 2.0 * eig(i) * pow((c__ / (Ep(i) + c2)), 2);
     RI_inv(i) = 1.0 / RI(i);
   }
- 
-  Matrix dkh(ndim, ndim);
-  for (size_t i = 0; i != ndim; ++i) {
-    dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
-  }
 
-  const Matrix EAVA(pre_scale(Ep,AVA));
-  const Matrix AVARI(post_scale(AVA,RI));
-  const Matrix AVAE(post_scale(AVA,Ep));
-  const Matrix BVBE(post_scale(BVB,Ep));
-  const Matrix EBVB(pre_scale(Ep,BVB));
+  const NAI nai(mol);
+  const Matrix V(*transfer % nai * *transfer);
+  const Small1e<NAIBatch> small1e(mol);
+  const Matrix smallnai(*transfer % small1e[0] * *transfer);
+
+  Matrix AVA(nunc, nunc);
+  Matrix BVB(nunc, nunc);
+  for (int i = 0; i != nunc; ++i)
+    for (int j = 0; j != nunc; ++j) {
+      double denom = Ep(j) + Ep(i);
+      AVA(j,i) = V(j,i) * A(j) * A(i) / denom ;
+      BVB(j,i) = smallnai(j,i) * B(j) * B(i) / denom;
+    }
+
+  Matrix dkh(nunc, nunc);
+  for (int i = 0; i != nunc; ++i)
+    dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
+
+  const Matrix EAVA(*pre_scale(Ep,AVA));
+  const Matrix AVARI(*post_scale(AVA,RI));
+  const Matrix AVAE(*post_scale(AVA,Ep));
+  const Matrix BVBE(*post_scale(BVB,Ep));
+  const Matrix EBVB(*pre_scale(Ep,BVB));
   
-  dkh += post_scale(pre_scale(A,V),A)               + post_scale(pre_scale(B,smallnai),B) // Free Particle Projection
-       - BVB * (EAVA - 0.5 * pre_scale(RI_inv,BVBE) + 0.5 * AVAE) 
-       - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (post_scale(EAVA,RI) - EBVB) * AVA    
-       + 0.5 * EBVB * pre_scale(RI_inv,BVB)         + AVARI * (EAVA + 0.5 * AVAE)                
-       + BVBE * pre_scale(RI_inv,BVB)               - 0.5 * AVA * BVBE;                   // DKH2
+  dkh += *post_scale(*pre_scale(A, V), A)           + *post_scale(*pre_scale(B, smallnai),B) // Free Particle Projection
+       - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE)) 
+       - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (*post_scale(EAVA, RI) - EBVB) * AVA    
+       + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)                
+       + BVBE * *pre_scale(RI_inv, BVB)             - 0.5 * AVA * BVBE;                   // DKH2
   
   const MixedBasis<OverlapBatch> mix(mol0, mol);
-
-  transfer = transfer % mix;
-  
-  dkh = transfer % dkh * transfer;
-
-  copy_block(0,0,mol0->nbasis(),mol0->nbasis(),dkh);
+  const Matrix transfer2 = *transfer % mix;
+  const Matrix dkhmat = transfer2 % dkh * transfer2;
+  copy_n(dkhmat.data(), size(), data());
 }
 
 
@@ -169,9 +152,9 @@ template class DKHcore_<std::complex<double>>;
   Matrix smallx(transfer % small1e[2] * transfer);
   Matrix smally(transfer % small1e[3] * transfer);
   Matrix smallz(transfer % small1e[1] * transfer);
-  for (size_t i = 0; i != ndim; ++i) {
-    for (size_t j = 0; j != ndim; ++j) {
-      const size_t denom = Ep(i) + Ep(j);
+  for (int i = 0; i != ndim; ++i) {
+    for (int j = 0; j != ndim; ++j) {
+      const int denom = Ep(i) + Ep(j);
       smallx(i,j) /= denom; 
       smally(i,j) /= denom;
       smallz(i,j) /= denom;
