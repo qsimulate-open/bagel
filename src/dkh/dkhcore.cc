@@ -63,7 +63,7 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
     assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
     shared_ptr<Matrix> out = mat.copy();
     for (int i = 0; i != mat.ndim(); ++i)
-      blas::scale_n(vec(i), out->element_ptr(0,i), mat.ndim());
+      blas::scale_n(vec(i), out->element_ptr(0, i), mat.ndim());
     return out;
   };
 
@@ -107,14 +107,14 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   Matrix BVB(nunc, nunc);
   for (int i = 0; i != nunc; ++i)
     for (int j = 0; j != nunc; ++j) {
-      double denom = Ep(j) + Ep(i);
-      AVA(j,i) = V(j,i) * A(j) * A(i) / denom ;
-      BVB(j,i) = smallnai(j,i) * B(j) * B(i) / denom;
+      const double denom = 1.0 / (Ep(j) + Ep(i));
+      AVA(j, i) = V(j, i) * A(j) * A(i) * denom ;
+      BVB(j, i) = smallnai(j, i) * B(j) * B(i) * denom;
     }
 
   Matrix dkh(nunc, nunc);
   for (int i = 0; i != nunc; ++i)
-    dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
+    dkh(i, i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
 
   const Matrix EAVA(*pre_scale(Ep,AVA));
   const Matrix AVARI(*post_scale(AVA,RI));
@@ -130,8 +130,7 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   
   const MixedBasis<OverlapBatch> mix(mol0, mol);
   const Matrix transfer2 = *transfer % mix;
-  const Matrix dkhmat = transfer2 % dkh * transfer2;
-  copy_n(dkhmat.data(), size(), data());
+  Matrix_base<double>::operator=(transfer2 % dkh * transfer2);
 }
 
 
