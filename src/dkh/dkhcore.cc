@@ -45,6 +45,23 @@ DKHcore_<DataType>::DKHcore_(shared_ptr<const Molecule> mol) : MatType(mol->nbas
   init(mol);
 }
 
+inline Matrix pre_scale(const VectorB& vec, const Matrix& mat) {
+//  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+  Matrix out(mat);
+  for (size_t i = 0; i != mat.ndim(); ++i)
+    dscal_(mat.ndim(),vec(i),out.element_ptr(i,0),mat.ndim());
+  return out;
+}
+
+inline Matrix post_scale(const Matrix& mat, const VectorB& vec) {
+//  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+  Matrix out(mat);
+  for (size_t i = 0; i != mat.ndim(); ++i) {
+    dscal_(mat.ndim(),vec(i),out.element_ptr(0,i),1);
+  } 
+  return out;
+}
+
 template<>
 void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
 
@@ -52,118 +69,83 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   mol = mol->uncontract();
 
   // build DKH Hamiltonian in uncontracted basis
-  Kinetic kinetic(mol);
-  Overlap overlap(mol);
+  const Kinetic kinetic(mol); // TODO assert declaration
+  const Overlap overlap(mol);
   shared_ptr<const Matrix> tildex = overlap.tildex(1.0e-9);
   assert(kinetic.ndim() == tildex->ndim()); // if it fails, check linear dependency
   Matrix transfer(*tildex % kinetic * *tildex);
-  int ndim = transfer.ndim(); 
+  const size_t ndim = transfer.ndim(); 
   VectorB eig(ndim);
-  VectorB ep_vec(ndim);
+  VectorB Ep(ndim);
   transfer.diagonalize(eig);
   transfer = *tildex * transfer;
-  NAI nai(mol);
-  Small1e<NAIBatch> small1e(mol);
-  
-  for (int i = 0; i < eig.size(); ++i) { 
-    ep_vec(i) = c__ * std::sqrt(2 * eig(i) + c__ * c__);
+  const NAI nai(mol);
+  const Small1e<NAIBatch> small1e(mol);
+  const double c2 = c__ * c__;
+
+  for (size_t i = 0; i != eig.size(); ++i) { 
+    Ep(i) = c__ * std::sqrt(2.0 * eig(i) + c2);
   }
 
-  Matrix Ep(ndim, ndim, 0.0); 
-  for (int i = 0; i != ndim; ++i) {
-    Ep(i,i) = ep_vec(i);
-  }
-  
-  Matrix A(ndim, ndim, 0.0);
-  for (int i = 0; i != ndim; ++i) {
-    A(i,i) = std::sqrt(0.5 * (ep_vec(i) + c__ * c__) / ep_vec(i));
+  VectorB A(ndim);
+  for (size_t i = 0; i != ndim; ++i) {
+    A(i) = std::sqrt(0.5 * (Ep(i) + c2) / Ep(i));
   }
   
   Matrix V(transfer % nai * transfer);
 
-  Matrix tildeV(ndim, ndim, 0.0);
-  for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != ndim; ++j){
-      tildeV(i,j) = V(i,j) / (ep_vec(i) + ep_vec(j));
+  Matrix AVA(V);
+  for (size_t i = 0; i != ndim; ++i) {
+    for (size_t j = 0; j != ndim; ++j){
+      AVA(j,i) = AVA(j,i) *A(j) * A(i) / (Ep(j) + Ep(i));
     }
   }
 
-  Matrix AVA(A * tildeV * A); 
-
-  Matrix B(ndim, ndim, 0.0);
-  for (int i = 0; i != ndim; ++i) {
-    B(i,i) = A(i,i) * c__ / (ep_vec(i) + c__ * c__);
+  VectorB B(ndim);
+  for (size_t i = 0; i != ndim; ++i) {
+    B(i) = A(i) * c__ / (Ep(i) + c2);
   }
 
-  Matrix smallnai(mol->nbasis(), mol->nbasis());
-  smallnai.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[0]);
-  smallnai = transfer % smallnai * transfer;
+  const Matrix smallnai(transfer % small1e[0] * transfer);
 
-  Matrix BVB(ndim, ndim, 0.0);
-  for(int i = 0; i != ndim; ++i) {
-    for(int j = 0; j != ndim; ++j) {
-      BVB(i,j) = smallnai(i,j) / (ep_vec(i) + ep_vec(j));
+  Matrix BVB(smallnai);
+  for(size_t i = 0; i != ndim; ++i) {
+    for(size_t j = 0; j != ndim; ++j) {
+      BVB(j,i) = BVB(j,i) * B(j) * B(i) / (Ep(j) + Ep(i));
     }
   }
-  BVB = B * BVB * B;
 
-  Matrix RI(ndim, ndim, 0.0); 
-  Matrix RI_inv(ndim, ndim, 0.0); 
-  for (int i = 0; i != ndim; ++i) {
-    RI(i,i) = 2.0 * eig(i) * pow((c__ / (ep_vec(i) + c__ * c__)), 2);
-    RI_inv(i,i) = 1.0 / RI(i,i);
+  VectorB RI(ndim);
+  VectorB RI_inv(ndim);
+  for (size_t i = 0; i != ndim; ++i) {
+    RI(i) = 2.0 * eig(i) * pow((c__ / (Ep(i) + c2)), 2);
+    RI_inv(i) = 1.0 / RI(i);
   }
  
-  Matrix smallx(mol->nbasis(), mol->nbasis()); 
-  smallx.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[2]);
-  smallx = transfer % smallx * transfer;
-  for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      smallx(i,j) /= ep_vec(i) + ep_vec(j);
-    }
+  Matrix dkh(ndim, ndim);
+  for (size_t i = 0; i != ndim; ++i) {
+    dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
   }
 
-  Matrix smally(mol->nbasis(), mol->nbasis()); 
-  smally.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[3]);
-  smally = transfer % smally * transfer;
-  for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      smally(i,j) /= ep_vec(i) + ep_vec(j);
-    }
-  }
+  Matrix EAVA(pre_scale(Ep,AVA));
+  Matrix AVARI(post_scale(AVA,RI));
+  Matrix AVAE(post_scale(AVA,Ep));
+  Matrix BVBE(post_scale(BVB,Ep));
+  Matrix EBVB(pre_scale(Ep,BVB));
   
-  Matrix smallz(mol->nbasis(), mol->nbasis()); 
-  smallz.copy_block(0, 0, mol->nbasis(), mol->nbasis(), small1e[1]);
-  smallz = transfer % smallz * transfer;
-  for (int i = 0; i != ndim; ++i) {
-    for (int j = 0; j != ndim; ++j) {
-      smallz(i,j) /= ep_vec(i) + ep_vec(j);
-    }
-  }
-
-  const Matrix Xc(B * smallx * B);
-  const Matrix Yc(B * smally * B);
-  const Matrix Zc(B * smallz * B);
-   
-  Matrix dkh(ndim, ndim, 0.0);
-  for (int i = 0; i != ndim; ++i) {
-    dkh(i,i) = c__ * c__ * 2 * eig(i) / (ep_vec(i) + c__ * c__);
-  }
+  dkh += post_scale(pre_scale(A,V),A)                + post_scale(pre_scale(B,smallnai),B) // Free Particle Projection
+       - BVB * (EAVA - 0.5 * pre_scale(RI_inv,BVBE)) - (AVAE + 0.5 * EAVA) * BVB  
+       + 0.5 * (post_scale(EAVA,RI) - EBVB) * AVA    + 0.5 * EBVB * pre_scale(RI_inv,BVB)
+       + AVARI * (EAVA + 0.5 * AVAE)                 + BVBE * pre_scale(RI_inv,BVB)      
+       - 0.5 * BVB * AVAE                            - 0.5 * AVA * BVBE;                   // DKH2
   
-#if 1
-  dkh += A * V * A                    + B * smallnai * B  // Free Particle Projection
-       - BVB * Ep * AVA               - AVA * Ep * BVB                 + AVA * RI * Ep * AVA
-       + BVB * Ep * RI_inv * BVB      - 0.5 * BVB * AVA * Ep           - 0.5 * AVA * BVB * Ep
-       + 0.5 * AVA * RI * AVA * Ep    + 0.5 * BVB * RI_inv * BVB * Ep  - 0.5 * Ep * BVB * AVA
-       - 0.5 * Ep * AVA * BVB         + 0.5 * Ep * AVA * RI * AVA      + 0.5 * Ep * BVB * RI_inv * BVB; // DKH2
-#else
-   // new code
-#endif
-/*     - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
-       - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
-       - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; */ // DKH2FULL
+/*  dkh += post_scale(pre_scale(A,V),A) + post_scale(pre_scale(B,smallnai),B) 
+       - BVB * EAVA                     - AVAE * BVB                         + AVARI * EAVA
+       + BVBE * pre_scale(RI_inv,BVB)   - 0.5 * BVB * AVAE                   - 0.5 * AVA * BVBE
+       + 0.5 * AVARI * AVAE             + 0.5 * BVB * pre_scale(RI_inv,BVBE) - 0.5 * EBVB * AVA
+       - 0.5 * EAVA * BVB               + 0.5 * EAVA * pre_scale(RI,AVA)     + 0.5 * EBVB * pre_scale(RI_inv,BVB); */ 
 
-  MixedBasis<OverlapBatch> mix(mol0, mol);
+  const MixedBasis<OverlapBatch> mix(mol0, mol);
 
   transfer = transfer % mix;
   
@@ -176,3 +158,26 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
 template class DKHcore_<double>;
 template class DKHcore_<std::complex<double>>;
 
+
+// Leave it here if we want do DKH2FULL in the future
+/*  
+  Matrix smallx(transfer % small1e[2] * transfer);
+  Matrix smally(transfer % small1e[3] * transfer);
+  Matrix smallz(transfer % small1e[1] * transfer);
+  for (size_t i = 0; i != ndim; ++i) {
+    for (size_t j = 0; j != ndim; ++j) {
+      const size_t denom = Ep(i) + Ep(j);
+      smallx(i,j) /= denom; 
+      smally(i,j) /= denom;
+      smallz(i,j) /= denom;
+    }
+  }
+
+  const Matrix Xc(B * smallx * B);
+  const Matrix Yc(B * smally * B);
+  const Matrix Zc(B * smallz * B);
+  
+     - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
+     - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
+     - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2FULL       
+*/
