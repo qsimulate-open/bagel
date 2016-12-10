@@ -34,6 +34,7 @@
 #include <src/integral/ecp/ecpbatch.h>
 #include <src/integral/ecp/soecpbatch.h>
 #include <src/integral/libint/libint.h>
+#include <src/dkh/dkhcore.h>
 
 using namespace std;
 using namespace bagel;
@@ -44,6 +45,9 @@ Hcore::Hcore(shared_ptr<const Molecule> mol, const bool initialize) : Matrix1e(m
   if (initialize) {
     init(mol);
     fill_upper();
+  } else {
+    auto dkhcore = make_shared<DKHcore>(mol);
+    copy_n(dkhcore->data(), dkhcore->size(), data());
   }
 }
 

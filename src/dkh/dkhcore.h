@@ -28,37 +28,24 @@
 
 #include <src/util/constants.h>
 #include <src/util/math/matrix.h>
-#include <src/util/math/zmatrix.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
 
-template<typename DataType>
-class DKHcore_ : public std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type {
+class DKHcore : public Matrix {
   protected:
-    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
     std::shared_ptr<const Molecule> mol_;
+    void init(std::shared_ptr<const Molecule>);
 
-    void init(std::shared_ptr<const Molecule>) { assert(false); }
   public:
-    DKHcore_() { }
-    DKHcore_(std::shared_ptr<const Molecule>);
+    DKHcore() { }
+    DKHcore(std::shared_ptr<const Molecule>);
 };
-
-template<>
-void DKHcore_<double>::init(std::shared_ptr<const Molecule>);
-
-using DKHcore = DKHcore_<double>;
-using ZDKHcore = DKHcore_<std::complex<double>>;
-
-extern template class DKHcore_<double>;
-extern template class DKHcore_<std::complex<double>>;
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::DKHcore_<double>)
-BOOST_CLASS_EXPORT_KEY(bagel::DKHcore_<std::complex<double>>)
+BOOST_CLASS_EXPORT_KEY(bagel::DKHcore)
 
 #endif
 

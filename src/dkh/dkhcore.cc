@@ -35,20 +35,16 @@
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore_<double>)
-BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore_<std::complex<double>>)
+BOOST_CLASS_EXPORT_IMPLEMENT(DKHcore)
 
 
-template<typename DataType>
-DKHcore_<DataType>::DKHcore_(shared_ptr<const Molecule> mol) : MatType(mol->nbasis(), mol->nbasis()) {
-  
+DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nbasis()) {
   cout << "       - Using DKHcore" << endl;
   init(mol);
 }
 
 
-template<>
-void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
+void DKHcore::init(shared_ptr<const Molecule> mol0) {
 
   auto pre_scale = [](const VectorB& vec, const Matrix& mat) {
     assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
@@ -132,10 +128,6 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   const Matrix transfer2 = *transfer % mix;
   Matrix_base<double>::operator=(transfer2 % dkh * transfer2);
 }
-
-
-template class DKHcore_<double>;
-template class DKHcore_<std::complex<double>>;
 
 
 /*   
