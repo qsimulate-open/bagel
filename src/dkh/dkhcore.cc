@@ -47,7 +47,7 @@ DKHcore::DKHcore(shared_ptr<const Molecule> mol) : Matrix(mol->nbasis(), mol->nb
 void DKHcore::init(shared_ptr<const Molecule> mol0) {
 
   auto pre_scale = [](const VectorB& vec, const Matrix& mat) {
-    assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+    assert(mat.ndim() == vec.size());
     shared_ptr<Matrix> out = mat.clone();
     for (int i = 0; i != mat.ndim(); ++i)
       for (int j = 0; j != mat.mdim(); ++j)
@@ -56,7 +56,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   };
 
   auto post_scale = [](const Matrix& mat, const VectorB& vec) {
-    assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+    assert(mat.mdim() == vec.size());
     shared_ptr<Matrix> out = mat.copy();
     for (int i = 0; i != mat.ndim(); ++i)
       blas::scale_n(vec(i), out->element_ptr(0, i), mat.ndim());
