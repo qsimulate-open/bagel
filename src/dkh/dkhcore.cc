@@ -30,6 +30,7 @@
 #include <src/mat1e/overlap.h>
 #include <src/integral/os/overlapbatch.h>
 #include <src/mat1e/mixedbasis.h>
+#include <src/util/math/algo.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,19 +46,21 @@ DKHcore_<DataType>::DKHcore_(shared_ptr<const Molecule> mol) : MatType(mol->nbas
   init(mol);
 }
 
-inline Matrix pre_scale(const VectorB& vec, const Matrix& mat) {
-//  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+const Matrix pre_scale(const VectorB& vec, const Matrix& mat) {
+  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
   Matrix out(mat);
-  for (size_t i = 0; i != mat.ndim(); ++i)
-    dscal_(mat.ndim(),vec(i),out.element_ptr(i,0),mat.ndim());
+  for (size_t i = 0; i != mat.ndim(); ++i) {
+    for (size_t j = 0; j != mat.mdim(); ++j)
+      out(j,i) = mat(j,i) * vec(j);
+  }
   return out;
 }
 
-inline Matrix post_scale(const Matrix& mat, const VectorB& vec) {
-//  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
+const Matrix post_scale(const Matrix& mat, const VectorB& vec) {
+  assert(mat.ndim() == mat.mdim() && mat.ndim() == vec.size());
   Matrix out(mat);
   for (size_t i = 0; i != mat.ndim(); ++i) {
-    dscal_(mat.ndim(),vec(i),out.element_ptr(0,i),1);
+    blas::scale_n(vec(i),out.element_ptr(0,i),mat.ndim());
   } 
   return out;
 }
@@ -72,17 +75,15 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   const Kinetic kinetic(mol); // TODO assert declaration
   const Overlap overlap(mol);
   shared_ptr<const Matrix> tildex = overlap.tildex(1.0e-9);
-  assert(kinetic.ndim() == tildex->ndim()); // if it fails, check linear dependency
+  assert(overlap.ndim() == tildex->ndim()); // if it fails, check linear dependency
   Matrix transfer(*tildex % kinetic * *tildex);
   const size_t ndim = transfer.ndim(); 
   VectorB eig(ndim);
-  VectorB Ep(ndim);
   transfer.diagonalize(eig);
   transfer = *tildex * transfer;
-  const NAI nai(mol);
-  const Small1e<NAIBatch> small1e(mol);
   const double c2 = c__ * c__;
 
+  VectorB Ep(ndim);
   for (size_t i = 0; i != eig.size(); ++i) { 
     Ep(i) = c__ * std::sqrt(2.0 * eig(i) + c2);
   }
@@ -92,7 +93,8 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
     A(i) = std::sqrt(0.5 * (Ep(i) + c2) / Ep(i));
   }
   
-  Matrix V(transfer % nai * transfer);
+  const NAI nai(mol);
+  const Matrix V(transfer % nai * transfer);
 
   Matrix AVA(V);
   for (size_t i = 0; i != ndim; ++i) {
@@ -106,6 +108,7 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
     B(i) = A(i) * c__ / (Ep(i) + c2);
   }
 
+  const Small1e<NAIBatch> small1e(mol);
   const Matrix smallnai(transfer % small1e[0] * transfer);
 
   Matrix BVB(smallnai);
@@ -127,24 +130,18 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
     dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
   }
 
-  Matrix EAVA(pre_scale(Ep,AVA));
-  Matrix AVARI(post_scale(AVA,RI));
-  Matrix AVAE(post_scale(AVA,Ep));
-  Matrix BVBE(post_scale(BVB,Ep));
-  Matrix EBVB(pre_scale(Ep,BVB));
+  const Matrix EAVA(pre_scale(Ep,AVA));
+  const Matrix AVARI(post_scale(AVA,RI));
+  const Matrix AVAE(post_scale(AVA,Ep));
+  const Matrix BVBE(post_scale(BVB,Ep));
+  const Matrix EBVB(pre_scale(Ep,BVB));
   
-  dkh += post_scale(pre_scale(A,V),A)                + post_scale(pre_scale(B,smallnai),B) // Free Particle Projection
-       - BVB * (EAVA - 0.5 * pre_scale(RI_inv,BVBE)) - (AVAE + 0.5 * EAVA) * BVB  
-       + 0.5 * (post_scale(EAVA,RI) - EBVB) * AVA    + 0.5 * EBVB * pre_scale(RI_inv,BVB)
-       + AVARI * (EAVA + 0.5 * AVAE)                 + BVBE * pre_scale(RI_inv,BVB)      
-       - 0.5 * BVB * AVAE                            - 0.5 * AVA * BVBE;                   // DKH2
+  dkh += post_scale(pre_scale(A,V),A)               + post_scale(pre_scale(B,smallnai),B) // Free Particle Projection
+       - BVB * (EAVA - 0.5 * pre_scale(RI_inv,BVBE) + 0.5 * AVAE) 
+       - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (post_scale(EAVA,RI) - EBVB) * AVA    
+       + 0.5 * EBVB * pre_scale(RI_inv,BVB)         + AVARI * (EAVA + 0.5 * AVAE)                
+       + BVBE * pre_scale(RI_inv,BVB)               - 0.5 * AVA * BVBE;                   // DKH2
   
-/*  dkh += post_scale(pre_scale(A,V),A) + post_scale(pre_scale(B,smallnai),B) 
-       - BVB * EAVA                     - AVAE * BVB                         + AVARI * EAVA
-       + BVBE * pre_scale(RI_inv,BVB)   - 0.5 * BVB * AVAE                   - 0.5 * AVA * BVBE
-       + 0.5 * AVARI * AVAE             + 0.5 * BVB * pre_scale(RI_inv,BVBE) - 0.5 * EBVB * AVA
-       - 0.5 * EAVA * BVB               + 0.5 * EAVA * pre_scale(RI,AVA)     + 0.5 * EBVB * pre_scale(RI_inv,BVB); */ 
-
   const MixedBasis<OverlapBatch> mix(mol0, mol);
 
   transfer = transfer % mix;
@@ -158,6 +155,14 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
 template class DKHcore_<double>;
 template class DKHcore_<std::complex<double>>;
 
+
+/*   
+   dkh += post_scale(pre_scale(A,V),A) + post_scale(pre_scale(B,smallnai),B) 
+       - BVB * EAVA                     - AVAE * BVB                         + AVARI * EAVA
+       + BVBE * pre_scale(RI_inv,BVB)   - 0.5 * BVB * AVAE                   - 0.5 * AVA * BVBE
+       + 0.5 * AVARI * AVAE             + 0.5 * BVB * pre_scale(RI_inv,BVBE) - 0.5 * EBVB * AVA
+       - 0.5 * EAVA * BVB               + 0.5 * EAVA * pre_scale(RI,AVA)     + 0.5 * EBVB * pre_scale(RI_inv,BVB); 
+*/
 
 // Leave it here if we want do DKH2FULL in the future
 /*  
