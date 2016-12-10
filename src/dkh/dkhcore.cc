@@ -116,11 +116,11 @@ void DKHcore_<double>::init(shared_ptr<const Molecule> mol0) {
   for (int i = 0; i != nunc; ++i)
     dkh(i,i) = c2 * 2.0 * eig(i) / (Ep(i) + c2);
 
-  const Matrix EAVA(*pre_scale(Ep,AVA));
-  const Matrix AVARI(*post_scale(AVA,RI));
-  const Matrix AVAE(*post_scale(AVA,Ep));
-  const Matrix BVBE(*post_scale(BVB,Ep));
-  const Matrix EBVB(*pre_scale(Ep,BVB));
+  const Matrix EAVA(*pre_scale(Ep, AVA));
+  const Matrix AVARI(*post_scale(AVA, RI));
+  const Matrix AVAE(*post_scale(AVA, Ep));
+  const Matrix BVBE(*post_scale(BVB, Ep));
+  const Matrix EBVB(*pre_scale(Ep, BVB));
   
   dkh += *post_scale(*pre_scale(A, V), A)           + *post_scale(*pre_scale(B, smallnai),B) // Free Particle Projection
        - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE)) 
