@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: zhcore.h
-// Copyright (C) 2014 Toru Shiozaki
+// Filename: dkhcore.h
+// Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>
+// Author: Raymond Wang <raymondwang@u.northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,35 +23,29 @@
 //
 
 
-#ifndef __SRC_MOLECULE_ZHCORE_H
-#define __SRC_MOLECULE_ZHCORE_H
+#ifndef __SRC_MAT1E_DKHCORE_H
+#define __SRC_MAT1E_DKHCORE_H
 
-#include <src/mat1e/matrix1e.h>
+#include <src/util/constants.h>
+#include <src/util/math/matrix.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class ZHcore : public ZMatrix1e {
+class DKHcore : public Matrix {
   protected:
-    void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override;
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<ZMatrix1e>(*this);
-    }
+    std::shared_ptr<const Molecule> mol_;
+    void init(std::shared_ptr<const Molecule>);
 
   public:
-    ZHcore() { }
-    ZHcore(std::shared_ptr<const Molecule> mol, const bool dummy = true);
-
+    DKHcore() { }
+    DKHcore(std::shared_ptr<const Molecule>);
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::ZHcore)
+BOOST_CLASS_EXPORT_KEY(bagel::DKHcore)
 
 #endif
 

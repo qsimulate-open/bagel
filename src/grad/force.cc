@@ -31,7 +31,8 @@ using namespace std;
 using namespace bagel;
 
 Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
-
+  if (geom_->dkh())
+    throw runtime_error("Analytical gradients have not been implemented with the DKH Hamiltonian yet");
 }
 
 

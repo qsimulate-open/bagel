@@ -61,6 +61,9 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   }
   const bool angstrom = geominfo->get<bool>("angstrom", false);
 
+  // DKH2 Hamiltonian
+  dkh_ = geominfo->get<bool>("dkh", false);
+
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
@@ -164,7 +167,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
+  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -275,7 +278,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
 
   // members of Molecule
@@ -401,7 +404,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), dkh_(nmer.front()->dkh()), magnetism_(false), london_(nmer.front()->london_),
   use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_) {
 
   // A member of Molecule
@@ -512,6 +515,8 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   common_init1();
 
   print_atoms();
+
+  dkh_ = geominfo->get<bool>("dkh", false);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});

@@ -33,7 +33,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(ZHcore)
 
-ZHcore::ZHcore(const shared_ptr<const Molecule> mol) : ZMatrix1e(mol) {
+ZHcore::ZHcore(shared_ptr<const Molecule> mol, const bool) : ZMatrix1e(mol) {
 
   init(mol);
   fill_upper_conjg();

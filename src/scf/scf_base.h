@@ -85,8 +85,7 @@ class SCF_base_ : public Method {
 
   public:
     SCF_base_() { }
-    SCF_base_(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
-             const std::shared_ptr<const Reference>, const bool need_schwarz = false);
+    SCF_base_(std::shared_ptr<const PTree> idata_, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool need_schwarz = false);
     virtual ~SCF_base_() { }
 
     virtual void compute() override = 0;

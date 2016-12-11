@@ -37,7 +37,7 @@ using namespace bagel;
 
 
 template <typename MatType, typename OvlType, typename HcType, class Enable>
-SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> re, const bool need_schwarz)
  : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
@@ -46,11 +46,13 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   restart_ = idata_->get<bool>("restart", false);
 
   Timer scfb;
-  overlap_ = make_shared<const OvlType>(geom);
+  overlap_ = make_shared<const OvlType>(geom_);
   scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom);
-  scfb.tick_print("Hcore matrix");
 
+  // Computing Hcore
+  hcore_ = make_shared<HcType>(geom_, !geom_->dkh());
+  scfb.tick_print("Hcore matrix");
+  
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
   diis_start_ = idata_->get<int>("diis_start", 1);

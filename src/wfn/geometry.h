@@ -52,6 +52,9 @@ class Geometry : public Molecule {
     void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
+    // DKH2 Hamiltonian
+    bool dkh_;
+
     // Magnetism-specific parameters
     bool magnetism_;
     bool london_;
@@ -65,7 +68,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
+      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -76,7 +79,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -111,6 +114,7 @@ class Geometry : public Molecule {
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
+    bool dkh() const { return dkh_; }
     bool london() const { return london_; }
     bool magnetism() const { return magnetism_; }
 
