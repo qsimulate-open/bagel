@@ -330,6 +330,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
+  dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
