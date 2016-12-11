@@ -33,12 +33,10 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(ZHcore)
 
-ZHcore::ZHcore(shared_ptr<const Molecule> mol, const bool initialize) : ZMatrix1e(mol) {
+ZHcore::ZHcore(shared_ptr<const Molecule> mol, const bool) : ZMatrix1e(mol) {
 
-  if (initialize) {
-    init(mol);
-    fill_upper_conjg();
-  }
+  init(mol);
+  fill_upper_conjg();
 
   if (mol->atoms().front()->use_ecp_basis())
     throw runtime_error("ECP is not available with a GIAO basis.");

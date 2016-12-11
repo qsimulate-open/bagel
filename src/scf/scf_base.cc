@@ -50,8 +50,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   scfb.tick_print("Overlap matrix");
 
   // Computing Hcore
-  const bool dkh = idata_->get<bool>("dkh", false);
-  hcore_ = make_shared<HcType>(geom_, !dkh);
+  hcore_ = make_shared<HcType>(geom_, !geom_->dkh());
   scfb.tick_print("Hcore matrix");
   
   max_iter_ = idata_->get<int>("maxiter", 100);
