@@ -51,7 +51,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
     shared_ptr<Matrix> out = mat.clone();
     for (int i = 0; i != mat.ndim(); ++i)
       for (int j = 0; j != mat.mdim(); ++j)
-        (*out)(j,i) = mat(j,i) * vec(j);
+        (*out)(j, i) = mat(j, i) * vec(j);
     return out;
   };
 
@@ -118,7 +118,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   const Matrix BVBE(*post_scale(BVB, Ep));
   const Matrix EBVB(*pre_scale(Ep, BVB));
   
-  dkh += *post_scale(*pre_scale(A, V), A)           + *post_scale(*pre_scale(B, smallnai),B) // Free Particle Projection
+  dkh += *post_scale(*pre_scale(A, V), A)           + *post_scale(*pre_scale(B, smallnai), B) // Free Particle Projection
        - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE)) 
        - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (*post_scale(EAVA, RI) - EBVB) * AVA    
        + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)                

@@ -3,7 +3,7 @@
 // Filename: dkhcore.h
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Raymond Wang <yiqunwang2021@u.northwestern.edu> 
+// Author: Raymond Wang <raymondwang@u.northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_DKH_DKHCORE_H
-#define __SRC_DKH_DKHCORE_H
+#ifndef __SRC_MAT1E_DKHCORE_H
+#define __SRC_MAT1E_DKHCORE_H
 
 #include <src/util/constants.h>
 #include <src/util/math/matrix.h>
