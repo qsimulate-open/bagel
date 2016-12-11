@@ -138,9 +138,9 @@ void Pseudospin::compute(const ZHarrison& zfci) {
 
       // Then just extract the D-tensor!
       tuple<shared_ptr<const Matrix>, double, double> D_params = compute_Dtensor(ESO_);
-      dtensor_ = std::get<0>(D_params);
-      Dval_ = std::get<1>(D_params);
-      Eval_ = std::get<2>(D_params);
+      dtensor_ = get<0>(D_params);
+      Dval_ = get<1>(D_params);
+      Eval_ = get<2>(D_params);
     }
   } else {
     cout << endl << "    There is no zero-field splitting or g-tensor to compute for an S = 0 system." << endl;
@@ -167,7 +167,7 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
       new_axes[0][i] = ((default_axes->element(fwd[i], 1) * new_axes[2][bck[i]]) - (new_axes[2][fwd[i]] * default_axes->element(bck[i], 1)));
   } else {
     const double dotprod = new_axes[0][0] * new_axes[2][0] + new_axes[0][1] * new_axes[2][1] + new_axes[0][2] * new_axes[2][2];
-    if (std::abs(dotprod) > 1.0e-6)
+    if (abs(dotprod) > 1.0e-6)
       throw runtime_error("Axes defining the quantization of spin must be orthogonal.");
   }
   for (int i = 0; i != 3; ++i)
@@ -179,7 +179,7 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
     for (int j = 0; j != 3; ++j) {
       tmp += new_axes[i][j] * new_axes[i][j];
     }
-    factors[i] = 1.0 / std::sqrt(tmp);
+    factors[i] = 1.0 / sqrt(tmp);
   }
 
   shared_ptr<Matrix> out = default_axes->clone();
@@ -203,7 +203,7 @@ shared_ptr<const Matrix> Pseudospin::read_axes(shared_ptr<const Matrix> default_
 void Pseudospin::update_spin_matrices(VectorB spinvals) {
   assert(spinvals.size() == nspin1_);
   for (int i = 0; i != nspin1_ / 2; ++i) {
-    assert(std::abs(spinvals[i] + spinvals[nspin_ - i]) < 1.0e-6);
+    assert(abs(spinvals[i] + spinvals[nspin_ - i]) < 1.0e-6);
   }
 
   for (int i = 0; i != 3; ++i)
@@ -217,9 +217,9 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
   for (int i = 0; i != nspin1_; ++i) {
     spin_xyz_[2]->element(i,i) = spinvals[i];
     if (i < nspin_)
-      spin_plus_->element(i,i+1) = std::sqrt(ssp1 - spinvals[i]*spinvals[i+1]);
+      spin_plus_->element(i,i+1) = sqrt(ssp1 - spinvals[i]*spinvals[i+1]);
     if (i > 0)
-      spin_minus_->element(i,i-1) = std::sqrt(ssp1 - spinvals[i]*spinvals[i-1]);
+      spin_minus_->element(i,i-1) = sqrt(ssp1 - spinvals[i]*spinvals[i-1]);
   }
 
   spin_xyz_[0]->add_block( 0.5, 0, 0, nspin1_, nspin1_, spin_plus_);
@@ -274,8 +274,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   { // Compute the matrix representation of the time-reversal operator   (This matrix + complex conjugation)
     trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
     trev_h_->zero();
-    const int maxa = std::min(zfci.nele(), zfci.norb());
-    const int mina = std::max(zfci.nele() - zfci.norb(), 0);
+    const int maxa = min(zfci.nele(), zfci.norb());
+    const int mina = max(zfci.nele() - zfci.norb(), 0);
 
     vector<array<int,2>> ab = {};
     for (int j = maxa; j >= mina; --j)
@@ -315,8 +315,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
             for (int j = 0; j != nspin1_; ++j) {
 
               // Since time-reversal includes the complex conjugation operator, both the bra and ket use conjugate here
-              const complex<double> cival_ist = std::conj(dvec_i->data(aniso_state[i])->data(fullpos_i));
-              const complex<double> cival_jst = std::conj(dvec_j->data(aniso_state[j])->data(fullpos_j));
+              const complex<double> cival_ist = conj(dvec_i->data(aniso_state[i])->data(fullpos_i));
+              const complex<double> cival_jst = conj(dvec_j->data(aniso_state[j])->data(fullpos_j));
 
               trev_h_->element(i, j) += sign1 * sign2 * cival_ist * cival_jst;
             }
@@ -470,8 +470,8 @@ pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_ax
     assert(Aeig[0] > 0.0 && Aeig[1] > 0.0 && Aeig[2] > 0.0);
 
     // Reorder eigenvectors so we quantize spin along the most anisotropic g-axis, rather than just the greatest g
-    const double Asqrt_avg = (std::sqrt(Aeig[0]) + std::sqrt(Aeig[1]) + std::sqrt(Aeig[2])) / 3.0;
-    if (std::sqrt(Aeig[1]) - Asqrt_avg > 0.0) {
+    const double Asqrt_avg = (sqrt(Aeig[0]) + sqrt(Aeig[1]) + sqrt(Aeig[2])) / 3.0;
+    if (sqrt(Aeig[1]) - Asqrt_avg > 0.0) {
       const double temp = Aeig[0];
       Aeig[0] = Aeig[2];
       Aeig[2] = temp;
@@ -487,8 +487,8 @@ pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_ax
     for (int i = 0; i != 3; ++i)
       Adiag->element(i, i) = Aeig[i];
     assert((*Atensor - (*Atransform * *Adiag ^ *Atransform)).rms() < 1.0e-10);
-    assert(std::abs(std::sqrt(Aeig[2]) - Asqrt_avg) > std::abs(std::sqrt(Aeig[1]) - Asqrt_avg));
-    assert(std::abs(std::sqrt(Aeig[2]) - Asqrt_avg) > std::abs(std::sqrt(Aeig[0]) - Asqrt_avg));
+    assert(abs(sqrt(Aeig[2]) - Asqrt_avg) > abs(sqrt(Aeig[1]) - Asqrt_avg));
+    assert(abs(sqrt(Aeig[2]) - Asqrt_avg) > abs(sqrt(Aeig[0]) - Asqrt_avg));
 #endif
 
     //Atensor->print("A tensor");
@@ -507,7 +507,7 @@ pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_ax
       cout << "  **  since we are not separating the first-order and higher-order contributions to the magnetic moment." << endl << endl;
     }
     for (int i = 0; i != 3; ++i) {
-      gval[i] = 2.0 * std::sqrt(factor * Aeig[i]);
+      gval[i] = 2.0 * sqrt(factor * Aeig[i]);
       gtensor->element(i, i) = gval[i];
     }
 
@@ -578,8 +578,8 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     //trev_s->print("Time-reversal matrix before phase adjustment");
     for (int k = 0; k <= nspin_ / 2; ++k) {
       const double target_phase = (k % 2 == 0) ? pi__ : 0.0;
-      const double phase_error = std::arg(trev_s->element(k, nspin_ - k)) - target_phase;
-      const complex<double> adjust = std::polar(1.0, 0.5 * phase_error);
+      const double phase_error = arg(trev_s->element(k, nspin_ - k)) - target_phase;
+      const complex<double> adjust = polar(1.0, 0.5 * phase_error);
       for (int i = 0; i != nspin1_; ++i)
         transform.element(i, k) = adjust * transform.element(i, k);
       if (nspin_ % 2 == 1 || k < nspin_ / 2) {
@@ -609,15 +609,15 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     complex<double> adjust = 1.0;
     for (int i = nspin1_ / 2 - 1; i >= 0; --i) {
 
-      double phase_check = std::arg(raising_op.element(i, i+1));
+      double phase_check = arg(raising_op.element(i, i+1));
       if (i + 1 == nspin1_ / 2 && nspin1_ % 2 == 0)
         phase_check *= 0.5;
-      adjust *= std::polar(1.0, phase_check);
+      adjust *= polar(1.0, phase_check);
 
-      //cout << " *** Eigenvector " << i << " time-reversal-allowed phased adjustment = " << std::arg(adjust) << endl;
+      //cout << " *** Eigenvector " << i << " time-reversal-allowed phased adjustment = " << arg(adjust) << endl;
       for (int j = 0; j != nspin1_; ++j) {
         transform.element(j, i) = adjust * transform.element(j, i);
-        transform.element(j, nspin_ - i) = std::conj(adjust) * transform.element(j, nspin_ - i);
+        transform.element(j, nspin_ - i) = conj(adjust) * transform.element(j, nspin_ - i);
       }
     }
   }
@@ -634,12 +634,12 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
       throw runtime_error("Sorry, you seem to be trying to adjust the phase of pseudospin eigenfunctions.  We expect " + to_string(nspin1_/2) + " phases, one for each pair of time-reversal symmetric states.");
 
     for (int i = 0; i != nspin1_ / 2; ++i) {
-      const complex<double> adjustment = std::polar(1.0, phase_adjust[i]);
-      cout << "  **  The phase of the m_s = " << " " + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << std::setw(11) <<  phase_adjust[i] << " radians." << endl;
-      cout << "  **  The phase of the m_s = " << "-" + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << std::setw(11) << -phase_adjust[i] << " radians." << endl;
+      const complex<double> adjustment = polar(1.0, phase_adjust[i]);
+      cout << "  **  The phase of the m_s = " << " " + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) <<  phase_adjust[i] << " radians." << endl;
+      cout << "  **  The phase of the m_s = " << "-" + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) << -phase_adjust[i] << " radians." << endl;
       for (int j = 0; j != nspin1_; ++j) {
         transform.element(j, i) = adjustment * transform.element(j, i);
-        transform.element(j, nspin_ - i) = std::conj(adjustment) * transform.element(j, nspin_ - i);
+        transform.element(j, nspin_ - i) = conj(adjustment) * transform.element(j, nspin_ - i);
       }
     }
     cout << endl;
@@ -647,7 +647,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
 
   const double phase_input_2 = idata_->get<double>("phase_full", 0.0);
   if (phase_input_2 != 0.0) {
-    transform.scale(std::polar(1.0, phase_input_2));
+    transform.scale(polar(1.0, phase_input_2));
     cout << "  **  The phase of all pseudospin functions will be shifted by " << setw(4) <<  phase_input_2 << " radians.  (This should have no effect.)" << endl << endl;
   }
 
@@ -726,7 +726,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
       trev_target->element(k, nspin_ - k) = val;
     }
     if (phase_input_2 != 0.0) {
-      trev_target->scale(std::polar(1.0, -2.0 * phase_input_2));
+      trev_target->scale(polar(1.0, -2.0 * phase_input_2));
       assert((*trev_s - *trev_target).rms() < 1.0e-10);
     }
   }
@@ -768,8 +768,8 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
     checkham->copy_block(0, 0, nspin1_, nspin1_, check_spinham_vec.element_ptr(0,0));
 
     for (int i = 0; i != nop; ++i) {
-      out[i].set_coeff(std::real(stevop_vec.element(i, 0)));
-      if (std::abs(std::imag(stevop_vec.element(i, 0))) > 1.0e-8)
+      out[i].set_coeff(real(stevop_vec.element(i, 0)));
+      if (abs(imag(stevop_vec.element(i, 0))) > 1.0e-8)
         throw runtime_error("For some reason, we have obtained a complex coefficient for an extended Stevens operator...  It should be real.");
     }
   }
@@ -784,7 +784,7 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
   checkham->diagonalize(shenergies);
 
   vector<double> ord_energy = ref_energy_;
-  std::sort(ord_energy.begin(), ord_energy.end());
+  sort(ord_energy.begin(), ord_energy.end());
 
   if (checkham_error > 1.0e-8) {
     cout << "  **** CAUTION ****  The pseudospin Hamiltonian does not fully reproduce the ab initio Hamiltonian.  RMS error = " << checkham_error << endl;
@@ -803,7 +803,7 @@ vector<Stevens_Operator> Pseudospin::extract_hamiltonian_parameters(const vector
     cout << "  ** Relative energies: " << endl;
     for (int i = nspin_; i >= 0; --i) {
       cout << "     " << i << "  " << setprecision(8) << setw(12) << shenergies[i] - shenergies[0] << " E_h  =  " << setprecision(4) << setw(8) << (shenergies[i] - shenergies[0])*au2wavenumber__ << " cm-1" << endl;
-      assert(std::abs(shenergies[i] - shenergies[0] - ord_energy[i] + ord_energy[0]) < 1.0e-7);
+      assert(abs(shenergies[i] - shenergies[0] - ord_energy[i] + ord_energy[0]) < 1.0e-7);
     }
     cout << endl;
   }
@@ -860,18 +860,18 @@ tuple<shared_ptr<const Matrix>, double, double> Pseudospin::compute_Dtensor(cons
   int jmax = 0;
   const array<int,3> fwd = {{ 1, 2, 0 }};
   const array<int,3> bck = {{ 2, 0, 1 }};
-  if (std::abs(Ddiag[1]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 1;
-  if (std::abs(Ddiag[2]-Davg) > std::abs(Ddiag[jmax]-Davg)) jmax = 2;
+  if (abs(Ddiag[1]-Davg) > abs(Ddiag[jmax]-Davg)) jmax = 1;
+  if (abs(Ddiag[2]-Davg) > abs(Ddiag[jmax]-Davg)) jmax = 2;
 
   cout << endl << "    Upon diagonalization," << endl;
   cout << "      Dxx = " << setw(12) << Ddiag[fwd[jmax]] << endl;
   cout << "      Dyy = " << setw(12) << Ddiag[bck[jmax]] << endl;
   cout << "      Dzz = " << setw(12) << Ddiag[jmax] << endl << endl;
   const double Dval = Ddiag[jmax] - 0.5*(Ddiag[fwd[jmax]] + Ddiag[bck[jmax]]);
-  const double Eval = std::abs(0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]));
+  const double Eval = abs(0.5*(Ddiag[fwd[jmax]] - Ddiag[bck[jmax]]));
   cout << " ** D = " << setw(12) << setprecision(8) << Dval << " E_h = " << setprecision(4) << setw(8) << Dval * au2wavenumber__ << " cm-1" << endl;
   cout << " ** E = " << setw(12) << setprecision(8) << Eval << " E_h = " << setprecision(4) << setw(8) << Eval * au2wavenumber__ << " cm-1" << endl;
-  cout << " ** |E / D| = " << std::abs(Eval / Dval) << endl;
+  cout << " ** |E / D| = " << abs(Eval / Dval) << endl;
 
   //Dtensor_diag->print("Transformation matrix of D-tensor");
 

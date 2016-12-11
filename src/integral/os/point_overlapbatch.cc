@@ -98,10 +98,10 @@ void Point_OverlapBatch::perform_VRR(double* intermediate) {
     const double czpl = location_[2] - P_[ii*3+2];
 
     // obtain S(0, 0)
-    const double tmp = pisqrtinv__ * std::sqrt(cxp);
-    workx[0] = coeffsx_[ii] * tmp * std::exp(- cxp * (cxpl * cxpl));
-    worky[0] = coeffsy_[ii] * tmp * std::exp(- cxp * (cypl * cypl));
-    workz[0] = coeffsz_[ii] * tmp * std::exp(- cxp * (czpl * czpl));
+    const double tmp = pisqrtinv__ * sqrt(cxp);
+    workx[0] = coeffsx_[ii] * tmp * exp(- cxp * (cxpl * cxpl));
+    worky[0] = coeffsy_[ii] * tmp * exp(- cxp * (cypl * cypl));
+    workz[0] = coeffsz_[ii] * tmp * exp(- cxp * (czpl * czpl));
 
     for (int i = 1; i <= ang0_; ++i) {
       // obtain S(i, 0)
