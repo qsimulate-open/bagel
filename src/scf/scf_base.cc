@@ -46,7 +46,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   restart_ = idata_->get<bool>("restart", false);
 
   Timer scfb;
-  overlap_ = make_shared<const OvlType>(geom);
+  overlap_ = make_shared<const OvlType>(geom_);
   scfb.tick_print("Overlap matrix");
 
   // Computing Hcore
