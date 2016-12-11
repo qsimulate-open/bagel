@@ -26,7 +26,6 @@
 #include <src/molecule/moment_compute.h>
 #include <src/util/math/matop.h>
 #include <src/integral/carsphlist.h>
-#include <src/integral/os/overlapbatch.h>
 
 using namespace std;
 using namespace bagel;

@@ -27,7 +27,6 @@
 #include <src/wfn/zreference.h>
 #include <src/util/timer.h>
 #include <src/util/math/diis.h>
-#include <src/dkh/dkhcore.h>
 #include <iostream>
 #include <cmath>
 #include <iomanip>
@@ -47,8 +46,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   restart_ = idata_->get<bool>("restart", false);
 
   Timer scfb;
-  // Computing Overlap
-  overlap_ = make_shared<const OvlType>(geom_);
+  overlap_ = make_shared<const OvlType>(geom);
   scfb.tick_print("Overlap matrix");
 
   // Computing Hcore

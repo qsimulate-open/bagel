@@ -24,6 +24,7 @@
 
 
 #include <src/mat1e/hcore.h>
+#include <src/mat1e/dkhcore.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
@@ -34,7 +35,6 @@
 #include <src/integral/ecp/ecpbatch.h>
 #include <src/integral/ecp/soecpbatch.h>
 #include <src/integral/libint/libint.h>
-#include <src/dkh/dkhcore.h>
 
 using namespace std;
 using namespace bagel;
