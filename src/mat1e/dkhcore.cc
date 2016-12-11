@@ -23,7 +23,7 @@
 //
 
 
-#include <src/dkh/dkhcore.h>
+#include <src/mat1e/dkhcore.h>
 #include <src/mat1e/kinetic.h>
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>

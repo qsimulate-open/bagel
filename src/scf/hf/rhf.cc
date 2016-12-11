@@ -134,7 +134,7 @@ void RHF::compute() {
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 
-    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(12) << energy_ << "   "
+    cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
                                       << setw(17) << error << setw(15) << setprecision(2) << scftime.tick() << endl;
 
     if (error < thresh_scf_) {
