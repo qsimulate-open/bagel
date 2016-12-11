@@ -396,7 +396,7 @@ shared_ptr<const Shell> Shell::uncontract() const {
     ranges.push_back({offset,offset+1});
     ++offset;
   }
-  
+
   auto citer = ranges.begin();
   for (auto iter = conts.begin(); iter != conts.end(); ++iter, ++citer) {
     auto eiter = exponents_.begin();
@@ -405,6 +405,6 @@ shared_ptr<const Shell> Shell::uncontract() const {
     for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
       *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(angular_number_)) / sqrt(denom);
   }
-  
+
   return make_shared<Shell>(spherical_, position_, angular_number_, exponents_, conts, ranges);
 }
