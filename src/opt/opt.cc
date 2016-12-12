@@ -43,8 +43,6 @@ void Opt::compute_noalglib() {
   size_ = internal_ ? bmat_[0]->mdim() : displ->size();
   displ_ = make_shared<XYZFile>(current_->natom());
 
-  // Initialize hessian: identity matrix (TODO molecular mechanics?)
-
   hess_ = make_shared<Matrix>(size_, size_);
   hess_->unit();
   
@@ -93,33 +91,21 @@ void Opt::compute_noalglib() {
 
       if (internal_)
         grad_ = grad_->transform(bmat_[1], true);
-      // Update Hessian with BFGS
+      // Update Hessian with Flowchart method
       if (iter_ != 1)
-        hessian_update_bfgs();
+        hessian_update();
 
       prev_grad_ = make_shared<GradFile>(*grad_);
  
       MoldenOut mfs("opt.molden");
       mfs << current_;
       rms = grad_->rms();
-      if (algorithm_ == "steep")
-        displ_ = get_step_steep();
-      else if (algorithm_ == "nr")
-        displ_ = get_step_nr();
-      else if (algorithm_ == "rfo")
-        displ_ = get_step_rfo();
-    }
 
-    if (iter_ > 1 && algorithm_ == "rfo" && adaptive_) {
-      // maximum steplength adjustment step, only available for RFO now
-
-      realchange_ = en_ - en_prev_;
-      double predreal_ratio = realchange_ / predictedchange_prev_;
-      if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
-      
-      if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep_) maxstep_ *= 2.0;
-      else if (predreal_ratio < 0.25) maxstep_ *= 0.25;
+      displ_ = get_step();
     }
+    
+    if (adaptive_) do_adaptive();
+
     resume_stdcout();
     print_iteration(rms, timer_.tick());
     en_prev_ = en_;
@@ -129,25 +115,85 @@ void Opt::compute_noalglib() {
   }
 }
 
-void Opt::hessian_update_bfgs() {
-  // Hessian update with BFGS
+void Opt::hessian_update() {
   auto y  = make_shared<GradFile>(*grad_ - *prev_grad_);
   auto s  = make_shared<GradFile>(*displ_);
-  auto bs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
+  auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
+  auto z  = make_shared<GradFile>(*y - *hs);
 
-  double sbs = bs->dot_product(s);
+  double nzs = z->norm() * s->norm();
+  double nys = y->norm() * s->norm();
+  double zs = z->dot_product(s);
+  double ys = y->dot_product(s);
+
+  if ((zs / nzs) < -0.1) hessian_update_sr1(y,s,z);
+  else if ((ys / nys) > 0.1) hessian_update_bfgs(y,s,hs);
+  else hessian_update_psb(y,s,z);
+}
+
+void Opt::hessian_update_sr1(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
+  cout << "Updating Hessian using SR1 " << endl;
+  // Hessian update with SR1
+  double  zs = z->dot_product(s);
+  if (fabs(zs)>1.0e-12) zs = 1.0 / zs;
+
+  auto zzt = make_shared<Matrix>(size_,size_);
+  dger_(size_,size_,zs,z->data(),1,z->data(),1,zzt->data(),size_);
+
+  *hess_ = *hess_ + *zzt;
+}
+
+void Opt::hessian_update_bfgs(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> hs) {
+  cout << "Updating Hessian using BFGS " << endl;
+  // Hessian update with BFGS
+  double shs = hs->dot_product(s);
   double  ys = y->dot_product(s);
   if (fabs(ys)>1.0e-12) ys = 1.0 / ys;
-  if (fabs(sbs)>1.0e-12) sbs = -1.0 / sbs;
+  if (fabs(shs)>1.0e-12) shs = -1.0 / shs;
 
   auto yyt = make_shared<Matrix>(size_,size_);
   auto sst = make_shared<Matrix>(size_,size_);
-  dger_(size_,size_,sbs,s->data(),1,s->data(),1,sst->data(),size_);
+  dger_(size_,size_,shs,s->data(),1,s->data(),1,sst->data(),size_);
   dger_(size_,size_,ys,y->data(),1,y->data(),1,yyt->data(),size_);
 
   auto bsst = make_shared<Matrix>(*hess_ * *sst * *hess_);
 
   *hess_ = *hess_ + *bsst + *yyt;
+}
+
+void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
+  cout << "Updating Hessian using PSB " << endl;
+  // Hessian update with PSB
+  double ss = s->dot_product(s);
+  double ss2 = ss * ss;
+  double sz = s->dot_product(z);
+
+  ss = 1.0 / ss;
+  ss2= -sz / ss2;
+
+  auto szt = make_shared<Matrix>(size_,size_);
+  auto zst = make_shared<Matrix>(size_,size_);
+  auto sst = make_shared<Matrix>(size_,size_);
+  dger_(size_,size_,ss,s->data(),1,z->data(),1,szt->data(),size_);
+  dger_(size_,size_,ss,z->data(),1,s->data(),1,zst->data(),size_);
+  dger_(size_,size_,ss2,s->data(),1,s->data(),1,sst->data(),size_);
+
+  *hess_ = *hess_ + *szt + *zst + *sst;
+}
+
+shared_ptr<XYZFile> Opt::get_step() {
+  auto displ = make_shared<XYZFile>(current_->natom());
+
+  if (algorithm_ == "steep")
+    displ = get_step_steep();
+  else if (algorithm_ == "nr")
+    displ = get_step_nr();
+  else if (algorithm_ == "rfo")
+    displ = get_step_rfo();
+  else if (algorithm_ == "rfos")
+    displ = get_step_rfos();
+
+  return displ;
 }
 
 shared_ptr<XYZFile> Opt::get_step_steep() {
@@ -185,7 +231,8 @@ shared_ptr<XYZFile> Opt::get_step_nr() {
 }
 
 shared_ptr<XYZFile> Opt::get_step_rfo() {
-  // Rational function optimization (aka augmented Hessian, This is default)
+  // Rational function optimization (aka augmented Hessian)
+  // Here we do scale lambda to get step < steplength
 
   auto displ = make_shared<XYZFile>(current_->natom());
   {
@@ -208,8 +255,7 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
   }
 
   if (adaptive_) {
-
-    // When we use adaptive steplength, we should predict energy change
+    // When we use adaptive steplength, we should predict quadratic energy change
 
     double qg  = displ->dot_product(grad_);
     auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
@@ -219,4 +265,52 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
   }
 
   return displ;
+}
+
+shared_ptr<XYZFile> Opt::get_step_rfos() {
+  // Rational function optimization (aka augmented Hessian)
+  // Here we do not scale lambda, but just scale the computed step
+
+  auto displ = make_shared<XYZFile>(current_->natom());
+  {
+    auto aughes = make_shared<Matrix>(size_+1,size_+1);
+    VectorB eigv(size_+1);
+    aughes->zero();
+    aughes->add_block(1.0, 1, 1, size_, size_, hess_);
+    aughes->add_block(1.0, 1, 0, size_, 1, grad_->data());
+    aughes->add_block(1.0, 0, 1, 1, size_, grad_->data());
+  
+    aughes->diagonalize(eigv);
+    aughes->scale(1.0 / aughes->element(0,0));
+ 
+    copy_n(aughes->element_ptr(1,0), size_, displ->data());
+    if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
+  }
+
+  if (adaptive_) {
+    // When we use adaptive steplength, we should predict quadratic energy change
+
+    double qg  = displ->dot_product(grad_);
+    auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
+    double qhq = displ->dot_product(hq);
+    predictedchange_prev_ = predictedchange_;
+    predictedchange_ = qg + 0.5 * qhq;
+  }
+
+  return displ;
+}
+
+void Opt::do_adaptive() {
+  // Fletcher's adaptive stepsize algorithm
+
+  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos");
+
+  if (algo) {
+    realchange_ = en_ - en_prev_;
+    double predreal_ratio = realchange_ / predictedchange_prev_;
+    if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
+    
+    if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep_) maxstep_ *= 2.0;
+    else if (predreal_ratio < 0.25) maxstep_ *= 0.25;
+  }
 }

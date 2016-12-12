@@ -99,12 +99,19 @@ class Opt {
     std::shared_ptr<GradFile> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_cigrad_bearpark(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+
+    std::shared_ptr<XYZFile> get_step();
     std::shared_ptr<XYZFile> get_step_steep();
     std::shared_ptr<XYZFile> get_step_nr();
     std::shared_ptr<XYZFile> get_step_rfo();
+    std::shared_ptr<XYZFile> get_step_rfos();
 
-    // modern geometry optimizations employ BFGS, SR1, PSB... currently I only have BFGS
-    void hessian_update_bfgs();
+    void hessian_update();
+    void hessian_update_bfgs(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> hs);
+    void hessian_update_sr1(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
+    void hessian_update_psb(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
+
+    void do_adaptive();
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
@@ -121,7 +128,7 @@ class Opt {
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 5.0e-5);
-      algorithm_ = idat->get<std::string>("algorithm", "lbfgs");
+      algorithm_ = idat->get<std::string>("algorithm", "rfo");
       adaptive_ = idat->get<bool>("adaptive", true);
       opttype_ = idat->get<std::string>("opttype", "energy");
 
