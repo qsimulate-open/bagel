@@ -435,13 +435,11 @@ vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<dou
 
   vector<complex<double>> mb(nmult_, 0);
 
-  int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+    for (int m = 0; m <= 2 * l; ++m) {
 
-      int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
-        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+        for (int k = 0; k <= 2 * j; ++k) {
 
           const int a = l + j;
           const int b = m - l + k - j;
@@ -452,10 +450,10 @@ vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<dou
             prefactor *= ft;
             ++ft;
           }
-          const complex<double> coeff(real, imag);
-          mb[i1] += pow(-1.0, l) * coeff * olm[i2];
           const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
           const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
+          const complex<double> Mab(real, imag);
+          mb[l*l+m] += pow(-1.0, l) * Mab * olm[j*j+k];
         }
       }
     }
@@ -474,13 +472,11 @@ vector<complex<double>> Box::shift_multipoles(vector<complex<double>> oa, array<
 
   vector<complex<double>> ob(nmult_, 0);
 
-  int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+    for (int m = 0; m <= 2 * l; ++m) {
 
-      int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
-        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+        for (int k = 0; k <= 2 * j; ++k) {
 
           const int a = l - j;
           const int b = m - l - k + j;
@@ -493,10 +489,9 @@ vector<complex<double>> Box::shift_multipoles(vector<complex<double>> oa, array<
             }
             const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> coeff(real, -imag);
+            const complex<double> Oab(real, -imag);
 
-            if (abs(coeff) > numerical_zero__)
-              ob[i1] += coeff * oa[i2];
+            ob[l*l+m] += Oab * oa[j*j+k];
           }
 
         }
@@ -517,13 +512,11 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
 
   vector<complex<double>> mrb(nmult_, 0);
 
-  int i1 = 0;
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m, ++i1) {
+    for (int m = 0; m <= 2 * l; ++m) {
 
-      int i2 = 0;
       for (int j = 0; j <= lmax_; ++j) {
-        for (int k = 0; k <= 2 * j; ++k, ++i2) {
+        for (int k = 0; k <= 2 * j; ++k) {
 
           const int a = j - l;
           const int b = k - j - m + l;
@@ -536,10 +529,9 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
             }
             const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> coeff(real, -imag);
+            const complex<double> Oab(real, -imag);
 
-            if (abs(coeff) > numerical_zero__)
-              mrb[i1] += coeff * mr[i2];
+            mrb[l*l+m] += Oab * mr[j*j+k];
           }
 
         }
