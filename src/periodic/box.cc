@@ -189,29 +189,29 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
   fill(multipole_.begin(), multipole_.end(), 0.0);
   fill(localJ_.begin(), localJ_.end(), 0.0);
 
-  if (nchild() == 0) { // leaf = shift sp's multipoles
+  if (nchild() == 0) { // leaf
 //    TaskQueue<function<void(void)>> tasks(nsp());
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
       shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), v->nbasis1(), v->nbasis0());
+      vector<complex<double>> olm(nmult_);
 
 //      tasks.emplace_back(
 //        [this, &v, &den]() {
-      vector<shared_ptr<const ZMatrix>> vmult = v->multipoles(lmax_, v->centre());
-      assert((vmult[0]->ndim() == den->ndim()) && (vmult[0]->mdim() == den->mdim()));
-      vector<complex<double>> olm(nmult_);
-      for (int i = 0; i != nmult_; ++i) {
-        const double real = den->dot_product(*(vmult[i]->get_real_part()));
-        const double imag = den->dot_product(*(vmult[i]->get_imag_part()));
-        olm[i] = complex<double>(real, imag);
-      }
+      MultipoleBatch mpole(v->shells(), centre_, lmax_);
+      mpole.compute();
+      const int dimb1 = v->shell(0)->nbasis();
+      const int dimb0 = v->shell(1)->nbasis();
+      vector<const complex<double>*> dat(nmult_);
+      for (int i = 0; i != nmult_; ++i)
+        dat[i] = mpole.data() + mpole.size_block()*i;
 
-      array<double, 3> r12;
-      r12[0] = v->centre(0) - centre_[0];
-      r12[1] = v->centre(1) - centre_[1];
-      r12[2] = v->centre(2) - centre_[2];
-      vector<complex<double>> smoment = shift_multipoles(olm, r12);
-      transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
+        for (int i = v->offset(1); i != dimb0 + v->offset(1); ++i)
+          for (int j = v->offset(0); j != dimb1 + v->offset(0); ++j)
+            for (int k = 0; k != mpole.num_blocks(); ++k)
+                olm[k] += conj(*dat[k]++ * density->element(j,i));
+
+      transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
 //        }
 //      );
     }
@@ -452,10 +452,10 @@ vector<complex<double>> Box::shift_localM(vector<complex<double>> olm, array<dou
             prefactor *= ft;
             ++ft;
           }
-          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
-          const double imag = prefactor * sin(abs(b) * phi);
           const complex<double> coeff(real, imag);
           mb[i1] += pow(-1.0, l) * coeff * olm[i2];
+          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
+          const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
         }
       }
     }
@@ -491,9 +491,9 @@ vector<complex<double>> Box::shift_multipoles(vector<complex<double>> oa, array<
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
-            const double imag = prefactor * sin(abs(b) * phi);
-            const complex<double> coeff(real, imag);
+            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
+            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
+            const complex<double> coeff(real, -imag);
 
             if (abs(coeff) > numerical_zero__)
               ob[i1] += coeff * oa[i2];
@@ -534,9 +534,9 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (-1.0 * prefactor * cos(abs(b) * phi));
-            const double imag = prefactor * sin(abs(b) * phi);
-            const complex<double> coeff(real, imag);
+            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
+            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
+            const complex<double> coeff(real, -imag);
 
             if (abs(coeff) > numerical_zero__)
               mrb[i1] += coeff * mr[i2];
