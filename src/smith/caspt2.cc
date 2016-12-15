@@ -169,7 +169,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
       geom_->print_atoms();
 
       refgrad_plus = make_shared<Reference>(*ref_, nullptr);
-      refgrad_plus = nullptr;
+      refgrad_plus = refgrad_plus->project_coeff(geom_);
 
       task_ = std::make_shared<CASPT2Energy>(idata_out, geom_, refgrad_plus);
       task_->compute();
@@ -193,7 +193,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
       geom_->print_atoms();
 
       refgrad_minus = make_shared<Reference>(*ref_, nullptr);
-      refgrad_minus = nullptr;
+      refgrad_minus = refgrad_minus->project_coeff(geom_);
       
       task_ = std::make_shared<CASPT2Energy>(idata_out, geom_, refgrad_minus);
       task_->compute();
@@ -361,8 +361,8 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
       geom_ = make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
 
-      refgrad_plus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_plus = nullptr;
+      refgrad_plus = make_shared<Reference>(*ref_, nullptr);
+      refgrad_plus = refgrad_plus->project_coeff(geom_);
 
       task_ = std::make_shared<CASPT2Energy>(idata_out, geom_, refgrad_plus);
       task_->compute();
@@ -403,8 +403,8 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
       geom_ = make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
 
-      refgrad_minus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_minus = nullptr;
+      refgrad_minus = make_shared<Reference>(*ref_, nullptr);
+      refgrad_minus = refgrad_minus->project_coeff(geom_);
       
       task_ = std::make_shared<CASPT2Energy>(idata_out, geom_, refgrad_minus);
       task_->compute();

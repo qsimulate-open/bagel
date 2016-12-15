@@ -49,12 +49,14 @@ CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
     cas->compute();
     ref_ = cas->conv_to_ref();
     fci_ = cas->fci();
+    cieig_ = cas->fci()->energy();
     thresh_ = cas->thresh();
   } else {
     auto cas = make_shared<CASNoopt>(inp, geom, ref);
     cas->compute();
     ref_ = cas->conv_to_ref();
     fci_ = cas->fci();
+    cieig_ = cas->fci()->energy();
     thresh_ = cas->thresh();
   }
 
@@ -103,6 +105,8 @@ void CASPT2Nacm::compute() {
   xmsrot_  = smith->xmsrot();
   heffrot_ = smith->heffrot();
   foeig_   = smith->foeig();
+  energy1_ = smith->algo()->energy(target1());
+  energy2_ = smith->algo()->energy(target2());
 
   Timer timer;
 
@@ -140,6 +144,7 @@ void CASPT2Nacm::compute() {
 
   d10ms_ = make_shared<RDM<1>>(nact);
   d20ms_ = make_shared<RDM<2>>(nact);
+  const double egap = energy2_ - energy1_;
   for (int ist = 0; ist != nstates_; ++ist) {
     const double ims = msrot(ist, target2());
     for (int jst = 0; jst != nstates_; ++jst) {
@@ -149,6 +154,12 @@ void CASPT2Nacm::compute() {
       tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
       d10ms_->ax_plus_y(ims*jms, *rdm1t);
       d20ms_->ax_plus_y(ims*jms, *rdm2t);
+      const double fkji = msrot(ist, target1()) * msrot(jst, target2()) - msrot(ist, target2()) * msrot(jst, target1());
+      const double eji  = fabs(cieig(jst) - cieig(ist)) > 1.0e-12 ? 0.5 * egap / (cieig(jst) - cieig(ist)) : 0.0;
+      if (ist != jst && (fabs(eji) > 1.0e-12) && (fabs(fkji) > 1.0e-12)) {
+        d10ms_->ax_plus_y(eji*fkji, *rdm1t);
+        d20ms_->ax_plus_y(eji*fkji, *rdm2t);
+      }
     }
   }
 
@@ -157,8 +168,6 @@ void CASPT2Nacm::compute() {
   *vd1_ += *d10IJ;
 
   d2_ = smith->dm2();
-  energy1_ = smith->algo()->energy(target1());
-  energy2_ = smith->algo()->energy(target2());
 
   cout << "    * NACME Target states: " << target1() << " - " << target2() << endl;
   cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * 27.21138602 << " eV" << endl << endl;
@@ -216,7 +225,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // solve CPCASSCF
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
-  task_->augment_Y(d0ms, g0, g1, halfj);
+  task_->augment_Y(d0ms, g0, g1, halfj);      // should I forget about it?
   timer.tick_print("Yrs non-Lagrangian terms");
 
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
@@ -357,6 +366,7 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
 
   // vd1_ term
   g0->add_block(egap, 0, 0, nmobasis, nmobasis, *vd1_);
+
   
   // If XMS, coupling from Fock is also needed
   // Similar code with caspt2/CASPT2.cc is used here
@@ -447,7 +457,6 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     const Matrix hmo(*coeff_ % *ref_->hcore() * *coeff_);
     auto d0 = make_shared<Matrix>(nmobasis, nmobasis);
     d0->add_block(1.0, nclosed, nclosed, nact, nact, *d10ms_);
-
     d0->symmetrize();
     *out += hmo * (*d1_ + *d11_ + *d0) * 2.0;
   }
@@ -458,7 +467,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     dkl = ref_->rdm1_mat(); // D0SA
     dkl->sqrt();
     dkl->scale(1.0/sqrt(2.0));
-    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, dkl ? ocoeff * *dkl : Matrix(ocoeff), /*grad*/false, /*rhf*/true);
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
     *out += *coeff_ % fock * *coeff_ * *d1_ * 2.0;
   }
 

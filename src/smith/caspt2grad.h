@@ -140,6 +140,7 @@ class CASPT2Nacm : public Method {
     std::shared_ptr<const Matrix> heffrot_;
     // Fock Eigenvalues
     std::vector<double> foeig_;
+    std::vector<double> cieig_;
     // Energies, vector
     std::vector<double> energy_;
 
@@ -196,6 +197,7 @@ class CASPT2Nacm : public Method {
 
     bool do_hyperfine() const { return do_hyperfine_; }
     double foeig(const int i) const { return foeig_.at(i); }
+    double cieig(const int i) const { return cieig_.at(i); }
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
