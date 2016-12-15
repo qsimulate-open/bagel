@@ -296,7 +296,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ)
   }
 
   common_init1();
-  common_init2(false, overlap_thresh_);
+  common_init2(true, overlap_thresh_);
   if (o.magnetism())
     throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
