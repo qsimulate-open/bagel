@@ -43,7 +43,7 @@ void Box::init() {
 
   ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
- 
+
   centre_ = {{0, 0, 0}};
   ndim_ = 0;
   nbasis0_ = 0;   nbasis1_ = 0;
@@ -190,33 +190,33 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
   fill(localJ_.begin(), localJ_.end(), 0.0);
 
   if (nchild() == 0) { // leaf
-//    TaskQueue<function<void(void)>> tasks(nsp());
+    TaskQueue<function<void(void)>> tasks(nsp());
+    mutex jmutex;
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
-      shared_ptr<const Matrix> den = density->get_submatrix(v->offset(1), v->offset(0), v->nbasis1(), v->nbasis0());
-      vector<complex<double>> olm(nmult_);
 
-//      tasks.emplace_back(
-//        [this, &v, &den]() {
-      MultipoleBatch mpole(v->shells(), centre_, lmax_);
-      mpole.compute();
-      const int dimb1 = v->shell(0)->nbasis();
-      const int dimb0 = v->shell(1)->nbasis();
-      vector<const complex<double>*> dat(nmult_);
-      for (int i = 0; i != nmult_; ++i)
-        dat[i] = mpole.data() + mpole.size_block()*i;
+      tasks.emplace_back(
+        [this, &v, &density, &jmutex]() {
+          vector<complex<double>> olm(nmult_);
+          MultipoleBatch mpole(v->shells(), centre_, lmax_);
+          mpole.compute();
+          const int dimb1 = v->shell(0)->nbasis();
+          const int dimb0 = v->shell(1)->nbasis();
+          vector<const complex<double>*> dat(nmult_);
+          for (int i = 0; i != nmult_; ++i)
+            dat[i] = mpole.data() + mpole.size_block()*i;
 
-        for (int i = v->offset(1); i != dimb0 + v->offset(1); ++i)
-          for (int j = v->offset(0); j != dimb1 + v->offset(0); ++j)
-            for (int k = 0; k != mpole.num_blocks(); ++k)
+          lock_guard<mutex> lock(jmutex);
+          for (int i = v->offset(1); i != dimb0 + v->offset(1); ++i)
+            for (int j = v->offset(0); j != dimb1 + v->offset(0); ++j)
+              for (int k = 0; k != mpole.num_blocks(); ++k)
                 olm[k] += conj(*dat[k]++ * density->element(j,i));
 
-      transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
-//        }
-//      );
+          transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
+        }
+      );
     }
-//    tasks.compute();
-
+    tasks.compute();
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -225,7 +225,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       r12[1] = c->centre(1) - centre_[1];
       r12[2] = c->centre(2) - centre_[2];
       vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
-      transform(multipole_.begin(), multipole_.end(), smoment.begin(), multipole_.begin(), std::plus<complex<double>>());
+      blas::ax_plus_y_n(1.0, smoment.data(), nmult_, multipole_.data());
     }
   }
 }
@@ -240,7 +240,7 @@ void Box::compute_L2L() {
     r12[1] = centre_[1] - parent_->centre(1);
     r12[2] = centre_[2] - parent_->centre(2);
     vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
-    transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
+    blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
   }
 }
 
@@ -254,7 +254,7 @@ void Box::compute_M2L() {
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
     vector<complex<double>> slocal = shift_localM(it->multipole(), r12);
-    transform(localJ_.begin(), localJ_.end(), slocal.begin(), localJ_.begin(), std::plus<complex<double>>());
+    blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
   }
 }
 
@@ -546,7 +546,7 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
 void Box::compute_energy_ff() {
 
   assert(multipole_.size() == localJ_.size());
-  complex<double> en = inner_product(multipole_.begin(), multipole_.end(), localJ_.begin(), complex<double>(0, 0));
+  complex<double> en = blas::dot_product_noconj(multipole_.data(), nmult_, localJ_.data());
 //  assert(abs(en.imag()) < 1e-10);
   if (abs(en.imag()) > 1e-10) cout << "*** Warning: en.imag() = " << setprecision(13) << en.imag() << endl;
   energy_ff_ = 0.5 * en.real();
@@ -554,10 +554,17 @@ void Box::compute_energy_ff() {
 
 
 double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //for debug
-  
+
   auto jff = make_shared<Matrix>(density->ndim(), density->ndim());
   jff->zero();
-  const double* density_data = density->data();
+
+  int ntask = 0;
+  for (auto& inter : inter_)
+    ntask += inter->sp().size();
+  ntask *= sp_.size();
+
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
 
   for (auto& v01 : sp_) {
     if (v01->schwarz() < 1e-15) continue;
@@ -582,28 +589,37 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
 
         array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
 
-        ERIBatch eribatch(input, 0.0);
-        eribatch.compute();
-        const double* eridata = eribatch.data();
+        tasks.emplace_back(
+          [this, &jff, &density, input, b0offset, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, &jmutex]() {
+            const double* density_data = density->data();
 
-        for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
-          for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-            const int j1n = j1 * density->ndim();
-            for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
-              const int j2n = j2 * density->ndim();
-              for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
-                const double eri = *eridata;
-                jff->element(j1, j0) += density_data[j2n + j3] * eri;
-                jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
+            ERIBatch eribatch(input, 0.0);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                const int j1n = j1 * density->ndim();
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  const int j2n = j2 * density->ndim();
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    const double eri = *eridata;
+                    jff->element(j1, j0) += density_data[j2n + j3] * eri;
+                    jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
+                  }
+                }
               }
             }
+
           }
-        }
+        );
 
       }
     }
   }
-
+  tasks.compute();
   const double out = 0.5*jff->dot_product(*density);
+
   return out;
 }
