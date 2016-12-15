@@ -23,6 +23,7 @@
 //
 
 #include <src/grad/gradeval.h>
+#include <src/grad/finite.h>
 #include <src/util/timer.h>
 #include <src/wfn/construct_method.h>
 

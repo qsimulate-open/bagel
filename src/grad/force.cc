@@ -25,6 +25,7 @@
 #include <string>
 #include <src/grad/force.h>
 #include <src/grad/gradeval.h>
+#include <src/grad/finite.h>
 #include <src/wfn/construct_method.h>
 
 using namespace std;

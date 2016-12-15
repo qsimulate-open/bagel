@@ -29,6 +29,7 @@
 #include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/grad/gradeval.h>
+#include <src/grad/finite.h>
 #include <src/grad/cpcasscf.h>
 #include <src/prop/multipole.h>
 

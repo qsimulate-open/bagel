@@ -27,6 +27,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/grad/cpcasscf.h>
 #include <src/grad/gradeval.h>
+#include <src/grad/finite.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/multi/casscf/qvec.h>
