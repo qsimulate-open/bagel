@@ -28,6 +28,7 @@
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/reloverlap.h>
 #include <src/scf/dhf/population_analysis.h>
+#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
@@ -256,6 +257,19 @@ void ZCASBFGS::compute() {
     population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
     resume_stdcout();
     pop_timer.tick_print("population analysis");
+  }
+
+  // TODO When the Property class is implemented, this should be one
+  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+  if (aniso_data) {
+    if (geom_->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+      const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
+      Pseudospin ps(nspin, aniso_data);
+      ps.compute(*fci_);
+
+    }
   }
 
 }

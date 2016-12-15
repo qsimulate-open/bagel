@@ -31,6 +31,7 @@
 #include <src/util/math/hpw_diis.h>
 #include <src/util/math/step_restrict_bfgs.h>
 #include <src/scf/dhf/population_analysis.h>
+#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
@@ -204,6 +205,19 @@ void ZSuperCI::compute() {
     resume_stdcout();
     pop_timer.tick_print("population analysis");
   }
+
+  // TODO When the Property class is implemented, this should be one
+  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+  if (aniso_data) {
+    if (geom_->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+      const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
+      Pseudospin ps(nspin, aniso_data);
+      ps.compute(*fci_);
+
+    }
+  }
 }
 
 
@@ -228,6 +242,7 @@ void ZSuperCI::one_body_operators(shared_ptr<ZMatrix>& f, shared_ptr<ZMatrix>& f
     coeff_ = update_coeff(coeff_, natorb_coeff);
     qvec = update_qvec(qvec, natorb_coeff);
     rdm1 = make_shared<ZMatrix>(*natorb_coeff % *rdm1 * *natorb_coeff);
+    if (natocc_) print_natocc();
   }
 
   shared_ptr<const ZMatrix> cfock;

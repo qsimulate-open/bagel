@@ -26,7 +26,6 @@
 #include <src/ci/zfci/relspace.h>
 #include <src/util/math/comb.h>
 #include <src/util/math/quatmatrix.h>
-#include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
@@ -377,23 +376,6 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
-
-
-  // TODO When the Property class is implemented, this should be one
-  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
-  if (aniso_data) {
-    if (geom_->magnetism()) {
-      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
-    } else {
-
-      assert(!idata_->get<bool>("numerical", false));  // This feature is deactivated
-
-      const int nspin = aniso_data->get<int>("nspin", states_.size()-1);
-      Pseudospin ps(nspin, aniso_data);
-      ps.compute(*this);
-
-    }
-  }
 }
 
 
