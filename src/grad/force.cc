@@ -129,8 +129,7 @@ void Force::compute() {
 
   if (numerical_) {
 
-    const int diffsize = idata_->get<int>("diffsize", 3);
-    const double dx = pow(0.1, static_cast<double>(diffsize));
+    const double dx = idata_->get<double>("diffsize", 1.0e-3);
 
     if (jobtitle == "force") {
 
