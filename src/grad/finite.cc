@@ -64,8 +64,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       geom_ = std::make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
 
-      refgrad_plus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_plus = nullptr;
+      refgrad_plus = make_shared<Reference>(*ref_, nullptr);
+      refgrad_plus = refgrad_plus->project_coeff(geom_);
 
       energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
       energy_method->compute();
@@ -76,8 +76,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       geom_ = std::make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
       
-      refgrad_minus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_minus = nullptr;
+      refgrad_minus = make_shared<Reference>(*ref_, nullptr);
+      refgrad_minus = refgrad_minus->project_coeff(geom_);
 
       energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
       energy_method->compute();
