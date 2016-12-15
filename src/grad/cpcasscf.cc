@@ -97,7 +97,15 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Matrix>> CPCASSCF::compu
 
 
 tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>, shared_ptr<const Matrix>>
-  CPCASSCF::solve(const double zthresh, const int zmaxiter, shared_ptr<const Matrix> additional_den) {
+  CPCASSCF::solve(const double zthresh, const int zmaxiter, shared_ptr<const Matrix> additional_den, const bool project_all) {
+
+  // helper function
+  auto project_out = [&project_all](shared_ptr<Dvec> a, shared_ptr<const Dvec> b) {
+    if (project_all)
+      a->project_out_all(b); 
+    else
+      a->project_out(b);
+  };
 
   const size_t nocca = ref_->nocc();
   const int nmobasis = coeff_->mdim();
@@ -201,7 +209,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   purify(*source->first(), nclosed, nact, nvirt);
 
   // project out Civector from the gradient
-  source->second()->project_out(civector_);
+  project_out(source->second(), civector_);
 
   const double lambda = max(sqrt(static_cast<double>(source->second()->size()) / source->first()->size()), 1.0);
   source->second()->scale(1.0/lambda);
@@ -212,7 +220,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   // initial guess
   shared_ptr<PairFile<Matrix, Dvec>> z = source->copy();
   *z /= *denom;
-  z->second()->project_out(civector_);
+  project_out(z->second(), civector_);
 
   // inverse matrix of C
   auto ovl = make_shared<const Overlap>(geom_);
@@ -228,7 +236,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true, lambda);
     sigma->first()->antisymmetrize();
     purify(*sigma->first(), nclosed, nact, nvirt);
-    sigma->second()->project_out(civector_);
+    project_out(sigma->second(), civector_);
 
     z = solver->compute_residual(z, sigma);
 
@@ -237,7 +245,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     if (z->first()->rms()+z->second()->rms()*lambda < zthresh) break;
 
     *z /= *denom; 
-    z->second()->project_out(civector_);
+    project_out(z->second(), civector_);
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();
@@ -352,7 +360,6 @@ shared_ptr<PairFile<Matrix,Dvec>>
       for (int i = 0; i != z1->ij(); ++i)
         blas::ax_plus_y_n(-(fci_->energy(i)-core_energy), z1->data(i)->data(), z1->data(i)->size(), sigmaci->data(i)->data());
       sigmaci->scale(1.0/(lambda*lambda));
-      sigmaci->project_out(civector_);
     } else {
       sigmaci = civector_->clone(); // always zero when nact=0
     }
