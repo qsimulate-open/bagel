@@ -30,12 +30,13 @@
 //
 
 #include <complex>
+#include <bagel_config.h>
 
 using namespace std;
 
 #ifdef HAVE_MKL_H
 extern "C" {
- void mkl_zomatcopy_(const char*, const char*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
+ void mkl_zomatcopy_(const char*, const char*, const int*, const int*, const complex<double>*, const complex<double>*, const int*, complex<double>*, const int*);
 }
 #endif
 

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gradeval_base.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -70,7 +69,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
@@ -114,7 +113,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
 vector<shared_ptr<GradTask>> GradEval_base::contract_gradsmall1e(array<shared_ptr<const Matrix>,6> rmat) {
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
@@ -151,9 +150,9 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const array<shared_p
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*nshell*nshell2);
 
@@ -198,8 +197,8 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const array<shared_p
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const array<shared_ptr<const Matrix>,6> o, const shared_ptr<const Geometry> geom) {
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<shared_ptr<GradTask>> out;
-  const size_t nshell = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
-  const size_t nfatom = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
+  const size_t nshell = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  const size_t nfatom = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0, [](const int& i, const shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
   out.reserve(nshell*nshell*nfatom);
 
   // loop over atoms
@@ -248,9 +247,9 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e(const shared_ptr<con
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(cgeom->atoms().begin(), cgeom->atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
 
   out.reserve(nshell*(nshell+1)*nshell2/2);
 
@@ -297,7 +296,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e_2index(const shared_
   shared_ptr<const Geometry> cgeom = geom ? geom : geom_;
   vector<shared_ptr<GradTask>> out;
   const size_t nshell2  = std::accumulate(cgeom->aux_atoms().begin(), cgeom->aux_atoms().end(), 0,
-                                          [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell2*(nshell2+1)/2);
 
   // using symmetry (b0 <-> b1)
@@ -336,8 +335,8 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad2e_2index(const shared_
 
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_ptr<const Matrix> nmat) {
   vector<shared_ptr<GradTask>> out;
-  const size_t nshell = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+o->shells().size(); });
-  const size_t nfatom = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const std::shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
+  const size_t nshell = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  const size_t nfatom = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0, [](const int& i, const shared_ptr<const Atom>& o) { return i+(o->finite_nucleus() ? 1 : 0); });
   out.reserve(nshell*nshell*nfatom);
 
   int cnt = 0;

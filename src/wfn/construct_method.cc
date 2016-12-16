@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: construct_method.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/scf/hf/rohf.h>
@@ -32,18 +31,17 @@
 #include <src/ci/fci/harrison.h>
 #include <src/ci/fci/knowles.h>
 #include <src/ci/ras/rasci.h>
-#include <src/ci/ras/distrasci.h>
 #include <src/ci/zfci/zharrison.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2.h>
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cashybrid.h>
+#include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casbfgs.h>
-#include <src/multi/zcasscf/zcasscf.h>
-#include <src/multi/zcasscf/zcasbfgs.h>
-#include <src/multi/zcasscf/zcashybrid.h>
-#include <src/multi/zcasscf/zsuperci.h>
+#include <src/multi/casscf/casnoopt.h>
+#include <src/multi/zcasscf/zcassecond.h>
+#include <src/multi/zcasscf/zcasnoopt.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
 #include <src/periodic/pscf.h>
@@ -74,13 +72,11 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "zfci")     out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "ras") {
       const string algorithm = itree->get<string>("algorithm", "");
-      if ( algorithm == "local" || algorithm == "" ) {
+      if ( algorithm == "local" || algorithm == "" )
         out = make_shared<RASCI>(itree, geom, ref);
-      }
 #ifdef HAVE_MPI_H
-      else if ( algorithm == "dist" || algorithm == "parallel" ) {
-        out = make_shared<DistRASCI>(itree, geom, ref);
-      }
+      else if ( algorithm == "dist" || algorithm == "parallel" )
+        throw logic_error("Parallel RASCI not implemented");
 #endif
       else
         throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
@@ -101,29 +97,28 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     }
     else if (title == "casscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
+      if (algorithm == "superci")
         out = make_shared<SuperCI>(itree, geom, ref);
+      else if (algorithm == "second" || algorithm == "")
+        out = make_shared<CASSecond>(itree, geom, ref);
       else if (algorithm == "hybrid")
         out = make_shared<CASHybrid>(itree, geom, ref);
       else if (algorithm == "bfgs")
         out = make_shared<CASBFGS>(itree, geom, ref);
+      else if (algorithm == "noopt")
+        out = make_shared<CASNoopt>(itree, geom, ref);
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
-    else if (title == "caspt2grad") {
-      // TODO to be called from optimizer
-      out = make_shared<CASPT2Grad>(itree, geom, ref);
-    }
+    else if (title == "caspt2grad") out = make_shared<CASPT2Grad>(itree, geom, ref);
     else if (title == "nevpt2")  out = make_shared<NEVPT2<double>>(itree, geom, ref);
     else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
-        out = make_shared<ZSuperCI>(itree, geom, ref);
-      else if (algorithm == "hybrid")
-        out = make_shared<ZCASHybrid>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = make_shared<ZCASBFGS>(itree, geom, ref);
+      if (algorithm == "second" || algorithm == "")
+        out = make_shared<ZCASSecond>(itree, geom, ref);
+      else if (algorithm == "noopt")
+        out = make_shared<ZCASNoopt>(itree, geom, ref);
       else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
@@ -138,13 +133,10 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
     else if (title == "zfci")       out = make_shared<ZHarrison>(itree, geom, ref);
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "")
-        out = make_shared<ZSuperCI>(itree, geom, ref);
-      else if (algorithm == "hybrid")
-        out = make_shared<ZCASHybrid>(itree, geom, ref);
-      else if (algorithm == "bfgs")
-        out = make_shared<ZCASBFGS>(itree, geom, ref);
-      else
+      if (algorithm == "second" || algorithm == "") {
+        throw logic_error("Relativistic CASSCF with magnetic fields is currently broken");
+        out = make_shared<ZCASSecond>(itree, geom, ref);
+      } else
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "moprint") { out = make_shared<MOPrint>(itree, geom, ref);
     } else if (title == "molecule") {

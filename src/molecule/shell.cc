@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: shell.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/molecule/shell.h>
@@ -35,8 +34,8 @@ static const CarSphList carsphlist;
 
 Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const vector<double>& _expo,
                        const vector<vector<double>>& _contr,  const vector<pair<int, int>>& _range)
- : Shell_base(sph, _position, _ang),
-   exponents_(_expo), contractions_(_contr), contraction_ranges_(_range), dummy_(false), relativistic_(false), magnetism_(false), vector_potential_{{0.0, 0.0, 0.0}} {
+ : Shell_base(sph, _position, _ang), exponents_(_expo), contractions_(_contr), contraction_ranges_(_range),
+   dummy_(false), relativistic_(false), magnetism_(false), london_(false), vector_potential_{{0.0, 0.0, 0.0}}, magnetic_field_{{0.0, 0.0, 0.0}} {
 
   contraction_lower_.reserve(_range.size());
   contraction_upper_.reserve(_range.size());
@@ -53,14 +52,14 @@ Shell::Shell(const bool sph, const array<double,3>& _position, int _ang, const v
 }
 
 
-Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}},
-                               contraction_ranges_{{0,1}}, dummy_(true), magnetism_(false), vector_potential_{{0.0,0.0,0.0}} {
+Shell::Shell(const bool sph) : Shell_base(sph), exponents_{0.0}, contractions_{{1.0}}, contraction_ranges_{{0,1}},
+                               dummy_(true), magnetism_(false), london_(false), vector_potential_{{0.0, 0.0, 0.0}}, magnetic_field_{{0.0, 0.0, 0.0}} {
   contraction_lower_.push_back(0);
   contraction_upper_.push_back(1);
 }
 
 
-std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
+shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacement) const {
   auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];
@@ -69,7 +68,7 @@ std::shared_ptr<const Shell> Shell::move_atom(const array<double,3>& displacemen
 }
 
 
-std::shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
+shared_ptr<const Shell> Shell::move_atom(const double* displacement) const {
   auto out = make_shared<Shell>(*this);
   out->position_[0] += displacement[0];
   out->position_[1] += displacement[1];
@@ -167,21 +166,27 @@ shared_ptr<const Shell> Shell::kinetic_balance_uncont() const {
     ranges.push_back({i,i+1});
   }
   auto out = angular_number_+increment < 0 ? nullptr : make_shared<Shell>(false, position_, angular_number_+increment, exponents_, conts, ranges);
-  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_);
+  if (magnetism_ && angular_number_+increment >= 0) out->add_phase(vector_potential_, magnetic_field_, london_);
   return out;
 }
 
 
-void Shell::add_phase(const std::array<double,3>& phase_input) {
+void Shell::add_phase(const array<double,3>& phase_input, const array<double,3>& magnetic_field, const bool london) {
+  assert(london || (phase_input[0] == 0.0 && phase_input[1] == 0.0 && phase_input[2] == 0.0));
+
   magnetism_ = true;
+  london_ = london;
   vector_potential_ = phase_input;
+  magnetic_field_ = magnetic_field;
 }
+
 
 shared_ptr<const Shell> Shell::cartesian_shell() const {
   auto out = make_shared<Shell>(false, position_, angular_number_, exponents_, contractions_, contraction_ranges_);
-  if (magnetism_) out->add_phase(vector_potential_);
+  if (magnetism_) out->add_phase(vector_potential_, magnetic_field_, london_);
   return out;
 }
+
 
 void Shell::init_relativistic() {
   if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
@@ -204,7 +209,7 @@ void Shell::init_relativistic(const array<double,3> magnetic_field, bool london)
 
   // zsmall is a transformation matrix (x,y,z components)
   zsmall_ = MomentCompute::call(*this, magnetic_field, london);
-  for (int i=0; i!=3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
+  for (int i = 0; i != 3; i++) zsmallc_[i] = zsmall_[i]->get_conjg();
 }
 
 
@@ -377,4 +382,27 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
     bzz += nxyz;
     ++range;
   }
+}
+
+
+shared_ptr<const Shell> Shell::uncontract() const {
+  vector<vector<double>> conts;
+  vector<pair<int, int>> ranges;
+  for (int i = 0; i != exponents_.size(); ++i) {
+    vector<double> cont(i, 0.0);
+    cont.insert(cont.end(),1.0);
+    conts.push_back(cont);
+    ranges.push_back({i, i+1});
+  }
+
+  auto citer = ranges.begin();
+  for (auto iter = conts.begin(); iter != conts.end(); ++iter, ++citer) {
+    auto eiter = exponents_.begin();
+    double denom = 1.0;
+    for (int ii = 2; ii <= angular_number_; ++ii) denom *= 2 * ii - 1;
+    for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
+      *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(sqrt(4.0 * *eiter), static_cast<double>(angular_number_)) / sqrt(denom);
+  }
+
+  return make_shared<Shell>(spherical_, position_, angular_number_, exponents_, conts, ranges);
 }

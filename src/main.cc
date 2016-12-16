@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: main.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/global.h>
@@ -32,14 +31,9 @@
 #include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
+#include <src/util/exception.h>
 #include <src/util/archive.h>
 #include <src/util/io/moldenout.h>
-
-// debugging
-extern void test_solvers(std::shared_ptr<bagel::Geometry>);
-extern void test_mp2f12();
-
-// function (TODO will be moved to an appropriate place)
 
 using namespace std;
 using namespace bagel;
@@ -60,7 +54,7 @@ int main(int argc, char** argv) {
     auto idata = make_shared<const PTree>(input);
 
     shared_ptr<Method> method;
-    shared_ptr<Geometry> geom;
+    shared_ptr<const Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
     shared_ptr<MultiSite> multisite;
@@ -79,11 +73,29 @@ int main(int argc, char** argv) {
       const string title = to_lower(itree->get<string>("title", ""));
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
+#ifndef DISABLE_SERIALIZATION
+      if (itree->get<bool>("load_ref", false)) {
+        const string name = itree->get<string>("ref_in", "");
+        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
+        IArchive archive(name);
+        shared_ptr<Reference> ptr;
+        archive >> ptr;
+        ref = shared_ptr<Reference>(ptr);
+        geom = ref->geom();
+        if (itree->get<bool>("extract_average_rdms", false)) {
+          vector<int> rdm_states = itree->get_vector<int>("rdm_state");
+          ref = ref->extract_average_rdm(rdm_states);
+        }
+      }
+#endif
+
       if (title == "molecule") {
         geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false))
           ref.reset();
         if (ref) ref = ref->project_coeff(geom);
+        if (!itree->get<string>("molden_file", "").empty())
+          ref = make_shared<Reference>(geom, itree);
       } else {
         if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
@@ -93,17 +105,6 @@ int main(int argc, char** argv) {
 
       if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
         throw runtime_error(title + " needs a reference");
-
-#ifndef DISABLE_SERIALIZATION
-      if (itree->get<bool>("load_ref", false)) {
-        const string name = itree->get<string>("ref_in", "");
-        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
-        IArchive archive(name);
-        shared_ptr<Reference> ptr;
-        archive >> ptr;
-        ref = shared_ptr<Reference>(ptr);
-      }
-#endif
 
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
@@ -162,7 +163,7 @@ int main(int argc, char** argv) {
 
         dimer->scf(itree);
 
-        *geom = *dimer->sgeom();
+        geom = dimer->sgeom();
         ref = dimer->sref();
       } else if (title == "asd") {
           auto asd = construct_ASD(itree, dimer);
@@ -180,7 +181,7 @@ int main(int argc, char** argv) {
           ms->scf(itree);
           multisite = ms;
           ref = ms->conv_to_ref();
-          *geom = *ref->geom();
+          geom = ref->geom();
       } else if (title == "asd_dmrg") {
           if (!multisite)
             throw runtime_error("multisite must be called before asd_dmrg");
@@ -230,7 +231,11 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (const exception &e) {
+  } catch (const Termination& e) {
+    cout << "  -- Termination requested --" << endl;
+    cout << "  message: " << e.what() << endl;
+    print_footer();
+  } catch (const exception& e) {
     resources__->proc()->cout_on();
     cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
     resources__->proc()->cout_off();

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: geometry.h
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -54,6 +53,9 @@ class Geometry : public Molecule {
     void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
+    // DKH2 Hamiltonian
+    bool dkh_;
+
     // Magnetism-specific parameters
     bool magnetism_;
     bool london_;
@@ -75,7 +77,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
+      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -86,7 +88,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -121,6 +123,7 @@ class Geometry : public Molecule {
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
+    bool dkh() const { return dkh_; }
     bool london() const { return london_; }
     bool magnetism() const { return magnetism_; }
 

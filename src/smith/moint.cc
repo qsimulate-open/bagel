@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: moint.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -46,188 +45,210 @@ K2ext<DataType>::K2ext(shared_ptr<const SMITH_Info<DataType>> r, shared_ptr<cons
   // so far MOInt can be called for 2-external K integral and all-internals.
   if (blocks_[0] != blocks_[2] || blocks_[1] != blocks_[3])
     throw logic_error("MOInt called with wrong blocks");
-  data_ = make_shared<TATensor<DataType,4>>(blocks_, false);
   init();
 }
 
 
-namespace TiledArray { namespace detail {
-class DFPmap : public Pmap {
-  protected:
-    vector<int> ainfo_;
-  public:
-    DFPmap(World& world, const std::vector<int>& ainfo, const Pmap::size_type dim23) : Pmap(world, ainfo.size()*dim23), ainfo_(ainfo) {
-      Pmap::local_.reserve(std::count(ainfo.begin(), ainfo.end(), Pmap::rank_) * dim23);
-      for (int j = 0, cnt = 0; j != dim23; ++j)
-        for (int i = 0; i != ainfo.size(); ++i, ++cnt)
-          if (ainfo[i] == Pmap::rank_)
-            Pmap::local_.push_back(cnt);
-    }
-    virtual ~DFPmap() { }
-    virtual Pmap::size_type owner(const Pmap::size_type tile) const { return ainfo_[tile % ainfo_.size()]; }
-    virtual bool is_local(const Pmap::size_type tile) const { return DFPmap::owner(tile) == Pmap::rank_; }
-};
-}}
-
-
 template<>
 void K2ext<complex<double>>::init() {
-
-  vector<int> ainfo;
-  IndexRange aux;
-  shared_ptr<const DFDist> df = info_->geom()->df();
-  const vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
-  for (int n = 0; n != atable.size(); ++n) {
-    IndexRange a("o", atable[n].second, info_->maxtile(), aux.nblock(), aux.size());
-    for (int j = 0; j != a.nblock(); ++j)
-      ainfo.push_back(n);
-    aux.merge(a);
+  // bits to store
+  const bool braket = blocks_[0] == blocks_[1] && blocks_[2] == blocks_[3];
+  const list<vector<int>> cblocks_int = braket ?
+    list<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,1,1,1}} :
+    list<vector<int>>{{0,0,0,0}, {0,0,0,1}, {0,0,1,0}, {0,0,1,1}, {0,1,0,1}, {0,1,1,0}, {0,1,1,1}, {1,0,1,1}, {1,0,1,0}, {1,1,1,1}};
+  // convert this to list<vector<bool>>
+  list<vector<bool>> cblocks;
+  for (auto& i : cblocks_int) {
+    vector<bool> tmp;
+    for (auto& j : i)
+      tmp.push_back(static_cast<bool>(j));
+    cblocks.push_back(tmp);
   }
-  auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
+  // tabluate all the blocks that are to be stored
+  unordered_set<size_t> sparse;
+  for (auto& i0 : blocks_[0])
+    for (auto& i1 : blocks_[1])
+      for (auto& i2 : blocks_[2])
+        for (auto& i3 : blocks_[3])
+          if (find(cblocks.begin(), cblocks.end(), vector<bool>{i0.kramers(), i1.kramers(), i2.kramers(), i3.kramers()}) != cblocks.end())
+            sparse.insert(generate_hash_key(i0, i1, i2, i3));
+  // allocate
+  data_ = make_shared<Tensor_<complex<double>>>(blocks_, /*kramers*/true, sparse, /*alloc*/true);
+  data_->set_stored_sectors(cblocks);
 
-  // Coulomb
-  data_->fill_local(0.0);
-  {
-#ifdef HAVE_MKL_H
-    mkl_set_num_threads(info_->num_threads());
-#endif
-    TATensor<complex<double>,3> ext({aux, blocks_[0], blocks_[1]}, false, pmap);
+  // Aux index blocking
+  const IndexRange aux(info_->geom()->df()->adist_now());
+  const size_t astart = info_->geom()->df()->block(0)->astart();
+
+  auto compute = [&, this](const bool gaunt, const bool breit) {
+    // create an intermediate array
+    using MapType = map<int, shared_ptr<Tensor_<complex<double>>>>;
+    MapType ext, ext2;
+    auto alpha = gaunt ? list<int>{Comp::X, Comp::Y, Comp::Z} : list<int>{Comp::L};
+
+    for (auto& i : alpha) {
+      ext.emplace(i, make_shared<Tensor_<complex<double>>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, unordered_set<size_t>{}, true));
+      if (breit)
+        ext2.emplace(i, make_shared<Tensor_<complex<double>>>(vector<IndexRange>{aux, blocks_[0], blocks_[1]}, false, unordered_set<size_t>{}, true));
+    }
+
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
-      list<shared_ptr<RelDFHalf>> half;
-      tie(half, ignore) = RelMOFile::compute_half(info_->geom(), i0coeff, /*gaunt*/false, /*breit*/false);
+      list<shared_ptr<RelDFHalf>> half, half2;
+      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
 
       for (auto& i1 : blocks_[1]) {
         shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-        shared_ptr<const ListRelDFFull> dffull = RelMOFile::compute_full(i1coeff, half, true);
-        for (auto& a : aux) {
-          auto it = ext.get_local(vector<Index>{a, i0, i1});
-          if (it.first)
-            ext.init_tile(it.second, dffull->data().front()->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
-        }
-      }
-    }
-#ifdef HAVE_MKL_H
-    mkl_set_num_threads(1);
-#endif
-    TATensor<complex<double>,3> ext2({aux, blocks_[0], blocks_[1]}, true);
-    ext2("o4,o0,o1") += ext("o4,o0,o1").conj();
-    (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
-  }
+        shared_ptr<const ListRelDFFull> full, full2;
+        full = RelMOFile::compute_full(i1coeff, half, true);
+        if (breit)
+          full2 = RelMOFile::compute_full(i1coeff, half2, false);
 
-  if (info_->gaunt()) {
-    using MapType = map<int, shared_ptr<TATensor<complex<double>,3>>>;
-    MapType ext, ext2;
-
-#ifdef HAVE_MKL_H
-    mkl_set_num_threads(info_->num_threads());
-#endif
-    {
-      auto temp = make_shared<TATensor<complex<double>,3>>({aux, blocks_[0], blocks_[1]}, false, pmap);
-      ext = MapType{{Comp::X, temp}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
-
-      if (info_->breit())
-        ext2 = MapType{{Comp::X, temp->clone(pmap)}, {Comp::Y, temp->clone(pmap)}, {Comp::Z, temp->clone(pmap)}};
-
-      for (auto& i0 : blocks_[0]) {
-        shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
-        list<shared_ptr<RelDFHalf>> half, half2;
-        tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, true, info_->breit());
-
-        for (auto& i1 : blocks_[1]) {
-          shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
-          auto init_local = [&](list<shared_ptr<RelDFFull>> li, MapType ee) {
-            for (auto& c : li)
-              for (auto& a : aux) {
-                auto it = ee.at(c->alpha_comp())->get_local(vector<Index>{a, i0, i1});
-                if (it.first)
-                  ee.at(c->alpha_comp())->init_tile(it.second, c->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+        for (auto& a : aux)
+          if (a.offset() == astart) {
+            const size_t bufsize = a.size()*i0.size()*i1.size();
+            unique_ptr<complex<double>[]> buf(new complex<double>[bufsize]);
+            auto comp = [&](shared_ptr<const ListRelDFFull> cfull, MapType& cext) {
+              for (auto& data : cfull->data()) {
+                auto block = data->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size());
+                assert(block->size() == bufsize);
+                copy_n(block->data(), bufsize, buf.get());
+                cext.at(data->alpha_comp())->put_block(buf, a, i0, i1);
               }
-          };
-          init_local(RelMOFile::compute_full(i1coeff, half, true)->data(), ext);
-          if (info_->breit())
-            init_local(RelMOFile::compute_full(i1coeff, half2, false)->data(), ext2);
+            };
+            comp(full, ext);
+            if (breit)
+              comp(full2, ext2);
+          }
+      }
+    }
+    if (!breit) ext2 = ext;
+    // wait for other nodes
+    for (auto& i : ext)
+      i.second->fence();
+    for (auto& i : ext2)
+      i.second->fence();
+
+    // form four-index integrals
+    const double gscale = gaunt ? (breit ? -0.25 /*we explicitly symmetrize*/ : -1.0) : 1.0;
+    for (auto& i0 : blocks_[0]) {
+      for (auto& i1 : blocks_[1]) {
+        for (auto& i2 : blocks_[2]) {
+          for (auto& i3 : blocks_[3]) {
+            if (sparse.count(generate_hash_key(i0, i1, i2, i3)) == 0 || !data_->is_local(i0, i1, i2, i3))
+              continue;
+            const size_t bufsize = data_->get_size(i0, i1, i2, i3);
+            unique_ptr<complex<double>[]> buf(new complex<double>[bufsize]);
+            fill_n(buf.get(), bufsize, 0.0);
+
+            for (auto& a : aux) {
+              for (auto& i : alpha) {
+                auto comp = [&] (const MapType& cext, const MapType& cext2) {
+                  unique_ptr<complex<double>[]> data01 = cext.at(i)->get_block(a, i0, i1);
+                  unique_ptr<complex<double>[]> data23 = cext2.at(i)->get_block(a, i2, i3);
+                  btas::gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size(), a.size(),
+                                              gscale, data01.get(), a.size(), data23.get(), a.size(), 1.0, buf.get(), i0.size()*i1.size());
+                };
+                comp(ext, ext2);
+                if (breit)
+                  comp(ext2, ext);
+              }
+            }
+            blas::conj_n(buf.get(), bufsize);
+            data_->add_block(buf, i0, i1, i2, i3);
+          }
         }
       }
-      if (!info_->breit())
-        ext2 = ext;
     }
-#ifdef HAVE_MKL_H
-    mkl_set_num_threads(1);
-#endif
-    auto make_conj = [](shared_ptr<const TATensor<complex<double>,3>> o) {
-      auto out = o->clone();
-      out->fill_local(0.0);
-      (*out)("o4,o0,o1") += (*o)("o4,o0,o1").conj();
-      return out;
-    };
-    for (auto& i : ext)
-      i.second = make_conj(i.second);
-    if (info_->breit())
-      for (auto& i : ext2)
-        i.second = make_conj(i.second);
+    data_->fence();
+  };
 
-    const double scale = info_->breit() ? -0.25 /*we explicitly symmetrize*/ : -1.0;
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::X])("o4,o0,o1") * ((*ext2[Comp::X])("o4,o2,o3") * scale);
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Y])("o4,o0,o1") * ((*ext2[Comp::Y])("o4,o2,o3") * scale);
-    (*data_)("o0,o1,o2,o3") += (*ext[Comp::Z])("o4,o0,o1") * ((*ext2[Comp::Z])("o4,o2,o3") * scale);
-    if (info_->breit()) {
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::X])("o4,o0,o1") * ((*ext[Comp::X])("o4,o2,o3") * scale);
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Y])("o4,o0,o1") * ((*ext[Comp::Y])("o4,o2,o3") * scale);
-      (*data_)("o0,o1,o2,o3") += (*ext2[Comp::Z])("o4,o0,o1") * ((*ext[Comp::Z])("o4,o2,o3") * scale);
-    }
+  // coulomb operator
+  compute(false, false);
+  if (info_->gaunt())
+    compute(true, info_->breit());
+
+  map<vector<int>, pair<double,bool>> perm{{{0,1,2,3}, {1.0, false}}, {{2,3,0,1}, {1.0, false}}};
+  if (braket) {
+    perm.emplace(vector<int>{1,0,3,2}, make_pair(1.0, true));
+    perm.emplace(vector<int>{3,2,1,0}, make_pair(1.0, true));
   }
-
+  data_->set_perm(perm);
 }
-
 
 
 template<>
 void K2ext<double>::init() {
+  data_ = make_shared<Tensor_<double>>(blocks_);
+  data_->allocate();
+
   shared_ptr<const DFDist> df = info_->geom()->df();
 
   // It is the easiest to do integral transformation for each blocks.
   assert(blocks_.size() == 4);
-  map<size_t, shared_ptr<DFFullDist>> dflist;
   // AO dimension
   assert(df->nbasis0() == df->nbasis1());
 
-  vector<int> ainfo;
-  IndexRange aux;
-  const vector<pair<size_t, size_t>> atable = df->adist_now()->atable();
-  for (int n = 0; n != atable.size(); ++n) {
-    IndexRange a("o", atable[n].second, info_->maxtile(), aux.nblock(), aux.size());
-    for (int j = 0; j != a.nblock(); ++j)
-      ainfo.push_back(n);
-    aux.merge(a);
-  }
-  auto pmap = make_shared<TiledArray::detail::DFPmap>(madness::World::get_default(), ainfo, blocks_[0].nblock()*blocks_[1].nblock());
-  TATensor<double,3> ext({aux, blocks_[0], blocks_[1]}, false, pmap);
+  // Aux index blocking
+  const IndexRange aux(df->adist_now());
 
-#ifdef HAVE_MKL_H
-  mkl_set_num_threads(info_->num_threads());
-#endif
+  // create an intermediate array
+  Tensor_<double> ext(vector<IndexRange>{aux, blocks_[0], blocks_[1]});
+  ext.allocate();
+
   // occ loop
   for (auto& i0 : blocks_[0]) {
     shared_ptr<DFHalfDist> df_half = df->compute_half_transform(coeff_->slice(i0.offset(), i0.offset()+i0.size()))->apply_J();
     // virtual loop
     for (auto& i1 : blocks_[1]) {
       shared_ptr<DFFullDist> df_full = df_half->compute_second_transform(coeff_->slice(i1.offset(), i1.offset()+i1.size()));
-      for (auto& a : aux) {
-        auto it = ext.get_local(vector<Index>{a, i0, i1});
-        if (it.first)
-          ext.init_tile(it.second, df_full->get_block(a.offset(), a.size(), 0, i0.size(), 0, i1.size()));
+      const size_t bufsize = df_full->block(0)->size();
+      unique_ptr<double[]> buf(new double[bufsize]);
+      copy_n(df_full->block(0)->data(), bufsize, buf.get());
+
+      for (auto& a : aux)
+        if (a.offset() == df->block(0)->astart())
+          ext.put_block(buf, a, i0, i1);
+    }
+  }
+  // wait for other nodes
+  ext.fence();
+
+  // form four-index integrals
+  for (auto& i0 : blocks_[0]) {
+    for (auto& i1 : blocks_[1]) {
+      for (auto& i2 : blocks_[2]) {
+        for (auto& i3 : blocks_[3]) {
+          const size_t hashkey01 = generate_hash_key(i0, i1);
+          const size_t hashkey23 = generate_hash_key(i2, i3);
+          if (hashkey23 > hashkey01) continue;
+          if (!data_->is_local(i0, i1, i2, i3)) continue;
+
+          const size_t bufsize = data_->get_size(i0, i1, i2, i3);
+          unique_ptr<double[]> buf0(new double[bufsize]);
+          fill_n(buf0.get(), bufsize, 0.0);
+
+          for (auto& a : aux) {
+            unique_ptr<double[]> data01 = ext.get_block(a, i0, i1);
+            unique_ptr<double[]> data23 = ext.get_block(a, i2, i3);
+            // contract and accumulate
+            btas::gemm_impl<true>::call(CblasColMajor, CblasTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size(), a.size(),
+                                        1.0, data01.get(), a.size(), data23.get(), a.size(), 1.0, buf0.get(), i0.size()*i1.size());
+          }
+
+          // put in place
+          data_->put_block(buf0, i0, i1, i2, i3);
+
+          if (hashkey23 != hashkey01) {
+            unique_ptr<double[]> buf1(new double[bufsize]);
+            blas::transpose(buf0.get(), i0.size()*i1.size(), i2.size()*i3.size(), buf1.get());
+            data_->put_block(buf1, i2, i3, i0, i1);
+          }
+        }
       }
     }
   }
-  data_->fill_local(0.0);
-#ifdef HAVE_MKL_H
-  mkl_set_num_threads(1);
-#endif
-  TATensor<double,3> ext2({aux, blocks_[0], blocks_[1]}, true);
-  ext2("o4,o0,o1") += ext("o4,o0,o1");
-  (*data_)("o0,o1,o2,o3") += ext2("o4,o0,o1") * ext2("o4,o2,o3");
-
+  data_->fence();
 }
 
 
@@ -235,8 +256,6 @@ template<typename DataType>
 MOFock<DataType>::MOFock(shared_ptr<const SMITH_Info<DataType>> r, const vector<IndexRange>& b) : info_(r), coeff_(info_->coeff()), blocks_(b) {
   assert(b.size() == 2 && b[0] == b[1]);
 
-  data_  = make_shared<TATensor<DataType,2>>(blocks_);
-  h1_    = make_shared<TATensor<DataType,2>>(blocks_);
   init();
 }
 
@@ -317,28 +336,8 @@ void MOFock<complex<double>>::init() {
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
 
-  {
-    unique_ptr<complex<double>[]> eig = f->diag();
-    const int n = f->ndim();
-    eig_ = VectorB(n);
-    for (int i = 0; i != n; ++i) {
-      assert(fabs(imag(eig[i])) < 1.0e-10);
-      eig_(i) = real(eig[i]);
-    }
-    // move ncore to first
-    if (ncore) {
-      VectorB tmp(n);
-      copy_n(eig_.data(), ncore, tmp.data());
-      copy_n(eig_.data()+ncore+nclosed, ncore, tmp.data()+ncore);
-      copy_n(eig_.data()+ncore, nclosed, tmp.data()+ncore*2);
-      copy_n(eig_.data()+ncore*2+nclosed, nclosed, tmp.data()+ncore*2+nclosed);
-      copy_n(eig_.data()+ncore*2+nclosed*2, nact*2+nvirt*2, tmp.data()+ncore*2+nclosed*2);
-      eig_ = tmp;
-    }
-  }
-
-  fill_block<2,complex<double>>(data_, f->get_conjg(), {0,0});
-  fill_block<2,complex<double>>(h1_,  h1->get_conjg(), {0,0});
+  data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
+  h1_   = fill_block<2,complex<double>>(h1->get_conjg(), {0,0}, blocks_);
 }
 
 template<>
@@ -407,15 +406,8 @@ void MOFock<double>::init() {
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
 
-  {
-    unique_ptr<double[]> eig = f->diag();
-    const int n = f->ndim();
-    eig_ = VectorB(n);
-    copy_n(eig.get(), n, eig_.data());
-  }
-
-  fill_block<2,double>(data_,  f, {0,0});
-  fill_block<2,double>(h1_,   h1, {0,0});
+  data_ = fill_block<2,double>(f, {0,0}, blocks_);
+  h1_   = fill_block<2,double>(h1, {0,0}, blocks_);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

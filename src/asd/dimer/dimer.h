@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dimer.h
 // Copyright (C) 2012 Shane Parker
 //
@@ -8,29 +8,26 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_DIMER_DIMER_H
 #define __SRC_DIMER_DIMER_H
 
-#include <src/ci/fci/distfci.h>
 #include <src/ci/fci/knowles.h>
 #include <src/ci/fci/harrison.h>
 #include <src/ci/ras/rasci.h>
-#include <src/ci/ras/distrasci.h>
 #include <src/asd/dimer/dimer_cispace.h>
 #include <src/wfn/construct_method.h>
 #include <src/util/muffle.h>
@@ -197,11 +194,6 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_cispace(const std::sh
           tmp.push_back(std::make_shared<CiType>(*i));
         results.push_back(std::make_shared<VecType>(tmp));
       }
-#if 0
-      // TODO this block does not compile
-      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
-        results.push_back(std::make_shared<VecType>(embedded_ci<DistFCI, DistDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
-#endif
       else
         throw std::runtime_error("Unrecognized FCI type algorithm");
 
@@ -296,8 +288,6 @@ std::shared_ptr<DimerCISpace_base<VecType>> Dimer::compute_rcispace(const std::s
 
       if (std::find(serial_options.begin(), serial_options.end(), method) != serial_options.end())
         results.push_back(std::make_shared<VecType>(embedded_ci<RASCI, RASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
-      else if (std::find(dist_options.begin(), dist_options.end(), method) != dist_options.end())
-        results.push_back(std::make_shared<VecType>(embedded_ci<DistRASCI, DistRASDvec>(input_copy, eref, ispace.at(0), ispace.at(1), ispace.at(2), label)));
       else
         throw std::logic_error("Unrecognized RAS type algorithm");
 

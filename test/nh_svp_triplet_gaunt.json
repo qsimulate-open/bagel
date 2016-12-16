@@ -1,0 +1,32 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : true,
+  "geometry" : [
+    { "atom" : "N",  "xyz" : [   -0.000000,     -0.000000,       1.0362]},
+    { "atom" : "H",  "xyz" : [   -0.000000,     -0.000000,       0.00000]}
+  ]
+},
+
+{
+  "title" : "dhf",
+  "thresh" : 1.0e-7
+},
+
+{
+  "title"  : "zcasscf",
+  "state" : [0,0,1],
+  "thresh" : 1.0e-6,
+  "gaunt" : true,
+  "breit" : false,
+  "nact_cas"   : 2,
+  "nclosed"  : 3,
+  "only_electrons" : true,
+  "active" : [4,5]
+}
+
+]}

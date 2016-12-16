@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: atom.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -130,10 +129,10 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
     {
       basis_init(ibas->get_child("valence"));
     }
-    catch (const std::exception &err)
+    catch (const exception &err)
     {
       cout << err.what() << endl;
-      throw std::runtime_error("ECP basis set file has the wrong format!");
+      throw runtime_error("ECP basis set file has the wrong format!");
     }
     const int ncore = ibas->get<int>("ncore");
     const shared_ptr<const PTree> core = ibas->get_child("core");
@@ -264,8 +263,8 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
 }
 
 
-Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in)
- : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_("custom_basis") {
+Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in, const string bas)
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -373,16 +372,18 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         double denom = 1.0;
         for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
-          *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
+          *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
 
-        vector<vector<double>> cont(1, *iter);
-        vector<pair<int, int>> cran(1, *citer);
-        auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
-        array<shared_ptr<const Shell>,2> cinp {{ current, current }};
-        OverlapBatch coverlap(cinp);
-        coverlap.compute();
-        const double scal = 1.0 / sqrt((coverlap.data())[0]);
-        for (auto& d : *iter) d *= scal;
+        if (basis_ != "molden") {
+          vector<vector<double>> cont {*iter};
+          vector<pair<int, int>> cran {*citer};
+          auto current = make_shared<const Shell>(spherical_, position_, i, exponents, cont, cran);
+          array<shared_ptr<const Shell>,2> cinp {{ current, current }};
+          OverlapBatch coverlap(cinp);
+          coverlap.compute();
+          const double scal = 1.0 / sqrt((coverlap.data())[0]);
+          for (auto& d : *iter) d *= scal;
+        }
       }
 
       shells_.push_back(make_shared<Shell>(spherical_, position_, i, exponents, contractions, contranges));
@@ -390,13 +391,6 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
     }
 
   } // end of batch loop
-
-  // shuffle, but deterministic
-  // FIXME this breaks the atomic density guess, since it relies on the shell ordering
-#if 0
-  srand(0);
-  random_shuffle(shells_.begin(), shells_.end(), [](const int& i) { return rand()%i; });
-#endif
 
   // TODO size is not optimized!
   split_shells(40);
@@ -593,19 +587,23 @@ shared_ptr<const Atom> Atom::relativistic(const array<double,3>& magnetic_field,
 }
 
 
-shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magnetic_field) const {
+shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magnetic_field, const bool london) const {
 
   auto atom = make_shared<Atom>(*this);
-  atom->vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
-  atom->vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
-  atom->vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+  if (london) {
+    atom->vector_potential_[0] = 0.5*(magnetic_field[1]*position_[2] - magnetic_field[2]*position_[1]);
+    atom->vector_potential_[1] = 0.5*(magnetic_field[2]*position_[0] - magnetic_field[0]*position_[2]);
+    atom->vector_potential_[2] = 0.5*(magnetic_field[0]*position_[1] - magnetic_field[1]*position_[0]);
+  } else {
+    atom->vector_potential_ = array<double,3>{{0.0, 0.0, 0.0}};
+  }
 
   // basically the same
   // except for shells_
   vector<shared_ptr<const Shell>> mshells;
   for (auto& i : shells_) {
     auto tmp = make_shared<Shell>(*i);
-    tmp->add_phase(atom->vector_potential_);
+    tmp->add_phase(atom->vector_potential_, magnetic_field, london);
     mshells.push_back(tmp);
   }
   atom->shells_ = mshells;
@@ -616,3 +614,20 @@ shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magneti
 
 double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
+
+
+shared_ptr<const Atom> Atom::uncontract() const {
+  auto atom = make_shared<Atom>(*this);
+
+  vector<shared_ptr<const Shell>> uncshells;
+  for (auto& i : shells_)
+    uncshells.push_back(i->uncontract());
+  atom->reset_shells(uncshells);
+
+  return atom;
+}
+
+void Atom::reset_shells(vector<shared_ptr<const Shell>> rshells) {
+  shells_ = rshells;
+  common_init();
+}

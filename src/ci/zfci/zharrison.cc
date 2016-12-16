@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zharrison.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,24 +8,26 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
+#include <src/util/exception.h>
 #include <src/util/math/comb.h>
+#include <src/util/math/quatmatrix.h>
+#include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
@@ -36,8 +38,9 @@ BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 using namespace std;
 using namespace bagel;
 
-ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool restricted)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate), restarted_(false) {
+ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb,
+                     shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), store_half_ints_(store), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
@@ -56,9 +59,6 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
   nstate_ = 0;
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
-
-  // if nstate was specified on construction, it should match
-  assert(nstate == nstate_ || nstate == -1);
 
   gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
   breit_ = idata_->get<bool>("breit", rr->breit());
@@ -96,14 +96,12 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
-  assert((restricted && coeff_zcas) || (!restricted && !coeff_zcas));
 
   // obtain the coefficient matrix in striped format
   shared_ptr<const RelCoeff_Block> coeff;
   if (coeff_zcas) {
     coeff = coeff_zcas;
   } else {
-    auto scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
 
     shared_ptr<const ZMatrix> hcore, overlap;
     if (!geom_->magnetism()) {
@@ -114,18 +112,13 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
       hcore = make_shared<RelHcore_London>(geom_);
     }
 
-    // then compute Kramers adapated coefficient matrices
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, geom_->nele()-charge_, tsymm_, gaunt_, breit_);
-
-    // generate modified virtual orbitals, if requested
-    const bool mvo = idata_->get<bool>("generate_mvo", false);
-    if (mvo) {
-      const bool hcore_mvo = idata_->get<bool>("hcore_mvo", false);
-      const int ncore_mvo = idata_->get<int>("ncore_mvo", geom_->num_count_ncore_only());
-      if (ncore_mvo == 2*rr->relcoeff_full()->nocc())
-        cout << "    +++ Modified virtuals are Dirac-Fock orbitals with this choice of the core +++ "<< endl;
-      else
-        scoeff = scoeff->generate_mvo(geom_, overlap, hcore, ncore_mvo, rr->relcoeff_full()->nocc(), hcore_mvo, tsymm_, gaunt_, breit_);
+    shared_ptr<const RelCoeff_Striped> scoeff;
+    if (rr->kramers()) {
+      scoeff = rr->relcoeff_full();
+    } else {
+      // then compute Kramers adapated coefficient matrices
+      scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
+      scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
     }
 
     // Reorder as specified in the input so frontier orbitals contain the desired active space
@@ -140,8 +133,15 @@ ZHarrison::ZHarrison(std::shared_ptr<const PTree> idat, shared_ptr<const Geometr
     coeff = scoeff->block_format();
   }
 
-  update(coeff, restricted);
+  update(coeff);
 
+  // if integral dump is requested, do it here, and throw Termination
+  if (idata_->get<bool>("only_ints", false)) {
+    OArchive ar("relcoeff");
+    ar << coeff;
+    dump_ints();
+    throw Termination("Relativistic MO integrals are dumped on a file.");
+  }
 }
 
 
@@ -157,16 +157,17 @@ void ZHarrison::print_header() const {
 
 
 // generate initial vectors
-void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, std::shared_ptr<RelZDvec> out, const int offset) {
+void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstate, shared_ptr<RelZDvec> out, const int offset) {
   shared_ptr<const Determinants> cdet = space_->finddet(nelea, neleb);
   int ndet = nstate*10;
   int oindex = offset;
+  const bool spin_adapt = idata_->get<bool>("spin_adapt", true);
   while (oindex < offset+nstate) {
     vector<pair<bitset<nbit__>, bitset<nbit__>>> bits = detseeds(ndet, nelea, neleb);
 
     // Spin adapt detseeds
     oindex = offset;
-    vector<bitset<nbit__>> done;
+    vector<pair<bitset<nbit__>,bitset<nbit__>>> done;
     for (auto& it : bits) {
       bitset<nbit__> alpha = it.second;
       bitset<nbit__> beta = it.first;
@@ -176,16 +177,26 @@ void ZHarrison::generate_guess(const int nelea, const int neleb, const int nstat
       if (alpha.count() + beta.count() != nele_)
         throw logic_error("ZFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
 
+      pair<bitset<nbit__>,bitset<nbit__>> config = spin_adapt ? make_pair(open_bit, alpha & beta) : it;
+      if (find(done.begin(), done.end(), config) != done.end()) continue;
+      done.push_back(config);
+
       // make sure that we have enough unpaired alpha
       const int unpairalpha = (alpha ^ (alpha & beta)).count();
       const int unpairbeta  = (beta ^ (alpha & beta)).count();
       if (unpairalpha-unpairbeta < nelea-neleb) continue;
 
-      if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
+      //if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
 
-      done.push_back(open_bit);
+      //done.push_back(open_bit);
       pair<vector<tuple<int, int, int>>, double> adapt;
-      adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      if (spin_adapt) {
+        adapt = space_->finddet(nelea, neleb)->spin_adapt(nelea-neleb, alpha, beta);
+      } else {
+        adapt.first = vector<tuple<int, int, int>>(1, make_tuple(space_->finddet(nelea, neleb)->lexical<1>(beta),
+                                                                 space_->finddet(nelea, neleb)->lexical<0>(alpha), 1));
+        adapt.second = 1.0;
+      }
 
       const double fac = adapt.second;
       for (auto& iter : adapt.first) {
@@ -375,21 +386,76 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
-}
 
 
-shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coeffin) const {
-  auto out = coeffin->clone();
-  const int n = coeffin->ndim();
-  const int m = coeffin->mdim()/2;
-  assert(n % 4 == 0 && m % 2 == 0 && m * 2 == coeffin->mdim());
-  out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
-  out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
-  return out;
+  // TODO When the Property class is implemented, this should be one
+  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+  if (aniso_data) {
+    if (geom_->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+
+      assert(!idata_->get<bool>("numerical", false));  // This feature is deactivated
+
+      const int nspin = aniso_data->get<int>("nspin", states_.size()-1);
+      Pseudospin ps(nspin, aniso_data);
+      ps.compute(*this);
+
+    }
+  }
 }
 
 
 shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
+}
+
+
+// CAUTION, this only updates rdm1_av_expanded_ and rdm2_av_expanded_ for CASSCF...
+pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
+  assert(rdm1_av_expanded_ != nullptr);
+  // first make natural orbitals
+  VectorB occup(norb_*2);
+  shared_ptr<ZMatrix> natorb;
+  {
+    auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
+    copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
+    rdm1->scale(-1.0);
+    for (int i = 0; i != norb_; ++i)
+      rdm1->element(i,i) += 1.0;
+    natorb = make_shared<QuatMatrix>(*rdm1);
+    natorb->diagonalize(occup);
+    for (int i = 0; i != norb_; ++i) {
+      occup[i] = 1.0-occup[i];
+      occup[i+norb_] = occup[i];
+    }
+  }
+  // update rdm1_av_expanded_
+  {
+    ZMatrix tmp(norb_*2, norb_*2);
+    copy_n(rdm1_av_expanded_->data(), tmp.size(), tmp.data());
+    tmp = *natorb % tmp * *natorb;
+    copy_n(tmp.data(), tmp.size(), rdm1_av_expanded_->data());
+  }
+  // update rdm2_av_expanded_
+  {
+    shared_ptr<ZRDM<2>> buf = rdm2_av_expanded_->clone();
+    shared_ptr<const ZMatrix> natorb_conjg = natorb->get_conjg();
+    const int ndim  = norb_*2;
+    const int ndim2 = ndim*ndim;;
+    auto half_trans = [&](shared_ptr<const ZRDM<2>> a, shared_ptr<ZRDM<2>> b, shared_ptr<ZRDM<2>> c) {
+      zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, natorb->data(), ndim, 0.0, b->data(), ndim2*ndim);
+      for (int i = 0; i != ndim; ++i)
+        zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, natorb_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
+    };
+    half_trans(rdm2_av_expanded_, buf, rdm2_av_expanded_);
+    blas::transpose(rdm2_av_expanded_->data(), ndim2, ndim2, buf->data());
+    half_trans(buf, rdm2_av_expanded_, buf);
+    blas::transpose(buf->data(), ndim2, ndim2, rdm2_av_expanded_->data());
+  }
+
+  for (auto& i : occup)
+    if (i < numerical_zero__) i = 0.0;
+  return make_pair(natorb, move(occup));
 }

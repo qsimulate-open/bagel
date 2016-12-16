@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: casbfgs.h
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -36,7 +35,7 @@ void CASHybrid::compute() {
 
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // construct and compute SuperCI
-  {
+  if (maxiter_switch_ != 0) {
     auto idata = make_shared<PTree>(*idata_);
     if (maxiter_switch_ != -1) {
       idata->erase("maxiter");
@@ -47,11 +46,13 @@ void CASHybrid::compute() {
       idata->erase("thresh");
       idata->put("thresh",  thresh_switch_);
     }
+    idata->erase("conv_ignore");
+    idata->put("conv_ignore", true);
     auto active_method = make_shared<SuperCI>(idata, geom_, ref_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << "      * CASSCF converged *    " << endl;
       fci_ = active_method->fci();
@@ -64,11 +65,12 @@ void CASHybrid::compute() {
   {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
+    idata->erase("restart");
     auto active_method = make_shared<CASBFGS>(idata, geom_, refout_);
     active_method->compute();
     refout_ = active_method->conv_to_ref();
 
-    const double grad = dynamic_pointer_cast<CASSCF>(active_method)->rms_grad();
+    const double grad = active_method->rms_grad();
     if (grad < thresh_) {
       cout << " " << endl;
       cout << "      * CASSCF converged *    " << endl;

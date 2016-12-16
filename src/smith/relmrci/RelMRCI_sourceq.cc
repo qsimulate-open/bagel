@@ -1,26 +1,25 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelMRCI_sourceqq.cc
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Shiozaki group <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -28,7 +27,8 @@
 
 
 #include <src/smith/relmrci/RelMRCI.h>
-#include <src/smith/relmrci/RelMRCI_tasks.h>
+#include <src/smith/relmrci/RelMRCI_tasks15.h>
+#include <src/smith/relmrci/RelMRCI_tasks16.h>
 
 using namespace std;
 using namespace bagel;
@@ -36,146 +36,184 @@ using namespace bagel::SMITH;
 
 shared_ptr<Queue> RelMRCI::RelMRCI::make_sourceq(const bool reset, const bool diagonal) {
 
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto sourceq = make_shared<Queue>();
-  auto task721 = make_shared<Task721>(s, reset);
-  sourceq->add_task(task721);
-
-  auto I1299 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, active_, active_});
-  auto task722 = make_shared<Task722>(s, I1299);
-  task722->add_dep(task721);
-  sourceq->add_task(task722);
-
-  auto task723 = make_shared<Task723>(I1299, Gamma5_(), h1_);
-  task722->add_dep(task723);
-  task723->add_dep(task721);
-  sourceq->add_task(task723);
-
-  auto task724 = make_shared<Task724>(I1299, Gamma81_(), v2_);
-  task722->add_dep(task724);
-  task724->add_dep(task721);
-  sourceq->add_task(task724);
-
-  auto task725 = make_shared<Task725>(I1299, Gamma4_(), v2_);
-  task722->add_dep(task725);
-  task725->add_dep(task721);
-  sourceq->add_task(task725);
-
-  auto I1301 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, active_, active_});
-  auto task726 = make_shared<Task726>(s, I1301);
-  task726->add_dep(task721);
-  sourceq->add_task(task726);
-
-  auto task727 = make_shared<Task727>(I1301, Gamma27_(), h1_);
-  task726->add_dep(task727);
-  task727->add_dep(task721);
+  auto tensor727 = vector<shared_ptr<Tensor>>{s};
+  auto task727 = make_shared<Task727>(tensor727, reset);
   sourceq->add_task(task727);
 
-  auto I1316 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, active_, active_});
-  auto task728 = make_shared<Task728>(I1301, Gamma24_(), I1316);
-  task726->add_dep(task728);
-  task728->add_dep(task721);
+  vector<IndexRange> I1308_index = {closed_, active_, active_, active_};
+  auto I1308 = make_shared<Tensor>(I1308_index);
+  auto tensor728 = vector<shared_ptr<Tensor>>{s, I1308};
+  auto task728 = make_shared<Task728>(tensor728, pindex);
+  task728->add_dep(task727);
   sourceq->add_task(task728);
 
-  auto task729 = make_shared<Task729>(I1316, v2_);
+  auto tensor729 = vector<shared_ptr<Tensor>>{I1308, Gamma5_(), h1_};
+  auto task729 = make_shared<Task729>(tensor729, pindex);
   task728->add_dep(task729);
-  task729->add_dep(task721);
+  task729->add_dep(task727);
   sourceq->add_task(task729);
 
-  auto task730 = make_shared<Task730>(I1301, Gamma5_(), v2_);
-  task726->add_dep(task730);
-  task730->add_dep(task721);
+  auto tensor730 = vector<shared_ptr<Tensor>>{I1308, v2_, Gamma81_()};
+  auto task730 = make_shared<Task730>(tensor730, pindex);
+  task728->add_dep(task730);
+  task730->add_dep(task727);
   sourceq->add_task(task730);
 
-  auto I1303 = make_shared<TATensor<std::complex<double>,4>>({virt_, active_, active_, active_});
-  auto task731 = make_shared<Task731>(s, I1303);
-  task731->add_dep(task721);
+  auto tensor731 = vector<shared_ptr<Tensor>>{I1308, v2_, Gamma4_()};
+  auto task731 = make_shared<Task731>(tensor731, pindex);
+  task728->add_dep(task731);
+  task731->add_dep(task727);
   sourceq->add_task(task731);
 
-  auto task732 = make_shared<Task732>(I1303, Gamma33_(), h1_);
-  task731->add_dep(task732);
-  task732->add_dep(task721);
+  vector<IndexRange> I1310_index = {active_, active_, closed_, virt_};
+  auto I1310 = make_shared<Tensor>(I1310_index);
+  auto tensor732 = vector<shared_ptr<Tensor>>{s, I1310};
+  auto task732 = make_shared<Task732>(tensor732, pindex);
+  task732->add_dep(task727);
   sourceq->add_task(task732);
 
-  auto task733 = make_shared<Task733>(I1303, Gamma32_(), v2_);
-  task731->add_dep(task733);
-  task733->add_dep(task721);
+  auto tensor733 = vector<shared_ptr<Tensor>>{I1310, h1_, Gamma27_()};
+  auto task733 = make_shared<Task733>(tensor733, pindex);
+  task732->add_dep(task733);
+  task733->add_dep(task727);
   sourceq->add_task(task733);
 
-  auto task734 = make_shared<Task734>(I1303, Gamma31_(), v2_);
-  task731->add_dep(task734);
-  task734->add_dep(task721);
+  auto tensor734 = vector<shared_ptr<Tensor>>{I1310, Gamma24_(), v2_};
+  auto task734 = make_shared<Task734>(tensor734, pindex);
+  task732->add_dep(task734);
+  task734->add_dep(task727);
   sourceq->add_task(task734);
 
-  auto I1305 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, active_, active_});
-  auto task735 = make_shared<Task735>(s, I1305);
-  task735->add_dep(task721);
+  auto tensor735 = vector<shared_ptr<Tensor>>{I1310, v2_, Gamma5_()};
+  auto task735 = make_shared<Task735>(tensor735, pindex);
+  task732->add_dep(task735);
+  task735->add_dep(task727);
   sourceq->add_task(task735);
 
-  auto task736 = make_shared<Task736>(I1305, Gamma0_(), v2_);
-  task735->add_dep(task736);
-  task736->add_dep(task721);
+  auto tensor736 = vector<shared_ptr<Tensor>>{I1310, v2_, Gamma24_()};
+  auto task736 = make_shared<Task736>(tensor736, pindex);
+  task732->add_dep(task736);
+  task736->add_dep(task727);
   sourceq->add_task(task736);
 
-  auto I1311 = make_shared<TATensor<std::complex<double>,4>>({closed_, closed_, virt_, active_});
-  auto task737 = make_shared<Task737>(s, I1311);
-  task737->add_dep(task721);
+  auto tensor737 = vector<shared_ptr<Tensor>>{I1310, v2_, Gamma24_()};
+  auto task737 = make_shared<Task737>(tensor737, pindex);
+  task732->add_dep(task737);
+  task737->add_dep(task727);
   sourceq->add_task(task737);
 
-  auto I1312 = make_shared<TATensor<std::complex<double>,4>>({closed_, active_, closed_, virt_});
-  auto task738 = make_shared<Task738>(I1311, Gamma11_(), I1312);
-  task737->add_dep(task738);
-  task738->add_dep(task721);
+  vector<IndexRange> I1312_index = {active_, active_, active_, virt_};
+  auto I1312 = make_shared<Tensor>(I1312_index);
+  auto tensor738 = vector<shared_ptr<Tensor>>{s, I1312};
+  auto task738 = make_shared<Task738>(tensor738, pindex);
+  task738->add_dep(task727);
   sourceq->add_task(task738);
 
-  auto task739 = make_shared<Task739>(I1312, v2_);
+  auto tensor739 = vector<shared_ptr<Tensor>>{I1312, h1_, Gamma33_()};
+  auto task739 = make_shared<Task739>(tensor739, pindex);
   task738->add_dep(task739);
-  task739->add_dep(task721);
+  task739->add_dep(task727);
   sourceq->add_task(task739);
 
-  shared_ptr<TATensor<std::complex<double>,4>> I1327;
-  if (diagonal) {
-    I1327 = make_shared<TATensor<std::complex<double>,4>>({closed_, virt_, closed_, virt_});
-  }
-  shared_ptr<Task740> task740;
-  if (diagonal) {
-    task740 = make_shared<Task740>(s, I1327);
-    task740->add_dep(task721);
-    sourceq->add_task(task740);
-  }
+  auto tensor740 = vector<shared_ptr<Tensor>>{I1312, v2_, Gamma32_()};
+  auto task740 = make_shared<Task740>(tensor740, pindex);
+  task738->add_dep(task740);
+  task740->add_dep(task727);
+  sourceq->add_task(task740);
 
-  shared_ptr<Task741> task741;
-  if (diagonal) {
-    task741 = make_shared<Task741>(I1327, v2_);
-    task740->add_dep(task741);
-    task741->add_dep(task721);
-    sourceq->add_task(task741);
-  }
+  auto tensor741 = vector<shared_ptr<Tensor>>{I1312, Gamma31_(), v2_};
+  auto task741 = make_shared<Task741>(tensor741, pindex);
+  task738->add_dep(task741);
+  task741->add_dep(task727);
+  sourceq->add_task(task741);
 
-  auto I1329 = make_shared<TATensor<std::complex<double>,4>>({virt_, closed_, virt_, active_});
-  auto task742 = make_shared<Task742>(s, I1329);
-  task742->add_dep(task721);
+  vector<IndexRange> I1314_index = {closed_, closed_, active_, active_};
+  auto I1314 = make_shared<Tensor>(I1314_index);
+  auto tensor742 = vector<shared_ptr<Tensor>>{s, I1314};
+  auto task742 = make_shared<Task742>(tensor742, pindex);
+  task742->add_dep(task727);
   sourceq->add_task(task742);
 
-  auto I1330 = make_shared<TATensor<std::complex<double>,4>>({active_, virt_, closed_, virt_});
-  auto task743 = make_shared<Task743>(I1329, Gamma27_(), I1330);
+  auto tensor743 = vector<shared_ptr<Tensor>>{I1314, Gamma0_(), v2_};
+  auto task743 = make_shared<Task743>(tensor743, pindex);
   task742->add_dep(task743);
-  task743->add_dep(task721);
+  task743->add_dep(task727);
   sourceq->add_task(task743);
 
-  auto task744 = make_shared<Task744>(I1330, v2_);
-  task743->add_dep(task744);
-  task744->add_dep(task721);
+  vector<IndexRange> I1320_index = {active_, closed_, closed_, virt_};
+  auto I1320 = make_shared<Tensor>(I1320_index);
+  auto tensor744 = vector<shared_ptr<Tensor>>{s, I1320};
+  auto task744 = make_shared<Task744>(tensor744, pindex);
+  task744->add_dep(task727);
   sourceq->add_task(task744);
 
-  auto I1333 = make_shared<TATensor<std::complex<double>,4>>({virt_, virt_, active_, active_});
-  auto task745 = make_shared<Task745>(s, I1333);
-  task745->add_dep(task721);
+  auto tensor745 = vector<shared_ptr<Tensor>>{I1320, v2_, Gamma11_()};
+  auto task745 = make_shared<Task745>(tensor745, pindex);
+  task744->add_dep(task745);
+  task745->add_dep(task727);
   sourceq->add_task(task745);
 
-  auto task746 = make_shared<Task746>(I1333, Gamma33_(), v2_);
-  task745->add_dep(task746);
-  task746->add_dep(task721);
+  auto tensor746 = vector<shared_ptr<Tensor>>{I1320, v2_, Gamma11_()};
+  auto task746 = make_shared<Task746>(tensor746, pindex);
+  task744->add_dep(task746);
+  task746->add_dep(task727);
   sourceq->add_task(task746);
+
+  shared_ptr<Tensor> I1336;
+  if (diagonal) {
+    vector<IndexRange> I1336_index = {closed_, virt_, closed_, virt_};
+    I1336 = make_shared<Tensor>(I1336_index);
+  }
+  shared_ptr<Task747> task747;
+  if (diagonal) {
+    auto tensor747 = vector<shared_ptr<Tensor>>{s, I1336};
+    task747 = make_shared<Task747>(tensor747, pindex);
+    task747->add_dep(task727);
+    sourceq->add_task(task747);
+  }
+
+  shared_ptr<Task748> task748;
+  if (diagonal) {
+    auto tensor748 = vector<shared_ptr<Tensor>>{I1336, v2_};
+    task748 = make_shared<Task748>(tensor748, pindex);
+    task747->add_dep(task748);
+    task748->add_dep(task727);
+    sourceq->add_task(task748);
+  }
+
+  vector<IndexRange> I1338_index = {active_, virt_, closed_, virt_};
+  auto I1338 = make_shared<Tensor>(I1338_index);
+  auto tensor749 = vector<shared_ptr<Tensor>>{s, I1338};
+  auto task749 = make_shared<Task749>(tensor749, pindex);
+  task749->add_dep(task727);
+  sourceq->add_task(task749);
+
+  auto tensor750 = vector<shared_ptr<Tensor>>{I1338, v2_, Gamma27_()};
+  auto task750 = make_shared<Task750>(tensor750, pindex);
+  task749->add_dep(task750);
+  task750->add_dep(task727);
+  sourceq->add_task(task750);
+
+  auto tensor751 = vector<shared_ptr<Tensor>>{I1338, v2_, Gamma27_()};
+  auto task751 = make_shared<Task751>(tensor751, pindex);
+  task749->add_dep(task751);
+  task751->add_dep(task727);
+  sourceq->add_task(task751);
+
+  vector<IndexRange> I1342_index = {virt_, virt_, active_, active_};
+  auto I1342 = make_shared<Tensor>(I1342_index);
+  auto tensor752 = vector<shared_ptr<Tensor>>{s, I1342};
+  auto task752 = make_shared<Task752>(tensor752, pindex);
+  task752->add_dep(task727);
+  sourceq->add_task(task752);
+
+  auto tensor753 = vector<shared_ptr<Tensor>>{I1342, Gamma33_(), v2_};
+  auto task753 = make_shared<Task753>(tensor753, pindex);
+  task752->add_dep(task753);
+  task753->add_dep(task727);
+  sourceq->add_task(task753);
 
   return sourceq;
 }

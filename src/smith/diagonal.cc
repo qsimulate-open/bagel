@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: diagonal.cc
 // Copyright (C) 2015 Shiozaki group
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -35,65 +34,194 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-void CASPT2::CASPT2::diagonal(shared_ptr<TATensor<double,4>> r, shared_ptr<const TATensor<double,4>> t) const {
-  const int ncore = info_->ncore();
-  const int nocc  = info_->nclosed() + info_->nact();
-  const VecView eig = eig_;
-  TATensor<double,4> i0({closed_, virt_, closed_, virt_}, true);
-  i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3")*8.0 - (*t)("c0,a3,c2,a1")*4.0;
-  foreach_inplace(i0, [&](typename TATensor<double,4>::value_type& tile) {
-    auto range = tile.range();
-    auto lo = range.lobound();
-    auto up = range.upbound();
-    size_t n = 0;
-    for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
-      for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
-        for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
-          for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
-            tile[n++] *= - eig(i3+ncore) + eig(i2+nocc) - eig(i1+ncore) + eig(i0+nocc);
-  });
-  (*r)("c2,a3,c0,a1") += i0("c2,a3,c0,a1");
+void CASPT2::CASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  double sum = 0.0;
+  for (auto& i1 : active_) {
+    for (auto& i0 : active_) {
+      if (f1_->is_local(i0, i1)) {
+        unique_ptr<double[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<double[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
+    }
+  }
+  mpi__->allreduce(&sum, 1);
+
+  const double e0loc = sum - (diag ? e0_ : 0.0);
+  for (auto& i3 : virt_) {
+    for (auto& i2 : closed_) {
+      for (auto& i1 : virt_) {
+        for (auto& i0 : closed_) {
+          // if this block is not included in the current wave function, skip it
+          if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+          unique_ptr<double[]>       data0 = t->get_block(i0, i1, i2, i3);
+          const unique_ptr<double[]> data1 = t->get_block(i0, i3, i2, i1);
+
+          sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+          if (diag) {
+            size_t iall = 0;
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    data0[iall] *= e0loc - (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1]);
+          } else {
+            blas::scale_n(e0loc, data0.get(), i0.size()*i3.size()*i2.size()*i1.size());
+          }
+          r->add_block(data0, i0, i1, i2, i3);
+        }
+      }
+    }
+  }
+  mpi__->barrier();
 }
 
 
-void RelCASPT2::RelCASPT2::diagonal(shared_ptr<TATensor<complex<double>,4>> r, shared_ptr<const TATensor<complex<double>,4>> t) const {
-  const int ncore = (info_->ncore())*2;
-  const int nocc  = (info_->nclosed() + info_->nact())*2;
-  const VecView eig = eig_;
-  TATensor<complex<double>,4> i0({closed_, virt_, closed_, virt_}, true);
-  i0("c2,a3,c0,a1") = (*t)("c0,a1,c2,a3");
-  foreach_inplace(i0, [&](typename TATensor<complex<double>,4>::value_type& tile) {
-    auto range = tile.range();
-    auto lo = range.lobound();
-    auto up = range.upbound();
-    size_t n = 0;
-    for (size_t i0 = lo[0]; i0 != up[0]; ++i0)
-      for (size_t i1 = lo[1]; i1 != up[1]; ++i1)
-        for (size_t i2 = lo[2]; i2 != up[2]; ++i2)
-          for (size_t i3 = lo[3]; i3 != up[3]; ++i3)
-            tile[n++] *= (- eig(i3+ncore) + eig(i2+nocc) - eig(i1+ncore) + eig(i0+nocc)) * 4.0;
-  });
-  (*r)("c2,a3,c0,a1") += i0("c2,a3,c0,a1");
+void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  complex<double> sum = 0.0;
+  for (auto& i1 : active_) {
+    for (auto& i0 : active_) {
+      if (f1_->is_local(i0, i1)) {
+        unique_ptr<complex<double>[]> fdata = f1_->get_block(i0, i1);
+        unique_ptr<complex<double>[]> rdata = rdm1_->get_block(i0, i1);
+        sum += blas::dot_product_noconj(fdata.get(), i0.size()*i1.size(), rdata.get());
+      }
+    }
+  }
+  mpi__->allreduce(&sum, 1);
+
+  const complex<double> e0loc = sum - (diag ? e0_ : 0.0);
+  for (auto& i3 : virt_) {
+    for (auto& i2 : closed_) {
+      for (auto& i1 : virt_) {
+        for (auto& i0 : closed_) {
+          // if this block is not included in the current wave function, skip it
+          if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+          unique_ptr<complex<double>[]> data = t->get_block(i0, i1, i2, i3);
+          if (diag) {
+            size_t iall = 0;
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    data[iall] *= (e0loc -(eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1])) * 4.0;
+          } else {
+            blas::scale_n(4.0*e0loc, data.get(), i0.size()*i3.size()*i2.size()*i1.size());
+          }
+          r->add_block(data, i0, i1, i2, i3);
+        }
+      }
+    }
+  }
+  mpi__->barrier();
 }
 
 
 // this function takes care of 4-external.
-void MRCI::MRCI::diagonal(shared_ptr<TATensor<double,4>> r, shared_ptr<const TATensor<double,4>> t) const {
-  const bool diag = (*rdm0_)("") == 1.0;
-  if (diag)
-    (*r)("c3,a4,c1,a2") += (*v2_)("a6,a2,a5,a4") * ((*t)("c1,a6,c3,a5")*8.0 - (*t)("c1,a5,c3,a6")*4.0);
-  (*r)("c2,a3,x0,a1") += (*v2_)("a5,a1,a4,a3") * (((*t)("x1,a5,c2,a4")*2.0 - (*t)("x1,a4,c2,a5")) * (*rdm1_)("x1,x0"));
-  (*r)("x1,a2,x0,a1") += (*v2_)("a4,a1,a3,a2") * ((*t)("x3,a3,x2,a4") * ((*rdm2_)("x3,x1,x2,x0") * 2.0));
+void MRCI::MRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+  const bool diag = rdm0_->get_block()[0] == 1.0;
+  if (diag) {
+    for (auto& i3 : virt_) {
+      for (auto& i2 : closed_) {
+        for (auto& i1 : virt_) {
+          for (auto& i0 : closed_) {
+            // if this block is not included in the current wave function, skip it
+            if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+            const size_t tsize = r->get_size(i0, i1, i2, i3);
+            unique_ptr<double[]> local(new double[tsize]);
+            unique_ptr<double[]> buf(new double[tsize]);
+            fill_n(buf.get(), tsize, 0.0);
+
+            for (auto& i3t : virt_) {
+              for (auto& i1t : virt_) {
+                unique_ptr<double[]> data0 = t->get_block(i0, i1t, i2, i3t);
+                unique_ptr<double[]> data1 = t->get_block(i0, i3t, i2, i1t);
+                sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3t.size(), i2.size(), i1t.size());
+                sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1t.size(), i2.size(), i3t.size());
+
+                unique_ptr<double[]> data2 = v2_->get_block(i1t, i1, i3t, i3);
+                unique_ptr<double[]> data3(new double[v2_->get_size(i1t, i1, i3t, i3)]);
+                sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
+
+                dgemm_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
+                        1.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
+              }
+            }
+            sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+            r->add_block(local, i0, i1, i2, i3);
+          }
+        }
+      }
+    }
+  }
+  mpi__->barrier();
 }
 
 
 // this function takes care of 4-external.
-void RelMRCI::RelMRCI::diagonal(shared_ptr<TATensor<std::complex<double>,4>> r, shared_ptr<const TATensor<std::complex<double>,4>> t) const {
-  const bool diag = (*rdm0_)("") == 1.0;
-  if (diag)
-    (*r)("c3,a4,c1,a2") += (*v2_)("a6,a2,a5,a4") * ((*t)("c1,a6,c3,a5") * 4.0);
-  (*r)("c2,a3,x0,a1") += (*v2_)("a5,a1,a4,a3") * ((*t)("x1,a5,c2,a4") * ((*rdm1_)("x1,x0") * 2.0));
-  (*r)("x1,a2,x0,a1") += (*v2_)("a4,a1,a3,a2") * ((*t)("x3,a3,x2,a4") * ((*rdm2_)("x3,x1,x2,x0") * 2.0));
+void RelMRCI::RelMRCI::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t) const {
+  const bool diag = rdm0_->get_block()[0] == 1.0;
+  if (diag) {
+    for (auto& i3 : virt_) {
+      for (auto& i2 : closed_) {
+        for (auto& i1 : virt_) {
+          for (auto& i0 : closed_) {
+            // if this block is not included in the current wave function, skip it
+
+// Some pieces commented out to turn off use of permutation symmetry
+//            if (i0.offset() < i2.offset() || i1.offset() < i3.offset()) continue;
+            if (!r->is_local(i0, i1, i2, i3) || !r->get_size(i0, i1, i2, i3)) continue;
+            const size_t tsize = r->get_size(i0, i1, i2, i3);
+            unique_ptr<complex<double>[]> local(new complex<double>[tsize]);
+            unique_ptr<complex<double>[]> buf(new complex<double>[tsize]);
+            fill_n(buf.get(), tsize, 0.0);
+
+            for (auto& i3t : virt_) {
+              for (auto& i1t : virt_) {
+//                if (i1t.offset() < i3t.offset()) continue;
+
+                unique_ptr<complex<double>[]> data0 = t->get_block(i0, i1t, i2, i3t);
+                unique_ptr<complex<double>[]> data1(new complex<double>[t->get_size(i0, i1t, i2, i3t)]);
+                sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1t.size(), i2.size(), i3t.size());
+
+                unique_ptr<complex<double>[]> data2 = v2_->get_block(i1t, i1, i3t, i3);
+                unique_ptr<complex<double>[]> data3(new complex<double>[v2_->get_size(i1t, i1, i3t, i3)]);
+                sort_indices<0,2,1,3,0,1,1,1>(data2, data3, i1t.size(), i1.size(), i3t.size(), i3.size());
+
+/*
+                if (i1t.offset() != i3t.offset()) {
+                  unique_ptr<complex<double>[]> data2 = v2_->get_block(i1t, i3, i3t, i1);
+                  sort_indices<0,2,3,1,1,1,-1,1>(data2, data3, i1t.size(), i3.size(), i3t.size(), i1.size());
+                }
+*/
+
+                zgemm3m_("N", "N", i0.size()*i2.size(), i1.size()*i3.size(), i1t.size()*i3t.size(),
+                         4.0, data1, i0.size()*i2.size(), data3, i1t.size()*i3t.size(), 1.0, buf, i0.size()*i2.size());
+              }
+            }
+            sort_indices<0,2,1,3,0,1,1,1>(buf, local, i0.size(), i2.size(), i1.size(), i3.size());
+            r->add_block(local, i0, i1, i2, i3);
+/*
+            if (i0.offset() != i2.offset()) {
+              sort_indices<2,1,0,3,0,1,-1,1>(local, buf, i0.size(), i1.size(), i2.size(), i3.size());
+              r->add_block(buf, i2, i1, i0, i3);
+              if (i1.offset() != i3.offset()) {
+                sort_indices<0,3,2,1,0,1,-1,1>(buf, local, i2.size(), i1.size(), i0.size(), i3.size());
+                r->add_block(local, i2, i3, i0, i1);
+                sort_indices<2,1,0,3,0,1,-1,1>(local, buf, i2.size(), i3.size(), i0.size(), i1.size());
+                r->add_block(buf, i0, i3, i2, i1);
+              }
+            } else {
+              sort_indices<0,3,2,1,0,1,-1,1>(local, buf, i0.size(), i1.size(), i2.size(), i3.size());
+              r->add_block(buf, i0, i3, i2, i1);
+            }
+*/
+          }
+        }
+      }
+    }
+  }
+  mpi__->barrier();
 }
 
 #endif

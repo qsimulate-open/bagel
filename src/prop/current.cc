@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: current.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -34,14 +33,16 @@ using namespace std;
 using namespace bagel;
 
 
-Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom,
-                 const std::shared_ptr<const Reference> re) : Method(idata, geom, re) {
+Current::Current(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
+                 const shared_ptr<const Reference> re) : Method(idata, geom, re) {
 
   // Need a GIAO-based Reference object
   auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
   auto ref_nr  = dynamic_pointer_cast<const ZReference>(ref_);
   if (!ref_rel && !ref_nr)
     throw runtime_error("Charge currents are only available when using the result of a GIAO calculation.");
+  if (ref_->nact() != 0)
+    throw runtime_error("Charge currents have only been implemented for closed-shell Hartree--Fock methods.");
   assert(geom_->magnetism());
   assert(!ref_rel || !ref_nr);
   relativistic_ = ref_rel ? true : false;
@@ -92,7 +93,7 @@ Current::Current(const std::shared_ptr<const PTree> idata, const std::shared_ptr
 
   // Form density matrix
   if (relativistic_)
-    density_ = ref_rel->relcoeff()->form_density_rhf(ref_rel->nclosed(), 0, 1.0);
+    density_ = ref_rel->relcoeff()->form_density_rhf(2*ref_rel->nclosed() + ref_rel->nact(), 0, 1.0);
   else
     density_ = ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0);
 

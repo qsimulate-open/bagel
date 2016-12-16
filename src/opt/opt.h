@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: opt.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,26 +8,25 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>
@@ -49,6 +48,7 @@ class Opt {
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
     std::shared_ptr<const Reference> prev_ref_;
+    int target_state_;
 
     int iter_;
 
@@ -61,8 +61,7 @@ class Opt {
     int maxiter_;
     double thresh_;
     double maxstep_;
-    static const bool nodf = true;
-    static const bool rotate = false;
+    bool scratch_;
 
     std::array<std::shared_ptr<const Matrix>,2> bmat_;
 
@@ -79,9 +78,11 @@ class Opt {
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
       : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
 
+      target_state_ = idat->get<int>("target", 0);
       internal_ = idat->get<bool>("internal", true);
       maxiter_ = idat->get<int>("maxiter", 100);
       maxstep_ = idat->get<double>("maxstep", 0.1);
+      scratch_ = idat->get<bool>("scratch", false);
       if (internal_)
         bmat_ = current_->compute_internal_coordinate();
       thresh_ = idat->get<double>("thresh", 5.0e-5);
@@ -103,14 +104,14 @@ class Opt {
 
       try {
         alglib::real_1d_array x;
-        x.setcontent(size_, displ->data()); 
+        x.setcontent(size_, displ->data());
         eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
         if (algorithm_ == "cg") {
           alglib::mincgstate state;
           alglib::mincgreport rep;
 
-          alglib::mincgcreate(x, state); 
+          alglib::mincgcreate(x, state);
           alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
           alglib::mincgsetstpmax(state, maxstep_);
 
@@ -119,7 +120,7 @@ class Opt {
           alglib::minlbfgsstate state;
           alglib::minlbfgsreport rep;
 
-          alglib::minlbfgscreate(1, x, state); 
+          alglib::minlbfgscreate(1, x, state);
           alglib::minlbfgssetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
           alglib::minlbfgssetstpmax(state, maxstep_);
 
@@ -172,8 +173,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // first convert x to the geometry
   auto displ = std::make_shared<XYZFile>(current_->natom());
   assert(size_ == x.length());
-  for (int i = 0; i != size_; ++i)
-    displ->element(i%3, i/3) = x[i]; // TODO this is just a hack
+  std::copy_n(x.getcontent(), size_, displ->data());
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
@@ -184,16 +184,16 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
 
   // current Geometry
   if (iter_ > 0) {
-    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
+    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>());
     current_->print_atoms();
     if (internal_)
       bmat_ = current_->compute_internal_coordinate(bmat_[0]);
   }
 
   // first calculate reference (if needed)
-  std::shared_ptr<PTree> cinput; 
+  std::shared_ptr<PTree> cinput;
   std::shared_ptr<const Reference> ref;
-  if (!prev_ref_) {
+  if (!prev_ref_ || scratch_) {
     auto m = input_->begin();
     for ( ; m != --input_->end(); ++m) {
       const std::string title = to_lower((*m)->get<std::string>("title", ""));
@@ -203,7 +203,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
         c->compute();
         ref = c->conv_to_ref();
       } else {
-        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        current_ = std::make_shared<const Geometry>(*current_, *m);
         if (ref) ref = ref->project_coeff(current_);
       }
     }
@@ -215,31 +215,35 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   cinput->put("gradient", true);
 
   // then calculate gradients
-  GradEval<T> eval(cinput, current_, ref);
-  if (iter_ == 0) {
-    print_header();
-    mute_stdcout();
+  double rms;
+  {
+    GradEval<T> eval(cinput, current_, ref, target_state_);
+    if (iter_ == 0) {
+      print_header();
+      mute_stdcout();
+    }
+    // current geom and grad in the cartesian coordinate
+    std::shared_ptr<const GradFile> cgrad = eval.compute();
+    if (internal_)
+      cgrad = cgrad->transform(bmat_[1], true);
+
+    assert(size_ == grad.length());
+    std::copy_n(cgrad->data(), size_, grad.getcontent());
+
+    prev_ref_ = eval.ref();
+    en = eval.energy();
+
+    // current geometry in a molden file
+    MoldenOut mfs("opt.molden");
+    mfs << current_;
+    rms = cgrad->rms();
   }
-  // current geom and grad in the cartesian coordinate
-  std::shared_ptr<const GradFile> cgrad = eval.compute();
-  if (internal_)
-    cgrad = cgrad->transform(bmat_[1], true);
 
-  assert(size_ == grad.length());
-  for (int i = 0; i != size_; ++i)
-    grad[i] = cgrad->element(i%3, i/3); // TODO this is just a hack
-
-  resume_stdcout();
-
-  prev_ref_ = eval.ref();
   ++iter_;
   // returns energy
-  en = eval.energy(); 
 
-  // current geometry in a molden file
-  MoldenOut mfs("opt.molden");
-  mfs << current_;
-  print_iteration(en, cgrad->rms(), timer_.tick());
+  resume_stdcout();
+  print_iteration(en, rms, timer_.tick());
 }
 
 

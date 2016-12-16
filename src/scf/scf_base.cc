@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: scf_base.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -38,13 +37,21 @@ using namespace bagel;
 
 
 template <typename MatType, typename OvlType, typename HcType, class Enable>
-SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> re, const bool need_schwarz)
  : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
+  dofmm_   = geom_->dofmm();
+
+  Timer scfb;
+  overlap_ = make_shared<const OvlType>(geom_);
+  scfb.tick_print("Overlap matrix");
+
+  hcore_ = make_shared<HcType>(geom_, !geom_->dkh(), dofmm_);
+  scfb.tick_print("Hcore matrix");
 
   max_iter_ = idata_->get<int>("maxiter", 100);
   max_iter_ = idata_->get<int>("maxiter_scf", max_iter_);
@@ -53,28 +60,15 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   thresh_scf_ = idata_->get<double>("thresh", 1.0e-8);
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
-  string dd = idata_->get<string>("diis", "gradient");
 
-  // FMM
-  dofmm_   = geom_->dofmm();
   if (dofmm_) {
     const bool dodf = idata_->get<bool>("df", true);
     if (dodf) throw runtime_error("FMM only works without DF now");
     fmm_ = make_shared<const FMM>(geom, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
                                         idata_->get<int>("ws", 0));
-    ///////fmmtree_ = make_shared<const Tree>(geom_, idata_->get<int>("height", 21), idata_->get<int>("contract", true), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
-    ///////fmmtree_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
-    //fmmtree_sp_ = make_shared<const TreeSP>(geom_, idata_->get<int>("height", 21), idata_->get<int>("l_max", 21), idata_->get<double>("thresh_fmm", thresh_overlap_), idata_->get<int>("ws", 2));
-    //fmmtree_sp_->init_fmm(idata_->get<bool>("df", true), geom_->auxfile());
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
   dma_print_ = idata_->get<int>("dma", 0);
-
-  Timer scfb;
-  overlap_ = make_shared<const OvlType>(geom);
-  scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom, dofmm_);
-  scfb.tick_print("Hcore matrix");
 
   const int ncharge = idata_->get<int>("charge", 0);
   const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);

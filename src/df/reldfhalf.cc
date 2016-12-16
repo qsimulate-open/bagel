@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: reldfhalf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -29,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, std::vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
+RelDFHalf::RelDFHalf(shared_ptr<const RelDF> df, vector<shared_ptr<const SpinorInfo>> bas, array<shared_ptr<const Matrix>,4> rcoeff, array<shared_ptr<const Matrix>,4> icoeff)
 : RelDFBase(*df) {
 
   basis_ = bas;
@@ -106,7 +105,7 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_JJ() const {
 }
 
 
-void RelDFHalf::set_sum_diff() {
+void RelDFHalf::set_sum_diff() const {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->ax_plus_y(1.0, dfhalf_[1]);
   df2_[1] = dfhalf_[0]->copy();
@@ -114,7 +113,7 @@ void RelDFHalf::set_sum_diff() {
 }
 
 
-void RelDFHalf::ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o) {
+void RelDFHalf::ax_plus_y(complex<double> a, shared_ptr<const RelDFHalf> o) {
   if (imag(a) == 0.0) {
     const double fac = real(a);
     dfhalf_[0]->ax_plus_y(fac, o->dfhalf_[0]);
@@ -131,6 +130,21 @@ void RelDFHalf::ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHal
     dfhalf_[0]->ax_plus_y(-ifac, o->dfhalf_[1]);
     dfhalf_[1]->ax_plus_y( ifac, o->dfhalf_[0]);
   }
+}
+
+
+void RelDFHalf::rotate_occ(shared_ptr<const ZMatrix> rdm1) {
+  shared_ptr<const Matrix> rdm1r = rdm1->get_real_part();
+  shared_ptr<const Matrix> rdm1i = rdm1->get_imag_part();
+
+  auto real = dfhalf_[0]->copy();
+  auto imag = dfhalf_[1]->copy();
+  dfhalf_[0]->rotate_occ(rdm1r);
+  dfhalf_[1]->rotate_occ(rdm1r);
+  real->rotate_occ(rdm1i);
+  imag->rotate_occ(rdm1i);
+  dfhalf_[0]->ax_plus_y(-1.0, imag);
+  dfhalf_[1]->ax_plus_y( 1.0, real);
 }
 
 
@@ -165,11 +179,11 @@ list<shared_ptr<RelDFHalf>> RelDFHalf::split(const bool docopy) {
   list<shared_ptr<RelDFHalf>> out;
   for (auto i = basis().begin(); i != basis().end(); ++i) {
     if (i == basis().begin() && docopy) {
-      out.push_back(make_shared<RelDFHalf>(dfhalf_, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(dfhalf_, cartesian_, vector<shared_ptr<const SpinorInfo>>{*i}));
     } else {
       // TODO Any way to avoid copying?
       array<shared_ptr<DFHalfDist>,2> d = {{ dfhalf_[0]->copy(), dfhalf_[1]->copy() }};
-      out.push_back(make_shared<RelDFHalf>(d, cartesian_, vector<std::shared_ptr<const SpinorInfo>>{*i}));
+      out.push_back(make_shared<RelDFHalf>(d, cartesian_, vector<shared_ptr<const SpinorInfo>>{*i}));
     }
   }
   return out;

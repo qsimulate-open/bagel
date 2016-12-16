@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: superci.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -31,10 +30,12 @@
 #include <src/multi/casscf/rotfile.h>
 #include <src/mat1e/hcore.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/dhf/population_analysis.h>
 #include <src/util/f77.h>
 #include <src/util/math/davidson.h>
 #include <src/util/math/bfgs.h>
 #include <src/util/math/hpw_diis.h>
+#include <src/prop/hyperfine.h>
 
 using namespace std;
 using namespace bagel;
@@ -48,7 +49,7 @@ void SuperCI::compute() {
   // macro iteration from here
   // ============================
   double gradient = 1.0e100;
-  mute_stdcout();
+  muffle_->mute();
   Timer timer;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
@@ -96,10 +97,9 @@ void SuperCI::compute() {
     gradient = grad->rms();
     if (iter > 2 && gradient < thresh_) {
       rms_grad_ = gradient;
-      resume_stdcout();
+      muffle_->unmute();
       cout << " " << endl;
       cout << "    * Super CI optimization converged. *    " << endl << endl;
-      mute_stdcout();
       break;
     }
 
@@ -113,7 +113,7 @@ void SuperCI::compute() {
     }
 
     // unitary matrix
-    shared_ptr<Matrix> rot = cc->unpack<Matrix>()->exp();
+    shared_ptr<Matrix> rot = cc->unpack()->exp();
     // forcing rot to be unitary (usually not needed, though)
     rot->purify_unitary();
 
@@ -122,8 +122,8 @@ void SuperCI::compute() {
     } else {
       // including natorb.first to rot so that they can be processed at once
       shared_ptr<Matrix> tmp = rot->copy();
-      dgemm_("N", "N", nact_, nbasis_, nact_, 1.0, natorb.first->data(), nact_, rot->element_ptr(nclosed_, 0), nbasis_, 0.0,
-                                                                          tmp->element_ptr(nclosed_, 0), nbasis_);
+      dgemm_("N", "N", nact_, nmo_, nact_, 1.0, natorb.first->data(), nact_, rot->element_ptr(nclosed_, 0), nmo_,
+                                           0.0, tmp->element_ptr(nclosed_, 0), nmo_);
       shared_ptr<const Matrix> tmp2 = tailor_rotation(tmp)->copy();
       shared_ptr<const Matrix> mcc = diis->extrapolate(tmp2);
       coeff_ = make_shared<const Coeff>(*mcc);
@@ -133,22 +133,22 @@ void SuperCI::compute() {
     mpi__->broadcast(const_pointer_cast<Coeff>(coeff_)->data(), coeff_->size(), 0);
 
     // print out...
-    resume_stdcout();
-    print_iteration(iter, 0, 0, energy_, gradient, timer.tick());
+    print_iteration(iter, energy_, gradient, timer.tick());
 
     if (iter == max_iter_-1) {
+      muffle_->unmute();
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
       cout << "    * Max iteration reached in the Super CI macro interations. *     " << endl << endl;
+      if (!conv_ignore_)
+        throw runtime_error("CASSCF SuperCI did not converge");
     }
-    mute_stdcout();
-
   }
   // ============================
   // macro iteration to here
   // ============================
-  resume_stdcout();
+  muffle_->unmute();
 
   // block diagonalize coeff_ in nclosed and nvirt
   coeff_ = semi_canonical_orb();
@@ -158,6 +158,25 @@ void SuperCI::compute() {
   fci_->update(coeff_);
   fci_->compute();
   fci_->compute_rdm12();
+
+  // calculate the HFCCs
+  if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+    HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
+    hfcc.compute();
+  }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    Timer pop_timer;
+    cout << " " << endl;
+    cout << "    * Printing out population analysis of SuperCI optimized orbitals to casscf.log" << endl;
+    muffle_->mute();
+    auto ovl = make_shared<Overlap>(geom_);
+    population_analysis(geom_, *coeff_, ovl);
+    muffle_->unmute();
+    pop_timer.tick_print("population analysis");
+  }
+
 }
 
 

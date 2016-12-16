@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci/dvector.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -40,12 +39,11 @@ namespace bagel {
 template <typename CiType>
 class Dvector_base {
   // used for template magicking
-  public: using DetType = typename CiType::DetType;
-  public: using Ci = CiType;
-
-  // only for use in lambdas
-  using CiPtr = std::shared_ptr<CiType>;
-  using CiConstPtr = std::shared_ptr<const CiType>;
+  public:
+    using DetType = typename CiType::DetType;
+    using Ci = CiType;
+    using CiPtr = std::shared_ptr<CiType>;
+    using CiConstPtr = std::shared_ptr<const CiType>;
 
   protected:
     // the determinant space where Dvector_base's are sitting
@@ -88,7 +86,7 @@ class Dvector_base {
     std::shared_ptr<const DetType> det() const { return det_; }
 
     CiPtr& data(const size_t i) { return dvec_[i]; }
-    CiPtr data(const size_t i) const { return dvec_[i]; }
+    CiConstPtr data(const size_t i) const { return dvec_[i]; }
 
     std::vector<CiPtr>& dvec() { return dvec_; }
     const std::vector<CiPtr>& dvec() const { return dvec_; }
@@ -160,22 +158,6 @@ class Dvector_base {
       return form_from_each([det] (std::shared_ptr<const CiType> cc) { return cc->spin_raise(det); }, det, typename CiType::LocalizedType());
     }
 
-    void spin_decontaminate() {
-      for (int i = 0; i < ij_; ++i) {
-#ifdef HAVE_MPI_H
-        if (i % mpi__->size() == mpi__->rank())
-          data(i)->spin_decontaminate();
-#else
-        data(i)->spin_decontaminate();
-#endif
-      }
-
-#ifdef HAVE_MPI_H
-      for (int i = 0; i < ij_; ++i)
-        data(i)->synchronize(i%mpi__->size());
-#endif
-    }
-
     void orthog(std::shared_ptr<const Dvector_base<CiType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::orthog called inconsistently");
       std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
@@ -184,8 +166,14 @@ class Dvector_base {
     void project_out(std::shared_ptr<const Dvector_base<CiType>> o) {
       if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::project_out called inconsistently");
       auto j = o->dvec().begin();
-      // simply project out each CI vector
-      for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
+      for (auto& i : dvec())
+        i->project_out(*j++);
+    }
+
+    void project_out_all(std::shared_ptr<const Dvector_base<CiType>> o) {
+      for (auto& i : dvec())
+        for (auto& j : o->dvec())
+          i->project_out(j);
     }
 
     void print(const double thresh = 0.05) const {
@@ -209,14 +197,12 @@ class Dvector_base {
       std::vector<CiPtr> out;
       for (int i = 0; i < ij_; ++i) {
 #ifdef HAVE_MPI_H
-        if ( (i % mpi__->size()) == mpi__->rank() ) {
-          out.push_back( func(data(i)) );
-        }
-        else {
-          out.push_back( std::make_shared<CiType>(d) );
-        }
+        if ((i % mpi__->size()) == mpi__->rank())
+          out.push_back(func(data(i)));
+        else
+          out.push_back(std::make_shared<CiType>(d));
 #else
-        out.push_back( func(data(i)) );
+        out.push_back(func(data(i)));
 #endif
       }
 #ifdef HAVE_MPI_H

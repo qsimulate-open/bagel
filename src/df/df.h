@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: df.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_DF_DF_H
@@ -59,10 +58,6 @@ class DFDist : public ParallelDF {
     size_t nbasis0() const { return nindex2_; }
     size_t nbasis1() const { return nindex1_; }
     size_t naux() const { return naux_; }
-
-    void add_direct_product(std::shared_ptr<const VectorB> a, std::shared_ptr<const Matrix> b, const double fac)
-       { add_direct_product(std::vector<std::shared_ptr<const VectorB>>{a}, std::vector<std::shared_ptr<const Matrix>>{b}, fac); }
-    void add_direct_product(std::vector<std::shared_ptr<const VectorB>> a, std::vector<std::shared_ptr<const Matrix>> b, const double fac);
 
     // compute half transforms; c is dimensioned by nbasis_;
     std::shared_ptr<DFHalfDist> compute_half_transform(const MatView c) const;
@@ -111,7 +106,6 @@ class DFDist_ints : public DFDist {
       for (auto& i2 : b2shell) {
         int j1 = 0;
         for (auto& i1 : b1shell) {
-          // TODO careful
           if (TBatch::Nblocks() > 1 || j1 <= j2) {
             int j0 = 0;
             for (auto& i0 : ashell) {
@@ -235,7 +229,12 @@ class DFFullDist : public ParallelDF {
     // general case without closed orbitals
     std::shared_ptr<DFFullDist> apply_2rdm(const btas::Tensor4<double>& rdm) const;
 
+    // returns the 4-index integrals with fixed index n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFFullDist> o, const double a, const size_t n) const;
+    // returns the diagonal part of the 4-index integrals [o1v0] = (o1v0|g)(g|o1v0)
+    std::shared_ptr<Matrix> form_4index_diagonal() const;
+    // returns the diagonal part of the 4-index integrals [o1o2v0] = (o1v0|g)(g|o2v0)
+    std::shared_ptr<Matrix> form_4index_diagonal_part() const;
 
     // utility functions
     std::shared_ptr<Matrix> form_aux_2index_apply_J(const std::shared_ptr<const DFFullDist> o, const double a) const;

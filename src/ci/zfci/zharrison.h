@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zharrison.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 // Desc :: The implementation closely follows Harrison and Zarrabian
@@ -88,8 +87,13 @@ class ZHarrison : public Method {
     // state averaged RDMs
     std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1_av_;
     std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2_av_;
+    std::shared_ptr<ZRDM<1>> rdm1_av_expanded_;
+    std::shared_ptr<ZRDM<2>> rdm2_av_expanded_;
 
     std::shared_ptr<DavidsonDiag<RelZDvec, ZMatrix>> davidson_;
+
+    // integral reuse
+    bool store_half_ints_;
 
     // restart
     bool restart_;
@@ -107,7 +111,7 @@ class ZHarrison : public Method {
       ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff_input();
+      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff();
       ar << coeff;
     }
     template<class Archive>
@@ -131,9 +135,6 @@ class ZHarrison : public Method {
     void print_header() const;
 
     void const_denom();
-
-    // just to move negative energy states into the virtual space
-    std::shared_ptr<const ZMatrix> swap_pos_neg(std::shared_ptr<const ZMatrix> coeffin) const;
 
     // run-time functions.
     // aaaa and bbbb
@@ -176,27 +177,21 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, const int nstate = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool restricted = false);
+              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    // "restricted" refers to whether the coefficient matrix is already Kramers-adapted
-    void update(std::shared_ptr<const RelCoeff_Block> coeff, const bool restricted = false) {
-      Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, charge_, gaunt_, breit_, restricted, tsymm_);
-
-      std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
-      const_denom();
-    }
+    void update(std::shared_ptr<const RelCoeff_Block> coeff);
 
     virtual void compute() override;
 
     // returns members
     int norb() const { return norb_; }
     int ncore() const { return ncore_; }
+    int nele() const { return nele_; }
+    int nstate() const { return nstate_; }
     double core_energy() const { return jop_->core_energy(); }
-
-    int nij() const { return norb_*norb_; }
+    std::shared_ptr<const RelZDvec> cc() const { return cc_; }
 
     std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
@@ -204,8 +199,6 @@ class ZHarrison : public Method {
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
-    std::shared_ptr<const ZMatrix> coeff() const { return jop_->coeff(); }
-    std::shared_ptr<const Kramers<1,ZMatrix>> kramers_coeff() const { return jop_->kramers_coeff(); }
 
     // functions related to RDMs
     void compute_rdm12();
@@ -214,6 +207,7 @@ class ZHarrison : public Method {
     std::shared_ptr<Kramers<6,ZRDM<3>>> rdm3(const int jst, const int ist) const;
     std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
 
+    std::vector<std::shared_ptr<const ZMatrix>> rdm1_matrix() const;
     std::shared_ptr<const ZMatrix> rdm1_av() const;
     std::shared_ptr<const ZMatrix> rdm2_av() const;
     std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1_av_kramers() const { return rdm1_av_; }
@@ -222,6 +216,11 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<1>> rdm1_av_kramers(const T& b) const { KTag<2> t(b); return rdm1_av_->at(t); }
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
+
+    std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
+
+    // interface functions
+    void dump_ints() const;
 };
 
 

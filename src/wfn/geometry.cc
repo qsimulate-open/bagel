@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: geometry.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -76,16 +75,19 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     }
   }
 
+  // DKH2 Hamiltonian
+  dkh_ = geominfo->get<bool>("dkh", false);
+
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
   if (tesla)
-    for (int i=0; i!=3; ++i)
+    for (int i = 0; i != 3; ++i)
       magnetic_field_[i] /= au2tesla__;
   set_london(geominfo);
 
   /* Set up atoms_ */
-  basisfile_ = to_lower(geominfo->get<string>("basis", ""));
+  basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
@@ -113,7 +115,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
       throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
-  auxfile_ = to_lower(geominfo->get<string>("df_basis", ""));  // default value for non-DF HF.
+  auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
   if (!auxfile_.empty()) {
     if (!primitive_vectors_.empty()) do_periodic_df_ = true;
     // read the default aux basis file
@@ -181,7 +183,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
+  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
     do_periodic_df_(o.do_periodic_df_) {
 
   // Members of Molecule
@@ -209,54 +211,26 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     Quatern<double> oc = o.charge_center();
     Quatern<double> mc = charge_center();
     // (2) direction of the first atom
-    Quatern<double> oa = o.atoms().front()->position();
-    Quatern<double> ma =   atoms().front()->position();
-    Quatern<double> od = oa - oc;
-    Quatern<double> md = ma - mc;
-    // Quaternion that maps md to od.
-    od.normalize();
-    md.normalize();
-    Quatern<double> op = md * od;
-    op[0] = 1.0 - op[0];
-    op.normalize();
-    Quatern<double> opd = op.dagger();
-
-    // first subtract mc, rotate, and then add oc
-    vector<shared_ptr<const Atom>> newatoms;
-    vector<shared_ptr<const Atom>> newauxatoms;
-    for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-      assert((*i)->position() == (*j)->position());
-      Quatern<double> source = (*i)->position();
-      Quatern<double> target = op * (source - mc) * opd + oc;
-      array<double,3> cdispl = (target - source).ijk();
-
-      newatoms.push_back(make_shared<Atom>(**i, cdispl));
-      newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-    }
-    atoms_ = newatoms;
-    aux_atoms_ = newauxatoms;
-
-    // (3) plane of center of charges, first and second atoms.
-    if (natom() > 2) {
-      assert(natom() == o.natom());
-      Quatern<double> oa0 = o.atoms(0)->position();
-      Quatern<double> ma0 =   atoms(0)->position();
-      Quatern<double> oa1 = o.atoms(1)->position();
-      Quatern<double> ma1 =   atoms(1)->position();
-      mc = charge_center();
-      od = (oa0 - oc) * (oa1 - oc);
-      md = (ma0 - mc) * (ma1 - mc);
-      od[0] = 0.0;
-      md[0] = 0.0;
+    int iatom = 0;
+    for ( ; iatom != natom(); ++iatom) {
+      Quatern<double> oa = o.atoms(iatom)->position();
+      Quatern<double> ma =   atoms(iatom)->position();
+      Quatern<double> od = oa - oc;
+      Quatern<double> md = ma - mc;
+      // if the charge center coincide with the location of the atom, skip
+      if (od.norm() < 0.1 || md.norm() < 0.1)
+        continue;
+      // Quaternion that maps md to od.
       od.normalize();
       md.normalize();
-      op = md * od;
+      Quatern<double> op = md * od;
       op[0] = 1.0 - op[0];
       op.normalize();
-      opd = op.dagger();
+      Quatern<double> opd = op.dagger();
 
-      newatoms.clear();
-      newauxatoms.clear();
+      // first subtract mc, rotate, and then add oc
+      vector<shared_ptr<const Atom>> newatoms;
+      vector<shared_ptr<const Atom>> newauxatoms;
       for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
         assert((*i)->position() == (*j)->position());
         Quatern<double> source = (*i)->position();
@@ -268,6 +242,47 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
       }
       atoms_ = newatoms;
       aux_atoms_ = newauxatoms;
+      break;
+    }
+
+    // (3) plane of center of charges, first and second atoms.
+    if (natom() > 2) {
+      assert(natom() == o.natom());
+      for (int jatom = 0; jatom != natom(); ++jatom) {
+        if (iatom == jatom) continue;
+        Quatern<double> oa0 = o.atoms(iatom)->position();
+        Quatern<double> ma0 =   atoms(iatom)->position();
+        Quatern<double> oa1 = o.atoms(jatom)->position();
+        Quatern<double> ma1 =   atoms(jatom)->position();
+        Quatern<double> mc = charge_center();
+        Quatern<double> od = (oa0 - oc) * (oa1 - oc);
+        Quatern<double> md = (ma0 - mc) * (ma1 - mc);
+        od[0] = 0.0;
+        md[0] = 0.0;
+        if (od.norm() < 1.0e-5 || md.norm() < 1.0e-5)
+          continue;
+        od.normalize();
+        md.normalize();
+        Quatern<double> op = md * od;
+        op[0] = 1.0 - op[0];
+        op.normalize();
+        Quatern<double> opd = op.dagger();
+
+        vector<shared_ptr<const Atom>> newatoms;
+        vector<shared_ptr<const Atom>> newauxatoms;
+        for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
+          assert((*i)->position() == (*j)->position());
+          Quatern<double> source = (*i)->position();
+          Quatern<double> target = op * (source - mc) * opd + oc;
+          array<double,3> cdispl = (target - source).ijk();
+
+          newatoms.push_back(make_shared<Atom>(**i, cdispl));
+          newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
+        }
+        atoms_ = newatoms;
+        aux_atoms_ = newauxatoms;
+        break;
+      }
     }
   }
 
@@ -281,7 +296,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
@@ -336,6 +351,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
   dofmm_ = geominfo->get<bool>("cfmm", false);
+  dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
@@ -343,7 +359,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     magnetic_field_ = geominfo->get_array<double,3>("magnetic_field");
     const bool tesla = geominfo->get<bool>("tesla", false);
     if (tesla)
-      for (int i=0; i!=3; ++i)
+      for (int i = 0; i != 3; ++i)
         magnetic_field_[i] /= au2tesla__;
 
     const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
@@ -355,7 +371,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   // check if we need to construct shells and integrals
   auto atoms = geominfo->get_child_optional("geometry");
   const string prevbasis = basisfile_;
-  basisfile_ = to_lower(geominfo->get<string>("basis", basisfile_));
+  basisfile_ = geominfo->get<string>("basis", basisfile_);
   use_finite_ = geominfo->get<bool>("finite_nucleus", use_finite_);
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms || newfield) {
@@ -373,7 +389,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     }
   }
   const string prevaux = auxfile_;
-  auxfile_ = to_lower(geominfo->get<string>("df_basis", auxfile_));
+  auxfile_ = geominfo->get<string>("df_basis", auxfile_);
   if (prevaux != auxfile_ || atoms) {
     aux_atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
@@ -410,8 +426,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_), do_periodic_df_(false) {
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), dkh_(nmer.front()->dkh()), magnetism_(false), london_(nmer.front()->london_),
+  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_),  do_periodic_df_(false) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
@@ -523,6 +539,8 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   common_init1();
 
   print_atoms();
+
+  dkh_ = geominfo->get<bool>("dkh", false);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -716,10 +734,8 @@ void Geometry::init_magnetism() {
     cout << "  Zero magnetic field - This computation would be more efficient with a standard basis." << endl;
   }
 
-  const array<double,3> fieldin = london_ ? magnetic_field_ : array<double,3>{{0.0, 0.0, 0.0}};
-
   vector<shared_ptr<const Atom>> atom;
   for (auto& i : atoms_)
-    atom.push_back(i->apply_magnetic_field(fieldin));
+    atom.push_back(i->apply_magnetic_field(magnetic_field_, london_));
   atoms_ = atom;
 }

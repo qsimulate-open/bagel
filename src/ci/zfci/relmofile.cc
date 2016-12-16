@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: relmofile.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 2, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <iostream>
@@ -36,15 +35,15 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const int charge, const bool gaunt, const bool breit, const bool tsymm)
- : charge_(charge), geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const bool gaunt, const bool breit, const bool tsymm)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
   // density fitting is assumed
   assert(geom_->df());
 }
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-void RelMOFile::init(const int nstart, const int nfence, const bool restricted) {
+void RelMOFile::init(const int nstart, const int nfence, const bool store) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
@@ -60,7 +59,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, /*do_grad = */false, /*robust*/breit_);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, store, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -82,98 +81,6 @@ void RelMOFile::init(const int nstart, const int nfence, const bool restricted) 
 
   // compress and set mo1e_ and mo2e_
   compress_and_set(buf1e, buf2e);
-}
-
-
-
-// this is a static function!
-shared_ptr<Kramers<1,ZMatrix>> RelMOFile::kramers(shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> overlap, shared_ptr<const ZMatrix> hcore) {
-  const int noff = coeff->mdim()/2;
-  const int ndim = coeff->ndim();
-  const int mdim = coeff->mdim();
-  const int nb = ndim / 4;
-  unique_ptr<complex<double>[]> eig = (*coeff % *hcore * *coeff).diag();
-
-  auto out = make_shared<Kramers<1,ZMatrix>>();
-  out->emplace(0, make_shared<ZMatrix>(ndim, noff));
-  out->emplace(1, make_shared<ZMatrix>(ndim, noff));
-
-  if (ndim%2 != 0 || ndim%4 != 0)
-    throw logic_error("illegal call of RelMOFile::kramers");
-
-  // overlap matrix
-  auto sigmaz = overlap->copy();
-  sigmaz->add_block(-2.0, nb, nb, nb, nb, sigmaz->get_submatrix(nb,nb,nb,nb));
-  sigmaz->add_block(-2.0, nb*3, nb*3, nb, nb, sigmaz->get_submatrix(nb*3,nb*3,nb,nb));
-  // just for convenience
-  sigmaz->scale(-1.0);
-
-  VectorB tmp(mdim);
-
-  list<int> done;
-  for (int i = 0; i != mdim; ++i) {
-    if (find(done.begin(), done.end(), i) != done.end()) continue;
-    list<int> current{i};
-    const double e = eig[i].real();
-
-    for (int j = i+1; j < mdim; ++j) {
-      if (fabs(eig[j].real()-e)/fabs(e) < 1.0e-8)
-        current.push_back(j);
-    }
-    const int n = current.size();
-    if (n%2 != 0) throw runtime_error("orbitals are not kramers paired");
-
-    auto cnow = make_shared<ZMatrix>(ndim, n);
-    int j = 0;
-    for (auto& i : current)
-      cnow->copy_block(0, j++, ndim, 1, coeff->element_ptr(0,i));
-
-    auto corig = cnow->copy();
-    auto s = make_shared<ZMatrix>(*cnow % *sigmaz * *cnow);
-    s->diagonalize(tmp);
-    *cnow *= *s;
-
-    // fix the phase - making the largest large-component element in each column real
-#if 1
-    for (int i = 0; i != n; ++i) {
-      const int iblock = i/(n/2);
-      complex<double> ele = *max_element(cnow->element_ptr(iblock*nb,i), cnow->element_ptr((iblock+1)*nb,i),
-                                         [](complex<double> a, complex<double> b) { return norm(a)+1.0e-5 < norm(b); }); // favors the first one
-      const complex<double> fac = norm(ele) / ele*complex<double>(1.0,1.0);
-      for_each(cnow->element_ptr(0,i), cnow->element_ptr(0,i+1), [&fac](complex<double>& a) { a *= fac; });
-    }
-#endif
-
-    // off diagonal
-    const int m = n/2;
-    cnow->add_block(-1.0, nb, 0, nb, m, cnow->get_submatrix(0, m, nb, m)->get_conjg());
-    cnow->copy_block(0, m, nb, m, *cnow->get_submatrix(nb, 0, nb, m)->get_conjg() * (-1.0));
-    cnow->add_block(-1.0, nb*3, 0, nb, m, cnow->get_submatrix(nb*2, m, nb, m)->get_conjg());
-    cnow->copy_block(nb*2, m, nb, m, *cnow->get_submatrix(nb*3, 0, nb, m)->get_conjg() * (-1.0));
-
-    // diagonal
-    cnow->add_block(1.0, 0, 0, nb, m, cnow->get_submatrix(nb, m, nb, m)->get_conjg());
-    cnow->copy_block(nb, m, nb, m, cnow->get_submatrix(0, 0, nb, m)->get_conjg());
-    cnow->add_block(1.0, nb*2, 0, nb, m, cnow->get_submatrix(nb*3, m, nb, m)->get_conjg());
-    cnow->copy_block(nb*3, m, nb, m, cnow->get_submatrix(nb*2, 0, nb, m)->get_conjg());
-
-    auto diag = (*cnow % *overlap * *cnow).diag();
-    for (int i = 0; i != n; ++i)
-      for (int j = 0; j != ndim; ++j)
-        cnow->element(j,i) /= sqrt(diag[i].real());
-
-    ZMatrix unit = *corig % *overlap * *cnow;
-    unit.purify_unitary();
-    *cnow = *corig * unit;
-
-    const int d = done.size();
-    assert(d % 2 == 0);
-    out->at(0)->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, 0));
-    out->at(1)->copy_block(0, d/2, ndim, n/2, cnow->element_ptr(0, n/2));
-
-    done.insert(done.end(), current.begin(), current.end());
-  }
-  return out;
 }
 
 
@@ -267,11 +174,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
     for (int k = 0; k != 2; ++k)
       tie(half_complex_exch[k], half_complex_exch2[k]) = compute_half(geom_, coeff->at(k), gaunt, breit);
 
-    if (!gaunt)
-      half_complex_coulomb_ = half_complex_exch;
-    else
-      half_complex_gaunt_ = half_complex_exch;
-
     // (4) compute (gamma|ii)
     auto full = make_shared<Kramers<2,ListRelDFFull>>();
     full->emplace({0,0}, compute_full(coeff->at(0), half_complex_exch[0], true));
@@ -353,6 +255,14 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 
 
 shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
+  list<shared_ptr<const RelDFHalf>> halfc;
+  for (auto& i : half)
+    halfc.push_back(i);
+  return compute_full(coeff, halfc, appj);
+}
+
+
+shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<const RelDFHalf>> half, const bool appj) {
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
   if (!transform_with_full && appj) {

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: distfci_bb.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_FCI_DISTFCI_BB_H
@@ -77,7 +76,7 @@ class DistBBTask {
             if(b[j]) continue;
             std::bitset<nbit__> bt = b; bt.set(i); bt.set(j);
             const double ij_phase = base_det->sign(bt,i,j);
-            daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*ij++, 1);
+            blas::ax_plus_y_n(ij_phase, source+la*base_det->lexical<1>(bt), la, ints.get()+la*ij++);
           }
         }
 
@@ -92,7 +91,7 @@ class DistBBTask {
             const double kl_phase = base_det->sign(bt,k,l);
             const size_t ib = base_det->lexical<1>(bt);
             std::lock_guard<std::mutex> lock((*mutex)[ib]);
-            daxpy_(la, kl_phase, ints2.get()+la*kl++, 1, target+la*ib, 1);
+            blas::ax_plus_y_n(kl_phase, ints2.get()+la*kl++, la, target+la*ib);
           }
         }
       } else if (b.count()+1 == base_det->neleb()) {
@@ -103,7 +102,7 @@ class DistBBTask {
           if (b[i]) continue;
           std::bitset<nbit__> bt = b; bt.set(i);
           const double ij_phase = base_det->sign(bt, -1, i);
-          daxpy_(la, ij_phase, source+la*base_det->lexical<1>(bt), 1, ints.get()+la*i, 1);
+          blas::ax_plus_y_n(ij_phase, source+la*base_det->lexical<1>(bt), la, ints.get()+la*i);
         }
         dgemm_("N", "N", la, norb_, norb_, 1.0, ints.get(), la, hamil, norb_, 0.0, ints2.get(), la);
         for (int i = 0; i != norb_; ++i) {
@@ -112,7 +111,7 @@ class DistBBTask {
           const double ij_phase = base_det->sign(bt, -1, i);
           const size_t ib = base_det->lexical<1>(bt);
           std::lock_guard<std::mutex> lock((*mutex)[ib]);
-          daxpy_(la, ij_phase, ints2.get()+la*i, 1, target+la*ib, 1);
+          blas::ax_plus_y_n(ij_phase, ints2.get()+la*i, la, target+la*ib);
         }
       } else {
         assert(false);

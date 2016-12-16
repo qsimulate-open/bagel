@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: shell.h
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -50,7 +49,9 @@ class Shell : public Shell_base {
 
     // whether a london phase factor is being used
     bool magnetism_;
+    bool london_;
     std::array<double,3> vector_potential_;
+    std::array<double,3> magnetic_field_;
 
     // protected members for relativistic calculations
     std::array<std::shared_ptr<const Matrix>,3> small_;
@@ -68,15 +69,21 @@ class Shell : public Shell_base {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Shell_base>(*this);
-      ar << exponents_ << contractions_ << contraction_ranges_ << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_ << relativistic_ << vector_potential_;
+      ar << exponents_ << contractions_ << contraction_ranges_ << dummy_ << contraction_upper_ << contraction_lower_ << nbasis_
+         << relativistic_ << magnetism_ << london_ << vector_potential_ << magnetic_field_;
     }
 
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Shell_base>(*this);
-      ar >> exponents_ >> contractions_ >> contraction_ranges_ >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_ >> relativistic_ >> vector_potential_;
-      if (relativistic_)
-        init_relativistic();
+      ar >> exponents_ >> contractions_ >> contraction_ranges_ >> dummy_ >> contraction_upper_ >> contraction_lower_ >> nbasis_
+         >> relativistic_ >> magnetism_ >> london_ >> vector_potential_ >> magnetic_field_;
+      if (relativistic_) {
+        if (!magnetism_)
+          init_relativistic();
+        else
+          init_relativistic(magnetic_field_, london_);
+      }
     }
 
     template<class Archive>
@@ -126,7 +133,7 @@ class Shell : public Shell_base {
     bool magnetism() const { return magnetism_; }
     double vector_potential(const unsigned int i) const { return vector_potential_[i]; }
     const std::array<double,3>& vector_potential() const { return vector_potential_; }
-    void add_phase(const std::array<double,3>& phase_input);
+    void add_phase(const std::array<double,3>& phase_input, const std::array<double,3>& magnetic_field, const bool london);
 
     void init_relativistic();
     void init_relativistic(const std::array<double,3> magnetic_field, bool london);
@@ -146,6 +153,9 @@ class Shell : public Shell_base {
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
     void compute_grid_value_deriv2(double*, double*, double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
+
+    std::shared_ptr<const Shell> uncontract() const;
+
 };
 
 }

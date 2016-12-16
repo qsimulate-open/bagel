@@ -1,0 +1,42 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "angstrom" : true,
+  "basis" : "3-21g",
+  "df_basis" : "svp-jkfit",
+  "geometry" : [
+    { "atom" : "O",  "xyz" : [       0.000000000000,       0.724200000000,      -0.965600000000 ] },
+    { "atom" : "O",  "xyz" : [       0.000000000000,       0.000000000000,       0.000000000000 ] }
+  ]
+},
+
+{
+  "title" : "hf",
+  "thresh" : 1.0e-6
+},
+
+{
+ "title" : "dhf",
+ "thresh" : 1.0e-6
+},
+
+{
+  "title" : "zcasscf",
+  "charge" : "-1",
+  "state" : [0,4,0,1],
+  "only_electrons" : "true",
+  "nact_cas" : 3,
+  "nclosed" : 7,
+  "thresh" : 4.0e-6,
+  "aniso" : {
+    "nspin" : 3,
+    "center" : [       0.00000000,       0.36210000,      -0.48280000 ],
+    "diagop" : "J",
+    "zaxis" : [ -0.3868473,  0.86395892,  0.32237273 ],
+    "xaxis" : [ -0.3177328, -0.45306455,  0.83293359 ],
+    "print_operators" : "true",
+    "states" : [5,6,7,8]
+  }
+}
+] }

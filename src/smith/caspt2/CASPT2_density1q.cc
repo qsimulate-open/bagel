@@ -1,26 +1,25 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: CASPT2_density1qq.cc
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Shiozaki group <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -28,7 +27,7 @@
 
 
 #include <src/smith/caspt2/CASPT2.h>
-#include <src/smith/caspt2/CASPT2_tasks.h>
+#include <src/smith/caspt2/CASPT2_tasks11.h>
 
 using namespace std;
 using namespace bagel;
@@ -36,45 +35,56 @@ using namespace bagel::SMITH;
 
 shared_ptr<Queue> CASPT2::CASPT2::make_density1q(const bool reset, const bool diagonal) {
 
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
   auto density1q = make_shared<Queue>();
-  auto task523 = make_shared<Task523>(den1, reset);
-  density1q->add_task(task523);
+  auto tensor508 = vector<shared_ptr<Tensor>>{den1};
+  auto task508 = make_shared<Task508>(tensor508, reset);
+  density1q->add_task(task508);
 
-  auto I734 = make_shared<TATensor<double,2>>({closed_, active_});
-  auto task524 = make_shared<Task524>(den1, I734);
-  task524->add_dep(task523);
-  density1q->add_task(task524);
+  vector<IndexRange> I650_index = {closed_, active_};
+  auto I650 = make_shared<Tensor>(I650_index);
+  auto tensor509 = vector<shared_ptr<Tensor>>{den1, I650};
+  auto task509 = make_shared<Task509>(tensor509, pindex);
+  task509->add_dep(task508);
+  density1q->add_task(task509);
 
-  auto task525 = make_shared<Task525>(I734, Gamma12_(), t2);
-  task524->add_dep(task525);
-  task525->add_dep(task523);
-  density1q->add_task(task525);
+  auto tensor510 = vector<shared_ptr<Tensor>>{I650, Gamma12_(), t2};
+  auto task510 = make_shared<Task510>(tensor510, pindex);
+  task509->add_dep(task510);
+  task510->add_dep(task508);
+  density1q->add_task(task510);
 
-  auto I736 = make_shared<TATensor<double,2>>({virt_, closed_});
-  auto task526 = make_shared<Task526>(den1, I736);
-  task526->add_dep(task523);
-  density1q->add_task(task526);
+  vector<IndexRange> I652_index = {virt_, closed_};
+  auto I652 = make_shared<Tensor>(I652_index);
+  auto tensor511 = vector<shared_ptr<Tensor>>{den1, I652};
+  auto task511 = make_shared<Task511>(tensor511, pindex);
+  task511->add_dep(task508);
+  density1q->add_task(task511);
 
-  auto I737 = make_shared<TATensor<double,4>>({active_, virt_, closed_, active_});
-  auto task527 = make_shared<Task527>(I736, Gamma38_(), I737);
-  task526->add_dep(task527);
-  task527->add_dep(task523);
-  density1q->add_task(task527);
+  auto tensor512 = vector<shared_ptr<Tensor>>{I652, t2, Gamma38_()};
+  auto task512 = make_shared<Task512>(tensor512, pindex);
+  task511->add_dep(task512);
+  task512->add_dep(task508);
+  density1q->add_task(task512);
 
-  auto task528 = make_shared<Task528>(I737, t2);
-  task527->add_dep(task528);
-  task528->add_dep(task523);
-  density1q->add_task(task528);
+  auto tensor513 = vector<shared_ptr<Tensor>>{I652, t2, Gamma38_()};
+  auto task513 = make_shared<Task513>(tensor513, pindex);
+  task511->add_dep(task513);
+  task513->add_dep(task508);
+  density1q->add_task(task513);
 
-  auto I740 = make_shared<TATensor<double,2>>({virt_, active_});
-  auto task529 = make_shared<Task529>(den1, I740);
-  task529->add_dep(task523);
-  density1q->add_task(task529);
+  vector<IndexRange> I656_index = {active_, virt_};
+  auto I656 = make_shared<Tensor>(I656_index);
+  auto tensor514 = vector<shared_ptr<Tensor>>{den1, I656};
+  auto task514 = make_shared<Task514>(tensor514, pindex);
+  task514->add_dep(task508);
+  density1q->add_task(task514);
 
-  auto task530 = make_shared<Task530>(I740, Gamma60_(), t2);
-  task529->add_dep(task530);
-  task530->add_dep(task523);
-  density1q->add_task(task530);
+  auto tensor515 = vector<shared_ptr<Tensor>>{I656, t2, Gamma60_()};
+  auto task515 = make_shared<Task515>(tensor515, pindex);
+  task514->add_dep(task515);
+  task515->add_dep(task508);
+  density1q->add_task(task515);
 
   return density1q;
 }

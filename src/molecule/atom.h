@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: atom.h
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -89,7 +88,7 @@ class Atom {
          const std::pair<std::string, std::shared_ptr<const PTree>> json, std::shared_ptr<const PTree> elem);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position, const double charge);
     Atom(const bool spherical, const std::string name, const std::array<double,3>& position,
-         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>);
+         const std::vector<std::tuple<std::string, std::vector<double>, std::vector<double>>>, const std::string bas = "custom_basis");
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell);
     Atom(const std::string name, const std::string bas, const std::vector<std::shared_ptr<const Shell>> shell,
                                                         const std::vector<std::shared_ptr<const Shell_ECP>> shell_ECP, const int ncore, const int maxl);
@@ -149,7 +148,11 @@ class Atom {
     std::shared_ptr<const Atom> relativistic(const std::array<double,3>& magnetic_field, bool london) const;
 
     // initialize magnetic field calculations
-    std::shared_ptr<const Atom> apply_magnetic_field(const std::array<double,3>& field) const;
+    std::shared_ptr<const Atom> apply_magnetic_field(const std::array<double,3>& field, const bool london) const;
+
+    std::shared_ptr<const Atom> uncontract() const;
+
+    void reset_shells(std::vector<std::shared_ptr<const Shell>>);
 
 };
 

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: rdm.h
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -87,6 +86,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
     RDM<rank,DataType> operator-(const RDM<rank,DataType>& o) const { RDM<rank,DataType> out(*this); out -= o; return out; }
 
     void zero() { this->fill(0.0); }
+    void allreduce() { mpi__->allreduce(data(), size()); }
 
     void ax_plus_y(const DataType a, const btas::TensorN<DataType,N>& o) { btas::axpy(a, o, *this); }
     void ax_plus_y(const DataType& a, const std::shared_ptr<const btas::TensorN<DataType,N>>& o) { this->ax_plus_y(a, *o); }
@@ -106,12 +106,12 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return nullptr;
     }
 
-    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals() const {
+    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals(const bool occ_sort = false) const {
       throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
       return std::pair<std::shared_ptr<Matrix>, VectorB>();
     }
 
-    void transform(const std::shared_ptr<Matrix>& coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
+    void transform(std::shared_ptr<const Matrix> coeff) { throw std::logic_error("RDM<N>::transform() (N>3) not implemented yet"); }
 
     std::vector<DataType> diag() const {
       throw std::logic_error("RDM<N>::diag() should not be called with N>1");
@@ -159,10 +159,10 @@ using ZRDM = RDM<rank, std::complex<double>>;
 template<> bool RDM<1,double>::natural_orbitals() const;
 template<> std::vector<double> RDM<1,double>::diag() const;
 
-template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals() const;
+template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals(const bool occ_sort) const;
 
-template<> void RDM<1,double>::transform(const std::shared_ptr<Matrix>& coeff);
-template<> void RDM<2,double>::transform(const std::shared_ptr<Matrix>& coeff);
+template<> void RDM<1,double>::transform(std::shared_ptr<const Matrix> coeff);
+template<> void RDM<2,double>::transform(std::shared_ptr<const Matrix> coeff);
 
 template<> std::shared_ptr<Matrix> RDM<1,double>::rdm1_mat(const int nclosed, const bool all) const;
 

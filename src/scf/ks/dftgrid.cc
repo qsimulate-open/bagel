@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dftgrid.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <numeric>
@@ -291,8 +290,8 @@ double DFTGrid_base::fuzzy_cell(shared_ptr<const Atom> atom, array<double,3>&& x
 namespace bagel {
 class FuzzyTask {
   protected:
-    std::shared_ptr<Matrix> data;
-    std::shared_ptr<const Atom> atom;
+    shared_ptr<Matrix> data;
+    shared_ptr<const Atom> atom;
     double xg;
     double yg;
     double zg;
@@ -300,7 +299,7 @@ class FuzzyTask {
     DFTGrid_base* parent;
     const int n;
   public:
-    FuzzyTask(std::shared_ptr<Matrix> d, std::shared_ptr<const Atom> a, double x, double y, double z, double c, DFTGrid_base* ptr, const int i)
+    FuzzyTask(shared_ptr<Matrix> d, shared_ptr<const Atom> a, double x, double y, double z, double c, DFTGrid_base* ptr, const int i)
      : data(d), atom(a), xg(x), yg(y), zg(z), coeff(c), parent(ptr), n(i) { }
 
     void compute() {

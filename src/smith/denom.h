@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: denom.h
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_SMITH_DENOM_H
@@ -28,7 +27,6 @@
 
 #include <src/wfn/rdm.h>
 #include <src/util/math/zmatrix.h>
-#include <src/smith/smith_util.h>
 
 namespace bagel {
 namespace SMITH {
@@ -40,16 +38,8 @@ class Denom {
 
   protected:
     std::shared_ptr<const MatType> fock_;
-    const IndexRange active_;
-    const IndexRange ortho1_;
-    const IndexRange ortho2_;
-    const IndexRange ortho3_;
-    const IndexRange ortho2t_;
     const double thresh_;
-    const int nstates_;
-    const int nact_;
 
-    // work area
     std::shared_ptr<MatType> shalf_x_;
     std::shared_ptr<MatType> shalf_h_;
     std::shared_ptr<MatType> shalf_xx_;
@@ -57,7 +47,7 @@ class Denom {
     std::shared_ptr<MatType> shalf_xh_;
     std::shared_ptr<MatType> shalf_xhh_;
     std::shared_ptr<MatType> shalf_xxh_;
-    // work area
+
     std::shared_ptr<MatType> work_x_;
     std::shared_ptr<MatType> work_h_;
     std::shared_ptr<MatType> work_xx_;
@@ -65,15 +55,6 @@ class Denom {
     std::shared_ptr<MatType> work_xh_;
     std::shared_ptr<MatType> work_xhh_;
     std::shared_ptr<MatType> work_xxh_;
-
-    std::vector<std::shared_ptr<TATensor<DataType,2>>> tashalf_x_;
-    std::vector<std::shared_ptr<TATensor<DataType,2>>> tashalf_h_;
-    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xx_;
-    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_hh_;
-    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xh_;
-    std::vector<std::shared_ptr<TATensor<DataType,3>>> tashalf_xh2_;
-    std::vector<std::shared_ptr<TATensor<DataType,4>>> tashalf_xhh_;
-    std::vector<std::shared_ptr<TATensor<DataType,4>>> tashalf_xxh_;
 
     VectorB denom_x_;
     VectorB denom_h_;
@@ -100,31 +81,44 @@ class Denom {
                                          std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
   public:
-    Denom(std::shared_ptr<const MatType> fock, const int nstates, const std::array<IndexRange,5>&, const double th = 1.0e-8);
+    Denom(std::shared_ptr<const MatType> fock, const int nstates, const double thresh_overlap);
 
     // add RDMs (using fock-multiplied 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                               std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
+    // add RDMs (using original 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
+    // add RDMs (using Kramers-reduced 4RDM)
+    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
+                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const Kramers<8,RDM<4,DataType>>>);
     // diagonalize and set to shalf and denom
     void compute();
 
-    const VecView denom_x() const { return denom_x_; }
-    const VecView denom_h() const { return denom_h_; }
-    const VecView denom_xx() const { return denom_xx_; }
-    const VecView denom_hh() const { return denom_hh_; }
-    const VecView denom_xh() const { return denom_xh_; }
-    const VecView denom_xhh() const { return denom_xhh_; }
-    const VecView denom_xxh() const { return denom_xxh_; }
+    std::shared_ptr<const MatType> shalf_x() const { return shalf_x_; }
+    std::shared_ptr<const MatType> shalf_h() const { return shalf_h_; }
+    std::shared_ptr<const MatType> shalf_xx() const { return shalf_xx_; }
+    std::shared_ptr<const MatType> shalf_hh() const { return shalf_hh_; }
+    std::shared_ptr<const MatType> shalf_xh() const { return shalf_xh_; }
+    std::shared_ptr<const MatType> shalf_xhh() const { return shalf_xhh_; }
+    std::shared_ptr<const MatType> shalf_xxh() const { return shalf_xxh_; }
 
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_x(const int i) const { return tashalf_x_[i]; }
-    std::shared_ptr<const TATensor<DataType,2>> tashalf_h(const int i) const { return tashalf_h_[i]; }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xx(const int i) const { return tashalf_xx_[i]; }
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_hh(const int i) const { return tashalf_hh_[i]; }
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xhh(const int i) const { return tashalf_xhh_[i]; }
-    std::shared_ptr<const TATensor<DataType,4>> tashalf_xxh(const int i) const { return tashalf_xxh_[i]; }
-    template<bool I>
-    std::shared_ptr<const TATensor<DataType,3>> tashalf_xh(const int i) const { auto o = I ? tashalf_xh_[i] : tashalf_xh2_[i]; assert(o); return o; }
+    const double& denom_x(const size_t i) const { return denom_x_(i); }
+    const double& denom_h(const size_t i) const { return denom_h_(i); }
+    const double& denom_xx(const size_t i) const { return denom_xx_(i); }
+    const double& denom_hh(const size_t i) const { return denom_hh_(i); }
+    const double& denom_xh(const size_t i) const { return denom_xh_(i); }
+    const double& denom_xhh(const size_t i) const { return denom_xhh_(i); }
+    const double& denom_xxh(const size_t i) const { return denom_xxh_(i); }
+
 };
+
+template<>
+void Denom<double>::append(const int, const int, std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>,
+                                                 std::shared_ptr<const RDM<3>>, std::shared_ptr<const Kramers<8,RDM<4>>>);
+template<>
+void Denom<std::complex<double>>::append(const int, const int, std::shared_ptr<const ZRDM<1>>, std::shared_ptr<const ZRDM<2>>,
+                                                               std::shared_ptr<const ZRDM<3>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>);
 
 extern template class Denom<double>;
 extern template class Denom<std::complex<double>>;

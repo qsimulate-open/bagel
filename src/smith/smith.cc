@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: smith.cc
 // Copyright (C) 2013 Matthew MacLeod
 //
@@ -8,34 +8,34 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
 
 #include <src/smith/smith.h>
+
 #ifdef COMPILE_SMITH
 #include <src/smith/mrci/MRCI.h>
-#include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relmrci/RelMRCI.h>
+#include <src/smith/caspt2/CASPT2.h>
+#include <src/smith/caspt2/SPCASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
 using namespace bagel::SMITH;
 #endif
 using namespace std;
 using namespace bagel;
-
 
 Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
@@ -69,23 +69,32 @@ void Smith::compute() {
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     dm2_ = algop->rdm21();
+    dcheck_ = algop->dcheck();
 
     // compute <1|1>
     wf1norm_ = algop->correlated_norm();
-
     // convert ci derivative tensor to civec
-    cider_ = algop->ci_deriv(ref_->ciwfn()->det());
+    cider_ = algop->ci_deriv();
+    msrot_ = algop->msrot();
+    coeff_ = algop->coeff();
 
-    // todo check
-    coeff_ = make_shared<Coeff>(*algop->coeff());
+    // if spin-density is requested...
+    if (idata_->get<bool>("_hyperfine")) {
+      auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
+      sp->solve();
+      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
+      sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
+    }
   }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
 #endif
 }
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
+#ifdef COMPILE_SMITH
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
-#ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
 
@@ -94,10 +103,10 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   } else if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {
-#else
-  {
-#endif
     stringstream ss; ss << method << " method is not implemented in SMITH";
     throw logic_error(ss.str());
   }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
+#endif
 }

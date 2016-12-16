@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: hcore.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,23 +8,23 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
 #include <src/mat1e/hcore.h>
+#include <src/mat1e/dkhcore.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
@@ -41,10 +41,15 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
-
-  init(mol);
-  fill_upper();
+Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
+  assert(nodkh || !hso_);
+  if (nodkh) {
+    init(mol);
+    fill_upper();
+  } else {
+    auto dkhcore = make_shared<DKHcore>(mol);
+    copy_n(dkhcore->data(), dkhcore->size(), data());
+  }
 }
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
@@ -61,14 +66,20 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
 
-//  if (!dofmm_) {
-    {
+  {
+    if (mol->natom() < nucleus_blocksize__) {
       NAIBatch nai(input, mol);
       nai.compute();
-
       add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    } else {
+      const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
+      for (auto& current_mol : atom_subsets) {
+        NAIBatch nai(input, current_mol);
+        nai.compute();
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+      }
     }
-//  }
+  }
 
   if (mol->atoms().front()->use_ecp_basis()) {
     {

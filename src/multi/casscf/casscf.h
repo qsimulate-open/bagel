@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: casscf.h
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 // This is a base class for various CASSCF solvers.
@@ -32,6 +31,7 @@
 #define __BAGEL_CASSCF_CASSCF_H
 
 #include <src/wfn/reference.h>
+#include <src/util/muffle.h>
 #include <src/ci/fci/knowles.h>
 #include <src/multi/casscf/rotfile.h>
 
@@ -45,13 +45,13 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int nclosed_;
     int nact_;
     int nvirt_;
-    // number of MO orbitals. TODO rename to norb. "nbasis" is confusing.
-    int nbasis_;
+    int nmo_;
     int nstate_;
     int max_iter_;
     int max_micro_iter_;
     double thresh_;
     double thresh_micro_;
+    bool conv_ignore_;
     bool natocc_;
 
     VectorB occup_;
@@ -59,7 +59,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     std::shared_ptr<FCI> fci_;
     void print_header() const;
-    void print_iteration(int iter, int miter, int tcount, const std::vector<double> energy, const double error, const double time) const;
+    void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
     void common_init();
 
     void mute_stdcout();
@@ -69,10 +69,17 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     std::shared_ptr<const Coeff> update_coeff(const std::shared_ptr<const Matrix> cold, std::shared_ptr<const Matrix> natorb) const;
     std::shared_ptr<const Coeff> semi_canonical_orb() const;
+    std::shared_ptr<const Matrix> spin_density() const;
 
     // energy
     std::vector<double> energy_;
     double rms_grad_;
+
+    // properties
+    bool do_hyperfine_;
+
+    // mask some of the output
+    mutable std::shared_ptr<Muffle> muffle_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);
@@ -91,7 +98,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
     int nvirt() const { return nvirt_; }
-    int nbasis() const { return nbasis_; }
+    int nmo() const { return nmo_; }
     int nstate() const { return nstate_; }
     int max_iter() const { return max_iter_; }
     int max_micro_iter() const { return max_micro_iter_; }
@@ -105,6 +112,8 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double energy_av() const { return blas::average(energy_); }
     const std::vector<double>& energy() const { return energy_; }
     double rms_grad() const { return rms_grad_; }
+
+    std::shared_ptr<Matrix> compute_active_fock(const MatView acoeff, std::shared_ptr<const RDM<1>> rdm1) const;
 
     // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
     void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,

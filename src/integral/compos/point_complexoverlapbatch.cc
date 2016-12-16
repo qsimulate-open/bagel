@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: point_complexoverlapbatch.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -75,7 +74,7 @@ void Point_ComplexOverlapBatch::compute() {
 }
 
 
-void Point_ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) {
+void Point_ComplexOverlapBatch::perform_VRR(complex<double>* intermediate) {
 
   const int ang0s = ang0_+1;
   const int worksize = (ang0_+1) * (ang1_+1);
@@ -101,10 +100,10 @@ void Point_ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) 
     const complex<double> czpl = location_[2] - P_[ii*3+2];
 
     // obtain S(0, 0)
-    const double tmp = pisqrtinv__ * std::sqrt(cxp);
-    workx[0] = coeffsx_[ii] * tmp * std::exp(- cxp * (cxpl * cxpl));
-    worky[0] = coeffsy_[ii] * tmp * std::exp(- cxp * (cypl * cypl));
-    workz[0] = coeffsz_[ii] * tmp * std::exp(- cxp * (czpl * czpl));
+    const double tmp = pisqrtinv__ * sqrt(cxp);
+    workx[0] = coeffsx_[ii] * tmp * exp(- cxp * (cxpl * cxpl));
+    worky[0] = coeffsy_[ii] * tmp * exp(- cxp * (cypl * cypl));
+    workz[0] = coeffsz_[ii] * tmp * exp(- cxp * (czpl * czpl));
 
     for (int i = 1; i <= ang0_; ++i) {
       // obtain S(i, 0)
@@ -152,16 +151,14 @@ void Point_ComplexOverlapBatch::perform_VRR(std::complex<double>* intermediate) 
 }
 
 
-std::complex<double> Point_ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+complex<double> Point_ComplexOverlapBatch::get_P(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                                        const int dim, const bool swap) {
   const double Areal = coord1*exp1;
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[0]->vector_potential(dim);
   const double Bimag = basisinfo_[1]->vector_potential(dim);
-  double imag;
-  if (swap) imag = 0.5*(Bimag - Aimag);
-  else imag = 0.5*(Aimag - Bimag);
-  const std::complex<double> num (Areal + Breal, imag);
+  const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag );
+  const complex<double> num (Areal + Breal, imag);
   return num * one12;
 }
 

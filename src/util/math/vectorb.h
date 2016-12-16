@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: vectorb.h
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,28 +8,27 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
 #ifndef __SRC_MATH_BVECTOR_H
 #define __SRC_MATH_BVECTOR_H
 
+#include <src/util/math/algo.h>
 #include <src/util/math/btas_interface.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <complex>
 
 namespace bagel {
 
@@ -57,7 +56,7 @@ class VecView_ : public btas::TensorView1<DataType> {
     VecView_() { }
     virtual ~VecView_() { }
 
-    size_t size() const { return this->storage().size(); }
+    size_t size() const { return this->extent(0); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
 
     DataType* data() { /*assert(contiguous());*/ return &*begin(); }
@@ -145,7 +144,7 @@ class Vector_ : public btas::Tensor1<DataType> {
       return VecView_<DataType>(btas::make_rwview(this->range().slice(low, up), this->storage()));
     }
 
-    size_t size() const { return this->storage().size(); }
+    size_t size() const { return this->extent(0); }
     double rms() const { return std::sqrt(detail::real(btas::dotc(*this, *this))/size()); }
 
     Vector_<DataType>& operator=(const Vector_<DataType>& o) { btas::Tensor1<DataType>::operator=(o);            return *this; }

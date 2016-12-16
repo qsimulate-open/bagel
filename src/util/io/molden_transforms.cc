@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: molden_transforms.cc
 // Copyright (C) 2012 Shane Parker
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 //
@@ -43,11 +42,7 @@ const static Comb comb;
 const static Factorial factorial;
 
 void MoldenIn::compute_transforms() {
-  const double one = 1.0;
-  const double two = 2.0;
-  const double quarter = 0.25;
-
-  vector<pair<int, double>> s0(1, make_pair(0, one));
+  vector<pair<int, double>> s0(1, make_pair(0, 1.0));
   vector<vector<pair<int, double>>> s1(1, s0);
   lmtuv_.push_back(s1);
 
@@ -74,41 +69,35 @@ void MoldenIn::compute_transforms() {
       const int absm = m > 0 ? m : -m;
       vector<pair<int, double>> tuv;
 
-      const double Nlms = one / pow(two, absm) / factorial(l) * sqrt((m == 0 ? one : two) * factorial(l + absm) * factorial(l - absm));
-      const int tmax = floor((l - absm) / 2.0);
+      const double Nlms = 1.0 / pow(2.0, absm) / factorial(l) * sqrt((m == 0 ? 1.0 : 2.0) * factorial(l + absm) * factorial(l - absm));
+      const int tmax = (l - absm) / 2;
       for (int t = 0; t <= tmax; ++t) {
         for (int u = 0; u <= t; ++u) {
-          const int vmax = 2 * floor((absm - vm2) / 2.0) + vm2;
+          const int vmax = 2 * ((absm - vm2) / 2) + vm2;
           for (int v2 = vm2; v2 <= vmax; v2 += 2) {
             assert((v2 - vm2) % 2 == 0);
-            const double Clmtuv = pow(-one, t + ((v2 - vm2) / 2)) * pow(quarter, t)
+            const double Clmtuv = pow(-1.0, t + ((v2 - vm2) / 2)) * pow(0.25, t)
                                 * comb(l, t) * comb(l - t, absm + t)
                                 * comb(t, u) * comb(absm, v2) * Nlms;
             const int xexp = 2 * t + absm - 2 * u - v2;
             const int yexp = 2 * u + v2;
             const int zexp = l - 2 * t - absm;
-            double denom = one;
-            map<int, int>::const_iterator current = mapping.find(xexp + yexp * LARGE + zexp * LARGE * LARGE);
+            auto current = mapping.find(xexp + yexp * LARGE + zexp * LARGE * LARGE);
             assert(current != mapping.end());
-            const double coeff = Clmtuv / denom;
-            tuv.push_back({current->second, coeff});
+            tuv.push_back({current->second, Clmtuv});
           }
         }
       }
       /* I have no idea if this will work for the general case, but it works up to d */
       double scale = 0.0;
-      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
-        scale += ituv->second*ituv->second;
-      }
+      for (auto& ituv : tuv)
+        scale += ituv.second*ituv.second;
 
-      for(auto ituv = tuv.begin(); ituv != tuv.end(); ++ituv) {
-        ituv->second /= scale;
-      }
+      for (auto& ituv : tuv)
+        ituv.second /= scale;
 
       mtuv.push_back(tuv);
     }
-
-
     lmtuv_.push_back(mtuv);
   }
 }
@@ -117,13 +106,10 @@ vector<double> MoldenIn::transform_cart(vector<double> carts, int ang_l) {
    vector<vector<pair<int,double>>> mtuv = lmtuv_.at(ang_l);
 
    vector<double> out;
-   for(auto& im : mtuv) {
+   for (auto& im : mtuv) {
      double value = 0.0;
-
-     for(auto& ituv : im) {
+     for (auto& ituv : im)
         value += (ituv.second) * carts.at(ituv.first);
-     }
-
      out.push_back(value);
    }
 

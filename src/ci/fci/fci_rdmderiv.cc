@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci_rdmderiv.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,25 +8,25 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
 #include <src/ci/fci/fci.h>
-#include <src/util/math/algo.h>
 #include <src/wfn/rdm.h>
+#include <src/util/math/algo.h>
+#include <src/util/parallel/rmawindow.h>
 
 using namespace std;
 using namespace bagel;
@@ -85,12 +85,16 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
-tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
+#ifndef HAVE_MPI_H
+  throw logic_error("FCI::rdm34deriv should not be called without MPI");
+#endif
   assert(fock->ndim() == norb_ && fock->mdim() == norb_);
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
   shared_ptr<Civec> cbra = cc_->data(target);
 
+  const size_t ndet = detex->size();
   const size_t norb2 = norb_*norb_;
   const size_t norb3 = norb2*norb_;
   const size_t norb4 = norb2*norb2;
@@ -103,37 +107,59 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, share
   auto ebra = rdm2deriv(target);
 
   // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
-  auto fbra = make_shared<Dvec>(cbra->det(), norb6);
+  // K is reduced to (offset, offset+size)
+  auto fbra = make_shared<Matrix>(size, norb6);
+  // [L|k+i+jl|0]
+  auto fock_fbra = make_shared<Dvec>(cbra->det(), norb4);
   {
+    RMAWindow_bare<double> fbra_win(size*norb6);
+    RMAWindow_bare<double> fock_fbra_win(ndet*norb4);
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
+    auto tmp2 = make_shared<Civec>(cbra->det());
     int ijkl = 0;
     for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
+      if (ijkl % mpi__->size() != mpi__->rank()) continue;
       const int j = ijkl/norb3;
       const int i = ijkl/norb2-j*norb_;
       const int l = ijkl/norb_-i*norb_-j*norb2;
       const int k = ijkl-l*norb_-i*norb2-j*norb3;
       tmp->zero();
+      tmp2->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
-      for (int m = 0; m != norb_; ++m) {
-        for (int n = 0; n != norb_; ++n)
-          *fbra->data(ijkl+norb4*m+norb5*n) += *tmp->data(m+norb_*n);
-        *fbra->data(ijkl+norb4*m+norb5*k) -= *ebra->data(m+norb_*(l+norb_*(i+norb_*(j))));
-        *fbra->data(ijkl+norb4*m+norb5*i) -= *ebra->data(k+norb_*(l+norb_*(m+norb_*(j))));
-      }
+      vector<shared_ptr<RMATask<double>>> tasks;
+      for (int m = 0; m != norb_; ++m)
+        for (int n = 0; n != norb_; ++n) {
+          if (k == n)
+            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(m+norb_*(l+norb_*(i+norb_*j))));
+          if (i == n)
+            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(k+norb_*(l+norb_*(m+norb_*j))));
+          // put this to the window
+          for (int inode = 0; inode != mpi__->size(); ++inode)
+            tasks.push_back(fbra_win.rma_rput(tmp->data(m+norb_*n)->data() + offset, inode, size*(ijkl+norb4*m+norb5*n), size));
+          // axpy for Fock-weighted 3RDM derivative
+          tmp2->ax_plus_y(fock->element(m,n), tmp->data(m+norb_*n));
+        }
+      for (int inode = 0; inode != mpi__->size(); ++inode)
+        tasks.push_back(fock_fbra_win.rma_rput(tmp2->data(), inode, ndet*ijkl, ndet));
+      // wait till all the work is done
+      for (auto& itask : tasks)
+        itask->wait();
     }
+    fbra_win.fence();
+    copy_n(fbra_win.local_data(), size*norb6, fbra->data());
+    fock_fbra_win.fence();
+    copy_n(fock_fbra_win.local_data(), ndet*norb4, fock_fbra->data());
   }
 
   // now make target:  f_mn <L|E_op,mn,kl,ij|0> = [L|E_kl,ij,op|0]  =  <L|o+p|K>[K|E_kl,ij|0] - f_np<L|E_kl,ij,on|0> - delta_pk[L|E_ij,ol|0] - delta_pi[L|E_kl,oj|0]
-  // calculate [K|k+i+jl|0]
-  auto fock_fbra = ebra->clone();
-  dgemv_("N", fbra->size()/norb2, norb2, 1.0, fbra->data(), fbra->size()/norb2, fock->data(), 1, 0.0, fock_fbra->data(), 1);
-
   auto gbra = fbra->clone();
   {
+    RMAWindow_bare<double> gbra_win(size*norb6);
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
     int ijkl = 0;
     for (auto iter = fock_fbra->dvec().begin(); iter != fock_fbra->dvec().end(); ++iter, ++ijkl) {
+      if (ijkl % mpi__->size() != mpi__->rank()) continue;
       const int j = ijkl/norb3;
       const int i = ijkl/norb2-j*norb_;
       const int l = ijkl/norb_-i*norb_-j*norb2;
@@ -141,13 +167,22 @@ tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> FCI::rdm34deriv(const int target, share
       tmp->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
-      for (int o = 0; o != norb_; ++o) {
-        for (int p = 0; p != norb_; ++p)
-          *gbra->data(ijkl+norb4*o+norb5*p) += *tmp->data(o+norb_*p);
-        *gbra->data(ijkl+norb4*o+norb5*k) -= *fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)));
-        *gbra->data(ijkl+norb4*o+norb5*i) -= *fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)));
-      }
+      vector<shared_ptr<RMATask<double>>> tasks;
+      for (int o = 0; o != norb_; ++o)
+        for (int p = 0; p != norb_; ++p) {
+          if (k == p)
+            blas::ax_plus_y_n(-1.0, fock_fbra->data(i+norb_*(j+norb_*(o+norb_*l)))->data() + offset, size, tmp->data(o+norb_*p)->data() + offset);
+          if (i == p)
+            blas::ax_plus_y_n(-1.0, fock_fbra->data(k+norb_*(l+norb_*(o+norb_*j)))->data() + offset, size, tmp->data(o+norb_*p)->data() + offset);
+          for (int inode = 0; inode != mpi__->size(); ++inode)
+            tasks.push_back(gbra_win.rma_rput(tmp->data(o+norb_*p)->data() + offset, inode, size*(ijkl+norb4*o+norb5*p), size));
+        }
+      // wait till all the work is done
+      for (auto& itask : tasks)
+        itask->wait();
     }
+    gbra_win.fence();
+    blas::ax_plus_y_n(1.0, gbra_win.local_data(), size*norb6, gbra->data());
     dgemm_("N", "N", fbra->size()/norb_, norb_, norb_, -1.0, fbra->data(), fbra->size()/norb_, fock->data(), norb_, 1.0, gbra->data(), fbra->size()/norb_);
   }
 

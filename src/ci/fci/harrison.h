@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: harrison.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 // Desc :: The implementation closely follows Harrison and Zarrabian
@@ -74,7 +73,7 @@ class HarrisonZarrabian : public FCI {
     HarrisonZarrabian() { }
     // this constructor is ugly... to be fixed some day...
     HarrisonZarrabian(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1) : FCI(a, g, b, ncore, nocc, nstate) {
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, const bool store = false) : FCI(a, g, b, ncore, nocc, nstate, store) {
       space_ = std::make_shared<HZSpace>(det_);
       update(ref_->coeff());
     }

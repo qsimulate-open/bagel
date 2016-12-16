@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dvec.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -88,40 +87,15 @@ class Dvector : public btas::Tensor3<DataType> {
 
   public:
     Dvector() { }
-
-    Dvector(std::shared_ptr<const Determinants> det, const size_t ij) : btas::Tensor3<DataType>(det->lenb(), det->lena(), ij), det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-      std::fill(begin(), end(), DataType(0.0));
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-    }
-
-    Dvector(const Dvector<DataType>& o) : btas::Tensor3<DataType>(o), det_(o.det_), lena_(o.lena_), lenb_(o.lenb_), ij_(o.ij_) {
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-    }
-
-    Dvector(const Dvector_base<Civector<DataType>>& o)
-      : btas::Tensor3<DataType>(o.det()->lenb(), o.det()->lena(), o.ij()), det_(o.det()), lena_(o.det()->lena()), lenb_(o.det()->lenb()), ij_(o.ij()) {
-      DataType* tmp = data();
-      for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
-        dvec_.push_back(std::make_shared<Civector<DataType>>(det_, tmp));
-      auto iter = dvec_.begin();
-      for (auto& inp : o.dvec())
-        **iter++ = *inp;
-    }
-
-    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij) : btas::Tensor3<DataType>(e->lenb(), e->lena(), ij), det_(e->det()), lena_(e->lena()), lenb_(e->lenb()), ij_(ij) {
-      DataType* tmp = data();
-      for (int i = 0; i != ij; ++i, tmp += lenb_*lena_) {
-        auto c = std::make_shared<Civector<DataType>>(det_, tmp);
-        std::copy_n(e->data(), lenb_*lena_, c->data());
-        dvec_.push_back(c);
-      }
-    }
+    Dvector(std::shared_ptr<const Determinants> det, const size_t ij);
+    Dvector(const Dvector<DataType>& o);
+    Dvector(const Dvector_base<Civector<DataType>>& o);
+    Dvector(std::shared_ptr<const Civector<DataType>> e, const size_t ij);
 
     std::shared_ptr<const Determinants> det() const { return det_; }
+
+    std::shared_ptr<Dvector> extract_state(const std::vector<int> input) const;
+    std::shared_ptr<Dvector> extract_state(const int istate) const;
 
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }
@@ -131,99 +105,45 @@ class Dvector : public btas::Tensor3<DataType> {
     const std::vector<std::shared_ptr<Civector<DataType>>>& dvec() const { return dvec_; }
 
     // returns a vector of Civec's which correspond to an unconverged state
-    std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv) {
-      std::vector<std::shared_ptr<Civector<DataType>>> out;
-      auto c = conv.begin();
-      for (auto& i : dvec_) {
-        if (*c++ == 0) out.push_back(i);
-        else out.push_back(nullptr);
-      }
-      return out;
-    }
-    std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const {
-      std::vector<std::shared_ptr<const Civector<DataType>>> out;
-      auto c = conv.begin();
-      for (auto& i : dvec_) {
-        if (*c++ == 0) out.push_back(i);
-        else out.push_back(nullptr);
-      }
-      return out;
-    }
+    std::vector<std::shared_ptr<Civector<DataType>>> dvec(const std::vector<int>& conv);
+    std::vector<std::shared_ptr<const Civector<DataType>>> dvec(const std::vector<int>& conv) const;
 
     size_t lena() const { return lena_; }
     size_t lenb() const { return lenb_; }
     size_t ij() const { return ij_; }
     size_t size() const { return lena_*lenb_*ij_; }
 
-    void set_det(std::shared_ptr<const Determinants> o) const {
-      det_ = o;
-      std::for_each(dvec_.begin(), dvec_.end(), [&o](CiPtr p){ p->set_det(o); });
-    }
+    void set_det(std::shared_ptr<const Determinants> o) const;
 
     // some functions for convenience
-    DataType dot_product(const Dvector<DataType>& other) const {
-      return std::inner_product(dvec_.begin(), dvec_.end(), other.dvec_.begin(), DataType(0.0), std::plus<DataType>(), [](CiPtr p, CiPtr q){ return p->dot_product(q); });
-    }
-    void ax_plus_y(const DataType a, std::shared_ptr<const Dvector<DataType>> other) {
-      ax_plus_y(a, *other);
-    }
-    void ax_plus_y(const DataType a, const Dvector<DataType>& other) {
-      std::transform(other.dvec_.begin(), other.dvec_.end(), dvec_.begin(), dvec_.begin(), [&a](CiPtr p, CiPtr q){ q->ax_plus_y(a, p); return q; });
-    }
+    DataType dot_product(const Dvector<DataType>& other) const;
+    void ax_plus_y(const DataType a, std::shared_ptr<const Dvector<DataType>> other) { ax_plus_y(a, *other); }
+    void ax_plus_y(const DataType a, const Dvector<DataType>& other);
+
     Dvector<DataType>& operator+=(const Dvector<DataType>& o) { ax_plus_y(1.0, o); return *this; }
     Dvector<DataType>& operator-=(const Dvector<DataType>& o) { ax_plus_y(-1.0, o); return *this; }
 
     Dvector<DataType> operator+(const Dvector<DataType>& o) const { Dvector<DataType> out(*this); return out += o; }
     Dvector<DataType> operator-(const Dvector<DataType>& o) const { Dvector<DataType> out(*this); return out -= o; }
 
-    Dvector<DataType>& operator/=(const Dvector<DataType>& o) {
-      assert(dvec().size() == o.dvec().size());
-      std::transform(o.dvec_.begin(), o.dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ *q / *p; return q; });
-      return *this;
-    }
-    Dvector<DataType> operator/(const Dvector<DataType>& o) const {
-      Dvector<DataType> out(*this);
-      out /= o;
-      return out;
-    }
+    Dvector<DataType>& operator/=(const Dvector<DataType>& o);
+    Dvector<DataType> operator/(const Dvector<DataType>& o) const;
 
     double norm() const { return std::sqrt(detail::real(dot_product(*this))); }
+    double rms() const { return norm() / std::sqrt(size()); }
 
-    void scale(const DataType& a) {
-      std::for_each(dvec_.begin(), dvec_.end(), [&a](CiPtr p){ p->scale(a); });
-    }
+    void scale(const DataType& a);
 
     Dvector& operator*=(const double& a) { scale(a); return *this; }
 
     std::shared_ptr<Dvector<DataType>> clone() const { return std::make_shared<Dvector<DataType>>(det_, ij_); }
     std::shared_ptr<Dvector<DataType>> copy() const { return std::make_shared<Dvector<DataType>>(*this); }
 
-    void orthog(std::shared_ptr<const Dvector<DataType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("Dvector<DataType>::orthog called inconsistently");
-      std::transform(o->dvec_.begin(), o->dvec_.end(), dvec_.begin(), dvec_.begin(), [](CiPtr p, CiPtr q){ q->orthog(p); return q; });
-    }
-
-    void project_out(std::shared_ptr<const Dvector<DataType>> o) {
-      if (o->ij() != ij()) throw std::logic_error("Dvec::project_out called inconsistently");
-      auto j = o->dvec().begin();
-      // simply project out each CI vector
-      for (auto i = dvec().begin(); i != dvec().end(); ++i, ++j) (*i)->project_out(*j);
-    }
-
-    void synchronize() {
-      for (auto& i : dvec_)
-        i->synchronize();
-    }
-
-    void print(const double thresh = 0.05) const {
-      int j = 0;
-      for (auto& iter : dvec_) {
-        std::cout << std::endl << "     * ci vector, state " << std::setw(3) << j++;
-        if (typeid(DataType) == typeid(double)) std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
-        std::cout << std::endl;
-        iter->print(thresh);
-      }
-    }
+    void orthog(std::shared_ptr<const Dvector<DataType>> o);
+    void project_out(std::shared_ptr<const Dvector<DataType>> o);
+    void project_out_all(std::shared_ptr<const Dvector<DataType>> o);
+    void synchronize();
+    void print(const double thresh = 0.05) const;
 };
 
 using Dvec = Dvector<double>;

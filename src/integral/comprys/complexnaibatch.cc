@@ -1,6 +1,5 @@
-#if 1
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: complexnaibatch.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -9,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/integral/comprys/complexnaibatch.h>
@@ -64,23 +62,20 @@ void ComplexNAIBatch::root_weight(const int ps) {
   }
 }
 
-std::complex<double> ComplexNAIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
+complex<double> ComplexNAIBatch::get_PQ(const double coord1, const double coord2, const double exp1, const double exp2, const double one12,
                                              const int center1, const int dim, const bool swap) {
   const double Areal = coord1*exp1;
   const double Breal = coord2*exp2;
   const double Aimag = basisinfo_[center1]->vector_potential(dim);
   const double Bimag = basisinfo_[center1+1]->vector_potential(dim);
-  double imag;
-  if (swap) imag = 0.5*(Bimag - Aimag);
-  else imag = 0.5*(Aimag - Bimag);
-  const std::complex<double> num (Areal + Breal, imag);
+  const double imag = 0.5 * (swap ? Bimag - Aimag : Aimag - Bimag );
+  const complex<double> num (Areal + Breal, imag);
   return num * one12;
 }
 
 void ComplexNAIBatch::compute() {
-  const double zero = 0.0;
 
-  complex<double>* const stack_save = stack_->template get<complex<double>>(size_alloc_);
+  complex<double>* const stack_save = stack_->template get<complex<double>>(size_block_);
   bkup_ = stack_save;
 
   const int worksize = rank_ * amax1_;
@@ -98,8 +93,7 @@ void ComplexNAIBatch::compute() {
   complex<double> r1z[20];
   complex<double> r2[20];
 
-  const int alc = size_alloc_;
-  std::fill_n(data_, alc, zero);
+  fill_n(data_, size_block_, 0.0);
 
   const CSortList sort(spherical1_);
 
@@ -109,7 +103,7 @@ void ComplexNAIBatch::compute() {
     const int iprim = i / natom_;
     const int iatom = i % natom_;
     const int offset_iprim = iprim * asize_;
-    complex<double>* current_data = &data_[offset_iprim];
+    complex<double>* current_data = data_ + offset_iprim;
 
     const complex<double>* croots = roots_ + i * rank_;
     const complex<double>* cweights = &weights_[i * rank_];
@@ -167,7 +161,7 @@ void ComplexNAIBatch::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_, bkup_, AB_, data_);
     } else {
-      std::copy(bkup_, bkup_+size_alloc_, data_);
+      copy_n(bkup_, size_block_, data_);
     }
   }
 
@@ -187,13 +181,11 @@ void ComplexNAIBatch::compute() {
   } else {
     const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
     sort.sortfunc_call(index, bkup_, data_, cont1size_, cont0size_, 1, swap01_);
-    std::copy(bkup_, bkup_+size_final_, data_);
+    copy_n(bkup_, size_final_, data_);
   }
 
   stack_->release(worksize, workz);
   stack_->release(worksize, worky);
   stack_->release(worksize, workx);
-  stack_->release(size_alloc_, stack_save);
+  stack_->release(size_block_, stack_save);
 }
-
-#endif

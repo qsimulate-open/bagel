@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: molecule.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_MOLECULE_MOLECULE_H
@@ -130,7 +129,6 @@ class Molecule {
     const std::vector<int>& aux_offset(const unsigned int i) const { return aux_offsets_.at(i); }
 
     int num_count_ncore_only() const; // also set nfrc_
-    int num_count_full_valence_nocc() const;
 
     void print_atoms() const;
 
@@ -165,6 +163,12 @@ class Molecule {
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
     std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+
+    // Split up the atoms into several Molecule objects
+    // To limit the memory requirement of integral evaluation
+    const std::vector<std::shared_ptr<const Molecule>> split_atoms(const int max_atoms) const;
+
+    std::shared_ptr<Molecule> uncontract() const;
 
 };
 

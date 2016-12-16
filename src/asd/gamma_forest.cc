@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gamma_forest.cc
 // Copyright (C) 2013 Shane Parker
 //
@@ -8,90 +8,89 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/asd/gamma_forest.h>
+#include <src/ci/ras/apply_block.h>
+#include <src/util/taskqueue.h>
+#include <src/asd/coupling.h>
+#include <src/asd/gamma_task.h>
 
 using namespace std;
 using namespace bagel;
 
-
-//TODO template to other VecType
-template <>
-void GammaTask<CASDvec>::compute() {
+template<typename VecType, int N>
+int GammaForest<VecType,N>::allocate_and_count() {
   constexpr int nops = 4;
-  const int norb = tree_->norb();
+  int ntasks = 0;
+  // Allocate memory while counting tasks
+  for (auto& iforest : forests_) {
+    for (auto& itreemap : iforest) {
+      shared_ptr<GammaTree<VecType>> itree = itreemap.second;
+      const int nA = itree->ket()->ij();
+      const int norb = itree->norb();
+      for (auto& basebra : itree->base()->bras())
+        itree->base()->gammas().emplace(basebra.first, make_shared<Matrix>(nA*basebra.second->ij(), 1));
 
-  auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
-  auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
+      // Allocation sweep
+      for (int i = 0; i < nops; ++i) {
+        shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
+        if (!first->active()) continue;
+        ++ntasks;
+        for (auto& ibra : first->bras()) {
+          const int nAp = ibra.second->ij();
+          const int nstates = nA * nAp;
+          first->gammas().emplace(ibra.first, make_shared<Matrix>(nstates, norb));
+        }
 
-  shared_ptr<GammaBranch<CASDvec>> first = tree_->base()->branch(operation_);
-  assert(first->active()); // This should have been checked before sending it to the TaskQueue
+        for (int j = 0; j < nops; ++j) {
+          shared_ptr<GammaBranch<VecType>> second = first->branch(j);
+          if (!second->active()) continue;
+          for (auto& jbra : second->bras()) {
+            const int nAp = jbra.second->ij();
+            const int nstates = nA * nAp;
+            second->gammas().emplace(jbra.first, make_shared<Matrix>(nstates, norb * norb));
+          }
 
-  shared_ptr<CASDvec> avec = tree_->ket()->apply_and_allocate(action(static_cast<int>(operation_)), spin(static_cast<int>(operation_))); //workspace
-  avec->apply_and_fill(tree_->ket(), a_, action(static_cast<int>(operation_)), spin(static_cast<int>(operation_))); //fill
-
-  for (auto& ibra : first->bras())
-    dot_product(ibra.second, avec, first->gammas().find(ibra.first)->second->element_ptr(0,a_));
-
-  for (int j = 0; j < nops; ++j) {
-    auto second = first->branch(j);
-    if (!second->active()) continue;
-
-    shared_ptr<CASDvec> bvec = avec->apply_and_allocate(action(j), spin(j));
-
-    for (int b = 0; b < norb; ++b) {
-      if (b==a_ && j==static_cast<int>(operation_)) continue;
-      bvec->apply_and_fill(avec, b, action(j), spin(j));
-      for (auto& jbra : second->bras())
-        dot_product(jbra.second, bvec, second->gammas().find(jbra.first)->second->element_ptr(0, a_*norb + b));
-
-      for (int k = 0; k < nops; ++k) {
-        shared_ptr<GammaBranch<CASDvec>> third = second->branch(k);
-        if (!third->active()) continue;
-
-        shared_ptr<CASDvec> cvec = bvec->apply_and_allocate(action(k), spin(k));
-
-        for (int c = 0; c < norb; ++c) {
-          if (b==c && k==j) continue;
-          cvec->apply_and_fill(bvec, c, action(k), spin(k));
-          for (auto& kbra : third->bras())
-            dot_product(kbra.second, cvec, third->gammas().find(kbra.first)->second->element_ptr(0, a_*norb*norb + b*norb + c));
+          for (int k = 0; k < nops; ++k) {
+            shared_ptr<GammaBranch<VecType>> third = second->branch(k);
+            if (!third->active()) continue;
+            for (auto& kbra : third->bras()) {
+              const int nAp = kbra.second->ij();
+              const int nstates = nA * nAp;
+              third->gammas().emplace(kbra.first, make_shared<Matrix>(nstates, norb * norb * norb));
+            }
+          }
         }
       }
     }
   }
-
+  return ntasks;
 }
 
 
-// TODO this needs to be improved
-template <>
-void GammaForest<DistDvec, 2>::compute() {
-  using DistBranch = GammaBranch<DistDvec>;
-  using DistTree = GammaTree<DistDvec>;
-
+template<typename VecType, int N>
+void GammaForest<VecType,N>::compute() {
   constexpr int nops = 4;
+  const int ntasks = allocate_and_count();
+  TaskQueue<GammaTask<VecType>> tasks(ntasks);
 
-  allocate_and_count();
-
-  // Compute tasks
+  // Add tasks
   for (auto& iforest : forests_) {
     for (auto& itreemap : iforest) {
-      shared_ptr<DistTree> itree = itreemap.second;
+      shared_ptr<GammaTree<VecType>> itree = itreemap.second;
       const int nket = itree->ket()->ij();
       for (auto& brapair : itree->base()->bras()) {
         double* target = itree->base()->gammas().at(brapair.first)->data();
@@ -101,166 +100,119 @@ void GammaForest<DistDvec, 2>::compute() {
             *target = brapair.second->data(b)->dot_product(*itree->ket()->data(k));
       }
 
-      const int norb = itree->ket()->det()->norb();
+      const int norb = itree->norb();
       for (int i = 0; i < nops; ++i) {
-        shared_ptr<DistBranch> first = itree->base()->branch(i);
+        shared_ptr<GammaBranch<VecType>> first = itree->base()->branch(i);
         if (!first->active()) continue;
-        for (int a = 0; a < norb; ++a) {
-          GammaTask<DistDvec> task(itree, GammaSQ(i), a);
-          task.compute();
-        }
+        for (int a = 0; a < norb; ++a) tasks.emplace_back(itree, GammaSQ(i), a);
       }
+    }
+  }
+  tasks.compute();
+}
+
+
+template <class VecType, int N>
+void GammaForest<VecType,N>::couple_blocks(const DimerSubspace<VecType>& AB, const DimerSubspace<VecType>& ApBp) {
+  if (N != 2)
+    throw logic_error("GammaForest<VecType,N>::couple_blocks assumes N == 2");
+
+  Coupling term_type = coupling_type(AB, ApBp);
+
+  auto* space1 = &AB;   // bra
+  auto* space2 = &ApBp; // ket
+
+  bool flip = (static_cast<int>(term_type) < 0);
+
+  if (flip) {
+    term_type = Coupling(-1*static_cast<int>(term_type));
+    swap(space1,space2);
+  }
+
+  // Throughout, I'm going to consider space1 to be the bra state, space2 to be the ket state
+  if (term_type != Coupling::none) {
+    const array<int,2> bra_tags {{space1->template tag<0>(), space1->template tag<1>()}};
+    const array<int,2> ket_tags {{space2->template tag<0>(), space2->template tag<1>()}};
+
+    shared_ptr<const VecType> bra_A = space1->template ci<0>();
+    shared_ptr<const VecType> bra_B = space1->template ci<1>();
+
+    shared_ptr<const VecType> ket_A = space2->template ci<0>();
+    shared_ptr<const VecType> ket_B = space2->template ci<1>();
+
+    switch(term_type) {
+      case Coupling::none :
+        assert(false); // Control should never be able to reach here
+        break;
+      case Coupling::diagonal :
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+        break;
+      case Coupling::aET : // Alpha ET
+        // One-body aET
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateAlpha});
+
+        //Two-body aET, type 1
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+
+        //Two-body aET, type 2
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateAlpha});
+        break;
+      case Coupling::bET : // Beta ET
+        // One-body bET
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateBeta});
+        //Two-body bET, type 1
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+
+        //Two-body aET, type 2
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateAlpha, GammaSQ::AnnihilateAlpha});
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta, GammaSQ::AnnihilateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateBeta});
+        break;
+      case Coupling::abFlip :
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::AnnihilateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::CreateAlpha, GammaSQ::AnnihilateBeta});
+        break;
+      case Coupling::abET :
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateBeta});
+        break;
+      case Coupling::aaET :
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateAlpha, GammaSQ::CreateAlpha});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateAlpha, GammaSQ::AnnihilateAlpha});
+        break;
+      case Coupling::bbET :
+        this->insert<0>(bra_A, bra_tags[0], ket_A, ket_tags[0], {GammaSQ::CreateBeta, GammaSQ::CreateBeta});
+        this->insert<1>(bra_B, bra_tags[1], ket_B, ket_tags[1], {GammaSQ::AnnihilateBeta, GammaSQ::AnnihilateBeta});
+        break;
+      default :
+        assert(false); break; // Control should never reach here
     }
   }
 }
 
-namespace bagel {
 
-class GammaDistRASTask : public RASTask<GammaBranch<DistRASDvec>> {
-  protected:
-    shared_ptr<GammaTree<DistRASDvec>> tree_;
-    shared_ptr<RASBlock<double>> starting_block_;
-    const int istate_;
-    const int operation_;
-    const int a_;
-    mutex* mutex_;
-    map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>>* stringspaces_;
-    mutex* ssmutex_;
-
-  public:
-    GammaDistRASTask(shared_ptr<GammaTree<DistRASDvec>> t, shared_ptr<RASBlock<double>> b, const int ist, const GammaSQ op, const int a,
-      mutex* m, map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>>* ss, mutex* ssmutex) :
-        RASTask<GammaBranch<DistRASDvec>>(t->ket()->det()->max_holes(), t->ket()->det()->max_particles()),
-        tree_(t), starting_block_(b), istate_(ist), operation_(static_cast<int>(op)), a_(a), mutex_(m), stringspaces_(ss), ssmutex_(ssmutex) {}
-
-    void compute() {
-      constexpr int nops = 4;
-      const int norb = tree_->ket()->det()->norb();
-
-      auto action = [] (const int op) { return is_creation(GammaSQ(op)); };
-      auto spin = [] (const int op) { return is_alpha(GammaSQ(op)); };
-
-      const bool base_action = action(operation_);
-      const bool base_spin = spin(operation_);
-
-      shared_ptr<GammaBranch<DistRASDvec>> first = tree_->base()->branch(operation_);
-      assert(first->active()); // This should have been checked before sending it to the TaskQueue
-
-      shared_ptr<const RASBlock<double>> ablock = next_block(first, starting_block_, a_, base_action, base_spin);
-
-      if (ablock) {
-        for (auto& ibra : first->bras())
-          dot_product(ibra.second, ablock, first->gammas()[ibra.first]->element_ptr(istate_*ibra.second->ij(), a_));
-
-        for (int j = 0; j < nops; ++j) {
-          auto second = first->branch(j);
-          if (!second->active()) continue;
-
-          for (int b = 0; b < norb; ++b) {
-            if (b==a_ && j==operation_) continue;
-            shared_ptr<const RASBlock<double>> bblock = next_block(second, ablock, b, action(j), spin(j));
-            if (!bblock) continue;
-
-            for (auto& jbra : second->bras())
-              dot_product(jbra.second, bblock, second->gammas()[jbra.first]->element_ptr(istate_*jbra.second->ij(), a_*norb + b));
-
-            for (int k = 0; k < nops; ++k) {
-              shared_ptr<GammaBranch<DistRASDvec>> third = second->branch(k);
-              if (!third->active()) continue;
-
-              for (int c = 0; c < norb; ++c) {
-                if (b==c && k==j) continue;
-                shared_ptr<const RASBlock<double>> cblock = next_block(third, bblock, c, action(k), spin(k));
-                if (!cblock) continue;
-                for (auto& kbra : third->bras())
-                  dot_product(kbra.second, cblock, third->gammas()[kbra.first]->element_ptr(istate_*kbra.second->ij(), a_*norb*norb + b*norb + c));
-              }
-            }
-          }
-        }
-      }
-    }
-
-  private:
-    void dot_product(shared_ptr<const DistRASDvec> bras, shared_ptr<const RASBlock<double>> ketblock, double* target) const {
-      const int nbras = bras->ij();
-
-      if (bras->det()->allowed(ketblock->stringsb(), ketblock->stringsa())) {
-        vector<double> values(nbras, 0.0);
-        for (int jbra = 0; jbra < nbras; ++jbra) {
-          shared_ptr<const DistCIBlock<double>> brablock = bras->data(jbra)->block(ketblock->stringsb(), ketblock->stringsa());
-          if (brablock) {
-            const double val = blas::dot_product(brablock->local(), brablock->size(), ketblock->data() + brablock->astart()*brablock->lenb());
-            values[jbra] = val;
-          }
-        }
-
-        lock_guard<mutex> lk(*mutex_);
-        for (int j = 0; j < nbras; ++j)
-          target[j] += values[j];
-      }
-    }
-
-    shared_ptr<const RASString> stringspace(const int a, const int b, const int c, const int d, const int e, const int f) final {
-      lock_guard<mutex> lk(*ssmutex_);
-      auto iter = stringspaces_->find(make_tuple(a,b,c,d,e,f));
-      if (iter != stringspaces_->end()) {
-        return iter->second;
-      }
-      else {
-        auto out = make_shared<RASString>(a,b,c,d,e,f);
-        stringspaces_->emplace(make_tuple(a,b,c,d,e,f), out);
-        return out;
-      }
-    }
-};
-
-}
-
-template <>
-void GammaForest<DistRASDvec, 2>::compute() {
-  using DistBranch = GammaBranch<DistRASDvec>;
-  using DistTree = GammaTree<DistRASDvec>;
-
-  constexpr int nops = 4;
-
-  allocate_and_count();
-
-  map<tuple<int,int,int,int,int,int>, shared_ptr<const RASString>> ssmap;
-  mutex ssmut;
-
-  // Compute tasks
-  for (auto& iforest : forests_) {
-    for (auto& itreemap : iforest) {
-      shared_ptr<DistTree> itree = itreemap.second;
-
-      const int norb = itree->ket()->det()->norb();
-      const int nstates = itree->ket()->ij();
-
-      vector<shared_ptr<RASCivec>> localvecs;
-      for(auto& i : itree->ket()->dvec()) localvecs.push_back(make_shared<RASCivec>(*i));
-
-      TaskQueue<GammaDistRASTask> tasks;
-      vector<mutex> mutexes(nstates*nops*norb);
-
-      for(int istate = 0; istate < nstates; ++istate) {
-        for (int i = 0; i < nops; ++i) {
-          shared_ptr<DistBranch> first = itree->base()->branch(i);
-          if (first->active()) {
-            for (int a = 0; a < norb; ++a) {
-              for (auto& block : localvecs[istate]->blocks()) {
-                if (block) tasks.emplace_back(itree, block, istate, GammaSQ(i), a, &mutexes[istate + nstates*(a + i*norb)], &ssmap, &ssmut);
-              }
-            }
-          }
-        }
-      }
-
-      tasks.compute();
-    }
-  }
-  for_each_branch([] (shared_ptr<DistBranch> b) {
-    for (auto& g : b->gammas())
-      g.second->allreduce();
-  });
-}
+template class GammaForest<CASDvec,1>;
+template class GammaForest<CASDvec,2>;
+template class GammaForest<CASDvec,3>;
+template class GammaForest<CASDvec,4>;
+template class GammaForest<CASDvec,5>;
+template class GammaForest<CASDvec,6>;
+template class GammaForest<CASDvec,7>;
+template class GammaForest<RASDvec,1>;
+template class GammaForest<RASDvec,2>;
+template class GammaForest<RASDvec,3>;
+template class GammaForest<RASDvec,4>;
+template class GammaForest<RASDvec,5>;
+template class GammaForest<RASDvec,6>;
+template class GammaForest<RASDvec,7>;

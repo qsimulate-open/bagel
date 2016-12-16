@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: fci/distfci.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <cassert>
@@ -37,20 +36,14 @@
 using namespace std;
 using namespace bagel;
 
-DistFCI::DistFCI(std::shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb, const int nstate)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), nstate_(nstate) {
-  common_init();
 
+void DistFCI::common_init() {
 #ifndef HAVE_MPI_H
   throw logic_error("DistFCI can be used only with MPI");
 #endif
 
   cout << "    * Parallel algorithm will be used." << endl;
 
-  update(ref_->coeff());
-}
-
-void DistFCI::common_init() {
   print_header();
 
   const bool frozen = idata_->get<bool>("frozen", false);
@@ -92,11 +85,10 @@ void DistFCI::common_init() {
 
   // TODO allow for zero electron (quick return)
   if (nelea_ <= 0 || neleb_ <= 0) throw runtime_error("#electrons cannot be zero/negative in FCI");
-  //for (int i = 0; i != nstate_; ++i) weight_.push_back(1.0/static_cast<double>(nstate_));
+  weight_ = vector<double>(nstate_, 1.0/static_cast<double>(nstate_));
 
-  // resizing rdm vectors (with null pointers)
-  //rdm1_.resize(nstate_);
-  //rdm2_.resize(nstate_);
+  rdm1_ = make_shared<VecRDM<1>>();
+  rdm2_ = make_shared<VecRDM<2>>();
   energy_.resize(nstate_);
 
   // construct a determinant space in which this FCI will be performed.
@@ -104,13 +96,14 @@ void DistFCI::common_init() {
   det_ = space_->finddet(nelea_, neleb_);
 }
 
+
 void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
   multimap<double, pair<size_t, size_t>> ordered_elements;
-  const double* d = denom_->local();
-  for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia) {
-    for (size_t ib = 0; ib < det_->lenb(); ++ib) {
-      ordered_elements.emplace(*d++, make_pair(ia, ib));
-    }
+  {
+    const double* d = denom_->local_data();
+    for (size_t ia = denom_->astart(); ia < denom_->aend(); ++ia)
+      for (size_t ib = 0; ib < det_->lenb(); ++ib)
+        ordered_elements.emplace(*d++, make_pair(ia, ib));
   }
 
   vector<double> energies;
@@ -185,14 +178,13 @@ void DistFCI::model_guess(vector<shared_ptr<DistCivec>>& out) {
 
     auto coeffs1 = (coeffs * *hamiltonian).slice_copy(0, nstate_);
     mpi__->broadcast(coeffs1->data(), coeffs1->ndim() * coeffs1->mdim(), 0);
-    const size_t lenb = det_->lenb();
     for (int i = 0; i < nguess; ++i) {
       size_t ia = det_->lexical<0>(basis[i].first);
       if ( ia >= denom_->astart() && ia < denom_->aend() ) {
         ia -= denom_->astart();
         const size_t ib = det_->lexical<1>(basis[i].second);
         for (int j = 0; j < nstate_; ++j)
-          out[j]->local(ib + ia*lenb) = coeffs1->element(i, j);
+          out[j]->set_local(ia, ib, coeffs1->element(i, j));
       }
     }
   }
@@ -219,6 +211,10 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
 
+    // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+    if (alpha.count() + beta.count() != nelea_ + neleb_)
+      throw logic_error("DistFCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
+
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
@@ -235,7 +231,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     for (auto& ad : adapt.first) {
       const int aloc = get<1>(ad) - out[oindex]->astart();
       if (aloc >= 0 && aloc < out[oindex]->asize())
-        out[oindex]->local(get<0>(ad) + det_->lenb()*aloc) = get<2>(ad)*fac;
+        out[oindex]->set_local(aloc, get<0>(ad), get<2>(ad)*fac);
     }
     out[oindex]->spin_decontaminate();
 
@@ -258,7 +254,7 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> DistFCI::detseeds(const int ndet) 
   for (int i = 0; i != ndet; ++i)
     tmp.emplace(-1.0e10*(1+i), make_pair(0,0));
 
-  double* diter = denom_->local();
+  const double* diter = denom_->local_data();
   for (size_t ia = denom_->astart(); ia != denom_->aend(); ++ia) {
     for (size_t ib = 0; ib != det_->lenb(); ++ib) {
       const double din = -*diter++;
@@ -321,7 +317,7 @@ void DistFCI::update(shared_ptr<const Matrix> c) {
   // iiii file to be created (MO transformation).
   // now jop_->mo1e() and jop_->mo2e() contains one and two body part of Hamiltonian
   Timer timer;
-  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, "HZ");
+  jop_ = make_shared<Jop>(ref_, ncore_, ncore_+norb_, c, store_half_ints_, "HZ");
 
   // right now full basis is used.
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
@@ -349,7 +345,8 @@ void DistFCI::const_denom() {
 
   denom_ = make_shared<DistCivec>(det_);
 
-  double* iter = denom_->local();
+  unique_ptr<double[]> buf(new double[denom_->size()]);
+  auto iter = buf.get();
   TaskQueue<HZDenomTask> tasks(denom_->asize());
   for (size_t i = denom_->astart(); i != denom_->aend(); ++i) {
     tasks.emplace_back(iter, denom_->det()->string_bits_a(i), det_, jop, kop, h);
@@ -357,11 +354,13 @@ void DistFCI::const_denom() {
   }
   tasks.compute();
 
+  denom_->accumulate_buffer(1.0, buf);
   denom_t.tick_print("denom");
 }
 
+
 void DistFCI::compute() {
-  Timer pdebug(0);
+  Timer pdebug(3);
 
   // at the moment I only care about C1 symmetry, with dynamics in mind
   if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
@@ -429,14 +428,15 @@ void DistFCI::compute() {
         if (!conv[ist]) {
           shared_ptr<DistCivec> c = errvec[ist]->clone();
           const int size = c->size();
-          double* target_array = c->local();
-          double* source_array = errvec[ist]->local();
-          double* denom_array = denom_->local();
+          unique_ptr<double[]> target_array(new double[c->size()]);
+          const double* source_array = errvec[ist]->local_data();
+          const double* denom_array = denom_->local_data();
           const double en = energies[ist];
           // TODO this should be threaded
           for (int i = 0; i != size; ++i) {
             target_array[i] = source_array[i] / min(en - denom_array[i], -0.1);
           }
+          c->accumulate_buffer(1.0, target_array);
           c->spin_decontaminate();
           c->normalize();
           cc.push_back(c);
@@ -470,4 +470,14 @@ void DistFCI::compute() {
                    << ", E = " << setw(17) << fixed << setprecision(8) << energy_[ist] << endl;
     cc_->data(ist)->print(print_thresh_);
   }
+}
+
+
+shared_ptr<const CIWfn> DistFCI::conv_to_ciwfn() const {
+  // convert DistDvec to Dvec
+  vector<shared_ptr<Civec>> vec;
+  for (auto& i : cc_->dvec())
+    vec.push_back(i->civec());
+  auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc, cc->det());
 }

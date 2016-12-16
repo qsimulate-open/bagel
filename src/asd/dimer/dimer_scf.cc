@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dimer_scf.cc
 // Copyright (C) 2014 Shane Parker
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/asd/dimer/dimer.h>
@@ -48,7 +47,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
     input_data->erase("type"); input_data->put("type", "region");
     localization = make_shared<PMLocalization>(input_data, sref_, sizes);
   } else
-    throw std::runtime_error("Unrecognized orbital localization method");
+    throw runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
   vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
@@ -153,7 +152,7 @@ void Dimer::localize(const shared_ptr<const PTree> idata, shared_ptr<const Matri
 /// localize_first flag defined as in Dimer::localize
 ///  If localize_first is set, separate SVDs are done for each monomer. Otherwise, two are done (one for
 ///  closed and one for active) on the whole dimer.
-void Dimer::set_active(const std::shared_ptr<const PTree> idata, const bool localize_first) {
+void Dimer::set_active(const shared_ptr<const PTree> idata, const bool localize_first) {
   // TODO needs clean up
   auto Asp = idata->get_child_optional("active_A");
   auto Bsp = idata->get_child_optional("active_B");

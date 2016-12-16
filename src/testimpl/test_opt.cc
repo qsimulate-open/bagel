@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: test_opt.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/opt/optimize.h>
@@ -38,6 +37,8 @@ std::vector<double> run_opt(std::string filename) {
   std::shared_ptr<const Geometry> geom;
   std::shared_ptr<const Reference> ref;
 
+  std::vector<double> out;
+
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
@@ -47,13 +48,13 @@ std::vector<double> run_opt(std::string filename) {
       auto opt = std::make_shared<Optimize>(itree, geom, ref);
       opt->compute();
 
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
+      std::shared_ptr<const Matrix> tmp = opt->geometry()->xyz();
+      out = std::vector<double>(tmp->data(), tmp->data()+tmp->size());
     }
   }
-  assert(false);
-  return std::vector<double>();
+  assert(!out.empty());
+  std::cout.rdbuf(backup_stream);
+  return out;
 }
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);

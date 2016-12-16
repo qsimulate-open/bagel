@@ -80,7 +80,7 @@ vector<mpreal> chebft(int n) {
   return out;
 }
 
-void complex_get_C (const complex<mpreal>& Tbase, const mpreal Rstride, const mpreal Istride, const int rank, const int RGRID, const int IGRID, vector<vector<double>>& cxr, vector<vector<double>>& cxi, vector<vector<double>>& cwr, vector<vector<double>>& cwi){
+void complex_get_C (const complex<mpreal>& Tbase, const mpreal& Rstride, const mpreal& Istride, const int rank, const int RGRID, const int IGRID, vector<vector<double>>& cxr, vector<vector<double>>& cxi, vector<vector<double>>& cwr, vector<vector<double>>& cwi){
   mpfr::mpreal::set_default_prec(GMPPREC); 
   using namespace std;
   cout << "TBase = " << Tbase << ", " << rank << " roots needed.  Using " << RGRID << " by " << IGRID << " gridpoints." << endl;
@@ -545,7 +545,7 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
     ofs.open(("../" + filename).c_str());
     ofs << "\
 //\n\
-// BAGEL - Parallel electron correlation program.\n\
+// BAGEL - Brilliantly Advanced General Electronic Structure Library\n\
 // Filename: " + filename + "\n\
 // Copyright (C) 2013 Toru Shiozaki\n\
 //\n\
@@ -554,19 +554,18 @@ complex_get_C (Tbase, Rstride, Istride, rankt, cxr, cxi, cwr, cwi);
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\
-// The BAGEL package is free software; you can redistribute it and/or modify\n\
-// it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 3, or (at your option)\n\
-// any later version.\n\
+// This program is free software: you can redistribute it and/or modify\n\
+// it under the terms of the GNU General Public License as published by\n\
+// the Free Software Foundation, either version 3 of the License, or\n\
+// (at your option) any later version.\n\
 //\n\
-// The BAGEL package is distributed in the hope that it will be useful,\n\
+// This program is distributed in the hope that it will be useful,\n\
 // but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
-// GNU Library General Public License for more details.\n\
+// GNU General Public License for more details.\n\
 //\n\
-// You should have received a copy of the GNU Library General Public License\n\
-// along with the BAGEL package; see COPYING.  If not, write to\n\
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
+// You should have received a copy of the GNU General Public License\n\
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
 //\n\
 \n\
 #include <algorithm>\n\
@@ -688,7 +687,7 @@ ofs << "\n\
       fill_n(rr+offset, " << nroot << ", 0.5);\n\
       fill_n(ww+offset, " << nroot << ", 0.0);\n\
     } else if (t.real() < " << MINTR << ") {\n\
-      throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength\");\n\
+      throw runtime_error (\"ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.\");\n\
     } else if (t.real() >= " << MAXTR << ") {\n";
 //      cout << \"T = \" << t << \", need " << nroot << " roots:  Used high-T approximation\" << endl;\n
       ofs << "\
@@ -704,8 +703,8 @@ ofs << "\n\
       if (torig.imag() < 0) t = conj(torig);\n\
       int itr = static_cast<int>((t.real()-(" << MINTR <<"))*" << setw(20) << setprecision(15) << fixed << 1.0/drstride << ") ;\n\
       int iti = static_cast<int>((t.imag()-(" << MINTI <<"))*" << setw(20) << setprecision(15) << fixed << 1.0/distride << ") ;\n\
-      double tr = (t.real()-itr*" << drstride << "-" << setw(20) << setprecision(15) << fixed << drstride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/drstride << " - (" << MINTR << ") ;\n\
-      double ti = (t.imag()-iti*" << distride << "-" << setw(20) << setprecision(15) << fixed << distride/2.0 << ") *" << setw(20) << setprecision(15) << fixed << 2.0/distride << " - (" << MINTI << ") ;\n\
+      double tr = (t.real()-itr*" << drstride << "-" << setw(20) << setprecision(15) << fixed << drstride/2.0 << " - " << MINTR << ") *" << setw(20) << setprecision(15) << fixed << 2.0/drstride << ";\n\
+      double ti = (t.imag()-iti*" << distride << "-" << setw(20) << setprecision(15) << fixed << distride/2.0 << " - " << MINTI << ") *" << setw(20) << setprecision(15) << fixed << 2.0/distride << ";\n\
       const double tr2 = tr * 2.0;\n\
       const double ti2 = ti * 2.0;\n";
       for (int cycle = 0; cycle != 2; cycle++) {
@@ -724,10 +723,10 @@ ofs << "\n\
 //        cout << \"T = \" << torig << \", need " << nroot << " roots: Used complex interpolation, with " << RGRID << " by " << IGRID << " gridpoints.\" << endl;
         ofs << "\
         for (int j=1; j <=" << nroot << "; ++j) {\n\
-          vector<double> xrval(" << IGRID << ");\n\
-          vector<double> xival(" << IGRID << ");\n\
-          vector<double> wrval(" << IGRID << ");\n\
-          vector<double> wival(" << IGRID << ");\n\
+          double xrval[" << IGRID << "];\n\
+          double xival[" << IGRID << "];\n\
+          double wrval[" << IGRID << "];\n\
+          double wival[" << IGRID << "];\n\
           for (int k=1; k<= " << IGRID << "; k++){\n";
         if (cycle == 0) {
           ofs << "\
@@ -781,10 +780,10 @@ ofs << "\n\
           const double denom = " << IGRID << ";\n\
           const double fac = 2 / denom;\n\
           const double pi = 3.141592653589793238462;\n\
-          vector<double> tcxr(" << IGRID << ");\n\
-          vector<double> tcxi(" << IGRID << ");\n\
-          vector<double> tcwr(" << IGRID << ");\n\
-          vector<double> tcwi(" << IGRID << ");\n\
+          double tcxr[" << IGRID << "];\n\
+          double tcxi[" << IGRID << "];\n\
+          double tcwr[" << IGRID << "];\n\
+          double tcwi[" << IGRID << "];\n\
           for (int b = 0; b != " << IGRID << "; ++b) {\n\
             double sumxr = 0;\n\
             double sumxi = 0;\n\

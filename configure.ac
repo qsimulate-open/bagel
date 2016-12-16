@@ -114,12 +114,9 @@ fi
 AC_ARG_ENABLE(smith, [AS_HELP_STRING([--enable-smith],[enable SMITH code.])], [compile_smith=yes], [compile_smith=no])
 if test "x${compile_smith}" != xno; then
   if test "x${with_mpi}" = xno; then
-    AC_MSG_ERROR("SMITH requires MPI + TiledArray / Madness")
+    AC_MSG_ERROR("SMITH requires MPI")
   fi
   AC_DEFINE([COMPILE_SMITH], [], [Compile SMITH generated code])
-  AH_TEMPLATE([HAVE_TILEDARRAY], [TILEDARRAY will be used.])
-  AC_CHECK_HEADERS([tiledarray.h], [], [AC_MSG_ERROR([tiledarray.h not found or not working])], [])
-  AC_CHECK_LIB(MADworld, main,  [AC_DEFINE([HAVE_TILEDARRAY]) LIBS="-lMADworld $LIBS"], [AC_MSG_ERROR("Linking against MADworld failed.")])
 fi
 
 AC_LANG_POP()

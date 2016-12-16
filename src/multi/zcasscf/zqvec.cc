@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zqvec.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/multi/zcasscf/zqvec.h>
@@ -35,7 +34,6 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
  : ZMatrix(nbasis, nact*2) {
 
   assert(gaunt || !breit);
-  assert((*acoeff - *fci->jop()->coeff()).rms() < 1.0e-15);
   assert(nbasis == rcoeff->mdim());
 
   auto compute = [&acoeff, &rcoeff, &geom, &fci, &nact] (const bool gaunt, const bool breit) {
@@ -49,7 +47,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
     shared_ptr<ListRelDFFull> fullr2 = !breit ? fullr : RelMOFile::compute_full(rcoeff, half2, false);
 
     // form (rs|tu)*G(vs,tu) where r runs fastest
-    shared_ptr<const ZRDM<2>> rdm2_av = expand_kramers(fci->rdm2_av_kramers(), nact);
+    shared_ptr<const ZMatrix> rdm2_av = fci->rdm2_av();
 
     auto full_d = make_shared<ListRelDFFull>();
     for (auto& ii : *full)

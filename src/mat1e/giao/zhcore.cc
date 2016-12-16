@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zhcore.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -34,14 +33,13 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(ZHcore)
 
-ZHcore::ZHcore(const shared_ptr<const Molecule> mol, const bool dofmm) : ZMatrix1e(mol, dofmm) {
+ZHcore::ZHcore(shared_ptr<const Molecule> mol, const bool nodkh /*true*/, const bool dofmm) : ZMatrix1e(mol, dofmm) {
 
   init(mol);
   fill_upper_conjg();
 
   if (mol->atoms().front()->use_ecp_basis())
     throw runtime_error("ECP is not available with a GIAO basis.");
-
 }
 
 
@@ -59,10 +57,18 @@ void ZHcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const i
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
   {
-    ComplexNAIBatch nai(input, mol);
-    nai.compute();
-
-    add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    if (mol->natom() < nucleus_blocksize__) {
+      ComplexNAIBatch nai(input, mol);
+      nai.compute();
+      add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+    } else {
+      const vector<shared_ptr<const Molecule>> atom_subsets = mol->split_atoms(nucleus_blocksize__);
+      for (auto& current_mol : atom_subsets) {
+        ComplexNAIBatch nai(input, current_mol);
+        nai.compute();
+        add_block(1.0, offsetb1, offsetb0, dimb1, dimb0, nai.data());
+      }
+    }
   }
 
   if (mol->has_finite_nucleus()) {

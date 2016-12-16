@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: reference.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -52,7 +51,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Coeff> coeffB_;
     int noccA_, noccB_;
 
-    double energy_;
+    std::vector<double> energy_;
 
     std::shared_ptr<const Hcore> hcore_;
     VectorB eig_;
@@ -69,9 +68,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<1>> rdm1_av_;
     std::shared_ptr<const RDM<2>> rdm2_av_;
 
-    // this is only for UHF gradient. Somehow I cannot come up with a beautiful design for this.
-    std::shared_ptr<const Matrix> erdm1_;
-
   private:
     // serialization
     friend class boost::serialization::access;
@@ -79,14 +75,14 @@ class Reference : public std::enable_shared_from_this<Reference> {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
-         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_ & erdm1_;
+         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
     }
 
   public:
     Reference() { }
     Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const Coeff> c,
               const int nclo, const int nact, const int nvirt,
-              const double en = 0.0,
+              const std::vector<double> en = {},
               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
               std::shared_ptr<const RDM<1>> rdm1_av = nullptr,
@@ -96,6 +92,9 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // copy construct with optionally updating coeff
     Reference(const Reference& o, std::shared_ptr<const Coeff> c = nullptr) :
       Reference(o.geom(), c ? c : o.coeff(), o.nclosed(), o.nact(), o.nvirt(), o.energy(), o.rdm1(), o.rdm2(), o.rdm1_av(), o.rdm2_av(), o.ciwfn()) { }
+
+    // construct from a molden file
+    Reference(std::shared_ptr<const Geometry> g, std::shared_ptr<const PTree> itree);
 
     virtual ~Reference() { }
 
@@ -109,8 +108,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     void set_eig(const VectorB& eig);
     const VectorB& eig() const { return eig_; }
-    void set_erdm1(const std::shared_ptr<const Matrix> o);
-    std::shared_ptr<const Matrix> erdm1() const { return erdm1_; }
 
     int nclosed() const { return nclosed_; }
     int nact() const { return nact_; }
@@ -124,15 +121,33 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Reference> set_ractive(std::set<int> ras1, std::set<int> ras2, std::set<int> ras3) const;
 
     // used in SA-CASSCF
-    void set_nstate(const int i) { nstate_ = i; }
-    int nstate() const { return nstate_; }
+    int nstate() const { return energy_.size(); }
+
+    // To get a single-state reference from multi-state CASSCF - for running single-state CASPT2
+    virtual std::shared_ptr<Reference> extract_state(const int istate, const std::vector<int> rdm_state = std::vector<int>()) const {
+      throw std::runtime_error("Reference::extract_state(...) has only been implemented for relativistic wavefunctions.");
+      return nullptr;
+    }
+
+    // To extract some states from the reference, and get RDMs averaged over all the retained states
+    virtual std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state = std::vector<int>()) const {
+      throw std::runtime_error("Reference::extract_state(...) has only been implemented for relativistic wavefunctions.");
+      return nullptr;
+    }
+
+    // To get a multi-state reference with RDMs averaged only over a subset of the relevant states (e.g., ground spin manifold)
+    virtual std::shared_ptr<Reference> extract_average_rdm(const std::vector<int> rdm_state) const {
+      throw std::runtime_error("Reference::extract_average_rdm(...) has only been implemented for relativistic wavefunctions.");
+      return nullptr;
+    }
 
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
     std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
     std::shared_ptr<const Coeff> coeffB() const { return coeffB_; }
 
-    double energy() const { return energy_; }
+    std::vector<double> energy() const { return energy_; }
+    double energy(const int i) const { return energy_[i]; }
 
     std::shared_ptr<const CIWfn> ciwfn() const { return ciwfn_; }
 
@@ -150,17 +165,16 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const RDM<2>> rdm2(const int ist) const { return rdm2_->at(ist); }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> rdm12(const int ist, const int jst, const bool recompute = false) const;
     std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> rdm34(const int ist, const int jst) const;
-    std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<3>>>
-      rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
 
     // function to return a CI vectors from orbital info
     std::shared_ptr<const Dvec> civectors() const;
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
     // 4RDM derivative is precontracted by the Fock matrix
-    std::tuple<std::shared_ptr<Dvec>,std::shared_ptr<Dvec>> rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
 
     // basis-set projection based on SVD
     virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>, const bool check_geom_change = true) const;

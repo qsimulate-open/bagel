@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: atommap.cc
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -373,6 +372,7 @@ AtomMap::AtomMap () {
 #endif
 
   // finite nuclear exponents, from L. Visscher and K. G. Dyall, At. Data Nucl. Data Tables 67, 207 (1997)
+  nuclear_exponents.emplace("q",  0.0000000000E+00);
   nuclear_exponents.emplace("h",  2.1248239171E+09);
   nuclear_exponents.emplace("he", 1.1671538870E+09);
   nuclear_exponents.emplace("li", 8.9266848806E+08);
@@ -733,6 +733,118 @@ AtomMap::AtomMap () {
   nopen.emplace("uus", make_tuple(0,5,0,0));
   nopen.emplace("uuo", make_tuple(0,0,0,0));
 
+  // P in the hyperfine coupling formula, copied from Takeshi's ORZ package
+  // which in turn originates from Orca's output according to Takeshi
+  // P = g_e * g_N * beta_e * beta_N :
+  //   g_e = 2.000... (g factor of free electron)
+  //   g_N = g factor of nucleus
+  //   beta_e = electron magneton = alpha(fine structure constant) / 2.0
+  //   beta_N = nuclear magneton
+  hfccp.emplace("h",   533.5514);
+  hfccp.emplace("he",    0.0000);
+  hfccp.emplace("li",  207.3726);
+  hfccp.emplace("be",    0.0000);
+  hfccp.emplace("b",   171.2143);
+  hfccp.emplace("c",   134.1900);
+  hfccp.emplace("n",    38.5677);
+  hfccp.emplace("o",   -72.3588);
+  hfccp.emplace("f",   502.2244);
+  hfccp.emplace("ne",    0.0000);
+  hfccp.emplace("na",  141.2175);
+  hfccp.emplace("mg",    0.0000);
+  hfccp.emplace("al",  139.1361);
+  hfccp.emplace("si",    0.0000);
+  hfccp.emplace("p",   216.1834);
+  hfccp.emplace("s",     0.0000);
+  hfccp.emplace("cl",    0.0000);
+  hfccp.emplace("ar",    0.0000);
+  hfccp.emplace("k",    24.9301);
+  hfccp.emplace("ca",    0.0000);
+  hfccp.emplace("sc",    0.0000);
+  hfccp.emplace("ti",  -30.1264);
+  hfccp.emplace("v",   140.2594);
+  hfccp.emplace("cr",  -30.0605);
+  hfccp.emplace("mn",  132.0006);
+  hfccp.emplace("fe",    0.0000);
+  hfccp.emplace("co",    0.0000);
+  hfccp.emplace("ni",    0.0000);
+  hfccp.emplace("cu",  141.7533);
+  hfccp.emplace("zn",   33.4622);
+  hfccp.emplace("ga",    0.0000);
+  hfccp.emplace("ge",    0.0000);
+  hfccp.emplace("as",    0.0000);
+  hfccp.emplace("se",    0.0000);
+  hfccp.emplace("br",    0.0000);
+  hfccp.emplace("kr",    0.0000);
+//hfccp.emplace("rb",    0.0000);
+//hfccp.emplace("sr",    0.0000);
+//hfccp.emplace("y",     0.0000);
+//hfccp.emplace("zr",    0.0000);
+//hfccp.emplace("nb",    0.0000);
+//hfccp.emplace("mo",    0.0000);
+//hfccp.emplace("tc",    0.0000);
+//hfccp.emplace("ru",    0.0000);
+  hfccp.emplace("rh",   -16.8881);
+  hfccp.emplace("pd",   -24.4534);
+  hfccp.emplace("ag",   -21.7071);
+  hfccp.emplace("cd",  -113.7112);
+//hfccp.emplace("in",    0.0000);
+//hfccp.emplace("sn",    0.0000);
+//hfccp.emplace("sb",    0.0000);
+//hfccp.emplace("te",    0.0000);
+//hfccp.emplace("i",     0.0000);
+//hfccp.emplace("xe",    0.0000);
+//hfccp.emplace("cs",    0.0000);
+//hfccp.emplace("ba",    0.0000);
+//hfccp.emplace("la",    0.0000);
+//hfccp.emplace("ce",    0.0000);
+//hfccp.emplace("pr",    0.0000);
+//hfccp.emplace("nd",    0.0000);
+//hfccp.emplace("pm",    0.0000);
+//hfccp.emplace("sm",    0.0000);
+//hfccp.emplace("eu",    0.0000);
+//hfccp.emplace("gd",    0.0000);
+//hfccp.emplace("tb",    0.0000);
+//hfccp.emplace("dy",    0.0000);
+//hfccp.emplace("ho",    0.0000);
+//hfccp.emplace("er",    0.0000);
+//hfccp.emplace("tm",    0.0000);
+//hfccp.emplace("yb",    0.0000);
+//hfccp.emplace("lu",    0.0000);
+//hfccp.emplace("hf",    0.0000);
+//hfccp.emplace("ta",    0.0000);
+//hfccp.emplace("w",     0.0000);
+//hfccp.emplace("re",    0.0000);
+//hfccp.emplace("os",    0.0000);
+//hfccp.emplace("ir",    0.0000);
+//hfccp.emplace("pt",    0.0000);
+  hfccp.emplace("au",    9.3580);
+//hfccp.emplace("hg",    0.0000);
+//hfccp.emplace("tl",    0.0000);
+//hfccp.emplace("pb",    0.0000);
+//hfccp.emplace("bi",    0.0000);
+//hfccp.emplace("po",    0.0000);
+//hfccp.emplace("at",    0.0000);
+//hfccp.emplace("rn",    0.0000);
+//hfccp.emplace("fr",    0.0000);
+//hfccp.emplace("ra",    0.0000);
+//hfccp.emplace("ac",    0.0000);
+//hfccp.emplace("th",    0.0000);
+//hfccp.emplace("pa",    0.0000);
+//hfccp.emplace("u",     0.0000);
+//hfccp.emplace("np",    0.0000);
+//hfccp.emplace("pu",    0.0000);
+//hfccp.emplace("am",    0.0000);
+//hfccp.emplace("cm",    0.0000);
+//hfccp.emplace("bk",    0.0000);
+//hfccp.emplace("cf",    0.0000);
+//hfccp.emplace("es",    0.0000);
+//hfccp.emplace("fm",    0.0000);
+//hfccp.emplace("md",    0.0000);
+//hfccp.emplace("no",    0.0000);
+//hfccp.emplace("lr",    0.0000);
+//hfccp.emplace("rf",    0.0000);
+
 }
 
 int AtomMap::angular_number(const string input) const {
@@ -774,6 +886,18 @@ tuple<int,int,int,int> AtomMap::num_closed(const string input) const {
 tuple<int,int,int,int> AtomMap::num_open(const string input) const {
   auto miter = nopen.find(input);
   if (miter == nopen.end()) throw runtime_error("Unknown atom (#open shell).");
+  return miter->second;
+}
+
+
+bool AtomMap::hfcc_exists(const string input) const {
+  return hfccp.find(input) != hfccp.end();
+}
+
+
+double AtomMap::hfcc_pfac(const string input) const {
+  auto miter = hfccp.find(input);
+  if (miter == hfccp.end()) throw runtime_error("Unknown atom (HPCC P factor).");
   return miter->second;
 }
 

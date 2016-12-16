@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: ras/rasci.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/ci/fci/modelci.h>
@@ -182,6 +181,10 @@ void RASCI::generate_guess(const int nspin, const int nstate, shared_ptr<RASDvec
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
 
+    // This can happen if all possible determinants are checked without finding nstate acceptable ones.
+    if (alpha.count() + beta.count() != nelea_ + neleb_)
+      throw logic_error("RasCI::generate_guess produced an invalid determinant.  Check the number of states being requested.");
+
     // make sure that we have enough unpaired alpha
     const int unpairalpha = (alpha ^ (alpha & beta)).count();
     const int unpairbeta  = (beta ^ (alpha & beta)).count();
@@ -319,9 +322,9 @@ void RASCI::compute() {
         const double en = energies.at(ist);
         transform(source_array, source_array + size, denom_array, target_array, [&en] (const double cc, const double den) { return cc / min(en - den, -0.1); });
         cc_->data(ist)->normalize();
+        cc_->data(ist)->spin_decontaminate();
         cc_->data(ist)->synchronize();
       }
-        cc_->spin_decontaminate();
     }
 
     pdebug.tick_print("denominator");

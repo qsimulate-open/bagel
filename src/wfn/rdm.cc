@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: rdm.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -48,7 +47,7 @@ vector<double> RDM<1>::diag() const {
 
 
 template<>
-pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
+pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals(const bool occ_sort) const {
   auto buf = make_shared<Matrix>(norb(),norb(),true);
   buf->add_diag(2.0);
   daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
@@ -57,26 +56,35 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
   buf->diagonalize(vec);
 
   for (auto& i : vec) i = 2.0-i;
-
-  map<int,int> emap;
   auto buf2 = buf->clone();
   VectorB vec2(norb());
-  // sort eigenvectors so that buf is close to a unit matrix
-  // target column
-  for (int i = 0; i != norb(); ++i) {
-    // first find the source column
-    tuple<int, double> max = make_tuple(-1, 0.0);
-    for (int j = 0; j != norb(); ++j)
-      if (fabs(buf->element(i,j)) > get<1>(max))
-        max = make_tuple(j, fabs(buf->element(i,j)));
 
-    // register to emap
-    if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
-    emap.emplace(get<0>(max), i);
+  if (occ_sort) {
+    // sort by natural orbital occupation numbers
+    int b2n = buf2->ndim();
+    for (int i = 0; i != buf2->mdim(); ++i) {
+      copy_n(buf->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i));
+      vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
+    }
+  } else {
+    map<int,int> emap;
+    // sort eigenvectors so that buf is close to a unit matrix
+    // target column
+    for (int i = 0; i != norb(); ++i) {
+      // first find the source column
+      tuple<int, double> max = make_tuple(-1, 0.0);
+      for (int j = 0; j != norb(); ++j)
+        if (fabs(buf->element(i,j)) > get<1>(max))
+          max = make_tuple(j, fabs(buf->element(i,j)));
 
-    // copy to the target
-    copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
-    vec2(i) = vec(get<0>(max));
+      // register to emap
+      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
+      emap.emplace(get<0>(max), i);
+
+      // copy to the target
+      copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
+      vec2(i) = vec(get<0>(max));
+     }
   }
 
   // fix the phase
@@ -84,13 +92,12 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
     if (buf2->element(i,i) < 0.0)
       blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
   }
-
   return {buf2, vec2};
 }
 
 
 template<>
-void RDM<1>::transform(const shared_ptr<Matrix>& coeff) {
+void RDM<1>::transform(shared_ptr<const Matrix> coeff) {
   auto buf = clone();
   btas::contract(1.0, *this, {0,1}, *coeff, {1,2}, 0.0, *buf, {0,2});
   btas::contract(1.0, *coeff, {1,0}, *buf, {1,2}, 0.0, *this, {0,2});
@@ -98,7 +105,7 @@ void RDM<1>::transform(const shared_ptr<Matrix>& coeff) {
 
 
 template<>
-void RDM<2>::transform(const shared_ptr<Matrix>& coeff) {
+void RDM<2>::transform(shared_ptr<const Matrix> coeff) {
   const double* start = coeff->data();
   const int dim = norb()*norb();
   unique_ptr<double[]> buf(new double[dim*dim]);

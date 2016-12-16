@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: test_zcasscf.cc
 // Copyright (C) 2014 Jefferson E. Bates
 //
@@ -8,25 +8,22 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
-#include <src/multi/zcasscf/zsuperci.h>
-#include <src/multi/zcasscf/zcasbfgs.h>
-#include <src/multi/zcasscf/zcashybrid.h>
+#include <src/multi/zcasscf/zcassecond.h>
 
 double relcas_energy(std::string inp) {
 
@@ -62,12 +59,12 @@ double relcas_energy(std::string inp) {
       if (ref) ref = ref->project_coeff(geom);
 
     } else if (method == "hf") {
-      auto scf = std::make_shared<RHF>(itree, geom);
+      auto scf = std::make_shared<RHF>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
 
     } else if (method == "dhf") {
-      auto scf = std::make_shared<Dirac>(itree, geom);
+      auto scf = std::make_shared<Dirac>(itree, geom, ref);
       scf->compute();
       ref = scf->conv_to_ref();
 
@@ -77,26 +74,18 @@ double relcas_energy(std::string inp) {
         auto cas = std::make_shared<SuperCI>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(0);
       }
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
-        auto zcas = std::make_shared<ZSuperCI>(itree, geom, ref);
+      if (algorithm == "second" || algorithm == "") {
+        auto zcas = std::make_shared<ZCASSecond>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
-        energy = ref->energy();
-      } else if (algorithm == "bfgs") {
-        auto zcas = std::make_shared<ZCASBFGS>(itree, geom, ref);
-        zcas->compute();
-        ref = zcas->conv_to_ref();
-        energy = ref->energy();
-      } else if (algorithm == "hybrid") {
-        auto zcas = std::make_shared<ZCASHybrid>(itree, geom, ref);
-        zcas->compute();
-        ref = zcas->conv_to_ref();
-        energy = ref->energy();
+        energy = ref->energy(ref->nstate()-1);
+      } else {
+        throw std::logic_error("unknown algorithm");
       }
     }
 #ifndef DISABLE_SERIALIZATION
@@ -115,15 +104,15 @@ double relcas_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_RELCAS)
 
 BOOST_AUTO_TEST_CASE(ZCASSCF) {
-  BOOST_CHECK(compare(relcas_energy("h2_qzvpp_superci_coulomb"), -1.01931815));
-  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_superci_coulomb"), -100.03016820));
-  BOOST_CHECK(compare(relcas_energy("he_tzvpp_bfgs_coulomb"),    -2.875647885));
-  BOOST_CHECK(compare(relcas_energy("nh_tzvpp_triplet_gaunt"),   -55.00281524));
-  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),     -149.56647946));
+  BOOST_CHECK(compare(relcas_energy("hf_svp_second_coulomb"),   -99.90025083));
+#ifndef HAVE_MPI_H
+  BOOST_CHECK(compare(relcas_energy("he_tzvpp_second_coulomb"),    -2.875647885));
+#endif
+  BOOST_CHECK(compare(relcas_energy("nh_svp_triplet_gaunt"),    -54.93378556));
+  BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),   -149.56647946));
 #ifndef DISABLE_SERIALIZATION
 //BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
 #endif
-  BOOST_CHECK(compare(relcas_energy("lif_6-31g_bfgs_coulomb"), -106.88481827));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: relreference.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_WFN_RELREFERENCE_H
@@ -50,21 +49,29 @@ class RelReference : public Reference {
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & kramers_;
+      ar & boost::serialization::base_object<Reference>(*this) & gaunt_ & breit_ & nneg_ & relcoeff_ & kramers_ & rdm1_av_ & rdm2_av_ & ciwfn_;
     }
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en,
-                 const int nneg, const int nocc, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const std::vector<double> en,
+                 const int nneg, const int nclo, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
 //               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
 //               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
                  std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
                  std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
                  std::shared_ptr<const RelCIWfn> ci = nullptr)
-     : Reference(g, nullptr, nocc, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c), kramers_(kram),
+     : Reference(g, nullptr, nclo, nact, nvirt, en), gaunt_(ga), breit_(br), nneg_(nneg), relcoeff_(c), kramers_(kram),
                                                      rdm1_av_(rdm1_av), rdm2_av_(rdm2_av), ciwfn_(ci) {
     }
+
+    // if only given one energy
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en, const int nneg,
+                 const int nclo, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
+                 std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
+                 std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
+                 std::shared_ptr<const RelCIWfn> ci = nullptr)
+     : RelReference(g, c, std::vector<double>(1, en), nneg, nclo, nact, nvirt, ga, br, kram, rdm1_av, rdm2_av, ci) { }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
     std::shared_ptr<const RelCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }
@@ -86,6 +93,10 @@ class RelReference : public Reference {
     std::shared_ptr<const Kramers<8,ZRDM<4>>> rdm4(const int ist, const int jst) const;
 
     std::shared_ptr<Reference> project_coeff(std::shared_ptr<const Geometry> geomin, const bool check_geom_change = true) const override;
+
+    std::shared_ptr<Reference> extract_state(const int istate, const std::vector<int> rdm_state = std::vector<int>()) const override;
+    std::shared_ptr<Reference> extract_state(const std::vector<int> rdm_state = std::vector<int>()) const override;
+    std::shared_ptr<Reference> extract_average_rdm(const std::vector<int> rdm_state) const override;
 
 };
 

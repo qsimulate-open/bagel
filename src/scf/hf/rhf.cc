@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: rhf.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/scf/atomicdensities.h>
@@ -28,6 +27,8 @@
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
 #include <src/prop/sphmultipole.h>
+#include <src/scf/dhf/population_analysis.h>
+#include <src/util/muffle.h>
 
 using namespace bagel;
 using namespace std;
@@ -40,8 +41,7 @@ RHF::RHF(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> g
   cout << indent << "*** RHF ***" << endl << endl;
   if (nocc_ != noccB_) throw runtime_error("Closed shell SCF was called with nact != 0");
 
-  // For the moment, I can't be bothered to test the level shifting apparatus for UHF and ROHF cases.
-  // In the future, this should probably be moved to SCF_base and designed to work properly there
+  // TODO In the future, this should probably be moved to SCF_base and designed to work properly there
   lshift_ = idata->get<double>("levelshift", 0.0);
   if (lshift_ != 0.0) {
     cout << "  level shift : " << setprecision(3) << lshift_ << endl << endl;
@@ -201,11 +201,18 @@ void RHF::compute() {
       smu.compute();
     }
   }
+
+  // print out orbital populations, if needed
+  if (idata_->get<bool>("pop", false)) {
+    cout << "    * Printing out population analysis to rhf.log" << endl;
+    Muffle muf ("rhf.log");
+    population_analysis(geom_, *coeff_, overlap_);
+  }
 }
 
 
 shared_ptr<const Reference> RHF::conv_to_ref() const {
-  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), energy());
+  auto out = make_shared<Reference>(geom_, coeff(), nocc(), 0, coeff_->mdim()-nocc(), vector<double>{energy_});
   out->set_eig(eig_);
   return out;
 }

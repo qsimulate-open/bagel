@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: tensor.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -28,151 +27,58 @@
 #define __SRC_SMITH_TENSOR_H
 
 #include <stddef.h>
-#include <list>
-#include <map>
-#include <memory>
 #include <iostream>
 #include <iomanip>
-#include <cassert>
 #include <type_traits>
-#include <src/ci/fci/civec.h>
+#include <unordered_set>
 #include <src/util/math/matrix.h>
 #include <src/util/math/matop.h>
 #include <src/util/prim_op.h>
 #include <src/smith/storage.h>
 #include <src/smith/indexrange.h>
 #include <src/smith/loopgenerator.h>
-#include <src/smith/tatensor.h>
 
 namespace bagel {
 namespace SMITH {
 
-
 template <typename DataType>
 class Tensor_ {
-  protected:
+  public:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
-
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
   protected:
     std::vector<IndexRange> range_;
     std::shared_ptr<Storage<DataType>> data_;
     int rank_;
+    std::unordered_set<size_t> sparse_;
 
     mutable bool initialized_;
 
+    bool allocated_;
+
   public:
-    Tensor_(std::vector<IndexRange> in, const bool kramers = false);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
-    template<typename D, int N>
-    Tensor_(const TATensor<D,N>& o) : Tensor_(o.indexrange()) { // delegate constuctor
-      madness::World::get_default().gop.fence();
-      std::vector<std::map<size_t, Index>> imap(N);
-      for (int n = 0; n != N; ++n) {
-        size_t off = 0lu;
-        for (auto& j : range_[n]) {
-          imap[n].emplace(off, j);
-          off += j.size();
-        }
-      }
-      // loop over tiles
-      for (auto it = o.begin(); it != o.end(); ++it) {
-        // first get range
-        const TiledArray::Range range = o.trange().make_tile_range(it.ordinal());
-        auto lo = range.lobound();
-        size_t cnt = 0;
-        std::vector<Index> indices;
-        for (auto i = lo.rbegin(); i != lo.rend(); ++i)
-          indices.push_back(imap[cnt++].at(*i));
-        if (it->probe()) {
-          auto tile = it->get();
-          std::unique_ptr<DataType[]> data(new DataType[tile.size()]);
-          assert(tile.size() == get_size(indices));
-          std::copy_n(&(tile[0]), tile.size(), data.get());
-          this->put_block(data, indices);
-        }
-      }
-      // allreduce
-      if (N != 0) allreduce();
-      // for zero dimentional array
-      if (N == 0) {
-        std::unique_ptr<DataType[]> data(new DataType[1]);
-        data[0] = o.get_scalar();
-        this->put_block(data, generate_hash_key());
-      }
-    }
+    Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
-    Tensor_<DataType>& operator=(const Tensor_<DataType>& o) {
-      *data_ = *(o.data_);
-      return *this;
-    }
+    std::shared_ptr<Tensor_<DataType>> clone() const;
+    std::shared_ptr<Tensor_<DataType>> copy() const;
 
-    // Debug function to return TiledArray Tensor from this
-    template<int N>
-    std::shared_ptr<TATensor<DataType,N>> tiledarray(const bool init = false) const {
-      assert(range_.size() == N);
-      std::vector<std::map<size_t,size_t>> keymap;
-      for (auto it = range_.rbegin(); it != range_.rend(); ++it) {
-        std::map<size_t,size_t> key;
-        size_t off = 0lu;
-        for (auto& j : *it) {
-          key.emplace(off, j.key());
-          off += j.size();
-        }
-        keymap.push_back(key);
-      }
-      auto out = std::make_shared<TATensor<DataType,N>>(range_);
-
-      for (auto it = out->begin(); it != out->end(); ++it) {
-        const TiledArray::Range range = out->trange().make_tile_range(it.ordinal());
-        auto lo = range.lobound();
-        assert(lo.size() == N);
-        std::vector<size_t> seed(lo.size());
-        {
-          auto iter = seed.rbegin();
-          auto key = keymap.begin();
-          for (auto jt = lo.begin(); jt != lo.end(); ++jt, ++key, ++iter)
-            *iter = key->at(*jt);
-        }
-        if (get_size_alloc(seed)) {
-          // pull out the tile
-          std::unique_ptr<DataType[]> data = get_block(generate_hash_key(seed));
-          // copy
-          typename TiledArray::Array<DataType,N>::value_type tile(range);
-          assert(tile.size() == get_size_alloc(seed));
-          std::copy_n(data.get(), tile.size(), &(tile[0]));
-          *it = tile;
-        } else if (init) {
-          typename TiledArray::Array<DataType,N>::value_type tile(range);
-          std::fill_n(tile.begin(), tile.size(), 0.0);
-          *it = tile;
-        }
-      }
-      // for zero dimentional array
-      if (N == 0) {
-        if (get_size_alloc()) {
-          std::unique_ptr<DataType[]> data = get_block();
-          out->fill_local(data[0]);
-        } else {
-          out->fill_local(static_cast<DataType>(0.0));
-        }
-      }
-      return out;
-    }
-
-    std::shared_ptr<Tensor_<DataType>> clone() const {
-      return std::make_shared<Tensor_<DataType>>(range_);
-    }
-
-    std::shared_ptr<Tensor_<DataType>> copy() const {
-      std::shared_ptr<Tensor_<DataType>> out = clone();
-      *out = *this;
-      return out;
-    }
+    virtual void init() const { initialized_ = true; }
 
     void ax_plus_y(const DataType& a, const Tensor_<DataType>& o) { data_->ax_plus_y(a, o.data_); }
     void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
 
     void scale(const DataType& a) { data_->scale(a); }
+
+    bool allocated() const { return allocated_; }
+    void allocate();
+    void fence() const { data_->fence(); }
+
+    template<typename ...args>
+    bool is_local(args&& ...p) const { return data_->is_local(std::forward<args>(p)...); }
+    template<typename ...args>
+    bool exists(args&& ...p) const { return sparse_.empty() || sparse_.count(generate_hash_key(std::forward<args>(p)...)); }
 
     DataType dot_product(const Tensor_<DataType>& o) const { return data_->dot_product(*o.data_); }
     DataType dot_product(std::shared_ptr<const Tensor_<DataType>> o) const { return dot_product(*o); }
@@ -187,13 +93,7 @@ class Tensor_ {
 
     template<typename ...args>
     std::unique_ptr<DataType[]> get_block(args&& ...p) const {
-      if (!initialized_) init();
       return data_->get_block(std::forward<args>(p)...);
-    }
-
-    template<typename ...args>
-    std::unique_ptr<DataType[]> move_block(args&& ...p) {
-      return data_->move_block(std::forward<args>(p)...);
     }
 
     template<typename ...args>
@@ -211,48 +111,29 @@ class Tensor_ {
       return data_->blocksize(std::forward<args>(p)...);
     }
 
-    template<typename ...args>
-    size_t get_size_alloc(args&& ...p) const {
-      return data_->blocksize_alloc(std::forward<args>(p)...);
-    }
+    void zero() { data_->zero(); }
 
-    void zero() {
-      data_->zero();
-    }
-
-    void conjugate_inplace() {
-      data_->conjugate_inplace();
-    }
-
-    void allreduce() { data_->allreduce(); }
-
-    virtual void init() const { initialized_ = true; } /*const due to hacky code*/
+    double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o);
 
     std::vector<DataType> diag() const;
-
     std::shared_ptr<MatType> matrix() const;
-    std::shared_ptr<MatType> matrix2() const;
-
-    std::shared_ptr<Civector<DataType>> civec(std::shared_ptr<const Determinants> det) const;
+    std::shared_ptr<VecType> vectorb() const;
 
     // for Kramers tensors (does not do anything for standard tensors)
     void set_perm(const std::map<std::vector<int>, std::pair<double,bool>>& p) { data_->set_perm(p); }
-
-    void print1(std::string label, const double thresh = 5.0e-2) const;
-    void print2(std::string label, const double thresh = 5.0e-2) const;
-    void print3(std::string label, const double thresh = 5.0e-2) const;
-    void print4(std::string label, const double thresh = 5.0e-2) const;
-    void print5(std::string label, const double thresh = 5.0e-2) const;
-    void print6(std::string label, const double thresh = 5.0e-2) const;
-    void print8(std::string label, const double thresh = 5.0e-2) const;
+    void set_stored_sectors(const std::list<std::vector<bool>>& s) { data_->set_stored_sectors(s); }
 };
 
 extern template class Tensor_<double>;
 extern template class Tensor_<std::complex<double>>;
 
 namespace CASPT2 { using Tensor = Tensor_<double>; }
+namespace SPCASPT2 { using Tensor = Tensor_<double>; }
+namespace MSCASPT2 { using Tensor = Tensor_<double>; }
 namespace MRCI   { using Tensor = Tensor_<double>; }
 namespace RelCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
+namespace RelSPCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
+namespace RelMSCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelMRCI   { using Tensor = Tensor_<std::complex<double>>; }
 
 }

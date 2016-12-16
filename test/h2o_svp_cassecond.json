@@ -1,0 +1,28 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "svp",
+  "df_basis" : "tzvpp-jkfit",
+  "angstrom" : "false",
+  "thresh_overlap" : 1e-10,
+  "geometry" : [
+    { "atom" : "O", "xyz" : [ 0.00, 0.00, -0.00]},
+    { "atom" : "H", "xyz" : [ 1.43, 0.00,  0.95]},
+    { "atom" : "H", "xyz" : [-1.43, 0.00,  0.95]}
+  ]
+},
+
+{
+  "title" : "hf"
+},
+
+{
+  "title" : "casscf",
+  "algorithm" : "second",
+  "nact" : 5,
+  "nclosed" : 2
+}
+
+]}

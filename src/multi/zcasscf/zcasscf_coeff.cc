@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zcasscf_coeff.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/multi/zcasscf/zcasscf.h>
@@ -30,38 +29,24 @@ using namespace bagel;
 
 
 void ZCASSCF::kramers_adapt(shared_ptr<ZMatrix> o, const int nvirt) const {
-  // function to enforce time-reversal symmetry
-  //    for a complex matrix o, that is SYMMETRIC under time reversal
+  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim());
 
-  auto kramers_adapt_block = [this](shared_ptr<ZMatrix> o, unsigned int tfac, int nq1, int nq2, int joff, int ioff, int nvirt) {
-    // function to enforce time-reversal symmetry for a given block of a complex matrix o.
-    // tfac                 symmetry factor under time-reversal (symmetric : t=1, antisymm : t=-1)
-    // nq1, nq2             nclosed_, nact_, nvirt
-    // ioff, joff           column and row offsets, respectively
-    assert( o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim() );
-    assert( tfac == 1 || tfac == -1);
-    const double t = tfac == 1 ? 1.0 : -1.0;
-    for (int i = 0; i != nq2; ++i) {
-      for (int j = 0; j != nq1; ++j) {
-        // Diagonal contributions : "A" matrices in notation of T. Suae thesis
-        o->element(joff+j, ioff+i) = ( o->element(joff+j, ioff+i) + conj(o->element(joff+j+nq1, ioff+i+nq2)) ) * 0.5;
-        o->element(joff+j+nq1,ioff+i+nq2) = t * conj(o->element(joff+j,ioff+i));
+  auto kramers_adapt_block = [this,&nvirt,&o](const int jst, const int ist, const int joff, const int ioff) {
+    for (int i = 0; i != ist; ++i)
+      for (int j = 0; j != jst; ++j) {
+        o->element(joff+j, ioff+i) = 0.5*(o->element(joff+j, ioff+i) + conj(o->element(joff+j+jst, ioff+i+ist)));
+        o->element(joff+j+jst,ioff+i+ist) = conj(o->element(joff+j,ioff+i));
 
-        // Diagonal contributions : "B" matrices in notation of T. Suae thesis
-        o->element(joff+nq1+j, ioff+i) = ( o->element(joff+nq1+j, ioff+i) - conj(o->element(joff+j, ioff+nq2+i)) ) * 0.5;
-        o->element(joff+j, ioff+nq2+i) = -t * conj(o->element(joff+nq1+j,ioff+i));
+        o->element(joff+jst+j, ioff+i) = 0.5*(o->element(joff+jst+j, ioff+i) - conj(o->element(joff+j, ioff+ist+i)));
+        o->element(joff+j, ioff+ist+i) = - conj(o->element(joff+jst+j, ioff+i));
       }
-    }
   };
 
-  assert(o->ndim() == o->mdim() && (nclosed_ + nact_ + nvirt)*2 == o->ndim());
-  const array<int,3> a0 {{nclosed_, nact_, nvirt}};
-  const array<int,3> a1 {{0, 2*nclosed_, 2*nocc_}};
-  for (int ii = 0; ii !=3; ++ii) {
-    for (int jj = 0; jj !=3; ++jj) {
-      kramers_adapt_block(o,1,a0[jj],a0[ii],a1[jj],a1[ii],nvirt);
-    }
-  }
+  const array<int,3> stride{{nclosed_, nact_, nvirt}};
+  const array<int,3> offset{{0, 2*nclosed_, 2*nocc_}};
+  for (int ii = 0; ii != 3; ++ii)
+    for (int jj = 0; jj != 3; ++jj)
+      kramers_adapt_block(stride[jj], stride[ii], offset[jj], offset[ii]);
 }
 
 
@@ -138,14 +123,14 @@ void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
   int nr_nvirt = nvirt_ - nneg_/2;
   for (int i = 0; i != nclosed_*2; ++i) {
     for (int j = 0; j != nneg_/2; ++j) {
-      rot->ele_vc(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
-      rot->ele_vc(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+      rot->ele_vc(j + nr_nvirt, i) = 0.0;
+      rot->ele_vc(j + nr_nvirt + nvirt_, i) = 0.0;
     }
   }
   for (int i = 0; i != nact_*2; ++i) {
     for (int j = 0; j != nneg_/2; ++j) {
-      rot->ele_va(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
-      rot->ele_va(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+      rot->ele_va(j + nr_nvirt, i) = 0.0;
+      rot->ele_va(j + nr_nvirt + nvirt_, i) = 0.0;
     }
   }
 }

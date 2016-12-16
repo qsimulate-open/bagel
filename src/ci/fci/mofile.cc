@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: mofile.cc
 // Copyright (C) 2011 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <iostream>
@@ -42,7 +41,7 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const string method)
   const bool do_df = geom_->df().get();
   if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
-  hz_ = (method=="HZ");
+  hz_ = method == "HZ";
 }
 
 
@@ -52,18 +51,18 @@ MOFile::MOFile(const shared_ptr<const Reference> ref, const shared_ptr<const Mat
   const bool do_df = geom_->df().get();
   if (!do_df) throw runtime_error("MOFile is implemented only with density fitting");
 
-  hz_ = (method=="HZ");
+  hz_ = method == "HZ";
 }
 
 
-void MOFile::init(const int nstart, const int nfence) {
+void MOFile::init(const int nstart, const int nfence, const bool store) {
 
   // first compute all the AO integrals in core
   nocc_ = nfence - nstart;
 
   // core energy is set here
   if (nstart != 0) {
-    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/false, /*rhf*/true);
+    core_fock_ = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, coeff_->slice(0,nstart), /*grad*/store, /*rhf*/true);
     shared_ptr<const Matrix> den = coeff_->form_density_rhf(nstart);
     core_energy_ = (*den * (*ref_->hcore()+*core_fock_)).trace() * 0.5;
   } else {

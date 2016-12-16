@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dfblock.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_DF_DFBLOCK_H
@@ -89,26 +88,8 @@ class DFBlock : public btas::Tensor3<double> {
 
 
     // some math functions
-    DFBlock& operator=(const DFBlock& o) {
-      btas::Tensor3<double>::operator=(o);
-      adist_shell_ = o.adist_shell_;
-      adist_ = o.adist_;
-      averaged_ = o.averaged_;
-      astart_ = o.astart_;
-      b1start_ = o.b1start_;
-      b2start_ = o.b2start_;
-      return *this;
-    }
-    DFBlock& operator=(DFBlock&& o) {
-      btas::Tensor3<double>::operator=(std::move(o));
-      adist_shell_ = o.adist_shell_;
-      adist_ = o.adist_;
-      averaged_ = o.averaged_;
-      astart_ = o.astart_;
-      b1start_ = o.b1start_;
-      b2start_ = o.b2start_;
-      return *this;
-    }
+    DFBlock& operator=(const DFBlock& o);
+    DFBlock& operator=(DFBlock&& o);
     DFBlock& operator+=(const DFBlock& o) { btas::Tensor3<double>::operator+=(o); return *this; }
     DFBlock& operator-=(const DFBlock& o) { btas::Tensor3<double>::operator-=(o); return *this; }
 
@@ -122,35 +103,12 @@ class DFBlock : public btas::Tensor3<double> {
     void zero() { std::fill_n(data(), size(), 0.0); }
 
     // symmetrize b1 and b2 (assuming b1size() == b2size())
-    void symmetrize() {
-      if (b1size() != b2size()) throw std::logic_error("illegal call of DFBlock::symmetrize()");
-      const int n = b1size();
-      for (int i = 0; i != n; ++i)
-        for (int j = i; j != n; ++j) {
-          blas::ax_plus_y_n(1.0, data()+asize()*(j+n*i), asize(), data()+asize()*(i+n*j));
-          std::copy_n(data()+asize()*(i+n*j), asize(), data()+asize()*(j+n*i));
-        }
-    }
+    void symmetrize();
 
-    void copy_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset) {
-      assert(o->size() == asize()*jdim);
-      std::copy_n(o->data(), asize()*jdim, data()+offset);
-    }
-
-    void copy_block(MatView o, const int jdim, const size_t offset) {
-      assert(o.size() == asize()*jdim);
-      std::copy_n(o.data(), asize()*jdim, data()+offset);
-    }
-
-    void add_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac = 1.0) {
-      assert(o->size() == asize()*jdim);
-      blas::ax_plus_y_n(fac, o->data(), asize()*jdim, data()+offset);
-    }
-
-    void add_block(MatView o, const int jdim, const size_t offset, const double fac = 1.0) {
-      assert(o.size() == asize()*jdim);
-      blas::ax_plus_y_n(fac, o.data(), asize()*jdim, data()+offset);
-    }
+    void copy_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset);
+    void copy_block(MatView o, const int jdim, const size_t offset);
+    void add_block(std::shared_ptr<MatView> o, const int jdim, const size_t offset, const double fac = 1.0);
+    void add_block(MatView o, const int jdim, const size_t offset, const double fac = 1.0);
 
     // average the asize between MPI processes (block will be described by dist_)
     void average();
@@ -165,7 +123,7 @@ class DFBlock : public btas::Tensor3<double> {
     std::shared_ptr<DFBlock> transform_third(const MatView c, const bool trans = false) const;
 
     // add ab^+  to this.
-    void add_direct_product(const std::shared_ptr<const VectorB> a, const std::shared_ptr<const Matrix> b, const double fac);
+    void add_direct_product(const VecView a, const MatView b, const double fac);
 
     // exchange b1 and b2
     std::shared_ptr<DFBlock> swap() const;
@@ -181,6 +139,8 @@ class DFBlock : public btas::Tensor3<double> {
     std::shared_ptr<Matrix> form_4index(const std::shared_ptr<const DFBlock> o, const double a) const;
     // slowest index of o is fixed to n
     std::shared_ptr<Matrix> form_4index_1fixed(const std::shared_ptr<const DFBlock> o, const double a, const size_t n) const;
+    std::shared_ptr<Matrix> form_4index_diagonal() const;
+    std::shared_ptr<Matrix> form_4index_diagonal_part() const;
     std::shared_ptr<Matrix> form_aux_2index(const std::shared_ptr<const DFBlock> o, const double a) const;
 
     std::shared_ptr<VectorB> form_vec(const std::shared_ptr<const Matrix> den) const;

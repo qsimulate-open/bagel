@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: mpi_interface.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <iostream>
@@ -81,6 +80,8 @@ MPI_Interface::MPI_Interface()
     assert(flag && *get_val >= 32767); // this is what the standard says
     tag_ub_ = *get_val;
   }
+
+  // start Global Arrays here
 #else
   rank_ = 0;
   size_ = 1;
@@ -129,7 +130,7 @@ void MPI_Interface::soft_barrier() {
 
 void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI::SUM, root, MPI_COMM_WORLD);
+  MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
 #endif
 }
 
@@ -170,26 +171,19 @@ void MPI_Interface::allreduce(int* a, const size_t size) const {
 }
 
 
-void MPI_Interface::allreduce(size_t* a, const size_t size) const {
-#ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-#endif
-}
-
-
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 
 int MPI_Interface::iallreduce(size_t* a, const size_t size) {
-  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
 #ifdef HAVE_MPI_H
   vector<MPI_Request> rq;
   MPI_Request c;
-  MPI_Iallreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD, &c);
+  MPI_Iallreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD, &c);
   rq.push_back(c);
 #endif
   lock_guard<mutex> lock(mpimutex_);
@@ -225,8 +219,8 @@ void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
 
 void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
-  MPI_Bcast(static_cast<void*>(a), size, MPI_LONG_LONG, root, MPI_COMM_WORLD);
+  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
+  MPI_Bcast(static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, root, MPI_COMM_WORLD);
 #endif
 }
 
@@ -240,7 +234,7 @@ void MPI_Interface::broadcast(double* a, const size_t size, const int root) cons
 
 void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
+  MPI_Bcast(static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
 #endif
 }
 
@@ -281,11 +275,22 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 }
 
 
+void MPI_Interface::allgather(const complex<double>* send, const size_t ssize, complex<double>* rec, const size_t rsize) const {
+#ifdef HAVE_MPI_H
+  // I hate const_cast. Blame the MPI C binding
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_CXX_DOUBLE_COMPLEX, static_cast<void*>(rec), rsize, MPI_CXX_DOUBLE_COMPLEX, MPI_COMM_WORLD);
+#else
+  assert(ssize == rsize);
+  copy_n(send, ssize, rec);
+#endif
+}
+
+
 void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
-  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
   // I hate const_cast. Blame the MPI C binding
-  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_LONG_LONG, static_cast<void*>(rec), rsize, MPI_LONG_LONG, MPI_COMM_WORLD);
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_UNSIGNED_LONG_LONG, static_cast<void*>(rec), rsize, MPI_UNSIGNED_LONG_LONG, MPI_COMM_WORLD);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);
@@ -333,7 +338,7 @@ int MPI_Interface::request_send(const complex<double>* sbuf, const size_t size, 
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<complex<double>*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE_COMPLEX, dest, tag, MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<complex<double>*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
 #endif
@@ -349,13 +354,13 @@ int MPI_Interface::request_send(const complex<double>* sbuf, const size_t size, 
 int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int dest, const int tag) {
 #ifdef HAVE_MPI_H
   assert(tag <= tag_ub_);
-  static_assert(sizeof(size_t) == sizeof(long long), "size_t is assumed to be the same size as long long");
+  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
   vector<MPI_Request> rq;
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
 #endif
@@ -396,7 +401,7 @@ int MPI_Interface::request_recv(complex<double>* rbuf, const size_t size, const 
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
-    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE_COMPLEX, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
 #endif
@@ -416,7 +421,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
-    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
     rq.push_back(c);
   }
 #endif

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: _complex_eriroot_6.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <algorithm>
@@ -11636,7 +11635,7 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
       fill_n(rr+offset, 6, 0.5);
       fill_n(ww+offset, 6, 0.0);
     } else if (t.real() < -2) {
-      throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength");
+      throw runtime_error ("ERROR!  Invalid T value!  Real part is too small.  Consider regenerating interpolation files with a larger domain or reducing the magnetic field strength.");
     } else if (t.real() >= 66) {
       t = 1.0/sqrt(t);
       for (int r = 0; r != 6; ++r) {
@@ -11650,16 +11649,16 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
       if (torig.imag() < 0) t = conj(torig);
       int itr = static_cast<int>((t.real()-(-2))*   0.500000000000000) ;
       int iti = static_cast<int>((t.imag()-(0))*   2.000000000000000) ;
-      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000) *   1.000000000000000 - (-2) ;
-      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000) *   4.000000000000000 - (0) ;
+      double tr = (t.real()-itr*2.000000000000000-   1.000000000000000 - -2) *   1.000000000000000;
+      double ti = (t.imag()-iti*0.500000000000000-   0.250000000000000 - 0) *   4.000000000000000;
       const double tr2 = tr * 2.0;
       const double ti2 = ti * 2.0;
       if (itr < 11) {
         for (int j=1; j <=6; ++j) {
-          vector<double> xrval(10);
-          vector<double> xival(10);
-          vector<double> wrval(10);
-          vector<double> wival(10);
+          double xrval[10];
+          double xival[10];
+          double wrval[10];
+          double wival[10];
           for (int k=1; k<= 10; k++){
             const int boxof = iti*20280 + itr*840 + (j-1)*140 + (k-1)*14;
             double dr = xr[boxof+13];
@@ -11722,10 +11721,10 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
           const double denom = 10;
           const double fac = 2 / denom;
           const double pi = 3.141592653589793238462;
-          vector<double> tcxr(10);
-          vector<double> tcxi(10);
-          vector<double> tcwr(10);
-          vector<double> tcwi(10);
+          double tcxr[10];
+          double tcxi[10];
+          double tcwr[10];
+          double tcwi[10];
           for (int b = 0; b != 10; ++b) {
             double sumxr = 0;
             double sumxi = 0;
@@ -11792,10 +11791,10 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
         }
       } else {
         for (int j=1; j <=6; ++j) {
-          vector<double> xrval(8);
-          vector<double> xival(8);
-          vector<double> wrval(8);
-          vector<double> wival(8);
+          double xrval[8];
+          double xival[8];
+          double wrval[8];
+          double wival[8];
           for (int k=1; k<= 8; k++){
             const int boxof = iti*20280 + itr*480 + 3960 + (j-1)*80 + (k-1)*10;
             double dr = xr[boxof+9];
@@ -11842,10 +11841,10 @@ void ComplexERIRootList::complex_eriroot6(const complex<double>* ta, complex<dou
           const double denom = 8;
           const double fac = 2 / denom;
           const double pi = 3.141592653589793238462;
-          vector<double> tcxr(8);
-          vector<double> tcxi(8);
-          vector<double> tcwr(8);
-          vector<double> tcwi(8);
+          double tcxr[8];
+          double tcxi[8];
+          double tcwr[8];
+          double tcwi[8];
           for (int b = 0; b != 8; ++b) {
             double sumxr = 0;
             double sumxi = 0;

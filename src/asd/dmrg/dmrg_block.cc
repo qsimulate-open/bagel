@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dmrg_block.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <algorithm>
@@ -165,7 +164,7 @@ shared_ptr<const BlockOperators> DMRG_Block1::compute_block_ops(shared_ptr<Dimer
   return make_shared<BlockOperators1>(shared_from_this(), jop);
 }
 
-DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, std::shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
+DMRG_Block2::DMRG_Block2(shared_ptr<const DMRG_Block1> lb, shared_ptr<const DMRG_Block1> rb) : left_block_(lb), right_block_(rb) {
   // left block runs first in the resulting pairmap_ vectors
   for (auto& left : lb->blocks()) {
     for (auto& right : rb->blocks()) {
@@ -350,6 +349,6 @@ shared_ptr<Matrix> DMRG_Block2::spin_raise(const BlockKey b) const {
   return out;
 }
 
-shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(std::shared_ptr<DimerJop> jop) const {
+shared_ptr<const BlockOperators> DMRG_Block2::compute_block_ops(shared_ptr<DimerJop> jop) const {
   return make_shared<BlockOperators2>(shared_from_this(), jop);
 }

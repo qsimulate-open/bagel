@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gcompute.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/util/math/algo.h>
@@ -105,7 +104,7 @@ void GradBatch::compute() {
       a = asph;
       b = bsph;
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -119,7 +118,7 @@ void GradBatch::compute() {
       for (int i = 0; i != nloop; ++i, offset += m * n)
         blas::transpose(source_now+offset, m, n, target_now+offset);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? cdata : bkup_;
@@ -135,7 +134,7 @@ void GradBatch::compute() {
       c = csph;
       d = dsph;
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     if (spherical1_) {
@@ -152,7 +151,7 @@ void GradBatch::compute() {
       const SortList sort2(spherical2_);
       sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? cdata : bkup_;
@@ -164,7 +163,7 @@ void GradBatch::compute() {
       const int n = a * b * cont0size_ * cont1size_;
       blas::transpose(source_now, m, n, target_now);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -177,7 +176,7 @@ void GradBatch::compute() {
       const SortList sort1(spherical1_);
       sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     if (swapped) copy_n(bkup_, size_block_, cdata);

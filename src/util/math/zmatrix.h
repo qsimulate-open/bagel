@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zmatrix.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -67,19 +66,8 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     std::shared_ptr<ZMatrix> resize(const int n, const int m) const { return this->resize_impl<ZMatrix>(n, m); }
     std::shared_ptr<ZMatrix> merge(const std::shared_ptr<const ZMatrix> o) const { return this->merge_impl<ZMatrix>(o); }
 
-    ZMatView slice(const int mstart, const int mend) {
-      assert(mstart >= 0 && mend <= mdim());
-      auto low = {0, mstart};
-      auto up  = {ndim(), mend};
-      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
-    }
-
-    const ZMatView slice(const int mstart, const int mend) const {
-      assert(mstart >= 0 && mend <= mdim());
-      auto low = {0, mstart};
-      auto up  = {ndim(), mend};
-      return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
-    }
+    ZMatView slice(const int mstart, const int mend);
+    const ZMatView slice(const int mstart, const int mend) const;
 
     // diagonalize this matrix (overwritten by a coefficient matrix)
     virtual void diagonalize(VecView vec);
@@ -115,7 +103,7 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
     ZMatrix& operator/=(const ZMatrix&);
     ZMatrix operator/(const ZMatrix&) const;
 
-    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim()); }
+    std::shared_ptr<ZMatrix> clone() const { return std::make_shared<ZMatrix>(ndim(), mdim(), localized()); }
     std::shared_ptr<ZMatrix> copy() const { return std::make_shared<ZMatrix>(*this); }
 
     // returns exp(*this)
@@ -149,8 +137,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
-    void purify_idempotent(const ZMatrix& s);
-    void purify_redrotation(const int nclosed, const int nact, const int nvirt);
 
     std::shared_ptr<ZMatrix> solve(std::shared_ptr<const ZMatrix> A, const int n) const;
 

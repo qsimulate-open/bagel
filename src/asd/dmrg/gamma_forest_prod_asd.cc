@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gamma_forest_prod_asd.cc
 // Copyright (C) 2014 Shane Parker
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/asd/dmrg/gamma_forest_prod_asd.h>
@@ -141,7 +140,7 @@ tuple</*conj*/bool, /*rev*/bool, list<GammaSQ>> GammaForestProdASD::try_permutat
     const bool rev = bitset<2>(conjrev)[1];
     const bool conj = bitset<2>(conjrev)[0];
 
-    list<GammaSQ> tmp = rev^conj ? list<GammaSQ>(gammalist.rbegin(), gammalist.rend()) : list<GammaSQ>(gammalist.begin(), gammalist.end());
+    list<GammaSQ> tmp = (rev != conj) ? list<GammaSQ>(gammalist.rbegin(), gammalist.rend()) : list<GammaSQ>(gammalist.begin(), gammalist.end());
     if (conj) for_each(tmp.begin(), tmp.end(), [] (GammaSQ& a) { a = conjugate(a); });
 
     if (count(possible_couplings_.begin(), possible_couplings_.end(), tmp)==1)
@@ -239,7 +238,7 @@ void GammaForestProdASD::compute() {
 
         vector<tuple<size_t, size_t, size_t>> index_data; index_data.reserve(nijk_part);
         for (size_t ijk_part = 0; ijk_part < nijk_part; ++ijk_part) {
-          tuple<size_t, size_t, size_t> indices = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj^ci_rev);
+          tuple<size_t, size_t, size_t> indices = get_indices(bit, coupling.size(), ijk_part, lnorb, block_conj^block_rev, rnorb, ci_conj != ci_rev);
           if (ci_conj) transpose_list.insert(std::get<0>(indices));
           index_data.push_back(indices);
         }
@@ -268,7 +267,7 @@ void GammaForestProdASD::compute() {
             // second part: the phase from rearranging the operators so that the block operators are on the right
             //   sign only changes if part = "010" or "101"
             // third part: phase from moving block operators past ci ket
-            const int phase = (block_rev^ci_rev ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((original_blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
+            const int phase = ((block_rev != ci_rev) ? -1 : 1) * (part==2 || part==5 ? -1 : 1) * static_cast<int>(1 - (((original_blockops.size()*(ci_ket.nelea+ci_ket.neleb))%2) << 1));
 
             // swap where appropriate
             if (block_conj) swap(block_bra, block_ket);
@@ -286,7 +285,7 @@ void GammaForestProdASD::compute() {
               for (int ket_k = 0; ket_k < Mket; ++ket_k) {
                 if (blockI && ket_k!=bra_k) continue; // block states are orthonormal
 
-                if (block_conj ^ ci_conj) {
+                if (block_conj != ci_conj) {
                   ps_bra.state = ket_k;
                   ps_ket.state = bra_k;
                 }

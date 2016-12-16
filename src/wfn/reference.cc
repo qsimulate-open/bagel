@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: reference.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/wfn/reference.h>
@@ -28,6 +27,7 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/mat1e/mixedbasis.h>
 #include <src/ci/fci/fci.h>
+#include <src/util/io/moldenin.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::Reference)
 
@@ -36,7 +36,7 @@ using namespace bagel;
 
 Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
                      const int _nclosed, const int _nact, const int _nvirt,
-                     const double en,
+                     const vector<double> en,
                      shared_ptr<const VecRDM<1>> _rdm1, shared_ptr<const VecRDM<2>> _rdm2,
                      shared_ptr<const RDM<1>> _rdm1_av, shared_ptr<const RDM<2>> _rdm2_av,
                      shared_ptr<const CIWfn> ci)
@@ -64,10 +64,25 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
 }
 
 
-tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst) const {
+Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const PTree> itree) : geom_(g), hcore_(make_shared<Hcore>(geom_)) {
+  // Note that other informations are not available...
+  // Then read molden
+  const string molden_file = itree->get<string>("molden_file", "");
+  assert(!molden_file.empty());
+  MoldenIn mfs(molden_file, geom_->spherical());
+  mfs.read();
+  if (mfs.has_mo()) {
+    auto c = make_shared<Coeff>(geom_);
+    mfs >> tie(c, g);
+    coeff_ = c;
+  }
+}
+
+
+tuple<shared_ptr<const RDM<1>>,shared_ptr<const RDM<2>>> Reference::rdm12(const int ist, const int jst, const bool recompute) const {
   shared_ptr<const RDM<1>> r1;
   shared_ptr<const RDM<2>> r2;
-  if (rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
+  if (!recompute && rdm1_->exist(ist, jst) && rdm2_->exist(ist, jst)) {
     r1 = rdm1_->at(ist, jst);
     r2 = rdm2_->at(ist, jst);
   } else {
@@ -80,17 +95,10 @@ tuple<shared_ptr<const RDM<1>>,std::shared_ptr<const RDM<2>>> Reference::rdm12(c
 }
 
 
-tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
+tuple<shared_ptr<const RDM<3>>,shared_ptr<const RDM<4>>> Reference::rdm34(const int ist, const int jst) const {
   FCI_bare fci(ciwfn_);
   fci.compute_rdm12(ist, jst); // TODO stupid code
   return fci.rdm34(ist, jst);
-}
-
-
-tuple<shared_ptr<const RDM<3>>,std::shared_ptr<const RDM<3>>> Reference::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
-  FCI_bare fci(ciwfn_);
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34f(ist, jst, fock);
 }
 
 
@@ -122,16 +130,17 @@ shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
 }
 
 
-tuple<shared_ptr<Dvec>,shared_ptr<Dvec>> Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
+Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm34deriv(istate, fock);
+  return fci.rdm34deriv(istate, fock, offset, size);
 }
 
 
 shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
 
   if (geomin->magnetism())
-    throw std::runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
+    throw runtime_error("Projection from real to GIAO basis set is not implemented.   Use the GIAO code at zero-field.");
 
   bool moved = false;
   bool newbasis = false;
@@ -193,12 +202,6 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
 void Reference::set_eig(const VectorB& eig) {
   eig_ = eig;
   mpi__->broadcast(eig_.data(), eig_.size(), 0);
-}
-
-
-void Reference::set_erdm1(const shared_ptr<const Matrix> o) {
-  mpi__->broadcast(const_pointer_cast<Matrix>(o)->data(), o->size(), 0);
-  erdm1_ = o;
 }
 
 

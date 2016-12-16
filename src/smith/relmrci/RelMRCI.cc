@@ -1,26 +1,25 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelMRCI.cc
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
-// Author: Shiozaki group <shiozaki@northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -36,15 +35,19 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 RelMRCI::RelMRCI::RelMRCI(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
+  auto eig = f1_->diag();
+  eig_.resize(eig.size());
+  for (int i = 0; i != eig.size(); ++i)
+    eig_[i] = real(eig[i]);
   nstates_ = ref->ciwfn()->nstates();
 
   for (int i = 0; i != nstates_; ++i) {
-    auto tmp = make_shared<MultiTATensor<std::complex<double>,4>>(nstates_);
+    auto tmp = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp)
       j = init_amplitude();
     t2all_.push_back(tmp);
 
-    auto tmp2 = make_shared<MultiTATensor<std::complex<double>,4>>(nstates_);
+    auto tmp2 = make_shared<MultiTensor>(nstates_);
     for (auto& j : *tmp2)
       j = init_residual();
     sall_.push_back(tmp2);
@@ -96,11 +99,12 @@ void RelMRCI::RelMRCI::solve() {
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
-      t2all_[i] = update_amplitude(t2all_[i], res[i]->tensor());
+      e0_ = e0all_[i];
+      update_amplitude(t2all_[i], res[i]->tensor());
     }
   }
 
-  shared_ptr<MultiTATensor<std::complex<double>,4>> rtmp = nall_[0]->copy();
+  shared_ptr<MultiTensor> rtmp = nall_[0]->copy();
   rtmp->zero();
 
   Timer mtimer;
@@ -153,7 +157,7 @@ void RelMRCI::RelMRCI::solve() {
 
       // <ab/ij| T |0_ist> Eref_ist.
       {
-        shared_ptr<MultiTATensor<std::complex<double>,4>> m = t2all_[istate]->copy();
+        shared_ptr<MultiTensor> m = t2all_[istate]->copy();
         for (int ist = 0; ist != nstates_; ++ist) {
           // First weighted T2 amplitude
           m->at(ist)->scale(info_->ciwfn()->energy(ist) - core_nuc);
@@ -170,7 +174,7 @@ void RelMRCI::RelMRCI::solve() {
       }
 
       {
-        shared_ptr<MultiTATensor<std::complex<double>,4>> m = rtmp->copy();
+        shared_ptr<MultiTensor> m = rtmp->copy();
         for (int ist = 0; ist != nstates_; ++ist)
           m->fac(ist) = dot_product_transpose(sall_[ist], t2all_[istate]);
         r0.push_back(make_shared<Residual<std::complex<double>>>(m, this));
@@ -187,8 +191,10 @@ void RelMRCI::RelMRCI::solve() {
 
       t2all_[i]->zero();
       conv[i] = err < info_->thresh();
-      if (!conv[i])
+      if (!conv[i]) {
+        e0_ = e0all_[i];
         update_amplitude(t2all_[i], res[i]->tensor());
+      }
     }
     if (nstates_ > 1) cout << endl;
 
@@ -196,6 +202,28 @@ void RelMRCI::RelMRCI::solve() {
   }
   print_iteration(iter == info_->maxiter());
   timer.tick_print("MRCI energy evaluation");
+
+  // Davidson corrections...
+  {
+    cout << endl;
+    vector<double> energy_q(nstates_);
+    vector<shared_ptr<Amplitude<std::complex<double>>>> ci = davidson.civec();
+    for (int i = 0; i != nstates_; ++i) {
+      double c = 0.0;
+      double eref = 0.0;
+      for (int j = 0; j != nstates_; ++j) {
+        const double cn = norm(ci[i]->tensor()->fac(j));
+        c += cn;
+        eref += cn * info_->ciwfn()->energy(j);
+      }
+      eref /= c;
+      const double eq = energy_[i]+core_nuc + (energy_[i]+core_nuc-eref)*(1.0-c)/c;
+      print_iteration(0, eq, 0.0, 0.0, i);
+    }
+    cout << endl;
+
+  }
+  timer.tick_print("MRCI+Q energy evaluation");
 }
 
 

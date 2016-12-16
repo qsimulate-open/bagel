@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gradeval.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -30,10 +29,9 @@
 #include <src/scf/hf/rohf.h>
 #include <src/scf/ks/ks.h>
 #include <src/scf/dhf/dirac.h>
+#include <src/multi/casscf/casscf.h>
 #include <src/pt2/mp2/mp2grad.h>
-#include <src/pt2/dmp2/dmp2grad.h>
 #include <src/grad/gradeval_base.h>
-#include <src/multi/casscf/supercigrad.h>
 #include <src/smith/caspt2grad.h>
 
 // T should have
@@ -46,21 +44,32 @@ namespace bagel {
 template<typename T>
 class GradEval : public GradEval_base {
   protected:
+    std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Reference> ref_;
 
     std::shared_ptr<T> task_;
 
     double energy_;
+    int target_state_;
+
+    void init() {
+      if (geom_->external())
+        throw std::logic_error("Gradients with external fields have not been implemented.");
+      // target has to be passed to T (for CASPT2, for instance)
+      auto idata_out = std::make_shared<PTree>(*idata_);
+      idata_out->put("_target", target_state_);
+      task_ = std::make_shared<T>(idata_out, geom_, ref_);
+      task_->compute();
+      ref_  = task_->conv_to_ref();
+      energy_ = ref_->energy(target_state_);
+      geom_ = ref_->geom();
+    }
 
   public:
     // Constructor performs energy calculation
-    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) : GradEval_base(geom) {
-      if (geom->external()) throw std::logic_error("Gradients with external fields have not been implemented.");
-      task_ = std::make_shared<T>(idata, geom, ref);
-      task_->compute();
-      ref_  = task_->conv_to_ref();
-      energy_ = ref_->energy();
-      geom_ = ref_->geom();
+    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target) {
+      init();
     }
 
     // compute() computes effective density matrices and perform gradient contractions
@@ -77,11 +86,12 @@ template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
 template<> std::shared_ptr<GradFile> GradEval<KS>::compute();
 template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
-template<> std::shared_ptr<GradFile> GradEval<SuperCI>::compute();
-template<> std::shared_ptr<GradFile> GradEval<SuperCIGrad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
-template<> std::shared_ptr<GradFile> GradEval<DMP2Grad>::compute();
 template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();
+
+// CASSCF is slightly more complicated. These functions are implemented in casgrad.cc
+template<> void GradEval<CASSCF>::init();
+template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute();
 
 }
 

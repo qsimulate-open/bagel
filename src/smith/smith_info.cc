@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: smith_info.cc
 // Copyright (C) 2015 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -31,7 +30,7 @@
 
 using namespace std;
 using namespace bagel;
-using namespace bagel::SMITH;
+
 
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr<const PTree> idata) : ref_(o) {
@@ -41,60 +40,51 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
   if (ncore_)
     cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
-  if (ncore_ > nclosed())
-    throw runtime_error("frozen core has been specified but there are not enough closed orbitals");
   nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
   if (nfrozenvirt_)
     cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << endl;
 
   maxiter_ = idata->get<int>("maxiter", 50);
-  target_  = idata->get<int>("target",   0);
   maxtile_ = idata->get<int>("maxtile", 10);
-  grad_    = idata->get<bool>("grad", false);
-#ifdef HAVE_MKL_H
-  num_threads_ = mkl_get_max_threads();
-#endif
+
+  do_ms_   = idata->get<bool>("ms",  true);
+  do_xms_  = idata->get<bool>("xms", false);
+  sssr_    = idata->get<bool>("sssr", false);
+  shift_diag_  = idata->get<bool>("shift_diag", true);
+  if (ciwfn()->nstates() > 1)
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
+
+  if (idata->get<bool>("extract_average_rdms", false) && ref_->nstate() != 1) {
+    vector<int> rdm_states = idata->get_vector<int>("rdm_state");
+    if (idata->get<bool>("extract_single_state", false))
+      ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
+    else
+      ref_ = extract_ref(rdm_states);
+  }
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
+  shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
-  // subspaces
-  const bool comp  = is_same<DataType,complex<double>>::value;
-  const int ncore2 = ncore_*(comp ? 2 : 1);
+  // These are not input parameters (set automatically)
+  target_  = idata->get<int>("_target", -1);
+  grad_    = idata->get<bool>("_grad", false);
+  assert(!(grad_ && target_ < 0));
+}
 
-  const int maxtile_act = idata->get<int>("maxtile_act", 4); // in order to fit 4RDMs in MADNESS' buffer
 
-  closed_ = IndexRange("c", nclosed()-ncore_, maxtile_, 0, ncore_);
-  if (comp)
-    closed_.merge(IndexRange("c", nclosed()-ncore_, maxtile_, closed_.nblock(), ncore2+closed_.size(), ncore_));
-  active_ = IndexRange("x", nact(), maxtile_act, closed_.nblock(), ncore2+closed_.size());
-  if (comp)
-    active_.merge(IndexRange("x", nact(), maxtile_act, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(), ncore2+closed_.size()));
-  virt_ = IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
-  if (comp)
-    virt_.merge(IndexRange("a", nvirt(), maxtile_, closed_.nblock()+active_.nblock()+virt_.nblock(), ncore2+closed_.size()+active_.size()+virt_.size(),
-                                                                                                     ncore2+closed_.size()+active_.size()));
-  all_    = closed_; all_.merge(active_); all_.merge(virt_);
-
-  // IndexRange for orbital update
-  const int nact2 = nact()*(comp ? 2 : 1);
-  ortho1_  = IndexRange("o", nstates()*nact2, maxtile_);
-  ortho2_  = IndexRange("o", nstates()*nact2*nact2, maxtile_);
-  ortho3_  = IndexRange("o", nstates()*nact2*nact2*nact2, maxtile_);
-  ortho2t_ = IndexRange("o", nstates()*nact2*nact2*(comp ? 1 : 2), maxtile_); // for XXCA
-
-  // only for gradient computation
-  if (ciwfn() && grad_) {
-    // length of the ci expansion
-    const size_t ci_size = ref_->civectors()->data(target_)->size();
-    ci_ = IndexRange("ci", ci_size, maxtile_);
-  }
+template<typename DataType>
+SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
+  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_), maxiter_(info->maxiter_), target_(info->target_),
+    maxtile_(info->maxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
+    shift_diag_(info->shift_diag_), thresh_overlap_(info->thresh_overlap_) {
 }
 
 
 template<>
-tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
-  return ref_->rdm12(ist, jst);
+tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
+  return ref_->rdm12(ist, jst, recompute);
 }
 
 
@@ -105,48 +95,24 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rd
 
 
 template<>
-tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
-  return ref_->rdm34f(ist, jst, fock);
-}
-
-
-template<>
-tuple<shared_ptr<const ZRDM<1>>, shared_ptr<const ZRDM<2>>>
-  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
+tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst, const bool) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm1 = ref->rdm1(ist, jst);
   auto rdm2 = ref->rdm2(ist, jst);
-  return make_tuple(expand_kramers(rdm1,nact()), expand_kramers(rdm2,nact()));
+  return make_tuple(rdm1, rdm2);
 }
 
 
 template<>
-tuple<shared_ptr<const ZRDM<3>>, shared_ptr<const ZRDM<4>>>
+tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   auto rdm3 = ref->rdm3(ist, jst);
   auto rdm4 = ref->rdm4(ist, jst);
-  return make_tuple(expand_kramers(rdm3,nact()), expand_kramers(rdm4,nact()));
-}
-
-
-template<>
-tuple<shared_ptr<const ZRDM<3>>, shared_ptr<const ZRDM<3>>>
-  SMITH_Info<complex<double>>::rdm34f(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
-
-  // TODO not the best code
-  shared_ptr<const ZRDM<3>> rdm3;
-  shared_ptr<const ZRDM<4>> rdm4;
-  tie(rdm3, rdm4) = rdm34(ist, jst);
-
-  shared_ptr<ZRDM<3>> rdm4f = rdm3->clone();;
-  auto rdm4v = group(group(*rdm4, 6,8), 0,6);
-  auto rdm4vf = group(*rdm4f, 0, 6);
-  contract(1.0, rdm4v, {0,1}, group(*fock,0,2), {1}, 0.0, rdm4vf, {0});
-
-  return make_tuple(rdm3, rdm4f);
+  return make_tuple(rdm3, rdm4);
 }
 
 
@@ -199,6 +165,37 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
   assert(false);
   return nullptr;
 }
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> dummy2) const {
+  return ref_;
+}
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, const vector<int> dummy2) const {
+  return ref_;
+}
+
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> rdm_states) const {
+  shared_ptr<const Reference> out = ref_;
+  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
+  out = ref_->extract_state(rdm_states);
+  return out;
+}
+
+template<>
+shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {
+  shared_ptr<const Reference> out = ref_;
+  const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
+  cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
+  out = ref_->extract_state(istate, rdm_states);
+  return out;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file

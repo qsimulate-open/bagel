@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelCASPT2.h
 // Copyright (C) 2014 Shiozaki group
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -43,44 +42,59 @@ namespace RelCASPT2{
 
 class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
   protected:
-    std::shared_ptr<TATensor<std::complex<double>,4>> t2;
-    std::shared_ptr<TATensor<std::complex<double>,4>> r;
-    std::shared_ptr<TATensor<std::complex<double>,4>> s;
-    void diagonal(std::shared_ptr<TATensor<std::complex<double>,4>> r, std::shared_ptr<const TATensor<std::complex<double>,4>> t) const;
+    std::shared_ptr<Tensor> t2;
+    std::shared_ptr<Tensor> r;
+    std::shared_ptr<Tensor> s;
+    std::shared_ptr<Tensor> n;
 
+    int nstates_;
+    std::vector<double> err_;
+    std::vector<double> pt2energy_;
+    std::shared_ptr<ZMatrix> heff_;
 
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma0_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma92_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma2_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma3_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma4_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma5_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma6_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma7_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma9_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma105_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma12_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma14_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma16_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma22_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma28_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma29_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma31_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma32_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma34_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma35_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma37_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma38_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma51_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma56_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma57_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma58_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma59_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma60_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma79_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma90_();
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> lall_;
+
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
+
+    std::shared_ptr<FutureTensor> Gamma0_();
+    std::shared_ptr<FutureTensor> Gamma92_();
+    std::shared_ptr<FutureTensor> Gamma2_();
+    std::shared_ptr<FutureTensor> Gamma3_();
+    std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma5_();
+    std::shared_ptr<FutureTensor> Gamma6_();
+    std::shared_ptr<FutureTensor> Gamma7_();
+    std::shared_ptr<FutureTensor> Gamma9_();
+    std::shared_ptr<FutureTensor> Gamma12_();
+    std::shared_ptr<FutureTensor> Gamma14_();
+    std::shared_ptr<FutureTensor> Gamma16_();
+    std::shared_ptr<FutureTensor> Gamma22_();
+    std::shared_ptr<FutureTensor> Gamma28_();
+    std::shared_ptr<FutureTensor> Gamma29_();
+    std::shared_ptr<FutureTensor> Gamma31_();
+    std::shared_ptr<FutureTensor> Gamma32_();
+    std::shared_ptr<FutureTensor> Gamma34_();
+    std::shared_ptr<FutureTensor> Gamma35_();
+    std::shared_ptr<FutureTensor> Gamma37_();
+    std::shared_ptr<FutureTensor> Gamma38_();
+    std::shared_ptr<FutureTensor> Gamma51_();
+    std::shared_ptr<FutureTensor> Gamma56_();
+    std::shared_ptr<FutureTensor> Gamma57_();
+    std::shared_ptr<FutureTensor> Gamma58_();
+    std::shared_ptr<FutureTensor> Gamma59_();
+    std::shared_ptr<FutureTensor> Gamma60_();
+    std::shared_ptr<FutureTensor> Gamma79_();
+    std::shared_ptr<FutureTensor> Gamma90_();
+    std::shared_ptr<FutureTensor> Gamma143_();
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
+
+    std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>>
+      solve_linear(std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> s, std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> t);
 
   public:
     RelCASPT2(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
@@ -93,6 +107,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
       double sum = 0.0;
       while (!queue->done())
         sum += queue->next_compute()->target();
+      mpi__->allreduce(&sum, 1);
       return sum;
     }
 

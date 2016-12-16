@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: nevpt2_rdm.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifdef NEVPT2IMPL
@@ -102,63 +101,52 @@ void NEVPT2<DataType>::compute_asrdm() {
 
   const double fac2 = is_same<DataType,double>::value ? 2.0 : 1.0;
 
-#if 0
-  shared_ptr<MatType> srdm2 = rdm2_->clone();
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nact_; ++j)
-      for (int k = 0; k != nact_; ++k)
-        for (int l = 0; l != nact_; ++l)
-          srdm2->element(l+nact_*k,j+nact_*i) = -rdm2_->element(l+nact_*i,k+nact_*j) + (i == j ? fac2*rdm1_->element(l,k) : 0.0) - (i == k ? rdm1_->element(l,j) : 0.0);
-#endif
   // amat = <a+ a b+ b>, <a+ a b+ b c+ c>, and <a+ a b+ b c+ c d+ d>
   // also srdm2 = <0|a+p bp cq d+q|0>
   shared_ptr<MatType> ardm2 = rdm2_->clone();
   shared_ptr<MatType> srdm2 = rdm2_->clone();
   for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nact_; ++j)
-      for (int k = 0; k != nact_; ++k) {
-        for (int l = 0; l != nact_; ++l)
-          ardm2->element(l+nact_*k,j+nact_*i) += rdm2_->element(l+nact_*j,k+nact_*i);
-        ardm2->element(k+nact_*j,j+nact_*i) += rdm1_->element(k,i);
-
-        srdm2->element(k+nact_*j,i+nact_*i) += fac2*rdm1_->element(k,j);
-      }
+    for (int j = 0; j != nact_; ++j) {
+      for (int k = 0; k != nact_; ++k)
+        blas::ax_plus_y_n(1.0, rdm2_->element_ptr(nact_*j,k+nact_*i), nact_, ardm2->element_ptr(nact_*k,j+nact_*i));
+      blas::ax_plus_y_n(1.0, rdm1_->element_ptr(0,i), nact_, ardm2->element_ptr(nact_*j,j+nact_*i));
+      blas::ax_plus_y_n(fac2, rdm1_->element_ptr(0,j), nact_, srdm2->element_ptr(nact_*j,i+nact_*i));
+    }
   sort_indices<0,2,1,1,1,-1,1>(ardm2->data(), srdm2->data(), nact_*nact_, nact_, nact_);
   shared_ptr<MatType> ardm3 = rdm3_->clone();
   shared_ptr<MatType> srdm3 = rdm3_->clone(); // <a+ a b b+ c+ c>
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
-      for (int k = 0; k != nact_; ++k)
-        for (int l = 0; l != nact_; ++l)
-          for (int m = 0; m != nact_; ++m) {
-            for (int n = 0; n != nact_; ++n)
-              ardm3->element(id3(n,m,l),id3(k,j,i)) += rdm3_->element(id3(n,l,j),id3(m,k,i));
-            ardm3->element(id3(m,l,l),id3(k,j,i)) += ardm2->element(m+nact_*k,j+nact_*i);
-            ardm3->element(id3(m,l,k),id3(j,j,i)) += rdm2_->element(m+nact_*k,l+nact_*i);
-            ardm3->element(id3(m,l,k),id3(j,l,i)) += rdm2_->element(m+nact_*k,i+nact_*j);
-
-            srdm3->element(id3(m,l,k),id3(k,j,i)) += fac2*ardm2->element(id2(m,l),id2(j,i));
-          }
+      for (int k = 0; k != nact_; ++k) {
+        for (int l = 0; l != nact_; ++l) {
+          for (int m = 0; m != nact_; ++m)
+            blas::ax_plus_y_n(1.0,  rdm3_->element_ptr(id3(0,l,j),id3(m,k,i)), nact_, ardm3->element_ptr(id3(0,m,l),id3(k,j,i)));
+          blas::ax_plus_y_n(1.0, ardm2->element_ptr(nact_*k,j+nact_*i), nact_, ardm3->element_ptr(id3(0,l,l),id3(k,j,i)));
+          blas::ax_plus_y_n(1.0, rdm2_->element_ptr(nact_*k,l+nact_*i), nact_, ardm3->element_ptr(id3(0,l,k),id3(j,j,i)));
+          blas::ax_plus_y_n(1.0, rdm2_->element_ptr(nact_*k,i+nact_*j), nact_, ardm3->element_ptr(id3(0,l,k),id3(j,l,i)));
+        }
+        blas::ax_plus_y_n(fac2, ardm2->element_ptr(0, id2(j,i)), nact_*nact_, srdm3->element_ptr(id3(0,0,k),id3(k,j,i)));
+      }
   sort_indices<0,2,1,3,1,1,-1,1>(ardm3->data(), srdm3->data(), nact_*nact_, nact_, nact_, nact_*nact_);
   shared_ptr<MatType> ardm4 = rdm4_->clone();
   for (int h = 0; h != nact_; ++h)
     for (int g = 0; g != nact_; ++g)
       for (int f = 0; f != nact_; ++f)
         for (int e = 0; e != nact_; ++e)
-          for (int d = 0; d != nact_; ++d)
-            for (int c = 0; c != nact_; ++c)
+          for (int d = 0; d != nact_; ++d) {
+            blas::ax_plus_y_n(-1.0, ardm2->element_ptr(id2(0,f),id2(g,h)), nact_, ardm4->element_ptr(id4(0,d,d,e),id4(e,f,g,h)));
+            blas::ax_plus_y_n(-1.0, ardm2->element_ptr(id2(0,d),id2(g,h)), nact_, ardm4->element_ptr(id4(0,e,f,d),id4(e,f,g,h)));
+            for (int c = 0; c != nact_; ++c) {
+              blas::ax_plus_y_n(1.0, ardm3->element_ptr(id3(0,d,e),id3(f,g,h)), nact_, ardm4->element_ptr(id4(0,c,c,d),id4(e,f,g,h)));
+              blas::ax_plus_y_n(1.0, ardm3->element_ptr(id3(0,c,d),id3(f,g,h)), nact_, ardm4->element_ptr(id4(0,c,d,e),id4(e,f,g,h)));
+              blas::ax_plus_y_n(1.0, ardm3->element_ptr(id3(0,f,c),id3(d,g,h)), nact_, ardm4->element_ptr(id4(0,e,c,d),id4(e,f,g,h)));
+              blas::ax_plus_y_n(1.0, rdm3_->element_ptr(id3(0,c,e),id3(f,d,h)), nact_, ardm4->element_ptr(id4(0,f,c,d),id4(e,g,g,h)));
+              blas::ax_plus_y_n(1.0, rdm3_->element_ptr(id3(0,c,e),id3(d,h,f)), nact_, ardm4->element_ptr(id4(0,d,c,g),id4(e,f,g,h)));
+              blas::ax_plus_y_n(1.0, rdm3_->element_ptr(id3(0,c,e),id3(h,d,f)), nact_, ardm4->element_ptr(id4(0,g,c,d),id4(e,f,g,h)));
               for (int b = 0; b != nact_; ++b)
-                for (int a = 0; a != nact_; ++a) {
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == c ? 1.0 : 0.0) * ardm3->element(id3(a,d,e),id3(f,g,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) -= (d == e && b == c ? 1.0 : 0.0) * ardm2->element(id2(a,f),id2(g,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (d == e ? 1.0 : 0.0) * ardm3->element(id3(a,b,c),id3(f,g,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) -= (b == e && c == f ? 1.0 : 0.0) * ardm2->element(id2(a,d),id2(g,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == e ? 1.0 : 0.0) * ardm3->element(id3(a,f,c),id3(d,g,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (f == g ? 1.0 : 0.0) * rdm3_->element(id3(a,c,e),id3(b,d,h));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (d == g ? 1.0 : 0.0) * rdm3_->element(id3(a,c,e),id3(b,h,f));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += (b == g ? 1.0 : 0.0) * rdm3_->element(id3(a,c,e),id3(h,d,f));
-                  ardm4->element(id4(a,b,c,d),id4(e,f,g,h)) += rdm4_->element(id4(a,c,e,g),id4(b,d,f,h));
-                }
+                blas::ax_plus_y_n(1.0, rdm4_->element_ptr(id4(0,c,e,g),id4(b,d,f,h)), nact_, ardm4->element_ptr(id4(0,b,c,d),id4(e,f,g,h)));
+            }
+          }
   ardm2_ = ardm2;
   ardm3_ = ardm3;
   ardm4_ = ardm4;
@@ -181,30 +169,43 @@ void NEVPT2<DataType>::compute_hrdm() {
 
   for (int i = 0; i != nact_; ++i) {
     for (int j = 0; j != nact_; ++j) {
+      blas::ax_plus_y_n(fac2, hrdm1->element_ptr(0,i), nact_, hrdm2->element_ptr(nact_*j, i+nact_*j));
+      blas::ax_plus_y_n(1.0, rdm1_->element_ptr(0,i), nact_, hrdm2->element_ptr(nact_*j, j+nact_*i));
       for (int k = 0; k != nact_; ++k) {
-        hrdm2->element(j+nact_*k, i+nact_*k) += fac2 * hrdm1->element(j,i);
         hrdm2->element(k+nact_*j, i+nact_*k) -= hrdm1->element(j,i);
-        hrdm2->element(j+nact_*k, k+nact_*i) += rdm1_->element(j,i);
         hrdm2->element(k+nact_*j, k+nact_*i) -= fac2 * rdm1_->element(j,i);
       }
     }
   }
-  auto hrdm3 = make_shared<MatType>(*rdm3_ * (-1.0));
+  auto hrdm3 = rdm3_->clone();
+  auto hrdm3tmp = rdm3_->clone();
+  auto srdm2trans = srdm2_->transpose_conjg();
+  auto rdm2reo = rdm2_->clone();
+  sort_indices<1,0,2,0,1,1,1>(rdm2_->data(), rdm2reo->data(), nact_, nact_, nact_*nact_);
   for (int i = 0; i != nact_; ++i)
     for (int j = 0; j != nact_; ++j)
-      for (int k = 0; k != nact_; ++k)
-        for (int l = 0; l != nact_; ++l)
-          for (int m = 0; m != nact_; ++m) {
-            hrdm3->element(id3(l,k,m),id3(j,i,m)) += fac2*hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(l,m,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,j+nact_*i);
-            hrdm3->element(id3(m,l,k),id3(j,i,m)) -=      hrdm2->element(l+nact_*k,i+nact_*j);
-            hrdm3->element(id3(l,k,m),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
-            hrdm3->element(id3(l,m,k),id3(j,m,i)) -= fac2*detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
-            hrdm3->element(id3(m,l,k),id3(j,m,i)) +=      detail::conj(srdm2_->element(i+nact_*k,l+nact_*j));
-            hrdm3->element(id3(l,k,m),id3(m,j,i)) -=      rdm2_->element(l+nact_*k,i+nact_*j);
-            hrdm3->element(id3(l,m,k),id3(m,j,i)) -=      rdm2_->element(k+nact_*l,i+nact_*j);
-            hrdm3->element(id3(m,l,k),id3(m,j,i)) += fac2*rdm2_->element(k+nact_*l,i+nact_*j);
-          }
+      for (int k = 0; k != nact_; ++k) {
+        for (int m = 0; m != nact_; ++m) {
+          blas::ax_plus_y_n(-1.0, hrdm2->element_ptr(nact_*k, i+nact_*j), nact_, hrdm3tmp->element_ptr(id3(0,m,k),id3(j,i,m)));
+          blas::ax_plus_y_n(1.0, srdm2trans->element_ptr(nact_*j, i+nact_*k), nact_, hrdm3tmp->element_ptr(id3(0,m,k),id3(j,m,i)));
+          blas::ax_plus_y_n(fac2, rdm2reo->element_ptr(nact_*k, i+nact_*j), nact_, hrdm3tmp->element_ptr(id3(0,m,k),id3(m,j,i)));
+        }
+      }
+  sort_indices<1,0,2,0,1,1,1>(hrdm3tmp->data(), hrdm3->data(), nact_, nact_, nact_*nact_*nact_*nact_);
+
+  hrdm3->ax_plus_y(-1.0, rdm3_);
+  for (int i = 0; i != nact_; ++i)
+    for (int j = 0; j != nact_; ++j)
+      for (int k = 0; k != nact_; ++k) {
+        blas::ax_plus_y_n(fac2, hrdm2->element_ptr(0, j+nact_*i), nact_*nact_, hrdm3->element_ptr(id3(0,0,k),id3(j,i,k)));
+        blas::ax_plus_y_n(-1.0, rdm2_->element_ptr(0, i+nact_*j), nact_*nact_, hrdm3->element_ptr(id3(0,0,k),id3(k,j,i)));
+        for (int l = 0; l != nact_; ++l) {
+          blas::ax_plus_y_n(-1.0, hrdm2->element_ptr(nact_*k,j+nact_*i), nact_, hrdm3->element_ptr(id3(0,l,k),id3(j,i,l)));
+          blas::ax_plus_y_n(1.0, srdm2trans->element_ptr(nact_*j, i+nact_*k), nact_, hrdm3->element_ptr(id3(0,k,l),id3(j,l,i)));
+          blas::ax_plus_y_n(-fac2, srdm2trans->element_ptr(nact_*j, i+nact_*k), nact_, hrdm3->element_ptr(id3(0,l,k),id3(j,l,i)));
+          blas::ax_plus_y_n(-1.0, rdm2reo->element_ptr(nact_*k, i+nact_*j), nact_, hrdm3->element_ptr(id3(0,l,k),id3(l,j,i)));
+        }
+      }
   hrdm1_ = hrdm1;
   assert(hrdm1_->is_hermitian());
   hrdm2_ = hrdm2;

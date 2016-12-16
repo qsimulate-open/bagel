@@ -9,15 +9,19 @@ rys/_r2root_1.cc rys/_r2root_2.cc rys/_r2root_3.cc rys/_r2root_4.cc rys/_r2root_
 comprys/_complex_eriroot_1.cc comprys/_complex_eriroot_2.cc comprys/_complex_eriroot_3.cc comprys/_complex_eriroot_4.cc comprys/_complex_eriroot_5.cc comprys/_complex_eriroot_6.cc comprys/_complex_eriroot_7.cc comprys/_complex_eriroot_8.cc comprys/_complex_eriroot_9.cc comprys/_complex_eriroot_10.cc comprys/_complex_eriroot_11.cc comprys/_complex_eriroot_12.cc comprys/_complex_eriroot_13.cc \
 rys/_breitroot_1.cc rys/_breitroot_2.cc rys/_breitroot_3.cc rys/_breitroot_4.cc rys/_breitroot_5.cc rys/_breitroot_6.cc rys/_breitroot_7.cc rys/_breitroot_8.cc rys/_breitroot_9.cc rys/_breitroot_10.cc rys/_breitroot_11.cc rys/_breitroot_12.cc rys/_breitroot_13.cc \
 rys/_spin2root_1.cc rys/_spin2root_2.cc rys/_spin2root_3.cc rys/_spin2root_4.cc rys/_spin2root_5.cc rys/_spin2root_6.cc rys/_spin2root_7.cc rys/_spin2root_8.cc rys/_spin2root_9.cc rys/_spin2root_10.cc rys/_spin2root_11.cc rys/_spin2root_12.cc rys/_spin2root_13.cc \
-compos/complexoverlapbatch.cc compos/covrr.cc compos/complexkineticbatch.cc compos/complexmomentumbatch.cc \
+compos/complexoverlapbatch.cc compos/covrr.cc compos/complexkineticbatch.cc compos/complexmomentumbatch.cc compos/complexangmombatch.cc \
 compos/point_complexmomentumbatch.cc compos/point_complexoverlapbatch.cc os/point_overlapbatch.cc \
 comprys/complexeribatch.cc rys/eribatch.cc rys/gradbatch.cc rys/gnaibatch.cc rys/slaterbatch.cc rys/breitbatch.cc rys/rysintegral.cc rys/coulombbatch_base.cc rys/coulombbatch_energy.cc \
 rys/compute.cc comprys/ccompute.cc rys/bcompute.cc rys/gcompute.cc rys/gncompute.cc rys/scompute.cc rys/vrr_optim.cc rys/bvrr_optim.cc rys/svrr_optim.cc rys/usvrr_optim.cc \
 rys/naibatch.cc rys/spindipolebatch.cc comprys/complexnaibatch.cc rys/r0batch.cc rys/r1batch.cc rys/r2batch.cc rys/eribatch_base.cc \
 rys/smalleribatch.cc rys/mixederibatch.cc rys/gsmallnaibatch.cc rys/gsmalleribatch.cc \
 comprys/complexsmalleribatch.cc comprys/complexmixederibatch.cc \
+<<<<<<< HEAD
 os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/mmbatch.cc os/sphmmbatch.cc os/momentumbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc os/osintegral.cc\
 os/multipolebatch_base.cc os/multipolebatch.cc \
+=======
+os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/mmbatch.cc os/momentumbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc os/osintegral.cc os/angmombatch.cc \
+>>>>>>> 46b7ca08e2ecf5098d2d0eb526abed60b783b6c3
 libint/libint.cc libint/glibint.cc \
 ecp/angularbatch.cc ecp/ecpbatch.cc ecp/radial.cc ecp/soangularbatch.cc ecp/soecpbatch.cc \
 ecp/_sphusp_0.cc ecp/_sphusp_1.cc ecp/_sphusp_2.cc ecp/_sphusp_3.cc ecp/_sphusp_4.cc ecp/_sphusp_5.cc ecp/_sphusp_6.cc ecp/_sphusp_7.cc ecp/_sphusp_8.cc ecp/_sphusp_9.cc ecp/_sphusp_10.cc

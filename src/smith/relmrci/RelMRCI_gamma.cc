@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelMRCI_gamma.cc
 // Copyright (C) 2014 Shiozaki group
 //
@@ -8,694 +8,777 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 #include <src/smith/relmrci/RelMRCI.h>
-#include <src/smith/relmrci/RelMRCI_tasks.h>
+#include <src/smith/relmrci/RelMRCI_tasks1.h>
+#include <src/smith/relmrci/RelMRCI_tasks2.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 using namespace bagel::SMITH::RelMRCI;
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma0_() {
-  auto Gamma0 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma0 = Gamma0->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma0_() {
+  vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};
+  auto Gamma0 = make_shared<Tensor>(Gamma0_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task0 = make_shared<Task0>(array<shared_ptr<Tensor>,4>{{Gamma0, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma0, Gamma0, task0);
+  auto tensor0 = vector<shared_ptr<Tensor>>{Gamma0, rdm0_, rdm1_, rdm2_};
+  auto task0 = make_shared<Task0>(tensor0, pindex);
+  return make_shared<FutureTensor>(*Gamma0, task0);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma1_() {
-  auto Gamma1 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma1 = Gamma1->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma1_() {
+  vector<IndexRange> Gamma1_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma1 = make_shared<Tensor>(Gamma1_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task1 = make_shared<Task1>(array<shared_ptr<Tensor>,4>{{Gamma1, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma1, Gamma1, task1);
+  auto tensor1 = vector<shared_ptr<Tensor>>{Gamma1, rdm1_, rdm2_, rdm3_};
+  auto task1 = make_shared<Task1>(tensor1, pindex);
+  return make_shared<FutureTensor>(*Gamma1, task1);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma2_() {
-  auto Gamma2 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma2 = Gamma2->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma2_() {
+  vector<IndexRange> Gamma2_index = {active_, active_, active_, active_};
+  auto Gamma2 = make_shared<Tensor>(Gamma2_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task2 = make_shared<Task2>(array<shared_ptr<Tensor>,4>{{Gamma2, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma2, Gamma2, task2);
+  auto tensor2 = vector<shared_ptr<Tensor>>{Gamma2, rdm0_, rdm1_, rdm2_};
+  auto task2 = make_shared<Task2>(tensor2, pindex);
+  return make_shared<FutureTensor>(*Gamma2, task2);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma58_() {
-  auto Gamma58 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma58 = Gamma58->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma58_() {
+  vector<IndexRange> Gamma58_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma58 = make_shared<Tensor>(Gamma58_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task3 = make_shared<Task3>(array<shared_ptr<Tensor>,5>{{Gamma58, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma58, Gamma58, task3);
+  auto tensor3 = vector<shared_ptr<Tensor>>{Gamma58, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task3 = make_shared<Task3>(tensor3, pindex);
+  return make_shared<FutureTensor>(*Gamma58, task3);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma59_() {
-  auto Gamma59 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma59 = Gamma59->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma59_() {
+  vector<IndexRange> Gamma59_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma59 = make_shared<Tensor>(Gamma59_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task4 = make_shared<Task4>(array<shared_ptr<Tensor>,5>{{Gamma59, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma59, Gamma59, task4);
+  auto tensor4 = vector<shared_ptr<Tensor>>{Gamma59, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task4 = make_shared<Task4>(tensor4, pindex);
+  return make_shared<FutureTensor>(*Gamma59, task4);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma60_() {
-  auto Gamma60 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma60 = Gamma60->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma60_() {
+  vector<IndexRange> Gamma60_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma60 = make_shared<Tensor>(Gamma60_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task5 = make_shared<Task5>(array<shared_ptr<Tensor>,5>{{Gamma60, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma60, Gamma60, task5);
+  auto tensor5 = vector<shared_ptr<Tensor>>{Gamma60, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task5 = make_shared<Task5>(tensor5, pindex);
+  return make_shared<FutureTensor>(*Gamma60, task5);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma63_() {
-  auto Gamma63 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma63 = Gamma63->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma63_() {
+  vector<IndexRange> Gamma63_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma63 = make_shared<Tensor>(Gamma63_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task6 = make_shared<Task6>(array<shared_ptr<Tensor>,5>{{Gamma63, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma63, Gamma63, task6);
+  auto tensor6 = vector<shared_ptr<Tensor>>{Gamma63, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task6 = make_shared<Task6>(tensor6, pindex);
+  return make_shared<FutureTensor>(*Gamma63, task6);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma64_() {
-  auto Gamma64 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma64 = Gamma64->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma64_() {
+  vector<IndexRange> Gamma64_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma64 = make_shared<Tensor>(Gamma64_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task7 = make_shared<Task7>(array<shared_ptr<Tensor>,5>{{Gamma64, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma64, Gamma64, task7);
+  auto tensor7 = vector<shared_ptr<Tensor>>{Gamma64, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task7 = make_shared<Task7>(tensor7, pindex);
+  return make_shared<FutureTensor>(*Gamma64, task7);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma65_() {
-  auto Gamma65 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma65 = Gamma65->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma65_() {
+  vector<IndexRange> Gamma65_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma65 = make_shared<Tensor>(Gamma65_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task8 = make_shared<Task8>(array<shared_ptr<Tensor>,4>{{Gamma65, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma65, Gamma65, task8);
+  auto tensor8 = vector<shared_ptr<Tensor>>{Gamma65, rdm1_, rdm2_, rdm3_};
+  auto task8 = make_shared<Task8>(tensor8, pindex);
+  return make_shared<FutureTensor>(*Gamma65, task8);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma66_() {
-  auto Gamma66 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma66 = Gamma66->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma66_() {
+  vector<IndexRange> Gamma66_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma66 = make_shared<Tensor>(Gamma66_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task9 = make_shared<Task9>(array<shared_ptr<Tensor>,5>{{Gamma66, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma66, Gamma66, task9);
+  auto tensor9 = vector<shared_ptr<Tensor>>{Gamma66, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task9 = make_shared<Task9>(tensor9, pindex);
+  return make_shared<FutureTensor>(*Gamma66, task9);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma67_() {
-  auto Gamma67 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma67 = Gamma67->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma67_() {
+  vector<IndexRange> Gamma67_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma67 = make_shared<Tensor>(Gamma67_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task10 = make_shared<Task10>(array<shared_ptr<Tensor>,5>{{Gamma67, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma67, Gamma67, task10);
+  auto tensor10 = vector<shared_ptr<Tensor>>{Gamma67, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task10 = make_shared<Task10>(tensor10, pindex);
+  return make_shared<FutureTensor>(*Gamma67, task10);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma3_() {
-  auto Gamma3 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma3 = Gamma3->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma3_() {
+  vector<IndexRange> Gamma3_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma3 = make_shared<Tensor>(Gamma3_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task11 = make_shared<Task11>(array<shared_ptr<Tensor>,4>{{Gamma3, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma3, Gamma3, task11);
+  auto tensor11 = vector<shared_ptr<Tensor>>{Gamma3, rdm1_, rdm2_, rdm3_};
+  auto task11 = make_shared<Task11>(tensor11, pindex);
+  return make_shared<FutureTensor>(*Gamma3, task11);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma4_() {
-  auto Gamma4 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma4 = Gamma4->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma4_() {
+  vector<IndexRange> Gamma4_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma4 = make_shared<Tensor>(Gamma4_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task12 = make_shared<Task12>(array<shared_ptr<Tensor>,4>{{Gamma4, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma4, Gamma4, task12);
+  auto tensor12 = vector<shared_ptr<Tensor>>{Gamma4, rdm1_, rdm2_, rdm3_};
+  auto task12 = make_shared<Task12>(tensor12, pindex);
+  return make_shared<FutureTensor>(*Gamma4, task12);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma5_() {
-  auto Gamma5 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma5 = Gamma5->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma5_() {
+  vector<IndexRange> Gamma5_index = {active_, active_, active_, active_};
+  auto Gamma5 = make_shared<Tensor>(Gamma5_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task13 = make_shared<Task13>(array<shared_ptr<Tensor>,3>{{Gamma5, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma5, Gamma5, task13);
+  auto tensor13 = vector<shared_ptr<Tensor>>{Gamma5, rdm1_, rdm2_};
+  auto task13 = make_shared<Task13>(tensor13, pindex);
+  return make_shared<FutureTensor>(*Gamma5, task13);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma74_() {
-  auto Gamma74 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma74 = Gamma74->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma74_() {
+  vector<IndexRange> Gamma74_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma74 = make_shared<Tensor>(Gamma74_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task14 = make_shared<Task14>(array<shared_ptr<Tensor>,5>{{Gamma74, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma74, Gamma74, task14);
+  auto tensor14 = vector<shared_ptr<Tensor>>{Gamma74, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task14 = make_shared<Task14>(tensor14, pindex);
+  return make_shared<FutureTensor>(*Gamma74, task14);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma75_() {
-  auto Gamma75 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma75 = Gamma75->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma75_() {
+  vector<IndexRange> Gamma75_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma75 = make_shared<Tensor>(Gamma75_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task15 = make_shared<Task15>(array<shared_ptr<Tensor>,5>{{Gamma75, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma75, Gamma75, task15);
+  auto tensor15 = vector<shared_ptr<Tensor>>{Gamma75, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task15 = make_shared<Task15>(tensor15, pindex);
+  return make_shared<FutureTensor>(*Gamma75, task15);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma77_() {
-  auto Gamma77 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma77 = Gamma77->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma77_() {
+  vector<IndexRange> Gamma77_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma77 = make_shared<Tensor>(Gamma77_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task16 = make_shared<Task16>(array<shared_ptr<Tensor>,5>{{Gamma77, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma77, Gamma77, task16);
+  auto tensor16 = vector<shared_ptr<Tensor>>{Gamma77, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task16 = make_shared<Task16>(tensor16, pindex);
+  return make_shared<FutureTensor>(*Gamma77, task16);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma78_() {
-  auto Gamma78 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma78 = Gamma78->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma78_() {
+  vector<IndexRange> Gamma78_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma78 = make_shared<Tensor>(Gamma78_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task17 = make_shared<Task17>(array<shared_ptr<Tensor>,5>{{Gamma78, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma78, Gamma78, task17);
+  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma78, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task17 = make_shared<Task17>(tensor17, pindex);
+  return make_shared<FutureTensor>(*Gamma78, task17);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma79_() {
-  auto Gamma79 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma79 = Gamma79->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma79_() {
+  vector<IndexRange> Gamma79_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma79 = make_shared<Tensor>(Gamma79_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task18 = make_shared<Task18>(array<shared_ptr<Tensor>,5>{{Gamma79, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma79, Gamma79, task18);
+  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma79, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task18 = make_shared<Task18>(tensor18, pindex);
+  return make_shared<FutureTensor>(*Gamma79, task18);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma81_() {
-  auto Gamma81 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma81 = Gamma81->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma81_() {
+  vector<IndexRange> Gamma81_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma81 = make_shared<Tensor>(Gamma81_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task19 = make_shared<Task19>(array<shared_ptr<Tensor>,4>{{Gamma81, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma81, Gamma81, task19);
+  auto tensor19 = vector<shared_ptr<Tensor>>{Gamma81, rdm1_, rdm2_, rdm3_};
+  auto task19 = make_shared<Task19>(tensor19, pindex);
+  return make_shared<FutureTensor>(*Gamma81, task19);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma84_() {
-  auto Gamma84 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma84 = Gamma84->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma84_() {
+  vector<IndexRange> Gamma84_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma84 = make_shared<Tensor>(Gamma84_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task20 = make_shared<Task20>(array<shared_ptr<Tensor>,4>{{Gamma84, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma84, Gamma84, task20);
+  auto tensor20 = vector<shared_ptr<Tensor>>{Gamma84, rdm1_, rdm2_, rdm3_};
+  auto task20 = make_shared<Task20>(tensor20, pindex);
+  return make_shared<FutureTensor>(*Gamma84, task20);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma86_() {
-  auto Gamma86 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma86 = Gamma86->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma86_() {
+  vector<IndexRange> Gamma86_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma86 = make_shared<Tensor>(Gamma86_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task21 = make_shared<Task21>(array<shared_ptr<Tensor>,4>{{Gamma86, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma86, Gamma86, task21);
+  auto tensor21 = vector<shared_ptr<Tensor>>{Gamma86, rdm1_, rdm2_, rdm3_};
+  auto task21 = make_shared<Task21>(tensor21, pindex);
+  return make_shared<FutureTensor>(*Gamma86, task21);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma92_() {
-  auto Gamma92 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma92 = Gamma92->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma92_() {
+  vector<IndexRange> Gamma92_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma92 = make_shared<Tensor>(Gamma92_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task22 = make_shared<Task22>(array<shared_ptr<Tensor>,5>{{Gamma92, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma92, Gamma92, task22);
+  auto tensor22 = vector<shared_ptr<Tensor>>{Gamma92, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task22 = make_shared<Task22>(tensor22, pindex);
+  return make_shared<FutureTensor>(*Gamma92, task22);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma95_() {
-  auto Gamma95 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma95 = Gamma95->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma95_() {
+  vector<IndexRange> Gamma95_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma95 = make_shared<Tensor>(Gamma95_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task23 = make_shared<Task23>(array<shared_ptr<Tensor>,4>{{Gamma95, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma95, Gamma95, task23);
+  auto tensor23 = vector<shared_ptr<Tensor>>{Gamma95, rdm2_, rdm3_, rdm4_};
+  auto task23 = make_shared<Task23>(tensor23, pindex);
+  return make_shared<FutureTensor>(*Gamma95, task23);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma98_() {
-  auto Gamma98 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma98 = Gamma98->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma98_() {
+  vector<IndexRange> Gamma98_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma98 = make_shared<Tensor>(Gamma98_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task24 = make_shared<Task24>(array<shared_ptr<Tensor>,4>{{Gamma98, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma98, Gamma98, task24);
+  auto tensor24 = vector<shared_ptr<Tensor>>{Gamma98, rdm1_, rdm2_, rdm3_};
+  auto task24 = make_shared<Task24>(tensor24, pindex);
+  return make_shared<FutureTensor>(*Gamma98, task24);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma411_() {
-  auto Gamma411 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma411 = Gamma411->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma414_() {
+  vector<IndexRange> Gamma414_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma414 = make_shared<Tensor>(Gamma414_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task25 = make_shared<Task25>(array<shared_ptr<Tensor>,6>{{Gamma411, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma411, Gamma411, task25);
+  auto tensor25 = vector<shared_ptr<Tensor>>{Gamma414, rdm1_, rdm2_, rdm3_, rdm4_, h1_};
+  auto task25 = make_shared<Task25>(tensor25, pindex);
+  return make_shared<FutureTensor>(*Gamma414, task25);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma412_() {
-  auto Gamma412 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma412 = Gamma412->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma415_() {
+  vector<IndexRange> Gamma415_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma415 = make_shared<Tensor>(Gamma415_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task26 = make_shared<Task26>(array<shared_ptr<Tensor>,6>{{Gamma412, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma412, Gamma412, task26);
+  auto tensor26 = vector<shared_ptr<Tensor>>{Gamma415, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task26 = make_shared<Task26>(tensor26, pindex);
+  return make_shared<FutureTensor>(*Gamma415, task26);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma9_() {
-  auto Gamma9 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma9 = Gamma9->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma9_() {
+  vector<IndexRange> Gamma9_index = {active_, active_, active_, active_};
+  auto Gamma9 = make_shared<Tensor>(Gamma9_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task27 = make_shared<Task27>(array<shared_ptr<Tensor>,3>{{Gamma9, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma9, Gamma9, task27);
+  auto tensor27 = vector<shared_ptr<Tensor>>{Gamma9, rdm1_, rdm2_};
+  auto task27 = make_shared<Task27>(tensor27, pindex);
+  return make_shared<FutureTensor>(*Gamma9, task27);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma11_() {
-  auto Gamma11 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma11 = Gamma11->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma11_() {
+  vector<IndexRange> Gamma11_index = {active_, active_};
+  auto Gamma11 = make_shared<Tensor>(Gamma11_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task28 = make_shared<Task28>(array<shared_ptr<Tensor>,3>{{Gamma11, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma11, Gamma11, task28);
+  auto tensor28 = vector<shared_ptr<Tensor>>{Gamma11, rdm0_, rdm1_};
+  auto task28 = make_shared<Task28>(tensor28, pindex);
+  return make_shared<FutureTensor>(*Gamma11, task28);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma160_() {
-  auto Gamma160 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma160 = Gamma160->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma160_() {
+  vector<IndexRange> Gamma160_index = {active_, active_, active_, active_};
+  auto Gamma160 = make_shared<Tensor>(Gamma160_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task29 = make_shared<Task29>(array<shared_ptr<Tensor>,4>{{Gamma160, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma160, Gamma160, task29);
+  auto tensor29 = vector<shared_ptr<Tensor>>{Gamma160, rdm0_, rdm1_, rdm2_};
+  auto task29 = make_shared<Task29>(tensor29, pindex);
+  return make_shared<FutureTensor>(*Gamma160, task29);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma99_() {
-  auto Gamma99 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma99 = Gamma99->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma99_() {
+  vector<IndexRange> Gamma99_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma99 = make_shared<Tensor>(Gamma99_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task30 = make_shared<Task30>(array<shared_ptr<Tensor>,5>{{Gamma99, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma99, Gamma99, task30);
+  auto tensor30 = vector<shared_ptr<Tensor>>{Gamma99, rdm0_, rdm1_, rdm2_, rdm3_};
+  auto task30 = make_shared<Task30>(tensor30, pindex);
+  return make_shared<FutureTensor>(*Gamma99, task30);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma105_() {
-  auto Gamma105 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma105 = Gamma105->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma105_() {
+  vector<IndexRange> Gamma105_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma105 = make_shared<Tensor>(Gamma105_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task31 = make_shared<Task31>(array<shared_ptr<Tensor>,4>{{Gamma105, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma105, Gamma105, task31);
+  auto tensor31 = vector<shared_ptr<Tensor>>{Gamma105, rdm1_, rdm2_, rdm3_};
+  auto task31 = make_shared<Task31>(tensor31, pindex);
+  return make_shared<FutureTensor>(*Gamma105, task31);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma110_() {
-  auto Gamma110 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma110 = Gamma110->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma110_() {
+  vector<IndexRange> Gamma110_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma110 = make_shared<Tensor>(Gamma110_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task32 = make_shared<Task32>(array<shared_ptr<Tensor>,4>{{Gamma110, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma110, Gamma110, task32);
+  auto tensor32 = vector<shared_ptr<Tensor>>{Gamma110, rdm1_, rdm2_, rdm3_};
+  auto task32 = make_shared<Task32>(tensor32, pindex);
+  return make_shared<FutureTensor>(*Gamma110, task32);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma128_() {
-  auto Gamma128 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma128 = Gamma128->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma128_() {
+  vector<IndexRange> Gamma128_index = {active_, active_, active_, active_};
+  auto Gamma128 = make_shared<Tensor>(Gamma128_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task33 = make_shared<Task33>(array<shared_ptr<Tensor>,4>{{Gamma128, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma128, Gamma128, task33);
+  auto tensor33 = vector<shared_ptr<Tensor>>{Gamma128, rdm0_, rdm1_, rdm2_};
+  auto task33 = make_shared<Task33>(tensor33, pindex);
+  return make_shared<FutureTensor>(*Gamma128, task33);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma151_() {
-  auto Gamma151 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma151 = Gamma151->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma151_() {
+  vector<IndexRange> Gamma151_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma151 = make_shared<Tensor>(Gamma151_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task34 = make_shared<Task34>(array<shared_ptr<Tensor>,4>{{Gamma151, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma151, Gamma151, task34);
+  auto tensor34 = vector<shared_ptr<Tensor>>{Gamma151, rdm1_, rdm2_, rdm3_};
+  auto task34 = make_shared<Task34>(tensor34, pindex);
+  return make_shared<FutureTensor>(*Gamma151, task34);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma159_() {
-  auto Gamma159 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma159 = Gamma159->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma159_() {
+  vector<IndexRange> Gamma159_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma159 = make_shared<Tensor>(Gamma159_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task35 = make_shared<Task35>(array<shared_ptr<Tensor>,3>{{Gamma159, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma159, Gamma159, task35);
+  auto tensor35 = vector<shared_ptr<Tensor>>{Gamma159, rdm2_, rdm3_};
+  auto task35 = make_shared<Task35>(tensor35, pindex);
+  return make_shared<FutureTensor>(*Gamma159, task35);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma174_() {
-  auto Gamma174 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma174 = Gamma174->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma174_() {
+  vector<IndexRange> Gamma174_index = {active_, active_, active_, active_};
+  auto Gamma174 = make_shared<Tensor>(Gamma174_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task36 = make_shared<Task36>(array<shared_ptr<Tensor>,3>{{Gamma174, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma174, Gamma174, task36);
+  auto tensor36 = vector<shared_ptr<Tensor>>{Gamma174, rdm1_, rdm2_};
+  auto task36 = make_shared<Task36>(tensor36, pindex);
+  return make_shared<FutureTensor>(*Gamma174, task36);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma413_() {
-  auto Gamma413 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma413 = Gamma413->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma416_() {
+  vector<IndexRange> Gamma416_index = {active_, active_};
+  auto Gamma416 = make_shared<Tensor>(Gamma416_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task37 = make_shared<Task37>(array<shared_ptr<Tensor>,5>{{Gamma413, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma413, Gamma413, task37);
+  auto tensor37 = vector<shared_ptr<Tensor>>{Gamma416, rdm0_, rdm1_, rdm2_, h1_};
+  auto task37 = make_shared<Task37>(tensor37, pindex);
+  return make_shared<FutureTensor>(*Gamma416, task37);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma415_() {
-  auto Gamma415 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma415 = Gamma415->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma418_() {
+  vector<IndexRange> Gamma418_index = {active_, active_};
+  auto Gamma418 = make_shared<Tensor>(Gamma418_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task38 = make_shared<Task38>(array<shared_ptr<Tensor>,6>{{Gamma415, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma415, Gamma415, task38);
+  auto tensor38 = vector<shared_ptr<Tensor>>{Gamma418, rdm0_, rdm1_, rdm2_, rdm3_, v2_};
+  auto task38 = make_shared<Task38>(tensor38, pindex);
+  return make_shared<FutureTensor>(*Gamma418, task38);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma24_() {
-  auto Gamma24 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma24 = Gamma24->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma24_() {
+  vector<IndexRange> Gamma24_index = {active_, active_, active_, active_};
+  auto Gamma24 = make_shared<Tensor>(Gamma24_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task39 = make_shared<Task39>(array<shared_ptr<Tensor>,3>{{Gamma24, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma24, Gamma24, task39);
+  auto tensor39 = vector<shared_ptr<Tensor>>{Gamma24, rdm1_, rdm2_};
+  auto task39 = make_shared<Task39>(tensor39, pindex);
+  return make_shared<FutureTensor>(*Gamma24, task39);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma26_() {
-  auto Gamma26 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma26 = Gamma26->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma26_() {
+  vector<IndexRange> Gamma26_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma26 = make_shared<Tensor>(Gamma26_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task40 = make_shared<Task40>(array<shared_ptr<Tensor>,3>{{Gamma26, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma26, Gamma26, task40);
+  auto tensor40 = vector<shared_ptr<Tensor>>{Gamma26, rdm2_, rdm3_};
+  auto task40 = make_shared<Task40>(tensor40, pindex);
+  return make_shared<FutureTensor>(*Gamma26, task40);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma27_() {
-  auto Gamma27 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma27 = Gamma27->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma27_() {
+  vector<IndexRange> Gamma27_index = {active_, active_};
+  auto Gamma27 = make_shared<Tensor>(Gamma27_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task41 = make_shared<Task41>(array<shared_ptr<Tensor>,2>{{Gamma27, make_shared<Tensor>(*rdm1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma27, Gamma27, task41);
+  auto tensor41 = vector<shared_ptr<Tensor>>{Gamma27, rdm1_};
+  auto task41 = make_shared<Task41>(tensor41, pindex);
+  return make_shared<FutureTensor>(*Gamma27, task41);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma179_() {
-  auto Gamma179 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma179 = Gamma179->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma179_() {
+  vector<IndexRange> Gamma179_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma179 = make_shared<Tensor>(Gamma179_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task42 = make_shared<Task42>(array<shared_ptr<Tensor>,5>{{Gamma179, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma179, Gamma179, task42);
+  auto tensor42 = vector<shared_ptr<Tensor>>{Gamma179, rdm1_, rdm2_, rdm3_, rdm4_};
+  auto task42 = make_shared<Task42>(tensor42, pindex);
+  return make_shared<FutureTensor>(*Gamma179, task42);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma183_() {
-  auto Gamma183 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma183 = Gamma183->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma183_() {
+  vector<IndexRange> Gamma183_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma183 = make_shared<Tensor>(Gamma183_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task43 = make_shared<Task43>(array<shared_ptr<Tensor>,4>{{Gamma183, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma183, Gamma183, task43);
+  auto tensor43 = vector<shared_ptr<Tensor>>{Gamma183, rdm1_, rdm2_, rdm3_};
+  auto task43 = make_shared<Task43>(tensor43, pindex);
+  return make_shared<FutureTensor>(*Gamma183, task43);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma193_() {
-  auto Gamma193 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma193 = Gamma193->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma193_() {
+  vector<IndexRange> Gamma193_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma193 = make_shared<Tensor>(Gamma193_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task44 = make_shared<Task44>(array<shared_ptr<Tensor>,4>{{Gamma193, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma193, Gamma193, task44);
+  auto tensor44 = vector<shared_ptr<Tensor>>{Gamma193, rdm1_, rdm2_, rdm3_};
+  auto task44 = make_shared<Task44>(tensor44, pindex);
+  return make_shared<FutureTensor>(*Gamma193, task44);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma203_() {
-  auto Gamma203 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma203 = Gamma203->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma203_() {
+  vector<IndexRange> Gamma203_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma203 = make_shared<Tensor>(Gamma203_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task45 = make_shared<Task45>(array<shared_ptr<Tensor>,4>{{Gamma203, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma203, Gamma203, task45);
+  auto tensor45 = vector<shared_ptr<Tensor>>{Gamma203, rdm2_, rdm3_, rdm4_};
+  auto task45 = make_shared<Task45>(tensor45, pindex);
+  return make_shared<FutureTensor>(*Gamma203, task45);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma204_() {
-  auto Gamma204 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma204 = Gamma204->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma204_() {
+  vector<IndexRange> Gamma204_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma204 = make_shared<Tensor>(Gamma204_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task46 = make_shared<Task46>(array<shared_ptr<Tensor>,4>{{Gamma204, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma204, Gamma204, task46);
+  auto tensor46 = vector<shared_ptr<Tensor>>{Gamma204, rdm2_, rdm3_, rdm4_};
+  auto task46 = make_shared<Task46>(tensor46, pindex);
+  return make_shared<FutureTensor>(*Gamma204, task46);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma229_() {
-  auto Gamma229 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma229 = Gamma229->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma229_() {
+  vector<IndexRange> Gamma229_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma229 = make_shared<Tensor>(Gamma229_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task47 = make_shared<Task47>(array<shared_ptr<Tensor>,3>{{Gamma229, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma229, Gamma229, task47);
+  auto tensor47 = vector<shared_ptr<Tensor>>{Gamma229, rdm2_, rdm3_};
+  auto task47 = make_shared<Task47>(tensor47, pindex);
+  return make_shared<FutureTensor>(*Gamma229, task47);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma417_() {
-  auto Gamma417 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma417 = Gamma417->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma420_() {
+  vector<IndexRange> Gamma420_index = {active_, active_, active_, active_};
+  auto Gamma420 = make_shared<Tensor>(Gamma420_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task48 = make_shared<Task48>(array<shared_ptr<Tensor>,5>{{Gamma417, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma417, Gamma417, task48);
+  auto tensor48 = vector<shared_ptr<Tensor>>{Gamma420, rdm1_, rdm2_, rdm3_, h1_};
+  auto task48 = make_shared<Task48>(tensor48, pindex);
+  return make_shared<FutureTensor>(*Gamma420, task48);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma418_() {
-  auto Gamma418 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma418 = Gamma418->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma421_() {
+  vector<IndexRange> Gamma421_index = {active_, active_, active_, active_};
+  auto Gamma421 = make_shared<Tensor>(Gamma421_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task49 = make_shared<Task49>(array<shared_ptr<Tensor>,6>{{Gamma418, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma418, Gamma418, task49);
+  auto tensor49 = vector<shared_ptr<Tensor>>{Gamma421, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task49 = make_shared<Task49>(tensor49, pindex);
+  return make_shared<FutureTensor>(*Gamma421, task49);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma31_() {
-  auto Gamma31 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma31 = Gamma31->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma31_() {
+  vector<IndexRange> Gamma31_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma31 = make_shared<Tensor>(Gamma31_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task50 = make_shared<Task50>(array<shared_ptr<Tensor>,3>{{Gamma31, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma31, Gamma31, task50);
+  auto tensor50 = vector<shared_ptr<Tensor>>{Gamma31, rdm2_, rdm3_};
+  auto task50 = make_shared<Task50>(tensor50, pindex);
+  return make_shared<FutureTensor>(*Gamma31, task50);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma32_() {
-  auto Gamma32 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma32 = Gamma32->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma32_() {
+  vector<IndexRange> Gamma32_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma32 = make_shared<Tensor>(Gamma32_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task51 = make_shared<Task51>(array<shared_ptr<Tensor>,3>{{Gamma32, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma32, Gamma32, task51);
+  auto tensor51 = vector<shared_ptr<Tensor>>{Gamma32, rdm2_, rdm3_};
+  auto task51 = make_shared<Task51>(tensor51, pindex);
+  return make_shared<FutureTensor>(*Gamma32, task51);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma33_() {
-  auto Gamma33 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma33 = Gamma33->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma33_() {
+  vector<IndexRange> Gamma33_index = {active_, active_, active_, active_};
+  auto Gamma33 = make_shared<Tensor>(Gamma33_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task52 = make_shared<Task52>(array<shared_ptr<Tensor>,2>{{Gamma33, make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma33, Gamma33, task52);
+  auto tensor52 = vector<shared_ptr<Tensor>>{Gamma33, rdm2_};
+  auto task52 = make_shared<Task52>(tensor52, pindex);
+  return make_shared<FutureTensor>(*Gamma33, task52);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma230_() {
-  auto Gamma230 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma230 = Gamma230->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma230_() {
+  vector<IndexRange> Gamma230_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma230 = make_shared<Tensor>(Gamma230_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task53 = make_shared<Task53>(array<shared_ptr<Tensor>,4>{{Gamma230, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma230, Gamma230, task53);
+  auto tensor53 = vector<shared_ptr<Tensor>>{Gamma230, rdm2_, rdm3_, rdm4_};
+  auto task53 = make_shared<Task53>(tensor53, pindex);
+  return make_shared<FutureTensor>(*Gamma230, task53);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma231_() {
-  auto Gamma231 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma231 = Gamma231->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma231_() {
+  vector<IndexRange> Gamma231_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma231 = make_shared<Tensor>(Gamma231_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task54 = make_shared<Task54>(array<shared_ptr<Tensor>,3>{{Gamma231, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma231, Gamma231, task54);
+  auto tensor54 = vector<shared_ptr<Tensor>>{Gamma231, rdm2_, rdm3_};
+  auto task54 = make_shared<Task54>(tensor54, pindex);
+  return make_shared<FutureTensor>(*Gamma231, task54);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma232_() {
-  auto Gamma232 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma232 = Gamma232->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma232_() {
+  vector<IndexRange> Gamma232_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma232 = make_shared<Tensor>(Gamma232_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task55 = make_shared<Task55>(array<shared_ptr<Tensor>,4>{{Gamma232, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma232, Gamma232, task55);
+  auto tensor55 = vector<shared_ptr<Tensor>>{Gamma232, rdm2_, rdm3_, rdm4_};
+  auto task55 = make_shared<Task55>(tensor55, pindex);
+  return make_shared<FutureTensor>(*Gamma232, task55);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma233_() {
-  auto Gamma233 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma233 = Gamma233->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma233_() {
+  vector<IndexRange> Gamma233_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma233 = make_shared<Tensor>(Gamma233_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task56 = make_shared<Task56>(array<shared_ptr<Tensor>,4>{{Gamma233, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma233, Gamma233, task56);
+  auto tensor56 = vector<shared_ptr<Tensor>>{Gamma233, rdm2_, rdm3_, rdm4_};
+  auto task56 = make_shared<Task56>(tensor56, pindex);
+  return make_shared<FutureTensor>(*Gamma233, task56);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma236_() {
-  auto Gamma236 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma236 = Gamma236->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma236_() {
+  vector<IndexRange> Gamma236_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma236 = make_shared<Tensor>(Gamma236_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task57 = make_shared<Task57>(array<shared_ptr<Tensor>,4>{{Gamma236, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma236, Gamma236, task57);
+  auto tensor57 = vector<shared_ptr<Tensor>>{Gamma236, rdm2_, rdm3_, rdm4_};
+  auto task57 = make_shared<Task57>(tensor57, pindex);
+  return make_shared<FutureTensor>(*Gamma236, task57);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma237_() {
-  auto Gamma237 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma237 = Gamma237->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma237_() {
+  vector<IndexRange> Gamma237_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma237 = make_shared<Tensor>(Gamma237_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task58 = make_shared<Task58>(array<shared_ptr<Tensor>,4>{{Gamma237, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma237, Gamma237, task58);
+  auto tensor58 = vector<shared_ptr<Tensor>>{Gamma237, rdm2_, rdm3_, rdm4_};
+  auto task58 = make_shared<Task58>(tensor58, pindex);
+  return make_shared<FutureTensor>(*Gamma237, task58);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma238_() {
-  auto Gamma238 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma238 = Gamma238->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma238_() {
+  vector<IndexRange> Gamma238_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma238 = make_shared<Tensor>(Gamma238_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task59 = make_shared<Task59>(array<shared_ptr<Tensor>,4>{{Gamma238, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma238, Gamma238, task59);
+  auto tensor59 = vector<shared_ptr<Tensor>>{Gamma238, rdm2_, rdm3_, rdm4_};
+  auto task59 = make_shared<Task59>(tensor59, pindex);
+  return make_shared<FutureTensor>(*Gamma238, task59);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma245_() {
-  auto Gamma245 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma245 = Gamma245->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma245_() {
+  vector<IndexRange> Gamma245_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma245 = make_shared<Tensor>(Gamma245_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task60 = make_shared<Task60>(array<shared_ptr<Tensor>,3>{{Gamma245, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma245, Gamma245, task60);
+  auto tensor60 = vector<shared_ptr<Tensor>>{Gamma245, rdm2_, rdm3_};
+  auto task60 = make_shared<Task60>(tensor60, pindex);
+  return make_shared<FutureTensor>(*Gamma245, task60);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma246_() {
-  auto Gamma246 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma246 = Gamma246->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma246_() {
+  vector<IndexRange> Gamma246_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma246 = make_shared<Tensor>(Gamma246_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task61 = make_shared<Task61>(array<shared_ptr<Tensor>,3>{{Gamma246, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma246, Gamma246, task61);
+  auto tensor61 = vector<shared_ptr<Tensor>>{Gamma246, rdm2_, rdm3_};
+  auto task61 = make_shared<Task61>(tensor61, pindex);
+  return make_shared<FutureTensor>(*Gamma246, task61);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma253_() {
-  auto Gamma253 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma253 = Gamma253->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma253_() {
+  vector<IndexRange> Gamma253_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma253 = make_shared<Tensor>(Gamma253_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task62 = make_shared<Task62>(array<shared_ptr<Tensor>,3>{{Gamma253, make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma253, Gamma253, task62);
+  auto tensor62 = vector<shared_ptr<Tensor>>{Gamma253, rdm3_, rdm4_};
+  auto task62 = make_shared<Task62>(tensor62, pindex);
+  return make_shared<FutureTensor>(*Gamma253, task62);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma419_() {
-  auto Gamma419 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma419 = Gamma419->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma422_() {
+  vector<IndexRange> Gamma422_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma422 = make_shared<Tensor>(Gamma422_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task63 = make_shared<Task63>(array<shared_ptr<Tensor>,5>{{Gamma419, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma419, Gamma419, task63);
+  auto tensor63 = vector<shared_ptr<Tensor>>{Gamma422, rdm2_, rdm3_, rdm4_, h1_};
+  auto task63 = make_shared<Task63>(tensor63, pindex);
+  return make_shared<FutureTensor>(*Gamma422, task63);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma420_() {
-  auto Gamma420 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma420 = Gamma420->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma423_() {
+  vector<IndexRange> Gamma423_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma423 = make_shared<Tensor>(Gamma423_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task64 = make_shared<Task64>(array<shared_ptr<Tensor>,5>{{Gamma420, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma420, Gamma420, task64);
+  auto tensor64 = vector<shared_ptr<Tensor>>{Gamma423, rdm2_, rdm3_, rdm4_, v2_};
+  auto task64 = make_shared<Task64>(tensor64, pindex);
+  return make_shared<FutureTensor>(*Gamma423, task64);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma317_() {
-  auto Gamma317 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma317 = Gamma317->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma317_() {
+  vector<IndexRange> Gamma317_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma317 = make_shared<Tensor>(Gamma317_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task65 = make_shared<Task65>(array<shared_ptr<Tensor>,4>{{Gamma317, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma317, Gamma317, task65);
+  auto tensor65 = vector<shared_ptr<Tensor>>{Gamma317, rdm1_, rdm2_, rdm3_};
+  auto task65 = make_shared<Task65>(tensor65, pindex);
+  return make_shared<FutureTensor>(*Gamma317, task65);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma318_() {
-  auto Gamma318 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma318 = Gamma318->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma318_() {
+  vector<IndexRange> Gamma318_index = {active_, active_, active_, active_};
+  auto Gamma318 = make_shared<Tensor>(Gamma318_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task66 = make_shared<Task66>(array<shared_ptr<Tensor>,3>{{Gamma318, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma318, Gamma318, task66);
+  auto tensor66 = vector<shared_ptr<Tensor>>{Gamma318, rdm1_, rdm2_};
+  auto task66 = make_shared<Task66>(tensor66, pindex);
+  return make_shared<FutureTensor>(*Gamma318, task66);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma335_() {
-  auto Gamma335 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma335 = Gamma335->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma335_() {
+  vector<IndexRange> Gamma335_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma335 = make_shared<Tensor>(Gamma335_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task67 = make_shared<Task67>(array<shared_ptr<Tensor>,3>{{Gamma335, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma335, Gamma335, task67);
+  auto tensor67 = vector<shared_ptr<Tensor>>{Gamma335, rdm2_, rdm3_};
+  auto task67 = make_shared<Task67>(tensor67, pindex);
+  return make_shared<FutureTensor>(*Gamma335, task67);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma336_() {
-  auto Gamma336 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma336 = Gamma336->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma336_() {
+  vector<IndexRange> Gamma336_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma336 = make_shared<Tensor>(Gamma336_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task68 = make_shared<Task68>(array<shared_ptr<Tensor>,3>{{Gamma336, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma336, Gamma336, task68);
+  auto tensor68 = vector<shared_ptr<Tensor>>{Gamma336, rdm2_, rdm3_};
+  auto task68 = make_shared<Task68>(tensor68, pindex);
+  return make_shared<FutureTensor>(*Gamma336, task68);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma368_() {
-  auto Gamma368 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma368 = Gamma368->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma368_() {
+  vector<IndexRange> Gamma368_index = {active_, active_, active_, active_};
+  auto Gamma368 = make_shared<Tensor>(Gamma368_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task69 = make_shared<Task69>(array<shared_ptr<Tensor>,2>{{Gamma368, make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma368, Gamma368, task69);
+  auto tensor69 = vector<shared_ptr<Tensor>>{Gamma368, rdm2_};
+  auto task69 = make_shared<Task69>(tensor69, pindex);
+  return make_shared<FutureTensor>(*Gamma368, task69);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma363_() {
-  auto Gamma363 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma363 = Gamma363->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma363_() {
+  vector<IndexRange> Gamma363_index = {active_, active_, active_, active_};
+  auto Gamma363 = make_shared<Tensor>(Gamma363_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task70 = make_shared<Task70>(array<shared_ptr<Tensor>,3>{{Gamma363, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma363, Gamma363, task70);
+  auto tensor70 = vector<shared_ptr<Tensor>>{Gamma363, rdm1_, rdm2_};
+  auto task70 = make_shared<Task70>(tensor70, pindex);
+  return make_shared<FutureTensor>(*Gamma363, task70);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma389_() {
-  auto Gamma389 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma389 = Gamma389->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma391_() {
+  vector<IndexRange> Gamma391_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma391 = make_shared<Tensor>(Gamma391_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task71 = make_shared<Task71>(array<shared_ptr<Tensor>,2>{{Gamma389, make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma389, Gamma389, task71);
+  auto tensor71 = vector<shared_ptr<Tensor>>{Gamma391, rdm3_};
+  auto task71 = make_shared<Task71>(tensor71, pindex);
+  return make_shared<FutureTensor>(*Gamma391, task71);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma425_() {
-  auto Gamma425 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma425 = Gamma425->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma428_() {
+  vector<IndexRange> Gamma428_index = {active_, active_};
+  auto Gamma428 = make_shared<Tensor>(Gamma428_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task72 = make_shared<Task72>(array<shared_ptr<Tensor>,4>{{Gamma425, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma425, Gamma425, task72);
+  auto tensor72 = vector<shared_ptr<Tensor>>{Gamma428, rdm1_, rdm2_, h1_};
+  auto task72 = make_shared<Task72>(tensor72, pindex);
+  return make_shared<FutureTensor>(*Gamma428, task72);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,2>> RelMRCI::RelMRCI::Gamma427_() {
-  auto Gamma427 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_});
-  auto TAGamma427 = Gamma427->tiledarray<2>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma430_() {
+  vector<IndexRange> Gamma430_index = {active_, active_};
+  auto Gamma430 = make_shared<Tensor>(Gamma430_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task73 = make_shared<Task73>(array<shared_ptr<Tensor>,5>{{Gamma427, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,2>>(*TAGamma427, Gamma427, task73);
+  auto tensor73 = vector<shared_ptr<Tensor>>{Gamma430, rdm1_, rdm2_, rdm3_, v2_};
+  auto task73 = make_shared<Task73>(tensor73, pindex);
+  return make_shared<FutureTensor>(*Gamma430, task73);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma394_() {
-  auto Gamma394 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma394 = Gamma394->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma396_() {
+  vector<IndexRange> Gamma396_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma396 = make_shared<Tensor>(Gamma396_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task74 = make_shared<Task74>(array<shared_ptr<Tensor>,3>{{Gamma394, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma394, Gamma394, task74);
+  auto tensor74 = vector<shared_ptr<Tensor>>{Gamma396, rdm2_, rdm3_};
+  auto task74 = make_shared<Task74>(tensor74, pindex);
+  return make_shared<FutureTensor>(*Gamma396, task74);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,8>> RelMRCI::RelMRCI::Gamma395_() {
-  auto Gamma395 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_, active_, active_});
-  auto TAGamma395 = Gamma395->tiledarray<8>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma397_() {
+  vector<IndexRange> Gamma397_index = {active_, active_, active_, active_, active_, active_, active_, active_};
+  auto Gamma397 = make_shared<Tensor>(Gamma397_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task75 = make_shared<Task75>(array<shared_ptr<Tensor>,3>{{Gamma395, make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,8>>(*TAGamma395, Gamma395, task75);
+  auto tensor75 = vector<shared_ptr<Tensor>>{Gamma397, rdm3_, rdm4_};
+  auto task75 = make_shared<Task75>(tensor75, pindex);
+  return make_shared<FutureTensor>(*Gamma397, task75);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,6>> RelMRCI::RelMRCI::Gamma407_() {
-  auto Gamma407 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_, active_, active_});
-  auto TAGamma407 = Gamma407->tiledarray<6>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma409_() {
+  vector<IndexRange> Gamma409_index = {active_, active_, active_, active_, active_, active_};
+  auto Gamma409 = make_shared<Tensor>(Gamma409_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task76 = make_shared<Task76>(array<shared_ptr<Tensor>,2>{{Gamma407, make_shared<Tensor>(*rdm3_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,6>>(*TAGamma407, Gamma407, task76);
+  auto tensor76 = vector<shared_ptr<Tensor>>{Gamma409, rdm3_};
+  auto task76 = make_shared<Task76>(tensor76, pindex);
+  return make_shared<FutureTensor>(*Gamma409, task76);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma409_() {
-  auto Gamma409 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma409 = Gamma409->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma412_() {
+  vector<IndexRange> Gamma412_index = {active_, active_, active_, active_};
+  auto Gamma412 = make_shared<Tensor>(Gamma412_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task77 = make_shared<Task77>(array<shared_ptr<Tensor>,6>{{Gamma409, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma409, Gamma409, task77);
+  auto tensor77 = vector<shared_ptr<Tensor>>{Gamma412, rdm0_, rdm1_, rdm2_, rdm3_, h1_};
+  auto task77 = make_shared<Task77>(tensor77, pindex);
+  return make_shared<FutureTensor>(*Gamma412, task77);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma410_() {
-  auto Gamma410 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma410 = Gamma410->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma413_() {
+  vector<IndexRange> Gamma413_index = {active_, active_, active_, active_};
+  auto Gamma413 = make_shared<Tensor>(Gamma413_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task78 = make_shared<Task78>(array<shared_ptr<Tensor>,7>{{Gamma410, make_shared<Tensor>(*rdm0_), make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma410, Gamma410, task78);
+  auto tensor78 = vector<shared_ptr<Tensor>>{Gamma413, rdm0_, rdm1_, rdm2_, rdm3_, rdm4_, v2_};
+  auto task78 = make_shared<Task78>(tensor78, pindex);
+  return make_shared<FutureTensor>(*Gamma413, task78);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,0>> RelMRCI::RelMRCI::Gamma421_() {
-  auto Gamma421 = make_shared<Tensor>(std::vector<IndexRange>{});
-  auto TAGamma421 = Gamma421->tiledarray<0>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma424_() {
+  vector<IndexRange> Gamma424_index;
+  auto Gamma424 = make_shared<Tensor>(Gamma424_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task79 = make_shared<Task79>(array<shared_ptr<Tensor>,3>{{Gamma421, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,0>>(*TAGamma421, Gamma421, task79);
+  auto tensor79 = vector<shared_ptr<Tensor>>{Gamma424, rdm1_, h1_};
+  auto task79 = make_shared<Task79>(tensor79, pindex);
+  return make_shared<FutureTensor>(*Gamma424, task79);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,0>> RelMRCI::RelMRCI::Gamma423_() {
-  auto Gamma423 = make_shared<Tensor>(std::vector<IndexRange>{});
-  auto TAGamma423 = Gamma423->tiledarray<0>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma426_() {
+  vector<IndexRange> Gamma426_index;
+  auto Gamma426 = make_shared<Tensor>(Gamma426_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task80 = make_shared<Task80>(array<shared_ptr<Tensor>,4>{{Gamma423, make_shared<Tensor>(*rdm1_), make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,0>>(*TAGamma423, Gamma423, task80);
+  auto tensor80 = vector<shared_ptr<Tensor>>{Gamma426, rdm1_, rdm2_, v2_};
+  auto task80 = make_shared<Task80>(tensor80, pindex);
+  return make_shared<FutureTensor>(*Gamma426, task80);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma429_() {
-  auto Gamma429 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma429 = Gamma429->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma432_() {
+  vector<IndexRange> Gamma432_index = {active_, active_, active_, active_};
+  auto Gamma432 = make_shared<Tensor>(Gamma432_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task81 = make_shared<Task81>(array<shared_ptr<Tensor>,4>{{Gamma429, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*h1_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma429, Gamma429, task81);
+  auto tensor81 = vector<shared_ptr<Tensor>>{Gamma432, rdm2_, rdm3_, h1_};
+  auto task81 = make_shared<Task81>(tensor81, pindex);
+  return make_shared<FutureTensor>(*Gamma432, task81);
 }
 
-shared_ptr<FutureTATensor<std::complex<double>,4>> RelMRCI::RelMRCI::Gamma430_() {
-  auto Gamma430 = make_shared<Tensor>(std::vector<IndexRange>{active_, active_, active_, active_});
-  auto TAGamma430 = Gamma430->tiledarray<4>();
+shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma433_() {
+  vector<IndexRange> Gamma433_index = {active_, active_, active_, active_};
+  auto Gamma433 = make_shared<Tensor>(Gamma433_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto task82 = make_shared<Task82>(array<shared_ptr<Tensor>,5>{{Gamma430, make_shared<Tensor>(*rdm2_), make_shared<Tensor>(*rdm3_), make_shared<Tensor>(*rdm4_), make_shared<Tensor>(*v2_)}}, pindex);
-  return make_shared<FutureTATensor<std::complex<double>,4>>(*TAGamma430, Gamma430, task82);
+  auto tensor82 = vector<shared_ptr<Tensor>>{Gamma433, rdm2_, rdm3_, rdm4_, v2_};
+  auto task82 = make_shared<Task82>(tensor82, pindex);
+  return make_shared<FutureTensor>(*Gamma433, task82);
 }
 
 #endif

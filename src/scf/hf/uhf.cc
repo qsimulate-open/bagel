@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: uhf.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/scf/atomicdensities.h>
@@ -77,8 +76,8 @@ void UHF::compute() {
   Timer scftime;
   for (int iter = 0; iter != max_iter_; ++iter) {
 
-    std::shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
-    std::shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
+    shared_ptr<const Matrix> fockA = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeff_->slice(0, nocc_));
+    shared_ptr<const Matrix> fockB = make_shared<const Fock<1>>(geom_, hcore_, aodensity_, coeffB_->slice(0, noccB_));
 
     energy_ = 0.25*((*hcore_+*fockA) * *aodensityA_ + (*hcore_+*fockB) * *aodensityB_).trace() + geom_->nuclear_repulsion();
 
@@ -171,24 +170,27 @@ tuple<shared_ptr<Coeff>, int, shared_ptr<VecRDM<1>>> UHF::natural_orbitals() con
 }
 
 
+shared_ptr<const Matrix> UHF::compute_erdm1() const {
+  // compute an energy weighted 1RDM and store
+  const VecView ea = eig_.slice(0, nocc_);
+  const VecView eb = eigB_.slice(0, noccB_);
+  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
+  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
+  *erdm *= 0.5;
+  return erdm;
+}
+
+
 shared_ptr<const Reference> UHF::conv_to_ref() const {
   shared_ptr<Coeff> natorb;
   int nocc;
   shared_ptr<VecRDM<1>> rdm1;
   tie(natorb, nocc, rdm1) = natural_orbitals();
-  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, energy(), rdm1);
+  auto out = make_shared<Reference>(geom_, natorb, 0, nocc, coeff_->mdim()-nocc, vector<double>{energy_}, rdm1);
 
   // set alpha and beta coeffs
   out->set_coeff_AB(coeff_, coeffB_);
   out->set_nocc(nocc_, noccB_);
-
-  // compute an energy weighted 1RDM and store
-  const VecView ea = eig_.slice(0, nocc_);
-  const VecView eb = eigB_.slice(0, nocc_);
-  shared_ptr<Matrix> erdm = coeff_->form_weighted_density_rhf(nocc_, ea);
-  *erdm += *coeffB_->form_weighted_density_rhf(noccB_, eb);
-  *erdm *= 0.5;
-  out->set_erdm1(erdm);
 
   // this is just dummy...
   out->set_eig(eig_);

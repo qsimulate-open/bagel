@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: scf_base.h
 // Copyright (C) 2009 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SCF_SCF_BASE_H
@@ -75,8 +74,6 @@ class SCF_base_ : public Method {
     std::shared_ptr<DFHalfDist> half_;
 
     // FMM
-    std::shared_ptr<const Tree> fmmtree_;
-    std::shared_ptr<const TreeSP> fmmtree_sp_;
     std::shared_ptr<const FMM> fmm_;
 
     bool restart_;
@@ -96,8 +93,7 @@ class SCF_base_ : public Method {
 
   public:
     SCF_base_() { }
-    SCF_base_(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
-             const std::shared_ptr<const Reference>, const bool need_schwarz = false);
+    SCF_base_(std::shared_ptr<const PTree> idata_, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool need_schwarz = false);
     virtual ~SCF_base_() { }
 
     virtual void compute() override = 0;

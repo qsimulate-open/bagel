@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: indexrange.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -33,6 +32,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <memory>
+#include <src/util/parallel/staticdist.h>
 
 namespace bagel {
 namespace SMITH {
@@ -40,17 +41,14 @@ namespace SMITH {
 // one index block
 class Index {
   protected:
-    std::string label_;
     size_t offset_;
     size_t offset2_;
     size_t size_;
     size_t key_;
   public:
-    Index(const std::string lab, const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : label_(lab), offset_(o), offset2_(o2), size_(s), key_(i) {}
-    Index() : offset_(0), offset2_(0), size_(0), key_(0) {}
+    Index(const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : offset_(o), offset2_(o2), size_(s), key_(i) {}
+    Index() {}
     ~Index() {}
-
-    std::string label() const { return label_; }
     size_t offset() const { return offset_; }
     size_t size() const { return size_; }
     size_t key() const { return key_; }
@@ -79,35 +77,13 @@ class IndexRange {
     int orboffset2_;
 
   public:
-    IndexRange(const std::string lab, const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1)
-      : keyoffset_(boffset), orboffset_(orboff), orboffset2_(orboff2 < 0 ? orboff : orboff2) {
-      if (size > 0) {
-        // first determine number of blocks.
-        const size_t nbl = (size-1) / maxblock + 1;
-        const size_t nblock = (size-1) / nbl + 1;
-        // we want to distribute orbitals as evenly as possible
-        const size_t rem = nbl * nblock - size;
-        std::vector<size_t> blocksizes(nbl, nblock);
-        auto iter = blocksizes.rbegin();
-        for (int k = 0; k != rem; ++iter, ++k) --*iter;
-        // push back to range_
-        size_t off = orboffset_;
-        size_t off2 = orboffset2_;
-        // key is offsetted by the input value
-        size_t cnt = boffset;
-        for (auto& i : blocksizes) {
-          Index t(lab, off, off2, i, cnt++);
-          range_.push_back(t);
-          off += i;
-          off2 += i;
-        }
-        // set size_
-        size_ = off - orboffset_;
-      } else {
-        size_ = 0;
-      }
-    }
-    IndexRange() : size_(0), keyoffset_(0), orboffset_(0), orboffset2_(0) {}
+    IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1);
+
+    // make IndexRange based on StaticDist. The offset in StaticDist is ignored
+    IndexRange(std::shared_ptr<const StaticDist> dist, const int boffset = 0, const int orboff = 0, const int orboff2 = -1);
+
+    IndexRange() {}
+    ~IndexRange() {}
 
     const std::vector<Index>& range() const { return range_; }
     Index range(const int i) const { return range_[i]; }
@@ -125,29 +101,12 @@ class IndexRange {
     int size() const { return size_; }
     int keyoffset() const { return keyoffset_; }
 
-    void merge(const IndexRange& o) {
-      range_.insert(range_.end(), o.range_.begin(), o.range_.end());
-      size_ += o.size_;
-    }
+    void merge(const IndexRange& o);
 
-    bool operator==(const IndexRange& o) const {
-      bool out = size_ == o.size_;
-      if (range_.size() == o.range_.size()) {
-        auto i = range_.begin();
-        for (auto j = o.range_.begin(); i != range_.end(); ++i, ++j) out &= (*i) == (*j);
-      } else {
-        out = false;
-      }
-      return out;
-    }
+    bool operator==(const IndexRange& o) const;
     bool operator!=(const IndexRange& o) const { return !(*this == o); }
 
-    std::string str() const {
-      std::stringstream ss;
-      for (auto& i : range_)
-        ss << std::setw(10) << i.offset() << std::setw(10) << i.size() << std::endl;
-      return ss.str();
-    }
+    std::string str() const;
     void print() const { std::cout << str() << std::endl; }
 };
 

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zmatrix.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -70,6 +69,22 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
   setlocal_(o.local());
 }
 #endif
+
+
+ZMatView ZMatrix::slice(const int mstart, const int mend) {
+  assert(mstart >= 0 && mend <= mdim());
+  auto low = {0, mstart};
+  auto up  = {ndim(), mend};
+  return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+}
+
+
+const ZMatView ZMatrix::slice(const int mstart, const int mend) const {
+  assert(mstart >= 0 && mend <= mdim());
+  auto low = {0, mstart};
+  auto up  = {ndim(), mend};
+  return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
+}
 
 
 ZMatrix ZMatrix::operator/(const ZMatrix& o) const {
@@ -245,35 +260,6 @@ void ZMatrix::purify_unitary() {
     const complex<double> b = 1.0/std::sqrt(blas::dot_product(element_ptr(0,i), ndim(), element_ptr(0,i)));
     for_each(element_ptr(0,i), element_ptr(0,i+1), [&b](complex<double>& a) { a *= b; });
   }
-}
-
-
-void ZMatrix::purify_redrotation(const int nclosed, const int nact, const int nvirt) {
-
-#if 1
-  for (int g = 0; g != nclosed; ++g)
-    for (int h = 0; h != nclosed; ++h)
-      element(h,g)=0.0;
-  for (int g = 0; g != nact; ++g)
-    for (int h = 0; h != nact; ++h)
-      element(h+nclosed,g+nclosed)=0.0;
-  for (int g = 0; g != nvirt; ++g)
-    for (int h = 0; h != nvirt; ++h)
-      element(h+nclosed+nact,g+nclosed+nact)=0.0;
-  for (int i = 0; i != ndim(); ++i) {
-    for (int j = 0; j != i; ++j) {
-      const complex<double> ele = (element(j,i) - conj(element(i,j))) * 0.5;
-      element(j,i) = ele;
-      element(i,j) = - conj(ele);
-    }
-  }
-#endif
-
-}
-
-
-void ZMatrix::purify_idempotent(const ZMatrix& s) {
-  *this = *this * s * *this * 3.0 - *this * s * *this * s * *this * 2.0;
 }
 
 

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: diracgrad.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/grad/gradeval.h>
@@ -38,6 +37,7 @@ using namespace bagel;
 
 template<>
 shared_ptr<GradFile> GradEval<Dirac>::compute() {
+  assert(ref_->nact() == 0);
   geom_ = task_->geom();
 
   Timer timer;
@@ -46,13 +46,15 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 #endif
   // density matrix
   shared_ptr<const RelReference> ref = dynamic_pointer_cast<const RelReference>(ref_);
-  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, ref->nocc());
+  shared_ptr<const ZMatrix> coeff = ref->relcoeff()->slice_copy(0, 2*ref->nocc());
   auto den = make_shared<const ZMatrix>(*coeff ^ *coeff);
+  if (ref->gaunt())
+    throw runtime_error("Dirac--Hartree--Fock gradients are currently unavailable with the Gaunt or full Breit interaction.");
 
   // energy-weighted density matrix
   shared_ptr<ZMatrix> ecoeff = coeff->copy();
   const VectorB& eig = ref->eig();
-  for (int i = 0; i != ref->nocc(); ++i)
+  for (int i = 0; i != 2*ref->nocc(); ++i)
     zscal_(ecoeff->ndim(), eig(i), ecoeff->element_ptr(0, i), 1);
   auto eden = make_shared<const ZMatrix>(*coeff ^ *ecoeff);
 
@@ -137,7 +139,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     array<shared_ptr<const Matrix>, 4> trocoeff;
     array<shared_ptr<const Matrix>, 4> tiocoeff;
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), ref->nocc());
+      shared_ptr<const ZMatrix> ocoeff = coeff->get_submatrix(i*geom_->nbasis(), 0, geom_->nbasis(), 2*ref->nocc());
       rocoeff[i] = ocoeff->get_real_part();
       iocoeff[i] = ocoeff->get_imag_part();
       trocoeff[i] = rocoeff[i]->transpose();
@@ -160,7 +162,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
       list<shared_ptr<RelDF>> dfdists = DFock::make_dfdists(dfs, false);
 
       // (2) first-transform
-      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, rocoeff, iocoeff);
+      list<shared_ptr<RelDFHalf>> half_complex = DFock::make_half_complex(dfdists, coeff->slice_copy(0, 2*ref->nocc()));
 
       // (3) split and factorize
       for (auto& i : half_complex) {
@@ -180,9 +182,9 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
     for (auto& j : half_complex_exch) {
       for (auto& i : j->basis()) {
         if (cd) {
-          *cd += RelCDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half /* false = multiply J^{-1} */);
+          *cd += RelCDMatrix(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half ? 1 : 2);
         } else {
-          cd = make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half);
+          cd = make_shared<RelCDMatrix>(j, i, trocoeff, tiocoeff, geom_->df()->data2(), external_half ? 1 : 2);
         }
       }
     }

@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: df.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -47,19 +46,6 @@ shared_ptr<DFDist> DFDist::clone() const {
   for (auto& i : block_)
     out->add_block(i->clone());
   return out;
-}
-
-
-void DFDist::add_direct_product(const vector<shared_ptr<const VectorB>> cd, const vector<shared_ptr<const Matrix>> dd, const double a) {
-  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
-  if (cd.size() != dd.size()) throw logic_error("Illegal call of DFDist::DFDist");
-
-  auto d = dd.begin();
-  for (auto& c : cd) {
-    auto aslice = make_shared<VectorB>(c->slice(block_[0]->astart(), block_[0]->astart()+block_[0]->asize()));
-    block_[0]->add_direct_product(aslice, *d++, a);
-  }
-  assert(d == dd.end());
 }
 
 
@@ -206,14 +192,14 @@ shared_ptr<DFDist> DFHalfDist::back_transform(const MatView c) const{
 }
 
 
-void DFHalfDist::rotate_occ(const std::shared_ptr<const Matrix> d) {
+void DFHalfDist::rotate_occ(const shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
     i = i->transform_second(*d);
 }
 
 
-shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Matrix> den) const {
+shared_ptr<DFHalfDist> DFHalfDist::apply_density(const shared_ptr<const Matrix> den) const {
   assert(den->mdim() == nindex2_);
   auto out = make_shared<DFHalfDist>(df_, nindex1_);
   for (auto& i : block_)
@@ -222,7 +208,7 @@ shared_ptr<DFHalfDist> DFHalfDist::apply_density(const std::shared_ptr<const Mat
 }
 
 
-shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const {
+shared_ptr<Matrix> DFHalfDist::compute_Kop_1occ(const shared_ptr<const Matrix> den, const double a) const {
   return apply_density(den)->form_2index(df_, a);
 }
 
@@ -246,7 +232,7 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::rotate_occ1(const std::shared_ptr<const Matrix> d) {
+void DFFullDist::rotate_occ1(const shared_ptr<const Matrix> d) {
   assert(nindex1_ == d->mdim());
   for (auto& i : block_)
     i = i->transform_second(*d);
@@ -306,6 +292,26 @@ shared_ptr<Matrix> DFFullDist::form_4index_1fixed(const shared_ptr<const DFFullD
   // TODO needs more work
   if (block_.size() != 1 || o->block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
   shared_ptr<Matrix> out = block_[0]->form_4index_1fixed(o->block_[0], a, n);
+  if (!serial_)
+    out->allreduce();
+  return out;
+}
+
+
+shared_ptr<Matrix> DFFullDist::form_4index_diagonal() const {
+  // TODO needs more work
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = block_[0]->form_4index_diagonal();
+  if (!serial_)
+    out->allreduce();
+  return out;
+}
+
+
+shared_ptr<Matrix> DFFullDist::form_4index_diagonal_part() const {
+  // TODO needs more work
+  if (block_.size() != 1) throw logic_error("so far assumes block_.size() == 1");
+  shared_ptr<Matrix> out = block_[0]->form_4index_diagonal_part();
   if (!serial_)
     out->allreduce();
   return out;

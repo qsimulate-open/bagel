@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: nevpt2.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,27 +8,26 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/mat1e/rel/relhcore.h>
-#include <src/multi/casscf/superci.h>
-#include <src/multi/zcasscf/zcashybrid.h>
+#include <src/multi/casscf/cassecond.h>
+#include <src/multi/zcasscf/zcassecond.h>
 #include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
@@ -49,7 +48,7 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
   istate_ = idata_->get<int>("istate", 0);
   ncore_  = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0))*z2;
   nfrozenvirt_ = idata_->get<int>("nfrozenvirt", 0)*z2;
-  if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
+  if (ncore_) cout << "    * freezing " << ncore_ << " orbital" << ((ncore_^1) ? "s" : "") << endl;
 
   // if three is a aux_basis keyword, we use that basis
   abasis_ = to_lower(idata_->get<string>("aux_basis", ""));
@@ -65,7 +64,9 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
     if (nclosed_+nact_ < 1) throw runtime_error("no correlated orbitals");
     if (nact_ < 1)          throw runtime_error("no active orbitals");
-    if (nvirt_ < 1)         throw runtime_error("no virtuals orbitals");
+    if (nvirt_ < 1)         throw runtime_error("no virtual orbitals");
+    if (istate_ < 0 || istate_ >= ref_->nstate())
+      throw runtime_error("invalid state requested");
   }
 
   cout << endl << "  === DF-NEVPT2 calculation ===" << endl << endl;
@@ -74,9 +75,11 @@ NEVPT2<DataType>::NEVPT2(shared_ptr<const PTree> input, shared_ptr<const Geometr
 
 template<>
 void NEVPT2<double>::init_reference() {
-  auto casscf = make_shared<SuperCI>(idata_, geom_, ref_);
-  casscf->compute();
-  ref_ = casscf->conv_to_ref();
+  if (!ref_ || ref_->nact() == 0) {
+    auto casscf = make_shared<CASSecond>(idata_, geom_, ref_);
+    casscf->compute();
+    ref_ = casscf->conv_to_ref();
+  }
 
   gaunt_ = false;
   breit_ = false;
@@ -85,9 +88,11 @@ void NEVPT2<double>::init_reference() {
 
 template<>
 void NEVPT2<complex<double>>::init_reference() {
-  auto casscf = make_shared<ZCASHybrid>(idata_, geom_, ref_);
-  casscf->compute();
-  ref_ = casscf->conv_to_ref();
+  if (!dynamic_pointer_cast<const RelReference>(ref_) || ref_->nact() == 0) {
+    auto casscf = make_shared<ZCASSecond>(idata_, geom_, ref_);
+    casscf->compute();
+    ref_ = casscf->conv_to_ref();
+  }
 
   auto ref = dynamic_pointer_cast<const RelReference>(ref_);
   gaunt_ = ref->gaunt();
@@ -302,7 +307,7 @@ struct NEVView {
 
 template<typename DataType>
 typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type
-  compute_mat(const NEVView<DataType> a, const NEVView<DataType> b, const bool conjg = false) {
+  compute_mat(const NEVView<DataType>& a, const NEVView<DataType>& b, const bool conjg = false) {
 
   using MatType = typename conditional<is_same<DataType,double>::value, Matrix, ZMatrix>::type;
   using ViewType = typename conditional<is_same<DataType,double>::value, MatView, ZMatView>::type;
@@ -474,7 +479,7 @@ void NEVPT2<DataType>::compute() {
   {
     // * core Fock operator
     shared_ptr<const MatType> hcore = make_shared<typename conditional<is_same<DataType,double>::value,Hcore,RelHcore>::type>(cgeom);
-    shared_ptr<const MatType> ofockao = nclosed_+ncore_ ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
+    shared_ptr<const MatType> ofockao = (nclosed_+ncore_) ?  compute_fock(cgeom, hcore, coeff()->slice(0, ncore_+nclosed_)) : hcore;
     // * active Fock operator
     // first make a weighted coefficient
     MatType rdm1_mat(*rdm1_->get_conjg());
@@ -902,13 +907,15 @@ void NEVPT2<DataType>::compute() {
   energy_ = detail::real(accumulate(energy.begin(), energy.end(), static_cast<DataType>(0.0)));
 
   cout << "    * assembly done" << endl << endl;
-  cout << "      NEVPT2 correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
+
+  const string stateid = ref_->nstate() > 1 ? (" state " + to_string(istate_)) : "";
+  cout << "      NEVPT2" << stateid << " correlation energy: " << fixed << setw(15) << setprecision(10) << energy_ << setw(10) << setprecision(2) << timer.tick() << endl << endl;
   for (auto& i : sect)
     cout << "          " << setw(7) << left << i.first << right << setw(15) << setprecision(10) << energy[i.second] << endl;
   cout << endl;
 
-  energy_ += ref_->energy();
-  cout << "      NEVPT2 total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
+  energy_ += ref_->energy(istate_);
+  cout << "      NEVPT2" << stateid << " total energy:       " << fixed << setw(15) << setprecision(10) << energy_ << endl << endl;
 
 }
 

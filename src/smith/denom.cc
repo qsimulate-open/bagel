@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: denom.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <bagel_config.h>
@@ -35,12 +34,10 @@ using namespace SMITH;
 using namespace btas;
 
 template<typename DataType>
-Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const array<IndexRange,5>& r, const double th)
- : fock_(fock), active_(r[0]), ortho1_(r[1]), ortho2_(r[2]), ortho3_(r[3]), ortho2t_(r[4]), thresh_(th), nstates_(nstates), nact_(fock->mdim()) {
-
-  const size_t ndim = nact_ * nstates;
-  const size_t ndim2 = nact_ * ndim;
-  const size_t ndim3 = nact_ * ndim2;
+Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const double th) : fock_(fock), thresh_(th) {
+  const size_t ndim = fock->mdim() * nstates;
+  const size_t ndim2 = fock->mdim() * ndim;
+  const size_t ndim3 = fock->mdim() * ndim2;
   const int fac2 = is_same<DataType,double>::value ? 2 : 1;
 
   shalf_x_ = make_shared<MatType>(ndim, ndim);
@@ -71,6 +68,73 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
 
 template<typename DataType>
 void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
+                                                           shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
+  // computes fock-weighted 4RDM
+  shared_ptr<RDM<3,DataType>> frdm4 = rdm3->clone();
+  auto frdm4gr = group(*frdm4, 0,6);
+  auto rdm4gr = group(group(*rdm4, 6,8),0,6);
+  auto fgr = group(*fock_, 0,2);
+  btas::contract(1.0, rdm4gr, {0,1}, fgr, {1}, 0.0, frdm4gr, {0});
+  // then call the standard routine
+  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+}
+
+
+template<>
+void Denom<double>::append(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1, shared_ptr<const RDM<2>> rdm2,
+                                                         shared_ptr<const RDM<3>> rdm3, shared_ptr<const Kramers<8,RDM<4>>> rdm4) {
+  throw logic_error("Denom<double>::append with Kramers should not be called");
+}
+
+
+template<>
+void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<const ZRDM<1>> rdm1, shared_ptr<const ZRDM<2>> rdm2,
+                                                                  shared_ptr<const ZRDM<3>> rdm3, shared_ptr<const Kramers<8,ZRDM<4>>> rdm4) {
+
+  shared_ptr<ZRDM<3>> frdm4 = rdm3->clone();
+
+  assert(fock_->ndim()%2 == 0);
+  const int n = fock_->ndim()/2;
+  Kramers<2,ZMatrix> fock;
+  fock.emplace({0,0}, fock_->get_submatrix(0, 0, n, n));
+  fock.emplace({1,0}, fock_->get_submatrix(n, 0, n, n));
+  fock.emplace({0,1}, fock_->get_submatrix(0, n, n, n));
+  fock.emplace({1,1}, fock_->get_submatrix(n, n, n, n));
+
+  // TODO if this step is time consuming, there are many ways to speed it up.
+  auto work = make_shared<ZRDM<3>>(n);
+  for (int i = 0; i != 64; ++i) {
+    const int aoff = ((i   )&1)*n;
+    const int boff = ((i>>1)&1)*n;
+    const int coff = ((i>>2)&1)*n;
+    const int doff = ((i>>3)&1)*n;
+    const int eoff = ((i>>4)&1)*n;
+    const int foff = ((i>>5)&1)*n;
+    for (int j = 0; j != 4; ++j) {
+      // computes fock-weighted 4RDM
+      shared_ptr<const ZMatrix> cfock = fock.at(j);
+      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data((i << 2) + j);
+      if (!crdm) continue;
+
+      auto crdmgr = group(group(*crdm, 6,8),0,6);
+      auto wgr = group(*work, 0,6);
+      btas::contract(1.0, crdmgr, {0,1}, group(*cfock, 0,2), {1}, 0.0, wgr, {0});
+
+      for (int a = 0; a != n; ++a)
+        for (int b = 0; b != n; ++b)
+          for (int c = 0; c != n; ++c)
+            for (int d = 0; d != n; ++d)
+              for (int e = 0; e != n; ++e) {
+                blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, frdm4->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
+              }
+    }
+  }
+  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+}
+
+
+template<typename DataType>
+void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
   init_x_(jst, ist, rdm1, rdm2, rdm3, frdm4);
   init_h_(jst, ist, rdm1, rdm2, rdm3, frdm4);
@@ -84,124 +148,48 @@ void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<
 
 template<typename DataType>
 void Denom<DataType>::compute() {
-  const int nclo = active_.front().offset();
-  const int nact = active_.size();
-  const int fac2 = is_same<DataType,double>::value ? 2 : 1;
+  // TODO in principle, we can use smaller dimension (i.e., use canonical orthogonalization for shalf_x_)
   {
     shalf_x_->inverse_half(thresh_);
     MatType tmp(*shalf_x_ % *work_x_ * *shalf_x_);
     tmp.diagonalize(denom_x_);
     shalf_x_ = make_shared<MatType>(tmp % *shalf_x_);
-
-    auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_x_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,2>>({ortho1_, active_});
-      fill_block<2,DataType>(tmp2, inp, {0, nclo});
-      tashalf_x_.push_back(tmp2);
-    }
-    work_x_ = shalf_x_ = nullptr;
   }
   {
     shalf_h_->inverse_half(thresh_);
     MatType tmp(*shalf_h_ % *work_h_ * *shalf_h_);
     tmp.diagonalize(denom_h_);
     shalf_h_ = make_shared<MatType>(tmp % *shalf_h_);
-
-    auto inp = make_shared<Tensor2<DataType>>(ortho1_.size(), nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_h_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,2>>({ortho1_, active_});
-      fill_block<2,DataType>(tmp2, inp, {0, nclo});
-      tashalf_h_.push_back(tmp2);
-    }
-    work_h_ = shalf_x_ = nullptr;
   }
   {
     shalf_xx_->inverse_half(thresh_);
     MatType tmp(*shalf_xx_ % *work_xx_ * *shalf_xx_);
     tmp.diagonalize(denom_xx_);
     shalf_xx_ = make_shared<MatType>(tmp % *shalf_xx_);
-
-    auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_xx_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2_, active_, active_});
-      fill_block<3,DataType>(tmp2, inp, {0, nclo, nclo});
-      tashalf_xx_.push_back(tmp2);
-    }
-    work_xx_ = shalf_xx_ = nullptr;
   }
   {
     shalf_hh_->inverse_half(thresh_);
     MatType tmp(*shalf_hh_ % *work_hh_ * *shalf_hh_);
     tmp.diagonalize(denom_hh_);
     shalf_hh_ = make_shared<MatType>(tmp % *shalf_hh_);
-
-    auto inp = make_shared<Tensor3<DataType>>(ortho2_.size(), nact, nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_hh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2_, active_, active_});
-      fill_block<3,DataType>(tmp2, inp, {0, nclo, nclo});
-      tashalf_hh_.push_back(tmp2);
-    }
-    work_hh_ = shalf_hh_ = nullptr;
   }
   {
-    {
-      shalf_xh_->inverse_half(thresh_);
-      MatType tmp(*shalf_xh_ % *work_xh_ * *shalf_xh_);
-      tmp.diagonalize(denom_xh_);
-      shalf_xh_ = make_shared<MatType>(tmp % *shalf_xh_);
-    } {
-      auto inp = make_shared<Tensor3<DataType>>(ortho2t_.size(), nact, nact);
-      for (int i = 0; i != nstates_; ++i) {
-        copy_n(shalf_xh_->data() + i*fac2*inp->size(), inp->size(), inp->data());
-        auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2t_, active_, active_});
-        fill_block<3,DataType>(tmp2, inp, {0, nclo, nclo});
-        tashalf_xh_.push_back(tmp2);
-      }
-
-      if (fac2 == 2) { // when real (i.e., spin-free equations)
-        for (int i = 0; i != nstates_; ++i) {
-          copy_n(shalf_xh_->data() + (i*2+1)*inp->size(), inp->size(), inp->data());
-          auto tmp2 = make_shared<TATensor<DataType,3>>({ortho2t_, active_, active_});
-          fill_block<3,DataType>(tmp2, inp, {0, nclo, nclo});
-          tashalf_xh2_.push_back(tmp2);
-        }
-      }
-    }
-    work_xh_ = shalf_xh_ = nullptr;
+    shalf_xh_->inverse_half(thresh_);
+    MatType tmp(*shalf_xh_ % *work_xh_ * *shalf_xh_);
+    tmp.diagonalize(denom_xh_);
+    shalf_xh_ = make_shared<MatType>(tmp % *shalf_xh_);
   }
   {
     shalf_xxh_->inverse_half(thresh_);
     MatType tmp(*shalf_xxh_ % *work_xxh_ * *shalf_xxh_);
     tmp.diagonalize(denom_xxh_);
     shalf_xxh_ = make_shared<MatType>(tmp % *shalf_xxh_);
-
-    auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_xxh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,4>>({ortho3_, active_, active_, active_});
-      fill_block<4,DataType>(tmp2, inp, {0, nclo, nclo, nclo});
-      tashalf_xxh_.push_back(tmp2);
-    }
-    work_xxh_ = shalf_xxh_ = nullptr;
   }
   {
     shalf_xhh_->inverse_half(thresh_);
     MatType tmp(*shalf_xhh_ % *work_xhh_ * *shalf_xhh_);
     tmp.diagonalize(denom_xhh_);
     shalf_xhh_ = make_shared<MatType>(tmp % *shalf_xhh_);
-
-    auto inp = make_shared<Tensor4<DataType>>(ortho3_.size(), nact, nact, nact);
-    for (int i = 0; i != nstates_; ++i) {
-      copy_n(shalf_xhh_->data() + i*inp->size(), inp->size(), inp->data());
-      auto tmp2 = make_shared<TATensor<DataType,4>>({ortho3_, active_, active_, active_});
-      fill_block<4,DataType>(tmp2, inp, {0, nclo, nclo, nclo});
-      tashalf_xhh_.push_back(tmp2);
-    }
-    work_xhh_ = shalf_xhh_ = nullptr;
   }
 }
 

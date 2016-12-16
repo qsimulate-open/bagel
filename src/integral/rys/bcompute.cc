@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: bcompute.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/integral/carsphlist.h>
@@ -76,7 +75,7 @@ void BreitBatch_base::compute() {
       const int hrr_index = basisinfo_[0]->angular_number() * ANG_HRR_END + basisinfo_[1]->angular_number();
       hrr.hrrfunc_call(hrr_index, contsize_ * csize_, cdata, AB_, bkup_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     const int ang0 = basisinfo_[0]->angular_number();
@@ -104,7 +103,7 @@ void BreitBatch_base::compute() {
         carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, cdata);
       else
         carsphlist.carsphfunc_call(carsphindex, nloops, cdata, bkup_);
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
       a = asph;
       b = bsph;
     }
@@ -126,7 +125,7 @@ void BreitBatch_base::compute() {
           blas::transpose(&bkup_[offset], m, n, &cdata[offset]);
       }
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     // HRR to indices 23
@@ -137,7 +136,7 @@ void BreitBatch_base::compute() {
       if (swapped) hrr.hrrfunc_call(hrr_index, contsize_ * a * b, bkup_, CD_, cdata);
       else         hrr.hrrfunc_call(hrr_index, contsize_ * a * b, cdata, CD_, bkup_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     // Cartesian to spherical 23 if necesarry
@@ -150,7 +149,7 @@ void BreitBatch_base::compute() {
         carsphlist.carsphfunc_call(carsphindex, nloops, cdata, bkup_);
       else
         carsphlist.carsphfunc_call(carsphindex, nloops, bkup_, cdata);
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
       c = csph;
       d = dsph;
     }
@@ -168,7 +167,7 @@ void BreitBatch_base::compute() {
       const unsigned int index = basisinfo_[3]->angular_number() * ANG_HRR_END + basisinfo_[2]->angular_number();
       sort2.sortfunc_call(index, target_now, source_now, cont3size_, cont2size_, nloop, swap23_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? cdata : bkup_;
@@ -180,7 +179,7 @@ void BreitBatch_base::compute() {
       const int n = a * b * cont0size_ * cont1size_;
       blas::transpose(source_now, m, n, target_now);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     target_now = swapped ? bkup_ : cdata;
@@ -193,7 +192,7 @@ void BreitBatch_base::compute() {
       const unsigned int index = basisinfo_[1]->angular_number() * ANG_HRR_END + basisinfo_[0]->angular_number();
       sort1.sortfunc_call(index, target_now, source_now, cont1size_, cont0size_, nloop, swap01_);
     } else {
-      swapped = (swapped ^ true);
+      swapped = swapped != true;
     }
 
     if (swapped) copy(bkup_, bkup_+size_block_, cdata);

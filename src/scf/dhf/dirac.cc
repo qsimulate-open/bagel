@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: dirac.cc
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -71,6 +70,13 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
+
+  if (nele_ % 2 != 0) {
+    if (geom_->nonzero_magnetic_field())
+      cout << "   ***  Dirac--Hartree--Fock is not recommended for odd electron counts.  State-averaged CASSCF can better handle near-degeneracies.  ***" << endl;
+    else
+      throw runtime_error("Dirac--Hartree--Fock should not be used for odd electron counts, due to ground state degeneracy.  State-averaged CASSCF is recommended.");
+  }
 
   multipole_print_ = idata->get<int>("multipole", 1);
 
@@ -146,7 +152,10 @@ void Dirac::compute() {
     if (error < thresh_scf_ && iter > 0) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       // when computing gradient, we store half-transform integrals to avoid recomputation
-      if (do_grad_) half_ = fock->half();
+      if (do_grad_) {
+        assert(!gaunt_);
+        half_ = fock->half_coulomb();
+      }
       break;
     } else if (iter == max_iter_-1) {
       cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
@@ -199,7 +208,7 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   assert(npos % 2 == 0);
   // coeff is occ, virt, nneg
   auto c = make_shared<RelCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
-  auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_, 0, npos-nele_, gaunt_, breit_);
+  auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_/2, nele_%2, (npos-nele_)/2, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
   VectorB eig(eig_.size());
@@ -232,7 +241,6 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   } else if (dynamic_pointer_cast<const ZReference>(ref_)) {
     // Non-relativistic, GIAO-based reference
     auto zref = dynamic_pointer_cast<const ZReference>(ref_);
-    const string typeinfo = geom_->london() ? "GIAO" : "(common origin)";
     assert(geom_->magnetism());
     const int nocc = ref_->nocc();
     shared_ptr<ZMatrix> fock;

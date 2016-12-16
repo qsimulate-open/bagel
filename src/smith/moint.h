@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: moint.h
 // Copyright (C) 2012 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 // A base class for electorn Correlation methods
@@ -52,15 +51,15 @@ class K2ext {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<TATensor<DataType,4>> data_;
-    std::shared_ptr<TATensor<DataType,3>> ext_; // (gamma|aa)
+    std::shared_ptr<Tensor_<DataType>> data_;
 
+    // some handwritten drivers
     void init() { assert(false); }
 
   public:
     K2ext(std::shared_ptr<const SMITH_Info<DataType>> r, std::shared_ptr<const MatType> c, const std::vector<IndexRange>& b);
 
-    std::shared_ptr<TATensor<DataType,4>> tensor() { return data_; }
+    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
 };
 template<> void K2ext<double>::init();
 template<> void K2ext<std::complex<double>>::init();
@@ -76,9 +75,8 @@ class MOFock {
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const MatType> coeff_;
     std::vector<IndexRange> blocks_;
-    std::shared_ptr<TATensor<DataType,2>> data_;
-    std::shared_ptr<TATensor<DataType,2>> h1_;
-    VectorB eig_;
+    std::shared_ptr<Tensor_<DataType>> data_;
+    std::shared_ptr<Tensor_<DataType>> h1_;
 
     double core_energy_;
 
@@ -88,13 +86,12 @@ class MOFock {
     MOFock(std::shared_ptr<const SMITH_Info<DataType>> r, const std::vector<IndexRange>& b);
 
     // fock operator
-    std::shared_ptr<TATensor<DataType,2>> tensor() { return data_; }
+    std::shared_ptr<Tensor_<DataType>> tensor() { return data_; }
     // core Fock operator minus diagonal part of the two-body integrals
-    std::shared_ptr<TATensor<DataType,2>> h1() { return h1_; }
+    std::shared_ptr<Tensor_<DataType>> h1() { return h1_; }
 
     std::shared_ptr<const MatType> coeff() const { return coeff_; }
     double core_energy() const { return core_energy_; }
-    VectorB eig() const { return eig_; }
 };
 template<> void MOFock<double>::init();
 template<> void MOFock<std::complex<double>>::init();

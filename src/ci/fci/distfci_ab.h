@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: distfci_ab.h
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #ifndef __SRC_FCI_DISTFCI_AB_H
@@ -29,9 +28,8 @@
 #include <bitset>
 #include <memory>
 #include <src/util/f77.h>
-#include <src/ci/fci/determinants.h>
 #include <src/ci/fci/mofile.h>
-#include <src/ci/fci/civec.h>
+#include <src/ci/fci/distcivec.h>
 
 namespace bagel {
 
@@ -46,7 +44,7 @@ class DistABTask {
 
     std::unique_ptr<double[]> buf;
 
-    std::vector<int> requests_;
+    std::vector<std::shared_ptr<RMATask<double>>> requests_;
 
   public:
     DistABTask(const std::bitset<nbit__> ast, std::shared_ptr<const Determinants> b, std::shared_ptr<const Determinants> i, std::shared_ptr<const MOFile> j,
@@ -61,26 +59,18 @@ class DistABTask {
       for (int i = 0, k = 0; i != norb_; ++i) {
         if (!astring[i]) {
           std::bitset<nbit__> tmp = astring; tmp.set(i);
-          const int j = cc->get_bstring_buf(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
-          if (j >= 0) requests_.push_back(j);
+          auto j = cc->rma_rget(buf.get()+lbs*k++, base_det->lexical<0>(tmp));
+          requests_.push_back(j);
         }
       }
-
     }
 
-    bool test() {
-      bool out = true;
-      for (auto i = requests_.begin(); i != requests_.end(); )
-        if (mpi__->test(*i)) {
-          i = requests_.erase(i);
-        } else {
-          ++i;
-          out = false;
-        }
-      return out;
+    void wait() {
+      for (auto& i : requests_)
+        i->wait();
     }
 
-    void compute() {
+     std::list<std::shared_ptr<RMATask<double>>> compute() {
       const int norb_ = base_det->norb();
       const size_t lbs = base_det->lenb();
       const size_t lbt = int_det->lenb();
@@ -118,6 +108,7 @@ class DistABTask {
       auto buf3v = btas::group(buf3, 1,3);
       btas::contract(1.0, buf2v, {0,1}, h, {1,2}, 0.0, buf3v, {0,2});
 
+      std::list<std::shared_ptr<RMATask<double>>> acctasks;
       for (int i = 0, k = 0; i < norb_; ++i) {
         if (astring[i]) continue;
         std::bitset<nbit__> atarget = astring; atarget.set(i);
@@ -130,12 +121,11 @@ class DistABTask {
           for (auto& b : int_det->phiupb(j))
             bcolumn[b.target] += asign * b.sign * buf3(b.source, j, k);
         }
-        sigma->accumulate_bstring_buf(bcolumn, base_det->lexical<0>(atarget));
+        std::shared_ptr<RMATask<double>> acctask = sigma->rma_radd(std::move(bcolumn), base_det->lexical<0>(atarget));
+        acctasks.push_back(acctask);
         ++k;
       }
-#ifndef USE_SERVER_THREAD
-      sigma->flush();
-#endif
+      return acctasks;
     }
 };
 

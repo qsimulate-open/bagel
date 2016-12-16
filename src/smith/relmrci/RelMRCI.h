@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelMRCI.h
 // Copyright (C) 2014 Shiozaki group
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -44,105 +43,112 @@ namespace RelMRCI{
 
 class RelMRCI : public SpinFreeMethod<std::complex<double>> {
   protected:
-    std::shared_ptr<TATensor<std::complex<double>,4>> t2;
-    std::shared_ptr<TATensor<std::complex<double>,4>> r;
-    std::shared_ptr<TATensor<std::complex<double>,4>> s;
-    std::shared_ptr<TATensor<std::complex<double>,4>> n;
+    std::shared_ptr<Tensor> t2;
+    std::shared_ptr<Tensor> r;
+    std::shared_ptr<Tensor> s;
+    std::shared_ptr<Tensor> n;
 
     int nstates_;
-    std::vector<double> energy_;
 
-    std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> t2all_;
-    std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> rall_;
-    std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> sall_;
-    std::vector<std::shared_ptr<MultiTATensor<std::complex<double>,4>>> nall_;
-    void diagonal(std::shared_ptr<TATensor<std::complex<double>,4>> r, std::shared_ptr<const TATensor<std::complex<double>,4>> t) const;
+    std::vector<std::shared_ptr<MultiTensor>> t2all_;
+    std::vector<std::shared_ptr<MultiTensor>> rall_;
+    std::vector<std::shared_ptr<MultiTensor>> sall_;
+    std::vector<std::shared_ptr<MultiTensor>> nall_;
+    void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t) const;
 
 
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma0_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma1_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma2_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma58_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma59_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma60_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma63_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma64_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma65_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma66_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma67_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma3_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma4_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma5_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma74_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma75_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma77_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma78_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma79_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma81_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma84_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma86_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma92_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma95_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma98_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma411_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma412_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma9_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma11_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma160_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma99_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma105_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma110_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma128_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma151_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma159_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma174_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma413_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma415_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma24_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma26_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma27_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma179_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma183_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma193_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma203_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma204_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma229_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma417_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma418_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma31_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma32_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma33_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma230_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma231_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma232_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma233_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma236_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma237_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma238_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma245_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma246_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma253_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma419_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma420_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma317_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma318_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma335_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma336_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma368_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma363_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma389_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma425_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,2>> Gamma427_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma394_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,8>> Gamma395_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,6>> Gamma407_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma409_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma410_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,0>> Gamma421_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,0>> Gamma423_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma429_();
-    std::shared_ptr<FutureTATensor<std::complex<double>,4>> Gamma430_();
+    std::shared_ptr<FutureTensor> Gamma0_();
+    std::shared_ptr<FutureTensor> Gamma1_();
+    std::shared_ptr<FutureTensor> Gamma2_();
+    std::shared_ptr<FutureTensor> Gamma58_();
+    std::shared_ptr<FutureTensor> Gamma59_();
+    std::shared_ptr<FutureTensor> Gamma60_();
+    std::shared_ptr<FutureTensor> Gamma63_();
+    std::shared_ptr<FutureTensor> Gamma64_();
+    std::shared_ptr<FutureTensor> Gamma65_();
+    std::shared_ptr<FutureTensor> Gamma66_();
+    std::shared_ptr<FutureTensor> Gamma67_();
+    std::shared_ptr<FutureTensor> Gamma3_();
+    std::shared_ptr<FutureTensor> Gamma4_();
+    std::shared_ptr<FutureTensor> Gamma5_();
+    std::shared_ptr<FutureTensor> Gamma74_();
+    std::shared_ptr<FutureTensor> Gamma75_();
+    std::shared_ptr<FutureTensor> Gamma77_();
+    std::shared_ptr<FutureTensor> Gamma78_();
+    std::shared_ptr<FutureTensor> Gamma79_();
+    std::shared_ptr<FutureTensor> Gamma81_();
+    std::shared_ptr<FutureTensor> Gamma84_();
+    std::shared_ptr<FutureTensor> Gamma86_();
+    std::shared_ptr<FutureTensor> Gamma92_();
+    std::shared_ptr<FutureTensor> Gamma95_();
+    std::shared_ptr<FutureTensor> Gamma98_();
+    std::shared_ptr<FutureTensor> Gamma414_();
+    std::shared_ptr<FutureTensor> Gamma415_();
+    std::shared_ptr<FutureTensor> Gamma9_();
+    std::shared_ptr<FutureTensor> Gamma11_();
+    std::shared_ptr<FutureTensor> Gamma160_();
+    std::shared_ptr<FutureTensor> Gamma99_();
+    std::shared_ptr<FutureTensor> Gamma105_();
+    std::shared_ptr<FutureTensor> Gamma110_();
+    std::shared_ptr<FutureTensor> Gamma128_();
+    std::shared_ptr<FutureTensor> Gamma151_();
+    std::shared_ptr<FutureTensor> Gamma159_();
+    std::shared_ptr<FutureTensor> Gamma174_();
+    std::shared_ptr<FutureTensor> Gamma416_();
+    std::shared_ptr<FutureTensor> Gamma418_();
+    std::shared_ptr<FutureTensor> Gamma24_();
+    std::shared_ptr<FutureTensor> Gamma26_();
+    std::shared_ptr<FutureTensor> Gamma27_();
+    std::shared_ptr<FutureTensor> Gamma179_();
+    std::shared_ptr<FutureTensor> Gamma183_();
+    std::shared_ptr<FutureTensor> Gamma193_();
+    std::shared_ptr<FutureTensor> Gamma203_();
+    std::shared_ptr<FutureTensor> Gamma204_();
+    std::shared_ptr<FutureTensor> Gamma229_();
+    std::shared_ptr<FutureTensor> Gamma420_();
+    std::shared_ptr<FutureTensor> Gamma421_();
+    std::shared_ptr<FutureTensor> Gamma31_();
+    std::shared_ptr<FutureTensor> Gamma32_();
+    std::shared_ptr<FutureTensor> Gamma33_();
+    std::shared_ptr<FutureTensor> Gamma230_();
+    std::shared_ptr<FutureTensor> Gamma231_();
+    std::shared_ptr<FutureTensor> Gamma232_();
+    std::shared_ptr<FutureTensor> Gamma233_();
+    std::shared_ptr<FutureTensor> Gamma236_();
+    std::shared_ptr<FutureTensor> Gamma237_();
+    std::shared_ptr<FutureTensor> Gamma238_();
+    std::shared_ptr<FutureTensor> Gamma245_();
+    std::shared_ptr<FutureTensor> Gamma246_();
+    std::shared_ptr<FutureTensor> Gamma253_();
+    std::shared_ptr<FutureTensor> Gamma422_();
+    std::shared_ptr<FutureTensor> Gamma423_();
+    std::shared_ptr<FutureTensor> Gamma317_();
+    std::shared_ptr<FutureTensor> Gamma318_();
+    std::shared_ptr<FutureTensor> Gamma335_();
+    std::shared_ptr<FutureTensor> Gamma336_();
+    std::shared_ptr<FutureTensor> Gamma368_();
+    std::shared_ptr<FutureTensor> Gamma363_();
+    std::shared_ptr<FutureTensor> Gamma391_();
+    std::shared_ptr<FutureTensor> Gamma428_();
+    std::shared_ptr<FutureTensor> Gamma430_();
+    std::shared_ptr<FutureTensor> Gamma396_();
+    std::shared_ptr<FutureTensor> Gamma397_();
+    std::shared_ptr<FutureTensor> Gamma409_();
+    std::shared_ptr<FutureTensor> Gamma412_();
+    std::shared_ptr<FutureTensor> Gamma413_();
+    std::shared_ptr<FutureTensor> Gamma424_();
+    std::shared_ptr<FutureTensor> Gamma426_();
+    std::shared_ptr<FutureTensor> Gamma432_();
+    std::shared_ptr<FutureTensor> Gamma433_();
+
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
+    void make_residualq1(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq2(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq3(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq4(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq5(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+    void make_residualq6(std::shared_ptr<Queue> out, std::shared_ptr<Task> task, const bool diagonal);
+
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_normq(const bool reset = true, const bool diagonal = true);
 
@@ -157,6 +163,7 @@ class RelMRCI : public SpinFreeMethod<std::complex<double>> {
       double sum = 0.0;
       while (!queue->done())
         sum += queue->next_compute()->target();
+      mpi__->allreduce(&sum, 1);
       return sum;
     }
 

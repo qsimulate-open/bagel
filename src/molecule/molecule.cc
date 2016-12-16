@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: molecule.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/molecule/molecule.h>
@@ -203,17 +202,6 @@ int Molecule::num_count_ncore_only() const {
 }
 
 
-int Molecule::num_count_full_valence_nocc() const {
-  int out = 0;
-  for (auto& it : atoms_) {
-    if (it->atom_number() < 2) out += 1;
-    if (it->atom_number() >= 2 && it->atom_number() <= 10) out += 5;
-    if (it->atom_number() > 10) throw logic_error("needs to modify Molecule::num_count_full_valence_nocc for atoms beyond Ne"); // TODO
-  }
-  return out;
-};
-
-
 bool Molecule::operator==(const Molecule& o) const {
   bool out = true;
   out &= spherical_ == o.spherical_;
@@ -285,11 +273,14 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
+  if (!molecule_details::is_one_molecule(nodes))
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule.");
+
   // then bond angles A-O-B (A<B)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     auto j = i;
     for (++j; j != nodes.end(); ++j) {
-      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto c = center.begin(); c != center.end(); ++c) {
         const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
 #if 0
@@ -331,11 +322,13 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
-      std::set<std::shared_ptr<Node>> center = (*i)->common_center(*j);
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
-        if (!(*k)->connected_with(*j)) continue;
         for (auto c = center.begin(); c != center.end(); ++c) {
+//        if (!((*k)->connected_with(*j))) continue;
+          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
           if (*c == *k || *k == *i) continue;
+          if (*j == *k) continue;
 #if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
@@ -463,3 +456,40 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
 }
 
+
+const vector<shared_ptr<const Molecule>> Molecule::split_atoms(const int max_atoms) const {
+  vector<shared_ptr<const Molecule>> out = {};
+  const int res = natom() % max_atoms;
+  const int nfullset = natom() / max_atoms;
+  const int nset = nfullset + (res != 0 ? 1 : 0);
+  assert((nset == nfullset && res == 0) || (nset == nfullset+1 && res > 0));
+  assert(nfullset*max_atoms + res == natom());
+  out.resize(nset);
+
+  // Do not bother copying aux_atom data, since they are not needed for NAI
+  const vector<shared_ptr<const Atom>> empty_aux_atoms = {};
+
+  for (int i=0; i!=nfullset; ++i) {
+    vector<shared_ptr<const Atom>> current_atoms(&atoms_[i*max_atoms], &atoms_[(i+1)*max_atoms]);
+    auto current_mol = make_shared<const Molecule>(current_atoms, empty_aux_atoms);
+    out[i] = current_mol;
+  }
+  if (res != 0) {
+    vector<shared_ptr<const Atom>> current_atoms(&atoms_[nfullset*max_atoms], &atoms_[nfullset*max_atoms+res]);
+    auto current_mol = make_shared<const Molecule>(current_atoms, empty_aux_atoms);
+    out[nfullset] = current_mol;
+  }
+  return out;
+}
+
+
+shared_ptr<Molecule> Molecule::uncontract() const {
+  vector<shared_ptr<const Atom>> atom;
+  for (auto& i : atoms_)
+    atom.push_back(i->uncontract()->relativistic());
+
+  auto mol = make_shared<Molecule>(atom, aux_atoms_);
+  mol->common_init1();
+
+  return mol;
+}

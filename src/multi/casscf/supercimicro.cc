@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: superci_micro.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 #include <src/util/math/pairfile.h>
@@ -99,7 +98,7 @@ void SuperCIMicro::compute() {
 }
 
 
-std::shared_ptr<RotFile> SuperCIMicro::form_sigma(std::shared_ptr<const RotFile> cc) const {
+shared_ptr<RotFile> SuperCIMicro::form_sigma(shared_ptr<const RotFile> cc) const {
 
   auto sigma = cc->clone();
   // equation 21d
@@ -122,11 +121,11 @@ void SuperCIMicro::sigma_at_at_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   const int nact = casscf_->nact();
   const int nvirt = casscf_->nvirt();
   const int nocc = casscf_->nocc();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nact || !nvirt) return;
 
   dgemm_("N", "N", nvirt, nact, nact, 1.0, cc->ptr_va(), nvirt, gaa_->data(), nact, 1.0, sigma->ptr_va(), nvirt);
-  dgemm_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
+  dgemm_("N", "N", nvirt, nact, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nmo, cc->ptr_va(), nvirt, 1.0, sigma->ptr_va(), nvirt);
 }
 
 
@@ -135,11 +134,11 @@ void SuperCIMicro::sigma_ai_ai_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
   const int nclosed = casscf_->nclosed();
   const int nvirt = casscf_->nvirt();
   const int nocc = casscf_->nocc();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nclosed || !nvirt) return;
 
-  dgemm_("N", "N", nvirt, nclosed, nclosed, -1.0, cc->ptr_vc(), nvirt, fock_->data(), nbasis, 1.0, sigma->ptr_vc(), nvirt);
-  dgemm_("N", "N", nvirt, nclosed, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nbasis, cc->ptr_vc(), nvirt, 1.0, sigma->ptr_vc(), nvirt);
+  dgemm_("N", "N", nvirt, nclosed, nclosed, -1.0, cc->ptr_vc(), nvirt, fock_->data(), nmo, 1.0, sigma->ptr_vc(), nvirt);
+  dgemm_("N", "N", nvirt, nclosed, nvirt, 1.0, fock_->element_ptr(nocc, nocc), nmo, cc->ptr_vc(), nvirt, 1.0, sigma->ptr_vc(), nvirt);
 }
 
 
@@ -185,7 +184,7 @@ void SuperCIMicro::sigma_ai_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
 void SuperCIMicro::sigma_ti_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile> sigma) const {
   const int nclosed = casscf_->nclosed();
   const int nact = casscf_->nact();
-  const int nbasis = casscf_->nbasis();
+  const int nmo = casscf_->nmo();
   if (!nact || !nclosed) return;
   Matrix tmp(nact, nact);
   for (int i = 0; i != nact; ++i) {
@@ -195,6 +194,6 @@ void SuperCIMicro::sigma_ti_ti_(shared_ptr<const RotFile> cc, shared_ptr<RotFile
     }
   }
   dgemm_("N", "N", nclosed, nact, nact, 1.0, cc->ptr_ca(), nclosed, tmp.data(), nact, 1.0, sigma->ptr_ca(), nclosed);
-  dgemm_("N", "N", nclosed, nact, nclosed, -1.0, fock_->data(), nbasis, cc->ptr_ca(), nclosed, 1.0, sigma->ptr_ca(), nclosed);
+  dgemm_("N", "N", nclosed, nact, nclosed, -1.0, fock_->data(), nmo, cc->ptr_ca(), nclosed, 1.0, sigma->ptr_ca(), nclosed);
 }
 

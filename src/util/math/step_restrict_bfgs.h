@@ -1,5 +1,5 @@
 //
-// BAGEL - Parallel electron correlation program.
+// BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: step_restrict_bfgs.h
 // Copyright (C) 2014 Toru Shiozaki
 //
@@ -8,19 +8,18 @@
 //
 // This file is part of the BAGEL package.
 //
-// The BAGEL package is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Library General Public License as published by
-// the Free Software Foundation; either version 3, or (at your option)
-// any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-// The BAGEL package is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU Library General Public License for more details.
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Library General Public License
-// along with the BAGEL package; see COPYING.  If not, write to
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 
@@ -61,16 +60,16 @@ class SRBFGS {
     double rk_;
     double level_shift_;
     double prev_level_shift_;
-    const bool debug_;
     const int hebden_iter_ = 75;
-    const int maxiter_ = 300;
     // default convergence parameters taken from JSY
+    const double alpha_ = 1.3;
     const double rmin_ = 0.6;
     const double rgood_ = 0.85;
-    const double alpha_ = 1.3;
+    const bool debug_;
 
   public:
-    SRBFGS(std::shared_ptr<const T> denom, bool debug = false) : denom_(denom), debug_(debug) {}
+    SRBFGS(std::shared_ptr<const T> _denom, const double rad = 0.4, const int _hebden_iter = 75, const double _alpha = 1.3,
+           const bool _debug = false) : denom_(_denom), trust_radius_(rad), hebden_iter_(_hebden_iter), alpha_(_alpha), debug_(_debug) {}
 
     std::shared_ptr<const T> denom() const { return denom_; }
     std::vector<std::shared_ptr<const T>> delta() { return delta_; }
@@ -83,12 +82,6 @@ class SRBFGS {
     std::shared_ptr<const T> prev_value() const { return prev_value_; }
     double level_shift() const { return level_shift_; }
     double prev_level_shift() const { return prev_level_shift_; }
-
-    // sets initial trust radius ; presently not used
-    void initiate_trust_radius() {
-      trust_radius_ = 0.4;
-    }
-
 
     // returns Hessian * value as part of the restricted step procedure ; should be called after extrapolate
     std::shared_ptr<T> interpolate_hessian(std::shared_ptr<const T> _value, std::shared_ptr<const T> _shift, const bool update = false) {
@@ -234,17 +227,19 @@ class SRBFGS {
 
      // to make sure, inputs are copied
      auto grad  = std::make_shared<const T>(*_grad);
+     bool converged = false;
 
      double shift = 1e-12;
      auto shift_vec = grad->clone();
      shift_vec->fill(shift);
-     double dl_norm;
+     double dl_norm = 0.0;
      for (int k = 0; k != hebden_iter_; ++k) {
        auto dl  = level_shift_inverse_hessian(grad, shift_vec); // Hn^-1 * gn
        dl_norm = dl->norm();//std::sqrt(detail::real(dl->dot_product(dl)));
        if (dl_norm <= trust_radius_ && k != 0) {
          std::cout << " Hebden algorithm converged in " << k << " iterations. " << std::endl;
          std::cout << " Level Shift = " << shift << std::endl;
+         converged = true;
          break;
        }
        auto dl2 = level_shift_inverse_hessian(dl, shift_vec);   // Hn^-2 * gn
@@ -257,6 +252,19 @@ class SRBFGS {
        if (k == hebden_iter_ - 1) {
          std::cout << " Hebden algorithm did not converge to appropriate level shift within " << k << " iterations " << std::endl;
          std::cout << " step norm with shift   = " << dl_norm << std::endl;
+         converged = false;
+       }
+     }
+
+     if (!converged) {
+       // If the step size has exploded, then we throw away the level shift
+       auto temp = grad->clone();
+       temp->fill(1e-12);
+       auto dl2 = level_shift_inverse_hessian(grad, temp); // Hn^-1 * gn
+       const double unshifted_norm = dl2->norm();
+       if (unshifted_norm < dl_norm) {
+         std::cout << " Level shift will be discarded." << std::endl;
+         shift = 1e-12;
        }
      }
      level_shift_ = shift;
@@ -433,11 +441,7 @@ class SRBFGS {
       // to make sure, inputs are copied
       auto grad  = std::make_shared<const T>(*_grad);
       auto value  = std::make_shared<const T>(*_value);
-
-      // initialize trust radius
-      if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius();
-      }
+      assert(trust_radius_ != 0.0);
 
       // compute Newton step and compare norm to trust radius
       auto acopy = two_loop_inverse_hessian(grad);
@@ -474,10 +478,7 @@ class SRBFGS {
       // to be sure; inputs are copied
       auto grad  = std::make_shared<T>(*_grad);
       auto value  = std::make_shared<T>(*_value);
-
-      if (prev_value() == nullptr && trust_radius_ == 0.0) {
-        initiate_trust_radius();
-      }
+      assert(trust_radius_ != 0.0);
 
       auto p = two_loop_inverse_hessian(grad);
       p->scale(-1.0);
