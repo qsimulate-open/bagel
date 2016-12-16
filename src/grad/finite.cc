@@ -48,11 +48,6 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   ref_ = energy_method->conv_to_ref();
   energy_ = ref_->energy(target_state_);
 
-  // TODO when we start CASSCF calculation with an initial guess from reference geometry,
-  // it should be scientifically better than doing the calculation all over again; but it doesn't work
-  // Currently the code "works", but in a silly way (for all DOFs, it does SCF again).
-  // I didn't delete the part for doing CASSCF calculation starting from reference...
-  // this is why the code at current stage is with the total stupidness...
   shared_ptr<const Reference> refgrad_plus;
   shared_ptr<const Reference> refgrad_minus;
  
@@ -61,6 +56,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
 
+      mute_stdcout();
       displ->element(j,i) = dx_;
       geom_ = std::make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
@@ -93,6 +89,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       geom_ = make_shared<Geometry>(*geom_, displ);
 
       displ->element(j,i) = 0.0;
+      resume_stdcout();
+      cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
 

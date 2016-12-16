@@ -154,11 +154,13 @@ void CASPT2Nacm::compute() {
       tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
       d10ms_->ax_plus_y(ims*jms, *rdm1t);
       d20ms_->ax_plus_y(ims*jms, *rdm2t);
-      const double fkji = msrot(ist, target1()) * msrot(jst, target2()) - msrot(ist, target2()) * msrot(jst, target1());
-      const double eji  = fabs(cieig(jst) - cieig(ist)) > 1.0e-12 ? 0.5 * egap / (cieig(jst) - cieig(ist)) : 0.0;
-      if (ist != jst && (fabs(eji) > 1.0e-12) && (fabs(fkji) > 1.0e-12)) {
-        d10ms_->ax_plus_y(eji*fkji, *rdm1t);
-        d20ms_->ax_plus_y(eji*fkji, *rdm2t);
+      if (!xmsrot_) {
+        const double fkji = msrot(ist, target1()) * msrot(jst, target2()) - msrot(ist, target2()) * msrot(jst, target1());
+        const double eji  = fabs(cieig(jst) - cieig(ist)) > 1.0e-12 ? 0.5 * egap / (cieig(jst) - cieig(ist)) : 0.0;
+        if (ist != jst && (fabs(eji) > 1.0e-12) && (fabs(fkji) > 1.0e-12)) {
+          d10ms_->ax_plus_y(eji*fkji, *rdm1t);
+          d20ms_->ax_plus_y(eji*fkji, *rdm2t);
+        }
       }
     }
   }
@@ -225,7 +227,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // solve CPCASSCF
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
-  task_->augment_Y(d0ms, g0, g1, halfj);      // should I forget about it?
+  task_->augment_Y(d0ms, g0, g1, halfj);
   timer.tick_print("Yrs non-Lagrangian terms");
 
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
@@ -236,8 +238,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck(), /*xms*/!!task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 
@@ -364,9 +365,7 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
   const Matrix hmo(*coeff_ % *ref_->hcore() * ocoeff);
   const int nmobasis = coeff_->mdim();
 
-  // vd1_ term
   g0->add_block(egap, 0, 0, nmobasis, nmobasis, *vd1_);
-
   
   // If XMS, coupling from Fock is also needed
   // Similar code with caspt2/CASPT2.cc is used here
@@ -421,7 +420,7 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
       for (int jst = 0; jst != nstates_; ++jst) {
         Matrix op(*fock * wdkl(jst, ist));
         if (ist == jst)
-          op += *gdc * (1.0/nstates_);
+          op += *gdc * (1.0/nstates_) * 0.5;
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             g1->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));

@@ -486,7 +486,7 @@ void CASPT2::CASPT2::solve_deriv() {
       for (int jst = 0; jst != nstates_; ++jst) {
         Matrix op(*fock * wmn(jst, ist));
         if (ist == jst)
-          op += *gdc * (1.0/nstates_);
+          op += *gdc * (1.0/nstates_) * 0.5;
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             ci_deriv_->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
@@ -525,7 +525,7 @@ void CASPT2::CASPT2::solve_nacme() {
   for (auto& i : *sourceI)
     i = init_residual(); 
 
-  for (int ist = 0; ist != nstates_; ++ist) {//K states
+  for (int ist = 0; ist != nstates_; ++ist) { // L states
     auto sist = make_shared<MultiTensor>(nstates_);
     for (int jst = 0; jst != nstates_; ++jst) {
       if (sall_[ist]->at(jst)) {
@@ -680,7 +680,7 @@ void CASPT2::CASPT2::solve_nacme() {
       for (int jst = 0; jst != nstates_; ++jst) {
         Matrix op(*fock * wmn(jst, ist));
         if (ist == jst)
-          op += *gdc * (1.0/nstates_);
+          op += *gdc * (1.0/nstates_) * 0.5;
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             ci_deriv_->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));

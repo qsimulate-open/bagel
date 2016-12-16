@@ -70,8 +70,8 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
 
     NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_);
     x2 = evaln.compute();
-  }else {
-    throw logic_error ("Conical intersection search currently only available for CASSCF"); 
+  } else {
+    throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2"); 
   }
 
   auto x1 = std::make_shared<GradFile>(*cgrad2 - *cgrad1);
