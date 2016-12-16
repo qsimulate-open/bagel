@@ -259,7 +259,7 @@ void Box::compute_M2L() {
 }
 
 
-shared_ptr<const ZMatrix> Box::compute_node_energy(shared_ptr<const Matrix> density, vector<double> max_den, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, vector<double> max_den, const double schwarz_thresh) const {
 
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->ndim());
@@ -540,6 +540,41 @@ vector<complex<double>> Box::shift_localL(vector<complex<double>> mr, array<doub
   }
 
   return mrb;
+}
+
+
+shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) const {
+
+  assert(nchild() == 0);
+  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
+
+  // compute multipoles again - not efficient - for now 
+  TaskQueue<function<void(void)>> tasks(nsp());
+  mutex jmutex;
+  for (auto& v : sp_) {
+    if (v->schwarz() < 1e-15) continue;
+
+    tasks.emplace_back(
+      [this, &out, &v, &density, &jmutex]() {
+        MultipoleBatch mpole(v->shells(), centre_, lmax_);
+        mpole.compute();
+        const int dimb0 = v->shell(0)->nbasis();
+        const int dimb1 = v->shell(1)->nbasis();
+        vector<const complex<double>*> dat(nmult_);
+        for (int i = 0; i != nmult_; ++i)
+          dat[i] = mpole.data() + mpole.size_block()*i;
+
+        lock_guard<mutex> lock(jmutex);
+        for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
+          for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
+            for (int k = 0; k != mpole.num_blocks(); ++k)
+              out->element(i, j) += conj(*dat[k]++) * localJ_[k];
+      }
+    );
+  }
+  tasks.compute();
+
+  return out;
 }
 
 

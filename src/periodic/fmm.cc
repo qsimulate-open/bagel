@@ -258,7 +258,7 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
     mpi__->broadcast(box_[i]->localJ().data(), box_[i]->localJ().size(), i % mpi__->size());
   }
 
-  m2mtime.tick_print("shift sp");
+  m2mtime.tick_print("Compute multipoles");
 
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+1; ++i) {
@@ -331,15 +331,20 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
       maxden[i01] = denmax;
     }
 
+    auto ff = make_shared<ZMatrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_node_energy(density, maxden, geom_->schwarz_thresh());
+        auto ei = box_[i]->compute_Fock_nf(density, maxden, geom_->schwarz_thresh());
         out->add_block(1.0, 0, 0, nbasis_, nbasis_, ei->data());
+        auto ffi = box_[i]->compute_Fock_ff(density);
+        ff->add_block(1.0, 0, 0, nbasis_, nbasis_, ffi->data());
       }
     out->allreduce();
+    ff->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
+    *out += *ff;
   }
 
   nftime.tick_print("near-field");

@@ -71,7 +71,8 @@ class Box {
     void compute_L2L();
     void compute_energy_ff();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
-    std::shared_ptr<const ZMatrix> compute_node_energy(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
 
 
   public:

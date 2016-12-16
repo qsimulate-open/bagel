@@ -124,7 +124,6 @@ void RHF::compute() {
 
   // starting SCF iteration
   shared_ptr<const Matrix> densitychange = aodensity_;
-  double enff = 0.0;
 
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer pdebug(1);
@@ -151,12 +150,6 @@ void RHF::compute() {
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
-    if (dofmm_) { 
-      enff += fmm_->energy_ff();
-      energy_ += enff;
-    }
-    cout << "CONTRIBUTION TO FF ENERGY = " << setprecision(10) << enff << endl;
-
     pdebug.tick_print("Fock build");
 
 //    if (dofmm_)
