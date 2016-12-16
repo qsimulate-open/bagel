@@ -16,12 +16,8 @@ rys/compute.cc comprys/ccompute.cc rys/bcompute.cc rys/gcompute.cc rys/gncompute
 rys/naibatch.cc rys/spindipolebatch.cc comprys/complexnaibatch.cc rys/r0batch.cc rys/r1batch.cc rys/r2batch.cc rys/eribatch_base.cc \
 rys/smalleribatch.cc rys/mixederibatch.cc rys/gsmallnaibatch.cc rys/gsmalleribatch.cc \
 comprys/complexsmalleribatch.cc comprys/complexmixederibatch.cc \
-<<<<<<< HEAD
-os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/mmbatch.cc os/sphmmbatch.cc os/momentumbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc os/osintegral.cc\
-os/multipolebatch_base.cc os/multipolebatch.cc \
-=======
 os/overlapbatch.cc os/ovrr.cc os/kineticbatch.cc os/mmbatch.cc os/momentumbatch.cc os/gocompute.cc os/gkcompute.cc os/gmcompute.cc os/osintegral.cc os/angmombatch.cc \
->>>>>>> 46b7ca08e2ecf5098d2d0eb526abed60b783b6c3
+os/multipolebatch_base.cc os/multipolebatch.cc \
 libint/libint.cc libint/glibint.cc \
 ecp/angularbatch.cc ecp/ecpbatch.cc ecp/radial.cc ecp/soangularbatch.cc ecp/soecpbatch.cc \
 ecp/_sphusp_0.cc ecp/_sphusp_1.cc ecp/_sphusp_2.cc ecp/_sphusp_3.cc ecp/_sphusp_4.cc ecp/_sphusp_5.cc ecp/_sphusp_6.cc ecp/_sphusp_7.cc ecp/_sphusp_8.cc ecp/_sphusp_9.cc ecp/_sphusp_10.cc
