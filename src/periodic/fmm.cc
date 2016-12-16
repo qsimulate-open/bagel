@@ -49,14 +49,12 @@ FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const do
 void FMM::init() {
 
   centre_ = geom_->charge_center();
-  cout << "**** CHARGE CENTRE " << setprecision(9) << centre_[0] << "  " << centre_[1] << "   " << centre_[2] << endl;
   nbasis_ = geom_->nbasis();
   const int ns2 = pow(2, ns_);
 
   int nsh = 0;
   for (auto& a : geom_->atoms())
     nsh += a->shells().size();
-  cout << "******** NSHELL = " << nsh << " *********** " << endl;
 
   const int nsp = geom_->nshellpair();
   base_extent_ = sqrt(2.0) * boost::math::erf_inv(1.0-tolgd__);
@@ -93,8 +91,6 @@ void FMM::init() {
   unitsize_ = boxsize_/ns2;
   coordinates_.resize(nsp_);
   isp_.resize(nsp_);
-
-  cout << "boxsize = " << boxsize_ << " unitsize = " << unitsize_ << " maxxyz = " << maxxyz_[0] << " " << maxxyz_[1] << " " << maxxyz_[2] << endl;
 
   get_boxes();
 
@@ -214,7 +210,6 @@ void FMM::get_boxes() {
   }
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
 
   for (auto& b : box_)
     b->init();
@@ -232,6 +227,7 @@ void FMM::get_boxes() {
     icnt += nbranch_[ir];
   }
 
+#if 0
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
@@ -241,8 +237,9 @@ void FMM::get_boxes() {
          << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
     ++i;
   }
+#endif
 
-  fmminit.tick_print("fmm initialisation");
+  fmminit.tick_print("FMM initialisation");
 }
 
 
@@ -299,7 +296,7 @@ void FMM::L2L() const {
 }
 
 
-shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) const {
+shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
 
   Timer nftime;
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
@@ -348,18 +345,6 @@ shared_ptr<const ZMatrix> FMM::compute_energy(shared_ptr<const Matrix> density) 
   }
 
   nftime.tick_print("near-field");
-
-  return out;
-}
-
-
-double FMM::energy_ff() const {
-
-  double out = 0;
-  for (int i = 0; i != nbranch_[0]; ++i) {
-    box_[i]->compute_energy_ff();
-    out += box_[i]->energy_ff();
-  }
 
   return out;
 }

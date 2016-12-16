@@ -200,17 +200,17 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
           vector<complex<double>> olm(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
-          const int dimb1 = v->shell(0)->nbasis();
-          const int dimb0 = v->shell(1)->nbasis();
+          const int dimb0 = v->shell(0)->nbasis();
+          const int dimb1 = v->shell(1)->nbasis();
           vector<const complex<double>*> dat(nmult_);
           for (int i = 0; i != nmult_; ++i)
             dat[i] = mpole.data() + mpole.size_block()*i;
 
           lock_guard<mutex> lock(jmutex);
-          for (int i = v->offset(1); i != dimb0 + v->offset(1); ++i)
-            for (int j = v->offset(0); j != dimb1 + v->offset(0); ++j)
+          for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
+            for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
               for (int k = 0; k != mpole.num_blocks(); ++k)
-                olm[k] += conj(*dat[k]++ * density->element(j,i));
+                olm[k] += conj(*dat[k]++ * density->element(i,j));
 
           transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
         }
@@ -575,16 +575,6 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
   tasks.compute();
 
   return out;
-}
-
-
-void Box::compute_energy_ff() {
-
-  assert(multipole_.size() == localJ_.size());
-  complex<double> en = blas::dot_product_noconj(multipole_.data(), nmult_, localJ_.data());
-//  assert(abs(en.imag()) < 1e-10);
-  if (abs(en.imag()) > 1e-10) cout << "*** Warning: en.imag() = " << setprecision(13) << en.imag() << endl;
-  energy_ff_ = 0.5 * en.real();
 }
 
 

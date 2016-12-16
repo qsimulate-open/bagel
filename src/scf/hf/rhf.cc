@@ -54,9 +54,6 @@ void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
-  //shared_ptr<const Matrix> nai;
-  //if (dofmm_)
-  //  nai = fmmtree_->fmm()->get_real_part();
 
   shared_ptr<const Matrix> aodensity_;
 
@@ -79,7 +76,7 @@ void RHF::compute() {
             focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          shared_ptr<const Matrix> tmp = fmm_->compute_energy(aden)->get_real_part();
+          shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden)->get_real_part();
           focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
         fock = focka->distmatrix();
@@ -98,7 +95,7 @@ void RHF::compute() {
         }
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        shared_ptr<const Matrix> tmp = fmm_->compute_energy(aodensity_)->get_real_part();
+        shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_)->get_real_part();
         focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
@@ -144,7 +141,7 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmm_->compute_energy(densitychange)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(densitychange)->get_real_part();
       previous_fock = make_shared<const Matrix>(*previous_fock + *tmp);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
@@ -152,8 +149,6 @@ void RHF::compute() {
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
     pdebug.tick_print("Fock build");
 
-//    if (dofmm_)
-//      fock = make_shared<const DistMatrix>(*fock-*nai);
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
     const double error = error_vector->rms();
 

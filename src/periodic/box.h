@@ -49,7 +49,6 @@ class Box {
     double thresh_, extent_;
     int nbasis0_, nbasis1_, ndim_;
     int nmult_;
-    double energy_ff_;
 
     void init();
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
@@ -69,7 +68,6 @@ class Box {
     std::vector<std::complex<double>> shift_localM(std::vector<std::complex<double>> olm, std::array<double, 3> r12) const;
     void compute_M2L();
     void compute_L2L();
-    void compute_energy_ff();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
@@ -111,7 +109,6 @@ class Box {
     const std::vector<std::complex<double>>& multipole() const { return multipole_; }
     std::vector<std::complex<double>>& localJ() { return localJ_; }
     const std::vector<std::complex<double>>& localJ() const { return localJ_; }
-    double energy_ff() const { return energy_ff_; }
 
 
     void print_box() const;

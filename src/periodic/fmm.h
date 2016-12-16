@@ -65,8 +65,7 @@ class FMM {
 
     const std::array<double, 3>& centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
-    std::shared_ptr<const ZMatrix> compute_energy(std::shared_ptr<const Matrix> density = nullptr) const;
-    double energy_ff() const;
+    std::shared_ptr<const ZMatrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr) const;
     void print_boxes(const int i) const;
 };
 
