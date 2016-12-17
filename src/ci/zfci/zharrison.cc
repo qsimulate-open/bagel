@@ -416,7 +416,7 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
   assert(rdm1_av_expanded_ != nullptr);
   // first make natural orbitals
-  VectorB occup(norb_*2); 
+  VectorB occup(norb_*2);
   shared_ptr<ZMatrix> natorb;
   {
     auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
@@ -448,7 +448,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
       zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, natorb->data(), ndim, 0.0, b->data(), ndim2*ndim);
       for (int i = 0; i != ndim; ++i)
         zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, natorb_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
-    };  
+    };
     half_trans(rdm2_av_expanded_, buf, rdm2_av_expanded_);
     blas::transpose(rdm2_av_expanded_->data(), ndim2, ndim2, buf->data());
     half_trans(buf, rdm2_av_expanded_, buf);

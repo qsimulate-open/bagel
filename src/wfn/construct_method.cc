@@ -44,6 +44,7 @@
 #include <src/multi/zcasscf/zcasnoopt.h>
 #include <src/smith/smith.h>
 #include <src/smith/caspt2grad.h>
+#include <src/periodic/pscf.h>
 #include <src/prop/current.h>
 #include <src/prop/moprint.h>
 #include <src/wfn/construct_method.h>
@@ -122,6 +123,7 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
         cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
     } else if (title == "current")  throw runtime_error("Charge currents are only available when using a GIAO basis set reference.");
     else if (title == "moprint") out = make_shared<MOPrint>(itree, geom, ref);
+    else if (title == "pscf") out = make_shared<PSCF>(itree, geom, ref);
 
   // now the versions to use with magnetic fields
   } else {

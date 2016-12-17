@@ -43,7 +43,16 @@ AtomicDensities::AtomicDensities(shared_ptr<const Geometry> g) : Matrix(g->nbasi
   // read basis file
   shared_ptr<const PTree> bdata = PTree::read_basis(defbasis);
 
-  auto ai = geom_->aux_atoms().begin();
+  vector<shared_ptr<const Atom>> aux_atoms;
+  if (geom_->auxfile().empty()) {
+     for (auto& a : geom_->atoms()) {
+       auto aux_atom = make_shared<const Atom>(*a, a->spherical(), geom_->basisfile(), make_pair(geom_->basisfile(), bdata), nullptr);
+       aux_atoms.push_back(aux_atom);
+     }
+  } else {
+    aux_atoms = geom_->aux_atoms();
+  }
+  auto ai = aux_atoms.begin();
   for (auto& i : geom_->atoms()) {
     if (i->dummy()) { ++ai; continue; }
     if (atoms.find({i->name(),i->basis()}) == atoms.end()) {

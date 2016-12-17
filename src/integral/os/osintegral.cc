@@ -46,7 +46,6 @@ OSIntegral<DataType, IntType>::OSIntegral(const array<shared_ptr<const Shell>,2>
 template <typename DataType, Int_t IntType>
 void OSIntegral<DataType, IntType>::common_init() {
   static_assert(IntType != Int_t::London || is_same<DataType, complex<double>>::value, "London-orbital integrals should be complex");
-  static_assert(IntType != Int_t::Standard || is_same<DataType, double>::value, "Standard Guassian-orbital integrals should be real");
 
   assert(basisinfo_.size() == 2);
 
@@ -237,3 +236,4 @@ void OSIntegral<DataType, IntType>::perform_contraction(const int asize, const D
 
 template class bagel::OSIntegral<double,bagel::Int_t::Standard>;
 template class bagel::OSIntegral<complex<double>,bagel::Int_t::London>;
+template class bagel::OSIntegral<complex<double>,bagel::Int_t::Standard>;

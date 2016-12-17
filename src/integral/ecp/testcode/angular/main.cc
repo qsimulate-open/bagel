@@ -5,15 +5,18 @@
 #include <iostream>
 #include <iomanip>
 #include <cassert>
-#include "src/integral/ecp/sphharmonics.h"
+#include <src/util/math/sphharmonics.h>
 #include "src/integral/ecp/sphusplist.h"
 #include "cartgauss.h"
 
 using namespace std;
 using namespace bagel;
+using namespace test;
 
 const static DoubleFactorial df;
 const static SphUSPList list;
+
+namespace test {
 
 class SOInt {
   protected:
@@ -149,6 +152,9 @@ class SOInt {
     }
 };
 
+}
+
+using namespace test;
 int main() {
 
   cout << " +++ TEST P(h, ld, l, m) +++ " << endl;

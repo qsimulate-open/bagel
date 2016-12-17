@@ -41,8 +41,8 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
-  assert(nodkh || !hso_);
+Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
+  assert(!(nodkh && !hso_));
   if (nodkh) {
     init(mol);
     fill_upper();
@@ -51,7 +51,6 @@ Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh) : Matrix1e(mol), 
     copy_n(dkhcore->data(), dkhcore->size(), data());
   }
 }
-
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
 
@@ -66,6 +65,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
+
   {
     if (mol->natom() < nucleus_blocksize__) {
       NAIBatch nai(input, mol);

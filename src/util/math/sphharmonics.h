@@ -23,16 +23,15 @@
 //
 
 
-#ifndef __SRC_INTEGRAL_ECP_SPHHARMONICS_H
-#define __SRC_INTEGRAL_ECP_SPHHARMONICS_H
+#ifndef __BAGEL_UTIL_MATH_SPHHARMONICS_H
+#define __BAGEL_UTIL_MATH_SPHHARMONICS_H
 
-#include <array>
 #include <vector>
 #include <complex>
 #include <cmath>
-#include <src/util/constants.h>
-#include <src/util/math/factorial.h>
+#include <src/util/math/legendre.h>
 #include <src/util/math/comb.h>
+#include <src/util/math/factorial.h>
 
 namespace bagel {
 
@@ -44,8 +43,6 @@ class SphHarmonics {
     double theta_;
     double phi_;
 
-    double LegendrePolynomial(const int l, const int am, const double x) const;
-
   public:
 
     SphHarmonics(const std::array<int, 2> lm, const std::array<double, 3> c);
@@ -53,7 +50,7 @@ class SphHarmonics {
     SphHarmonics(const std::array<int, 2> lm);
     SphHarmonics(const int l, const int m);
 
-    ~SphHarmonics() {}
+    ~SphHarmonics() { }
 
     double centre(const int i) const { return centre_[i]; }
     std::array<double, 3> centre() const { return centre_; }

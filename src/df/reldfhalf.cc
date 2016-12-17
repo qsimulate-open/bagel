@@ -137,8 +137,8 @@ void RelDFHalf::rotate_occ(shared_ptr<const ZMatrix> rdm1) {
   shared_ptr<const Matrix> rdm1r = rdm1->get_real_part();
   shared_ptr<const Matrix> rdm1i = rdm1->get_imag_part();
 
-  auto real = dfhalf_[0]->copy(); 
-  auto imag = dfhalf_[1]->copy(); 
+  auto real = dfhalf_[0]->copy();
+  auto imag = dfhalf_[1]->copy();
   dfhalf_[0]->rotate_occ(rdm1r);
   dfhalf_[1]->rotate_occ(rdm1r);
   real->rotate_occ(rdm1i);

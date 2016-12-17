@@ -34,7 +34,7 @@ class Termination : public std::exception {
   protected:
     const std::string message_;
   public:
-    Termination(const std::string& m) : message_(m) { } 
+    Termination(const std::string& m) : message_(m) { }
     const char* what() const noexcept override { return message_.c_str(); }
 };
 

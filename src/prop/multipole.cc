@@ -78,22 +78,21 @@ vector<double> Multipole::compute() const {
   cout << "    * Permanent dipole moment:" << (jobname_.empty() ? "" : " " + jobname_) << endl;
   cout << "           (" << setw(12) << setprecision(6) << out[0] << ", " << setw(12) << out[1] << ", " << setw(12) << out[2] << ") a.u." << endl << endl;
 
-  if (rank_ >= 2) {
+  if (rank_ == 2) {
     // we need to add nuclear contribution
     // \hat xx = -\sum_i x_i^2 + \sum_N Z_N X_N^2 (same as Molpro's convention).
     array<double,6> sm = geom_->quadrupole();
     for (int i = 0; i != 6; ++i)
       out[i+3] = sm[i] - out[i+3];
-    cout << "    * Permanent quadrupole moment (around the center of charge):" << (jobname_.empty() ? "" : " " + jobname_) << endl;
+    cout << "    * Permanent second moment (around the center of charge):" << (jobname_.empty() ? "" : " " + jobname_) << endl;
     cout << "          Qxx " << setw(12) << setprecision(6) << out[3] << endl;
     cout << "          Qxy " << setw(12) << setprecision(6) << out[4] << endl;
-    cout << "          Qxz " << setw(12) << setprecision(6) << out[5] << endl;
-    cout << "          Qyy " << setw(12) << setprecision(6) << out[6] << endl;
+    cout << "          Qyy " << setw(12) << setprecision(6) << out[5] << endl;
+    cout << "          Qxz " << setw(12) << setprecision(6) << out[6] << endl;
     cout << "          Qyz " << setw(12) << setprecision(6) << out[7] << endl;
     cout << "          Qzz " << setw(12) << setprecision(6) << out[8] << endl << endl;
-  }
 
-  if (rank_ >= 3) {
+  } else if (rank_ >= 3) {
     throw logic_error("higher-order multipole integrals are implemented, but post-processing is missing");
   }
 

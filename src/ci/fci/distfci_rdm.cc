@@ -29,7 +29,7 @@ using namespace bagel;
 
 
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> DistFCI::rdm34(const int ist, const int jst) const {
-  return tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>(); 
+  return tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>>();
 }
 
 

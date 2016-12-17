@@ -475,7 +475,7 @@ void DistFCI::compute() {
 
 shared_ptr<const CIWfn> DistFCI::conv_to_ciwfn() const {
   // convert DistDvec to Dvec
-  vector<shared_ptr<Civec>> vec; 
+  vector<shared_ptr<Civec>> vec;
   for (auto& i : cc_->dvec())
     vec.push_back(i->civec());
   auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));

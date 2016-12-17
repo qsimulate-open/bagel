@@ -3,7 +3,7 @@
 // Filename: dkhcore.h
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Raymond Wang <raymondwang@u.northwestern.edu> 
+// Author: Raymond Wang <raymondwang@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.

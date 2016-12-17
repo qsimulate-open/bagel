@@ -29,6 +29,7 @@
 #include <src/df/df.h>
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
+#include <src/molecule/shellpair.h>
 
 namespace bagel {
 
@@ -60,6 +61,14 @@ class Geometry : public Molecule {
     bool london_;
     bool use_finite_;
     bool use_ecp_basis_;
+
+    // Lattice parameters
+    std::vector<std::array<double, 3>> primitive_vectors_;
+    bool do_periodic_df_;
+
+    // Schwarz, multipoles
+    void get_shellpairs();
+    std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
 
   private:
     // serialization
@@ -108,7 +117,7 @@ class Geometry : public Molecule {
     Geometry(const Geometry& o, std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
     Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
-    Geometry(std::vector<std::shared_ptr<const Geometry>>);
+    Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 
     // Returns a constant
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
@@ -139,6 +148,16 @@ class Geometry : public Molecule {
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt, const bool do_coulomb = true) const;
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
+
+    // Lattice
+    std::vector<std::array<double, 3>> primitive_vectors() const { return primitive_vectors_; }
+    std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
+    const bool do_periodic_df() const { return do_periodic_df_; }
+    std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
+
+    std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
+    std::shared_ptr<const ShellPair> shellpair(const int i) const { return shellpairs_[i]; }
+    int nshellpair() const { return shellpairs_.size(); }
 
 };
 

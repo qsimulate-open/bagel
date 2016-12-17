@@ -97,7 +97,7 @@ namespace btas {
   template <typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
   void print(const T& t, std::string name = "", const typename T::size_type size = 10) {
     assert(t.rank() == 2 && t.range().ordinal().contiguous());
-    std::cout << "++++ " + name + " ++++" << std::endl;
+    if (!name.empty()) std::cout << "++++ " + name + " ++++" << std::endl;
     constexpr const int width = std::is_same<typename std::remove_cv<typename T::value_type>::type, double>::value ? 12 : 30;
     constexpr const int prec  = std::is_same<typename std::remove_cv<typename T::value_type>::type, double>::value ? 9 : 8;
     for (int i = 0; i != std::min(size, t.extent(0)); ++i) {

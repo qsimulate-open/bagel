@@ -3,7 +3,7 @@
 // Filename: dkhcore.cc
 // Copyright (C) 2016 Toru Shiozaki
 //
-// Author: Raymond Wang <raymondwang@u.northwestern.edu> 
+// Author: Raymond Wang <raymondwang@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -86,7 +86,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   VectorB B(nunc);
   VectorB RI(nunc);
   VectorB RI_inv(nunc);
-  for (int i = 0; i != nunc; ++i) { 
+  for (int i = 0; i != nunc; ++i) {
     Ep(i) = c__ * std::sqrt(2.0 * eig(i) + c2);
     A(i) = std::sqrt(0.5 * (Ep(i) + c2) / Ep(i));
     B(i) = A(i) * c__ / (Ep(i) + c2);
@@ -117,36 +117,36 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   const Matrix AVAE(*post_scale(AVA, Ep));
   const Matrix BVBE(*post_scale(BVB, Ep));
   const Matrix EBVB(*pre_scale(Ep, BVB));
-  
+
   dkh += *post_scale(*pre_scale(A, V), A)           + *post_scale(*pre_scale(B, smallnai), B) // Free Particle Projection
-       - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE)) 
-       - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (*post_scale(EAVA, RI) - EBVB) * AVA    
-       + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)                
+       - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE))
+       - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (*post_scale(EAVA, RI) - EBVB) * AVA
+       + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)
        + BVBE * *pre_scale(RI_inv, BVB)             - 0.5 * AVA * BVBE;                   // DKH2
-  
+
   const MixedBasis<OverlapBatch> mix(mol0, mol);
   const Matrix transfer2 = *transfer % mix;
   Matrix_base<double>::operator=(transfer2 % dkh * transfer2);
 }
 
 
-/*   
-   dkh += post_scale(pre_scale(A,V),A) + post_scale(pre_scale(B,smallnai),B) 
+/*
+   dkh += post_scale(pre_scale(A,V),A) + post_scale(pre_scale(B,smallnai),B)
        - BVB * EAVA                     - AVAE * BVB                         + AVARI * EAVA
        + BVBE * pre_scale(RI_inv,BVB)   - 0.5 * BVB * AVAE                   - 0.5 * AVA * BVBE
        + 0.5 * AVARI * AVAE             + 0.5 * BVB * pre_scale(RI_inv,BVBE) - 0.5 * EBVB * AVA
-       - 0.5 * EAVA * BVB               + 0.5 * EAVA * pre_scale(RI,AVA)     + 0.5 * EBVB * pre_scale(RI_inv,BVB); 
+       - 0.5 * EAVA * BVB               + 0.5 * EAVA * pre_scale(RI,AVA)     + 0.5 * EBVB * pre_scale(RI_inv,BVB);
 */
 
 // Leave it here if we want do DKH2FULL in the future
-/*  
+/*
   Matrix smallx(transfer % small1e[2] * transfer);
   Matrix smally(transfer % small1e[3] * transfer);
   Matrix smallz(transfer % small1e[1] * transfer);
   for (int i = 0; i != ndim; ++i) {
     for (int j = 0; j != ndim; ++j) {
       const int denom = Ep(i) + Ep(j);
-      smallx(i,j) /= denom; 
+      smallx(i,j) /= denom;
       smally(i,j) /= denom;
       smallz(i,j) /= denom;
     }
@@ -155,8 +155,8 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   const Matrix Xc(B * smallx * B);
   const Matrix Yc(B * smally * B);
   const Matrix Zc(B * smallz * B);
-  
+
      - Xc * Ep * RI_inv * Xc        - Yc * Ep * RI_inv * Yc          - Zc * Ep * RI_inv * Zc
      - 0.5 * Xc * RI_inv * Xc * Ep  - 0.5 * Yc * RI_inv * Yc * Ep    - 0.5 * Zc * RI_inv * Zc * Ep
-     - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2FULL       
+     - 0.5 * Ep * Xc * RI_inv * Xc  - 0.5 * Ep * Yc * RI_inv * Yc    - 0.5 * Ep * Zc * RI_inv * Zc; // DKH2FULL
 */

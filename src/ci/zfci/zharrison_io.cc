@@ -31,7 +31,7 @@ using namespace bagel;
 
 // Write relativistic integrals to an file in chemists notation suitable for reading into NECI
 void ZHarrison::dump_ints() const {
-  
+
   cout << "" << endl;
   cout << "Writing relativistic integrals to FCIDUMP.REL file" << endl;
   cout << setprecision(10) << endl;
@@ -62,7 +62,7 @@ void ZHarrison::dump_ints() const {
     fs << " ISYM= 0 ," << endl;
     fs << " TREL=.TRUE." << endl;
     fs << " &END" << endl;
-    
+
     fs << setw(20) << setprecision(15);
 
     for (int i = 0; i != 16; ++i) {
@@ -88,7 +88,7 @@ void ZHarrison::dump_ints() const {
       else cout << " - ";
       if ( jfac == 1) cout << "+ )" << endl;
       else cout << "- )" << endl;
-      
+
 //      fs << endl;
 //      if ( k2fac == 1) fs << "( + ";
 //      else fs << "( - ";
@@ -106,16 +106,16 @@ void ZHarrison::dump_ints() const {
             for (int k2 = 0; k2 != norb_; ++k2) {
               val = tmp->element(k2+norb_*k, j2+norb_*j);
               if (abs(val) > 1.0e-9) {
-                fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4) 
+                fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
                   << 2*j2+j2fac << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
-                //fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4) 
+                //fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
                 //  << 2*k+kfac << setw(4) << 2*j2+j2fac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
               }
             }
           }
         }
       }
-      
+
     }
 
     tval = 0.0;
@@ -132,7 +132,7 @@ void ZHarrison::dump_ints() const {
       for (int j = 0; j != norb_; ++j) {
         for (int k = 0; k != norb_; ++k) {
           val = tmp->element(k, j);
-          if (abs(val) > 1.0e-9) 
+          if (abs(val) > 1.0e-9)
             fs << val << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << "   0   0" << endl;
           if ((j == k) && ((i == 0) || (i == 3))) tval += val;
         }
