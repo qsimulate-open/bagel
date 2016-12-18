@@ -71,8 +71,8 @@ class AtomGroup {
     int order_in_geom(const int i)  const { return order_in_geom_[i]; }
     const std::vector<int> ishell()  const { return ishell_; }
     int ishell(const int i)  const { return ishell_[i]; }
-    const int nbasis() const { return nbasis_; }
-    const int natom() const { return atoms_.size(); }
+    int nbasis() const { return nbasis_; }
+    int natom() const { return atoms_.size(); }
 };
 
 }
