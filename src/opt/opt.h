@@ -74,6 +74,9 @@ class Opt {
     bool internal_;
     // whether we use adaptive stepsize or not
     bool adaptive_;
+    // whether we save reference or not
+    bool refsave_;
+    std::string refname_;
     size_t size_;
 
     Timer timer_;
@@ -131,6 +134,10 @@ class Opt {
       algorithm_ = idat->get<std::string>("algorithm", "rfo");
       adaptive_ = idat->get<bool>("adaptive", true);
       opttype_ = idat->get<std::string>("opttype", "energy");
+#ifndef DISABLE_SERIALIZATION
+      refsave_ = idat->get<bool>("save_ref", false);
+      if (refsave_) refname_ = idat->get<std::string>("ref_out", "reference");
+#endif
 
       // For LBFGS or CG optimizer, ALGLIB is true. Otherwise, ALGLIB is false
       if (algorithm_ == "lbfgs" || algorithm_ == "cg")

@@ -34,6 +34,7 @@
 #include <src/wfn/construct_method.h>
 #include <src/opt/optimize.h>
 #include <src/opt/opt.h>
+#include <src/util/archive.h>
 
 using namespace std;
 using namespace bagel;
@@ -113,6 +114,13 @@ void Opt::compute_noalglib() {
     double stepnorm = displ_->norm();
     if (stepnorm < thresh_ * sqrt(size_)) break;
   }
+
+#ifndef DISABLE_SERIALIZATION
+  if (refsave_) {
+    OArchive archive(refname_);
+    archive << prev_ref_;
+  }
+#endif
 }
 
 void Opt::hessian_update() {
