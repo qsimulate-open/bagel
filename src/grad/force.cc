@@ -41,6 +41,7 @@ void Force::compute() {
   const int target = idata_->get<int>("target", 0);
   const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
   const int target2= idata_->get<int>("target2", 1);
+  const int nacmtype = idata_->get<int>("nacmtype", 0);
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -101,7 +102,7 @@ void Force::compute() {
  
     } else if (method == "casscf" && jobtitle == "nacme") {
       
-      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2);
+      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype);
       force->compute();
  
     } else if (method == "casscf") {
@@ -111,7 +112,7 @@ void Force::compute() {
 
     } else if (method == "caspt2" && jobtitle == "nacme") {
       
-      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2);
+      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype);
       force->compute();
 
     } else if (method == "caspt2") {

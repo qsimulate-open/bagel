@@ -233,7 +233,6 @@ void NacmEval<CASSCF>::init() {
 
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
-  const string nacmtype = idata_out->get<string>("nacmtype", "");
 
   if (algorithm == "superci")
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
@@ -360,7 +359,10 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
 
   // f_CSF is only this when rdm1 is anti-symmetrized
   shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
-  qxmat->scale(egap);
+  if (nacmtype_ == 0) 
+    qxmat->scale(egap);
+  else 
+    qxmat->scale(0.0);
 
   auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
   auto qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());

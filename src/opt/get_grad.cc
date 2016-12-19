@@ -55,7 +55,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
     refs = eval1.ref();
     en1 = eval2.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_);
+    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_);
     x2 = evaln.compute();
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_);
@@ -68,7 +68,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
     refs = eval1.ref();
     en1 = eval2.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_);
+    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_);
     x2 = evaln.compute();
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2"); 

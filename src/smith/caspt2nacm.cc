@@ -227,7 +227,10 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // solve CPCASSCF
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
-  task_->augment_Y(d0ms, g0, g1, halfj);
+
+  if (nacmtype_==0)
+    task_->augment_Y(d0ms, g0, g1, halfj);
+
   timer.tick_print("Yrs non-Lagrangian terms");
 
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
@@ -271,7 +274,12 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   // xmat in the AO basis
   auto xmatao = make_shared<Matrix>(*coeff * *xmat ^ *coeff);
   shared_ptr<Matrix> qxmat = task_->vd1()->resize(nmobasis, nmobasis);
-  qxmat->scale(egap);
+
+  if (nacmtype_==0)
+    qxmat->scale(egap);
+  else 
+    qxmat->scale(0.0);
+
   auto qxmatao = make_shared<Matrix>(*coeff * (*qxmat) ^ *coeff);
 
   // two-body part

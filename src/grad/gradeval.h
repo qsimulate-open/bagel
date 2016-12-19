@@ -105,6 +105,8 @@ class NacmEval : public GradEval_base {
     double energy2_;
     int target_state1_;
     int target_state2_;
+    // nacmtype? full (0) or without ETF (1), ETF only (2)?
+    int nacmtype_;
 
     void init() {
       if (geom_->external())
@@ -121,8 +123,8 @@ class NacmEval : public GradEval_base {
     }
 
   public:
-    NacmEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2) {
+    NacmEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2, const int nacmtype)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2), nacmtype_(nacmtype) {
       init();
     }
 
