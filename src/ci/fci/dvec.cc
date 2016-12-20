@@ -190,12 +190,6 @@ shared_ptr<Dvector<DataType>> Dvector<DataType>::extract_state(const vector<int>
 }
 
 
-template <typename DataType>
-shared_ptr<Dvector<DataType>> Dvector<DataType>::extract_state(const int istate) const {
-  auto out = make_shared<Dvector<DataType>>(dvec_[istate], 1);
-  return out;
-}
-
 template class bagel::Dvector<double>;
 template class bagel::Dvector<std::complex<double>>;
 
