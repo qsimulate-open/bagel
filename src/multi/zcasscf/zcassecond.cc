@@ -178,16 +178,7 @@ void ZCASSecond::compute() {
       cout << endl << "    * Max iteration reached during the second optimization. *     " << endl << endl;
     mute_stdcout();
   }
-
-  // this is not needed for energy, but for consistency we want to have this...
-  // update construct Jop from scratch
   resume_stdcout();
-  if (nact_) {
-    fci_->update(coeff_);
-    fci_->compute();
-    fci_->compute_rdm12();
-  }
-
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
     Timer pop_timer;
