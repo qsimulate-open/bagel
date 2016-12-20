@@ -136,9 +136,6 @@ class ZHarrison : public Method {
 
     void const_denom();
 
-    // just to move negative energy states into the virtual space
-    std::shared_ptr<const ZMatrix> swap_pos_neg(std::shared_ptr<const ZMatrix> coeffin) const;
-
     // run-time functions.
     // aaaa and bbbb
     void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
@@ -184,12 +181,7 @@ class ZHarrison : public Method {
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const RelCoeff_Block> coeff) {
-      Timer timer;
-      jop_ = std::make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, tsymm_, store_half_ints_);
-      std::cout << "    * Integral transformation done. Elapsed time: " << std::setprecision(2) << timer.tick() << std::endl << std::endl;
-      const_denom();
-    }
+    void update(std::shared_ptr<const RelCoeff_Block> coeff);
 
     virtual void compute() override;
 
@@ -200,8 +192,6 @@ class ZHarrison : public Method {
     int nstate() const { return nstate_; }
     double core_energy() const { return jop_->core_energy(); }
     std::shared_ptr<const RelZDvec> cc() const { return cc_; }
-
-    int nij() const { return norb_*norb_; }
 
     std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
@@ -228,6 +218,9 @@ class ZHarrison : public Method {
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
     std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
+
+    // interface functions
+    void dump_ints() const;
 };
 
 

@@ -123,14 +123,14 @@ void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
   int nr_nvirt = nvirt_ - nneg_/2;
   for (int i = 0; i != nclosed_*2; ++i) {
     for (int j = 0; j != nneg_/2; ++j) {
-      rot->ele_vc(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
-      rot->ele_vc(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+      rot->ele_vc(j + nr_nvirt, i) = 0.0;
+      rot->ele_vc(j + nr_nvirt + nvirt_, i) = 0.0;
     }
   }
   for (int i = 0; i != nact_*2; ++i) {
     for (int j = 0; j != nneg_/2; ++j) {
-      rot->ele_va(j + nr_nvirt, i) =  complex<double> (0.0,0.0);
-      rot->ele_va(j + nr_nvirt + nvirt_, i) =  complex<double> (0.0,0.0);
+      rot->ele_va(j + nr_nvirt, i) = 0.0;
+      rot->ele_va(j + nr_nvirt + nvirt_, i) = 0.0;
     }
   }
 }

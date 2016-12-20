@@ -50,7 +50,7 @@ class ParallelDF : public std::enable_shared_from_this<ParallelDF> {
     bool serial_;
 
   public:
-    ParallelDF(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF> = nullptr, std::shared_ptr<Matrix> = nullptr);
+    ParallelDF(const size_t, const size_t, const size_t, std::shared_ptr<const ParallelDF> = nullptr, std::shared_ptr<Matrix> = nullptr, const bool serial = false);
     virtual ~ParallelDF() { }
 
     size_t naux() const { return naux_; }

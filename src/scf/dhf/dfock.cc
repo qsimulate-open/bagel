@@ -355,7 +355,7 @@ void DFock::build_j(list<shared_ptr<const RelDFHalf>> dummy, list<shared_ptr<con
   if (scale_coulomb != 0.0) {
     array<shared_ptr<const Matrix>,4> trocoeff, tiocoeff;
     for (int i = 0; i != 4; ++i) {
-      shared_ptr<const ZMatrix> c = coeff->cut(i*geom_->nbasis(), (i+1)*geom_->nbasis()); 
+      shared_ptr<const ZMatrix> c = coeff->cut(i*geom_->nbasis(), (i+1)*geom_->nbasis());
       trocoeff[i] = c->get_real_part()->transpose();
       tiocoeff[i] = c->get_imag_part()->transpose();
     }

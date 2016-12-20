@@ -24,6 +24,7 @@
 
 
 #include <src/mat1e/hcore.h>
+#include <src/mat1e/dkhcore.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
@@ -40,10 +41,15 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
-
-  init(mol);
-  fill_upper();
+Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
+  assert(!(nodkh && !hso_));
+  if (nodkh) {
+    init(mol);
+    fill_upper();
+  } else {
+    auto dkhcore = make_shared<DKHcore>(mol);
+    copy_n(dkhcore->data(), dkhcore->size(), data());
+  }
 }
 
 void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const int offsetb0, const int offsetb1, shared_ptr<const Molecule> mol) {
@@ -59,6 +65,7 @@ void Hcore::computebatch(const array<shared_ptr<const Shell>,2>& input, const in
 
     copy_block(offsetb1, offsetb0, dimb1, dimb0, kinetic.data());
   }
+
   {
     if (mol->natom() < nucleus_blocksize__) {
       NAIBatch nai(input, mol);

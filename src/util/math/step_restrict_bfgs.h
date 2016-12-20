@@ -68,7 +68,7 @@ class SRBFGS {
     const bool debug_;
 
   public:
-    SRBFGS(std::shared_ptr<const T> _denom, const double rad = 0.4, const int _hebden_iter = 75, const double _alpha = 1.3, 
+    SRBFGS(std::shared_ptr<const T> _denom, const double rad = 0.4, const int _hebden_iter = 75, const double _alpha = 1.3,
            const bool _debug = false) : denom_(_denom), trust_radius_(rad), hebden_iter_(_hebden_iter), alpha_(_alpha), debug_(_debug) {}
 
     std::shared_ptr<const T> denom() const { return denom_; }

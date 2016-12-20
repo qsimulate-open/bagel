@@ -31,6 +31,7 @@
 #include <src/asd/orbital/construct_asd_orbopt.h>
 #include <src/asd/dmrg/rasd.h>
 #include <src/asd/multisite/multisite.h>
+#include <src/util/exception.h>
 #include <src/util/archive.h>
 #include <src/util/io/moldenout.h>
 
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
 
     map<string, shared_ptr<const void>> saved;
     bool dodf = true;
+    bool dofmm = false;
 
     // timer for each method
     Timer timer(-1);
@@ -97,7 +99,8 @@ int main(int argc, char** argv) {
       } else {
         if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (!itree->get<bool>("cfmm", false)) dofmm = true;
+        if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
@@ -228,7 +231,11 @@ int main(int argc, char** argv) {
 
     print_footer();
 
-  } catch (const exception &e) {
+  } catch (const Termination& e) {
+    cout << "  -- Termination requested --" << endl;
+    cout << "  message: " << e.what() << endl;
+    print_footer();
+  } catch (const exception& e) {
     resources__->proc()->cout_on();
     cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
     resources__->proc()->cout_off();

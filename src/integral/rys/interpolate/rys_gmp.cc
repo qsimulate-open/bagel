@@ -22,12 +22,12 @@ using namespace mpfr;
 void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& dw, const int nrank, const int nbatch) {
 
   mpfr::mpreal::set_default_prec(GMPPREC);
-  mpreal mlp[40];
-  mpreal sigma[40];
-  mpreal fm[40];
-  mpreal w[40];
-  mpreal x[40];
-  mpreal lp[40];
+  mpreal mlp[150];
+  mpreal sigma[150];
+  mpreal fm[150];
+  mpreal w[150];
+  mpreal x[150];
+  mpreal lp[150];
 
   for (int ibatch = 0; ibatch != nbatch; ++ibatch) {
     const int offset = ibatch * nrank;
@@ -50,7 +50,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal halfpT = half / T;
 #ifndef DAWSON
       fm[0] = sqrt(pi) / sqrtt * half * erf(sqrtt);
-      for (int i = 1; i != 40; ++i) {
+      for (int i = 1; i != 150; ++i) {
         fm[i] = halfpT * ((2*i-1) * fm[i - 1] - exp(-T));
       }
 #ifdef BREIT
@@ -67,7 +67,7 @@ void rysroot_gmp(const vector<mpreal>& ta, vector<mpreal>& dx, vector<mpreal>& d
       const mpreal one = "1.0";
       double dawson_double = gsl_sf_dawson(sqrtt.toDouble());
       // based on taylor expansion
-      for (int i = 0; i != 40; ++i) {
+      for (int i = 0; i != 150; ++i) {
         fm[i] = 0;
         mpreal current = one/(2*i+1) * exp(-T);
         int j = 0;
@@ -135,7 +135,7 @@ line1:
 line2:
         if(mm != l) {
           ++iter;
-          if (iter == 100) throw logic_error("bad");
+          if (iter == 150) throw logic_error("bad");
           mpreal g = (dx[offset + l + 1] - dx[offset + l]) / (dw[offset + l] * 2);
           const mpreal r = sqrt(g * g + one);
           g = dx[offset + mm] - dx[offset + l] + dw[offset + l] / (g + (g >= 0 ? fabs(r) : -fabs(r)));

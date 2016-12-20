@@ -164,6 +164,13 @@ class Dvector_base {
     }
 
     void project_out(std::shared_ptr<const Dvector_base<CiType>> o) {
+      if (o->ij() != ij()) throw std::logic_error("Dvector_base<CiType>::project_out called inconsistently");
+      auto j = o->dvec().begin();
+      for (auto& i : dvec())
+        i->project_out(*j++);
+    }
+
+    void project_out_all(std::shared_ptr<const Dvector_base<CiType>> o) {
       for (auto& i : dvec())
         for (auto& j : o->dvec())
           i->project_out(j);

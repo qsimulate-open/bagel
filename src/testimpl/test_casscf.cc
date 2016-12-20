@@ -38,6 +38,8 @@ double cas_energy(std::string filename) {
   std::shared_ptr<Geometry> geom;
   std::shared_ptr<const Reference> ref;
 
+  double energy = 0.0;
+
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
@@ -54,35 +56,28 @@ double cas_energy(std::string filename) {
         auto cas = std::make_shared<SuperCI>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-
-        std::cout.rdbuf(backup_stream);
-        return ref->energy(0);
+        energy = ref->energy(0);
       } else if (algorithm == "second") {
         auto cas = std::make_shared<CASSecond>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-
-        std::cout.rdbuf(backup_stream);
-        return ref->energy(0);
+        energy = ref->energy(0);
       } else if (algorithm == "hybrid") {
         auto cas = std::make_shared<CASHybrid>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-
-        std::cout.rdbuf(backup_stream);
-        return ref->energy(0);
+        energy = ref->energy(0);
       } else if (algorithm == "bfgs") {
         auto cas = std::make_shared<CASBFGS>(itree, geom, ref);
         cas->compute();
         ref = cas->conv_to_ref();
-
-        std::cout.rdbuf(backup_stream);
-        return ref->energy(0);
+        energy = ref->energy(0);
       }
     }
   }
-  assert(false);
-  return 0.0;
+  assert(energy != 0.0);
+  std::cout.rdbuf(backup_stream);
+  return energy;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_CASSCF)

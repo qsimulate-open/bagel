@@ -133,7 +133,7 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
     for (int i = 0; i != ij; ++i)
       copy_n(dket->data(i)->data(), nri, dket_data->element_ptr(0, i));
     auto rdm1t = btas::group(*rdm1,0,2);
-    btas::contract(1.0, *dket_data, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1}); 
+    btas::contract(1.0, *dket_data, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
 
     auto dbra_data = dket_data;
     if (dbra != dket) {
@@ -142,7 +142,7 @@ FCI_base<CivecType,DvecType>::compute_rdm12_last_step(shared_ptr<const DvecType>
         copy_n(dbra->data(i)->data(), nri, dbra_data->element_ptr(0, i));
     }
     auto rdm2t = group(group(*rdm2, 2,4), 0,2);
-    btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2}); 
+    btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2});
   }
 
   // when used with dist FCI, we have to allreduce

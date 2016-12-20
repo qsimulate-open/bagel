@@ -39,8 +39,8 @@ template<typename T>
 class AugHess {
   public:
     using DataType = typename T::data_type;
-    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type; 
-    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type; 
+    using MatType = typename std::conditional<std::is_same<DataType,double>::value, Matrix, ZMatrix>::type;
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
 
   protected:
     std::list<std::shared_ptr<const T>> c_;

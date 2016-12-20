@@ -37,6 +37,8 @@ std::vector<double> run_opt(std::string filename) {
   std::shared_ptr<const Geometry> geom;
   std::shared_ptr<const Reference> ref;
 
+  std::vector<double> out;
+
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
@@ -46,13 +48,13 @@ std::vector<double> run_opt(std::string filename) {
       auto opt = std::make_shared<Optimize>(itree, geom, ref);
       opt->compute();
 
-      std::cout.rdbuf(backup_stream);
-      std::shared_ptr<const Matrix> out = opt->geometry()->xyz();
-      return std::vector<double>(out->data(), out->data()+out->size());
+      std::shared_ptr<const Matrix> tmp = opt->geometry()->xyz();
+      out = std::vector<double>(tmp->data(), tmp->data()+tmp->size());
     }
   }
-  assert(false);
-  return std::vector<double>();
+  assert(!out.empty());
+  std::cout.rdbuf(backup_stream);
+  return out;
 }
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);

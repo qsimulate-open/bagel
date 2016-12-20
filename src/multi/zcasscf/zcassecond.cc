@@ -38,7 +38,7 @@ void ZCASSecond::compute() {
 
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
 
-  mute_stdcout();
+  muffle_->mute();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     // first perform CASCI to obtain RDMs
@@ -50,6 +50,7 @@ void ZCASSecond::compute() {
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
       occup_ = natorb.second;
+      if (natocc_) print_natocc();
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
       if (natocc_) print_natocc();
@@ -71,13 +72,10 @@ void ZCASSecond::compute() {
 
     // check gradient and break if converged
     const double gradient = grad->rms();
-    resume_stdcout();
     print_iteration(iter, energy_, gradient, timer.tick());
-    mute_stdcout();
     if (gradient < thresh_) {
-      resume_stdcout();
+      muffle_->unmute();
       cout << endl << "    * Second-order optimization converged. *   " << endl << endl;
-      mute_stdcout();
       break;
     }
 
@@ -138,14 +136,14 @@ void ZCASSecond::compute() {
       tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma, lam);
       kramers_adapt(residual, nclosed_, nact_, nvirt_);
       const double err = residual->norm() / lambda;
-      resume_stdcout();
+      muffle_->unmute();
       if (!miter) cout << endl;
       cout << "         res : " << setw(8) << setprecision(2) << scientific << err
            <<       "   lamb: " << setw(8) << setprecision(2) << scientific << lambda
            <<       "   eps : " << setw(8) << setprecision(2) << scientific << epsilon
            <<       "   step: " << setw(8) << setprecision(2) << scientific << stepsize
            << setw(8) << fixed << setprecision(2) << mtimer.tick() << endl;
-      mute_stdcout();
+      muffle_->mute();
       if (err < max(thresh_micro_, stepsize*thresh_microstep_))
         break;
 
@@ -173,20 +171,27 @@ void ZCASSecond::compute() {
     kramers_adapt(R, nvirt_);
     coeff_ = make_shared<RelCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
 
-    resume_stdcout();
     if (iter == max_iter_-1)
-      cout << endl << "    * Max iteration reached during the second optimization. *     " << endl << endl;
-    mute_stdcout();
+      throw runtime_error("Max iteration reached during the second optimization.");
   }
-  resume_stdcout();
+
+  // this is not needed for energy, but for consistency we want to have this...
+  // update construct Jop from scratch
+  muffle_->unmute();
+  if (nact_) {
+    fci_->update(coeff_);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
+
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
     Timer pop_timer;
     cout << " " << endl;
-    cout << "    * Printing out population analysis of optimized orbitals to casscf.log" << endl;
-    mute_stdcout();
+    cout << "    * Printing out population analysis to casscf.log" << endl;
+    muffle_->mute();
     population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
-    resume_stdcout();
+    muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
 

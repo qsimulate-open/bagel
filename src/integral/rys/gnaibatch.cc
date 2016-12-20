@@ -72,9 +72,9 @@ void GNAIBatch::root_weight(const int ps) {
       if (std::abs(T_[i]) < T_thresh__) {
         weights_[i] = 1.0;
       } else {
-        const double sqrtt = std::sqrt(T_[i]);
+        const double sqrtt = sqrt(T_[i]);
         const double erfsqt = inline_erf(sqrtt);
-        weights_[i] = erfsqt * std::sqrt(pi__) * 0.5 / sqrtt;
+        weights_[i] = erfsqt * sqrt(pi__) * 0.5 / sqrtt;
       }
     }
   } else {

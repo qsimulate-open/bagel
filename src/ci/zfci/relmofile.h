@@ -78,6 +78,9 @@ class RelMOFile {
     template<typename T>
     const std::complex<double>& mo2e(const T& b, const size_t i, const size_t j, const size_t k, const size_t l) const { return mo2e(b)->element(i+nocc_*j, k+nocc_*l); }
 
+    std::shared_ptr<const Kramers<2,ZMatrix>> mo1e() const { return mo1e_; }
+    std::shared_ptr<const Kramers<4,ZMatrix>> mo2e() const { return mo2e_; }
+
     double core_energy() const { return core_energy_; }
 
     std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }

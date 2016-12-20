@@ -41,11 +41,12 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Geometry)
 
-Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   // members of Molecule
   spherical_ = true;
   lmax_ = 0;
+  dofmm_   = geominfo->get<bool>("cfmm", false);
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -60,6 +61,22 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
     spherical_ = false;
   }
   const bool angstrom = geominfo->get<bool>("angstrom", false);
+
+  /* Set up lattice */
+  shared_ptr<const PTree> vectors = geominfo->get_child_optional("primitive_vectors");
+  if (vectors) {
+    int dim = 0;
+    for (auto& ivec : *vectors) {
+      string id = "a" + to_string(dim+1);
+      array<double, 3> vec = ivec->get_array<double, 3>(id);
+      if (angstrom) for (auto& i : vec) i /= angstrom ? au2angstrom__ : 1.0;
+      primitive_vectors_.push_back(vec);
+      ++dim;
+    }
+  }
+
+  // DKH2 Hamiltonian
+  dkh_ = geominfo->get<bool>("dkh", false);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -100,6 +117,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false) {
   /* Set up aux_atoms_ */
   auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
   if (!auxfile_.empty()) {
+    if (!primitive_vectors_.empty()) do_periodic_df_ = true;
     // read the default aux basis file
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
@@ -135,7 +153,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && !nodf) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df() && !dofmm_) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
@@ -157,6 +175,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
+  get_shellpairs();
 
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 }
@@ -164,7 +183,8 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
+  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
+    do_periodic_df_(o.do_periodic_df_) {
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -175,6 +195,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -275,8 +296,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -287,6 +308,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -307,7 +329,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 // used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_) {
+    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -320,6 +342,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_atoms_ = o.aux_atoms_;
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -327,6 +350,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
+  dofmm_ = geominfo->get<bool>("cfmm", false);
+  dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
@@ -400,15 +425,16 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  Merge info from multiple geometries to make one          *
 *  supergeometry                                            *
 ************************************************************/
-Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_) {
+Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), dkh_(nmer.front()->dkh()), magnetism_(false), london_(nmer.front()->london_),
+  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_),  do_periodic_df_(false) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
   symmetry_ = nmer.front()->symmetry_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
+  dofmm_ = nmer.front()->dofmm_;
 
   /************************************************************
   * Going down the list of protected variables, merge the     *
@@ -462,7 +488,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
   /* Data is merged (crossed fingers), now finish */
   common_init1();
   print_atoms();
-  common_init2(true,overlap_thresh_);
+  common_init2(true,overlap_thresh_, nodf);
 
   // static external field
   if (external())
@@ -476,10 +502,11 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer) :
 
 
 // used in SCF initial guess.
-Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false) {
+Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const PTree> geominfo) : magnetism_(false), do_periodic_df_(false) {
 
   spherical_ = true;
   lmax_ = 0;
+  dofmm_ = false;
 
   atoms_ = atoms;
 
@@ -512,6 +539,8 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   common_init1();
 
   print_atoms();
+
+  dkh_ = geominfo->get<bool>("dkh", false);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -550,38 +579,36 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 }
 
 
-vector<double> Geometry::schwarz() const {
+void Geometry::get_shellpairs() {
+
+  vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
-  for (auto aiter = atoms_.begin(); aiter != atoms_.end(); ++aiter) {
-    const vector<shared_ptr<const Shell>> tmp = (*aiter)->shells();
-    basis.insert(basis.end(), tmp.begin(), tmp.end());
+  for (int n = 0; n != natom(); ++n) {
+    const vector<int> tmpoff = offset(n);
+    offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
+    const vector<shared_ptr<const Shell>> tmpsh = atoms_[n]->shells();
+    basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
   }
-  const int size = basis.size();
+  const int nsh = basis.size();
 
-  vector<double> schwarz(size * size);
-  for (int i0 = 0; i0 != size; ++i0) {
-    shared_ptr<const Shell> b0 = basis[i0];
-    for (int i1 = i0; i1 != size; ++i1) {
-      shared_ptr<const Shell> b1 = basis[i1];
-
-      array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
-#ifdef LIBINT_INTERFACE
-      Libint eribatch(input);
-#else
-      ERIBatch eribatch(input, 1.0);
-#endif
-      eribatch.compute();
-      const double* eridata = eribatch.data();
-      const int datasize = eribatch.data_size();
-      double cmax = 0.0;
-      for (int xi = 0; xi != datasize; ++xi, ++eridata) {
-        const double absed = fabs(*eridata);
-        if (absed > cmax) cmax = absed;
-      }
-      schwarz[i0 * size + i1] = cmax;
-      schwarz[i1 * size + i0] = cmax;
+  shellpairs_.resize(nsh * nsh);
+  for (int i0 = 0; i0 != nsh; ++i0) {
+    for (int i1 = 0; i1 != nsh; ++i1) {
+      const int i01 = i0 * nsh + i1;
+      shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0));
     }
   }
+}
+
+
+vector<double> Geometry::schwarz() const {
+
+  const int nsp = shellpairs_.size();
+  vector<double> schwarz(nsp);
+  for (int i = 0; i != nsp; ++i)
+    schwarz[i] = shellpairs_[i]->schwarz();
+
   return schwarz;
 }
 
@@ -595,6 +622,27 @@ void Geometry::get_electric_field(shared_ptr<const PTree>& geominfo) {
   cout << "  * applying an external electric field (" << setprecision(3) << setw(7) << external_[0] << ", "
                                                                          << setw(7) << external_[1] << ", "
                                                                          << setw(7) << external_[2] << ") a.u." << endl << endl;
+}
+
+
+shared_ptr<const Geometry> Geometry::periodic(vector<shared_ptr<const Atom>> atoms) const {
+
+  auto out = make_shared<Geometry>(*this);
+
+  vector<shared_ptr<const Atom>> aux_atoms;
+  if (!auxfile_.empty()) {
+    shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
+    for (auto& a : atoms)
+      aux_atoms.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), nullptr));
+  }
+  out->atoms_ = atoms;
+  out->aux_atoms_ = aux_atoms;
+  out->do_periodic_df_ = false;
+
+  out->common_init1();
+  out->common_init2(true, overlap_thresh_);
+
+  return make_shared<const Geometry>(*out);
 }
 
 

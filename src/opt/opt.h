@@ -26,7 +26,7 @@
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>
@@ -104,14 +104,14 @@ class Opt {
 
       try {
         alglib::real_1d_array x;
-        x.setcontent(size_, displ->data()); 
+        x.setcontent(size_, displ->data());
         eval_type eval = std::bind(&Opt<T>::evaluate, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
 
         if (algorithm_ == "cg") {
           alglib::mincgstate state;
           alglib::mincgreport rep;
 
-          alglib::mincgcreate(x, state); 
+          alglib::mincgcreate(x, state);
           alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
           alglib::mincgsetstpmax(state, maxstep_);
 
@@ -120,7 +120,7 @@ class Opt {
           alglib::minlbfgsstate state;
           alglib::minlbfgsreport rep;
 
-          alglib::minlbfgscreate(1, x, state); 
+          alglib::minlbfgscreate(1, x, state);
           alglib::minlbfgssetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
           alglib::minlbfgssetstpmax(state, maxstep_);
 
@@ -173,7 +173,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   // first convert x to the geometry
   auto displ = std::make_shared<XYZFile>(current_->natom());
   assert(size_ == x.length());
-  std::copy_n(x.getcontent(), size_, displ->data()); 
+  std::copy_n(x.getcontent(), size_, displ->data());
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
@@ -184,14 +184,14 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
 
   // current Geometry
   if (iter_ > 0) {
-    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
+    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>());
     current_->print_atoms();
     if (internal_)
       bmat_ = current_->compute_internal_coordinate(bmat_[0]);
   }
 
   // first calculate reference (if needed)
-  std::shared_ptr<PTree> cinput; 
+  std::shared_ptr<PTree> cinput;
   std::shared_ptr<const Reference> ref;
   if (!prev_ref_ || scratch_) {
     auto m = input_->begin();
@@ -203,7 +203,7 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
         c->compute();
         ref = c->conv_to_ref();
       } else {
-        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        current_ = std::make_shared<const Geometry>(*current_, *m);
         if (ref) ref = ref->project_coeff(current_);
       }
     }
@@ -215,30 +215,35 @@ void Opt<T>::evaluate(const alglib::real_1d_array& x, double& en, alglib::real_1
   cinput->put("gradient", true);
 
   // then calculate gradients
-  GradEval<T> eval(cinput, current_, ref, target_state_);
-  if (iter_ == 0) {
-    print_header();
-    mute_stdcout();
+  double rms;
+  {
+    GradEval<T> eval(cinput, current_, ref, target_state_);
+    if (iter_ == 0) {
+      print_header();
+      mute_stdcout();
+    }
+    // current geom and grad in the cartesian coordinate
+    std::shared_ptr<const GradFile> cgrad = eval.compute();
+    if (internal_)
+      cgrad = cgrad->transform(bmat_[1], true);
+
+    assert(size_ == grad.length());
+    std::copy_n(cgrad->data(), size_, grad.getcontent());
+
+    prev_ref_ = eval.ref();
+    en = eval.energy();
+
+    // current geometry in a molden file
+    MoldenOut mfs("opt.molden");
+    mfs << current_;
+    rms = cgrad->rms();
   }
-  // current geom and grad in the cartesian coordinate
-  std::shared_ptr<const GradFile> cgrad = eval.compute();
-  if (internal_)
-    cgrad = cgrad->transform(bmat_[1], true);
 
-  assert(size_ == grad.length());
-  std::copy_n(cgrad->data(), size_, grad.getcontent());
-
-  resume_stdcout();
-
-  prev_ref_ = eval.ref();
   ++iter_;
   // returns energy
-  en = eval.energy(); 
 
-  // current geometry in a molden file
-  MoldenOut mfs("opt.molden");
-  mfs << current_;
-  print_iteration(en, cgrad->rms(), timer_.tick());
+  resume_stdcout();
+  print_iteration(en, rms, timer_.tick());
 }
 
 

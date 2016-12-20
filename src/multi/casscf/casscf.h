@@ -78,7 +78,9 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // properties
     bool do_hyperfine_;
-    std::shared_ptr<Muffle> ofs_;
+
+    // mask some of the output
+    mutable std::shared_ptr<Muffle> muffle_;
 
   public:
     CASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> = nullptr);

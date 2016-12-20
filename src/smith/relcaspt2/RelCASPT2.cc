@@ -78,7 +78,7 @@ void RelCASPT2::RelCASPT2::solve() {
       shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
       while(!sourceq->done())
         sourceq->next_compute();
-    }   
+    }
   }
 
   // solve linear equation for t amplitudes
@@ -199,7 +199,7 @@ void RelCASPT2::RelCASPT2::solve() {
 
 
 // function to solve linear equation
-vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s, 
+vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s,
                                                                                      vector<shared_ptr<MultiTensor_<complex<double>>>> t) {
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall

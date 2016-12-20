@@ -132,13 +132,13 @@ void CASSCF::common_init() {
 
 
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and total orbitals.
-  mute_stdcout();
+  muffle_ = make_shared<Muffle>("casscf.log");
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
     fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
   }
-  resume_stdcout();
+  muffle_->unmute();
 
   do_hyperfine_ = idata_->get<bool>("hyperfine", false);
 
@@ -159,6 +159,7 @@ void CASSCF::print_header() const {
 }
 
 void CASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
+  muffle_->unmute();
   if (energy.size() != 1 && iter) cout << endl;
 
   int i = 0;
@@ -167,19 +168,7 @@ void CASSCF::print_iteration(const int iter, const vector<double>& energy, const
                  << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
     ++i;
   }
-}
-
-
-static bool append__ = false;
-
-void CASSCF::mute_stdcout() {
-  ofs_ = make_shared<Muffle>("casscf.log", append__);
-  append__ = true;
-}
-
-
-void CASSCF::resume_stdcout() {
-  ofs_.reset();
+  muffle_->mute();
 }
 
 

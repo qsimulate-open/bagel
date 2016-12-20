@@ -30,6 +30,9 @@
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
+#include <src/periodic/tree.h>
+#include <src/periodic/tree_sp.h>
+#include <src/periodic/fmm.h>
 
 namespace bagel {
 
@@ -43,6 +46,7 @@ class SCF_base_ : public Method {
     std::shared_ptr<const HcType> hcore_;
     std::shared_ptr<const Coeff_<MatType>> coeff_;
 
+    bool dofmm_;
     int max_iter_;
 
     int diis_start_;
@@ -51,6 +55,7 @@ class SCF_base_ : public Method {
     double thresh_overlap_;
     double thresh_scf_;
     int multipole_print_;
+    int dma_print_;
 
     std::vector<double> schwarz_;
     void init_schwarz();
@@ -67,6 +72,9 @@ class SCF_base_ : public Method {
     // TODO so far only implemented in closed-shell SCF
     bool do_grad_;
     std::shared_ptr<DFHalfDist> half_;
+
+    // FMM
+    std::shared_ptr<const FMM> fmm_;
 
     bool restart_;
 
@@ -85,8 +93,7 @@ class SCF_base_ : public Method {
 
   public:
     SCF_base_() { }
-    SCF_base_(const std::shared_ptr<const PTree> idata_, const std::shared_ptr<const Geometry>,
-             const std::shared_ptr<const Reference>, const bool need_schwarz = false);
+    SCF_base_(std::shared_ptr<const PTree> idata_, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>, const bool need_schwarz = false);
     virtual ~SCF_base_() { }
 
     virtual void compute() override = 0;

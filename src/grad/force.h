@@ -38,7 +38,7 @@ class Force {
   public:
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
-    void compute();
+    std::shared_ptr<GradFile> compute();
 
 };
 

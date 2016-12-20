@@ -50,7 +50,7 @@ void CASBFGS1::compute() {
   vector<double> evals;
   const int limited_memory = idata_->get<int>("limited_memory", 0);
 
-  mute_stdcout();
+  muffle_->mute();
   for (int iter = 0; iter != max_iter_; ++iter) {
 
     const shared_ptr<const Coeff> cold = coeff_;
@@ -157,18 +157,18 @@ void CASBFGS1::compute() {
     // setting error of macro iteration
     const double gradient = sigma->rms();
 
-    resume_stdcout();
     print_iteration(iter, energy_, gradient, timer.tick());
 
     if (gradient < thresh_) {
+      muffle_->unmute();
       rms_grad_ = gradient;
       cout << " " << endl;
       cout << "    * quasi-Newton optimization converged. *   " << endl << endl;
-      mute_stdcout();
       break;
     }
 
     if (iter == max_iter_-1) {
+      muffle_->unmute();
       rms_grad_ = gradient;
       cout << " " << endl;
       if (rms_grad_ > thresh_) cout << "    * The calculation did NOT converge. *    " << endl;
@@ -176,9 +176,8 @@ void CASBFGS1::compute() {
       if (!conv_ignore_)
         throw runtime_error("CASSCF BFGS1 did not converge");
     }
-    mute_stdcout();
   }
-  resume_stdcout();
+  muffle_->unmute();
   // ============================
   // macro iteration to here
   // ============================
@@ -205,10 +204,10 @@ void CASBFGS1::compute() {
     Timer pop_timer;
     cout << " " << endl;
     cout << "    * Printing out population analysis of BFGS optimized orbitals to casscf.log" << endl;
-    mute_stdcout();
+    muffle_->mute();
     auto ovl = make_shared<Overlap>(geom_);
     population_analysis(geom_, *coeff_, ovl);
-    resume_stdcout();
+    muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
 }

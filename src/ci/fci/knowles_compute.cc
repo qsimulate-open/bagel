@@ -35,7 +35,7 @@ using namespace bagel;
 shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_ptr<const MOFile> jop,
                      const vector<int>& conv) const { // d and e are scratch area for D and E intermediates
 
-  const int ij = nij();
+  const int ij = (norb_*(norb_+1))/2;
 
   const int nstate = ccvec->ij();
   auto sigmavec = make_shared<Dvec>(ccvec->det(), nstate);
@@ -122,7 +122,7 @@ void FCI::sigma_2a2(shared_ptr<const Civec> cc, shared_ptr<Dvec> d) const {
 
 void KnowlesHandy::sigma_1(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   assert(cc->det() == sigma->det());
-  const int ij = nij();
+  const int ij = (norb_*(norb_+1))/2;
   const int lb = cc->lenb();
   for (int ip = 0; ip != ij; ++ip) {
     const double h = jop->mo1e(ip);
@@ -164,7 +164,7 @@ void KnowlesHandy::sigma_2c2(shared_ptr<Civec> sigma, shared_ptr<const Dvec> e) 
 
 void KnowlesHandy::sigma_3(shared_ptr<const Civec> cc, shared_ptr<Civec> sigma, shared_ptr<const MOFile> jop) const {
   const int la = cc->lena();
-  const int ij = nij();
+  const int ij = (norb_*(norb_+1))/2;
 
   for (int i = 0; i < la; ++i) {
     double* const target_array0 = sigma->element_ptr(0, i);

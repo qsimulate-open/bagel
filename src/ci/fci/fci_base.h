@@ -111,7 +111,7 @@ class FCI_base : public Method {
       // jop_ and denom_ will be constructed in derived classes
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
-         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> det_ 
+         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> det_
          >> energy_ >> cc_ >> rdm1_ >> rdm2_ >> weight_ >> rdm1_av_ >> rdm2_av_ >> davidson_;
       restarted_ = true;
     }
@@ -135,8 +135,6 @@ class FCI_base : public Method {
     int ncore() const { return ncore_; }
     double core_energy() const { return jop_->core_energy(); }
     double weight(const int i) const { return weight_.at(i); }
-
-    int nij() const { return (norb_*(norb_+1))/2; }
 
     virtual void update(std::shared_ptr<const Matrix>) = 0;
 
@@ -188,7 +186,7 @@ class FCI_base : public Method {
     virtual std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert(const bool occ_sort);
 
     virtual std::shared_ptr<const CIWfn> conv_to_ciwfn() const = 0;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const = 0; 
+    virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
 };
 
 extern template class FCI_base<Civec,Dvec>;
