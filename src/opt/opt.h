@@ -80,6 +80,7 @@ class Opt {
     size_t size_;
     // nonadiabatic coupling type used in conical
     int nacmtype_;
+    double thielc3_, thielc4_;
 
     Timer timer_;
 
@@ -155,6 +156,8 @@ class Opt {
           target_state2_ = tmpstate;
         }
         nacmtype_ = idat->get<int>("nacmtype", 0);
+        thielc3_  = idat->get<double>("thielc3", 2.0);
+        thielc4_  = idat->get<double>("thielc4", 0.5);
         adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
       }
       else if (opttype_ == "transition")

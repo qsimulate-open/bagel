@@ -84,13 +84,16 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
   x1->scale(1.0 / x1norm);
   x2->scale(1.0 / x2norm);
 
-  for (int iatom = 0; iatom != current_->natom(); ++iatom) {
-    xg->element(0, iatom) *= (1.0 - x1->element(0, iatom) - x2->element(0, iatom));
-    xg->element(1, iatom) *= (1.0 - x1->element(1, iatom) - x2->element(1, iatom));
-    xg->element(2, iatom) *= (1.0 - x1->element(2, iatom) - x2->element(2, iatom));
-  }
+  auto proj = make_shared<Matrix>(size_, size_);
+  proj->unit();
+  auto ppt = make_shared<Matrix>(size_,size_);
+  auto qqt = make_shared<Matrix>(size_,size_);
+  dger_(size_,size_,-1.0,x1->data(),1,x1->data(),1,ppt->data(),size_);
+  dger_(size_,size_,-1.0,x2->data(),1,x2->data(),1,qqt->data(),size_);
+  *proj = *proj + *ppt + *qqt;
+  xg->transform(proj, /*transpose=*/false);
 
-  *out = *xf + *xg;
+  *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
   en_ = en2;
   egap_ = en;
 
