@@ -46,6 +46,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
 
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref, target_state_);
+    prev_ref_ = eval1.ref();
     cgrad1 = eval1.compute();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
@@ -59,6 +60,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
     x2 = evaln.compute();
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_);
+    prev_ref_ = eval1.ref();
     cgrad1 = eval1.compute();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
