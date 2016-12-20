@@ -80,6 +80,9 @@ class FiniteNacm : public GradEval_base {
   protected:
     std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Reference> ref_;
+    // somehow using raw pointers
+    std::streambuf* backup_stream_;
+    std::ofstream* ofs_;
 
     std::shared_ptr<T> task_;
 
@@ -117,6 +120,20 @@ class FiniteNacm : public GradEval_base {
 
     double energy1 () const { return energy1_; }
     double energy2 () const { return energy2_; }
+
+    void mute_stdcout() {
+      if (mpi__->rank() == 0) {
+        ofs_ = new std::ofstream("finite.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
+        backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
+      }
+    }
+
+    void resume_stdcout() {
+      if (mpi__->rank() == 0) {
+        std::cout.rdbuf(backup_stream_);
+        delete ofs_;
+      }
+    }
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };

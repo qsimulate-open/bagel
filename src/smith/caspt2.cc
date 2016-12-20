@@ -165,6 +165,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
+      mute_stdcout();
       displ->element(j,i) = dx_;
       geom_ = make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
@@ -277,6 +278,8 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
           grad_csf->element(j,i) += vd1a->element(ij, ii) * Ifactor->element(ij, ii);
         }
       }
+      resume_stdcout();
+      cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
 
@@ -285,13 +288,13 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   auto grad_basis = make_shared<GradFile>(geom_->natom());
   grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
-  grad_ci->print(": CI term, <cJ | (cI(X+dX) - cI(X-dX))>", 0);
-  grad->print(": CI term, Orbital-dependent", 0);
+//  grad_ci->print(": CI term, <cJ | (cI(X+dX) - cI(X-dX))>", 0);
+//  grad->print(": CI term, Orbital-dependent", 0);
   *grad += *grad_ci;
   grad->print(": CI term", 0);
   grad_csf->print(": First-order CSF term", 0);
   *grad += *grad_csf;
-  grad->print(": CI term + First-order CSF term", 0);
+//  grad->print(": CI term + First-order CSF term", 0);
   grad_basis->print(": Basis set derivative (analytically calculated)", 0);
 
   *grad += *grad_basis;

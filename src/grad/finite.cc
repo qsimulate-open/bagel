@@ -137,6 +137,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
+      mute_stdcout();
       displ->element(j,i) = dx_;
       geom_ = make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
@@ -226,6 +227,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           }
         }
       }
+      resume_stdcout();
+      cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
   grad_ci->print(": CI term without orbital relaxation, <cJ|d/dXa cI>", 0);
