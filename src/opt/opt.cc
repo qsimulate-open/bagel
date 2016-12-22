@@ -39,13 +39,21 @@
 using namespace std;
 using namespace bagel;
 
+// TODO: (1) Introduce redundant internal coordinates
+//       (2) Add eigenvector following algorithm
+//       (3) Scaled RFO algorithm (different from rfos)
+//       (4) Transition state search
+
 void Opt::compute_noalglib() {
   auto displ = make_shared<XYZFile>(current_->natom());
-  size_ = internal_ ? bmat_[0]->mdim() : displ->size();
-  displ_ = make_shared<XYZFile>(current_->natom());
+  size_ = internal_ ? (redundant_? bmat_red_[0]->ndim() : bmat_[0]->mdim()) : displ->size();
+  
+  dispsize_ = max(current_->natom(),int(size_/3+1));
+  displ_ = make_shared<XYZFile>(dispsize_);
+  grad_ = make_shared<GradFile>(dispsize_);
 
   hess_ = make_shared<Matrix>(size_, size_);
-  hess_->unit();
+  hess_->unit();        // TODO can take the initial hessian from internal coordinate generator
   
   print_header();
 
@@ -54,13 +62,22 @@ void Opt::compute_noalglib() {
     mute_stdcout();
 
     displ = displ_;
-    if (internal_) 
-      displ = displ->transform(bmat_[1], false);
+
+    if (internal_) {
+      if (redundant_) 
+        displ = displ->transform(bmat_red_[2], false);      // should be done iteratively
+      else 
+        displ = displ->transform(bmat_[1], false);
+    }
 
     current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>()); 
     current_->print_atoms();
-    if (internal_)
-      bmat_ = current_->compute_internal_coordinate(bmat_[0]);
+    if (internal_) {
+      if (redundant_) 
+        bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
+      else            
+        bmat_ = current_->compute_internal_coordinate(bmat_[0]);
+    }
  
     shared_ptr<PTree> cinput; 
     shared_ptr<const Reference> ref;
@@ -87,11 +104,17 @@ void Opt::compute_noalglib() {
  
     double rms;
     {
+      grad_->zero();
       shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
-      grad_ = make_shared<GradFile>(*cgrad);
+      grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
-      if (internal_)
-        grad_ = grad_->transform(bmat_[1], true);
+      if (internal_) {
+        if (redundant_)
+          grad_ = grad_->transform(bmat_red_[1], false);
+        else 
+          grad_ = grad_->transform(bmat_[1], true);
+      }
+
       // Update Hessian with Flowchart method
       if (iter_ != 1)
         hessian_update();
@@ -190,7 +213,7 @@ void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sha
 }
 
 shared_ptr<XYZFile> Opt::get_step() {
-  auto displ = make_shared<XYZFile>(current_->natom());
+  auto displ = make_shared<XYZFile>(dispsize_);
 
   if (algorithm_ == "steep")
     displ = get_step_steep();
@@ -206,7 +229,7 @@ shared_ptr<XYZFile> Opt::get_step() {
 
 shared_ptr<XYZFile> Opt::get_step_steep() {
   // Steepest descent step
-  auto displ = make_shared<XYZFile>(current_->natom());
+  auto displ = make_shared<XYZFile>(dispsize_);
   copy_n(grad_->data(), size_, displ->data());
   displ->scale(-1.0);
 
@@ -220,8 +243,7 @@ shared_ptr<XYZFile> Opt::get_step_steep() {
 shared_ptr<XYZFile> Opt::get_step_nr() {
 
   // Quasi-Newton-Raphson step
-
-  auto displ = make_shared<XYZFile>(current_->natom());
+  auto displ = make_shared<XYZFile>(dispsize_);
 
   shared_ptr<Matrix> hinv(hess_);
   hinv->inverse();
@@ -242,7 +264,7 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
   // Rational function optimization (aka augmented Hessian)
   // Here we do scale lambda to get step < steplength
 
-  auto displ = make_shared<XYZFile>(current_->natom());
+  auto displ = make_shared<XYZFile>(dispsize_);
   {
     auto aughes = make_shared<Matrix>(size_+1,size_+1);
     VectorB eigv(size_+1);
@@ -279,7 +301,7 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
   // Rational function optimization (aka augmented Hessian)
   // Here we do not scale lambda, but just scale the computed step
 
-  auto displ = make_shared<XYZFile>(current_->natom());
+  auto displ = make_shared<XYZFile>(dispsize_);
   {
     auto aughes = make_shared<Matrix>(size_+1,size_+1);
     VectorB eigv(size_+1);

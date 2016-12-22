@@ -66,12 +66,15 @@ class Opt {
     double maxstep_;
     bool scratch_;
 
-    std::array<std::shared_ptr<const Matrix>,2> bmat_;
+    std::array<std::shared_ptr<const Matrix>,3> bmat_;
+    std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
 
     // whether we use alglib or not
     bool alglib_;
     // whether we use a delocalized internal coordinate or not
     bool internal_;
+    bool redundant_;
+    int dispsize_;
     // whether we use adaptive stepsize or not
     bool adaptive_;
     // whether we save reference or not
@@ -128,11 +131,16 @@ class Opt {
 
       target_state_ = idat->get<int>("target", 0);
       internal_ = idat->get<bool>("internal", true);
+      redundant_ = idat->get<bool>("redundant", false);
       maxiter_ = idat->get<int>("maxiter", 100);
       maxstep_ = idat->get<double>("maxstep", 0.1);
       scratch_ = idat->get<bool>("scratch", false);
-      if (internal_)
-        bmat_ = current_->compute_internal_coordinate();
+      if (internal_) {
+        if (redundant_) 
+          bmat_red_ = current_->compute_redundant_coordinate();
+        else
+          bmat_ = current_->compute_internal_coordinate();
+      }
       thresh_ = idat->get<double>("thresh", 5.0e-5);
       algorithm_ = idat->get<std::string>("algorithm", "rfo");
       adaptive_ = idat->get<bool>("adaptive", true);
