@@ -39,6 +39,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
   // Find conical intersection by gradient projection method (Schlegel)
 
   auto out = make_shared<GradFile>(current_->natom());
+  int n3 = current_->natom() * 3;
   shared_ptr<GradFile> cgrad1;
   shared_ptr<GradFile> cgrad2;
   shared_ptr<GradFile> x2;
@@ -86,12 +87,12 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
   x1->scale(1.0 / x1norm);
   x2->scale(1.0 / x2norm);
 
-  auto proj = make_shared<Matrix>(size_, size_);
+  auto proj = make_shared<Matrix>(n3, n3);
   proj->unit();
-  auto ppt = make_shared<Matrix>(size_,size_);
-  auto qqt = make_shared<Matrix>(size_,size_);
-  dger_(size_,size_,-1.0,x1->data(),1,x1->data(),1,ppt->data(),size_);
-  dger_(size_,size_,-1.0,x2->data(),1,x2->data(),1,qqt->data(),size_);
+  auto ppt = make_shared<Matrix>(n3, n3);
+  auto qqt = make_shared<Matrix>(n3, n3);
+  dger_(n3,n3,-1.0,x1->data(),1,x1->data(),1,ppt->data(),n3);
+  dger_(n3,n3,-1.0,x2->data(),1,x2->data(),1,qqt->data(),n3);
   *proj = *proj + *ppt + *qqt;
   xg->transform(proj, /*transpose=*/false);
 
