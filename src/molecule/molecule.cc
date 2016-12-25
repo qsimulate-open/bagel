@@ -457,9 +457,13 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
 }
 
 array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_ptr<const Matrix> prev) const {
+  // Using original B by E B Wilson (Chapter 4)
+#if 1
   cout << "    o Connectivitiy analysis" << endl;
+#endif
 
   vector<vector<double>> out;
+  vector<double> val;
   const size_t size = natom()*3;
 
   list<shared_ptr<Node>> nodes;
@@ -468,9 +472,6 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
     if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in general)");
     nodes.push_back(make_shared<Node>(*i, n));
   }
-
-  vector<double> hessprim;
-  hessprim.reserve(natom()*3 * 10);
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
@@ -482,26 +483,25 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
+#if 1
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
-
-        // see IJQC 106, 2536 (2006)
-        const double modelhess = 0.35 * adf_rho(*i, *j);
-        hessprim.push_back(modelhess);
-
+#endif
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
-        const double fac = adf_rho(*i, *j);
-        current[3*(*i)->num()+0] =  jp[1]*fac;
-        current[3*(*i)->num()+1] =  jp[2]*fac;
-        current[3*(*i)->num()+2] =  jp[3]*fac;
-        current[3*(*j)->num()+0] = -jp[1]*fac;
-        current[3*(*j)->num()+1] = -jp[2]*fac;
-        current[3*(*j)->num()+2] = -jp[3]*fac;
+        current[3*(*i)->num()+0] =  jp[1];
+        current[3*(*i)->num()+1] =  jp[2];
+        current[3*(*i)->num()+2] =  jp[3];
+        current[3*(*j)->num()+0] = -jp[1];
+        current[3*(*j)->num()+1] = -jp[2];
+        current[3*(*j)->num()+2] = -jp[3];
         out.push_back(current);
+
+        const double length = (*i)->atom()->distance((*j)->atom());
+        val.push_back(length);
       }
     }
   }
@@ -520,8 +520,6 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
         cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
                 "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl;
 #endif
-        // I found explicit formulas in http://www.ncsu.edu/chemistry/franzen/public_html/nca/int_coord/int_coord.html (thanking the author)
-        // 1=A=i, 2=O=c, 3=B=j
         Quatern<double> op = (*c)->atom()->position();
         Quatern<double> ap = (*i)->atom()->position();
         Quatern<double> bp = (*j)->atom()->position();
@@ -536,17 +534,14 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
         Quatern<double> st3 = (e23 * cos(rad) - e21) / (r23 * sin(rad));
         Quatern<double> st2 = (st1 + st3) * (-1.0);
         vector<double> current(size);
-        // see IJQC 106, 2536 (2006)
-        const double modelhess = 0.15 * adf_rho(*i, *c) * adf_rho(*c, *j);
-        hessprim.push_back(modelhess);
-        const double fval = 0.12;
-        const double fac = sqrt(adf_rho(*i, *c) * adf_rho(*c, *j)) * (fval + (1-fval)*sin(rad));
         for (int ic = 0; ic != 3; ++ic) {
-          current[3*(*i)->num() + ic] = st1[ic+1]*fac;
-          current[3*(*j)->num() + ic] = st3[ic+1]*fac;
-          current[3*(*c)->num() + ic] = st2[ic+1]*fac;
+          current[3*(*i)->num() + ic] = st1[ic+1];
+          current[3*(*j)->num() + ic] = st3[ic+1];
+          current[3*(*c)->num() + ic] = st2[ic+1];
         }
         out.push_back(current);
+
+        val.push_back(rad);
       }
     }
   }
@@ -558,7 +553,6 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-//        if (!((*k)->connected_with(*j))) continue;
           if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
           if (*c == *k || *k == *i) continue;
           if (*j == *k) continue;
@@ -566,8 +560,7 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
 #endif
-          // following J. Molec. Spec. 44, 599 (1972)
-          // a=i, b=c, c=j, d=k
+          const double dihed = (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom())/rad2deg__;
           Quatern<double> ap = (*i)->atom()->position();
           Quatern<double> bp = (*c)->atom()->position();
           Quatern<double> cp = (*j)->atom()->position();
@@ -595,21 +588,16 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
           Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
-          // see IJQC 106, 2536 (2006)
-          const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
-          hessprim.push_back(modelhess);
-          const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
-          const double theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
-          const double fval = 0.12;
-          const double fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
           for (int ic = 0; ic != 3; ++ic) {
-            current[3*(*i)->num() + ic] = sa[ic+1]*fac;
-            current[3*(*c)->num() + ic] = sb[ic+1]*fac;
-            current[3*(*j)->num() + ic] = sc[ic+1]*fac;
-            current[3*(*k)->num() + ic] = sd[ic+1]*fac;
+            current[3*(*i)->num() + ic] = sa[ic+1];
+            current[3*(*c)->num() + ic] = sb[ic+1];
+            current[3*(*j)->num() + ic] = sc[ic+1];
+            current[3*(*k)->num() + ic] = sd[ic+1];
             assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
           }
           out.push_back(current);
+
+          val.push_back(dihed);
         }
       }
     }
@@ -649,23 +637,22 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
   // pseudoinvert g
   Matrix ml(primsize, primsize);
   ml.zero();
+  auto values = make_shared<Matrix>(3, primsize/3+1);
+
   for (int i = 0; i != primsize; ++i) {
+    values->element(i%3,i/3) = val[i];
     geig(i) *= -1.0;
     if (fabs(geig(i)) < 1.0e-8) { geig(i) = 0.0; ml(i,i) = 0.0; }
     else ml(i,i) = 1.0 / geig(i);
   }
   Matrix ginv = g * ml ^ g;
   auto bmat = make_shared<Matrix>(*bdag.transpose());
-  auto gbunew = make_shared<Matrix>((ginv ^ bdag) * minv);
   auto ubgnew = make_shared<Matrix>(minv * bdag * ginv);
 
-  cout << " Dimensions = " << gbunew->ndim() << " , " << gbunew->mdim() << " and " << ubgnew->ndim() << " , " << ubgnew->mdim() << endl;
-
   bmat->broadcast();
-  gbunew->broadcast();
   ubgnew->broadcast();
 
-  return array<shared_ptr<const Matrix>,4>{{bmat, gbunew, ubgnew, nullptr}};
+  return array<shared_ptr<const Matrix>,4>{{bmat, ubgnew, values, nullptr}};
 }
 
 

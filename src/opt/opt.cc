@@ -64,8 +64,8 @@ void Opt::compute_noalglib() {
     displ = displ_;
 
     if (internal_) {
-      if (redundant_) 
-        displ = displ->transform(bmat_red_[2], false);      // should be done iteratively
+      if (redundant_)
+        displ = displ->transform(bmat_red_[1], false);      // should be done iteratively, currently just 1st order
       else 
         displ = displ->transform(bmat_[1], false);
     }
@@ -110,7 +110,7 @@ void Opt::compute_noalglib() {
 
       if (internal_) {
         if (redundant_)
-          grad_ = grad_->transform(bmat_red_[1], false);
+          grad_ = grad_->transform(bmat_red_[1], true);
         else 
           grad_ = grad_->transform(bmat_[1], true);
       }
