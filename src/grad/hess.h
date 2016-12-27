@@ -38,8 +38,11 @@ class Hess {
     std::shared_ptr<const Reference> ref_;
 
     bool numhess_;
+    bool numforce_;
     std::shared_ptr<Matrix> hess_;
-    double dstep_;
+    std::vector<std::vector<double>> grad_plus_;
+    std::vector<std::vector<double>> grad_minus_;
+    double dx_;
 
     // mask some of the output
     mutable std::shared_ptr<Muffle> muffle_;

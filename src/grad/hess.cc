@@ -56,62 +56,80 @@ void Hess::compute() {
   auto cinput = make_shared<PTree>(**m);
   cinput->put("hessian", true);
 
+  numhess_ = idata_->get<bool>("numhess", false);
+  numforce_ = idata_->get<bool>("numforce", false);
+  if (numhess_)
+    if (!numforce_)
+      cout << "  The Hessian will be computed with central gradient differences (analytical gradients)" << endl;
+    else
+      cout << "  The Hessian will be computed with central gradient differences (numerical gradients)" << endl;
+  else
+    cout << "  Analytical Hessian is not implemented" << endl;
+
   const string method = to_lower(cinput->get<string>("title", ""));
 
-  numhess_ = idata_->get<bool>("numhess", false);
   if (numhess_) {
 
   auto displ = std::make_shared<XYZFile>(geom_->natom());
   displ->scale(0.0);
-
-  double plus, minus;
-  hess_ = make_shared<Matrix>(3,geom_->natom());
-  dstep_ = idata_->get<double>("dstep", 0.0001);
-
-  cout << "  The numerical Hessian will be computed from gradient calculations" << endl;
-  cout << "  Displacement of " <<setprecision(4) << dstep_ <<" bohr is used" << endl;
+  dx_ = idata_->get<double>("dx", 0.001);
+  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
   muffle_ = make_shared<Muffle>("freq.log");
+  hess_ = make_shared<Matrix>(geom_->natom(),3);
 
-  for (int i = 0; i != geom_->natom(); ++i) {
-    for (int j = 0; j != 3; ++j) {
-      displ->element(j,i) = dstep_;
+  for (int j = 0; j != geom_->natom(); ++j) {  // atom j
+    for (int i = 0; i != 3; ++i) { //xyz
+      //displace +dx
+      displ->element(i,j) = dx_;
       geom_ = std::make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
 
-      auto force_plus = make_shared<Force>(idata_, geom_, ref_);
-      force_plus->compute();
-      plus = force_plus->grad()->element(j,i);
+      auto plus = make_shared<Force>(idata_, geom_, ref_);
+      plus->compute();
 
-      displ->element(j,i) = -2*dstep_;
+      // displace -dx
+      displ->element(i,j) = -2.0 * dx_; // undo displacement
       geom_ = std::make_shared<Geometry>(*geom_, displ);
       geom_->print_atoms();
 
-      auto force_minus = make_shared<Force>(idata_, geom_, ref_);
-      force_minus->compute();
-      minus = force_minus->grad()->element(j,i);
+      auto minus = make_shared<Force>(idata_, geom_, ref_);
+      minus->compute();
 
-      (*hess_)(j,i) = (plus - minus) / (2*dstep_);      // Hartree / bohr^2
+      displ->element(i,j) = dx_; //back to original coordinates
+      geom_ = make_shared<Geometry>(*geom_, displ);
+      displ->element(i,j) = 0.0;
 
-      displ->element(j,i) = dstep_;
-      geom_ = std::make_shared<Geometry>(*geom_, displ);
+        for (int k = 0; k != geom_->natom(); ++k) {  // atom j
+          for (int l = 0; l != 3; ++l) { //xyz
 
-      displ->element(j,i) = 0.0;
+        (*hess_)(k,l) = (plus->grad()->element(k,l) - minus->grad()->element(k,l)) / (2*dx_);
+        cout << " hess atom k " << k << " and coord l " << l << "  is " << setprecision(10) << (*hess_)(k,l) << endl;
+          }
+        }
+      }
     }
-  }
   muffle_->unmute();
+
+#if 0
+  //print hessian
+  hess_ = make_shared<Matrix>(3*geom_->natom(),3*geom_->natom());
 
   cout << endl;
   cout << "    * Numerical Hessian matrix";
-  for (int j = 0; j != 3; ++j) {
-    cout << endl << "      ";
-    for (int i = 0; i != geom_->natom(); ++i)
-      cout << setw(20) << setprecision(10) << (*hess_)(j,i);
-  }
+    for (int j = 0; j != 3*geom_->natom(); ++j) {
+      cout << endl << "      ";
+      for (int i = 0; i != 3*geom_->natom(); ++i){
+        if (i == j) {
+          (*hess_)(i,i) = ((*grad_plus_)(i,i) - (*grad_minus_)(i,i))/(2*dx_);
+        } else {
+          (*hess_)(i,j) = 0.0;
+        }
+        cout << setw(20) << setprecision(10) << (*hess_)(i,j);
+      }
+    }
   cout << endl << endl;
+#endif
 
-  } else {
-    cout << "  Analytical Hessian is not currently implemented" << endl;
   }
-
 }
