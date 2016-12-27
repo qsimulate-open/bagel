@@ -71,7 +71,7 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
-Pseudospin::Pseudospin(const int _nspin, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), idata_(_idata) {
+Pseudospin::Pseudospin(const int _nspin, const int _nele, const int _norb, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), norb_(_norb), idata_(_idata) {
 
   VectorB spinvals(nspin1_);
   for (int i = 0; i != nspin1_; ++i)
@@ -231,8 +231,9 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
 void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
+  assert(zfci.norb() == norb_);
+  assert(zfci.nele() == nele_);
   const complex<double> imag(0.0, 1.0);
-  const int norb = zfci.norb();
 
   // First, we create matrices of the magnetic moment in atomic orbital basis
   array<shared_ptr<ZMatrix>,3> magnetic_moment;
@@ -242,11 +243,11 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   { // Calculation of time-reversal matrix assumes it has this form in MO basis, so let's verify...
     auto ao_trev = make_shared<const RelTRevInt>(zfci.geom());
     auto mo_trev = make_shared<ZMatrix>(*active_coeff % *ao_trev * *active_coeff->get_conjg());
-    auto mo_trev_exp = make_shared<ZMatrix>(2*norb, 2*norb);
-    auto identity = make_shared<ZMatrix>(norb, norb);
+    auto mo_trev_exp = make_shared<ZMatrix>(2*norb_, 2*norb_);
+    auto identity = make_shared<ZMatrix>(norb_, norb_);
     identity->unit();
-    mo_trev_exp->add_block( 1.0, norb, 0, norb, norb, identity);
-    mo_trev_exp->add_block(-1.0, 0, norb, norb, norb, identity);
+    mo_trev_exp->add_block( 1.0, norb_, 0, norb_, norb_, identity);
+    mo_trev_exp->add_block(-1.0, 0, norb_, norb_, norb_, identity);
     assert((*mo_trev - *mo_trev_exp).rms() < 1.0e-10);
   }
 #endif
@@ -274,12 +275,12 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   { // Compute the matrix representation of the time-reversal operator   (This matrix + complex conjugation)
     trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
     trev_h_->zero();
-    const int maxa = min(zfci.nele(), zfci.norb());
-    const int mina = max(zfci.nele() - zfci.norb(), 0);
+    const int maxa = min(nele_, norb_);
+    const int mina = max(nele_ - norb_, 0);
 
     vector<array<int,2>> ab = {};
     for (int j = maxa; j >= mina; --j)
-      ab.push_back({{j, zfci.nele()-j}});
+      ab.push_back({{j, nele_-j}});
 
     // Loop over spin sectors
     for (int k = 0; k != ab.size(); ++k) {
@@ -408,13 +409,13 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
         temprdm->add({1,0}, temprdm->at({0,0})->clone());
       }
-      shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(temprdm, norb);
+      shared_ptr<const ZRDM<1>> tmp = expand_kramers<1,complex<double>>(temprdm, norb_);
 
-      auto rdmmat = make_shared<ZMatrix>(norb * 2, norb * 2);
+      auto rdmmat = make_shared<ZMatrix>(norb_ * 2, norb_ * 2);
       copy_n(tmp->data(), tmp->size(), rdmmat->data());
 
-      ZMatrix modensity (2 * norb, 2 * norb);
-      modensity.copy_block(0, 0, 2 * norb, 2 * norb, rdmmat);
+      ZMatrix modensity (2 * norb_, 2 * norb_);
+      modensity.copy_block(0, 0, 2 * norb_, 2 * norb_, rdmmat);
       ZMatrix aodenconj = (*active_coeff * *modensity.get_conjg() ^ *active_coeff);
 
       for (int k = 0; k != 3; ++k) {
