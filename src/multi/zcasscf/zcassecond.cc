@@ -202,8 +202,7 @@ void ZCASSecond::compute() {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
       const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
-      const int nele = geom_->nele() - charge_ - nclosed_*2;
-      Pseudospin ps(nspin, nele, geom_, fci_->conv_to_ciwfn(), aniso_data);
+      Pseudospin ps(nspin, geom_, fci_->conv_to_ciwfn(), aniso_data);
       ps.compute(energy_, coeff_->active_part());
 
     }

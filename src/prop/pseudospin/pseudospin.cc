@@ -71,10 +71,8 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
-//Pseudospin::Pseudospin(const int _nspin, const int _nele, const int _norb, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), norb_(_norb), idata_(_idata) {
-//Pseudospin::Pseudospin(const int _nspin, const int _nele, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), idata_(_idata), ciwfn_(_ciwfn) {
-Pseudospin::Pseudospin(const int _nspin, const int _nele, shared_ptr<const Geometry> _geom, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata)
- : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), geom_(_geom), idata_(_idata), ciwfn_(_ciwfn) {
+Pseudospin::Pseudospin(const int _nspin, shared_ptr<const Geometry> _geom, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata)
+ : nspin_(_nspin), nspin1_(_nspin + 1), geom_(_geom), idata_(_idata), ciwfn_(_ciwfn) {
   norb_ = ciwfn_->nact();
 
   VectorB spinvals(nspin1_);
@@ -277,12 +275,13 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
   { // Compute the matrix representation of the time-reversal operator   (This matrix + complex conjugation)
     trev_h_ = make_shared<ZMatrix>(nspin1_, nspin1_);
     trev_h_->zero();
-    const int maxa = min(nele_, norb_);
-    const int mina = max(nele_ - norb_, 0);
+    const int nele = ciwfn_->det()->first->nele();
+    const int maxa = min(nele, norb_);
+    const int mina = max(nele - norb_, 0);
 
     vector<array<int,2>> ab = {};
     for (int j = maxa; j >= mina; --j)
-      ab.push_back({{j, nele_-j}});
+      ab.push_back({{j, nele-j}});
 
     // Loop over spin sectors
     for (int k = 0; k != ab.size(); ++k) {

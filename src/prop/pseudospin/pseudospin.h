@@ -71,8 +71,7 @@ class Pseudospin {
   protected:
     int nspin_;                              // 2S   (number of unpaired electrons)
     int nspin1_;                             // 2S+1
-    int nele_;                               // Number of active electrons
-    int norb_;                               // Number of active orbitals
+    int norb_;
     std::vector<double> ref_energy_;
     std::vector<Stevens_Operator> ESO_;
     std::shared_ptr<const Matrix> dtensor_;
@@ -109,7 +108,7 @@ class Pseudospin {
     std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes) const;
 
   public:
-    Pseudospin(const int nspin, const int nele, std::shared_ptr<const Geometry> geom, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
+    Pseudospin(const int nspin, std::shared_ptr<const Geometry> geom, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
 
     void compute(const std::vector<double> energy, std::shared_ptr<const RelCoeff_Block> active_coeff);
 
