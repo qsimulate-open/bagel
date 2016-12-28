@@ -168,8 +168,36 @@ void RelCASA::RelCASA::solve() {
     if (info_->geom()->magnetism()) {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
+      shared_ptr<const RelCIWfn> new_ciwfn;
+      if (info_->aniso_data()->get<bool>("rotate_ciwfn", true)) {
+        // construct rotated CIWfn (like with XMS)
+        // TODO eliminate code redundancy - similar rotation done in XMS part
+        shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
+        shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
+        shared_ptr<RelZDvec> new_dvec = dvec->clone();
+
+        map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
+        map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
+
+        for (auto& i: dvecs) {
+          vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
+          vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
+          for (int jst =0; jst != nstates_; ++jst)
+            for (int ist =0; ist != nstates_; ++ist)
+              new_civecs[jst]->ax_plus_y(heff_->element(ist,jst), civecs[ist]);
+        }
+
+        vector<double> energies(ciwfn->nstates());
+        for (int i = 0; i != ciwfn->nstates(); ++i)
+          energies[i] = ciwfn->energy(i);
+        new_ciwfn = make_shared<RelCIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
+                                               energies, new_dvec, ciwfn->det());
+      } else {
+        new_ciwfn = info_->ciwfn();
+      }
+
       const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
-      Pseudospin ps(nspin, info_->geom(), info_->ciwfn(), info_->aniso_data());
+      Pseudospin ps(nspin, info_->geom(), new_ciwfn, info_->aniso_data());
       ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
     }
   }
