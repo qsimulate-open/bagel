@@ -105,7 +105,6 @@ class NacmEval : public GradEval_base {
     double energy2_;
     int target_state1_;
     int target_state2_;
-    // nacmtype? full (0) or without ETF (1), ETF only (2)?
     int nacmtype_;
 
     void init() {
@@ -114,6 +113,7 @@ class NacmEval : public GradEval_base {
       auto idata_out = std::make_shared<PTree>(*idata_);
       idata_out->put("_target", target_state1_);
       idata_out->put("_target2", target_state2_);
+      idata_out->put("_nacmtype", nacmtype_);
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
       task_->compute();
       ref_  = task_->conv_to_ref();

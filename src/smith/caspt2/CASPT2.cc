@@ -664,8 +664,11 @@ void CASPT2::CASPT2::solve_nacme() {
     shared_ptr<Tensor> dc = rdm1_->clone();
     for (int i = 0; i != nstates_; ++i)
       for (int j = 0; j != i; ++j) {
-        const double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
-                        - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
+        double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
+                  - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
+        if (info_->nacmtype()==0) 
+          cy += (pt2energy_[targetI] - pt2energy_[targetJ])
+              * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
         wmn(j,i) = fabs(e0all_[j]-e0all_[i]) > 1.0e-12 ? -0.5 * cy / (e0all_[j]-e0all_[i]) : 0.0;
         wmn(i,j) = wmn(j,i);
         dc->ax_plus_y(wmn(j,i), rdm1all_->at(j, i));

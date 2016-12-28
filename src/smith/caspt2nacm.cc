@@ -63,6 +63,7 @@ CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   // gradient/property calculation
   target_state1_ = inp->get<int>("_target");
   target_state2_ = inp->get<int>("_target2");
+  nacmtype_ = inp->get<int>("_nacmtype");
 
   timer.tick_print("Reference calculation");
 
@@ -86,6 +87,8 @@ void CASPT2Nacm::compute() {
   smithinput->put("_nacm", true);
   smithinput->put("_target", target_state1_);
   smithinput->put("_target2", target_state2_);
+  smithinput->put("_nacmtype", nacmtype_);
+
   auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
   smith->compute();
 
@@ -144,7 +147,6 @@ void CASPT2Nacm::compute() {
 
   d10ms_ = make_shared<RDM<1>>(nact);
   d20ms_ = make_shared<RDM<2>>(nact);
-  const double egap = energy2_ - energy1_;
   for (int ist = 0; ist != nstates_; ++ist) {
     const double ims = msrot(ist, target2());
     for (int jst = 0; jst != nstates_; ++jst) {
@@ -154,14 +156,6 @@ void CASPT2Nacm::compute() {
       tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
       d10ms_->ax_plus_y(ims*jms, *rdm1t);
       d20ms_->ax_plus_y(ims*jms, *rdm2t);
-      if (!xmsrot_) {
-        const double fkji = msrot(ist, target1()) * msrot(jst, target2()) - msrot(ist, target2()) * msrot(jst, target1());
-        const double eji  = fabs(cieig(jst) - cieig(ist)) > 1.0e-12 ? 0.5 * egap / (cieig(jst) - cieig(ist)) : 0.0;
-        if (ist != jst && (fabs(eji) > 1.0e-12) && (fabs(fkji) > 1.0e-12)) {
-          d10ms_->ax_plus_y(eji*fkji, *rdm1t);
-          d20ms_->ax_plus_y(eji*fkji, *rdm2t);
-        }
-      }
     }
   }
 
@@ -172,7 +166,7 @@ void CASPT2Nacm::compute() {
   d2_ = smith->dm2();
 
   cout << "    * NACME Target states: " << target1() << " - " << target2() << endl;
-  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * 27.21138602 << " eV" << endl << endl;
+  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * au2eV__ << " eV" << endl << endl;
 #endif
 }
 
@@ -364,74 +358,15 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
 void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, shared_ptr<Dvec> g1, shared_ptr<const DFHalfDist> halfj) {
 #ifdef COMPILE_SMITH
   const double egap = energy2_ - energy1_;
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
-  const MatView ocoeff = coeff_->slice(0, nocc);
-  const MatView acoeff = coeff_->slice(nclosed, nclosed+nact);
-
-  const Matrix hmo(*coeff_ % *ref_->hcore() * ocoeff);
   const int nmobasis = coeff_->mdim();
 
   g0->add_block(egap, 0, 0, nmobasis, nmobasis, *vd1_);
-  
-  // If XMS, coupling from Fock is also needed
-  // Similar code with caspt2/CASPT2.cc is used here
-  if (xmsrot_) {
-    auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
-      shared_ptr<const Matrix> jop = ref_->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
-      auto out = make_shared<Matrix>(acoeff % (add ? (*ref_->hcore() + *jop) : *jop) * acoeff);
-      shared_ptr<const DFFullDist> full = ref_->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
-      shared_ptr<DFFullDist> full2 = full->copy();
-      full2->rotate_occ1(moden);
-      *out += *full->form_2index(full2, -0.5);
-      return out;
-    };
 
-    Matrix wdkl(nstates_, nstates_);
-    auto dtilde = make_shared<Matrix>(nocc, nocc);
-    shared_ptr<Matrix> dtildq;
-
-    // Get orbital and CI gradient using existing modules
-    for (int kst = 0; kst != nstates_; ++kst) {
-      for (int lst = 0; lst != nstates_; ++lst) {
-        shared_ptr<const RDM<1>> rdm1t;
-        shared_ptr<const RDM<2>> rdm2t;
-
-        wdkl(kst, lst) = 0.0;
-        const int jst = target1();
-        const int ist = target2();
-
-        for (int nst = 0; nst != nstates_; ++nst) {
-          for (int mst = 0; mst != nstates_; ++mst) {
-            if (nst==mst) continue;
-            const double cnm = fabs(foeig(nst) - foeig(mst)) > 1.0e-12 ? 0.5 * egap / (foeig(nst) - foeig(mst))  : 0.0;
-            const double rkji = heffrot(mst, jst) * heffrot(nst, ist) - heffrot(mst, ist) * heffrot(nst, jst);
-            wdkl(kst, lst) += cnm * rkji * xmsrot(kst, mst) * xmsrot(lst, nst);
-          }
-        }
-        tie(rdm1t, rdm2t) = ref_->rdm12(kst, lst);
-        shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1t);
-        rdms->symmetrize();
-        *dtilde += *rdms * wdkl(kst, lst);
-      }
-    }
-
-    // dtilde is added to dcheck
-    *dcheck_ += *dtilde;
-    dtildq = dtilde->get_submatrix(nclosed, nclosed, nact, nact);
-
-    shared_ptr<const Matrix> fock = focksub(ref_->rdm1_mat(), coeff_->slice(0, ref_->nocc()), true);
-    shared_ptr<const Matrix> gdc = focksub(dtildq, acoeff, false);
-    for (int ist = 0; ist != nstates_; ++ist) {
-      shared_ptr<const Dvec> deriv = fci_->rdm1deriv(ist);
-      for (int jst = 0; jst != nstates_; ++jst) {
-        Matrix op(*fock * wdkl(jst, ist));
-        if (ist == jst)
-          op += *gdc * (1.0/nstates_) * 0.5;
-        for (int i = 0; i != nact; ++i)
-          for (int j = 0; j != nact; ++j)
-            g1->data(jst)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+  for (int ist = 0; ist != nstates_; ++ist) {
+    for (int jst = 0; jst != nstates_; ++jst) {
+      if (ist != jst) {
+        const double fac = .5 * (msrot(ist, target1()) * msrot(jst, target2()) - msrot(ist, target2()) * msrot(jst, target1())) * egap;
+        g1->data(jst)->ax_plus_y(fac, fci_->civectors()->data(ist));
       }
     }
   }

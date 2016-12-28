@@ -153,6 +153,7 @@ class CASPT2Nacm : public Method {
     int nstates_;
     int target_state1_;
     int target_state2_;
+    int nacmtype_;
     int ncore_;
     double energy1_;
     double energy2_;

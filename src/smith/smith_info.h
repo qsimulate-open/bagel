@@ -47,6 +47,7 @@ class SMITH_Info {
     int maxiter_;
     int target_;
     int target2_;
+    int nacmtype_;
     int maxtile_;
     int davidson_subspace_;
 
@@ -84,6 +85,7 @@ class SMITH_Info {
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int target2() const { return target2_; }
+    int nacmtype() const { return nacmtype_; }
     int maxtile() const { return maxtile_; }
     bool grad() const { return grad_; }
     bool nacm() const { return nacm_; }

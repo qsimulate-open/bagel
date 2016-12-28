@@ -253,7 +253,7 @@ void NacmEval<CASSCF>::init() {
   energy2_ = ref_->energy(target_state2_);
   cout << "  === NACME evaluation === " << endl << endl;
   cout << "    * NACME Target states: " << target_state1_ << " - " << target_state2_ << endl;
-  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * 27.21138602 << " eV" << endl << endl;
+  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * au2eV__ << " eV" << endl << endl;
   geom_ = ref_->geom();
 }
 
