@@ -28,6 +28,7 @@
 
 #include <src/smith/relcaspt2/RelCASPT2.h>
 #include <src/util/math/linearRM.h>
+#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
@@ -195,6 +196,17 @@ void RelCASPT2::RelCASPT2::solve() {
     heff_->element(0,0) = 1.0;
   }
   energy_ = pt2energy_;
+
+  // TODO When the Property class is implemented, this should be one
+  if (info_->aniso_data()) {
+    if (info_->geom()->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+      const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
+      Pseudospin ps(nspin, info_->geom(), info_->ciwfn(), info_->aniso_data());
+      ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
+    }
+  }
 }
 
 

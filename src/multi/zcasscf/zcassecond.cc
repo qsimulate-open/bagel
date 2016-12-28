@@ -204,7 +204,6 @@ void ZCASSecond::compute() {
       const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
       Pseudospin ps(nspin, geom_, fci_->conv_to_ciwfn(), aniso_data);
       ps.compute(energy_, coeff_->active_part());
-
     }
   }
 }

@@ -59,6 +59,8 @@ class SMITH_Info {
 
     double thresh_overlap_;
 
+    std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);
@@ -114,6 +116,8 @@ class SMITH_Info {
 
     // TODO Do we want to keep this?  Implemented for debugging, but could be useful in the future
     std::shared_ptr<const Reference> extract_ref(const std::vector<int> states, const bool extract_rdm) const;
+
+    std::shared_ptr<const PTree> aniso_data() const { return aniso_data_; }
 };
 
 template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const;
