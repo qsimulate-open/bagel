@@ -68,8 +68,7 @@ std::vector<double> zfs_param(std::string inp) {
         if (aniso_data) {
           const int nspin = aniso_data->get<int>("nspin", 3);
           const int nele = geom->nele() - zcas->charge() - zcas->nclosed()*2;
-          //auto ps = std::make_shared<Pseudospin>(nspin, nele, zcas->nact(), aniso_data);
-          auto ps = std::make_shared<Pseudospin>(nspin, nele, geom, zcas->fci()->conv_to_ciwfn(), aniso_data);
+          auto ps = std::make_shared<Pseudospin>(nspin, nele, geom->relativistic(/*gaunt*/false), zcas->fci()->conv_to_ciwfn(), aniso_data);
           ps->compute(*zcas->fci(), zcas->energy(), zcas->coeff()->active_part());
           out.clear();
           out.push_back(ps->gval(0) * gscale);
