@@ -160,7 +160,6 @@ void CASPT2Nacm::compute() {
   }
 
   auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
-  d10IJ->antisymmetrize();
   *vd1_ += *d10IJ;
 
   d2_ = smith->dm2();

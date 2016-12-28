@@ -300,12 +300,15 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1_tr);
   shared_ptr<Matrix> rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
   rdms->symmetrize();
-  rdm1->antisymmetrize();
 
   assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
 
-  // 1) CI term in Lagrangian: RDM1 is symmetrized here
+  // 1-1) CI term in Lagrangian: RDM1 is symmetrized here
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
+
+  // determinant term (1)
+  if (nacmtype_ == 0)
+    g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tr (look for gamma)
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
@@ -357,7 +360,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
     dipole.compute();
   }
 
-  // f_CSF is only this when rdm1 is anti-symmetrized
+  // determinant term (2)
   shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
   if (nacmtype_ == 0) 
     qxmat->scale(egap);
