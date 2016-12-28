@@ -69,8 +69,7 @@ void MSCASPT2::MSCASPT2::solve_dm() {
     const int targetJ = info_->target();
     const int targetI = info_->target2();
 
-    shared_ptr<Tensor> resultvA = den1->clone();
-    shared_ptr<Tensor> resultvB= den1->clone();
+    shared_ptr<Tensor> resultv = den1->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
       const double jheffJ = (*heff_)(jst, targetJ);
       const double jheffI = (*heff_)(jst, targetI);
@@ -81,21 +80,17 @@ void MSCASPT2::MSCASPT2::solve_dm() {
             continue;
           const double isheffJ = (*heff_)(istate, targetJ);
           const double isheffI = (*heff_)(istate, targetI);
-          const double ijvJIA = jheffJ*isheffI * 0.5;
-          const double ijvJIB = jheffI*isheffJ * 0.5;
+          const double ijvJI = (jheffJ*isheffI - jheffI*isheffJ) * 0.5;
           l2 = t2all_[istate]->at(ist); // careful
 
           shared_ptr<Queue> queue = make_density1q(true, ist == jst);
           while (!queue->done())
             queue->next_compute();
-          resultvA->ax_plus_y(ijvJIA, den1);
-          resultvB->ax_plus_y(ijvJIB, den1);
-
+          resultv->ax_plus_y(ijvJI, den1);
         }
       }
     }
-    vden1_ = resultvA->matrix();
-    vden1_->add_block(1.0, 0, 0, vden1_->ndim(), vden1_->mdim(), resultvB->matrix()->transpose());
+    vden1_ = resultv->matrix();
   }
 }
 

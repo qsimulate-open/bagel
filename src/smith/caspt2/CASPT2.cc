@@ -647,12 +647,10 @@ void CASPT2::CASPT2::solve_nacme() {
     }
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
-    const int tstJ = info_->target();
-    const int tstI = info_->target2();
     const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
     for (int ist = 0; ist != nstates_; ++ist)
       for (int jst = 0; jst != nstates_; ++jst) {
-        double urheff = (ur(ist,tstJ)*(*heff_)(jst,tstI) + ur(ist, tstI)*(*heff_)(jst,tstJ)) * ref->energy(ist);
+        double urheff = (ur(ist,targetJ)*(*heff_)(jst,targetI) + ur(ist, targetI)*(*heff_)(jst,targetJ)) * ref->energy(ist);
         ci_deriv_->data(jst)->ax_plus_y(urheff, info_orig_->ciwfn()->civectors()->data(ist));
       } 
 
