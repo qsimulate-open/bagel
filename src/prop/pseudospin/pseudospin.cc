@@ -84,7 +84,7 @@ Pseudospin::Pseudospin(const int _nspin, const int _nele, shared_ptr<const Geome
 }
 
 
-void Pseudospin::compute(const ZHarrison& zfci, const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
+void Pseudospin::compute(const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
 
   // Which ranks of extended Stevens operators to use
   // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -114,8 +114,7 @@ void Pseudospin::compute(const ZHarrison& zfci, const vector<double> energy_in, 
   if (nspin_ > 0) {
 
     // Computes spin, orbital angular momentum, Hamiltonian, and time-reversal operators in the basis of ZFCI eigenstates
-    compute_numerical_hamiltonian(zfci, energy_in, active_coeff);
-    //compute_numerical_hamiltonian(zfci, zfci.jop()->coeff()->active_part());
+    compute_numerical_hamiltonian(energy_in, active_coeff);
 
     // Compute G and diagonalize to give main magnetic axes, but allow the user to quantify spin along some other axis
     pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
@@ -235,10 +234,7 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
-void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
-  assert(zfci.norb() == norb_);
-  assert(zfci.nele() == nele_);
-  assert(zfci.nstate() == energy_in.size());
+void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
   const complex<double> imag(0.0, 1.0);
 
   // First, we create matrices of the magnetic moment in atomic orbital basis
