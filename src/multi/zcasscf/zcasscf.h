@@ -115,8 +115,10 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh_micro() const { return thresh_micro_; }
     double occup(const int i) const { return occup_[i]; }
     bool tsymm() const { return tsymm_; }
+    std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
+    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
 };
 
 }

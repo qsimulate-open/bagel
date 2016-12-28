@@ -80,7 +80,9 @@ class Pseudospin {
     double Eval_;
     std::array<double,3> gval_; // absolute value of principle g-tensor elements (sign not determined)
 
+    std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const RelCIWfn> ciwfn_;
 
     // These are the basic spin operators
     std::array<std::shared_ptr<ZMatrix>,3> spin_xyz_;
@@ -107,9 +109,11 @@ class Pseudospin {
     std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes) const;
 
   public:
-    Pseudospin(const int nspin, const int nele, const int norb, std::shared_ptr<const PTree> idata);
+    Pseudospin(const int nspin, const int nele, std::shared_ptr<const Geometry> geom, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
+    //Pseudospin(const int nspin, const int nele, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
+    //Pseudospin(const int nspin, const int nele, const int norb, std::shared_ptr<const PTree> idata);
 
-    void compute(const ZHarrison& zfci);
+    void compute(const ZHarrison& zfci, const std::vector<double> energy, std::shared_ptr<const RelCoeff_Block> active_coeff);
 
     // return symbolic spin matrices
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
@@ -127,7 +131,7 @@ class Pseudospin {
 
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
-    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void compute_numerical_hamiltonian(const ZHarrison& zfci, const std::vector<double> energy_in, std::shared_ptr<const RelCoeff_Block> active_coeff);
     std::pair<std::shared_ptr<const Matrix>, std::array<double,3>> identify_magnetic_axes() const;
 
     // to extract D-tensor

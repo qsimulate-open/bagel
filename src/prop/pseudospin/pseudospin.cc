@@ -71,7 +71,11 @@ string Stevens_Operator::coeff_name() const {
 }
 
 
-Pseudospin::Pseudospin(const int _nspin, const int _nele, const int _norb, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), norb_(_norb), idata_(_idata) {
+//Pseudospin::Pseudospin(const int _nspin, const int _nele, const int _norb, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), norb_(_norb), idata_(_idata) {
+//Pseudospin::Pseudospin(const int _nspin, const int _nele, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata) : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), idata_(_idata), ciwfn_(_ciwfn) {
+Pseudospin::Pseudospin(const int _nspin, const int _nele, shared_ptr<const Geometry> _geom, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata)
+ : nspin_(_nspin), nspin1_(_nspin + 1), nele_(_nele), geom_(_geom), idata_(_idata), ciwfn_(_ciwfn) {
+  norb_ = ciwfn_->nact();
 
   VectorB spinvals(nspin1_);
   for (int i = 0; i != nspin1_; ++i)
@@ -80,7 +84,7 @@ Pseudospin::Pseudospin(const int _nspin, const int _nele, const int _norb, share
 }
 
 
-void Pseudospin::compute(const ZHarrison& zfci) {
+void Pseudospin::compute(const ZHarrison& zfci, const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
 
   // Which ranks of extended Stevens operators to use
   // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -110,7 +114,8 @@ void Pseudospin::compute(const ZHarrison& zfci) {
   if (nspin_ > 0) {
 
     // Computes spin, orbital angular momentum, Hamiltonian, and time-reversal operators in the basis of ZFCI eigenstates
-    compute_numerical_hamiltonian(zfci, zfci.jop()->coeff()->active_part());
+    compute_numerical_hamiltonian(zfci, energy_in, active_coeff);
+    //compute_numerical_hamiltonian(zfci, zfci.jop()->coeff()->active_part());
 
     // Compute G and diagonalize to give main magnetic axes, but allow the user to quantify spin along some other axis
     pair<shared_ptr<const Matrix>, array<double,3>> mag_info = identify_magnetic_axes();
@@ -230,18 +235,19 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
-void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr<const RelCoeff_Block> active_coeff) {
+void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
   assert(zfci.norb() == norb_);
   assert(zfci.nele() == nele_);
+  assert(zfci.nstate() == energy_in.size());
   const complex<double> imag(0.0, 1.0);
 
   // First, we create matrices of the magnetic moment in atomic orbital basis
   array<shared_ptr<ZMatrix>,3> magnetic_moment;
-  RelSpinInt ao_spin(zfci.geom());
+  RelSpinInt ao_spin(geom_);
 
 #ifndef NDEBUG
   { // Calculation of time-reversal matrix assumes it has this form in MO basis, so let's verify...
-    auto ao_trev = make_shared<const RelTRevInt>(zfci.geom());
+    auto ao_trev = make_shared<const RelTRevInt>(geom_);
     auto mo_trev = make_shared<ZMatrix>(*active_coeff % *ao_trev * *active_coeff->get_conjg());
     auto mo_trev_exp = make_shared<ZMatrix>(2*norb_, 2*norb_);
     auto identity = make_shared<ZMatrix>(norb_, norb_);
@@ -267,8 +273,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
       if (aniso_state.size() != nspin1_)
         throw runtime_error("Aniso:  Wrong number of states requested for this S value (should be " + to_string(nspin1_) + ")");
       for (int i = 0; i != nspin1_; ++i)
-        if (aniso_state[i] < 0 || aniso_state[i] >= zfci.nstate())
-         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(zfci.nstate()) + ")");
+        if (aniso_state[i] < 0 || aniso_state[i] >= energy_in.size())
+         throw runtime_error("Aniso:  Invalid state requested (should be between 1 and " + to_string(energy_in.size()) + ")");
     }
   }
 
@@ -286,10 +292,10 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     for (int k = 0; k != ab.size(); ++k) {
 
       // bra
-      auto dvec_i = zfci.cc()->find(ab[k][0], ab[k][1]);
+      auto dvec_i = ciwfn_->civectors()->find(ab[k][0], ab[k][1]);
 
       // ket (just flip alpha and beta - all other contributions will be zero)
-      auto dvec_j = zfci.cc()->find(ab[k][1], ab[k][0]);
+      auto dvec_j = ciwfn_->civectors()->find(ab[k][1], ab[k][0]);
 
       auto det_i = dvec_i->data(0)->det();
       auto det_j = dvec_j->data(0)->det();
@@ -339,19 +345,19 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   { // orbital angular momentum
     // TODO For geometries with only one metal atom, use that atom's position as default mcoord
     const array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
-    const int n = zfci.geom()->nbasis();
+    const int n = geom_->nbasis();
 
     array<shared_ptr<ZMatrix>,3> angmom_large;
     array<array<shared_ptr<ZMatrix>,4>,3> angmom_small;
 
     {
-      AngMom angmom(zfci.geom(), mcoord);
+      AngMom angmom(geom_, mcoord);
       array<shared_ptr<Matrix>,3> mom = angmom.compute();
       for (int i = 0; i != 3; ++i)
         angmom_large[i] = make_shared<ZMatrix>(*mom[i], imag);
     }
     {
-      auto smallmom = make_shared<Small1e<AngMomBatch, array<double,3>>>(zfci.geom(), mcoord);
+      auto smallmom = make_shared<Small1e<AngMomBatch, array<double,3>>>(geom_, mcoord);
       for (int i = 0; i != 3; ++i)
         for (int j = 0; j != 4; ++j)
           angmom_small[i][j] = make_shared<ZMatrix>((*smallmom)[4*i+j], imag);
@@ -393,7 +399,7 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
     cout << "  *  Energies of Hamiltonian eigenstates are taken from input rather than relativistic FCI." << endl;
   } else {
     for (int i = 0; i != nspin1_; ++i)
-      ref_energy_[i] = zfci.energy()[aniso_state[i]];
+      ref_energy_[i] = energy_in[aniso_state[i]];
   }
 
   // Compute spin matrices in the basis of ZFCI Hamiltonian eigenstates
@@ -404,7 +410,8 @@ void Pseudospin::compute_numerical_hamiltonian(const ZHarrison& zfci, shared_ptr
   }
   for (int i = 0; i != nspin1_; ++i) {
     for (int j = 0; j != nspin1_; ++j) {
-      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = zfci.rdm1(aniso_state[i], aniso_state[j]);
+      ZFCI_bare fci(ciwfn_);
+      shared_ptr<Kramers<2,ZRDM<1>>> temprdm = fci.rdm1(aniso_state[i], aniso_state[j]);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
         temprdm->add({1,0}, temprdm->at({0,0})->clone());
