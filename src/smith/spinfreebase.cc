@@ -158,25 +158,8 @@ void SpinFreeMethod<double>::rotate_xms() {
   }
   cout << endl << endl;
 
-  // construct CIWfn
-  shared_ptr<const CIWfn> ciwfn = info_->ciwfn();
-  shared_ptr<const Dvec> dvec = ciwfn->civectors();
-  shared_ptr<Dvec> new_dvec = dvec->clone();
-  vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
-  vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
-
-  for (int jst =0; jst != nstates; ++jst) {
-    for (int ist =0; ist != nstates; ++ist)
-      new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
-  }
-
-  vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i)
-    energies[i] = ciwfn->energy(i);
-  auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
-                                      energies, new_dvec, ciwfn->det());
-
   // construct Reference
+  shared_ptr<const CIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
                                         info_->nvirt() + info_->nfrozenvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
@@ -229,30 +212,8 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   }
   cout << endl << endl;
 
-  // construct CIWfn
-  // TODO:  Verify this chunk of code carefully
-  shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
-  shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
-  shared_ptr<RelZDvec> new_dvec = dvec->clone();
-
-  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
-  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
-
-  for (auto& i: dvecs) {
-    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
-    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
-    for (int jst =0; jst != nstates; ++jst)
-      for (int ist =0; ist != nstates; ++ist)
-        new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
-  }
-
-  vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i)
-    energies[i] = ciwfn->energy(i);
-  auto new_ciwfn = make_shared<RelCIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
-                                         energies, new_dvec, ciwfn->det());
-
   // construct Reference
+  shared_ptr<const RelCIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
   auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
   auto relcoeff = dynamic_pointer_cast<const RelCoeff_Block>(info_->coeff());
   assert(relref && relcoeff);
@@ -502,6 +463,53 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<doubl
   shared_ptr<IndexRange> du;
   shared_ptr<Tensor_<complex<double>>> dum;
   return tie(d, du, dum, dum, dum, dum, dum);
+}
+
+
+template<>
+std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const {
+  // construct CIWfn
+  const int nstates = input->nstates();
+  shared_ptr<const Dvec> dvec = input->civectors();
+  shared_ptr<Dvec> new_dvec = dvec->clone();
+  vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
+  vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
+
+  for (int jst =0; jst != nstates; ++jst) {
+    for (int ist =0; ist != nstates; ++ist)
+      new_civecs[jst]->ax_plus_y(rotation(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(nstates);
+  for (int i = 0; i != nstates; ++i)
+    energies[i] = input->energy(i);
+  return make_shared<CIWfn>(input->geom(), input->ncore(), input->nact(), nstates, energies, new_dvec, input->det());
+}
+
+
+template<>
+std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const {
+  // construct CIWfn
+  // TODO:  Verify this chunk of code carefully
+  const int nstates = input->nstates();
+  shared_ptr<const RelZDvec> dvec = input->civectors();
+  shared_ptr<RelZDvec> new_dvec = dvec->clone();
+
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
+
+  for (auto& i: dvecs) {
+    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
+    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
+    for (int jst =0; jst != nstates; ++jst)
+      for (int ist =0; ist != nstates; ++ist)
+        new_civecs[jst]->ax_plus_y(rotation(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(nstates);
+  for (int i = 0; i != nstates; ++i)
+    energies[i] = input->energy(i);
+  return make_shared<RelCIWfn>(input->geom(), input->ncore(), input->nact(), nstates, energies, new_dvec, input->det());
 }
 
 
