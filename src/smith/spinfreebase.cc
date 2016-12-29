@@ -470,6 +470,7 @@ template<>
 std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const {
   // construct CIWfn
   const int nstates = input->nstates();
+  assert(rotation.ndim() == rotation.mdim() && rotation.ndim() == nstates);
   shared_ptr<const Dvec> dvec = input->civectors();
   shared_ptr<Dvec> new_dvec = dvec->clone();
   vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
@@ -492,6 +493,7 @@ std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std
   // construct CIWfn
   // TODO:  Verify this chunk of code carefully
   const int nstates = input->nstates();
+  assert(rotation.ndim() == rotation.mdim() && rotation.ndim() == nstates);
   shared_ptr<const RelZDvec> dvec = input->civectors();
   shared_ptr<RelZDvec> new_dvec = dvec->clone();
 
