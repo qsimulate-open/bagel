@@ -82,7 +82,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   grad_    = idata->get<bool>("_grad", false);
   assert(!(grad_ && target_ < 0));
 
-  shared_ptr<const PTree> aniso_data_ = idata->get_child_optional("aniso");
+  aniso_data_ = idata->get_child_optional("aniso");
 }
 
 
