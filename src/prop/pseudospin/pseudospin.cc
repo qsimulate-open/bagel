@@ -547,16 +547,16 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
 
   // Diagonalize S_z to get pseudospin eigenstates as combinations of ZFCI Hamiltonian eigenstates
   ZMatrix transform(nspin1_, nspin1_);
-  const string diagset = idata_->get<string>("diagop", "Mu");
-  if (diagset != "Mu" && diagset != "J" && diagset != "S" && diagset != "L")
+  const string diagset = to_lower(idata_->get<string>("diagop", "Mu"));
+  if (diagset != "mu" && diagset != "j" && diagset != "s" && diagset != "l")
     throw runtime_error("Sorry, the only options for which angular momentum to diagonalize are S, L, J and Mu for the magnetic moment");
 
   for (int i = 0; i != 3; ++i) {
-    if (diagset == "Mu")
+    if (diagset == "mu")
       transform += spin_axes_->element(i, 2) * *zfci_mu_[i];
-    if (diagset == "S" || diagset == "J")
+    if (diagset == "s" || diagset == "j")
       transform += spin_axes_->element(i, 2) * *zfci_spin_[i];
-    if (diagset == "L" || diagset == "J")
+    if (diagset == "l" || diagset == "j")
       transform += spin_axes_->element(i, 2) * *zfci_orbang_[i];
   }
   VectorB zeig(nspin1_);
@@ -593,18 +593,17 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   }
 
   { // Adjust the phase to make the (M+1, M) elements of the raising operator real (default choice)
-    const string diagset = idata_->get<string>("diagop", "Mu");
     ZMatrix raising_op(nspin1_, nspin1_);
 
-    if (diagset == "Mu") {
+    if (diagset == "mu") {
       raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_mu_[0] * transform);
       raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_mu_[1] * transform);
     }
-    if (diagset == "S" || diagset == "J") {
+    if (diagset == "s" || diagset == "j") {
       raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_spin_[0] * transform);
       raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_spin_[1] * transform);
     }
-    if (diagset == "L" || diagset == "J") {
+    if (diagset == "l" || diagset == "j") {
       raising_op.add_block(complex<double>(1.0, 0.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_orbang_[0] * transform);
       raising_op.add_block(complex<double>(0.0, 1.0), 0, 0, nspin1_, nspin1_, transform % *zfci2_orbang_[1] * transform);
     }
@@ -671,7 +670,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
   cout << "    The z-axis is set to (";
   cout << setw(8) << spin_axes_->element(0, 2) << ", " << setw(8) << spin_axes_->element(1, 2) << ", " << setw(8) << spin_axes_->element(2, 2) << ")." << endl << endl;
   for (int i = 0; i != nspin1_; ++i)
-    cout << "    " << diagset << " diagonal element " << i+1 << " = " << setw(12) << zeig[i] << endl;
+    cout << "    " << to_upper(diagset) << " diagonal element " << i+1 << " = " << setw(12) << zeig[i] << endl;
 
   // We can no longer use this option, since I made this function const...
   //if (numerical_eig) {
