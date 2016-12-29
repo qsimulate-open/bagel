@@ -74,6 +74,8 @@ string Stevens_Operator::coeff_name() const {
 Pseudospin::Pseudospin(const int _nspin, shared_ptr<const Geometry> _geom, shared_ptr<const RelCIWfn> _ciwfn, shared_ptr<const PTree> _idata)
  : nspin_(_nspin), nspin1_(_nspin + 1), geom_(_geom), idata_(_idata), ciwfn_(_ciwfn) {
   norb_ = ciwfn_->nact();
+  if (nspin_ >= ciwfn_->nstates())
+    throw runtime_error("Error in pseudospin module:  Not enough states for the requested spin multiplicity.");
 
   VectorB spinvals(nspin1_);
   for (int i = 0; i != nspin1_; ++i)
