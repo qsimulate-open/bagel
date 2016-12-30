@@ -202,7 +202,7 @@ void RelCASPT2::RelCASPT2::solve() {
     if (info_->geom()->magnetism()) {
       cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
     } else {
-      shared_ptr<const RelCIWfn> new_ciwfn = (info_->aniso_data()->get<bool>("rotate_ciwfn", true) && info_->do_ms()) ? rotate_ciwfn(info_->ciwfn(), *heff_) : info_->ciwfn();
+      shared_ptr<const RelCIWfn> new_ciwfn = info_->do_ms() ? rotate_ciwfn(info_->ciwfn(), *heff_) : info_->ciwfn();
       const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
       Pseudospin ps(nspin, info_->geom(), new_ciwfn, info_->aniso_data());
       ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
