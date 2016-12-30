@@ -405,9 +405,9 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
     zfci_spin_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
     zfci_orbang_[i] = make_shared<ZMatrix>(nspin1_, nspin1_);
   }
+  ZFCI_bare fci(ciwfn_);
   for (int i = 0; i != nspin1_; ++i) {
     for (int j = 0; j != nspin1_; ++j) {
-      ZFCI_bare fci(ciwfn_);
       shared_ptr<Kramers<2,ZRDM<1>>> temprdm = fci.rdm1(aniso_state[i], aniso_state[j]);
       if (!temprdm->exist({1,0})) {
         cout << " * Need to generate an off-diagonal rdm of zeroes." << endl;
@@ -430,13 +430,13 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
     }
   }
 
-#if 0
-  for (int k = 0; k != 3; ++k) {
-    zfci_mu_[k]->print("Magnetic moment in ZFCI basis - " + to_string(k), 24);
-    zfci_spin_[k]->print("Spin angular momentum in ZFCI basis - " + to_string(k), 24);
-    zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis - " + to_string(k), 24);
+  if (idata_->get<bool>("print_operators", false)) {
+    for (int k = 0; k != 3; ++k) {
+      zfci_mu_[k]->print("Magnetic moment in ZFCI basis - " + to_string(k), 24);
+      zfci_spin_[k]->print("Spin angular momentum in ZFCI basis - " + to_string(k), 24);
+      zfci_orbang_[k]->print("Orbital angular momentum in ZFCI basis - " + to_string(k), 24);
+    }
   }
-#endif
 
   // We will subtract out average energy so the pseudospin Hamiltonian is traceless
   complex<double> energy_avg = 0.0;
