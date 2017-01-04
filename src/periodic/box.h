@@ -49,6 +49,10 @@ class Box {
     double thresh_, extent_;
     int nbasis0_, nbasis1_, ndim_;
     int nmult_;
+    int nocc_;
+
+    std::vector<std::shared_ptr<ZMatrix>> olm_ji_;
+    std::vector<std::shared_ptr<ZMatrix>> mlm_ji_;
 
     void init();
     void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
@@ -61,13 +65,16 @@ class Box {
     std::vector<std::complex<double>> multipole_;
     std::vector<std::complex<double>> localJ_;
     std::vector<int> offset0_, offset1_;
-    void compute_M2M(std::shared_ptr<const Matrix> density);
+    void compute_M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr);
     void sort_sp();
     std::vector<std::complex<double>> shift_multipoles(std::vector<std::complex<double>> oa, std::array<double, 3> rab) const;
+    std::vector<std::shared_ptr<const ZMatrix>> shift_multipolesX(std::vector<std::shared_ptr<ZMatrix>> oa, std::array<double, 3> rab) const;
     std::vector<std::complex<double>> shift_localL(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
+    std::vector<std::shared_ptr<const ZMatrix>> shift_localLX(std::vector<std::shared_ptr<ZMatrix>> mr, std::array<double, 3> rb) const;
     std::vector<std::complex<double>> shift_localM(std::vector<std::complex<double>> olm, std::array<double, 3> r12) const;
-    void compute_M2L();
-    void compute_L2L();
+    std::vector<std::shared_ptr<const ZMatrix>> shift_localMX(std::vector<std::shared_ptr<ZMatrix>> olm, std::array<double, 3> r12) const;
+    void compute_M2L(const bool do_exchange);
+    void compute_L2L(const bool do_exchange);
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
@@ -110,6 +117,8 @@ class Box {
     std::vector<std::complex<double>>& localJ() { return localJ_; }
     const std::vector<std::complex<double>>& localJ() const { return localJ_; }
 
+    std::vector<std::shared_ptr<ZMatrix>> olm_ji() const { return olm_ji_; }
+    std::vector<std::shared_ptr<ZMatrix>> mlm_ji() const { return mlm_ji_; }
 
     void print_box() const;
 };

@@ -52,20 +52,25 @@ class FMM {
     double thresh_;
     int ws_;
     double base_extent_;
+    bool do_exchange_;
+    std::vector<std::shared_ptr<const ZMatrix>> olm_ri_;
 
     void init();
     void get_boxes();
-    void M2M(std::shared_ptr<const Matrix> density) const;
-    void M2L() const;
-    void L2L() const;
+    void M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr) const;
+    void M2L(const bool do_exchange = false) const;
+    void L2L(const bool do_exchange = false) const;
 
   public:
-    FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH, const int ws = 0);
+    FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH,
+        const int ws = 0, const bool do_exchange = false);
     ~FMM() { }
 
     const std::array<double, 3>& centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
-    std::shared_ptr<const ZMatrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr) const;
+    bool do_exchange() const { return do_exchange_; }
+    std::shared_ptr<const ZMatrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr,
+                                                    std::shared_ptr<const Matrix> ocoeff = nullptr) const;
     void print_boxes(const int i) const;
 };
 

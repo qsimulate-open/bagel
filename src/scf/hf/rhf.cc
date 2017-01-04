@@ -95,7 +95,7 @@ void RHF::compute() {
         }
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_)->get_real_part();
+        shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_, make_shared<const Matrix>(coeff_->slice(0, nocc_)))->get_real_part();
         focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
@@ -141,7 +141,7 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(densitychange)->get_real_part();
+      shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(densitychange, make_shared<const Matrix>(coeff_->slice(0, nocc_)))->get_real_part();
       previous_fock = make_shared<const Matrix>(*previous_fock + *tmp);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();

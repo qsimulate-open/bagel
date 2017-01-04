@@ -39,8 +39,8 @@ static const double pisq__ = pi__ * pi__;
 static const double tolgd__ = 1e-9;
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws) {
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws, const bool ex)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex) {
 
   init();
 }
@@ -243,12 +243,12 @@ void FMM::get_boxes() {
 }
 
 
-void FMM::M2M(shared_ptr<const Matrix> density) const {
+void FMM::M2M(shared_ptr<const Matrix> density, const bool dox, shared_ptr<const Matrix> ocoeff) const {
 
   Timer m2mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
     if (i % mpi__->size() == mpi__->rank())
-      box_[i]->compute_M2M(density);
+      box_[i]->compute_M2M(density, dox, ocoeff);
 
   for (int i = 0; i != nbranch_[0]; ++i) {
     mpi__->broadcast(box_[i]->multipole().data(), box_[i]->multipole().size(), i % mpi__->size());
@@ -260,7 +260,7 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+1; ++i) {
     for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-        box_[icnt]->compute_M2M(density);
+        box_[icnt]->compute_M2M(density, dox, ocoeff);
   }
 
   assert(icnt == nbox_);
@@ -269,25 +269,25 @@ void FMM::M2M(shared_ptr<const Matrix> density) const {
 }
 
 
-void FMM::M2L() const {
+void FMM::M2L(const bool dox) const {
 
   Timer m2ltime;
 
   for (auto& b : box_)
-    b->compute_M2L();
+    b->compute_M2L(dox);
 
   m2ltime.tick_print("M2L pass");
 }
 
 
-void FMM::L2L() const {
+void FMM::L2L(const bool dox) const {
 
   Timer l2ltime;
 
   int icnt = 0;
   for (int ir = ns_; ir > -1; --ir) {
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
-      box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L();
+      box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L(dox);
 
     icnt += nbranch_[ir];
   }
@@ -296,15 +296,19 @@ void FMM::L2L() const {
 }
 
 
-shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
+shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> ocoeff) const {
 
-  Timer nftime;
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
  
-  M2M(density);
-  M2L();
-  L2L();
+  const bool dox = (do_exchange_ && ocoeff) ? true : false;
+  M2M(density, dox, ocoeff);
+  M2L(dox);
+  L2L(dox);
+
+  Timer nftime;
+  if (!density)
+    density = ocoeff->form_density_rhf(ocoeff->mdim());
 
   if (density) {
     assert(nbasis_ == density->ndim());
