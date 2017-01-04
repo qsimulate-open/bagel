@@ -471,8 +471,13 @@ pair<shared_ptr<const Matrix>, array<double,3>> Pseudospin::identify_magnetic_ax
     Atransform = Atensor->copy();
     Atransform->diagonalize(Aeig);
 
+    // Zero out any numerically zero values, because -1.0e-16 would cause problems...
+    for (int i = 0; i != 3; ++i)
+      if (std::abs(Aeig[i]) < 1.0e-12)
+        Aeig[i] = 0.0;
+
     // All eigenvalues of A should be positive, since they are proportional to squares of the principle g-values
-    assert(Aeig[0] > 0.0 && Aeig[1] > 0.0 && Aeig[2] > 0.0);
+    assert(Aeig[0] >= 0.0 && Aeig[1] >= 0.0 && Aeig[2] >= 0.0);
 
     // Reorder eigenvectors so we quantize spin along the most anisotropic g-axis, rather than just the greatest g
     const double Asqrt_avg = (sqrt(Aeig[0]) + sqrt(Aeig[1]) + sqrt(Aeig[2])) / 3.0;
