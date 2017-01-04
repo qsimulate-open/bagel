@@ -76,7 +76,9 @@ void Hess::compute() {
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
   muffle_ = make_shared<Muffle>("freq.log");
-  hess_ = make_shared<Matrix>(geom_->natom(),3);
+  hess_ = make_shared<Matrix>(3*geom_->natom(),3*geom_->natom());
+  int counter = 0;
+  int step = 0;
 
   for (int j = 0; j != geom_->natom(); ++j) {  // atom j
     for (int i = 0; i != 3; ++i) { //xyz
@@ -100,36 +102,29 @@ void Hess::compute() {
       geom_ = make_shared<Geometry>(*geom_, displ);
       displ->element(i,j) = 0.0;
 
-        for (int k = 0; k != geom_->natom(); ++k) {  // atom j
-          for (int l = 0; l != 3; ++l) { //xyz
-
-        (*hess_)(k,l) = (plus->grad()->element(k,l) - minus->grad()->element(k,l)) / (2*dx_);
-        cout << " hess atom k " << k << " and coord l " << l << "  is " << setprecision(10) << (*hess_)(k,l) << endl;
-          }
+      for (int k = 0; k != geom_->natom(); ++k) {  // atom j
+        for (int l = 0; l != 3; ++l) { //xyz
+//storing hessian in a really silly way. Need to improve
+        (*hess_)(counter,step) = (plus->grad()->element(l,k) - minus->grad()->element(l,k)) / (2*dx_);
+        step = step + 1;
         }
       }
+      step = 0;
+      counter = counter + 1;
+      }
     }
-  muffle_->unmute();
+    muffle_->unmute();
 
-#if 0
   //print hessian
-  hess_ = make_shared<Matrix>(3*geom_->natom(),3*geom_->natom());
-
   cout << endl;
   cout << "    * Numerical Hessian matrix";
     for (int j = 0; j != 3*geom_->natom(); ++j) {
       cout << endl << "      ";
       for (int i = 0; i != 3*geom_->natom(); ++i){
-        if (i == j) {
-          (*hess_)(i,i) = ((*grad_plus_)(i,i) - (*grad_minus_)(i,i))/(2*dx_);
-        } else {
-          (*hess_)(i,j) = 0.0;
-        }
         cout << setw(20) << setprecision(10) << (*hess_)(i,j);
       }
     }
   cout << endl << endl;
-#endif
 
   }
 }
