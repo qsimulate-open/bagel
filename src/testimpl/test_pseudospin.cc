@@ -73,8 +73,8 @@ std::vector<double> zfs_param(std::string inp) {
           out.push_back(ps->gval(0) * gscale);
           out.push_back(ps->gval(1) * gscale);
           out.push_back(ps->gval(2) * gscale);
-          out.push_back(ps->Dval());
-          out.push_back(ps->Eval());
+          out.push_back(ps->dval());
+          out.push_back(ps->eval());
         }
       }
     }
