@@ -108,7 +108,6 @@ void CASPT2Energy::compute() {
         return out;
       }
     };
-    msrot_->print("msrot = ", 20);
     auto vd1tmp = make_shared<Matrix>(*smith->vd1());
     vd1_ = d1set(vd1tmp);
   }

@@ -39,10 +39,72 @@
 using namespace std;
 using namespace bagel;
 
-// TODO: (1) Introduce redundant internal coordinates
-//       (2) Add eigenvector following algorithm
-//       (3) Scaled RFO algorithm (different from rfos)
-//       (4) Transition state search
+// TODO Scaled RFO algorithm
+//      Constrained optimization
+
+Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
+  : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
+
+  auto lastmethod = *idat->get_child("method")->rbegin();
+  method_ = to_lower(lastmethod->get<string>("title", ""));
+
+  target_state_ = idat->get<int>("target", 0);
+  internal_ = idat->get<bool>("internal", true);
+  redundant_ = idat->get<bool>("redundant", false);
+  maxiter_ = idat->get<int>("maxiter", 100);
+  maxstep_ = idat->get<double>("maxstep", 0.1);
+  scratch_ = idat->get<bool>("scratch", false);
+
+  constrained_ = idat->get<bool>("constrained", false);
+  if (constrained_) {
+    if (!internal_ || redundant_) throw runtime_error("Constrained optimization currently only for delocalized internals");
+    auto constraints = idat->get_child("constraint");
+    for (auto& c : *constraints) {
+      constraints_.push_back(make_shared<const OptConstraint>(c));
+    }
+    cout << "# constraints = " << constraints_.size() << endl;
+  }
+
+  if (internal_) {
+    if (redundant_) 
+      bmat_red_ = current_->compute_redundant_coordinate();
+    else
+      bmat_ = current_->compute_internal_coordinate();
+  }
+  thresh_ = idat->get<double>("thresh", 5.0e-5);
+  algorithm_ = idat->get<string>("algorithm", "ef");
+  adaptive_ = idat->get<bool>("adaptive", true);
+  opttype_ = idat->get<string>("opttype", "energy");
+#ifndef DISABLE_SERIALIZATION
+  refsave_ = idat->get<bool>("save_ref", false);
+  if (refsave_) refname_ = idat->get<string>("ref_out", "reference");
+#endif
+
+  // For LBFGS or CG optimizer, ALGLIB is true. Otherwise, ALGLIB is false
+  if (algorithm_ == "lbfgs" || algorithm_ == "cg")
+    alglib_ = true;
+  else 
+    alglib_ = false;
+
+  if (opttype_ == "conical") {
+    target_state2_ = idat->get<int>("target2", 1);
+    if (target_state2_ > target_state_) {
+      int tmpstate = target_state_;
+      target_state_ = target_state2_;
+      target_state2_ = tmpstate;
+    }
+    nacmtype_ = idat->get<int>("nacmtype", 0);
+    thielc3_  = idat->get<double>("thielc3", 2.0);
+    thielc4_  = idat->get<double>("thielc4", 0.5);
+    adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
+  }
+  else if (opttype_ == "transition") {
+    if (alglib_) throw runtime_error("Transition state search only possible without alglib");
+  }
+  else if (opttype_ != "energy")
+    throw runtime_error("Optimization type should be: \"energy\", \"transition\" or \"conical\"");
+
+}
 
 void Opt::compute_noalglib() {
   auto displ = make_shared<XYZFile>(current_->natom());
@@ -107,6 +169,7 @@ void Opt::compute_noalglib() {
       grad_->zero();
       shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
+      rms = cgrad->rms();       // This is more appropriate
 
       if (internal_) {
         if (redundant_)
@@ -123,9 +186,18 @@ void Opt::compute_noalglib() {
  
       MoldenOut mfs("opt.molden");
       mfs << current_;
-      rms = grad_->rms();
 
       displ_ = get_step();
+    }
+
+    displ = displ_;
+
+    // check the size of (displ)
+    if (internal_) {
+      if (redundant_)
+        displ = displ->transform(bmat_red_[1], false);
+      else 
+        displ = displ->transform(bmat_[1], false);
     }
     
     if (adaptive_) do_adaptive();
@@ -134,8 +206,9 @@ void Opt::compute_noalglib() {
     print_iteration(rms, timer_.tick());
     en_prev_ = en_;
 
-    double stepnorm = displ_->norm();
-    if (stepnorm < thresh_ * sqrt(size_)) break;
+    double stepnorm = displ->norm();
+    // test
+    if (stepnorm < thresh_ * sqrt(current_->natom()*3)) break;
   }
 
 #ifndef DISABLE_SERIALIZATION
@@ -223,6 +296,8 @@ shared_ptr<XYZFile> Opt::get_step() {
     displ = get_step_rfo();
   else if (algorithm_ == "rfos")
     displ = get_step_rfos();
+  else if (algorithm_ == "ef")
+    displ = get_step_ef();
 
   return displ;
 }
@@ -260,6 +335,58 @@ shared_ptr<XYZFile> Opt::get_step_nr() {
   return displ;
 }
 
+shared_ptr<XYZFile> Opt::get_step_ef() {
+  // Eigenvector following by Baker
+  auto displ = make_shared<XYZFile>(dispsize_);
+  auto hess = make_shared<Matrix>(*hess_);
+
+  VectorB eigv(size_);
+  hess->diagonalize(eigv);
+
+  // evaluate eigenvalue iteratively
+  double lambda = 100.0;
+  VectorB f(size_);
+
+  for (int i = 0; i != size_; ++i) {
+    copy_n(hess->element_ptr(0,i), size_, displ->data());
+    f[i] = -displ->dot_product(grad_);
+  }
+
+  for (int iiter = 0; iiter != 100; ++iiter) {
+    double lambda_prev = lambda;
+    double lambda_n = 0.0;
+    for (int i = 0; i != size_; ++i)
+      lambda_n += -(f[i] * f[i]) / (eigv[i] - lambda);
+    lambda = lambda_n;
+
+    double error = fabs(lambda_prev - lambda);
+    if (error < 1.0e-8) break;
+  }
+
+  displ->zero();
+  for (int i = 0; i != size_; ++i) {
+    auto dispb = make_shared<XYZFile>(dispsize_);
+    double fb = f[i] / (eigv[i] - lambda);
+    copy_n(hess->element_ptr(0,i), size_, dispb->data());
+    dispb->scale(fb);
+    *displ += *dispb;
+  }
+  
+  if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
+
+  if (adaptive_) {
+    // When we use adaptive steplength, we should predict quadratic energy change
+
+    double qg  = displ->dot_product(grad_);
+    auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
+    double qhq = displ->dot_product(hq);
+    predictedchange_prev_ = predictedchange_;
+    predictedchange_ = qg + 0.5 * qhq;
+  }
+
+  return displ;
+}
+
 shared_ptr<XYZFile> Opt::get_step_rfo() {
   // Rational function optimization (aka augmented Hessian)
   // Here we do scale lambda to get step < steplength
@@ -277,8 +404,12 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
   
       aughes->diagonalize(eigv);
       aughes->scale(lambda / aughes->element(0,0));
- 
-      copy_n(aughes->element_ptr(1,0), size_, displ->data());
+      
+      if (opttype_!="transition")
+        copy_n(aughes->element_ptr(1,0), size_, displ->data());
+      else 
+        copy_n(aughes->element_ptr(1,1), size_, displ->data());
+      
       if (displ->norm() < maxstep_) break;
       else lambda /= 1.2;
     }
@@ -312,8 +443,12 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
   
     aughes->diagonalize(eigv);
     aughes->scale(1.0 / aughes->element(0,0));
- 
-    copy_n(aughes->element_ptr(1,0), size_, displ->data());
+      
+    if (opttype_!="transition")
+      copy_n(aughes->element_ptr(1,0), size_, displ->data());
+    else 
+      copy_n(aughes->element_ptr(1,1), size_, displ->data());
+
     if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
   }
 
@@ -333,7 +468,7 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
 void Opt::do_adaptive() {
   // Fletcher's adaptive stepsize algorithm
 
-  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos");
+  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos" || algorithm_ == "ef") && opttype_ == "energy";
 
   if (algo) {
     realchange_ = en_ - en_prev_;

@@ -36,6 +36,7 @@
 #include <src/util/io/moldenout.h>
 #include <src/wfn/construct_method.h>
 #include <src/alglib/optimization.h>
+#include <src/opt/constraint.h>
 
 namespace bagel {
 
@@ -68,6 +69,10 @@ class Opt {
 
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
+
+    // constraints
+    bool constrained_;
+    std::vector<std::shared_ptr<const OptConstraint>> constraints_;
 
     // whether we use alglib or not
     bool alglib_;
@@ -112,6 +117,8 @@ class Opt {
     std::shared_ptr<XYZFile> get_step();
     std::shared_ptr<XYZFile> get_step_steep();
     std::shared_ptr<XYZFile> get_step_nr();
+    std::shared_ptr<XYZFile> get_step_ef();
+    std::shared_ptr<XYZFile> get_step_ef_pn();
     std::shared_ptr<XYZFile> get_step_rfo();
     std::shared_ptr<XYZFile> get_step_rfos();
 
@@ -123,56 +130,7 @@ class Opt {
     void do_adaptive();
 
   public:
-    Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-      : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
-
-      auto lastmethod = *idat->get_child("method")->rbegin();
-      method_ = to_lower(lastmethod->get<std::string>("title", ""));
-
-      target_state_ = idat->get<int>("target", 0);
-      internal_ = idat->get<bool>("internal", true);
-      redundant_ = idat->get<bool>("redundant", false);
-      maxiter_ = idat->get<int>("maxiter", 100);
-      maxstep_ = idat->get<double>("maxstep", 0.1);
-      scratch_ = idat->get<bool>("scratch", false);
-      if (internal_) {
-        if (redundant_) 
-          bmat_red_ = current_->compute_redundant_coordinate();
-        else
-          bmat_ = current_->compute_internal_coordinate();
-      }
-      thresh_ = idat->get<double>("thresh", 5.0e-5);
-      algorithm_ = idat->get<std::string>("algorithm", "rfo");
-      adaptive_ = idat->get<bool>("adaptive", true);
-      opttype_ = idat->get<std::string>("opttype", "energy");
-#ifndef DISABLE_SERIALIZATION
-      refsave_ = idat->get<bool>("save_ref", false);
-      if (refsave_) refname_ = idat->get<std::string>("ref_out", "reference");
-#endif
-
-      // For LBFGS or CG optimizer, ALGLIB is true. Otherwise, ALGLIB is false
-      if (algorithm_ == "lbfgs" || algorithm_ == "cg")
-        alglib_ = true;
-      else 
-        alglib_ = false;
-
-      if (opttype_ == "conical") {
-        target_state2_ = idat->get<int>("target2", 1);
-        if (target_state2_ > target_state_) {
-          int tmpstate = target_state_;
-          target_state_ = target_state2_;
-          target_state2_ = tmpstate;
-        }
-        nacmtype_ = idat->get<int>("nacmtype", 0);
-        thielc3_  = idat->get<double>("thielc3", 2.0);
-        thielc4_  = idat->get<double>("thielc4", 0.5);
-        adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
-      }
-      else if (opttype_ == "transition")
-        throw std::runtime_error("We cannot do saddle point optimization now, wait for Hessian coming up...");
-      else if (opttype_ != "energy")
-        throw std::runtime_error("Optimization type should be: \"energy\", \"transition\" or \"conical\"");
-    }
+    Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
 
     ~Opt() {
       print_footer();
@@ -190,7 +148,7 @@ class Opt {
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {
-      if (opttype_ == "energy") {
+      if (opttype_ == "energy" || opttype_ == "transition") {
         std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl <<
                                   "     iter         energy               grad rms       time"
         << std::endl << std::endl;
@@ -215,7 +173,7 @@ class Opt {
     }
 
     void print_iteration(const double residual, const double time) {
-      if (opttype_ == "energy") print_iteration_energy (residual, time);
+      if (opttype_ == "energy" || opttype_ == "transition") print_iteration_energy (residual, time);
       else if (opttype_ == "conical") print_iteration_conical (residual, time);
     }
 
