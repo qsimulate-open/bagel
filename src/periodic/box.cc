@@ -32,6 +32,7 @@
 #include <src/integral/rys/eribatch.h>
 #include <src/util/taskqueue.h>
 #include <mutex>
+#include <src/util/timer.h>
 
 using namespace bagel;
 using namespace std;
@@ -692,6 +693,7 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
 // M2M for X
 vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(vector<shared_ptr<ZMatrix>> oa, array<double, 3> rab) const {
 
+  Timer m2mx;
   const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
   const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
   const double phi = atan2(rab[1], rab[0]);
@@ -719,9 +721,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(vector<shared_ptr<ZMatr
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
             const complex<double> Oab(real, -imag);
 
-            for (int q = 0; q != oa[0]->mdim(); ++q)
-              for (int p = 0; p != oa[0]->ndim(); ++p)
-                out->element(p, q) += Oab * oa[j*j+k]->element(p, q);
+            out->add_block(Oab, 0, 0, oa[0]->ndim(), oa[0]->mdim(),  oa[j*j+k]->data());
           }
 
         }
@@ -730,6 +730,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(vector<shared_ptr<ZMatr
     }
   }
 
+  m2mx.tick_print("        shift_multipolesX");
   return ob;
 }
 
@@ -737,6 +738,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(vector<shared_ptr<ZMatr
 // L2L for X
 vector<shared_ptr<const ZMatrix>> Box::shift_localLX(vector<shared_ptr<ZMatrix>> mr, array<double, 3> rb) const {
 
+  Timer l2lx;
   const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
   const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
   const double phi = atan2(rb[1], rb[0]);
@@ -764,9 +766,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(vector<shared_ptr<ZMatrix>>
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
             const complex<double> Oab(real, -imag);
 
-            for (int q = 0; q != mr[0]->mdim(); ++q)
-              for (int p = 0; p != mr[0]->ndim(); ++p)
-                out->element(p, q) += Oab * mr[j*j+k]->element(p, q);
+            out->add_block(Oab, 0, 0, mr[0]->ndim(), mr[0]->mdim(),  mr[j*j+k]->data());
           }
 
         }
@@ -776,6 +776,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(vector<shared_ptr<ZMatrix>>
     }
   }
 
+  l2lx.tick_print("        shift_localLX");
   return mrb;
 }
 
@@ -783,6 +784,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(vector<shared_ptr<ZMatrix>>
 // M2L for X
 vector<shared_ptr<const ZMatrix>> Box::shift_localMX(vector<shared_ptr<ZMatrix>> olm, array<double, 3> r12) const {
 
+  Timer m2lx;
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
@@ -810,9 +812,8 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localMX(vector<shared_ptr<ZMatrix>>
           const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
           const complex<double> Mab(real, imag);
 
-          for (int q = 0; q != olm[0]->mdim(); ++q)
-            for (int p = 0; p != olm[0]->ndim(); ++p)
-              out->element(p, q) += pow(-1.0, l) * Mab * olm[j*j+k]->element(p, q);
+          const complex<double> coeff = pow(-1.0, l) * Mab;
+          out->add_block(coeff, 0, 0, olm[0]->ndim(), olm[0]->mdim(),  olm[j*j+k]->data());
         }
       }
 
@@ -820,5 +821,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localMX(vector<shared_ptr<ZMatrix>>
     }
   }
 
+  m2lx.tick_print("        shift_localMX");
   return mb;
 }
