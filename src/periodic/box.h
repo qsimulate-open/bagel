@@ -66,6 +66,7 @@ class Box {
     std::vector<std::complex<double>> localJ_;
     std::vector<int> offset0_, offset1_;
     void compute_M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr);
+    void compute_multipolesX(std::shared_ptr<const Matrix> ocoeff);
     void sort_sp();
     std::vector<std::complex<double>> shift_multipoles(std::vector<std::complex<double>> oa, std::array<double, 3> rab) const;
     std::vector<std::shared_ptr<const ZMatrix>> shift_multipolesX(std::vector<std::shared_ptr<ZMatrix>> oa, std::array<double, 3> rab) const;
@@ -78,6 +79,7 @@ class Box {
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff) const;
 
 
   public:

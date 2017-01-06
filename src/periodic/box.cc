@@ -201,12 +201,12 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
 
   if (nchild() == 0) { // leaf
     TaskQueue<function<void(void)>> tasks(nsp());
-    //mutex jmutex;
+    mutex jmutex;
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
 
-      //tasks.emplace_back(
-       // [this, &v, &density, &ocoeff, &jmutex]() {
+      tasks.emplace_back(
+        [this, &v, &density, &ocoeff, &dox, &jmutex]() {
           vector<complex<double>> olm(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
@@ -216,7 +216,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
           for (int i = 0; i != nmult_; ++i)
             dat[i] = mpole.data() + mpole.size_block()*i;
 
-          //lock_guard<mutex> lock(jmutex);
+          lock_guard<mutex> lock(jmutex);
           for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
             for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
               for (int k = 0; k != mpole.num_blocks(); ++k)
@@ -224,6 +224,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
 
           transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
 
+#if 1
           if (dox) {
             shared_ptr<const Matrix> ocoeff_ui = ocoeff->cut(v->offset(1), dimb1+v->offset(1));
             shared_ptr<const Matrix> ocoeff_si = ocoeff->cut(v->offset(0), dimb0+v->offset(0));
@@ -235,10 +236,11 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
               zgemm3m_("T", "N", nocc_, nocc_, dimb0, 1.0, zc_si->data(), dimb0, olm_ri->data(), dimb0, 1.0, olm_ji_[k]->data(), nocc_);
             }
           }
+#endif
         }
-      //);
-    //}
-    //tasks.compute();
+      );
+    }
+    tasks.compute();
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -256,6 +258,48 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
       }
     }
   }
+}
+
+
+void Box::compute_multipolesX(shared_ptr<const Matrix> ocoeff) {
+
+  Timer multX;
+  nocc_ = ocoeff->mdim();
+  for (int k = 0; k != nmult_; ++k) {
+    olm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
+    mlm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
+  }
+
+  TaskQueue<function<void(void)>> task2(nocc_*nocc_);
+  mutex kmutex;
+  for (int i = 0; i != nocc_; ++i) {
+    for (int j = 0; j != nocc_; ++j) {
+
+      task2.emplace_back(
+        [this, &ocoeff, &kmutex, i, j]() {
+          for (auto& v : sp_) {
+            if (v->schwarz() < 1e-15) continue;
+
+            vector<complex<double>> olm(nmult_);
+            MultipoleBatch mpole(v->shells(), centre_, lmax_);
+            mpole.compute();
+            const int dimb0 = v->shell(0)->nbasis();
+            const int dimb1 = v->shell(1)->nbasis();
+
+            lock_guard<mutex> lock(kmutex);
+            for (int k = 0; k != nmult_; ++k) {
+              const complex<double>* olm_su = mpole.data() + mpole.size_block()*k;
+              for (int u = 0; u != dimb1; ++u)
+                for (int s = 0; s != dimb0; ++s)
+                  olm_ji_[k]->element(j, i) += ocoeff->element(s+v->offset(0), j) * *olm_su++ * ocoeff->element(u+v->offset(1), i);
+            }
+          }
+        }
+      );
+    }
+  }
+  task2.compute();
+  multX.tick_print("       compute_multipolesX");
 }
 
 
@@ -613,6 +657,14 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
     );
   }
   tasks.compute();
+
+  return out;
+}
+
+
+shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff) const { //K_ri
+  assert(nchild() == 0);
+  auto out = make_shared<ZMatrix>(ocoeff->ndim(), ocoeff->mdim());
 
   return out;
 }

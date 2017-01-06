@@ -247,8 +247,11 @@ void FMM::M2M(shared_ptr<const Matrix> density, const bool dox, shared_ptr<const
 
   Timer m2mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
-    if (i % mpi__->size() == mpi__->rank())
-      box_[i]->compute_M2M(density, dox, ocoeff);
+    if (i % mpi__->size() == mpi__->rank()) {
+      //box_[i]->compute_M2M(density, dox, ocoeff);
+      box_[i]->compute_M2M(density);
+      if (dox) box_[i]->compute_multipolesX(ocoeff);
+    }
 
   for (int i = 0; i != nbranch_[0]; ++i) {
     mpi__->broadcast(box_[i]->multipole().data(), box_[i]->multipole().size(), i % mpi__->size());
