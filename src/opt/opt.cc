@@ -296,8 +296,12 @@ shared_ptr<XYZFile> Opt::get_step() {
     displ = get_step_rfo();
   else if (algorithm_ == "rfos")
     displ = get_step_rfos();
-  else if (algorithm_ == "ef")
-    displ = get_step_ef();
+  else if (algorithm_ == "ef") {
+    if (opttype_ == "transition" || constrained_)
+      displ = get_step_ef_pn();
+    else 
+      displ = get_step_ef();
+  }
 
   return displ;
 }
@@ -340,6 +344,7 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
   auto displ = make_shared<XYZFile>(dispsize_);
   auto hess = make_shared<Matrix>(*hess_);
 
+  // diagonalize Hessian
   VectorB eigv(size_);
   hess->diagonalize(eigv);
 
@@ -383,6 +388,82 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
     predictedchange_prev_ = predictedchange_;
     predictedchange_ = qg + 0.5 * qhq;
   }
+
+  return displ;
+}
+
+shared_ptr<XYZFile> Opt::get_step_ef_pn() {
+  // Eigenvector following by Baker
+  auto displ = make_shared<XYZFile>(dispsize_);
+  auto hess = make_shared<Matrix>(*hess_);
+
+  // diagonalize Hessian.
+  // Note: size_ will be 3N - 6 (transition state search), 3N - 6 + constraints_.size() (constrained optimization)
+  VectorB eigv(size_);
+  hess->diagonalize(eigv);
+
+  // partition lambda
+  double lambda_p = 100.0;
+  double lambda_n = 100.0;
+  int size_p = constrained_? constraints_.size() : 1;
+  int size_n = size_ - size_p;
+
+  VectorB f1(size_p);
+  VectorB f2(size_n);
+
+  for (int i = 0; i != size_p; ++i) {
+    copy_n(hess->element_ptr(0,i), size_, displ->data());
+    f1[i] = -displ->dot_product(grad_);
+  }
+  for (int j = 0; j != size_n; ++j) {
+    copy_n(hess->element_ptr(0,j+size_p), size_, displ->data());
+    f2[j] = -displ->dot_product(grad_);
+  }
+
+  // iterate lambda
+
+  for (int iiter = 0; iiter != 100; ++iiter) {
+    double lambda_p_prev = lambda_p;
+    double lambda_p_n = 0.0;
+    for (int i = 0; i != size_p; ++i)
+      lambda_p_n += -(f1[i] * f1[i]) / (eigv[i] - lambda_p);
+    lambda_p = lambda_p_n;
+
+    double error = fabs(lambda_p_prev - lambda_p);
+    if (error < 1.0e-8) break;
+  }
+
+  for (int iiter = 0; iiter != 100; ++iiter) {
+    double lambda_n_prev = lambda_n;
+    double lambda_n_n = 0.0;
+    for (int j = 0; j != size_n; ++j)
+      lambda_n_n += -(f2[j] * f2[j]) / (eigv[j+size_p] - lambda_n);
+    lambda_n = lambda_n_n;
+
+    double error = fabs(lambda_n_prev - lambda_n);
+    if (error < 1.0e-8) break;
+  }
+
+  displ->zero();
+
+  // sign is reversed, but i think this is correct
+  for (int i = 0; i != size_p; ++i) {
+    auto dispb = make_shared<XYZFile>(size_);
+    double fb = -f1[i] / (eigv[i] - lambda_p);
+    copy_n(hess->element_ptr(0,i), size_, dispb->data());
+    dispb->scale(fb);
+    *displ += *dispb;
+  }
+
+  for (int j = 0; j != size_n; ++j) {
+    auto dispb = make_shared<XYZFile>(size_);
+    double fb = f2[j] / (eigv[j+size_p] - lambda_n);
+    copy_n(hess->element_ptr(0,j+size_p), size_, dispb->data());
+    dispb->scale(fb);
+    *displ += *dispb;
+  }
+  
+  if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
 
   return displ;
 }
