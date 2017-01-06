@@ -175,7 +175,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
-  get_shellpairs();
+  if (dofmm_) get_shellpairs();
 
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 }
@@ -603,11 +603,49 @@ void Geometry::get_shellpairs() {
 
 
 vector<double> Geometry::schwarz() const {
+  
+  vector<double> schwarz;
+  if (shellpairs_.empty()) {
+    vector<int> offsets;
+    vector<shared_ptr<const Shell>> basis;
+    for (int n = 0; n != natom(); ++n) {
+      const vector<int> tmpoff = offset(n);
+      offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
+      const vector<shared_ptr<const Shell>> tmpsh = atoms_[n]->shells();
+      basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
+    }
 
-  const int nsp = shellpairs_.size();
-  vector<double> schwarz(nsp);
-  for (int i = 0; i != nsp; ++i)
-    schwarz[i] = shellpairs_[i]->schwarz();
+    const int size = basis.size();
+    schwarz.resize(size * size);
+    for (int i0 = 0; i0 != size; ++i0) {
+      shared_ptr<const Shell> b0 = basis[i0];
+      for (int i1 = i0; i1 != size; ++i1) {
+        shared_ptr<const Shell> b1 = basis[i1];
+  
+        array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
+ #ifdef LIBINT_INTERFACE
+        Libint eribatch(input);
+ #else
+        ERIBatch eribatch(input, 1.0);
+ #endif
+        eribatch.compute();
+        const double* eridata = eribatch.data();
+        const int datasize = eribatch.data_size();
+        double cmax = 0.0;
+        for (int xi = 0; xi != datasize; ++xi, ++eridata) {
+          const double absed = fabs(*eridata);
+          if (absed > cmax) cmax = absed;
+        }
+        schwarz[i0 * size + i1] = cmax;
+        schwarz[i1 * size + i0] = cmax;
+      }
+    }
+  } else {
+    const int nsp = shellpairs_.size();
+    schwarz.resize(nsp);
+    for (int i = 0; i != nsp; ++i)
+      schwarz[i] = shellpairs_[i]->schwarz();
+  }
 
   return schwarz;
 }
