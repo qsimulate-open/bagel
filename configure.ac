@@ -138,6 +138,11 @@ if test "x${use_mkl}" = xyes; then
         fi
     fi
 fi
+
+# ZGEMM3M is provided by MKL, OpenBLAS and perhaps others.
+AC_CHECK_FUNC([zgemm3m], [AC_DEFINE([HAVE_ZGEMM3M], [1], [Define if zgemm3m is present in BLAS .])])
+AC_CHECK_FUNC([zgemm3m_], [AC_DEFINE([HAVE_ZGEMM3M], [2], [Define if zgemm3m_ is present in BLAS .])])
+
 if test "x${with_mpi}" != xno; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi
