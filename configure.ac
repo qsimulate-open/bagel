@@ -35,7 +35,7 @@ if test x${with_mpi} != xno; then
     CXXFLAGS="${CXXFLAGS}"
 fi
 AX_CXX_COMPILE_STDCXX_11([noext])
-CPPFLAGS="-std=c++11 ${CPPFLAGS}"
+CXXFLAGS="-std=c++11 ${CPPFLAGS}"
 
 LT_INIT([disable-static])
 AC_CONFIG_MACRO_DIR([m4])
