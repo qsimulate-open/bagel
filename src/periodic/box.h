@@ -47,37 +47,41 @@ class Box {
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
     double thresh_, extent_;
-    int nbasis0_, nbasis1_, ndim_;
+    int nbasis0_, nbasis1_;
     int nmult_;
     int nocc_;
+    int nsize_, msize_;
 
+    std::vector<std::shared_ptr<ZMatrix>> box_olm_;
     std::vector<std::shared_ptr<ZMatrix>> olm_ji_;
     std::vector<std::shared_ptr<ZMatrix>> mlm_ji_;
+    std::vector<std::array<int, 2>> offsets_;
+    std::vector<std::pair<int, int>> coffsets_i_, coffsets_j_;
+    void get_offsets();
 
     void init();
-    void insert_sp(std::vector<std::shared_ptr<const ShellPair>>);
+    void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
     void insert_child(std::shared_ptr<const Box> = NULL);
     void insert_parent(std::shared_ptr<const Box> parent = NULL);
     bool is_neigh(std::shared_ptr<const Box> b, const int ws) const;
-    void get_neigh(std::vector<std::shared_ptr<Box>> box, const int ws);
-    void get_inter(std::vector<std::shared_ptr<Box>> box, const int ws);
+    void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const int ws);
+    void get_inter(const std::vector<std::shared_ptr<Box>>& box, const int ws);
 
     std::vector<std::complex<double>> multipole_;
     std::vector<std::complex<double>> localJ_;
-    std::vector<int> offset0_, offset1_;
     void compute_M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr);
     void compute_multipolesX(std::shared_ptr<const Matrix> ocoeff);
     void sort_sp();
-    std::vector<std::complex<double>> shift_multipoles(std::vector<std::complex<double>> oa, std::array<double, 3> rab) const;
-    std::vector<std::shared_ptr<const ZMatrix>> shift_multipolesX(std::vector<std::shared_ptr<ZMatrix>> oa, std::array<double, 3> rab) const;
-    std::vector<std::complex<double>> shift_localL(std::vector<std::complex<double>> mr, std::array<double, 3> rb) const;
-    std::vector<std::shared_ptr<const ZMatrix>> shift_localLX(std::vector<std::shared_ptr<ZMatrix>> mr, std::array<double, 3> rb) const;
-    std::vector<std::complex<double>> shift_localM(std::vector<std::complex<double>> olm, std::array<double, 3> r12) const;
-    std::vector<std::shared_ptr<const ZMatrix>> shift_localMX(std::vector<std::shared_ptr<ZMatrix>> olm, std::array<double, 3> r12) const;
+    std::vector<std::complex<double>> shift_multipoles(const std::vector<std::complex<double>>& oa, std::array<double, 3> rab) const;
+    std::vector<std::shared_ptr<const ZMatrix>> shift_multipolesX(const std::vector<std::shared_ptr<ZMatrix>>& oa, std::array<double, 3> rab) const;
+    std::vector<std::complex<double>> shift_localL(const std::vector<std::complex<double>>& mr, std::array<double, 3> rb) const;
+    std::vector<std::shared_ptr<const ZMatrix>> shift_localLX(const std::vector<std::shared_ptr<ZMatrix>>& mr, std::array<double, 3> rb) const;
+    std::vector<std::complex<double>> shift_localM(const std::vector<std::complex<double>>& olm, std::array<double, 3> r12) const;
+    std::vector<std::shared_ptr<const ZMatrix>> shift_localMX(const std::vector<std::shared_ptr<ZMatrix>>& olm, std::array<double, 3> r12) const;
     void compute_M2L(const bool do_exchange);
     void compute_L2L(const bool do_exchange);
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
-    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double> max_den, const double schwarz_thresh = 0.0) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff) const;
 
@@ -102,9 +106,6 @@ class Box {
     double extent() const { return extent_; }
     int nbasis0() const { return nbasis0_; }
     int nbasis1() const { return nbasis1_; }
-    int ndim() const { return ndim_; }
-    const std::vector<int>& offset0() const { return offset0_; }
-    const std::vector<int>& offset1() const { return offset1_; }
 
     std::shared_ptr<const Box> parent() const { return parent_; }
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
