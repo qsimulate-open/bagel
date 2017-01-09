@@ -27,7 +27,7 @@
 #define BAGEL_FCI_DVEC_H
 
 #include <src/ci/fci/civec.h>
-#include <src/util/math/csymmatrix.h>
+#include <src/util/math/matrix.h>
 
 // I forgot why I named this class "Dvector"...
 // Basically Dvector is a vector of Civec, with some utility functions.

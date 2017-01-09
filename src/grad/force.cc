@@ -40,7 +40,7 @@ Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared
 shared_ptr<GradFile> Force::compute() {
   auto input = idata_->get_child("method");
   const int target = idata_->get<int>("target", 0);
-  const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
+  const string jobtitle = to_lower(idata_->get<string>("title", ""));
   const int target2= idata_->get<int>("target2", 1);
   const int nacmtype = idata_->get<int>("nacmtype", 0);
 

@@ -310,9 +310,9 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   if (nacmtype_ == 0)
     g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
-  // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tr (look for gamma)
+  // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
   shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tr(*rdm2_tr, *rdm1_tr, nclosed, nact);
+  shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tran(*rdm2_tr, *rdm1_tr, nclosed, nact);
   auto buf = make_shared<Matrix>(*half->form_2index(fulld, 0.5) + *half->form_2index(fulld->swap(), 0.5));
 
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
@@ -383,7 +383,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
         for (int j = 0; j != nact; ++j)
           dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
 
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tr(D, dd, nclosed, nact);
+      shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
       qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
       qri = qijd->back_transform(ocoeff);
     }

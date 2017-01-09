@@ -91,7 +91,8 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
 
   *displ -= *xyz;
 
-  if (iter_ > 0) mute_stdcout();
+  muffle_ = make_shared<Muffle>("opt.log");
+  if (iter_ > 0) muffle_->mute();
 
   // current Geometry
   if (iter_ > 0) {
@@ -131,7 +132,7 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
     // current geom and grad in the cartesian coordinate
     if (iter_ == 0) {
       print_header();
-      mute_stdcout();
+      muffle_->mute();
     }
     shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
     en = en_;
@@ -150,6 +151,6 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
   ++iter_;
   // returns energy
 
-  resume_stdcout();
+  muffle_->unmute();
   print_iteration(rms, timer_.tick());
 }

@@ -39,7 +39,7 @@ using namespace std;
 using namespace bagel;
 
 CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
-  : Method(inp, geom, ref) {
+  : CASPT2Deriv(inp, geom, ref) {
 #ifdef COMPILE_SMITH
   Timer timer;
 
@@ -287,7 +287,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
     for (int i = 0; i != nact; ++i)
       for (int j = 0; j != nact; ++j)
         dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
-    shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tr(D, dd, nclosed, nact);
+    shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
 
     qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact));
     qri = qijd->back_transform(ocoeff);
@@ -433,7 +433,7 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     fullks = contract_D1(full);
     *out += *full->form_2index(fullks, 2.0);
     // D0 part
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm_tr(*d20ms_, *d10ms_, nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm_tran(*d20ms_, *d10ms_, nclosed, nact);
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 0.5));
     out->add_block(2.0, 0, 0, nmobasis, nocc, full->form_2index(fulld->swap(), 0.5));
   }

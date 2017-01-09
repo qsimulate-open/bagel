@@ -37,6 +37,7 @@
 #include <src/wfn/construct_method.h>
 #include <src/alglib/optimization.h>
 #include <src/opt/constraint.h>
+#include <src/util/muffle.h>
 
 namespace bagel {
 
@@ -55,9 +56,7 @@ class Opt {
 
     int iter_;
 
-    // somehow using raw pointers
-    std::streambuf* backup_stream_;
-    std::ofstream* ofs_;
+    mutable std::shared_ptr<Muffle> muffle_;
 
     std::string algorithm_;
     std::string method_;
@@ -177,19 +176,6 @@ class Opt {
       else if (opttype_ == "conical") print_iteration_conical (residual, time);
     }
 
-    void mute_stdcout() {
-      if (mpi__->rank() == 0) {
-        ofs_ = new std::ofstream("opt.log",(backup_stream_ ? std::ios::app : std::ios::trunc));
-        backup_stream_ = std::cout.rdbuf(ofs_->rdbuf());
-      }
-    }
-
-    void resume_stdcout() {
-      if (mpi__->rank() == 0) {
-        std::cout.rdbuf(backup_stream_);
-        delete ofs_;
-      }
-    }
     std::shared_ptr<const Geometry> geometry() const { return current_; }
 
 };

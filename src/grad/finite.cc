@@ -52,13 +52,15 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   shared_ptr<const Reference> refgrad_minus;
  
   cout << "  Reference energy is " << energy_ << endl;
+
+  muffle_ = make_shared<Muffle>("finite.log");
  
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
 
-      mute_stdcout();
+      muffle_->mute();
       displ->element(j,i) = dx_;
-      geom_ = std::make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
       geom_->print_atoms();
 
       refgrad_plus = make_shared<Reference>(*ref_, nullptr);
@@ -70,7 +72,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       energy_plus = refgrad_plus->energy(target_state_);
 
       displ->element(j,i) = -2.0 * dx_;
-      geom_ = std::make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
       geom_->print_atoms();
       
       refgrad_minus = make_shared<Reference>(*ref_, nullptr);
@@ -83,13 +85,11 @@ shared_ptr<GradFile> FiniteGrad::compute() {
  
       grad->element(j,i) = (energy_plus - energy_minus) / (dx_ * 2.0);      // Hartree / bohr
 
-      // to the original position
-
       displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, true);
 
       displ->element(j,i) = 0.0;
-      resume_stdcout();
+      muffle_->unmute();
       cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
@@ -134,12 +134,13 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   gmo->zero();
   
   assert(norb==(nocc-nclosed));
+  muffle_ = make_shared<Muffle>("finite.log");
   
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
-      mute_stdcout();
+      muffle_->mute();
       displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, false);
       geom_->print_atoms();
 
       refgrad_plus = make_shared<Reference> (*ref_, nullptr);
@@ -159,7 +160,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       civ_plus->match(civ_ref);
 
       displ->element(j,i) = -2.0 * dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, false);
       geom_->print_atoms();
 
       refgrad_minus = make_shared<Reference> (*ref_, nullptr);
@@ -185,7 +186,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       acoeff_diff->scale(1.0 / (2.0 * dx_));
   
       displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ);
+      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, true);
 
       displ->element(j,i) = 0.0;
 
@@ -227,7 +228,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           }
         }
       }
-      resume_stdcout();
+      muffle_->unmute();
       cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }

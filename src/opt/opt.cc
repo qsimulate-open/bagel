@@ -43,7 +43,7 @@ using namespace bagel;
 //      Constrained optimization
 
 Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
-  : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0), backup_stream_(nullptr) {
+  : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0) {
 
   auto lastmethod = *idat->get_child("method")->rbegin();
   method_ = to_lower(lastmethod->get<string>("title", ""));
@@ -119,9 +119,10 @@ void Opt::compute_noalglib() {
   
   print_header();
 
+  muffle_ = make_shared<Muffle>("opt.log");
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
     shared_ptr<const XYZFile> xyz = current_->xyz();
-    mute_stdcout();
+    muffle_->mute();
 
     displ = displ_;
 
@@ -202,7 +203,7 @@ void Opt::compute_noalglib() {
     
     if (adaptive_) do_adaptive();
 
-    resume_stdcout();
+    muffle_->unmute();
     print_iteration(rms, timer_.tick());
     en_prev_ = en_;
 

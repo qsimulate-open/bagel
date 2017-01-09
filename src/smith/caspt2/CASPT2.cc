@@ -280,7 +280,7 @@ void CASPT2::CASPT2::solve_deriv() {
     const int target = info_->target();
     auto source = make_shared<MultiTensor>(nstates_);
     for (auto& i : *source)
-      i = init_residual(); 
+      i = init_residual();
     for (int ist = 0; ist != nstates_; ++ist) {//N states
       auto sist = make_shared<MultiTensor>(nstates_);
       for (int jst = 0; jst != nstates_; ++jst) {

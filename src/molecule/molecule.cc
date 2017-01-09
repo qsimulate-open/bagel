@@ -459,9 +459,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
 
 array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_ptr<const Matrix> prev) const {
   // Using original B by E B Wilson (Chapter 4)
-#if 1
   cout << "    o Connectivitiy analysis" << endl;
-#endif
 
   vector<vector<double>> out;
   vector<double> val;
@@ -484,10 +482,10 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
-#if 1
+
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
-#endif
+
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
         jp -= ip;  // jp is a vector from i to j
