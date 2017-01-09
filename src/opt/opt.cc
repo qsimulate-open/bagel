@@ -71,7 +71,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     else
       bmat_ = current_->compute_internal_coordinate();
   }
-  thresh_ = idat->get<double>("thresh", 5.0e-5);
+  thresh_ = idat->get<double>("thresh", 1.0e-5);
   algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", true);
   opttype_ = idat->get<string>("opttype", "energy");
