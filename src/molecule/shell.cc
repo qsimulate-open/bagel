@@ -383,3 +383,26 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
     ++range;
   }
 }
+
+
+shared_ptr<const Shell> Shell::uncontract() const {
+  vector<vector<double>> conts;
+  vector<pair<int, int>> ranges;
+  for (int i = 0; i != exponents_.size(); ++i) {
+    vector<double> cont(i, 0.0);
+    cont.insert(cont.end(),1.0);
+    conts.push_back(cont);
+    ranges.push_back({i, i+1});
+  }
+
+  auto citer = ranges.begin();
+  for (auto iter = conts.begin(); iter != conts.end(); ++iter, ++citer) {
+    auto eiter = exponents_.begin();
+    double denom = 1.0;
+    for (int ii = 2; ii <= angular_number_; ++ii) denom *= 2 * ii - 1;
+    for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
+      *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(sqrt(4.0 * *eiter), static_cast<double>(angular_number_)) / sqrt(denom);
+  }
+
+  return make_shared<Shell>(spherical_, position_, angular_number_, exponents_, conts, ranges);
+}

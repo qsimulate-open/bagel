@@ -24,8 +24,8 @@
 
 //
 
-#ifndef __BAGEL_UTIL_FACTORIAL_H
-#define __BAGEL_UTIL_FACTORIAL_H
+#ifndef __BAGEL_UTIL_MATH_FACTORIAL_H
+#define __BAGEL_UTIL_MATH_FACTORIAL_H
 
 #include <algorithm>
 #include <array>

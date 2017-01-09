@@ -115,10 +115,10 @@ void Point_ComplexMomentumBatch::perform_VRR(complex<double>* intermediate) {
     const complex<double> czpl = location_[2] - P_[ii*3+2];
 
     // obtain S(0, 0)
-    const double tmp = pisqrtinv__ * std::sqrt(cxp);
-    worksx[0] = coeffsx_[ii] * tmp * std::exp(- cxp * (cxpl * cxpl));
-    worksy[0] = coeffsy_[ii] * tmp * std::exp(- cxp * (cypl * cypl));
-    worksz[0] = coeffsz_[ii] * tmp * std::exp(- cxp * (czpl * czpl));
+    const double tmp = pisqrtinv__ * sqrt(cxp);
+    worksx[0] = coeffsx_[ii] * tmp * exp(- cxp * (cxpl * cxpl));
+    worksy[0] = coeffsy_[ii] * tmp * exp(- cxp * (cypl * cypl));
+    worksz[0] = coeffsz_[ii] * tmp * exp(- cxp * (czpl * czpl));
 
     for (int i = 1; i <= ang0_; ++i) {
       // obtain S(i, 0)

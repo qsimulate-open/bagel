@@ -26,9 +26,7 @@
 #ifndef __SRC_MOLECULE_SHELL_H
 #define __SRC_MOLECULE_SHELL_H
 
-#include <src/util/math/matrix.h>
 #include <src/util/math/zmatrix.h>
-#include <src/util/serialization.h>
 #include <src/molecule/shell_base.h>
 
 namespace bagel {
@@ -155,6 +153,9 @@ class Shell : public Shell_base {
     // DFT grid
     void compute_grid_value(double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
     void compute_grid_value_deriv2(double*, double*, double*, double*, double*, double*, const double& x, const double& y, const double& z) const;
+
+    std::shared_ptr<const Shell> uncontract() const;
+
 };
 
 }

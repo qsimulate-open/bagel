@@ -13,6 +13,8 @@
 using namespace mpfr;
 using namespace boost;
 
+namespace test {
+
 class Gaussian_Int {
 
   protected:
@@ -135,5 +137,7 @@ class ABBB_ss {
      }
 
 };
+
+}
 
 #endif

@@ -26,7 +26,7 @@
 #ifndef __SRC_OPT_OPT_H
 #define __SRC_OPT_OPT_H
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>

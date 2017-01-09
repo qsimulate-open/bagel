@@ -9,6 +9,9 @@
 
 using namespace std;
 using namespace bagel;
+using namespace test;
+
+namespace test {
 
 class Gaussian_Int {
   protected:
@@ -22,6 +25,9 @@ class Gaussian_Int {
     double exponent() { return exponent_; }
 };
 
+}
+
+using namespace test;
 int main() {
 
   /* ++++ TEST int r^n exp(-zeta r*r) <phi_A|lm><lm|l|lm'><lm'|phi_C> ++++  */

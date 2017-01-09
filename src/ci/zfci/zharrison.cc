@@ -406,17 +406,6 @@ void ZHarrison::compute() {
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::swap_pos_neg(shared_ptr<const ZMatrix> coeffin) const {
-  auto out = coeffin->clone();
-  const int n = coeffin->ndim();
-  const int m = coeffin->mdim()/2;
-  assert(n % 4 == 0 && m % 2 == 0 && m * 2 == coeffin->mdim());
-  out->copy_block(0, 0, n, m, coeffin->get_submatrix(0, m, n, m));
-  out->copy_block(0, m, n, m, coeffin->get_submatrix(0, 0, n, m));
-  return out;
-}
-
-
 shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
   return make_shared<RelCIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, make_shared<PairType>(make_pair(space_, int_space_)));
@@ -427,15 +416,20 @@ shared_ptr<const RelCIWfn> ZHarrison::conv_to_ciwfn() const {
 pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
   assert(rdm1_av_expanded_ != nullptr);
   // first make natural orbitals
-  VectorB occup(norb_*2); 
+  VectorB occup(norb_*2);
   shared_ptr<ZMatrix> natorb;
   {
     auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
     copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
+    rdm1->scale(-1.0);
+    for (int i = 0; i != norb_; ++i)
+      rdm1->element(i,i) += 1.0;
     natorb = make_shared<QuatMatrix>(*rdm1);
     natorb->diagonalize(occup);
-    for (int i = 0; i != norb_; ++i)
+    for (int i = 0; i != norb_; ++i) {
+      occup[i] = 1.0-occup[i];
       occup[i+norb_] = occup[i];
+    }
   }
   // update rdm1_av_expanded_
   {
@@ -454,7 +448,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
       zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, natorb->data(), ndim, 0.0, b->data(), ndim2*ndim);
       for (int i = 0; i != ndim; ++i)
         zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, natorb_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
-    };  
+    };
     half_trans(rdm2_av_expanded_, buf, rdm2_av_expanded_);
     blas::transpose(rdm2_av_expanded_->data(), ndim2, ndim2, buf->data());
     half_trans(buf, rdm2_av_expanded_, buf);

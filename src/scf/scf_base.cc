@@ -37,18 +37,20 @@ using namespace bagel;
 
 
 template <typename MatType, typename OvlType, typename HcType, class Enable>
-SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re, const bool need_schwarz)
+SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> re, const bool need_schwarz)
  : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
+  dofmm_   = geom_->dofmm();
 
   Timer scfb;
-  overlap_ = make_shared<const OvlType>(geom);
+  overlap_ = make_shared<const OvlType>(geom_);
   scfb.tick_print("Overlap matrix");
-  hcore_ = make_shared<const HcType>(geom);
+
+  hcore_ = make_shared<HcType>(geom_, !geom_->dkh(), dofmm_);
   scfb.tick_print("Hcore matrix");
 
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -59,7 +61,14 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(const shared_ptr<const PT
   thresh_scf_ = idata_->get<double>("thresh", 1.0e-8);
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
 
+  if (dofmm_) {
+    const bool dodf = idata_->get<bool>("df", true);
+    if (dodf) throw runtime_error("FMM only works without DF now");
+    fmm_ = make_shared<const FMM>(geom, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
+                                        idata_->get<int>("ws", 0));
+  }
   multipole_print_ = idata_->get<int>("multipole", 1);
+  dma_print_ = idata_->get<int>("dma", 0);
 
   const int ncharge = idata_->get<int>("charge", 0);
   const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);

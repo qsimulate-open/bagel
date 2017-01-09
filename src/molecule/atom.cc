@@ -129,10 +129,10 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
     {
       basis_init(ibas->get_child("valence"));
     }
-    catch (const std::exception &err)
+    catch (const exception &err)
     {
       cout << err.what() << endl;
-      throw std::runtime_error("ECP basis set file has the wrong format!");
+      throw runtime_error("ECP basis set file has the wrong format!");
     }
     const int ncore = ibas->get<int>("ncore");
     const shared_ptr<const PTree> core = ibas->get_child("core");
@@ -372,7 +372,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         double denom = 1.0;
         for (int ii = 2; ii <= i; ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter)
-          *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(::sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
+          *diter *= pow(2.0 * *eiter / pi__, 0.75) * pow(sqrt(4.0 * *eiter), static_cast<double>(i)) / sqrt(denom);
 
         if (basis_ != "molden") {
           vector<vector<double>> cont {*iter};
@@ -614,3 +614,20 @@ shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magneti
 
 double Atom::radius() const { return atommap_.radius(name_); }
 double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
+
+
+shared_ptr<const Atom> Atom::uncontract() const {
+  auto atom = make_shared<Atom>(*this);
+
+  vector<shared_ptr<const Shell>> uncshells;
+  for (auto& i : shells_)
+    uncshells.push_back(i->uncontract());
+  atom->reset_shells(uncshells);
+
+  return atom;
+}
+
+void Atom::reset_shells(vector<shared_ptr<const Shell>> rshells) {
+  shells_ = rshells;
+  common_init();
+}

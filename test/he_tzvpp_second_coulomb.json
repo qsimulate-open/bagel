@@ -1,0 +1,22 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "symmetry" : "C1",
+  "basis" : "tzvpp",
+  "df_basis" : "tzvpp-jkfit",
+  "angstrom" : false,
+  "geometry" : [
+    { "atom" : "He",  "xyz" : [   -0.000000,     -0.000000,      0.0000]}
+  ]
+},
+
+{
+  "title" : "zcasscf",
+  "thresh" : 5.0e-7,
+  "state"  : [1],
+  "nact_cas"      : 2,
+  "nclosed"   : 0
+}
+
+]}

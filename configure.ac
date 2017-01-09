@@ -172,6 +172,7 @@ AC_CONFIG_FILES([Makefile
                  src/multi/casscf/Makefile
                  src/multi/zcasscf/Makefile
                  src/mat1e/Makefile
+                 src/periodic/Makefile
                  src/opt/Makefile
                  src/alglib/Makefile
                  src/basis/Makefile])

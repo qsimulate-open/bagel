@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
 
     map<string, shared_ptr<const void>> saved;
     bool dodf = true;
+    bool dofmm = false;
 
     // timer for each method
     Timer timer(-1);
@@ -98,7 +99,8 @@ int main(int argc, char** argv) {
       } else {
         if (!geom) throw runtime_error("molecule block is missing");
         if (!itree->get<bool>("df",true)) dodf = false;
-        if (dodf && !geom->df()) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (!itree->get<bool>("cfmm", false)) dofmm = true;
+        if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
       }
 
       if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
@@ -235,7 +237,7 @@ int main(int argc, char** argv) {
     print_footer();
 
   } catch (const Termination& e) {
-    cout << "  -- Termination requested --" << endl; 
+    cout << "  -- Termination requested --" << endl;
     cout << "  message: " << e.what() << endl;
     print_footer();
   } catch (const exception& e) {

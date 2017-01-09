@@ -23,21 +23,12 @@
 
 {
   "title" : "zcasscf",
-  "algorithm" : "bfgs",
-  "occ_sort" : "true",
   "charge" : "-1",
   "state" : [0,4,0,1],
-  "maxiter" : 80,
   "only_electrons" : "true",
   "nact_cas" : 3,
   "nclosed" : 7,
   "thresh" : 4.0e-6,
-  "thresh_micro" : 1.0e-6,
-  "thresh_fci" : 1.0e-7,
-  "thresh_switch" : 1.0e-4,
-  "maxiter_micro" : 50,
-  "maxiter_fci" : 50,
-  "diis_start" : 5,
   "aniso" : {
     "nspin" : 3,
     "center" : [       0.00000000,       0.36210000,      -0.48280000 ],

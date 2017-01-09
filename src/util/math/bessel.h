@@ -24,8 +24,8 @@
 
 //
 
-#ifndef __BAGEL_UTIL_BESSEL_H
-#define __BAGEL_UTIL_BESSEL_H
+#ifndef __BAGEL_UTIL_MATH_BESSEL_H
+#define __BAGEL_UTIL_MATH_BESSEL_H
 
 #include <iostream>
 #include <cmath>

@@ -37,7 +37,8 @@ Tensor_<DataType>::Tensor_(vector<IndexRange> in, const bool kramers, const unor
   : range_(in), rank_(in.size()), sparse_(sparse), initialized_(false), allocated_(alloc) {
 
   // make block list
-  if (!in.empty()) {
+  // First make sure the tensor is not empty
+  if (!in.empty() && !any_of(in.begin(), in.end(), [](IndexRange i){return (i.range().size() == 0);})) {
     vector<vector<Index>> index = LoopGenerator::gen(in);
 
     // first compute hashtags and length

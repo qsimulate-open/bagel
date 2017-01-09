@@ -76,11 +76,11 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals(const bool o
       for (int j = 0; j != norb(); ++j)
         if (fabs(buf->element(i,j)) > get<1>(max))
           max = make_tuple(j, fabs(buf->element(i,j)));
-  
+
       // register to emap
       if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
       emap.emplace(get<0>(max), i);
-  
+
       // copy to the target
       copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
       vec2(i) = vec(get<0>(max));

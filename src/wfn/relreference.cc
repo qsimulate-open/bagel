@@ -156,7 +156,7 @@ shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const
   cout << endl;
 
   vector<double> newenergies(input.size());
-  for (int i = 0; i != input.size(); ++i) 
+  for (int i = 0; i != input.size(); ++i)
     newenergies[i] = energy_[input[i]];
 
   // Construct a RelCIWfn with only CI coefficients for the desired state

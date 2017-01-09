@@ -32,11 +32,12 @@ using namespace std;
 using namespace bagel;
 
 Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
-
+  if (geom_->dkh())
+    throw runtime_error("Analytical gradients have not been implemented with the DKH Hamiltonian yet");
 }
 
 
-void Force::compute() {
+shared_ptr<GradFile> Force::compute() {
   auto input = idata_->get_child("method");
   const int target = idata_->get<int>("target", 0);
   const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
@@ -66,6 +67,7 @@ void Force::compute() {
   else
     cout << "  The gradients will be computed analytically" << endl;
 
+  shared_ptr<GradFile> out;
 
   const string method = to_lower(cinput->get<string>("title", ""));
 
@@ -73,52 +75,52 @@ void Force::compute() {
     if (method == "uhf") {
  
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "rohf") {
  
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "hf") {
  
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "ks") {
  
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "dhf") {
  
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "mp2") {
  
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "casscf" && jobtitle == "nacme") {
       
       auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype);
-      force->compute();
+      out = force->compute();
  
     } else if (method == "casscf") {
  
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
 
     } else if (method == "caspt2" && jobtitle == "nacme") {
       
       auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype);
-      force->compute();
+      out = force->compute();
 
     } else if (method == "caspt2") {
  
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
-      force->compute();
+      out = force->compute();
  
     } 
     else {
@@ -136,21 +138,22 @@ void Force::compute() {
     if (jobtitle == "force") {
 
       auto force = make_shared<FiniteGrad>(method, cinput, geom_, ref_, target, dx);
-      force->compute();
+      out = force->compute();
 
     } else if (jobtitle == "nacme") {
 
       if (method == "casscf") {
 
         auto force = make_shared<FiniteNacm<CASSCF>>(method, cinput, geom_, ref_, target, target2, dx);
-        force->compute();
+        out = force->compute();
 
       } else if (method == "caspt2") {
 
         auto force = make_shared<FiniteNacm<CASPT2Energy>>(method, cinput, geom_, ref_, target, target2, dx);
-        force->compute();
+        out = force->compute();
 
       }
     }
   }
+  return out;
 }

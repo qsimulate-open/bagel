@@ -229,8 +229,8 @@ shared_ptr<ZMatrix> RelDFFull::form_2index(shared_ptr<const RelDFFull> a, const 
 shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZMatrix> rdm2) const {
   const int nocc = nocc1();
   assert(nocc == nocc2() && nocc*nocc == rdm2->ndim() && rdm2->ndim() == rdm2->mdim());
-  shared_ptr<Matrix> rrdm = rdm2->get_real_part(); 
-  shared_ptr<Matrix> irdm = rdm2->get_imag_part(); 
+  shared_ptr<Matrix> rrdm = rdm2->get_real_part();
+  shared_ptr<Matrix> irdm = rdm2->get_imag_part();
   const btas::CRange<4> range(nocc, nocc, nocc, nocc);
   static_pointer_cast<btas::Tensor2<double>>(rrdm)->resize(range);
   static_pointer_cast<btas::Tensor2<double>>(irdm)->resize(range);
@@ -258,7 +258,7 @@ shared_ptr<RelDFFull> RelDFFull::apply_2rdm(shared_ptr<const ZRDM<2>> rdm2) cons
 
 
 void ListRelDFFull::ax_plus_y(const complex<double>& a, shared_ptr<const ListRelDFFull> o) {
-  assert(data_.size() == o->data_.size()); 
+  assert(data_.size() == o->data_.size());
   auto oi = o->data_.begin();
   for (auto& i : data_)
     i->ax_plus_y(a, *oi++);
@@ -316,11 +316,11 @@ shared_ptr<ZMatrix> ListRelDFFull::form_4index(shared_ptr<const ListRelDFFull> o
           *out += *ii->form_4index(jj, fac);
         } else {
           out = ii->form_4index(jj, fac);
-        }   
-      }   
+        }
+      }
   assert(out);
   return out;
-}   
+}
 
 
 shared_ptr<ZMatrix> ListRelDFFull::form_4index_1fixed(shared_ptr<const ListRelDFFull> o, const double fac, const int i) const {
@@ -329,14 +329,14 @@ shared_ptr<ZMatrix> ListRelDFFull::form_4index_1fixed(shared_ptr<const ListRelDF
     for (auto& jj : o->data_)
       if (ii->alpha_matches(jj)) {
         if (out) {
-          *out += *ii->form_4index_1fixed(jj, fac, i); 
+          *out += *ii->form_4index_1fixed(jj, fac, i);
         } else {
-          out = ii->form_4index_1fixed(jj, fac, i); 
-        }   
-      }   
+          out = ii->form_4index_1fixed(jj, fac, i);
+        }
+      }
   assert(out);
   return out;
-}   
+}
 
 
 shared_ptr<ZMatrix> ListRelDFFull::form_2index(shared_ptr<const ListRelDFFull> o, const double fac, const bool conjugate_left) const {
@@ -348,9 +348,9 @@ shared_ptr<ZMatrix> ListRelDFFull::form_2index(shared_ptr<const ListRelDFFull> o
           *out += *ii->form_2index(jj, fac, conjugate_left);
         } else {
           out = ii->form_2index(jj, fac, conjugate_left);
-        }   
-      }   
+        }
+      }
   assert(out);
   return out;
-}   
+}
 

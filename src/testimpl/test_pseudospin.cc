@@ -23,7 +23,7 @@
 //
 
 
-#include <src/multi/zcasscf/zcasbfgs.h>
+#include <src/multi/zcasscf/zcassecond.h>
 #include <src/prop/pseudospin/pseudospin.h>
 
 // Checking g-values to the 8th decimal place is not ideal
@@ -60,8 +60,8 @@ std::vector<double> zfs_param(std::string inp) {
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "bfgs") {
-        auto zcas = std::make_shared<ZCASBFGS>(itree, geom, ref);
+      if (algorithm == "second" || algorithm == "") {
+        auto zcas = std::make_shared<ZCASSecond>(itree, geom, ref);
         zcas->compute();
         ref = zcas->conv_to_ref();
         std::shared_ptr<const PTree> aniso_data = itree->get_child_optional("aniso");

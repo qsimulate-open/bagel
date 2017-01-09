@@ -98,6 +98,7 @@ using OSInt = OSIntegral<double,Int_t::Standard>;
 
 extern template class bagel::OSIntegral<double,bagel::Int_t::Standard>;
 extern template class bagel::OSIntegral<std::complex<double>,bagel::Int_t::London>;
+extern template class bagel::OSIntegral<std::complex<double>,bagel::Int_t::Standard>;
 
 #endif
 

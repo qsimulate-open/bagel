@@ -26,6 +26,7 @@
 #include <src/scf/hf/rhf.h>
 #include <src/scf/hf/fock.h>
 #include <src/prop/multipole.h>
+#include <src/prop/sphmultipole.h>
 #include <src/scf/dhf/population_analysis.h>
 #include <src/util/muffle.h>
 
@@ -53,6 +54,7 @@ void RHF::compute() {
   Timer scftime;
 
   shared_ptr<const Matrix> previous_fock = hcore_;
+
   shared_ptr<const Matrix> aodensity_;
 
   shared_ptr<const DistMatrix> tildex = tildex_->distmatrix();
@@ -63,10 +65,20 @@ void RHF::compute() {
 
   if (!restarted_) {
     if (coeff_ == nullptr) {
-      shared_ptr<const DistMatrix> fock = hcore;
-      if (dodf_ && geom_->spherical()) {
+      shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
+      if (geom_->spherical()) {
         auto aden = make_shared<const AtomicDensities>(geom_);
-        auto focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+        shared_ptr<const Matrix> focka;
+        if (!dofmm_) {
+          if (dodf_) {
+            focka = make_shared<const Fock<1>>(geom_, hcore_, aden, schwarz_);
+          } else {
+            focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
+          }
+        } else {
+          shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden)->get_real_part();
+          focka = make_shared<const Matrix>(*hcore_ + *tmp);
+        }
         fock = focka->distmatrix();
       }
       DistMatrix intermediate = *tildex % *fock * *tildex;
@@ -74,11 +86,17 @@ void RHF::compute() {
       coeff = make_shared<const DistMatrix>(*tildex * intermediate);
     } else {
       shared_ptr<const Matrix> focka;
-      if (!dodf_) {
-        aodensity_ = coeff_->form_density_rhf(nocc_);
-        focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+      if (!dofmm_) {
+        if (!dodf_) {
+          aodensity_ = coeff_->form_density_rhf(nocc_);
+          focka = make_shared<const Fock<0>>(geom_, hcore_, aodensity_, schwarz_);
+        } else {
+          focka = make_shared<const Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        }
       } else {
-        focka = make_shared<const Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+        aodensity_ = coeff_->form_density_rhf(nocc_);
+        shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_)->get_real_part();
+        focka = make_shared<const Matrix>(*hcore_ + *tmp);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -98,12 +116,8 @@ void RHF::compute() {
     coeff = coeff_->distmatrix();
   }
 
-  if (!dodf_) {
-    aodensity_ = coeff_->form_density_rhf(nocc_);
-    aodensity = aodensity_->distmatrix();
-  } else {
-    aodensity = coeff->form_density_rhf(nocc_);
-  }
+  aodensity_ = coeff_->form_density_rhf(nocc_);
+  aodensity = aodensity_->distmatrix();
 
   // starting SCF iteration
   shared_ptr<const Matrix> densitychange = aodensity_;
@@ -119,16 +133,20 @@ void RHF::compute() {
     }
 #endif
 
-    if (!dodf_) {
-      previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
-      mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
+    if (!dofmm_) {
+      if (!dodf_) {
+        previous_fock = make_shared<Fock<0>>(geom_, previous_fock, densitychange, schwarz_);
+        mpi__->broadcast(const_pointer_cast<Matrix>(previous_fock)->data(), previous_fock->size(), 0);
+      } else {
+        previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      }
     } else {
-      previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
+      shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(densitychange)->get_real_part();
+      previous_fock = make_shared<const Matrix>(*previous_fock + *tmp);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
-
     pdebug.tick_print("Fock build");
 
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
@@ -167,10 +185,10 @@ void RHF::compute() {
       shared_ptr<const Matrix> new_density = coeff_->form_density_rhf(nocc_);
       densitychange = make_shared<Matrix>(*new_density - *aodensity_);
       aodensity_ = new_density;
-      aodensity = aodensity_->distmatrix();
     } else {
-      aodensity = coeff->form_density_rhf(nocc_);
+      aodensity_ = coeff_->form_density_rhf(nocc_);
     }
+    aodensity = aodensity_->distmatrix();
     pdebug.tick_print("Post process");
   }
   // by default we compute dipoles
@@ -178,6 +196,10 @@ void RHF::compute() {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
     mu.compute();
+    if (dma_print_ > 0) {
+      SphMultipole smu(geom_, aodensity_, dma_print_);
+      smu.compute();
+    }
   }
 
   // print out orbital populations, if needed

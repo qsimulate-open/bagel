@@ -55,7 +55,7 @@ double compute_alpha(const int k, const int q) {
 // Compute Nkq for q = 0
 double compute_Nk0(const int k) {
   assert (k >= 0);
-  const double twok = std::pow(2.0,k);
+  const double twok = pow(2.0,k);
   const double Nkk_denomenator = twok * fact(k);
   const double out = 1.0 / Nkk_denomenator;
   return out;
@@ -99,10 +99,10 @@ long long greatest_common_factor(const long long a, const long long b) {
 
 // Fkq is the greatest common factor of all a(k, q; m, i) with the same k, q
 long long compute_Fkq(const vector<vector<long long>>& input) {
-  long long out = std::abs(input[0][0]);
+  long long out = abs(input[0][0]);
   for(int m = 0; m != input.size(); ++m)
     for(int i = 0; i != input[m].size(); ++i)
-      out = greatest_common_factor(out, std::abs(input[m][i]));
+      out = greatest_common_factor(out, abs(input[m][i]));
   return out;
 }
 
@@ -126,7 +126,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
     // Requires factorial of k
     // Above k = 12, coefficients become so large that long long fails to capture them.
     // Potentially we could tabulate a(k, q; m) / Fkq or something, but for now this is fine.
-    const int kmax = std::min(fact.max(), 13);
+    const int kmax = min(fact.max(), 13);
     if (k >= kmax)
       throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax - 1) + " and lower");
     if (k < 0)
@@ -151,7 +151,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
 
     for (int q = 1; q <= k; ++q) {
       alpha[q] = compute_alpha(k, q);
-      Nkq[q] = -1.0 * Nkq[q-1] * std::sqrt((k + q) * (k - q + 1.0));
+      Nkq[q] = -1.0 * Nkq[q-1] * sqrt((k + q) * (k - q + 1.0));
     }
 
     for (int q = k; q >= 0; --q) {
@@ -171,7 +171,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
 
         akqm_current[m] = 0.0;
         for (int i=0; i <= (k-q-m)/2; ++i)
-          akqm_current[m] += std::pow(ss1, i) * akqmi_current[m][i];
+          akqm_current[m] += pow(ss1, i) * akqmi_current[m][i];
 
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
       }

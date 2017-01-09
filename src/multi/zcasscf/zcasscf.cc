@@ -103,7 +103,7 @@ void ZCASSCF::init() {
   nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
-  natocc_ = idata_->get<bool>("natocc",false);
+  natocc_ = idata_->get<bool>("natocc", false);
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -147,7 +147,7 @@ void ZCASSCF::init() {
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_*0.5);
 
   cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
   cout << "    * nact     : " << setw(6) << nact_ << endl;
@@ -211,163 +211,11 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 }
 
 
-pair<shared_ptr<ZMatrix>, VectorB> ZCASSCF::make_natural_orbitals(shared_ptr<const ZMatrix> rdm1) const {
-
-  // input should be 1rdm in kramers format
-  shared_ptr<ZMatrix> tmp;
-  if (tsymm_) {
-    tmp = make_shared<QuatMatrix>(*rdm1);
-#ifndef NDEBUG
-    // Failures here can sometimes be fixed by using a tighter convergence threshold in the FCI part
-    auto quatrdm = static_pointer_cast<const QuatMatrix>(tmp);
-    assert(quatrdm->is_t_symmetric(1.0e-6));
-#endif
-  } else {
-    tmp = make_shared<ZMatrix>(*rdm1);
-  }
-
-  const bool unitmat = tmp->is_identity(1.0e-14);
-  shared_ptr<ZMatrix> out;
-  VectorB vec2(tmp->ndim());
-
-  if (!unitmat) {
-    VectorB vec(rdm1->ndim());
-    tmp->diagonalize(vec);
-
-    if (!tsymm_)
-      RelCoeff::rearrange_eig(vec, tmp, false);
-
-    map<int,int> emap;
-    out = tmp->clone();
-
-    const bool occ_sort = idata_->get<bool>("occ_sort",false);
-    if (tsymm_) {
-      if (occ_sort) {
-        // sort by natural orbital occupation numbers
-        int b2n = out->ndim();
-        for (int i = 0; i != out->mdim()/2; ++i) {
-          copy_n(tmp->element_ptr(0, out->mdim()/2-1-i), b2n, out->element_ptr(0, i));
-          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i+b2n/2));
-          vec2[b2n/2-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
-          vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
-        }
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          if (real(out->element(i,i)) < 0.0)
-            blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
-        }
-      } else {
-        // sort eigenvectors so that buf is close to a unit matrix
-        // assumes quaternion symmetry - only the top-left quarter is checked
-        // target column
-        for (int i = 0; i != tmp->ndim()/2; ++i) {
-          // first find the source column
-          tuple<int, double> max = make_tuple(-1, 0.0);
-          for (int j = 0; j != tmp->ndim(); ++j) {
-            if (std::abs(tmp->element(i,j)) > get<1>(max))
-              max = make_tuple(j, std::abs(tmp->element(i,j)));
-          }
-
-          // register to emap
-          if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
-          assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
-          emap.emplace(get<0>(max), i);
-
-          // copy to the target
-          copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
-          copy_n(tmp->element_ptr(0,get<0>(max)+tmp->ndim()/2), tmp->ndim(), out->element_ptr(0,i+tmp->ndim()/2));
-          vec2[i] = vec[get<0>(max)];
-          vec2[i+tmp->ndim()/2] = vec[get<0>(max)];
-        }
-
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          if (real(out->element(i,i)) < 0.0)
-          blas::scale_n(-1.0, out->element_ptr(0,i), tmp->ndim());
-        }
-      }
-    } else {
-      // assumes no particular symmetry - the full matrix is checked
-      if (occ_sort) {
-        // sort by natural orbital occupation numbers
-        int b2n = out->ndim();
-        for (int i = 0; i != out->mdim(); ++i) {
-          copy_n(tmp->element_ptr(0, out->mdim()-1-i), b2n, out->element_ptr(0, i));
-          vec2[b2n-i-1] = vec[i] > 0.0 ? vec[i] : 0.0;
-        }
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          const double phase = std::arg(out->element(i,i));
-          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
-        }
-      } else {
-        // target column
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          // first find the source column
-          tuple<int, double> max = make_tuple(-1, 0.0);
-          for (int j = 0; j != tmp->ndim(); ++j)
-            if (std::abs(tmp->element(i,j)) > get<1>(max))
-              max = make_tuple(j, std::abs(tmp->element(i,j)));
-
-          // register to emap
-          if (emap.find(get<0>(max)) != emap.end()) throw logic_error("In ZCASSCF::make_natural_orbitals(), two columns had max values in the same positions.  This should not happen.");
-          assert(get<0>(max) != -1); // can happen if all checked elements are zero, for example
-          emap.emplace(get<0>(max), i);
-
-          // copy to the target
-          copy_n(tmp->element_ptr(0,get<0>(max)), tmp->ndim(), out->element_ptr(0,i));
-          vec2[i] = vec[get<0>(max)];
-        }
-
-        // fix the phase
-        for (int i = 0; i != tmp->ndim(); ++i) {
-          const double phase = std::arg(out->element(i,i));
-          blas::scale_n(polar(1.0, -phase), out->element_ptr(0,i), tmp->ndim());
-        }
-      }
-    }
-
-  } else { // set occupation numbers, but coefficients don't need to be updated
-    for (int i = 0; i != tmp->ndim(); ++i)
-      vec2[i] = tmp->get_real_part()->element(i,i);
-    out = tmp;
-  }
-
-  return make_pair(out, vec2);
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::natorb_rdm2_transform(const shared_ptr<ZMatrix> coeff, shared_ptr<const ZMatrix> rdm2) const {
-  shared_ptr<ZMatrix> out = rdm2->clone();
-  shared_ptr<ZMatrix> buf = rdm2->clone();
-  shared_ptr<const ZMatrix> coeff_conjg = coeff->get_conjg();
-  const int ndim  = nact_*2;
-  const int ndim2 = ndim*ndim;;
-  auto half_trans = [&](shared_ptr<const ZMatrix> a, shared_ptr<ZMatrix> b, shared_ptr<ZMatrix> c) {
-    zgemm3m_("N", "N", ndim2*ndim, ndim, ndim, 1.0, a->data(), ndim2*ndim, coeff->data(), ndim, 0.0, b->data(), ndim2*ndim);
-    for (int i = 0; i != ndim; ++i)
-      zgemm3m_("N", "N", ndim2, ndim, ndim, 1.0, b->data()+i*ndim2*ndim, ndim2, coeff_conjg->data(), ndim, 0.0, c->data()+i*ndim2*ndim, ndim2);
-  };
-  half_trans(rdm2, buf, out);
-  blas::transpose(out->data(), ndim2, ndim2, buf->data());
-  half_trans(buf, out, buf);
-  blas::transpose(buf->data(), ndim2, ndim2, out->data());
-  return out;
-}
-
-
 shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
   auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
   cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, cold->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
   return cnew;
-}
-
-
-shared_ptr<const ZMatrix> ZCASSCF::update_qvec(shared_ptr<const ZMatrix> qold, shared_ptr<const ZMatrix> natorb) const {
-  auto qnew = make_shared<ZMatrix>(*qold * *natorb);
-  qnew->copy_block(nclosed_*2, 0, nact_*2, nact_*2, *natorb % *qnew->get_submatrix(nclosed_*2, 0, nact_*2, nact_*2));
-  return qnew;
 }
 
 
@@ -386,55 +234,6 @@ void ZCASSCF::print_natocc() const {
   for (int i = 0; i != num; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
   cout << "  ============================================ " << endl;
-}
-
-
-shared_ptr<ZRotFile> ZCASSCF::copy_electronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  const int nr_nvirt = nvirt_ - nneg_/2;
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nr_nvirt*2);
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nr_nvirt;   ++j) {
-      out->ele_vc(j, i) = rot->ele_vc(j, i);
-      out->ele_vc(j + nr_nvirt, i) = rot->ele_vc(j + nvirt_, i);
-      out->ele_vc(j, i + nclosed_) = rot->ele_vc(j, i + nclosed_);
-      out->ele_vc(j + nr_nvirt, i + nclosed_) = rot->ele_vc(j + nvirt_, i + nclosed_);
-    }
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nr_nvirt;   ++j) {
-      out->ele_va(j, i) = rot->ele_va(j, i);
-      out->ele_va(j + nr_nvirt, i) = rot->ele_va(j + nvirt_, i);
-      out->ele_va(j, i + nact_) = rot->ele_va(j, i + nact_);
-      out->ele_va(j + nr_nvirt, i + nact_) = rot->ele_va(j + nvirt_, i + nact_);
-    }
-  for (int i = 0; i != nact_;   ++i)
-    for (int j = 0; j != nclosed_; ++j) {
-      out->ele_ca(j, i) = rot->ele_ca(j, i);
-      out->ele_ca(j + nclosed_, i) = rot->ele_ca(j + nclosed_, i);
-      out->ele_ca(j, i + nact_) = rot->ele_ca(j, i + nact_);
-      out->ele_ca(j + nclosed_, i + nact_) = rot->ele_ca(j + nclosed_, i + nact_);
-    }
-  return out;
-}
-
-
-shared_ptr<ZRotFile> ZCASSCF::copy_positronic_rotations(shared_ptr<const ZRotFile> rot) const {
-  const int nvirtnr = nvirt_ - nneg_/2;
-  auto out = make_shared<ZRotFile>(nclosed_*2, nact_*2, nneg_);
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nneg_/2;   ++j) {
-      out->ele_vc(j, i) = rot->ele_vc(j + nvirtnr, i);
-      out->ele_vc(j, i + nclosed_) = rot->ele_vc(j + nvirtnr, i + nclosed_);
-      out->ele_vc(j + nneg_/2, i)  = rot->ele_vc(j + nvirt_ + nvirtnr, i);
-      out->ele_vc(j + nneg_/2, i + nclosed_) = rot->ele_vc(j + nvirt_ + nvirtnr, i + nclosed_);
-    }
-  for (int i = 0; i != nact_; ++i)
-    for (int j = 0; j != nneg_/2;   ++j) {
-      out->ele_va(j, i) = rot->ele_va(j + nvirtnr, i);
-      out->ele_va(j, i + nact_) = rot->ele_va(j + nvirtnr, i + nact_);
-      out->ele_va(j + nneg_/2, i) = rot->ele_va(j + nvirt_ + nvirtnr, i);
-      out->ele_va(j + nneg_/2, i + nact_) = rot->ele_va(j + nvirt_ + nvirtnr, i + nact_);
-    }
-  return out;
 }
 
 
