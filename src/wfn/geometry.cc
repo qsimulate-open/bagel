@@ -294,7 +294,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
-
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {

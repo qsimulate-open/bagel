@@ -73,6 +73,8 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<Matrix> dcheck_;
+    // for derivative coupling only
+    std::shared_ptr<Matrix> vden1_;
 
     // passed from CASPT2
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
@@ -173,10 +175,13 @@ class MSCASPT2 {
     ~MSCASPT2() {}
 
     void solve_deriv();
+    void solve_nacme();
+    void solve_dm();
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
+    std::shared_ptr<const Matrix> vden1() const { return vden1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
 };

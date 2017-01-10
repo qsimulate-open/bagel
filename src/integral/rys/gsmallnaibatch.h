@@ -31,7 +31,7 @@
 
 namespace bagel {
 
-// TODO make a base class SmallNAIBatch_base and remove redundancy 
+// TODO make a base class SmallNAIBatch_base and remove redundancy
 class GSmallNAIBatch {
   protected:
     std::vector<std::shared_ptr<Matrix>> data_;

@@ -35,7 +35,7 @@ class MomentumBatch : public OSInt {
     void perform_VRR(double*) override;
 
     int nblocks() const override { return 3; }
-    int nrank() const override { return 0; } 
+    int nrank() const override { return 0; }
 
   public:
     MomentumBatch(const std::array<std::shared_ptr<const Shell>,2>& basis, std::shared_ptr<StackMem> stack = nullptr)

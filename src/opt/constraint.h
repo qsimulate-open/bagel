@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: force.h
-// Copyright (C) 2015 Toru Shiozaki
+// Filename: constraint.h
+// Copyright (C) 2017 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Jae Woo Park <jwpk1201@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,28 +22,30 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_GRAD_FORCE_H
-#define __SRC_GRAD_FORCE_H
+#include <string>
+#include <array>
+#include <src/util/timer.h>
+#include <src/util/io/moldenout.h>
+#include <src/wfn/construct_method.h>
 
-#include <src/wfn/reference.h>
+#ifndef __SRC_OPT_CONSTRAINT_H
+#define __SRC_OPT_CONSTRAINT_H
 
-namespace bagel {
+namespace bagel  {
+  class OptConstraint {
+    protected:
+      std::string type_;
+      std::array<int,4> pair_;
+      double value_;
 
-class Force {
-  protected:
-    const std::shared_ptr<const PTree> idata_;
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Reference> ref_;
-    bool numerical_;		// numerical or analytical gradient?
+    public:
+      OptConstraint(std::shared_ptr<const PTree> inp);
 
-  public:
-    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
-
-    std::shared_ptr<GradFile> compute();
-
-};
-
-
+      const std::string type() const { return type_; }
+      const std::array<int,4>& pair() const { return pair_; }
+      int pair(const unsigned int i) const { return pair_[i]; }
+      double value() const { return value_; }
+  };
 }
 
 #endif

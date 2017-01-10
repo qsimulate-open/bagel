@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: force.h
-// Copyright (C) 2015 Toru Shiozaki
+// Filename: constraint.cc
+// Copyright (C) 2017 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Jae Woo Park <jwpk1201@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,28 +22,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_GRAD_FORCE_H
-#define __SRC_GRAD_FORCE_H
+#include <src/opt/constraint.h>
 
-#include <src/wfn/reference.h>
+using namespace std;
+using namespace bagel;
 
-namespace bagel {
+// TODO: have linear combination
 
-class Force {
-  protected:
-    const std::shared_ptr<const PTree> idata_;
-    std::shared_ptr<const Geometry> geom_;
-    std::shared_ptr<const Reference> ref_;
-    bool numerical_;		// numerical or analytical gradient?
+OptConstraint::OptConstraint(shared_ptr<const PTree> inp) {
+  type_ = to_lower(inp->get<string>("type"));
+  pair_ = inp->get_array<int,4>("pair");
+  value_ = inp->get<double>("value");
 
-  public:
-    Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
+  // some processings
+  for (int p = 0; p != 4; ++p) pair_[p]--;
+  if (type_=="dihedral") type_="torsion";
+  if (type_=="angle" || type_=="torsion") value_ /= rad2deg__;
+  if (type_=="angstrom") { type_ = "bond"; value_ /= au2angstrom__; }
 
-    std::shared_ptr<GradFile> compute();
-
-};
-
-
+  cout << "Constraint initialized : " << type_ << "  pair = " << pair_[0] << " " << pair_[1] << " " << pair_[2] << " " << pair_[3] << " " << value_ << endl;
 }
-
-#endif

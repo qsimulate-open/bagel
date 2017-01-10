@@ -52,6 +52,7 @@ class GradEval_base {
     /// contract finite-nucleus NAI gradient
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(const std::shared_ptr<const Matrix> n);
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(std::array<std::shared_ptr<const Matrix>,6> n,  const std::shared_ptr<const Geometry> geom = nullptr);
+    std::vector<std::shared_ptr<GradTask>> contract_grad1e_sigma(const std::shared_ptr<const Matrix> v);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<std::shared_ptr<GradTask>> contract_grad2e(const std::shared_ptr<const DFDist> o,               const std::shared_ptr<const Geometry> geom = nullptr);
@@ -73,9 +74,18 @@ class GradEval_base {
                                                 const std::shared_ptr<const Geometry> g2 = nullptr,
                                                 const std::shared_ptr<const DFDist> g2o = nullptr,
                                                 const std::shared_ptr<const Matrix> g2o2 = nullptr);
+    /// Basically do the same thing with contract_gradient, but without nuclear gradient
+    std::shared_ptr<GradFile> contract_nacme   (const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
+                                                const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2,
+                                                const std::shared_ptr<const Matrix> v,
+                                                const bool numerical = false,
+                                                const std::shared_ptr<const Geometry> g2 = nullptr,
+                                                const std::shared_ptr<const DFDist> g2o = nullptr,
+                                                const std::shared_ptr<const Matrix> g2o2 = nullptr);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return nullptr; }
 
   friend class GradTask1;
+  friend class GradTask1s;
   friend class GradTask2;
   friend class GradTask3;
   friend class GradTask1r;
@@ -95,6 +105,15 @@ std::shared_ptr<GradFile> GradTask1::compute_os(std::shared_ptr<const Matrix> de
   return batch.compute_gradient(cden, atomindex_[0], atomindex_[1], ge_->geom_->natom());
 }
 
+template<typename TBatch>
+std::shared_ptr<GradFile> GradTask1s::compute_os(std::shared_ptr<const Matrix> den) const {
+  const int dimb1 = shell_[0]->nbasis();
+  const int dimb0 = shell_[1]->nbasis();
+  std::shared_ptr<const Matrix> cden = den->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  TBatch batch(shell_);
+  batch.compute();
+  return batch.compute_gradient(cden, atomindex_[0], atomindex_[1], ge_->geom_->natom());
+}
 
 
 }

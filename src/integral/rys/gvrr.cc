@@ -71,8 +71,8 @@ void GradBatch::perform_VRR() {
         transx[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);
         transy[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);
         transz[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);
-      }   
-    }   
+      }
+    }
   }
   for (int id = 0, k = 0; id <= d+1; ++id) {
     for (int ic = 0; ic <= c+1; ++ic, ++k) {
@@ -81,8 +81,8 @@ void GradBatch::perform_VRR() {
         trans2x[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[0], ic+id-i);
         trans2y[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[1], ic+id-i);
         trans2z[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[2], ic+id-i);
-      }   
-    }   
+      }
+    }
   }
   double* const intermediate = stack_->get(b2*a2*(cmax_+1)*rank_);
   double* const final_x  = stack_->get(b2*a2*c2*d2*rank_);

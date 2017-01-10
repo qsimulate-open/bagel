@@ -162,7 +162,9 @@ class Molecule {
 
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+    std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+    // driver for compute B matrix for redundant coordinate
+    std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
     // Split up the atoms into several Molecule objects
     // To limit the memory requirement of integral evaluation

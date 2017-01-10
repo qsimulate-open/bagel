@@ -95,7 +95,7 @@ void SmallERIBatch::eri_compute(double* eri) const {
   const size_t a1 = a1size_inc + a1size_dec;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
-  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); }; 
+  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); };
 
   {
 #ifndef LIBINT_INTERFACE

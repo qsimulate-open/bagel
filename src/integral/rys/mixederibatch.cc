@@ -92,7 +92,7 @@ void MixedERIBatch::eri_compute(double* eri) const {
   const int a1 = a1size_inc + a1size_dec;
 
   auto dummy = make_shared<const Shell>(shells_[0]->spherical());
-  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); }; 
+  auto m = [&s0size, &a1](const size_t& i, const size_t& j, const size_t k){ return i+s0size*(j+a1*k); };
 
   {
     shared_ptr<const Shell> cart2 = shells_[2]->cartesian_shell();

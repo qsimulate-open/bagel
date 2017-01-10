@@ -166,6 +166,26 @@ void Dvector<DataType>::synchronize() {
     i->synchronize();
 }
 
+template <typename DataType>
+void Dvector<DataType>::rotate(std::shared_ptr<const Matrix> msrot) {
+  // now coded in somewhat un-efficient manner
+  Dvector<DataType> tmp(*this);
+  const size_t detnumb = dvec().size();
+  const size_t detsize = data(0)->size();
+  for (size_t i = 0; i != detnumb; ++i) {
+    for (size_t a = 0; a != detsize; ++a) {
+      data(i)->data(a) = 0.0;
+    }
+  }
+  for (size_t i = 0; i != detnumb; ++i) {
+    for (size_t k = 0; k != detnumb; ++k) {
+      for (size_t a = 0; a != detsize; ++a) {
+        data(i)->data(a) += msrot->element(k, i) * tmp.data(k)->data(a);
+      }
+    }
+  }
+}
+
 
 template <typename DataType>
 void Dvector<DataType>::print(const double thresh) const {
@@ -176,6 +196,17 @@ void Dvector<DataType>::print(const double thresh) const {
       cout << ", <S^2> = " << setw(6) << setprecision(4) << iter->spin_expectation();
     cout << endl;
     iter->print(thresh);
+  }
+}
+
+template <typename DataType>
+void Dvector<DataType>::print(const bool sort) const {
+  int j = 0;
+  for (auto& iter : dvec_) {
+    std::cout << std::endl << "     * ci vector, state " << std::setw(3) << j++;
+    if (typeid(DataType) == typeid(double)) std::cout << ", <S^2> = " << std::setw(6) << std::setprecision(4) << iter->spin_expectation();
+    std::cout << std::endl;
+    iter->print(0.0, false);
   }
 }
 
@@ -195,6 +226,42 @@ shared_ptr<Dvector<DataType>> Dvector<DataType>::extract_state(const int istate)
   auto out = make_shared<Dvector<DataType>>(dvec_[istate], 1);
   return out;
 }
+
+template<typename DataType>
+template<typename T, class>
+void Dvector<DataType>::match(shared_ptr<Dvector<double>>& ref) {
+  assert(data(0)->size() == ref->data(0)->size());
+  assert(dvec().size() == ref->dvec().size());
+
+  const size_t detsize = ref->data(0)->size();
+  const size_t detnumb = dvec().size();
+
+  vector<int> horizontal(detsize);
+
+  for (size_t i = 0; i != detsize; ++i) {
+    double comp = data(0)->data(i) * ref->data(0)->data(i);
+    if (comp < 0.0) horizontal[i] = -1;
+    else horizontal[i] = 1;
+  }
+
+  // for all determinants, do "horizontal matching"
+
+  for (auto& iter : dvec_)
+    for (size_t i = 0; i != detsize; ++i)
+      iter->data(i) = iter->data(i) * double(horizontal[i]);
+
+  // then "vertical matching" at one shot
+
+  for (size_t i = 0; i != detnumb; ++i) {
+    double comp = 0.0;
+    for (size_t j = 0; j != detsize; ++j) {
+      comp += data(i)->data(j) * ref->data(i)->data(j);
+    }
+    if (comp < 0.0) data(i)->scale(-1.0);
+  }
+
+}
+
 
 template class Dvector<double>;
 template class Dvector<complex<double>>;

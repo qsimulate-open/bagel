@@ -137,6 +137,18 @@ shared_ptr<Matrix> RDM<1>::rdm1_mat(const int nclosed, const bool all) const {
 
 
 template<>
+shared_ptr<Matrix> RDM<1>::rdm1_mat_tr(const int nclosed, const bool all) const {
+  auto out = make_shared<Matrix>(nclosed+norb(), nclosed+norb());
+  if (all)
+    for (int i = 0; i != nclosed; ++i) out->element(i,i) = 0.0;
+  for (int i = 0; i != norb(); ++i)
+    for (int j = 0; j != norb(); ++j)
+      out->element(j+nclosed, i+nclosed) = element(j,i);
+  return out;
+}
+
+
+template<>
 void RDM<1>::print(const double thresh) const {
   const double* ptr = data();
   for (int i = 0; i != norb(); ++i)

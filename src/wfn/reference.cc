@@ -112,6 +112,15 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   }
 }
 
+shared_ptr<Matrix> Reference::rdm1_mat_tr(shared_ptr<const RDM<1>> active) const {
+  if (nact_)
+    return active->rdm1_mat_tr(nclosed_);
+  else {
+    auto out = make_shared<Matrix>(nocc(), nocc());
+    for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 0.0;	// unnecessary and silly: just to make it sure
+    return out;
+  }
+}
 
 shared_ptr<const Dvec> Reference::civectors() const {
   return ciwfn_->civectors();

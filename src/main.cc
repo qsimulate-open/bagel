@@ -140,6 +140,11 @@ int main(int argc, char** argv) {
         auto opt = make_shared<Force>(itree, geom, ref);
         opt->compute();
 
+      } else if (title == "nacme") {
+
+        auto opt = make_shared<Force>(itree, geom, ref);
+        opt->compute();
+
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
