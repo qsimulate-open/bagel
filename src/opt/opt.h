@@ -136,14 +136,7 @@ class Opt {
       current_->print_atoms();
     }
 
-    void compute_alglib();
-    void compute_noalglib();
-    void compute() {
-      if (alglib_)
-        compute_alglib();
-      else
-        compute_noalglib();
-    }
+    void compute();
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {

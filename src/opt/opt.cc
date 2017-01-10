@@ -106,7 +106,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
 
 }
 
-void Opt::compute_noalglib() {
+void Opt::compute() {
   auto displ = make_shared<XYZFile>(current_->natom());
   size_ = internal_ ? (redundant_? bmat_red_[0]->ndim() : bmat_[0]->mdim()) : displ->size();
 
