@@ -246,10 +246,10 @@ void Dvector<DataType>::match(shared_ptr<Dvector<double>>& ref) {
 
   // for all determinants, do "horizontal matching"
 
-  for (auto& iter : dvec_) 
+  for (auto& iter : dvec_)
     for (size_t i = 0; i != detsize; ++i)
       iter->data(i) = iter->data(i) * double(horizontal[i]);
-  
+
   // then "vertical matching" at one shot
 
   for (size_t i = 0; i != detnumb; ++i) {

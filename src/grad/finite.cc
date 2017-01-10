@@ -33,16 +33,16 @@ using namespace bagel;
 shared_ptr<GradFile> FiniteGrad::compute() {
   cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
- 
+
   auto displ = std::make_shared<XYZFile>(geom_->natom());
   auto grad = std::make_shared<GradFile>(geom_->natom());
 
   double energy_plus, energy_minus;
- 
+
   displ->scale(0.0);
- 
+
   shared_ptr<Method> energy_method;
- 
+
   energy_method = construct_method(method_, idata_, geom_, ref_);
   energy_method->compute();
   ref_ = energy_method->conv_to_ref();
@@ -50,11 +50,11 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
   shared_ptr<const Reference> refgrad_plus;
   shared_ptr<const Reference> refgrad_minus;
- 
+
   cout << "  Reference energy is " << energy_ << endl;
 
   muffle_ = make_shared<Muffle>("finite.log");
- 
+
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
 
@@ -74,7 +74,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       displ->element(j,i) = -2.0 * dx_;
       geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
       geom_->print_atoms();
-      
+
       refgrad_minus = make_shared<Reference>(*ref_, nullptr);
       refgrad_minus = refgrad_minus->project_coeff(geom_);
 
@@ -82,7 +82,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       energy_method->compute();
       refgrad_minus = energy_method->conv_to_ref();
       energy_minus = refgrad_minus->energy(target_state_);
- 
+
       grad->element(j,i) = (energy_plus - energy_minus) / (dx_ * 2.0);      // Hartree / bohr
 
       displ->element(j,i) = dx_;
@@ -102,13 +102,13 @@ template<>
 shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr(s)" << endl;
-  
+
   auto displ = make_shared<XYZFile>(geom_->natom());
   auto grad_ci = std::make_shared<GradFile>(geom_->natom());
   auto grad = make_shared<GradFile>(geom_->natom());
 
   displ->scale(0.0);
-  
+
   shared_ptr<Method> energy_method;
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   int nclosed = ref_->nclosed();
@@ -116,7 +116,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   shared_ptr<const Matrix> acoeff_ref;
   acoeff_ref = make_shared<Matrix>(ref_->coeff()->slice(nclosed, nocc));
   civ_ref->print (/*sort=*/false);
-  
+
   shared_ptr<const Reference> refgrad_plus;
   shared_ptr<const Reference> refgrad_minus;
   shared_ptr<Dvec> civ_plus;
@@ -132,10 +132,10 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   const int lenb = civ_ref->det()->lenb();
   auto gmo = make_shared<Matrix>(norb, norb);
   gmo->zero();
-  
+
   assert(norb==(nocc-nclosed));
   muffle_ = make_shared<Muffle>("finite.log");
-  
+
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
       muffle_->mute();
@@ -145,14 +145,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
       refgrad_plus = make_shared<Reference> (*ref_, nullptr);
       refgrad_plus = nullptr;
-  
+
       energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
       energy_method->compute();
       refgrad_plus = energy_method->conv_to_ref();
       acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
       for (int im = 0; im != acoeff_ref->mdim(); ++im) {
         double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
-        if (dmatch < 0.0) 
+        if (dmatch < 0.0)
           blas::scale_n(-1.0, acoeff_plus->element_ptr(0, im), acoeff_ref->ndim());
       }
 
@@ -165,14 +165,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
       refgrad_minus = make_shared<Reference> (*ref_, nullptr);
       refgrad_minus = nullptr;
-      
+
       energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
       energy_method->compute();
       refgrad_minus = energy_method->conv_to_ref();
       acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
       for (int im = 0; im != acoeff_ref->mdim(); ++im) {
         double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
-        if (dmatch < 0.0) 
+        if (dmatch < 0.0)
           blas::scale_n(-1.0, acoeff_minus->element_ptr(0, im), acoeff_ref->ndim());
       }
 
@@ -184,7 +184,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       civ_diff->scale(1.0 / (2.0 * dx_));
       acoeff_diff = make_shared<Matrix>(*acoeff_plus - *acoeff_minus);
       acoeff_diff->scale(1.0 / (2.0 * dx_));
-  
+
       displ->element(j,i) = dx_;
       geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, true);
 
@@ -202,7 +202,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
               size_t iaB = iter.target;
               double sign = static_cast<double>(iter.sign);
 
-              for (size_t ib = 0; ib != lenb; ++ib) {                    
+              for (size_t ib = 0; ib != lenb; ++ib) {
                 double factor = civ_ref->data(target_state1_)->data(ib+iaB*lenb) * civ_ref->data(target_state2_)->data(ib+iaA*lenb) * sign;
                 grad->element(j,i) += factor * (Uij->element(ij, ii) - Uij->element(ii, ij)) * .5;
                 if ((i + j * 3) == 0) {

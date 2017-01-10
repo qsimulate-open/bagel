@@ -23,7 +23,7 @@
 //
 
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>
@@ -74,7 +74,7 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
     NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_);
     x2 = evaln.compute();
   } else {
-    throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2"); 
+    throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
   auto x1 = std::make_shared<GradFile>(*cgrad2 - *cgrad1);
@@ -112,63 +112,63 @@ shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<c
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "rohf") {
 
     GradEval<ROHF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "hf") {
 
     GradEval<RHF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "ks") {
 
     GradEval<KS> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "dhf") {
 
     GradEval<Dirac> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "mp2") {
 
     GradEval<MP2Grad> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "casscf") {
 
     GradEval<CASSCF> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   } else if (method_ == "caspt2") {
 
     GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();
-    
+
   }
   return out;
 }
 
 shared_ptr<GradFile> Opt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
   auto out = make_shared<GradFile>(current_->natom());
-  
+
   if (opttype_ == "conical") out = get_cigrad_bearpark(cinput, ref);
   else out = get_grad_energy(cinput, ref);
 

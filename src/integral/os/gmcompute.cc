@@ -73,11 +73,11 @@ void GMomentBatch::compute() {
   copy_n(data_+size_block_*4, size_block_, data_+size_block_*7); //yz
   copy_n(data_+size_block_*4, size_block_, data_+size_block_*5); //yz
   copy_n(data_+size_block_*3, size_block_, data_+size_block_*4); //yy
-  copy_n(data_+size_block_*2, size_block_, data_+size_block_*6); //xz 
-//copy_n(data_+size_block_*2, size_block_, data_+size_block_*2); //xz 
-  copy_n(data_+size_block_*1, size_block_, data_+size_block_*3); //xy 
-//copy_n(data_+size_block_*1, size_block_, data_+size_block_*1); //xy 
-//copy_n(data_+size_block_*0, size_block_, data_+size_block_*0); //xx 
+  copy_n(data_+size_block_*2, size_block_, data_+size_block_*6); //xz
+//copy_n(data_+size_block_*2, size_block_, data_+size_block_*2); //xz
+  copy_n(data_+size_block_*1, size_block_, data_+size_block_*3); //xy
+//copy_n(data_+size_block_*1, size_block_, data_+size_block_*1); //xy
+//copy_n(data_+size_block_*0, size_block_, data_+size_block_*0); //xx
 
   // derivative with respect to the second center
   fill_n(data_+size_block_*9, size_block_*9, 0.0);

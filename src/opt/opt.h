@@ -108,7 +108,7 @@ class Opt {
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<XYZFile> displ_;
 
-    // some internal functions 
+    // some internal functions
     std::shared_ptr<GradFile> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_cigrad_bearpark(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);

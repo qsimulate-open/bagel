@@ -88,7 +88,7 @@ void CASPT2Energy::compute() {
   }
   auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
   smith->compute();
-  
+
   energy_  = smith->algo()->energyvec();
   ref_->energy() = energy_;
 
@@ -127,7 +127,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   auto vd1a = make_shared<Matrix>(*task_->vd1());
 
   displ->scale(0.0);
-  
+
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   int nclosed = ref_->nclosed();
   int nocc = ref_->nocc();
@@ -137,7 +137,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
 
   civ_ref->rotate (task_->msrot());
   civ_ref->print (/*sort=*/false);
-  
+
   shared_ptr<const Reference> refgrad_plus;
   shared_ptr<const Reference> refgrad_minus;
   shared_ptr<Dvec> civ_plus;
@@ -154,15 +154,15 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   const int lenb = civ_ref->det()->lenb();
   auto gmo = make_shared<Matrix>(norb, norb);
   gmo->zero();
-  
+
   assert(norb==(nocc-nclosed));
 
   auto idata_out = std::make_shared<PTree>(*idata_);
   idata_out->put("_target", target_state1_);
   idata_out->put("_target2", target_state2_);
-  
+
   muffle_ = make_shared<Muffle>("finite.log");
-  
+
   for (int i = 0; i != geom_->natom(); ++i) {
     for (int j = 0; j != 3; ++j) {
       muffle_->mute();
@@ -196,7 +196,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
 
       refgrad_minus = make_shared<Reference>(*ref_, nullptr);
       refgrad_minus = refgrad_minus->project_coeff(geom_);
-      
+
       task_ = std::make_shared<CASPT2Energy>(idata_out, geom_, refgrad_minus);
       task_->compute();
       refgrad_minus  = task_->conv_to_ref();
@@ -221,7 +221,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
       coeff_diff = make_shared<Matrix>(*coeff_plus - *coeff_minus);
       coeff_diff->scale(1.0 / (2.0 * dx_));
       acoeff_diff = make_shared<Matrix>(coeff_diff->slice(nclosed, nocc));
-  
+
       displ->element(j,i) = dx_;
       geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, true);
 
@@ -241,7 +241,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
               size_t iaB = iter.target;
               double sign = static_cast<double>(iter.sign);
 
-              for (size_t ib = 0; ib != lenb; ++ib) {                    
+              for (size_t ib = 0; ib != lenb; ++ib) {
                 double factor = civ_ref->data(target_state1_)->data(ib+iaB*lenb) * civ_ref->data(target_state2_)->data(ib+iaA*lenb) * sign;
                 grad->element(j,i) += factor * (Uij->element(ij, ii) - Uij->element(ii, ij)) * .5;
                 if ((i + j * 3) == 0) {
@@ -266,7 +266,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
           }
         }
       }
-    
+
       const int nmobasis = task_->coeff()->ndim();
       auto Ifactor = make_shared<Matrix>(*coeff_ref % *Smn * *coeff_diff);
       for (int ii = 0; ii != nmobasis; ++ii) {

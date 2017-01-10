@@ -47,7 +47,7 @@ class FiniteGrad : public GradEval_base {
 
   public:
     // Constructor does nothing here
-    FiniteGrad(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx) 
+    FiniteGrad(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx)
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), method_(method) {
     }
 
@@ -93,7 +93,7 @@ class FiniteNacm : public GradEval_base {
     }
 
   public:
-    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx) 
+    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx)
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
       init();
     }

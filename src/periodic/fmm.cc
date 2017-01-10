@@ -301,7 +301,7 @@ shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density
   Timer nftime;
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
- 
+
   M2M(density);
   M2L();
   L2L();

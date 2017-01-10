@@ -23,7 +23,7 @@
 //
 
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>
@@ -66,7 +66,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   }
 
   if (internal_) {
-    if (redundant_) 
+    if (redundant_)
       bmat_red_ = current_->compute_redundant_coordinate();
     else
       bmat_ = current_->compute_internal_coordinate();
@@ -83,7 +83,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   // For LBFGS or CG optimizer, ALGLIB is true. Otherwise, ALGLIB is false
   if (algorithm_ == "lbfgs" || algorithm_ == "cg")
     alglib_ = true;
-  else 
+  else
     alglib_ = false;
 
   if (opttype_ == "conical") {
@@ -109,14 +109,14 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
 void Opt::compute_noalglib() {
   auto displ = make_shared<XYZFile>(current_->natom());
   size_ = internal_ ? (redundant_? bmat_red_[0]->ndim() : bmat_[0]->mdim()) : displ->size();
-  
+
   dispsize_ = max(current_->natom(),int(size_/3+1));
   displ_ = make_shared<XYZFile>(dispsize_);
   grad_ = make_shared<GradFile>(dispsize_);
 
   hess_ = make_shared<Matrix>(size_, size_);
   hess_->unit();        // TODO can take the initial hessian from internal coordinate generator
-  
+
   print_header();
 
   muffle_ = make_shared<Muffle>("opt.log");
@@ -129,20 +129,20 @@ void Opt::compute_noalglib() {
     if (internal_) {
       if (redundant_)
         displ = displ->transform(bmat_red_[1], false);      // should be done iteratively, currently just 1st order
-      else 
+      else
         displ = displ->transform(bmat_[1], false);
     }
 
-    current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>()); 
+    current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
     current_->print_atoms();
     if (internal_) {
-      if (redundant_) 
+      if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
-      else            
+      else
         bmat_ = current_->compute_internal_coordinate(bmat_[0]);
     }
- 
-    shared_ptr<PTree> cinput; 
+
+    shared_ptr<PTree> cinput;
     shared_ptr<const Reference> ref;
     if (!prev_ref_ || scratch_) {
       auto m = input_->begin();
@@ -154,7 +154,7 @@ void Opt::compute_noalglib() {
           c->compute();
           ref = c->conv_to_ref();
         } else {
-          current_ = make_shared<const Geometry>(*current_, *m); 
+          current_ = make_shared<const Geometry>(*current_, *m);
           if (ref) ref = ref->project_coeff(current_);
         }
       }
@@ -164,7 +164,7 @@ void Opt::compute_noalglib() {
       cinput = make_shared<PTree>(**input_->rbegin());
     }
     cinput->put("gradient", true);
- 
+
     double rms;
     {
       grad_->zero();
@@ -175,7 +175,7 @@ void Opt::compute_noalglib() {
       if (internal_) {
         if (redundant_)
           grad_ = grad_->transform(bmat_red_[1], true);
-        else 
+        else
           grad_ = grad_->transform(bmat_[1], true);
       }
 
@@ -184,7 +184,7 @@ void Opt::compute_noalglib() {
         hessian_update();
 
       prev_grad_ = make_shared<GradFile>(*grad_);
- 
+
       MoldenOut mfs("opt.molden");
       mfs << current_;
 
@@ -197,10 +197,10 @@ void Opt::compute_noalglib() {
     if (internal_) {
       if (redundant_)
         displ = displ->transform(bmat_red_[1], false);
-      else 
+      else
         displ = displ->transform(bmat_[1], false);
     }
-    
+
     if (adaptive_) do_adaptive();
 
     muffle_->unmute();
@@ -300,7 +300,7 @@ shared_ptr<XYZFile> Opt::get_step() {
   else if (algorithm_ == "ef") {
     if (opttype_ == "transition" || constrained_)
       displ = get_step_ef_pn();
-    else 
+    else
       displ = get_step_ef();
   }
 
@@ -377,7 +377,7 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
     dispb->scale(fb);
     *displ += *dispb;
   }
-  
+
   if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
 
   if (adaptive_) {
@@ -463,7 +463,7 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
     dispb->scale(fb);
     *displ += *dispb;
   }
-  
+
   if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
 
   return displ;
@@ -483,15 +483,15 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
       aughes->add_block(1.0 * lambda, 1, 1, size_, size_, hess_);
       aughes->add_block(1.0, 1, 0, size_, 1, grad_->data());
       aughes->add_block(1.0, 0, 1, 1, size_, grad_->data());
-  
+
       aughes->diagonalize(eigv);
       aughes->scale(lambda / aughes->element(0,0));
-      
+
       if (opttype_!="transition")
         copy_n(aughes->element_ptr(1,0), size_, displ->data());
-      else 
+      else
         copy_n(aughes->element_ptr(1,1), size_, displ->data());
-      
+
       if (displ->norm() < maxstep_) break;
       else lambda /= 1.2;
     }
@@ -522,13 +522,13 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
     aughes->add_block(1.0, 1, 1, size_, size_, hess_);
     aughes->add_block(1.0, 1, 0, size_, 1, grad_->data());
     aughes->add_block(1.0, 0, 1, 1, size_, grad_->data());
-  
+
     aughes->diagonalize(eigv);
     aughes->scale(1.0 / aughes->element(0,0));
-      
+
     if (opttype_!="transition")
       copy_n(aughes->element_ptr(1,0), size_, displ->data());
-    else 
+    else
       copy_n(aughes->element_ptr(1,1), size_, displ->data());
 
     if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
@@ -556,7 +556,7 @@ void Opt::do_adaptive() {
     realchange_ = en_ - en_prev_;
     double predreal_ratio = realchange_ / predictedchange_prev_;
     if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
-    
+
     if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep_) maxstep_ *= 2.0;
     else if (predreal_ratio < 0.25) maxstep_ *= 0.25;
   }

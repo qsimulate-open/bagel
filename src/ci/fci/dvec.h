@@ -148,12 +148,12 @@ class Dvector : public btas::Tensor3<DataType> {
     void print(const double thresh = 0.05) const;
     void print(const bool sort) const;
 
-    template<typename T = DataType, 
+    template<typename T = DataType,
              class = typename std::enable_if<std::is_same<T, double>::value>::type
             >
     void match (std::shared_ptr<Dvector<double>>& ref);
-    
-    template<typename T = DataType, 
+
+    template<typename T = DataType,
              class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type
             >
     void match (std::shared_ptr<Dvector<std::complex<double>>>& ref) {  }

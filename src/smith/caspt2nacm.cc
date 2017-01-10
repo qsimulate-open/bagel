@@ -270,7 +270,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
 
   if (nacmtype_==0)
     qxmat->scale(egap);
-  else 
+  else
     qxmat->scale(0.0);
 
   auto qxmatao = make_shared<Matrix>(*coeff * (*qxmat) ^ *coeff);
@@ -372,7 +372,7 @@ void CASPT2Nacm::augment_Y(shared_ptr<Matrix> d0ms, shared_ptr<Matrix> g0, share
 #endif
 }
 
-  
+
 tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   CASPT2Nacm::compute_Y(shared_ptr<const DFHalfDist> half, shared_ptr<const DFHalfDist> halfj, shared_ptr<const DFHalfDist> halfjj) {
 #ifdef COMPILE_SMITH

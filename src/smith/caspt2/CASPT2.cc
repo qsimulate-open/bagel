@@ -460,7 +460,7 @@ void CASPT2::CASPT2::solve_deriv() {
     const int tst = info_->target();
     const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
     for (int ist = 0; ist != nstates_; ++ist)
-      for (int jst = 0; jst != nstates_; ++jst) 
+      for (int jst = 0; jst != nstates_; ++jst)
         ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,tst)*(*heff_)(jst,tst)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
   }
 
@@ -523,7 +523,7 @@ void CASPT2::CASPT2::solve_nacme() {
   for (auto& i : *sourceJ)
     i = init_residual();
   for (auto& i : *sourceI)
-    i = init_residual(); 
+    i = init_residual();
 
   for (int ist = 0; ist != nstates_; ++ist) { // L states
     auto sist = make_shared<MultiTensor>(nstates_);
@@ -599,7 +599,7 @@ void CASPT2::CASPT2::solve_nacme() {
     }
     correlated_norm_[istate] = tmp;
   }
-  
+
   timer.tick_print("T1 norm evaluation");
 
   // some additional terms to be added
@@ -652,7 +652,7 @@ void CASPT2::CASPT2::solve_nacme() {
       for (int jst = 0; jst != nstates_; ++jst) {
         double urheff = (ur(ist,targetJ)*(*heff_)(jst,targetI) + ur(ist, targetI)*(*heff_)(jst,targetJ)) * ref->energy(ist);
         ci_deriv_->data(jst)->ax_plus_y(urheff, info_orig_->ciwfn()->civectors()->data(ist));
-      } 
+      }
 
   }
 
@@ -664,7 +664,7 @@ void CASPT2::CASPT2::solve_nacme() {
       for (int j = 0; j != i; ++j) {
         double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
                   - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
-        if (info_->nacmtype()==0) 
+        if (info_->nacmtype()==0)
           cy += (pt2energy_[targetI] - pt2energy_[targetJ])
               * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
         wmn(j,i) = fabs(e0all_[j]-e0all_[i]) > 1.0e-12 ? -0.5 * cy / (e0all_[j]-e0all_[i]) : 0.0;

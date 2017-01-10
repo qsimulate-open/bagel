@@ -105,7 +105,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       throw std::logic_error("RDM<N>::rdm1_mat() should not be called with N>1");
       return nullptr;
     }
-    
+
     std::shared_ptr<Matrix> rdm1_mat_tr(const int nclosed, const bool all = true) const {
       throw std::logic_error("RDM<N>::rdm1_mat_tr() should not be called with N>1");
       return nullptr;

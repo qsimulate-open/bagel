@@ -243,7 +243,7 @@ shared_ptr<DFBlock> DFBlock::apply_2RDM(const Tensor4<double>& rdm, const Tensor
 shared_ptr<DFBlock> DFBlock::apply_2RDM_tr(const Tensor4<double>& rdm, const Tensor2<double>& rdm1, const int nclosed, const int nact) const {
   assert(nclosed+nact == b1size() && b1size() == b2size());
   // checking if natural orbitals...
-  
+
   bool natural = true;
   {
     const double a = ddot_(nact*nact, rdm1.data(), 1, rdm1.data(), 1);

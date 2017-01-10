@@ -244,7 +244,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
                                      << setw(17) << z->second()->rms()*lambda  << setw(10) << setprecision(2) << timer.tick() << endl;
     if (z->first()->rms()+z->second()->rms()*lambda < zthresh) break;
 
-    *z /= *denom; 
+    *z /= *denom;
     project_out(z->second(), civector_);
   }
 

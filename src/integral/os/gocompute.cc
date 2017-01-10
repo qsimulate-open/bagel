@@ -318,7 +318,7 @@ void GDerivOverBatch::compute() {
       sort.sortfunc_call(sort_index, target, source, cont1_, cont0_, 1, swap01_);
     }
   }
-  
+
   if (!swap01_)
     for (int i = 0; i != 3; ++i) {
       blas::ax_plus_y_n(1.0, data_+i*size_block_, cont0_*cont1_*acsize, data_+(i+3)*size_block_);

@@ -23,7 +23,7 @@
 //
 
 
-#include <functional> 
+#include <functional>
 #include <typeinfo>
 #include <fstream>
 #include <string>
@@ -50,27 +50,27 @@ void Opt::compute_alglib() {
     alglib::real_1d_array x;
     x.setcontent(size_, displ->data());
     eval_type eval = std::bind(&Opt::evaluate_alglib, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-  
+
     if (algorithm_ == "cg") {
       alglib::mincgstate state;
       alglib::mincgreport rep;
-  
+
       alglib::mincgcreate(x, state);
       alglib::mincgsetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
       alglib::mincgsetstpmax(state, maxstep_);
-  
+
       alglib::mincgoptimize(state, eval);
-  
+
     } else if (algorithm_ == "lbfgs") {
       alglib::minlbfgsstate state;
       alglib::minlbfgsreport rep;
-  
-      alglib::minlbfgscreate(1, x, state); 
+
+      alglib::minlbfgscreate(1, x, state);
       alglib::minlbfgssetcond(state, thresh_*std::sqrt(size_), 0.0, 0.0, maxiter_);
       alglib::minlbfgssetstpmax(state, maxstep_);
-  
+
       alglib::minlbfgsoptimize(state, eval);
-  
+
     }
   } catch (alglib::ap_error e) {
     std::cout << e.msg << std::endl;
@@ -84,7 +84,7 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
   // first convert x to the geometry
   auto displ = std::make_shared<XYZFile>(current_->natom());
   assert(size_ == x.length());
-  std::copy_n(x.getcontent(), size_, displ->data()); 
+  std::copy_n(x.getcontent(), size_, displ->data());
 
   if (internal_)
     displ = displ->transform(bmat_[1], false);
@@ -96,14 +96,14 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
 
   // current Geometry
   if (iter_ > 0) {
-    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>()); 
+    current_ = std::make_shared<Geometry>(*current_, displ, std::make_shared<const PTree>());
     current_->print_atoms();
     if (internal_)
       bmat_ = current_->compute_internal_coordinate(bmat_[0]);
   }
 
   // first calculate reference (if needed)
-  std::shared_ptr<PTree> cinput; 
+  std::shared_ptr<PTree> cinput;
   std::shared_ptr<const Reference> ref;
   if (!prev_ref_ || scratch_) {
     auto m = input_->begin();
@@ -115,7 +115,7 @@ void Opt::evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::re
         c->compute();
         ref = c->conv_to_ref();
       } else {
-        current_ = std::make_shared<const Geometry>(*current_, *m); 
+        current_ = std::make_shared<const Geometry>(*current_, *m);
         if (ref) ref = ref->project_coeff(current_);
       }
     }
