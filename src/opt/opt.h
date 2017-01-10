@@ -35,7 +35,6 @@
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
 #include <src/wfn/construct_method.h>
-#include <src/alglib/optimization.h>
 #include <src/opt/constraint.h>
 #include <src/util/muffle.h>
 
@@ -73,8 +72,6 @@ class Opt {
     bool constrained_;
     std::vector<std::shared_ptr<const OptConstraint>> constraints_;
 
-    // whether we use alglib or not
-    bool alglib_;
     // whether we use a delocalized internal coordinate or not
     bool internal_;
     bool redundant_;
@@ -90,10 +87,6 @@ class Opt {
     double thielc3_, thielc4_;
 
     Timer timer_;
-
-    // some global values needed for ALGLIB-based optimizations
-    void evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr);
-    using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
     // some global values needed for quasi-newton optimizations
     double en_;
