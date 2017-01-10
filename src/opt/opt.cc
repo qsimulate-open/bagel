@@ -80,12 +80,6 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   if (refsave_) refname_ = idat->get<string>("ref_out", "reference");
 #endif
 
-  // For LBFGS or CG optimizer, ALGLIB is true. Otherwise, ALGLIB is false
-  if (algorithm_ == "lbfgs" || algorithm_ == "cg")
-    alglib_ = true;
-  else
-    alglib_ = false;
-
   if (opttype_ == "conical") {
     target_state2_ = idat->get<int>("target2", 1);
     if (target_state2_ > target_state_) {
@@ -99,7 +93,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
   }
   else if (opttype_ == "transition") {
-    if (alglib_) throw runtime_error("Transition state search only possible without alglib");
+    algorithm_ = "ef";
   }
   else if (opttype_ != "energy")
     throw runtime_error("Optimization type should be: \"energy\", \"transition\" or \"conical\"");
