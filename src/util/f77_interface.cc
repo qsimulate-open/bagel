@@ -25,7 +25,7 @@
 #include <src/util/f77.h>
 #include <bagel_config.h>
 
-#ifndef HAVE_MKL_H
+#ifndef HAVE_ZGEMM3M
 extern "C" {
   void zgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
               const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,

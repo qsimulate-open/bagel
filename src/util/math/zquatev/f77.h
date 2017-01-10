@@ -44,7 +44,7 @@ extern "C" {
  void zgemv_(const char*, const int*, const int*, const std::complex<double>*, const std::complex<double>*, const int*, const std::complex<double>*, const int*,
              const std::complex<double>*, std::complex<double>*, const int*);
  void ztrmv_(const char*, const char*, const char*, const int*, const std::complex<double>*, const int*, std::complex<double>*, const int*);
-#ifdef HAVE_MKL_H
+#ifdef HAVE_ZGEMM3M
  void zgemm3m_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
                const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,
                const std::complex<double>* beta, std::complex<double>* c, const int* ldc);
@@ -74,7 +74,7 @@ namespace {
              const std::complex<double>& i, std::complex<double>* j, const int k) { ::zgemv_(a,&b,&c,&d,e,&f,g,&h,&i,j,&k); }
  void ztrmv_(const char* a, const char* b, const char* c, const int d, const std::complex<double>* e, const int f, std::complex<double>* g, const int h)
             { ::ztrmv_(a,b,c,&d,e,&f,g,&h); }
-#ifdef HAVE_MKL_H
+#ifdef HAVE_ZGEMM3M
  void zgemm3m_(const char* transa, const char* transb, const int m, const int n, const int k,
                const std::complex<double>& alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
                const std::complex<double>& beta, std::complex<double>* c, const int ldc) { ::zgemm3m_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }
