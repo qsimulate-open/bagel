@@ -76,7 +76,7 @@ void RHF::compute() {
             focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden)->get_real_part();
+          shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden);
           focka = make_shared<const Matrix>(*hcore_ + *tmp);
         }
         fock = focka->distmatrix();
@@ -95,8 +95,9 @@ void RHF::compute() {
         }
       } else {
         aodensity_ = coeff_->form_density_rhf(nocc_);
-        shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_, make_shared<const Matrix>(coeff_->slice(0, nocc_)))->get_real_part();
-        focka = make_shared<const Matrix>(*hcore_ + *tmp);
+        shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM(aodensity_, make_shared<const Matrix>(coeff_->slice(0, nocc_)));
+        shared_ptr<const Matrix> tmpK = fmm_->compute_K_ff(make_shared<const Matrix>(coeff_->slice(0, nocc_)), overlap_);
+        focka = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK);
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
       intermediate.diagonalize(eig());
@@ -141,12 +142,14 @@ void RHF::compute() {
         previous_fock = make_shared<Fock<1>>(geom_, hcore_, nullptr, coeff_->slice(0, nocc_), do_grad_, true/*rhf*/);
       }
     } else {
-      shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(densitychange, make_shared<const Matrix>(coeff_->slice(0, nocc_)))->get_real_part();
-      previous_fock = make_shared<const Matrix>(*previous_fock + *tmp);
+      shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM(densitychange, make_shared<const Matrix>(coeff_->slice(0, nocc_)));
+      shared_ptr<const Matrix> tmpK = fmm_->compute_K_ff(make_shared<const Matrix>(coeff_->slice(0, nocc_)), overlap_);
+      previous_fock = make_shared<const Matrix>(*previous_fock + *tmpJ - *tmpK);
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
+
     pdebug.tick_print("Fock build");
 
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);

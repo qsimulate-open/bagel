@@ -69,8 +69,6 @@ void Box::init() {
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   multipole_.resize(nmult_); fill_n(multipole_.begin(), nmult_, 0.0);
   localJ_.resize(nmult_);    fill_n(localJ_.begin(), nmult_, 0.0);
-  mlm_ji_.resize(nmult_);
-  olm_ji_.resize(nmult_);
 }
 
 
@@ -173,14 +171,22 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
 
   fill(multipole_.begin(), multipole_.end(), 0.0);
   fill(localJ_.begin(), localJ_.end(), 0.0);
+  vector<shared_ptr<ZMatrix>> box_olm;
   if (dox) {
     nocc_ = ocoeff->mdim();
+    mlm_ji_.resize(nmult_);
+    olm_ji_.resize(nmult_);
+    olm_ri_.resize(nmult_);
+    box_olm.resize(nmult_);
+    get_offsets();
     for (int k = 0; k != nmult_; ++k) {
       olm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
       mlm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
+      olm_ri_[k] = make_shared<ZMatrix>(nsize_, nocc_);
+      box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
     }
-    get_offsets();
   }
+
 
   if (nchild() == 0) { // leaf
     TaskQueue<function<void(void)>> tasks(nsp());
@@ -190,7 +196,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
       if (v->schwarz() < 1e-15) continue;
 
       tasks.emplace_back(
-        [this, &v, &density, &ocoeff, &dox, &jmutex, &isp]() {
+        [this, &v, &density, &ocoeff, &dox, &jmutex, &isp, &box_olm]() {
           vector<complex<double>> olm(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
@@ -225,7 +231,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
             for (int k = 0; k != nmult_; ++k) {
               const int nstart = offsets_[isp][0];
               const int mstart = offsets_[isp][1];
-              box_olm_[k]->add_block(1.0, nstart, mstart, v->shell(0)->nbasis(), v->shell(1)->nbasis(), mpole.data(k));
+              box_olm[k]->add_block(1.0, nstart, mstart, v->shell(0)->nbasis(), v->shell(1)->nbasis(), mpole.data(k));
             }
           }
         }
@@ -256,9 +262,8 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
       auto zc_ui = make_shared<const ZMatrix>(*ocoeff_ui, 1.0);
       auto zc_sj = make_shared<const ZMatrix>(*ocoeff_sj, 1.0);
       for (int k = 0; k != nmult_; ++k) {
-        auto olm_si = make_shared<ZMatrix>(nsize_, nocc_);
-        zgemm3m_("N", "N", nsize_, nocc_, msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_si->data(), nsize_);
-        zgemm3m_("T", "N", nocc_, nocc_, nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 1.0, olm_ji_[k]->data(), nocc_);
+        zgemm3m_("N", "N", nsize_, nocc_, msize_, 1.0, box_olm[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_ri_[k]->data(), nsize_);
+        zgemm3m_("T", "N", nocc_, nocc_, nsize_, 1.0, zc_sj->data(), nsize_, olm_ri_[k]->data(), nsize_, 0.0, olm_ji_[k]->data(), nocc_);
       }
     }
   } else { // shift children's multipoles
@@ -283,7 +288,6 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
 
 void Box::compute_multipolesX(shared_ptr<const Matrix> ocoeff) {
 
-  Timer multX;
   nocc_ = ocoeff->mdim();
   for (int k = 0; k != nmult_; ++k) {
     olm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
@@ -319,7 +323,6 @@ void Box::compute_multipolesX(shared_ptr<const Matrix> ocoeff) {
     }
   }
   task2.compute();
-  multX.tick_print("       compute_multipolesX");
 }
 
 
@@ -682,9 +685,13 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
 }
 
 
-shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff) const { //K_ri
+shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff) const { //K_rj
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(ocoeff->ndim(), ocoeff->mdim());
+
+  // contract Olm_ri and Mlm_ij
+  for (int k = 0; k != nmult_; ++k)
+    zgemm3m_("N", "N", nsize_, nocc_, nocc_, 1.0, olm_ri_[k]->data(), nsize_, mlm_ji_[k]->data(), nocc_, 1.0, out->data(), nocc_);
 
   return out;
 }
@@ -765,7 +772,6 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
 // M2M for X
 vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(const vector<shared_ptr<ZMatrix>>& oa, array<double, 3> rab) const {
 
-  Timer m2mx;
   const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
   const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
   const double phi = atan2(rab[1], rab[0]);
@@ -802,7 +808,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(const vector<shared_ptr
     }
   }
 
-  m2mx.tick_print("        shift_multipolesX");
   return ob;
 }
 
@@ -810,7 +815,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(const vector<shared_ptr
 // L2L for X
 vector<shared_ptr<const ZMatrix>> Box::shift_localLX(const vector<shared_ptr<ZMatrix>>& mr, array<double, 3> rb) const {
 
-  Timer l2lx;
   const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
   const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
   const double phi = atan2(rb[1], rb[0]);
@@ -848,7 +852,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(const vector<shared_ptr<ZMa
     }
   }
 
-  l2lx.tick_print("        shift_localLX");
   return mrb;
 }
 
@@ -856,7 +859,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(const vector<shared_ptr<ZMa
 // M2L for X
 vector<shared_ptr<const ZMatrix>> Box::shift_localMX(const vector<shared_ptr<ZMatrix>>& olm, array<double, 3> r12) const {
 
-  Timer m2lx;
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
@@ -893,7 +895,6 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localMX(const vector<shared_ptr<ZMa
     }
   }
 
-  m2lx.tick_print("        shift_localMX");
   return mb;
 }
 
@@ -946,8 +947,4 @@ void Box::get_offsets() {
     }
   }
   msize_ = jsize;
-
-  box_olm_.resize(nmult_);
-  for (auto& b : box_olm_)
-    b  = make_shared<ZMatrix>(nsize_, msize_);
 }

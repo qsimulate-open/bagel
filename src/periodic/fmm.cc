@@ -299,7 +299,7 @@ void FMM::L2L(const bool dox) const {
 }
 
 
-shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> ocoeff) const {
+shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> ocoeff) const {
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
@@ -310,8 +310,6 @@ shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density
   L2L(dox);
 
   Timer nftime;
-  if (!density)
-    density = ocoeff->form_density_rhf(ocoeff->mdim());
 
   if (density) {
     assert(nbasis_ == density->ndim());
@@ -351,9 +349,44 @@ shared_ptr<const ZMatrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density
     *out += *ff;
   }
 
-  nftime.tick_print("near-field");
+  nftime.tick_print("JK near-field");
 
-  return out;
+  return make_shared<const Matrix>(*out->get_real_part());
+}
+
+
+shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shared_ptr<const Matrix> overlap) const {
+
+  const bool dox = (do_exchange_ && ocoeff) ? true : false;
+  if (!dox)
+    return make_shared<const Matrix>(overlap->ndim(), overlap->mdim());
+
+  Timer ktime;
+  const int nocc = ocoeff->mdim();
+
+  // K_rj
+  auto krj_ff = make_shared<ZMatrix>(nbasis_, nocc);
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (i % mpi__->size() == mpi__->rank()) {
+      auto ffx = box_[i]->compute_Fock_ffX(ocoeff);
+      krj_ff->add_block(1.0, 0, 0, nbasis_, nocc, ffx->data());
+    }
+  auto krj = make_shared<const ZMatrix>(*krj_ff);
+
+  auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
+  auto tmp = make_shared<ZMatrix>(nocc, nocc);
+  zgemm3m_("T", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj_ff->data(), nbasis_, 0.0, tmp->data(), nocc);
+  auto kij = make_shared<const ZMatrix>(*tmp);
+
+  auto sc = make_shared<Matrix>(nbasis_, nocc);
+  dgemm_("N", "N", nbasis_, nocc, nbasis_, 1.0, overlap->data(), nbasis_, ocoeff->data(), nbasis_, 0.0, sc->data(), nbasis_);
+  auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
+
+  auto zsck = make_shared<const ZMatrix>(*zsc ^ *krj);
+  auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose()) - (*zsc * *kij ^ *zsc));
+
+  ktime.tick_print("K far-field");
+  return make_shared<const Matrix>(*out->get_real_part());
 }
 
 

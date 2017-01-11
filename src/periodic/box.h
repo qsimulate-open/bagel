@@ -52,7 +52,7 @@ class Box {
     int nocc_;
     int nsize_, msize_;
 
-    std::vector<std::shared_ptr<ZMatrix>> box_olm_;
+    std::vector<std::shared_ptr<ZMatrix>> olm_ri_;
     std::vector<std::shared_ptr<ZMatrix>> olm_ji_;
     std::vector<std::shared_ptr<ZMatrix>> mlm_ji_;
     std::vector<std::array<int, 2>> offsets_;
