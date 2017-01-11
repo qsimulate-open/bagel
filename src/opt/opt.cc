@@ -39,8 +39,7 @@
 using namespace std;
 using namespace bagel;
 
-// TODO Scaled RFO algorithm
-//      Constrained optimization
+// TODO  Constrained optimization
 
 Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0) {
@@ -87,7 +86,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
       target_state_ = target_state2_;
       target_state2_ = tmpstate;
     }
-    nacmtype_ = idat->get<int>("nacmtype", 0);
+    nacmtype_ = idat->get<int>("nacmtype", 1);
     thielc3_  = idat->get<double>("thielc3", 2.0);
     thielc4_  = idat->get<double>("thielc4", 0.5);
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
@@ -108,8 +107,11 @@ void Opt::compute() {
   displ_ = make_shared<XYZFile>(dispsize_);
   grad_ = make_shared<GradFile>(dispsize_);
 
-  hess_ = make_shared<Matrix>(size_, size_);
-  hess_->unit();        // TODO can take the initial hessian from internal coordinate generator
+  if (internal_ && !redundant_ && opttype_ == "energy") hess_ = make_shared<Matrix>(*(bmat_[2]));
+  else {
+    hess_ = make_shared<Matrix>(size_, size_);
+    hess_->unit();
+  }
 
   print_header();
 

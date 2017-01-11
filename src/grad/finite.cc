@@ -60,7 +60,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
       muffle_->mute();
       displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/false);
       geom_->print_atoms();
 
       refgrad_plus = make_shared<Reference>(*ref_, nullptr);
@@ -72,7 +72,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       energy_plus = refgrad_plus->energy(target_state_);
 
       displ->element(j,i) = -2.0 * dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/false);
       geom_->print_atoms();
 
       refgrad_minus = make_shared<Reference>(*ref_, nullptr);
@@ -86,7 +86,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
       grad->element(j,i) = (energy_plus - energy_minus) / (dx_ * 2.0);      // Hartree / bohr
 
       displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, true);
+      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/true);
 
       displ->element(j,i) = 0.0;
       muffle_->unmute();

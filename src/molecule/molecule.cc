@@ -222,7 +222,6 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-
 array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
   cout << "    o Connectivitiy analysis" << endl;
 
@@ -429,12 +428,12 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
       scale(j,i) *= hessprim[j];
     }
   }
-  auto hessout = make_shared<Matrix>(bbslice % scale);
   Matrix hess = bbslice % scale;
   hess.sqrt();
   *bnew = *bnew * hess;
   hess.inverse();
   *bdmnew = *bdmnew * hess;
+  auto hessout = make_shared<Matrix>(hess);
 
   // if this is not the first time, make sure that the change is minimum
   if (prev) {
@@ -612,7 +611,7 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
   for (int i = 0; i != natom(); ++i) {
     minv(i*3+0,i*3+0) = 1.0;
     minv(i*3+1,i*3+1) = 1.0;
-    minv(i*3+2,i*3+2) = 1.0;        // TODO after atomic mass is included, this should be changed --> 1/minv
+    minv(i*3+2,i*3+2) = 1.0;
   }
 
   // By convention, bdag is B^+ here
