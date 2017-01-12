@@ -242,8 +242,6 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff) {
           vector<complex<double>> olm(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
-          const int dimb0 = v->shell(0)->nbasis();
-          const int dimb1 = v->shell(1)->nbasis();
           for (int k = 0; k != nmult_; ++k) {
             const int nstart = offsets_[isp][0];
             const int mstart = offsets_[isp][1];
@@ -316,9 +314,9 @@ void Box::compute_multipolesX(shared_ptr<const Matrix> ocoeff) {
             vector<complex<double>> olm(nmult_);
             MultipoleBatch mpole(v->shells(), centre_, lmax_);
             mpole.compute();
+
             const int dimb0 = v->shell(0)->nbasis();
             const int dimb1 = v->shell(1)->nbasis();
-
             lock_guard<mutex> lock(kmutex);
             for (int k = 0; k != nmult_; ++k) {
               const complex<double>* olm_su = mpole.data() + mpole.size_block()*k;
@@ -569,7 +567,6 @@ vector<complex<double>> Box::shift_localM(const vector<complex<double>>& olm, ar
 
   vector<complex<double>> mb(nmult_, 0);
 
-  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -607,7 +604,6 @@ vector<complex<double>> Box::shift_multipoles(const vector<complex<double>>& oa,
 
   vector<complex<double>> ob(nmult_, 0);
 
-  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -648,7 +644,6 @@ vector<complex<double>> Box::shift_localL(const vector<complex<double>>& mr, arr
 
   vector<complex<double>> mrb(nmult_, 0);
 
-  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -829,7 +824,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(const vector<shared_ptr
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
             const complex<double> Oab(real, -imag);
 
-            out->add_block(Oab, 0, 0, oa[0]->ndim(), oa[0]->mdim(),  oa[j*j+k]->data());
+            out->add_block(Oab, 0, 0, oa[0]->ndim(), oa[0]->mdim(), oa[j*j+k]->data());
           }
 
         }

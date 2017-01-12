@@ -245,7 +245,7 @@ void FMM::get_boxes() {
 
 void FMM::M2M(shared_ptr<const Matrix> mat, const bool dox) const {
 
-  Timer m2mtime(1);
+  Timer m2mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
     if (i % mpi__->size() == mpi__->rank()) {
       if (!dox) {
@@ -265,49 +265,49 @@ void FMM::M2M(shared_ptr<const Matrix> mat, const bool dox) const {
     }
   }
 
-  m2mtime.tick_print("  Compute multipoles");
+  m2mtime.tick_print("Compute multipoles");
 
   int icnt = nbranch_[0];
-  for (int i = 1; i != ns_+1; ++i) {
-    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-      if (!dox) {
+  if (!dox) {
+    for (int i = 1; i != ns_+1; ++i) {
+      for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
         box_[icnt]->compute_M2M(mat);
-      } else {
+
+    }
+    m2mtime.tick_print("M2M pass");
+  } else {
+    for (int i = 1; i != ns_+1; ++i) {
+      for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
         box_[icnt]->compute_M2M_X(mat);
-      }
+    }
+    m2mtime.tick_print("M2M-X pass");
   }
 
   assert(icnt == nbox_);
-
-  if (!dox) {
-    m2mtime.tick_print("  M2M pass");
-  } else {
-    m2mtime.tick_print("  M2M-X pass");
-  }
 }
 
 
 void FMM::M2L(const bool dox) const {
 
-  Timer m2ltime(1);
+  Timer m2ltime;
 
   if (!dox) {
     for (auto& b : box_)
       b->compute_M2L();
 
-    m2ltime.tick_print("  M2L pass");
+    m2ltime.tick_print("M2L pass");
   } else {
     for (auto& b : box_)
       b->compute_M2L_X();
 
-    m2ltime.tick_print("  M2L-X pass");
+    m2ltime.tick_print("M2L-X pass");
   }
 }
 
 
 void FMM::L2L(const bool dox) const {
 
-  Timer l2ltime(1);
+  Timer l2ltime;
 
   int icnt = 0;
   if (!dox) {
@@ -318,7 +318,7 @@ void FMM::L2L(const bool dox) const {
       icnt += nbranch_[ir];
     }
 
-    l2ltime.tick_print("  L2L pass");
+    l2ltime.tick_print("L2L pass");
   } else {
     for (int ir = ns_; ir > -1; --ir) {
       for (int ib = 0; ib != nbranch_[ir]; ++ib)
@@ -326,7 +326,7 @@ void FMM::L2L(const bool dox) const {
 
       icnt += nbranch_[ir];
     }
-    l2ltime.tick_print("  L2L-X pass");
+    l2ltime.tick_print("L2L-X pass");
   }
 }
 
@@ -341,7 +341,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
   M2L();
   L2L();
 
-  Timer nftime(1);
+  Timer nftime;
 
   if (density) {
     assert(nbasis_ == density->ndim());
