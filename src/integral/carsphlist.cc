@@ -66,27 +66,6 @@ CarSphList::CarSphList() {
       carsphfunc[ANG_HRR_END * 7 + 5] = &carsph_75;
       carsphfunc[ANG_HRR_END * 7 + 6] = &carsph_76;
       carsphfunc[ANG_HRR_END * 7 + 7] = &carsph_77;
-/*
-      carsphfunc[ANG_HRR_END * 8 + 0] = &carsph_80;
-      carsphfunc[ANG_HRR_END * 8 + 1] = &carsph_81;
-      carsphfunc[ANG_HRR_END * 8 + 2] = &carsph_82;
-      carsphfunc[ANG_HRR_END * 8 + 3] = &carsph_83;
-      carsphfunc[ANG_HRR_END * 8 + 4] = &carsph_84;
-      carsphfunc[ANG_HRR_END * 8 + 5] = &carsph_85;
-      carsphfunc[ANG_HRR_END * 8 + 6] = &carsph_86;
-      carsphfunc[ANG_HRR_END * 8 + 7] = &carsph_87;
-      carsphfunc[ANG_HRR_END * 8 + 8] = &carsph_88;
-      carsphfunc[ANG_HRR_END * 9 + 0] = &carsph_90;
-      carsphfunc[ANG_HRR_END * 9 + 1] = &carsph_91;
-      carsphfunc[ANG_HRR_END * 9 + 2] = &carsph_92;
-      carsphfunc[ANG_HRR_END * 9 + 3] = &carsph_93;
-      carsphfunc[ANG_HRR_END * 9 + 4] = &carsph_94;
-      carsphfunc[ANG_HRR_END * 9 + 5] = &carsph_95;
-      carsphfunc[ANG_HRR_END * 9 + 6] = &carsph_96;
-      carsphfunc[ANG_HRR_END * 9 + 7] = &carsph_97;
-      carsphfunc[ANG_HRR_END * 9 + 8] = &carsph_98;
-      carsphfunc[ANG_HRR_END * 9 + 9] = &carsph_99;
-*/
 }
 
 
@@ -127,25 +106,4 @@ CCarSphList::CCarSphList() {
       carsphfunc[ANG_HRR_END * 7 + 5] = &carsph_75;
       carsphfunc[ANG_HRR_END * 7 + 6] = &carsph_76;
       carsphfunc[ANG_HRR_END * 7 + 7] = &carsph_77;
-/*
-      carsphfunc[ANG_HRR_END * 8 + 0] = &carsph_80;
-      carsphfunc[ANG_HRR_END * 8 + 1] = &carsph_81;
-      carsphfunc[ANG_HRR_END * 8 + 2] = &carsph_82;
-      carsphfunc[ANG_HRR_END * 8 + 3] = &carsph_83;
-      carsphfunc[ANG_HRR_END * 8 + 4] = &carsph_84;
-      carsphfunc[ANG_HRR_END * 8 + 5] = &carsph_85;
-      carsphfunc[ANG_HRR_END * 8 + 6] = &carsph_86;
-      carsphfunc[ANG_HRR_END * 8 + 7] = &carsph_87;
-      carsphfunc[ANG_HRR_END * 8 + 8] = &carsph_88;
-      carsphfunc[ANG_HRR_END * 9 + 0] = &carsph_90;
-      carsphfunc[ANG_HRR_END * 9 + 1] = &carsph_91;
-      carsphfunc[ANG_HRR_END * 9 + 2] = &carsph_92;
-      carsphfunc[ANG_HRR_END * 9 + 3] = &carsph_93;
-      carsphfunc[ANG_HRR_END * 9 + 4] = &carsph_94;
-      carsphfunc[ANG_HRR_END * 9 + 5] = &carsph_95;
-      carsphfunc[ANG_HRR_END * 9 + 6] = &carsph_96;
-      carsphfunc[ANG_HRR_END * 9 + 7] = &carsph_97;
-      carsphfunc[ANG_HRR_END * 9 + 8] = &carsph_98;
-      carsphfunc[ANG_HRR_END * 9 + 9] = &carsph_99;
-*/
 }

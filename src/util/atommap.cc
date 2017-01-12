@@ -490,8 +490,8 @@ AtomMap::AtomMap () {
   angmap.emplace("g", 4);
   angmap.emplace("h", 5);
   angmap.emplace("i", 6);
-// Since they are not implemented yet
   angmap.emplace("j", 7);
+// Since they are not implemented yet
 //angmap.emplace("k", 8);
 //angmap.emplace("l", 9);
 

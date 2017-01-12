@@ -18,7 +18,7 @@ using namespace mpfr;
 using namespace boost;
 
 #define LARGE 32
-#define LEND 10
+#define LEND 8
 
 struct Data {
     vector<mpreal> factorial;
