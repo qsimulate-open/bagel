@@ -6,7 +6,7 @@ filename = "vrr.cc"
 
 ss = "\
 //\n\
-// BAGEL - Parallel electron correlation program.\n\
+// BAGEL - Brilliantly Advanced General Electronic Structure Library\n\
 // Filename: " + filename + "\n\
 // Copyright (C) 2009 Toru Shiozaki\n\
 //\n\
@@ -15,19 +15,18 @@ ss = "\
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\
-// The BAGEL package is free software; you can redistribute it and/or modify\n\
-// it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 3, or (at your option)\n\
-// any later version.\n\
+// This program is free software: you can redistribute it and/or modify\n\
+// it under the terms of the GNU General Public License as published by\n\
+// the Free Software Foundation, either version 3 of the License, or\n\
+// (at your option) any later version.\n\
 //\n\
-// The BAGEL package is distributed in the hope that it will be useful,\n\
+// This program is distributed in the hope that it will be useful,\n\
 // but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
-// GNU Library General Public License for more details.\n\
+// GNU General Public License for more details.\n\
 //\n\
-// You should have received a copy of the GNU Library General Public License\n\
-// along with the BAGEL package; see COPYING.  If not, write to\n\
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
+// You should have received a copy of the GNU General Public License\n\
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
 //\n\
 \n\
 #include <src/integral/rys/eribatch.h>\n\
@@ -50,11 +49,11 @@ void ERIBatch::perform_VRR() {\n\
   double* const workz = worky + isize*rank_;\n\
   const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
-for a in range(0,7):
- for b in range(0,7):
+for a in range(0,8):
+ for b in range(0,8):
   if a < b: continue
-  for c in range(0,7):
-   for d in range(0,7):
+  for c in range(0,8):
+   for d in range(0,8):
     if c < d: continue
     rank = int(math.ceil((a+b+c+d+1)*0.5-0.001))
     off = 1 << 8
