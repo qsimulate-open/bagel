@@ -189,8 +189,12 @@ static std::shared_ptr<Matrix> carsph_matrix (const int i) {
       assert( m*n == 364);
       // Current integral codes cannot handle j-type integrals.  If this is ever fixed, please verify csi carefully.
       // One strategy is to ensure 0.5*Small1e<OverlapBatch> can reproduce the results of KineticBatch
-      throw std::runtime_error("Relativistic calculations cannot use i-type primary basis functions (because j-type would be needed for the small component");
+      throw std::runtime_error("Relativistic calculations cannot use i-type orbital basis functions (because j-type would be needed for the small component");
       out->copy_block(0, 0, m, n, csi.data());
+      break;
+    case 7 :
+      assert( m*n == 540);
+      throw std::runtime_error("Relativistic calculations cannot use j-type orbital basis functions.  (k-type would be needed for the small component.)");
       break;
     default :
       throw std::runtime_error("Angular momentum index not recognized");
