@@ -243,73 +243,105 @@ void FMM::get_boxes() {
 }
 
 
-void FMM::M2M(shared_ptr<const Matrix> density, const bool dox, shared_ptr<const Matrix> ocoeff) const {
+void FMM::M2M(shared_ptr<const Matrix> mat, const bool dox) const {
 
-  Timer m2mtime;
+  Timer m2mtime(1);
   for (int i = 0; i != nbranch_[0]; ++i)
     if (i % mpi__->size() == mpi__->rank()) {
-      box_[i]->compute_M2M(density, dox, ocoeff);
-      //box_[i]->compute_M2M(density);
-      //if (dox) box_[i]->compute_multipolesX(ocoeff);
+      if (!dox) {
+        box_[i]->compute_M2M(mat);
+      } else {
+        box_[i]->compute_M2M_X(mat);
+      }
     }
 
   for (int i = 0; i != nbranch_[0]; ++i) {
     mpi__->broadcast(box_[i]->multipole().data(), box_[i]->multipole().size(), i % mpi__->size());
     mpi__->broadcast(box_[i]->localJ().data(), box_[i]->localJ().size(), i % mpi__->size());
+    for (int k = 0; k != box_[i]->olm_ji().size(); ++k) {
+      mpi__->broadcast(box_[i]->olm_ji()[k]->data(), box_[i]->olm_ji().size(), i % mpi__->size());
+      mpi__->broadcast(box_[i]->mlm_ji()[k]->data(), box_[i]->mlm_ji().size(), i % mpi__->size());
+      mpi__->broadcast(box_[i]->olm_ri()[k]->data(), box_[i]->olm_ri().size(), i % mpi__->size());
+    }
   }
 
-  m2mtime.tick_print("Compute multipoles");
+  m2mtime.tick_print("  Compute multipoles");
 
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+1; ++i) {
     for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-        box_[icnt]->compute_M2M(density, dox, ocoeff);
+      if (!dox) {
+        box_[icnt]->compute_M2M(mat);
+      } else {
+        box_[icnt]->compute_M2M_X(mat);
+      }
   }
 
   assert(icnt == nbox_);
 
-  m2mtime.tick_print("M2M pass");
+  if (!dox) {
+    m2mtime.tick_print("  M2M pass");
+  } else {
+    m2mtime.tick_print("  M2M-X pass");
+  }
 }
 
 
 void FMM::M2L(const bool dox) const {
 
-  Timer m2ltime;
+  Timer m2ltime(1);
 
-  for (auto& b : box_)
-    b->compute_M2L(dox);
+  if (!dox) {
+    for (auto& b : box_)
+      b->compute_M2L();
 
-  m2ltime.tick_print("M2L pass");
+    m2ltime.tick_print("  M2L pass");
+  } else {
+    for (auto& b : box_)
+      b->compute_M2L_X();
+
+    m2ltime.tick_print("  M2L-X pass");
+  }
 }
 
 
 void FMM::L2L(const bool dox) const {
 
-  Timer l2ltime;
+  Timer l2ltime(1);
 
   int icnt = 0;
-  for (int ir = ns_; ir > -1; --ir) {
-    for (int ib = 0; ib != nbranch_[ir]; ++ib)
-      box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L(dox);
+  if (!dox) {
+    for (int ir = ns_; ir > -1; --ir) {
+      for (int ib = 0; ib != nbranch_[ir]; ++ib)
+        box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L();
 
-    icnt += nbranch_[ir];
+      icnt += nbranch_[ir];
+    }
+
+    l2ltime.tick_print("  L2L pass");
+  } else {
+    for (int ir = ns_; ir > -1; --ir) {
+      for (int ib = 0; ib != nbranch_[ir]; ++ib)
+        box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L_X();
+
+      icnt += nbranch_[ir];
+    }
+    l2ltime.tick_print("  L2L-X pass");
   }
-
-  l2ltime.tick_print("L2L pass");
 }
 
 
-shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> ocoeff) const {
+shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
 
   auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
   out->zero();
  
-  const bool dox = (do_exchange_ && ocoeff) ? true : false;
-  M2M(density, dox, ocoeff);
-  M2L(dox);
-  L2L(dox);
+  Timer fmmtime;
+  M2M(density);
+  M2L();
+  L2L();
 
-  Timer nftime;
+  Timer nftime(1);
 
   if (density) {
     assert(nbasis_ == density->ndim());
@@ -349,7 +381,8 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density,
     *out += *ff;
   }
 
-  nftime.tick_print("JK near-field");
+  nftime.tick_print("near-field");
+  fmmtime.tick_print("FMM-J");
 
   return make_shared<const Matrix>(*out->get_real_part());
 }
@@ -362,6 +395,10 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
     return make_shared<const Matrix>(overlap->ndim(), overlap->mdim());
 
   Timer ktime;
+  M2M(ocoeff, dox);
+  M2L(dox);
+  L2L(dox);
+
   const int nocc = ocoeff->mdim();
 
   // K_rj
@@ -385,7 +422,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   auto zsck = make_shared<const ZMatrix>(*zsc ^ *krj);
   auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose()) - (*zsc * *kij ^ *zsc));
 
-  ktime.tick_print("K far-field");
+  ktime.tick_print("FMM-K");
   return make_shared<const Matrix>(*out->get_real_part());
 }
 

@@ -69,7 +69,8 @@ class Box {
 
     std::vector<std::complex<double>> multipole_;
     std::vector<std::complex<double>> localJ_;
-    void compute_M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr);
+    void compute_M2M(std::shared_ptr<const Matrix> density);
+    void compute_M2M_X(std::shared_ptr<const Matrix> ocoeff);
     void compute_multipolesX(std::shared_ptr<const Matrix> ocoeff);
     void sort_sp();
     std::vector<std::complex<double>> shift_multipoles(const std::vector<std::complex<double>>& oa, std::array<double, 3> rab) const;
@@ -78,8 +79,10 @@ class Box {
     std::vector<std::shared_ptr<const ZMatrix>> shift_localLX(const std::vector<std::shared_ptr<ZMatrix>>& mr, std::array<double, 3> rb) const;
     std::vector<std::complex<double>> shift_localM(const std::vector<std::complex<double>>& olm, std::array<double, 3> r12) const;
     std::vector<std::shared_ptr<const ZMatrix>> shift_localMX(const std::vector<std::shared_ptr<ZMatrix>>& olm, std::array<double, 3> r12) const;
-    void compute_M2L(const bool do_exchange);
-    void compute_L2L(const bool do_exchange);
+    void compute_M2L();
+    void compute_M2L_X();
+    void compute_L2L();
+    void compute_L2L_X();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
@@ -122,6 +125,7 @@ class Box {
 
     std::vector<std::shared_ptr<ZMatrix>> olm_ji() const { return olm_ji_; }
     std::vector<std::shared_ptr<ZMatrix>> mlm_ji() const { return mlm_ji_; }
+    std::vector<std::shared_ptr<ZMatrix>> olm_ri() const { return olm_ri_; }
 
     void print_box() const;
 };

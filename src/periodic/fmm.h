@@ -57,7 +57,7 @@ class FMM {
 
     void init();
     void get_boxes();
-    void M2M(std::shared_ptr<const Matrix> density, const bool do_exchange = false, std::shared_ptr<const Matrix> ocoeff = nullptr) const;
+    void M2M(std::shared_ptr<const Matrix> mat, const bool do_exchange = false) const;
     void M2L(const bool do_exchange = false) const;
     void L2L(const bool do_exchange = false) const;
 
@@ -69,8 +69,7 @@ class FMM {
     const std::array<double, 3>& centre() const { return centre_; }
     double boxsize() const { return boxsize_; }
     bool do_exchange() const { return do_exchange_; }
-    std::shared_ptr<const Matrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr,
-                                                    std::shared_ptr<const Matrix> ocoeff = nullptr) const;
+    std::shared_ptr<const Matrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr) const;
     std::shared_ptr<const Matrix> compute_K_ff(std::shared_ptr<const Matrix> ocoeff, std::shared_ptr<const Matrix> overlap) const;
     void print_boxes(const int i) const;
 };

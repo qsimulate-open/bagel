@@ -167,36 +167,19 @@ void Box::sort_sp() {
 }
 
 
-void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_ptr<const Matrix> ocoeff) {
+void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
   fill(multipole_.begin(), multipole_.end(), 0.0);
   fill(localJ_.begin(), localJ_.end(), 0.0);
-  vector<shared_ptr<ZMatrix>> box_olm;
-  if (dox) {
-    nocc_ = ocoeff->mdim();
-    mlm_ji_.resize(nmult_);
-    olm_ji_.resize(nmult_);
-    olm_ri_.resize(nmult_);
-    box_olm.resize(nmult_);
-    get_offsets();
-    for (int k = 0; k != nmult_; ++k) {
-      olm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
-      mlm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
-      olm_ri_[k] = make_shared<ZMatrix>(nsize_, nocc_);
-      box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
-    }
-  }
-
 
   if (nchild() == 0) { // leaf
     TaskQueue<function<void(void)>> tasks(nsp());
     mutex jmutex;
-    int isp = 0;
     for (auto& v : sp_) {
       if (v->schwarz() < 1e-15) continue;
 
       tasks.emplace_back(
-        [this, &v, &density, &ocoeff, &dox, &jmutex, &isp, &box_olm]() {
+        [this, &v, &density, &jmutex]() {
           vector<complex<double>> olm(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
@@ -213,59 +196,10 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
                 olm[k] += conj(*dat[k]++ * density->element(i,j));
 
           transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
-
-#if 0
-          if (dox) {
-            shared_ptr<const Matrix> ocoeff_ui = ocoeff->cut(v->offset(1), dimb1+v->offset(1));
-            shared_ptr<const Matrix> ocoeff_si = ocoeff->cut(v->offset(0), dimb0+v->offset(0));
-            auto zc_ui = make_shared<const ZMatrix>(*ocoeff_ui, 1.0);
-            auto zc_si = make_shared<const ZMatrix>(*ocoeff_si, 1.0);
-            for (int k = 0; k != nmult_; ++k) {
-              auto olm_ri = make_shared<ZMatrix>(dimb0, nocc_);
-              zgemm3m_("N", "N", dimb0, nocc_, dimb1, 1.0, mpole.data(k), dimb0, zc_ui->data(), dimb1, 0.0, olm_ri->data(), dimb0);
-              zgemm3m_("T", "N", nocc_, nocc_, dimb0, 1.0, zc_si->data(), dimb0, olm_ri->data(), dimb0, 1.0, olm_ji_[k]->data(), nocc_);
-            }
-          }
-#endif
-          if (dox) {
-            for (int k = 0; k != nmult_; ++k) {
-              const int nstart = offsets_[isp][0];
-              const int mstart = offsets_[isp][1];
-              box_olm[k]->add_block(1.0, nstart, mstart, v->shell(0)->nbasis(), v->shell(1)->nbasis(), mpole.data(k));
-            }
-          }
         }
       );
-      ++isp;
     }
     tasks.compute();
-    // contract for X
-    if (dox) {
-      auto ocoeff_ui = make_shared<Matrix>(nsize_, nocc_);
-      int start = 0;
-      for (auto& ci : coffsets_i_) {
-        const int ndim = ci.second;
-        shared_ptr<const Matrix> c_ui = ocoeff->cut(ci.first, ci.first + ndim);
-        ocoeff_ui->copy_block(start, 0, ndim, nocc_, c_ui->data());
-        start += ndim;
-      }
-      assert(start == nsize_);
-      auto ocoeff_sj = make_shared<Matrix>(msize_, nocc_);
-      start = 0;
-      for (auto& cj : coffsets_j_) {
-        const int mdim = cj.second;
-        shared_ptr<const Matrix> c_sj = ocoeff->cut(cj.first, cj.first + mdim);
-        ocoeff_sj->copy_block(start, 0, mdim, nocc_, c_sj->data());
-        start += mdim;
-      }
-      assert(start == msize_);
-      auto zc_ui = make_shared<const ZMatrix>(*ocoeff_ui, 1.0);
-      auto zc_sj = make_shared<const ZMatrix>(*ocoeff_sj, 1.0);
-      for (int k = 0; k != nmult_; ++k) {
-        zgemm3m_("N", "N", nsize_, nocc_, msize_, 1.0, box_olm[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_ri_[k]->data(), nsize_);
-        zgemm3m_("T", "N", nocc_, nocc_, nsize_, 1.0, zc_sj->data(), nsize_, olm_ri_[k]->data(), nsize_, 0.0, olm_ji_[k]->data(), nocc_);
-      }
-    }
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -275,12 +209,87 @@ void Box::compute_M2M(shared_ptr<const Matrix> density, const bool dox, shared_p
       r12[2] = c->centre(2) - centre_[2];
       vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
       blas::ax_plus_y_n(1.0, smoment.data(), nmult_, multipole_.data());
+    }
+  }
+}
 
-      if (dox) {
-        vector<shared_ptr<const ZMatrix>> smoment = shift_multipolesX(c->olm_ji(), r12);
-        for (int k = 0; k != nmult_; ++k)
-          olm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, smoment[k]->data());
-      }
+
+void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff) {
+
+  vector<shared_ptr<ZMatrix>> box_olm;
+  nocc_ = ocoeff->mdim();
+  mlm_ji_.resize(nmult_);
+  olm_ji_.resize(nmult_);
+  olm_ri_.resize(nmult_);
+  box_olm.resize(nmult_);
+  get_offsets();
+  for (int k = 0; k != nmult_; ++k) {
+    olm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
+    mlm_ji_[k] = make_shared<ZMatrix>(nocc_, nocc_);
+    olm_ri_[k] = make_shared<ZMatrix>(nsize_, nocc_);
+    box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
+  }
+
+
+  if (nchild() == 0) { // leaf
+    TaskQueue<function<void(void)>> tasks(nsp());
+    int isp = 0;
+    for (auto& v : sp_) {
+      if (v->schwarz() < 1e-15) continue;
+
+      tasks.emplace_back(
+        [this, &v, &ocoeff, &isp, &box_olm]() {
+          vector<complex<double>> olm(nmult_);
+          MultipoleBatch mpole(v->shells(), centre_, lmax_);
+          mpole.compute();
+          const int dimb0 = v->shell(0)->nbasis();
+          const int dimb1 = v->shell(1)->nbasis();
+          for (int k = 0; k != nmult_; ++k) {
+            const int nstart = offsets_[isp][0];
+            const int mstart = offsets_[isp][1];
+            box_olm[k]->add_block(1.0, nstart, mstart, v->shell(0)->nbasis(), v->shell(1)->nbasis(), mpole.data(k));
+          }
+        }
+      );
+      ++isp;
+    }
+    tasks.compute();
+    // contract for X
+    auto ocoeff_ui = make_shared<Matrix>(nsize_, nocc_);
+    int start = 0;
+    for (auto& ci : coffsets_i_) {
+      const int ndim = ci.second;
+      shared_ptr<const Matrix> c_ui = ocoeff->cut(ci.first, ci.first + ndim);
+      ocoeff_ui->copy_block(start, 0, ndim, nocc_, c_ui->data());
+      start += ndim;
+    }
+    assert(start == nsize_);
+    auto ocoeff_sj = make_shared<Matrix>(msize_, nocc_);
+    start = 0;
+    for (auto& cj : coffsets_j_) {
+      const int mdim = cj.second;
+      shared_ptr<const Matrix> c_sj = ocoeff->cut(cj.first, cj.first + mdim);
+      ocoeff_sj->copy_block(start, 0, mdim, nocc_, c_sj->data());
+      start += mdim;
+    }
+    assert(start == msize_);
+    auto zc_ui = make_shared<const ZMatrix>(*ocoeff_ui, 1.0);
+    auto zc_sj = make_shared<const ZMatrix>(*ocoeff_sj, 1.0);
+    for (int k = 0; k != nmult_; ++k) {
+      zgemm3m_("N", "N", nsize_, nocc_, msize_, 1.0, box_olm[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_ri_[k]->data(), nsize_);
+      zgemm3m_("T", "N", nocc_, nocc_, nsize_, 1.0, zc_sj->data(), nsize_, olm_ri_[k]->data(), nsize_, 0.0, olm_ji_[k]->data(), nocc_);
+    }
+  } else { // shift children's multipoles
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> c = child(n);
+      array<double, 3> r12;
+      r12[0] = c->centre(0) - centre_[0];
+      r12[1] = c->centre(1) - centre_[1];
+      r12[2] = c->centre(2) - centre_[2];
+
+      vector<shared_ptr<const ZMatrix>> smoment = shift_multipolesX(c->olm_ji(), r12);
+      for (int k = 0; k != nmult_; ++k)
+        olm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, smoment[k]->data());
     }
   }
 }
@@ -326,7 +335,22 @@ void Box::compute_multipolesX(shared_ptr<const Matrix> ocoeff) {
 }
 
 
-void Box::compute_L2L(const bool dox) {
+void Box::compute_L2L_X() {
+
+  // from parent
+  if (parent_) {
+    array<double, 3> r12;
+    r12[0] = centre_[0] - parent_->centre(0);
+    r12[1] = centre_[1] - parent_->centre(1);
+    r12[2] = centre_[2] - parent_->centre(2);
+    vector<shared_ptr<const ZMatrix>> slocal = shift_localLX(parent_->mlm_ji(), r12);
+    for (int k = 0; k != nmult_; ++k)
+      mlm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, slocal[k]->data());
+  }
+}
+
+
+void Box::compute_L2L() {
 
   // from parent
   if (parent_) {
@@ -336,17 +360,26 @@ void Box::compute_L2L(const bool dox) {
     r12[2] = centre_[2] - parent_->centre(2);
     vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
     blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
-
-    if (dox) {
-      vector<shared_ptr<const ZMatrix>> slocal = shift_localLX(parent_->mlm_ji(), r12);
-      for (int k = 0; k != nmult_; ++k)
-        mlm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, slocal[k]->data());
-    }
   }
 }
 
 
-void Box::compute_M2L(const bool dox) {
+void Box::compute_M2L_X() {
+
+  // from interaction list
+  for (auto& it : inter_) {
+    array<double, 3> r12;
+    r12[0] = centre_[0] - it->centre(0);
+    r12[1] = centre_[1] - it->centre(1);
+    r12[2] = centre_[2] - it->centre(2);
+    vector<shared_ptr<const ZMatrix>> slocal = shift_localMX(it->olm_ji(), r12);
+    for (int k = 0; k != nmult_; ++k)
+      mlm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, slocal[k]->data());
+  }
+}
+
+
+void Box::compute_M2L() {
 
   // from interaction list
   for (auto& it : inter_) {
@@ -356,12 +389,6 @@ void Box::compute_M2L(const bool dox) {
     r12[2] = centre_[2] - it->centre(2);
     vector<complex<double>> slocal = shift_localM(it->multipole(), r12);
     blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
-
-    if (dox) {
-      vector<shared_ptr<const ZMatrix>> slocal = shift_localMX(it->olm_ji(), r12);
-      for (int k = 0; k != nmult_; ++k)
-        mlm_ji_[k]->add_block(1.0, 0, 0, nocc_, nocc_, slocal[k]->data());
-    }
   }
 }
 
@@ -542,6 +569,7 @@ vector<complex<double>> Box::shift_localM(const vector<complex<double>>& olm, ar
 
   vector<complex<double>> mb(nmult_, 0);
 
+  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -579,6 +607,7 @@ vector<complex<double>> Box::shift_multipoles(const vector<complex<double>>& oa,
 
   vector<complex<double>> ob(nmult_, 0);
 
+  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -619,6 +648,7 @@ vector<complex<double>> Box::shift_localL(const vector<complex<double>>& mr, arr
 
   vector<complex<double>> mrb(nmult_, 0);
 
+  int u = 0;
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
 
@@ -867,7 +897,7 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localMX(const vector<shared_ptr<ZMa
 
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
-
+ 
       auto out = make_shared<ZMatrix>(olm[0]->ndim(), olm[0]->mdim());
 
       for (int j = 0; j <= lmax_; ++j) {
