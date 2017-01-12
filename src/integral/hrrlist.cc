@@ -49,6 +49,13 @@ HRRList::HRRList() {
       hrrfunc[ANG_HRR_END * 6 + 4] = &perform_HRR_a0_64;
       hrrfunc[ANG_HRR_END * 6 + 5] = &perform_HRR_b0_65;
       hrrfunc[ANG_HRR_END * 6 + 6] = &perform_HRR_c0_66;
+      hrrfunc[ANG_HRR_END * 7 + 1] = &perform_HRR_80_71;
+      hrrfunc[ANG_HRR_END * 7 + 2] = &perform_HRR_90_72;
+      hrrfunc[ANG_HRR_END * 7 + 3] = &perform_HRR_a0_73;
+      hrrfunc[ANG_HRR_END * 7 + 4] = &perform_HRR_b0_74;
+      hrrfunc[ANG_HRR_END * 7 + 5] = &perform_HRR_c0_75;
+      hrrfunc[ANG_HRR_END * 7 + 6] = &perform_HRR_d0_76;
+      hrrfunc[ANG_HRR_END * 7 + 7] = &perform_HRR_e0_77;
 }
 
 
@@ -74,4 +81,11 @@ CHRRList::CHRRList() {
       hrrfunc[ANG_HRR_END * 6 + 4] = &perform_HRR_a0_64;
       hrrfunc[ANG_HRR_END * 6 + 5] = &perform_HRR_b0_65;
       hrrfunc[ANG_HRR_END * 6 + 6] = &perform_HRR_c0_66;
+      hrrfunc[ANG_HRR_END * 7 + 1] = &perform_HRR_80_71;
+      hrrfunc[ANG_HRR_END * 7 + 2] = &perform_HRR_90_72;
+      hrrfunc[ANG_HRR_END * 7 + 3] = &perform_HRR_a0_73;
+      hrrfunc[ANG_HRR_END * 7 + 4] = &perform_HRR_b0_74;
+      hrrfunc[ANG_HRR_END * 7 + 5] = &perform_HRR_c0_75;
+      hrrfunc[ANG_HRR_END * 7 + 6] = &perform_HRR_d0_76;
+      hrrfunc[ANG_HRR_END * 7 + 7] = &perform_HRR_e0_77;
 }
