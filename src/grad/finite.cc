@@ -51,7 +51,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   shared_ptr<const Reference> refgrad_plus;
   shared_ptr<const Reference> refgrad_minus;
 
-  cout << "  Reference energy is " << energy_ << endl;
+  cout << "  Reference energy is " << energy_ << endl << endl;
 
   muffle_ = make_shared<Muffle>("finite.log");
 
@@ -90,7 +90,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
       displ->element(j,i) = 0.0;
       muffle_->unmute();
-      cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
+      cout << "  Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
 
