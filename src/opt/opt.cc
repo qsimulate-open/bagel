@@ -70,9 +70,18 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     else
       bmat_ = current_->compute_internal_coordinate(nullptr, constraints_);
   }
-  thresh_grad_ = idat->get<double>("maxgrad", 0.0001);
-  thresh_displ_ = idat->get<double>("maxdisp", 0.0001);
-  thresh_echange_ = idat->get<double>("maxchange", 0.000001);
+
+  // small molecule (atomno < 4) threshold : (1.0e-5, 4.0e-5, 1.0e-6)  (tight in GAUSSIAN and Q-Chem = normal / 30)
+  // large molecule              threshold : (3.0e-4, 1.2e-3, 1.0e-6)  (normal in GAUSSIAN and Q-Chem)
+  if (current_->natom() < 4) {
+    thresh_grad_ = idat->get<double>("maxgrad", 0.00001);
+    thresh_displ_ = idat->get<double>("maxdisp", 0.00004);
+    thresh_echange_ = idat->get<double>("maxchange", 0.000001);
+  } else {
+    thresh_grad_ = idat->get<double>("maxgrad", 0.0003);
+    thresh_displ_ = idat->get<double>("maxdisp", 0.0012);
+    thresh_echange_ = idat->get<double>("maxchange", 0.000001);
+  }
   algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", true);
   opttype_ = idat->get<string>("opttype", "energy");
@@ -210,9 +219,9 @@ void Opt::compute() {
     bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
     cout << endl << "  === Convergence status ===" << endl << endl;
     cout << "                         Maximum     Tolerance   Converged?" << endl;
-    cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << convergegrad << endl;
-    cout << "  * Displacement  " << setw(14) << setprecision(6) << maxdispl << setw(14) << thresh_displ_ << setw(13) << convergedispl << endl;
-    cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << convergeenergy << endl << endl;
+    cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << (convergegrad? "Yes" : "No") << endl;
+    cout << "  * Displacement  " << setw(14) << setprecision(6) << maxdispl << setw(14) << thresh_displ_ << setw(13) << (convergedispl? "Yes" : "No") << endl;
+    cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << (convergeenergy? "Yes" : "No") << endl << endl;
 
     muffle_->unmute();
     print_iteration(rms, timer_.tick());
