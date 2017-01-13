@@ -26,7 +26,6 @@
 #define __SRC_GRAD_HESS_H
 
 #include <src/wfn/reference.h>
-#include <src/grad/force.h>
 #include <src/util/muffle.h>
 
 namespace bagel {
@@ -40,10 +39,10 @@ class Hess {
     bool numhess_;
     bool numforce_;
     std::shared_ptr<Matrix> hess_;
-    std::vector<std::vector<double>> grad_plus_;
-    std::vector<std::vector<double>> grad_minus_;
+
     double dx_;
-//    std::vector<std::shared_ptr<MultiTensor>> hess_all_;
+    double energy_;
+    int target_state_;
 
     // mask some of the output
     mutable std::shared_ptr<Muffle> muffle_;

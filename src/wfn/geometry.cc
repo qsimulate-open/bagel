@@ -286,6 +286,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ)
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
+  overlap_thresh_ = o.overlap_thresh_;
 
   // first construct atoms using displacements
   int iat = 0;
