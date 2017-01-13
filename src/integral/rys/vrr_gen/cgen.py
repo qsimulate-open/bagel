@@ -10,7 +10,7 @@ ss = "\
 // Filename: " + filename + "\n\
 // Copyright (C) 2013 Toru Shiozaki\n\
 //\n\
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>\n\
+// Author: Ryan D. Reynolds <RyanDReynolds@u.northwestern.edu>\n\
 // Maintainer: Shiozaki group\n\
 //\n\
 // This file is part of the BAGEL package.\n\
@@ -67,7 +67,8 @@ for a in range(0,8):
     for (int j = 0; j != screening_size_; ++j) {\n\
       int ii = screening_[j];\n\
       vrr_driver<" + str(a) + "," + str(b) + "," + str(c) + "," +  str(d) + "," + str(rank) + ",complex<double>>(data_+ii*acsize, roots_+ii*rank_, weights_+ii*rank_, coeff_[ii],\n\
-                    A_, B_, C_, D_, P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz);\n\
+                    basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
+                    P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz);\n\
     } break;\n"
 ss += "\
   }\n\
