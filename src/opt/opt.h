@@ -61,7 +61,9 @@ class Opt {
     std::string method_;
 
     int maxiter_;
-    double thresh_;
+    double thresh_grad_;
+    double thresh_displ_;
+    double thresh_echange_;
     double maxstep_;
     bool scratch_;
 

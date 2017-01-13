@@ -56,3 +56,14 @@ shared_ptr<XYZFile> XYZFile::transform(const shared_ptr<const Matrix> a, const b
   }
   return out;
 }
+
+double XYZFile::maximum(int atomno) {
+  double maximum = -1000.0;
+  for (int i = 0; i != atomno; ++i) {
+    if (fabs(element(0,i)) > maximum) maximum = fabs(element(0,i));
+    if (fabs(element(1,i)) > maximum) maximum = fabs(element(1,i));
+    if (fabs(element(2,i)) > maximum) maximum = fabs(element(2,i));
+  }
+
+  return maximum;
+}

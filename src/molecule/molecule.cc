@@ -222,9 +222,11 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptConstraint>> cmat) const {
   cout << "    o Connectivitiy analysis" << endl;
 
+  // list of primitive internals
+  array<vector<vector<int>>,3> prims;
   vector<vector<double>> out;
   const size_t size = natom()*3;
 
@@ -237,6 +239,14 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
 
   vector<double> hessprim;
   hessprim.reserve(natom()*3 * 10);
+
+  // (1) make c-matrix from constraint data
+  // (2) Schmidt orthogonalization ---> (ninternal - nconstraint) + nconstraint vector generated
+  // (3) in eigenvector following ---> generate Hessian and follow eigenvector (p,n) n eigenvector
+  //
+  // List of primitive internals should be generated first
+//        Quatern<double> ip = (atoms_[(*c)->pair(0)])->position();
+//        Quatern<double> jp = (atoms_[(*c)->pair(1)])->position();
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
@@ -257,10 +267,13 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
 
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
+
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
         const double fac = adf_rho(*i, *j);
+
+        // use baker, temporarily
         current[3*(*i)->num()+0] =  jp[1]*fac;
         current[3*(*i)->num()+1] =  jp[2]*fac;
         current[3*(*i)->num()+2] =  jp[3]*fac;
@@ -268,6 +281,11 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
         current[3*(*j)->num()+1] = -jp[2]*fac;
         current[3*(*j)->num()+2] = -jp[3]*fac;
         out.push_back(current);
+
+        vector<int> prim(2);
+        prim[0] = (*i)->num();
+        prim[1] = (*j)->num();
+        prims[0].push_back(prim);
       }
     }
   }
@@ -313,6 +331,12 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
           current[3*(*c)->num() + ic] = st2[ic+1]*fac;
         }
         out.push_back(current);
+
+        vector<int> prim(3);
+        prim[0] = (*i)->num();
+        prim[1] = (*c)->num();
+        prim[2] = (*j)->num();
+        prims[1].push_back(prim);
       }
     }
   }
@@ -324,8 +348,10 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-//        if (!((*k)->connected_with(*j))) continue;
-          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
+//          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
+//        Only proper dihedrals
+          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
+          if (*c > *j) continue;
           if (*c == *k || *k == *i) continue;
           if (*j == *k) continue;
 #if 0
@@ -376,14 +402,79 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
             assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
           }
           out.push_back(current);
+          vector<int> prim(4);
+          prim[0] = (*i)->num();
+          prim[1] = (*c)->num();
+          prim[2] = (*j)->num();
+          prim[3] = (*k)->num();
+          prims[2].push_back(prim);
         }
       }
     }
   }
+#if 0
+  cout << " # primitive, bond = " << prims[0].size() << "  angle = " << prims[1].size() << "  torsion = " << prims[2].size() << endl;
+  cout << "   List of Primitive Stretches : " << endl;
+  for (auto i : prims[0]) {
+    cout << "   " << i[0] << "   " << i[1] << endl;
+  }
+  cout << "   List of Primitive Bends : " << endl;
+  for (auto i : prims[1]) {
+    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] << endl;
+  }
+  cout << "   List of Primitive Torsions : " << endl;
+  for (auto i : prims[2]) {
+    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] <<  "   " << i[3] << endl;
+  }
+#endif
 
   // debug output
   const int primsize = out.size();
   const int cartsize = 3*natom();
+
+  bool constrained = cmat.size() ? true : false;
+  vector<vector<double>> cvec;
+  if (constrained) {
+    for (auto c : cmat) {
+      if (c->type() == "bond") {
+        int count = 0;
+        for (auto p : prims[0]) {
+          if (((c->pair(0) == p[0]) && (c->pair(1) == p[1])) ||
+              ((c->pair(0) == p[1]) && (c->pair(1) == p[0]))) {
+            vector<double> current(primsize);
+            current[count] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      } else if (c->type() == "angle") {
+        int count = 0;
+        for (auto p : prims[1]) {
+          if ((c->pair(1) == p[1]) &&
+              (((c->pair(0) == p[0]) && (c->pair(2) == p[2])) ||
+               ((c->pair(0) == p[2]) && (c->pair(2) == p[0])))) {
+            vector<double> current(primsize);
+            current[count+prims[0].size()] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      } else if (c->type() == "torsion") {
+        int count = 0;
+        for (auto p : prims[2]) {
+          if ((((c->pair(1) == p[1]) && (c->pair(2) == p[2])) &&
+               ((c->pair(0) == p[0]) && (c->pair(3) == p[3]))) ||
+              (((c->pair(1) == p[2]) && (c->pair(2) == p[1])) &&
+               ((c->pair(0) == p[3]) && (c->pair(3) == p[0])))) {
+            vector<double> current(primsize);
+            current[count+prims[0].size()+prims[1].size()] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      }
+    }
+  }
 
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
@@ -411,8 +502,31 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   }
   cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
+  // bbslice = U
   // form B = U^+ Bprim
   Matrix bbslice = bb.slice(0,ninternal);
+
+  if (constrained) {
+    cout << "      Imposing Constraints with Schmidt Orthogonalization " << endl;
+    auto cdag = make_shared<Matrix>(primsize, cmat.size());
+    double *citer = cdag->data();
+    for (auto i = cvec.begin(); i != cvec.end(); ++i, citer += primsize)
+      copy (i->begin(), i->end(), citer);
+    cdag->broadcast();
+    auto umat = make_shared<Matrix>(bbslice);
+    auto vmat = make_shared<Matrix>(*(umat->merge(cdag)));
+
+    for (int i = vmat->mdim()-1; i != -1; --i) {
+      for (int j = vmat->mdim()-1; j != i; --j) {
+        const double a = blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,j));
+        blas::ax_plus_y_n(-a, vmat->element_ptr(0,j), vmat->ndim(), vmat->element_ptr(0,i));
+      }
+      const double b = 1.0 / sqrt(blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,i)));
+      for_each(vmat->element_ptr(0,i), vmat->element_ptr(0,i+1), [&b](double &a) { a *= b; });
+    }
+    bbslice = vmat->slice(cmat.size(), ninternal+cmat.size());
+  }
+
   auto bnew = make_shared<Matrix>(bdag * bbslice);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
@@ -429,6 +543,15 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     }
   }
   Matrix hess = bbslice % scale;
+
+  shared_ptr<Matrix> hessc;
+  if (constrained)
+    hessc = make_shared<Matrix>(*(hess.resize(hess.ndim()+cmat.size(), hess.mdim()+cmat.size())));
+  for (int i = 0; i != cmat.size(); ++i) {
+    // let me assume that they are arranged well (will make a map)
+    hessc->element(i + ninternal, ninternal - cmat.size() + i) = 1.0;
+    hessc->element(ninternal - cmat.size() + i, i + ninternal) = 1.0;
+  }
   hess.sqrt();
   *bnew = *bnew * hess;
   hess.inverse();

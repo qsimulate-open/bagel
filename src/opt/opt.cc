@@ -68,9 +68,11 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     if (redundant_)
       bmat_red_ = current_->compute_redundant_coordinate();
     else
-      bmat_ = current_->compute_internal_coordinate();
+      bmat_ = current_->compute_internal_coordinate(nullptr, constraints_);
   }
-  thresh_ = idat->get<double>("thresh", 1.0e-5);
+  thresh_grad_ = idat->get<double>("maxgrad", 0.0001);
+  thresh_displ_ = idat->get<double>("maxdisp", 0.0001);
+  thresh_echange_ = idat->get<double>("maxchange", 0.000001);
   algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", true);
   opttype_ = idat->get<string>("opttype", "energy");
@@ -107,7 +109,7 @@ void Opt::compute() {
   displ_ = make_shared<XYZFile>(dispsize_);
   grad_ = make_shared<GradFile>(dispsize_);
 
-  if (internal_ && !redundant_ && opttype_ == "energy") hess_ = make_shared<Matrix>(*(bmat_[2]));
+  if (internal_ && !redundant_) hess_ = make_shared<Matrix>(*(bmat_[2]));
   else {
     hess_ = make_shared<Matrix>(size_, size_);
     hess_->unit();
@@ -135,7 +137,7 @@ void Opt::compute() {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0]);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], constraints_);
     }
 
     shared_ptr<PTree> cinput;
@@ -162,11 +164,13 @@ void Opt::compute() {
     cinput->put("gradient", true);
 
     double rms;
+    double maxgrad;
     {
       grad_->zero();
       shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
       rms = cgrad->rms();       // This is more appropriate
+      maxgrad = cgrad->maximum(current_->natom());
 
       if (internal_) {
         if (redundant_)
@@ -198,14 +202,23 @@ void Opt::compute() {
     }
 
     if (adaptive_) do_adaptive();
+    double maxdispl = displ->maximum(current_->natom());
+    double echange = en_ - en_prev_;
+
+    bool convergegrad = maxgrad > thresh_grad_ ? false : true;
+    bool convergedispl = maxdispl > thresh_displ_ ? false : true;
+    bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
+    cout << endl << "  === Convergence status ===" << endl << endl;
+    cout << "                         Maximum     Tolerance   Converged?" << endl;
+    cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << convergegrad << endl;
+    cout << "  * Displacement  " << setw(14) << setprecision(6) << maxdispl << setw(14) << thresh_displ_ << setw(13) << convergedispl << endl;
+    cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << convergeenergy << endl << endl;
 
     muffle_->unmute();
     print_iteration(rms, timer_.tick());
     en_prev_ = en_;
 
-    double stepnorm = displ->norm();
-    // test
-    if (stepnorm < thresh_ * sqrt(current_->natom()*3)) break;
+    if (convergegrad && (convergedispl || convergeenergy)) break;
   }
 
 #ifndef DISABLE_SERIALIZATION
@@ -233,7 +246,7 @@ void Opt::hessian_update() {
 }
 
 void Opt::hessian_update_sr1(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
-  cout << "Updating Hessian using SR1 " << endl;
+  cout << "  * Updating Hessian using SR1 " << endl;
   // Hessian update with SR1
   double  zs = z->dot_product(s);
   if (fabs(zs)>1.0e-12) zs = 1.0 / zs;
@@ -245,7 +258,7 @@ void Opt::hessian_update_sr1(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sha
 }
 
 void Opt::hessian_update_bfgs(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> hs) {
-  cout << "Updating Hessian using BFGS " << endl;
+  cout << "  * Updating Hessian using BFGS " << endl;
   // Hessian update with BFGS
   double shs = hs->dot_product(s);
   double  ys = y->dot_product(s);
@@ -263,7 +276,7 @@ void Opt::hessian_update_bfgs(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sh
 }
 
 void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
-  cout << "Updating Hessian using PSB " << endl;
+  cout << "  * Updating Hessian using PSB " << endl;
   // Hessian update with PSB
   double ss = s->dot_product(s);
   double ss2 = ss * ss;
