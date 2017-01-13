@@ -275,7 +275,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
         }
       }
       muffle_->unmute();
-      cout << "Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
+      cout << "  Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
     }
   }
 
