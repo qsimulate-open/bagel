@@ -58,6 +58,7 @@ class FMM {
     void init();
     void get_boxes();
     void M2M(std::shared_ptr<const Matrix> mat, const bool do_exchange = false) const;
+    void M2M_X(const VectorB& c_si, const VectorB& c_uj) const;
     void M2L(const bool do_exchange = false) const;
     void L2L(const bool do_exchange = false) const;
 
