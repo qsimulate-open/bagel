@@ -352,6 +352,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 1792 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -361,6 +362,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1793 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -370,6 +373,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1794 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -379,6 +384,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1795 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -388,6 +395,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1796 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -397,6 +406,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1797 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -406,6 +417,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1798 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -415,6 +428,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 1799 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -424,6 +439,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 16777216 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -676,6 +692,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 16779008 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -685,6 +702,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779009 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -694,6 +713,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779010 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -703,6 +724,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779011 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -712,6 +735,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779012 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -721,6 +746,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779013 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -730,6 +757,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779014 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -739,6 +768,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16779015 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -748,6 +779,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 16842752 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1000,6 +1032,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 16844544 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1009,6 +1042,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844545 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1018,6 +1053,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844546 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1027,6 +1064,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844547 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1036,6 +1075,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844548 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1045,6 +1086,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844549 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1054,6 +1097,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844550 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1063,6 +1108,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 16844551 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1072,6 +1119,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 33554432 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1324,6 +1372,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 33556224 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1333,6 +1382,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556225 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1342,6 +1393,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556226 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1351,6 +1404,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556227 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1360,6 +1415,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556228 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1369,6 +1426,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556229 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1378,6 +1437,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556230 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1387,6 +1448,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33556231 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1396,6 +1459,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 33619968 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1648,6 +1712,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 33621760 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1657,6 +1722,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621761 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1666,6 +1733,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621762 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1675,6 +1744,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621763 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1684,6 +1755,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621764 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1693,6 +1766,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621765 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1702,6 +1777,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621766 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1711,6 +1788,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33621767 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1720,6 +1799,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 33685504 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1972,6 +2052,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 33687296 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1981,6 +2062,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687297 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1990,6 +2073,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687298 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -1999,6 +2084,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687299 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2008,6 +2095,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687300 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2017,6 +2106,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687301 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2026,6 +2117,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687302 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2035,6 +2128,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 33687303 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2044,6 +2139,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 50331648 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2296,6 +2392,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 50333440 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2305,6 +2402,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333441 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2314,6 +2413,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333442 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2323,6 +2424,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333443 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2332,6 +2435,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333444 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2341,6 +2446,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333445 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2350,6 +2457,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333446 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2359,6 +2468,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50333447 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2368,6 +2479,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 50397184 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2620,6 +2732,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 50398976 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2629,6 +2742,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398977 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2638,6 +2753,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398978 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2647,6 +2764,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398979 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2656,6 +2775,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398980 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2665,6 +2786,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398981 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2674,6 +2797,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398982 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2683,6 +2808,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50398983 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2692,6 +2819,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 50462720 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2944,6 +3072,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 50464512 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2953,6 +3082,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464513 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2962,6 +3093,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464514 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2971,6 +3104,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464515 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2980,6 +3115,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464516 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2989,6 +3126,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464517 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -2998,6 +3137,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464518 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3007,6 +3148,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50464519 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3016,6 +3159,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 50528256 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3268,6 +3412,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 50530048 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3277,6 +3422,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530049 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3286,6 +3433,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530050 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3295,6 +3444,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530051 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3304,6 +3455,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530052 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3313,6 +3466,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530053 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3322,6 +3477,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530054 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3331,6 +3488,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 50530055 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3340,6 +3499,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 67108864 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3592,6 +3752,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 67110656 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3601,6 +3762,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110657 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3610,6 +3773,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110658 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3619,6 +3784,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110659 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3628,6 +3795,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110660 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3637,6 +3806,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110661 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3646,6 +3817,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110662 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3655,6 +3828,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67110663 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3664,6 +3839,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 67174400 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3916,6 +4092,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 67176192 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3925,6 +4102,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176193 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3934,6 +4113,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176194 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3943,6 +4124,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176195 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3952,6 +4135,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176196 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3961,6 +4146,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176197 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3970,6 +4157,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176198 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3979,6 +4168,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67176199 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -3988,6 +4179,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 67239936 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4240,6 +4432,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 67241728 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4249,6 +4442,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241729 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4258,6 +4453,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241730 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4267,6 +4464,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241731 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4276,6 +4475,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241732 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4285,6 +4486,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241733 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4294,6 +4497,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241734 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4303,6 +4508,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67241735 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4312,6 +4519,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 67305472 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4564,6 +4772,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 67307264 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4573,6 +4782,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307265 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4582,6 +4793,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307266 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4591,6 +4804,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307267 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4600,6 +4815,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307268 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4609,6 +4826,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307269 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4618,6 +4837,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307270 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4627,6 +4848,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67307271 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4636,6 +4859,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 67371008 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4888,6 +5112,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 67372800 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4897,6 +5122,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372801 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4906,6 +5133,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372802 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4915,6 +5144,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372803 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4924,6 +5155,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372804 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4933,6 +5166,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372805 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4942,6 +5177,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372806 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4951,6 +5188,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 67372807 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -4960,6 +5199,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 83886080 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5212,6 +5452,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 83887872 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5221,6 +5462,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887873 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5230,6 +5473,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887874 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5239,6 +5484,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887875 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5248,6 +5495,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887876 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5257,6 +5506,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887877 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5266,6 +5517,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887878 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5275,6 +5528,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83887879 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5284,6 +5539,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 83951616 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5536,6 +5792,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 83953408 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5545,6 +5802,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953409 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5554,6 +5813,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953410 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5563,6 +5824,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953411 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5572,6 +5835,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953412 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5581,6 +5846,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953413 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5590,6 +5857,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953414 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5599,6 +5868,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 83953415 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5608,6 +5879,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 84017152 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5860,6 +6132,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 84018944 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5869,6 +6142,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018945 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5878,6 +6153,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018946 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5887,6 +6164,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018947 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5896,6 +6175,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018948 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5905,6 +6186,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018949 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5914,6 +6197,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018950 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5923,6 +6208,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84018951 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -5932,6 +6219,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 84082688 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6184,6 +6472,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 84084480 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6193,6 +6482,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084481 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6202,6 +6493,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084482 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6211,6 +6504,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084483 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6220,6 +6515,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084484 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6229,6 +6526,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084485 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6238,6 +6537,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084486 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6247,6 +6548,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84084487 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6256,6 +6559,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 84148224 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6508,6 +6812,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 84150016 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6517,6 +6822,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150017 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6526,6 +6833,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150018 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6535,6 +6844,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150019 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6544,6 +6855,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150020 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6553,6 +6866,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150021 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6562,6 +6877,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150022 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6571,6 +6888,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84150023 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6580,6 +6899,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 84213760 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6832,6 +7152,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 84215552 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6841,6 +7162,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215553 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6850,6 +7173,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215554 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6859,6 +7184,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215555 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6868,6 +7195,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215556 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6877,6 +7206,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215557 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6886,6 +7217,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215558 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6895,6 +7228,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 84215559 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -6904,6 +7239,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100663296 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7156,6 +7492,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100665088 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7165,6 +7502,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665089 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7174,6 +7513,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665090 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7183,6 +7524,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665091 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7192,6 +7535,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665092 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7201,6 +7546,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665093 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7210,6 +7557,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665094 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7219,6 +7568,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100665095 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7228,6 +7579,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100728832 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7480,6 +7832,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100730624 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7489,6 +7842,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730625 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7498,6 +7853,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730626 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7507,6 +7864,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730627 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7516,6 +7875,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730628 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7525,6 +7886,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730629 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7534,6 +7897,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730630 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7543,6 +7908,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100730631 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7552,6 +7919,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100794368 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7804,6 +8172,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100796160 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7813,6 +8182,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796161 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7822,6 +8193,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796162 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7831,6 +8204,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796163 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7840,6 +8215,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796164 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7849,6 +8226,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796165 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7858,6 +8237,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796166 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7867,6 +8248,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100796167 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -7876,6 +8259,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100859904 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8128,6 +8512,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100861696 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8137,6 +8522,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861697 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8146,6 +8533,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861698 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8155,6 +8544,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861699 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8164,6 +8555,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861700 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8173,6 +8566,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861701 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8182,6 +8577,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861702 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8191,6 +8588,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100861703 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8200,6 +8599,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100925440 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8452,6 +8852,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100927232 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8461,6 +8862,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927233 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8470,6 +8873,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927234 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8479,6 +8884,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927235 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8488,6 +8895,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927236 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8497,6 +8906,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927237 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8506,6 +8917,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927238 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8515,6 +8928,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100927239 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8524,6 +8939,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 100990976 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8776,6 +9192,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 100992768 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8785,6 +9202,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992769 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8794,6 +9213,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992770 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8803,6 +9224,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992771 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8812,6 +9235,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992772 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8821,6 +9246,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992773 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8830,6 +9257,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992774 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8839,6 +9268,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 100992775 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -8848,6 +9279,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
   case 101056512 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9100,6 +9532,7 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#ifdef COMPILE_J_ORB
   case 101058304 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9109,6 +9542,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058305 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9118,6 +9553,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058306 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9127,6 +9564,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058307 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9136,6 +9575,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058308 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9145,6 +9586,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058309 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9154,6 +9597,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058310 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9163,6 +9608,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 101058311 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9172,6 +9619,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117440512 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9181,6 +9630,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117440768 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9190,6 +9641,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117440769 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9199,6 +9652,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441024 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9208,6 +9663,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441025 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9217,6 +9674,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441026 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9226,6 +9685,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441280 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9235,6 +9696,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441281 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9244,6 +9707,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441282 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9253,6 +9718,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441283 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9262,6 +9729,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441536 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9271,6 +9740,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441537 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9280,6 +9751,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441538 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9289,6 +9762,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441539 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9298,6 +9773,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441540 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9307,6 +9784,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441792 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9316,6 +9795,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441793 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9325,6 +9806,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441794 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9334,6 +9817,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441795 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9343,6 +9828,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441796 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9352,6 +9839,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117441797 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9361,6 +9850,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442048 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9370,6 +9861,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442049 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9379,6 +9872,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442050 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9388,6 +9883,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442051 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9397,6 +9894,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442052 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9406,6 +9905,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442053 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9415,6 +9916,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442054 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9424,6 +9927,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442304 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9433,6 +9938,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442305 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9442,6 +9949,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442306 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9451,6 +9960,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442307 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9460,6 +9971,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442308 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9469,6 +9982,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442309 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9478,6 +9993,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442310 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9487,6 +10004,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117442311 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9496,6 +10015,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506048 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9505,6 +10026,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506304 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9514,6 +10037,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506305 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9523,6 +10048,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506560 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9532,6 +10059,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506561 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9541,6 +10070,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506562 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9550,6 +10081,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506816 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9559,6 +10092,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506817 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9568,6 +10103,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506818 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9577,6 +10114,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117506819 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9586,6 +10125,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507072 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9595,6 +10136,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507073 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9604,6 +10147,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507074 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9613,6 +10158,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507075 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9622,6 +10169,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507076 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9631,6 +10180,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507328 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9640,6 +10191,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507329 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9649,6 +10202,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507330 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9658,6 +10213,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507331 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9667,6 +10224,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507332 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9676,6 +10235,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507333 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9685,6 +10246,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507584 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9694,6 +10257,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507585 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9703,6 +10268,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507586 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9712,6 +10279,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507587 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9721,6 +10290,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507588 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9730,6 +10301,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507589 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9739,6 +10312,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507590 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9748,6 +10323,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507840 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9757,6 +10334,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507841 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9766,6 +10345,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507842 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9775,6 +10356,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507843 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9784,6 +10367,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507844 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9793,6 +10378,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507845 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9802,6 +10389,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507846 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9811,6 +10400,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117507847 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9820,6 +10411,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117571584 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9829,6 +10422,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117571840 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9838,6 +10433,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117571841 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9847,6 +10444,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572096 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9856,6 +10455,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572097 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9865,6 +10466,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572098 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9874,6 +10477,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572352 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9883,6 +10488,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572353 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9892,6 +10499,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572354 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9901,6 +10510,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572355 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9910,6 +10521,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572608 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9919,6 +10532,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572609 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9928,6 +10543,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572610 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9937,6 +10554,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572611 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9946,6 +10565,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572612 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9955,6 +10576,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572864 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9964,6 +10587,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572865 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9973,6 +10598,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572866 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9982,6 +10609,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572867 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -9991,6 +10620,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572868 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10000,6 +10631,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117572869 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10009,6 +10642,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573120 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10018,6 +10653,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573121 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10027,6 +10664,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573122 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10036,6 +10675,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573123 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10045,6 +10686,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573124 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10054,6 +10697,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573125 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10063,6 +10708,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573126 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10072,6 +10719,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573376 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10081,6 +10730,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573377 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10090,6 +10741,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573378 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10099,6 +10752,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573379 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10108,6 +10763,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573380 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10117,6 +10774,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573381 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10126,6 +10785,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573382 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10135,6 +10796,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117573383 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10144,6 +10807,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637120 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10153,6 +10818,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637376 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10162,6 +10829,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637377 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10171,6 +10840,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637632 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10180,6 +10851,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637633 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10189,6 +10862,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637634 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10198,6 +10873,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637888 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10207,6 +10884,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637889 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10216,6 +10895,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637890 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10225,6 +10906,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117637891 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10234,6 +10917,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638144 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10243,6 +10928,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638145 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10252,6 +10939,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638146 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10261,6 +10950,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638147 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10270,6 +10961,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638148 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10279,6 +10972,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638400 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10288,6 +10983,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638401 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10297,6 +10994,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638402 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10306,6 +11005,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638403 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10315,6 +11016,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638404 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10324,6 +11027,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638405 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10333,6 +11038,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638656 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10342,6 +11049,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638657 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10351,6 +11060,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638658 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10360,6 +11071,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638659 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10369,6 +11082,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638660 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10378,6 +11093,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638661 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10387,6 +11104,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638662 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10396,6 +11115,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638912 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10405,6 +11126,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638913 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10414,6 +11137,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638914 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10423,6 +11148,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638915 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10432,6 +11159,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638916 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10441,6 +11170,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638917 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10450,6 +11181,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638918 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10459,6 +11192,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117638919 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10468,6 +11203,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117702656 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10477,6 +11214,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117702912 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10486,6 +11225,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117702913 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10495,6 +11236,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703168 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10504,6 +11247,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703169 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10513,6 +11258,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703170 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10522,6 +11269,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703424 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10531,6 +11280,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703425 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10540,6 +11291,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703426 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10549,6 +11302,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703427 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10558,6 +11313,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703680 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10567,6 +11324,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703681 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10576,6 +11335,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703682 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10585,6 +11346,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703683 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10594,6 +11357,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703684 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10603,6 +11368,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703936 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10612,6 +11379,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703937 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10621,6 +11390,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703938 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10630,6 +11401,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703939 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10639,6 +11412,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703940 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10648,6 +11423,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117703941 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10657,6 +11434,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704192 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10666,6 +11445,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704193 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10675,6 +11456,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704194 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10684,6 +11467,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704195 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10693,6 +11478,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704196 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10702,6 +11489,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704197 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10711,6 +11500,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704198 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10720,6 +11511,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704448 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10729,6 +11522,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704449 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10738,6 +11533,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704450 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10747,6 +11544,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704451 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10756,6 +11555,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704452 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10765,6 +11566,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704453 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10774,6 +11577,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704454 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10783,6 +11588,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117704455 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10792,6 +11599,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768192 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10801,6 +11610,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768448 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10810,6 +11621,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768449 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10819,6 +11632,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768704 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10828,6 +11643,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768705 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10837,6 +11654,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768706 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10846,6 +11665,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768960 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10855,6 +11676,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768961 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10864,6 +11687,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768962 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10873,6 +11698,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117768963 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10882,6 +11709,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769216 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10891,6 +11720,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769217 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10900,6 +11731,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769218 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10909,6 +11742,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769219 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10918,6 +11753,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769220 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10927,6 +11764,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769472 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10936,6 +11775,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769473 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10945,6 +11786,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769474 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10954,6 +11797,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769475 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10963,6 +11808,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769476 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10972,6 +11819,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769477 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10981,6 +11830,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769728 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10990,6 +11841,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769729 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -10999,6 +11852,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769730 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11008,6 +11863,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769731 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11017,6 +11874,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769732 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11026,6 +11885,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769733 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11035,6 +11896,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769734 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11044,6 +11907,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769984 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11053,6 +11918,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769985 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11062,6 +11929,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769986 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11071,6 +11940,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769987 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11080,6 +11951,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769988 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11089,6 +11962,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769989 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11098,6 +11973,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769990 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11107,6 +11984,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117769991 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11116,6 +11995,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117833728 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11125,6 +12006,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117833984 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11134,6 +12017,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117833985 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11143,6 +12028,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834240 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11152,6 +12039,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834241 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11161,6 +12050,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834242 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11170,6 +12061,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834496 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11179,6 +12072,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834497 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11188,6 +12083,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834498 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11197,6 +12094,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834499 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11206,6 +12105,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834752 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11215,6 +12116,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834753 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11224,6 +12127,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834754 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11233,6 +12138,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834755 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11242,6 +12149,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117834756 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11251,6 +12160,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835008 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11260,6 +12171,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835009 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11269,6 +12182,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835010 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11278,6 +12193,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835011 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11287,6 +12204,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835012 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11296,6 +12215,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835013 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11305,6 +12226,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835264 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11314,6 +12237,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835265 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11323,6 +12248,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835266 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11332,6 +12259,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835267 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11341,6 +12270,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835268 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11350,6 +12281,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835269 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11359,6 +12292,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835270 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11368,6 +12303,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835520 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11377,6 +12314,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835521 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11386,6 +12325,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835522 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11395,6 +12336,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835523 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11404,6 +12347,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835524 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11413,6 +12358,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835525 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11422,6 +12369,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835526 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11431,6 +12380,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117835527 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11440,6 +12391,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899264 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11449,6 +12402,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899520 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11458,6 +12413,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899521 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11467,6 +12424,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899776 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11476,6 +12435,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899777 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11485,6 +12446,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117899778 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11494,6 +12457,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900032 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11503,6 +12468,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900033 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11512,6 +12479,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900034 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11521,6 +12490,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900035 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11530,6 +12501,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900288 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11539,6 +12512,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900289 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11548,6 +12523,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900290 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11557,6 +12534,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900291 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11566,6 +12545,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900292 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11575,6 +12556,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900544 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11584,6 +12567,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900545 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11593,6 +12578,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900546 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11602,6 +12589,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900547 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11611,6 +12600,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900548 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11620,6 +12611,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900549 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11629,6 +12622,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900800 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11638,6 +12633,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900801 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11647,6 +12644,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900802 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11656,6 +12655,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900803 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11665,6 +12666,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900804 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11674,6 +12677,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900805 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11683,6 +12688,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117900806 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11692,6 +12699,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901056 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11701,6 +12710,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901057 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11710,6 +12721,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901058 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11719,6 +12732,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901059 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11728,6 +12743,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901060 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11737,6 +12754,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901061 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11746,6 +12765,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901062 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11755,6 +12776,8 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+#ifdef COMPILE_J_ORB
   case 117901063 :
     for (int j = 0; j != screening_size_; ++j) {
       int ii = screening_[j];
@@ -11764,6 +12787,9 @@ void GradBatch::perform_VRR() {
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);
     } break;
+#endif
+  default :
+    assert(false);   // hashkey not found
   }
   stack_->release(b2*a2*c2*d2*rank_, final_zc);
   stack_->release(b2*a2*c2*d2*rank_, final_zb);

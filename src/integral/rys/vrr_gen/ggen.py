@@ -120,6 +120,9 @@ for a in range(0,8):
     if a == 0 and c == 0:
      ss += "\
   switch (hashkey) {\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#ifdef COMPILE_J_ORB\n"
     ss += "\
   case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
@@ -130,7 +133,12 @@ for a in range(0,8):
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);\n\
     } break;\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#endif\n"
 ss += "\
+  default :\n\
+    assert(false);   // hashkey not found\n\
   }\n\
   stack_->release(b2*a2*c2*d2*rank_, final_zc);\n\
   stack_->release(b2*a2*c2*d2*rank_, final_zb);\n\

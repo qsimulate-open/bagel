@@ -62,6 +62,9 @@ for a in range(0,8):
     if a == 0 and c == 0:
      ss += "\
   switch (hashkey) {\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#ifdef COMPILE_J_ORB\n"
     ss += "\
   case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
@@ -70,7 +73,12 @@ for a in range(0,8):
                     basisinfo_[0]->position(), basisinfo_[1]->position(), basisinfo_[2]->position(), basisinfo_[3]->position(),\n\
                     P_+ii*3, Q_+ii*3, xp_[ii], xq_[ii], amapping_, cmapping_, asize_, workx, worky, workz);\n\
     } break;\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#endif\n"
 ss += "\
+  default :\n\
+    assert(false);   // hashkey not found\n\
   }\n\
   stack_->release(rank_*isize*3, workx);\n\
 \n\
