@@ -8,7 +8,7 @@
 #include <sstream>
 
 #include <fstream>
-#define SPHERICAL 1
+//#define SPHERICAL 1
 
 constexpr int ANG_HRR_END = 8;
 
@@ -75,6 +75,11 @@ int main() {
     const int x3end = xyz[x3];
     const string label = String<int>(x3) + String<int>(x2);
 
+    if (x2 == 7 && x3 == 0) {
+      out << "\
+#ifdef COMPILE_J_ORB\n";
+    } 
+
 #if SPHERICAL
     out << "\
 void SortList::sort_indices_" << label << "_sph(double* target, const double* source, const int c3end, const int c2end, const int loopsize, const bool swap23) {\n";
@@ -133,8 +138,13 @@ void SortList::sort_indices_" << label << "(double* target, const double* source
 \n\
 }" << endl << endl << endl;
 
-
 }}
+
+  if (ANG_HRR_END > 7) {
+    out << "\
+#endif\n";
+  } 
+
   ofs << out.str() << endl;
   ofs.close();
   return 0;

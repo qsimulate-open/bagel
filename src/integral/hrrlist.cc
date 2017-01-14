@@ -49,6 +49,7 @@ HRRList::HRRList() {
       hrrfunc[ANG_HRR_END * 6 + 4] = &perform_HRR_a0_64;
       hrrfunc[ANG_HRR_END * 6 + 5] = &perform_HRR_b0_65;
       hrrfunc[ANG_HRR_END * 6 + 6] = &perform_HRR_c0_66;
+#ifdef COMPILE_J_ORB
       hrrfunc[ANG_HRR_END * 7 + 1] = &perform_HRR_80_71;
       hrrfunc[ANG_HRR_END * 7 + 2] = &perform_HRR_90_72;
       hrrfunc[ANG_HRR_END * 7 + 3] = &perform_HRR_a0_73;
@@ -56,6 +57,7 @@ HRRList::HRRList() {
       hrrfunc[ANG_HRR_END * 7 + 5] = &perform_HRR_c0_75;
       hrrfunc[ANG_HRR_END * 7 + 6] = &perform_HRR_d0_76;
       hrrfunc[ANG_HRR_END * 7 + 7] = &perform_HRR_e0_77;
+#endif
 }
 
 
@@ -81,6 +83,7 @@ CHRRList::CHRRList() {
       hrrfunc[ANG_HRR_END * 6 + 4] = &perform_HRR_a0_64;
       hrrfunc[ANG_HRR_END * 6 + 5] = &perform_HRR_b0_65;
       hrrfunc[ANG_HRR_END * 6 + 6] = &perform_HRR_c0_66;
+#ifdef COMPILE_J_ORB
       hrrfunc[ANG_HRR_END * 7 + 1] = &perform_HRR_80_71;
       hrrfunc[ANG_HRR_END * 7 + 2] = &perform_HRR_90_72;
       hrrfunc[ANG_HRR_END * 7 + 3] = &perform_HRR_a0_73;
@@ -88,4 +91,5 @@ CHRRList::CHRRList() {
       hrrfunc[ANG_HRR_END * 7 + 5] = &perform_HRR_c0_75;
       hrrfunc[ANG_HRR_END * 7 + 6] = &perform_HRR_d0_76;
       hrrfunc[ANG_HRR_END * 7 + 7] = &perform_HRR_e0_77;
+#endif
 }

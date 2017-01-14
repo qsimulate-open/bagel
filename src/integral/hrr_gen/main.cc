@@ -115,7 +115,12 @@ int main() {
 // You should have received a copy of the GNU General Public License\n\
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
 //\n\
-\n\
+\n";
+      if (a == 7 || b == 7) {
+        out += "\
+#ifdef COMPILE_J_ORB\n";
+      }
+      out +="\
 #include <src/integral/hrrlist.h>\n\
 #include <array>\n\
 #include <algorithm>\n\
@@ -238,6 +243,10 @@ void " + classname + "::perform_HRR_" + n0 + "_" + ab + "(const int nloop, const
       out += function("double", "HRRList");
       out += "\n\n";
       out += function("complex<double>", "CHRRList");
+      if (a == 7 || b == 7) {
+        out += "\
+#endif\n";
+      }
       ofstream ofs;
       ofs.open(filename.c_str());
       ofs << out << endl;

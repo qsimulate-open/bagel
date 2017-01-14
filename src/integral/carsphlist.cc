@@ -58,6 +58,7 @@ CarSphList::CarSphList() {
       carsphfunc[ANG_HRR_END * 6 + 4] = &carsph_64;
       carsphfunc[ANG_HRR_END * 6 + 5] = &carsph_65;
       carsphfunc[ANG_HRR_END * 6 + 6] = &carsph_66;
+#ifdef COMPILE_J_ORB
       carsphfunc[ANG_HRR_END * 7 + 0] = &carsph_70;
       carsphfunc[ANG_HRR_END * 7 + 1] = &carsph_71;
       carsphfunc[ANG_HRR_END * 7 + 2] = &carsph_72;
@@ -66,6 +67,7 @@ CarSphList::CarSphList() {
       carsphfunc[ANG_HRR_END * 7 + 5] = &carsph_75;
       carsphfunc[ANG_HRR_END * 7 + 6] = &carsph_76;
       carsphfunc[ANG_HRR_END * 7 + 7] = &carsph_77;
+#endif
 }
 
 
@@ -98,6 +100,7 @@ CCarSphList::CCarSphList() {
       carsphfunc[ANG_HRR_END * 6 + 4] = &carsph_64;
       carsphfunc[ANG_HRR_END * 6 + 5] = &carsph_65;
       carsphfunc[ANG_HRR_END * 6 + 6] = &carsph_66;
+#ifdef COMPILE_J_ORB
       carsphfunc[ANG_HRR_END * 7 + 0] = &carsph_70;
       carsphfunc[ANG_HRR_END * 7 + 1] = &carsph_71;
       carsphfunc[ANG_HRR_END * 7 + 2] = &carsph_72;
@@ -106,4 +109,5 @@ CCarSphList::CCarSphList() {
       carsphfunc[ANG_HRR_END * 7 + 5] = &carsph_75;
       carsphfunc[ANG_HRR_END * 7 + 6] = &carsph_76;
       carsphfunc[ANG_HRR_END * 7 + 7] = &carsph_77;
+#endif
 }

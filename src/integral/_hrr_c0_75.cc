@@ -22,6 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifdef COMPILE_J_ORB
 #include <src/integral/hrrlist.h>
 #include <array>
 #include <algorithm>
@@ -20563,4 +20564,5 @@ void CHRRList::perform_HRR_c0_75(const int nloop, const complex<double>* data_st
     }
   }
 }
+#endif
 

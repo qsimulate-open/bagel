@@ -2801,6 +2801,7 @@ void CSortList::sort_indices_66_sph(complex<double>* target, const complex<doubl
 }
 
 
+#ifdef COMPILE_J_ORB
 void CSortList::sort_indices_07_sph(complex<double>* target, const complex<double>* source, const int c3end, const int c2end, const int loopsize, const bool swap23) {
   const int innerloopsize = c2end * c3end * 15;
   if (!swap23) {
@@ -4193,4 +4194,5 @@ void CSortList::sort_indices_77_sph(complex<double>* target, const complex<doubl
 }
 
 
+#endif
 

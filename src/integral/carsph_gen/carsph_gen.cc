@@ -147,7 +147,12 @@ int main() {
 // You should have received a copy of the GNU General Public License\n\
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
 //\n\
-\n\
+\n";
+    if (l0 == 7 || l1 == 7) {
+      code += "\
+#ifdef COMPILE_J_ORB\n";
+    }
+    code += "\
 #include <src/integral/carsphlist.h>\n\
 #include <algorithm>\n\
 \n\
@@ -230,6 +235,11 @@ void " + classname + "::carsph_" + l1str + l0str + "(const int nloop, const " + 
 };
     code += function("double", "CarSphList");
     code += function("complex<double>", "CCarSphList");
+
+    if (l0 == 7 || l1 == 7) {
+      code += "\
+#endif\n";
+    }
 
     ofstream ofs;
     ofs.open(filename.c_str());

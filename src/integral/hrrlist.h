@@ -55,19 +55,21 @@ struct HRRList {
   static void perform_HRR_80_44(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_80_53(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_80_62(const int, const double*, const std::array<double,3>&, double*);
-  static void perform_HRR_80_71(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_90_54(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_90_63(const int, const double*, const std::array<double,3>&, double*);
-  static void perform_HRR_90_72(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_a0_55(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_a0_64(const int, const double*, const std::array<double,3>&, double*);
-  static void perform_HRR_a0_73(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_b0_65(const int, const double*, const std::array<double,3>&, double*);
-  static void perform_HRR_b0_74(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_c0_66(const int, const double*, const std::array<double,3>&, double*);
+#ifdef COMPILE_J_ORB
+  static void perform_HRR_80_71(const int, const double*, const std::array<double,3>&, double*);
+  static void perform_HRR_90_72(const int, const double*, const std::array<double,3>&, double*);
+  static void perform_HRR_a0_73(const int, const double*, const std::array<double,3>&, double*);
+  static void perform_HRR_b0_74(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_c0_75(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_d0_76(const int, const double*, const std::array<double,3>&, double*);
   static void perform_HRR_e0_77(const int, const double*, const std::array<double,3>&, double*);
+#endif
 
   void hrrfunc_call(const unsigned int i, const int a0, const double* a1, const std::array<double,3>& a2, double* a3) const {
     return hrrfunc[i](a0, a1, a2, a3);
@@ -95,19 +97,21 @@ struct CHRRList {
   static void perform_HRR_80_44(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_80_53(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_80_62(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
-  static void perform_HRR_80_71(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_90_54(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_90_63(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
-  static void perform_HRR_90_72(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_a0_55(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_a0_64(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
-  static void perform_HRR_a0_73(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_b0_65(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
-  static void perform_HRR_b0_74(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_c0_66(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
+#ifdef COMPILE_J_ORB
+  static void perform_HRR_80_71(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
+  static void perform_HRR_90_72(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
+  static void perform_HRR_a0_73(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
+  static void perform_HRR_b0_74(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_c0_75(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_d0_76(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
   static void perform_HRR_e0_77(const int, const std::complex<double>*, const std::array<double,3>&, std::complex<double>*);
+#endif
 
   void hrrfunc_call(const unsigned int i, const int a0, const std::complex<double>* a1, const std::array<double,3>& a2, std::complex<double>* a3) const {
     return hrrfunc[i](a0, a1, a2, a3);

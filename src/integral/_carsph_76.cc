@@ -22,6 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifdef COMPILE_J_ORB
 #include <src/integral/carsphlist.h>
 #include <algorithm>
 
@@ -8535,3 +8536,4 @@ void CCarSphList::carsph_76(const int nloop, const complex<double>* source, comp
   }
 }
 
+#endif

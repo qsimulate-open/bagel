@@ -2801,6 +2801,7 @@ void SortList::sort_indices_66_sph(double* target, const double* source, const i
 }
 
 
+#ifdef COMPILE_J_ORB
 void SortList::sort_indices_07_sph(double* target, const double* source, const int c3end, const int c2end, const int loopsize, const bool swap23) {
   const int innerloopsize = c2end * c3end * 15;
   if (!swap23) {
@@ -4193,4 +4194,5 @@ void SortList::sort_indices_77_sph(double* target, const double* source, const i
 }
 
 
+#endif
 

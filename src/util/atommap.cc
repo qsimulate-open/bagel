@@ -851,6 +851,10 @@ int AtomMap::angular_number(const string input) const {
   auto miter = angmap.find(input);
   stringstream ss; ss << "Unknown angular number in a basis set file. Requested: " << input << endl;
   if (miter == angmap.end()) throw runtime_error(ss.str());
+#ifndef COMPILE_J_ORB
+  if (input == "j")
+    throw runtime_error("j-orbitals requested in a basis set file.  BAGEL must be compiled with the -DCOMPILE_J_ORB flag to use this.");
+#endif
   return miter->second;
 }
 
