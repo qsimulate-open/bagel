@@ -153,7 +153,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && (!nodf || !do_periodic_df() || !dofmm_)) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df_ && !dofmm_) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
