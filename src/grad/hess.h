@@ -42,7 +42,6 @@ class Hess {
 
     double dx_;
     double energy_;
-    int target_state_;
 
     // mask some of the output
     mutable std::shared_ptr<Muffle> muffle_;
