@@ -81,7 +81,13 @@ int main(int argc, char** argv) {
         shared_ptr<Reference> ptr;
         archive >> ptr;
         ref = shared_ptr<Reference>(ptr);
-        geom = ref->geom();
+        if (itree->get<bool>("continue_geom", true)) {
+          cout << endl << "  Using the geometry in the archive file " << endl << endl;
+          geom = ref->geom();
+        } else {
+          cout << endl << "  Using the coefficient projected to the input geometry " << endl << endl;
+          ref = ref->project_coeff(geom);
+        }
         if (itree->get<bool>("extract_average_rdms", false)) {
           vector<int> rdm_states = itree->get_vector<int>("rdm_state");
           ref = ref->extract_average_rdm(rdm_states);
