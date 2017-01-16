@@ -98,10 +98,10 @@ void Hess::compute() {
       shared_ptr<const Reference> refgrad_plus2;
       shared_ptr<const Reference> refgrad_minus1;
       shared_ptr<const Reference> refgrad_minus2;
-      shared_ptr<const Reference> refgrad_plus3;
-      shared_ptr<const Reference> refgrad_minus3;
+      shared_ptr<const Reference> refgrad_plus;
+      shared_ptr<const Reference> refgrad_minus;
 
-     //compute diagonal elements of hessian
+      //compute diagonal elements of hessian
       for (int i = 0; i != natom; ++i) {
         for (int j = 0; j != 3; ++j) {
           // displace +dx
@@ -164,11 +164,10 @@ void Hess::compute() {
           counter = counter + 1;
         }
       }
-
       counter = 0;
       step = 0;
 
-#if 0
+      cout << "*****  Mixed Derivaties by Finite Difference  *****" << endl;
       for (int i = 0; i != natom; ++i) {  // atom i
         for (int j = 0; j != 3; ++j) { //xyz
 
@@ -177,28 +176,29 @@ void Hess::compute() {
           auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_plus->print_atoms();
 
-          refgrad_plus3 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_plus3 = nullptr;
+          refgrad_plus = make_shared<Reference> (*ref_, nullptr);
+          refgrad_plus = nullptr;
 
-          auto plus = make_shared<FiniteGrad>(method, cinput, geom_plus, refgrad_plus3, target, dx_);
+          auto plus = make_shared<FiniteGrad>(method, cinput, geom_plus, refgrad_plus, target, dx_);
           shared_ptr<GradFile> outplus = plus->compute();
 
           // displace -dx
-          displ->element(j,i) = -dx_; // undo displacement
+          displ->element(j,i) = -dx_;
           auto geom_minus = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_minus->print_atoms();
 
-          refgrad_minus3 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_minus3 = nullptr;
+          refgrad_minus = make_shared<Reference> (*ref_, nullptr);
+          refgrad_minus = nullptr;
 
-          auto minus = make_shared<Force>(method, cinput, geom_minus, refgrad_minus3, target, dx_);
+          auto minus = make_shared<FiniteGrad>(method, cinput, geom_minus, refgrad_minus, target, dx_);
           shared_ptr<GradFile> outminus = minus->compute();
-
           displ->element(j,i) = 0.0;
-          if (counter != step) {
+
+          if (counter == step) {
+            (*hess_)(counter,step) = (*hess_)(counter,step);
+          } else {
             for (int k = 0; k != natom; ++k) {  // atom j
               for (int l = 0; l != 3; ++l) { //xyz
-                //storing hessian in a really silly way. Need to improve
                 (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
                 step = step + 1;
               }
@@ -208,9 +208,6 @@ void Hess::compute() {
           counter = counter + 1;
         }
       }
-#endif
-
-
 
     } else {  //finite difference with analytical gradients
 
@@ -226,7 +223,7 @@ void Hess::compute() {
           shared_ptr<GradFile> outplus = plus->compute();
 
           // displace -dx
-          displ->element(j,i) = -dx_; // undo displacement
+          displ->element(j,i) = -dx_;
           auto geom_minus = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_minus->print_atoms();
 
@@ -237,7 +234,6 @@ void Hess::compute() {
 
           for (int k = 0; k != natom; ++k) {  // atom j
             for (int l = 0; l != 3; ++l) { //xyz
-              //storing hessian in a really silly way. Need to improve
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
               step = step + 1;
             }
@@ -259,9 +255,8 @@ void Hess::compute() {
       }
     }
     cout << endl << endl;
-
-    //print symmetrized hessian
 #if 1
+    //print symmetrized hessian
     cout << endl;
     cout << "    * Symmetrized Numerical Hessian matrix";
     for (int j = 0; j != 3*geom_->natom(); ++j) {
@@ -272,6 +267,5 @@ void Hess::compute() {
     }
     cout << endl << endl;
 #endif
-
   }
 }
