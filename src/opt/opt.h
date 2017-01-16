@@ -35,7 +35,6 @@
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
 #include <src/wfn/construct_method.h>
-#include <src/alglib/optimization.h>
 #include <src/opt/constraint.h>
 #include <src/util/muffle.h>
 
@@ -62,7 +61,9 @@ class Opt {
     std::string method_;
 
     int maxiter_;
-    double thresh_;
+    double thresh_grad_;
+    double thresh_displ_;
+    double thresh_echange_;
     double maxstep_;
     bool scratch_;
 
@@ -73,8 +74,6 @@ class Opt {
     bool constrained_;
     std::vector<std::shared_ptr<const OptConstraint>> constraints_;
 
-    // whether we use alglib or not
-    bool alglib_;
     // whether we use a delocalized internal coordinate or not
     bool internal_;
     bool redundant_;
@@ -90,10 +89,6 @@ class Opt {
     double thielc3_, thielc4_;
 
     Timer timer_;
-
-    // some global values needed for ALGLIB-based optimizations
-    void evaluate_alglib(const alglib::real_1d_array& x, double& en, alglib::real_1d_array& grad, void* ptr);
-    using eval_type = std::function<void(const alglib::real_1d_array&, double&, alglib::real_1d_array&, void*)>;
 
     // some global values needed for quasi-newton optimizations
     double en_;
@@ -136,14 +131,7 @@ class Opt {
       current_->print_atoms();
     }
 
-    void compute_alglib();
-    void compute_noalglib();
-    void compute() {
-      if (alglib_)
-        compute_alglib();
-      else
-        compute_noalglib();
-    }
+    void compute();
 
     void print_footer() const { std::cout << std::endl << std::endl; };
     void print_header() const {

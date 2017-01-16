@@ -24,9 +24,8 @@
 
 #include <string>
 #include <array>
-#include <src/util/timer.h>
-#include <src/util/io/moldenout.h>
-#include <src/wfn/construct_method.h>
+#include <src/util/input/input.h>
+#include <src/util/constants.h>
 
 #ifndef __SRC_OPT_CONSTRAINT_H
 #define __SRC_OPT_CONSTRAINT_H

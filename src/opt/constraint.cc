@@ -31,7 +31,6 @@ using namespace bagel;
 
 OptConstraint::OptConstraint(shared_ptr<const PTree> inp) {
   type_ = to_lower(inp->get<string>("type"));
-  pair_ = inp->get_array<int,4>("pair");
   value_ = inp->get<double>("value");
 
   // some processings
@@ -40,5 +39,11 @@ OptConstraint::OptConstraint(shared_ptr<const PTree> inp) {
   if (type_=="angle" || type_=="torsion") value_ /= rad2deg__;
   if (type_=="angstrom") { type_ = "bond"; value_ /= au2angstrom__; }
 
-  cout << "Constraint initialized : " << type_ << "  pair = " << pair_[0] << " " << pair_[1] << " " << pair_[2] << " " << pair_[3] << " " << value_ << endl;
+  pair_ = inp->get_array<int,4>("pair");      // should change
+  pair_[0]--;
+  pair_[1]--;
+  pair_[2]--;
+  pair_[3]--;
+
+  cout << "Constraint initialized : " << type_ << "  pair = " << pair_[0] << " " << pair_[1] << " " << pair_[2] << " " << pair_[3] << " " << setprecision(10) << value_ << endl;
 }
