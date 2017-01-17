@@ -123,9 +123,12 @@ class Box {
     std::vector<std::complex<double>>& localJ() { return localJ_; }
     const std::vector<std::complex<double>>& localJ() const { return localJ_; }
 
-    const std::vector<std::complex<double>>& olm_ji() const { return olm_ji(); }
-    const std::vector<std::complex<double>>& mlm_ji() const { return mlm_ji(); }
-    const std::vector<std::shared_ptr<ZMatrix>> box_olm() const { return box_olm_; }
+    const std::vector<std::complex<double>>& olm_ji() const { return olm_ji_; }
+    std::vector<std::complex<double>>& olm_ji() { return olm_ji_; }
+    const std::vector<std::complex<double>>& mlm_ji() const { return mlm_ji_; }
+    std::vector<std::complex<double>>& mlm_ji() { return mlm_ji_; }
+    const std::vector<std::shared_ptr<ZMatrix>>& box_olm() const { return box_olm_; }
+    std::vector<std::shared_ptr<ZMatrix>>& box_olm() { return box_olm_; }
     std::shared_ptr<ZMatrix> box_olm(const int i) const { return box_olm_[i]; }
 
     void print_box() const;

@@ -271,8 +271,8 @@ void FMM::M2M_X(const VectorB& c_si, const VectorB& c_uj) const {
 
   Timer m2mtime;
 
-  int icnt = nbranch_[0];
-  for (int i = 1; i != ns_+1; ++i) {
+  int icnt = 0;
+  for (int i = 0; i != ns_+1; ++i) {
     for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
       box_[icnt]->compute_M2M_X(c_si, c_uj);
   }
@@ -405,34 +405,26 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
   auto krj_ff = make_shared<ZMatrix>(nbasis_, nocc);
   int u = 0;
-  TaskQueue<function<void(void)>> tasks(nocc*nocc);
-  mutex kmutex;
   for (int j = 0; j != nocc; ++j) {
     for (int i = 0; i != nocc; ++i, ++u) {
       if (u % mpi__->size() == mpi__->rank()) {
-        tasks.emplace_back(
-          [this, &krj_ff, j, i, &ocoeff, &kmutex]() {
-            VectorB c_uj(nbasis_);
-            VectorB c_si(nbasis_);
-            for (int p = 0; p != nbasis_; ++p) {
-              c_uj[p] = ocoeff->element(p, j);
-              c_si[p] = ocoeff->element(p, i);
-            }
-            M2M_X(c_si, c_uj);
-            M2L(true);
-            L2L(true);
+        VectorB c_uj(nbasis_);
+        VectorB c_si(nbasis_);
+        for (int p = 0; p != nbasis_; ++p) {
+          c_uj[p] = ocoeff->element(p, j);
+          c_si[p] = ocoeff->element(p, i);
+        }
+        M2M_X(c_si, c_uj);
+        M2L(true);
+        L2L(true);
 
-            lock_guard<mutex> lock(kmutex);
-            for (int n = 0; n != nbranch_[0]; ++n) {
-              shared_ptr<const ZVectorB> ffx = box_[n]->compute_Fock_ffX(c_uj);
-              transform(krj_ff->data()+j*nbasis_, krj_ff->data()+(j+1)*nbasis_, ffx->data(), krj_ff->data()+j*nbasis_, std::plus<complex<double>>());
-            }
-          }
-        );
+        for (int n = 0; n != nbranch_[0]; ++n) {
+          shared_ptr<const ZVectorB> ffx = box_[n]->compute_Fock_ffX(c_uj);
+          transform(krj_ff->data()+j*nbasis_, krj_ff->data()+(j+1)*nbasis_, ffx->data(), krj_ff->data()+j*nbasis_, std::plus<complex<double>>());
+        }
       }
     }
   }
-  tasks.compute();
   krj_ff->allreduce();
   auto krj = make_shared<const ZMatrix>(*krj_ff);
 

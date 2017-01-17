@@ -216,8 +216,8 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
 void Box::compute_M2M_X(const VectorB& ocoeff_i, const VectorB& ocoeff_j) {
 
-  mlm_ji_.clear(); mlm_ji_.resize(nmult_);
-  olm_ji_.clear(); olm_ji_.resize(nmult_);
+  mlm_ji_.resize(nmult_); fill(mlm_ji_.begin(), mlm_ji_.end(), complex<double>(0.0, 0.0));
+  olm_ji_.resize(nmult_); fill(olm_ji_.begin(), olm_ji_.end(), complex<double>(0.0, 0.0));
 
   if (nchild() == 0) { // leaf
     VectorB ocoeff_si(nsize_);
