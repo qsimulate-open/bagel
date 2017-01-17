@@ -296,7 +296,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   }
 
   if (!molecule_details::is_one_molecule(nodes))
-    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule.");
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
 
   // then bond angles A-O-B (A<B)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
@@ -633,7 +633,7 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
   }
 
   if (!molecule_details::is_one_molecule(nodes))
-    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule.");
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
 
   // then bond angles A-O-B (A<B)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
