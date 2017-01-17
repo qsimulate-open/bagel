@@ -483,6 +483,61 @@ AtomMap::AtomMap () {
   nuclear_exponents.emplace("hn", 1.1905722195E+08);
   nuclear_exponents.emplace("mt", 1.1878724932E+08);
 
+  averaged_masses.emplace("h", 1.008);
+  averaged_masses.emplace("he", 4.00);
+  averaged_masses.emplace("li", 6.94);
+  averaged_masses.emplace("be", 9.01);
+  averaged_masses.emplace("b", 10.81);
+  averaged_masses.emplace("c", 12.01);
+  averaged_masses.emplace("n", 14.01);
+  averaged_masses.emplace("o", 16.00);
+  averaged_masses.emplace("f", 19.00);
+  averaged_masses.emplace("ne", 20.18);
+  averaged_masses.emplace("na", 22.99);
+  averaged_masses.emplace("mg", 24.31);
+  averaged_masses.emplace("al", 26.98);
+  averaged_masses.emplace("si", 28.09);
+  averaged_masses.emplace("p", 30.98);
+  averaged_masses.emplace("s", 32.07);
+  averaged_masses.emplace("cl", 35.45);
+  averaged_masses.emplace("ar", 39.95);
+  averaged_masses.emplace("k", 39.10);
+  averaged_masses.emplace("ca", 40.08);
+  averaged_masses.emplace("sc", 44.96);
+  averaged_masses.emplace("ti", 47.87);
+  averaged_masses.emplace("v", 50.94);
+  averaged_masses.emplace("cr", 52.00);
+  averaged_masses.emplace("mn", 54.94);
+  averaged_masses.emplace("fe", 55.85);
+  averaged_masses.emplace("co", 58.93);
+  averaged_masses.emplace("ni", 58.69);
+  averaged_masses.emplace("cu", 63.55);
+  averaged_masses.emplace("zn", 65.38);
+  averaged_masses.emplace("ga", 69.72);
+  averaged_masses.emplace("ge", 72.64);
+  averaged_masses.emplace("as", 74.92);
+  averaged_masses.emplace("se", 78.96);
+  averaged_masses.emplace("br", 79.90);
+  averaged_masses.emplace("kr", 83.80);
+  averaged_masses.emplace("rb", 85.47);
+  averaged_masses.emplace("sr", 87.62);
+  averaged_masses.emplace("y", 88.91);
+  averaged_masses.emplace("zr", 91.22);
+  averaged_masses.emplace("nb", 92.91);
+  averaged_masses.emplace("mo", 95.96);
+  averaged_masses.emplace("tc", 98.00);
+  averaged_masses.emplace("ru", 101.07);
+  averaged_masses.emplace("rh", 102.91);
+  averaged_masses.emplace("pd", 106.42);
+  averaged_masses.emplace("ag", 107.87);
+  averaged_masses.emplace("cd", 112.41);
+  averaged_masses.emplace("in", 114.82);
+  averaged_masses.emplace("sn", 118.71);
+  averaged_masses.emplace("sb", 121.76);
+  averaged_masses.emplace("te", 127.60);
+  averaged_masses.emplace("i", 126.90);
+  averaged_masses.emplace("xe", 131.29);
+
   angmap.emplace("s", 0);
   angmap.emplace("p", 1);
   angmap.emplace("d", 2);
@@ -875,6 +930,11 @@ double AtomMap::nuclear_exponent(const string input) const {
   return miter->second;
 }
 
+double AtomMap::averaged_mass(const string input) const {
+  auto miter = averaged_masses.find(input);
+  if (miter == averaged_masses.end()) throw runtime_error("Unknown atom (Averaged atomic mass).");
+  return miter->second;
+}
 
 tuple<int,int,int,int> AtomMap::num_closed(const string input) const {
   auto miter = nclosed.find(input);
