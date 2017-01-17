@@ -222,7 +222,7 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptConstraint>> cmat) const {
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat) const {
   cout << "    o Connectivitiy analysis" << endl;
 
   // list of primitive internals
@@ -255,7 +255,12 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     for (++j ; j != nodes.end(); ++j) {
       const double radiusj = (*j)->atom()->cov_radius();
 
-      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
+      bool expbond = false;
+      if (explicit_bond.size())
+        for (auto e : explicit_bond)
+          if ((e->pair(0) == (*i)->num()) && (e->pair(1) == (*j)->num())) expbond = true;
+
+      if (((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) || expbond) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<

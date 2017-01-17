@@ -64,11 +64,20 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     cout << "# constraints = " << constraints_.size() << endl;
   }
 
+  explicit_bond_ = idat->get<bool>("explicitbond", false);
+  if (explicit_bond_) {
+    auto explicit_bonds = idat->get_child("explicit");
+    for (auto& e : *explicit_bonds) {
+      bonds_.push_back(make_shared<const OptExpBonds>(e));
+    }
+    cout << endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms in overall" << endl;
+  }
+
   if (internal_) {
     if (redundant_)
       bmat_red_ = current_->compute_redundant_coordinate();
     else
-      bmat_ = current_->compute_internal_coordinate(nullptr, constraints_);
+      bmat_ = current_->compute_internal_coordinate(nullptr, bonds_, constraints_);
   }
 
   // small molecule (atomno < 4) threshold : (1.0e-5, 4.0e-5, 1.0e-6)  (tight in GAUSSIAN and Q-Chem = normal / 30)
@@ -146,7 +155,7 @@ void Opt::compute() {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], constraints_);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
     }
 
     shared_ptr<PTree> cinput;

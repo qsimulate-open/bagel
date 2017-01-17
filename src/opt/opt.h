@@ -73,6 +73,8 @@ class Opt {
     // constraints
     bool constrained_;
     std::vector<std::shared_ptr<const OptConstraint>> constraints_;
+    bool explicit_bond_;
+    std::vector<std::shared_ptr<const OptExpBonds>> bonds_;
 
     // whether we use a delocalized internal coordinate or not
     bool internal_;

@@ -45,6 +45,17 @@ namespace bagel  {
       int pair(const unsigned int i) const { return pair_[i]; }
       double value() const { return value_; }
   };
+
+  class OptExpBonds {
+    protected:
+      std::array<int,2> pair_;
+
+    public:
+      OptExpBonds(std::shared_ptr<const PTree> inp);
+
+      const std::array<int,2>& pair() const { return pair_; }
+      int pair(const unsigned int i) const { return pair_[i]; }
+  };
 }
 
 #endif

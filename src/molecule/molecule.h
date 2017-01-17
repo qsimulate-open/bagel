@@ -165,6 +165,7 @@ class Molecule {
     // ninternal runs fast (and cartsize slower) (weighted Wilson B)
     std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(
         std::shared_ptr<const Matrix> prev = nullptr,
+        std::vector<std::shared_ptr<const OptExpBonds>> explicit_bond = std::vector<std::shared_ptr<const OptExpBonds>>(),
         std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>()) const;
     // driver for compute B matrix for redundant coordinate (original Wilson B)
     std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
