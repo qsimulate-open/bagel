@@ -83,7 +83,7 @@ void Hess::compute() {
     if (numforce_) {
       const string method = to_lower(cinput->get<string>("title", ""));
       const int target = idata_->get<int>("target", 0);
-      double energy_plus1, energy_plus2, energy_minus1, energy_minus2, energy_ref;
+      double energy_ref;
 
       shared_ptr<Method> energy_method;
 
@@ -92,86 +92,14 @@ void Hess::compute() {
       ref_ = energy_method->conv_to_ref();
       energy_ref = ref_->energy(target);
 
-      cout << "  Reference energy is " << energy_ref << endl;
+      cout << "  Reference energy is " << setprecision(25)<< energy_ref << endl;
 
-      shared_ptr<const Reference> refgrad_plus1;
-      shared_ptr<const Reference> refgrad_plus2;
-      shared_ptr<const Reference> refgrad_minus1;
-      shared_ptr<const Reference> refgrad_minus2;
       shared_ptr<const Reference> refgrad_plus;
       shared_ptr<const Reference> refgrad_minus;
 
-      //compute diagonal elements of hessian
-      for (int i = 0; i != natom; ++i) {
-        for (int j = 0; j != 3; ++j) {
-          // displace +dx
-          displ->element(j,i) = dx_;
-          auto geom_plus1 = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_plus1->print_atoms();
-
-          refgrad_plus1 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_plus1 = nullptr;
-
-          energy_method = construct_method(method, idata_, geom_plus1, refgrad_plus1);
-          energy_method->compute();
-          refgrad_plus1 = energy_method->conv_to_ref();
-          energy_plus1 = refgrad_plus1->energy(target);
-          displ->element(j,i) = 0;
-
-          // displace +2dx
-          displ->element(j,i) = 2.0 * dx_;
-          auto geom_plus2 = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_plus2->print_atoms();
-
-          refgrad_plus2 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_plus2 = nullptr;
-
-          energy_method = construct_method(method, idata_, geom_plus2, refgrad_plus2);
-          energy_method->compute();
-          refgrad_plus2 = energy_method->conv_to_ref();
-          energy_plus2 = refgrad_plus2->energy(target);
-          displ->element(j,i) = 0;
-
-          // displace -dx
-          displ->element(j,i) = -dx_;
-          auto geom_minus1 = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_minus1->print_atoms();
-
-          refgrad_minus1 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_minus1 = nullptr;
-
-          energy_method = construct_method(method, idata_, geom_minus1, refgrad_minus1);
-          energy_method->compute();
-          refgrad_minus1 = energy_method->conv_to_ref();
-          energy_minus1 = refgrad_minus1->energy(target);
-          displ->element(j,i) = 0;
-
-          // displace -2dx
-          displ->element(j,i) = -2.0 * dx_;
-          auto geom_minus2 = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_minus2->print_atoms();
-
-          refgrad_minus2 = make_shared<Reference> (*ref_, nullptr);
-          refgrad_minus2 = nullptr;
-
-          energy_method = construct_method(method, idata_, geom_minus2, refgrad_minus2);
-          energy_method->compute();
-          refgrad_minus2 = energy_method->conv_to_ref();
-          energy_minus2 = refgrad_minus2->energy(target);
-          displ->element(j,i) = 0;
-
-          (*hess_)(counter,counter) = (-energy_plus2 + (16 * energy_plus1) - (30 * energy_ref) + (16 * energy_minus1) - energy_minus2) / ( 12 * dx_ * dx_);
-          counter = counter + 1;
-        }
-      }
-      counter = 0;
-      step = 0;
-
-      cout << "*****  Mixed Derivaties by Finite Difference  *****" << endl;
       for (int i = 0; i != natom; ++i) {  // atom i
         for (int j = 0; j != 3; ++j) { //xyz
-
-          //displace +dx
+          // displace +dx
           displ->element(j,i) = dx_;
           auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_plus->print_atoms();
@@ -182,9 +110,9 @@ void Hess::compute() {
           auto plus = make_shared<FiniteGrad>(method, cinput, geom_plus, refgrad_plus, target, dx_);
           shared_ptr<GradFile> outplus = plus->compute();
 
-          // displace -dx
+          //displace -dx
           displ->element(j,i) = -dx_;
-          auto geom_minus = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+          auto geom_minus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_minus->print_atoms();
 
           refgrad_minus = make_shared<Reference> (*ref_, nullptr);
@@ -194,14 +122,10 @@ void Hess::compute() {
           shared_ptr<GradFile> outminus = minus->compute();
           displ->element(j,i) = 0.0;
 
-          if (counter == step) {
-            (*hess_)(counter,step) = (*hess_)(counter,step);
-          } else {
-            for (int k = 0; k != natom; ++k) {  // atom j
-              for (int l = 0; l != 3; ++l) { //xyz
-                (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-                step = step + 1;
-              }
+          for (int k = 0; k != natom; ++k) {  // atom j
+            for (int l = 0; l != 3; ++l) { //xyz
+              (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+              step = step + 1;
             }
           }
           step = 0;
@@ -213,7 +137,6 @@ void Hess::compute() {
 
       for (int i = 0; i != natom; ++i) {  // atom i
         for (int j = 0; j != 3; ++j) { //xyz
-
           //displace +dx
           displ->element(j,i) = dx_;
           auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
@@ -251,21 +174,33 @@ void Hess::compute() {
     for (int i = 0; i != 3*natom; ++i) {
       cout << endl << "      ";
       for (int j = 0; j != 3*natom; ++j){
-        cout << setw(20) << setprecision(10) << (*hess_)(j,i);
+        cout << setw(20) << setprecision(7) << (*hess_)(j,i);
       }
     }
     cout << endl << endl;
-#if 1
     //print symmetrized hessian
     cout << endl;
     cout << "    * Symmetrized Numerical Hessian matrix";
     for (int j = 0; j != 3*geom_->natom(); ++j) {
       cout << endl << "      ";
       for (int i = 0; i != 3*geom_->natom(); ++i){
-        cout << setw(20) << setprecision(10) << ((*hess_)(i,j) + (*hess_)(j,i)) / 2.0 ;
+        cout << setw(20) << setprecision(7) <<  ((*hess_)(i,j) + (*hess_)(j,i)) / 2.0 ;
       }
     }
     cout << endl << endl;
-#endif
+
+//diagonalize as a test
+    Matrix hij(3*natom,3*natom);
+    VectorB eig(3*natom);
+    for (int i = 0; i != 3*natom; ++i) {
+      cout << endl << "      ";
+      for (int j = 0; j != 3*natom; ++j){
+        hij(j,i) = (*hess_)(j,i);
+      }
+    }
+    hij.diagonalize(eig);
+
+    //TODO: mass weight hessian
+    //TODO: project out rotational and translational DOF
   }
 }
