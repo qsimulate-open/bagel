@@ -288,29 +288,27 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
   for (auto& i : half_complex_exch2)
     i->discard_sum_diff();
 
-  // this is for gradient calculations
-  if (store_half_) {
-    for (auto& i : half_complex_exch)
-      i->discard_sum_diff();
-    if (!gaunt) {
-      if (half_coulomb_.size() == 0) {
-        half_coulomb_ = half_complex_exch;
-      } else {
-        assert(half_coulomb_.size() == half_complex_exch.size());
-        auto iex = half_complex_exch.begin();
-        for (auto& ist : half_coulomb_) {
-          ist = ist->merge(*iex);
-          iex++;
-        }
+  // This is for gradient and second-order CASSCF calculations
+  auto store_half_ints = [](list<shared_ptr<RelDFHalf>>& save, list<shared_ptr<RelDFHalf>>& input) {
+    if (save.size() == 0) {
+      save = input;
+    } else {
+      assert(save.size() == input.size());
+      auto iex = input.begin();
+      for (auto& ist : save) {
+        ist = ist->merge(*iex);
+        iex++;
       }
     }
+  };
+
+  if (store_half_) {
+    if (!gaunt)
+      store_half_ints(half_coulomb_, half_complex_exch);
     else
-      half_gaunt_ = half_complex_exch;
-    if (breit) {
-      for (auto& i : half_complex_exch2)
-        i->discard_sum_diff();
-      half_breit_ = half_complex_exch2;
-    }
+      store_half_ints(half_gaunt_, half_complex_exch);
+    if (breit)
+      store_half_ints(half_breit_, half_complex_exch2);
   }
 }
 
