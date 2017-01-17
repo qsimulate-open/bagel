@@ -65,6 +65,8 @@ class RelDFHalf : public RelDFBase {
     std::shared_ptr<RelDFHalf> apply_J() const;
     std::shared_ptr<RelDFHalf> apply_JJ() const;
 
+    std::shared_ptr<RelDFHalf> merge(std::shared_ptr<RelDFHalf> o) const;
+
     void ax_plus_y(std::complex<double> a, std::shared_ptr<const RelDFHalf> o);
     void rotate_occ(std::shared_ptr<const ZMatrix> rdm1);
 

@@ -292,8 +292,18 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
   if (store_half_) {
     for (auto& i : half_complex_exch)
       i->discard_sum_diff();
-    if (!gaunt)
-      half_coulomb_ = half_complex_exch;
+    if (!gaunt) {
+      if (half_coulomb_.size() == 0) {
+        half_coulomb_ = half_complex_exch;
+      } else {
+        assert(half_coulomb_.size() == half_complex_exch.size());
+        auto iex = half_complex_exch.begin();
+        for (auto& ist : half_coulomb_) {
+          ist = ist->merge(*iex);
+          iex++;
+        }
+      }
+    }
     else
       half_gaunt_ = half_complex_exch;
     if (breit) {

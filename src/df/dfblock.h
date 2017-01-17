@@ -122,6 +122,8 @@ class DFBlock : public btas::Tensor3<double> {
     std::shared_ptr<DFBlock> transform_second(const MatView c, const bool trans = false) const;
     std::shared_ptr<DFBlock> transform_third(const MatView c, const bool trans = false) const;
 
+    std::shared_ptr<DFBlock> merge(std::shared_ptr<const DFBlock> o) const;
+
     // add ab^+  to this.
     void add_direct_product(const VecView a, const MatView b, const double fac);
 

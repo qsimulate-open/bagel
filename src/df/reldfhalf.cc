@@ -105,6 +105,14 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_JJ() const {
 }
 
 
+shared_ptr<RelDFHalf> RelDFHalf::merge(shared_ptr<RelDFHalf> o) const {
+  assert(cartesian() == o->cartesian() && basis().size() == o->basis().size());
+  for (int i = 0; i != basis().size(); ++i)
+    assert(*basis_[i] == *o->basis_[i]);
+  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{get_real()->merge(o->get_real()), get_imag()->merge(o->get_imag())}}, cartesian_, basis_);
+}
+
+
 void RelDFHalf::set_sum_diff() const {
   df2_[0] = dfhalf_[0]->copy();
   df2_[0]->ax_plus_y(1.0, dfhalf_[1]);

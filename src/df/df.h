@@ -186,6 +186,8 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> copy() const;
     std::shared_ptr<DFHalfDist> clone() const;
 
+    std::shared_ptr<DFHalfDist> merge(std::shared_ptr<DFHalfDist> o) const;
+
     void rotate_occ(const std::shared_ptr<const Matrix> d);
     std::shared_ptr<DFHalfDist> apply_density(const std::shared_ptr<const Matrix> d) const;
 
