@@ -95,9 +95,6 @@ shared_ptr<DFBlock> DFBlock::merge(std::shared_ptr<const DFBlock> o) const {
   assert(astart() == o->astart() && b1start() == o->b1start() && b2start() == o->b2start());
   assert(adist_shell_ == o->adist_shell_ && adist_ == o->adist_ && averaged_ == o->averaged_);
 
-  // TODO generalize so this assert is not necessary?
-  assert(astart() == 0 && b1start() == 0 && b2start() == 0);
-
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size() + o->b1size(), b2size(), astart_, b1start_, b2start_, averaged_);
   const int size1 = asize() * b1size();
   const int size2 = o->asize() * o->b1size();
