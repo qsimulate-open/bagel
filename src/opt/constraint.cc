@@ -34,16 +34,29 @@ OptConstraint::OptConstraint(shared_ptr<const PTree> inp) {
   value_ = inp->get<double>("value");
 
   // some processings
-  for (int p = 0; p != 4; ++p) pair_[p]--;
   if (type_=="dihedral") type_="torsion";
   if (type_=="angle" || type_=="torsion") value_ /= rad2deg__;
   if (type_=="angstrom") { type_ = "bond"; value_ /= au2angstrom__; }
 
   pair_ = inp->get_array<int,4>("pair");      // should change
-  pair_[0]--;
-  pair_[1]--;
-  pair_[2]--;
-  pair_[3]--;
+  if (type_=="bond" && (pair_[0] > pair_[1])) {
+    int tmp = pair_[1];
+    pair_[1] = pair_[0];
+    pair_[0] = tmp;
+  }
+  for (int p = 0; p != 4; ++p) pair_[p]--;
 
   cout << "Constraint initialized : " << type_ << "  pair = " << pair_[0] << " " << pair_[1] << " " << pair_[2] << " " << pair_[3] << " " << setprecision(10) << value_ << endl;
+}
+
+OptExpBonds::OptExpBonds(shared_ptr<const PTree> inp) {
+  pair_ = inp->get_array<int,2>("pair");
+  if ((pair_[0] > pair_[1])) {
+    int tmp = pair_[1];
+    pair_[1] = pair_[0];
+    pair_[0] = tmp;
+  }
+  for (int p = 0; p != 2; ++p) pair_[p]--;
+
+  cout << "  * Explicit bond pair added between " << pair_[0] << " and " << pair_[1] << endl;
 }

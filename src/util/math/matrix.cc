@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
+#include <string>
 #include <src/util/f77.h>
 #include <src/util/math/algo.h>
 #include <src/util/math/matrix.h>
@@ -414,6 +415,48 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 }
 #endif
 
+void Matrix::print (const string tag, int len) const {
+  cout << endl << "  ++ " << tag << " ++" << endl << endl;
+  int len_n, len_m;
+
+  if (len == 0 || (len > mdim() && len > ndim())) {
+    len_n = ndim();
+    len_m = mdim();
+  } else {
+    len_n = len_m = len;
+  }
+
+  for (int i = 0; i != len_n/6; ++i) {
+    cout << setw(6) << " ";
+    for (int k = 0; k != 6; ++k)
+      cout << setw(20) << i * 6 + k;
+    cout << endl;
+    for (int j = 0; j != len_m; ++j) {
+      cout << setw(6) << j;
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << setprecision(10) << *element_ptr(i * 6 + k, j);
+      cout << endl;
+    }
+    cout << endl;
+  }
+
+  if (len_m%6) {
+    int i = len_m/6;
+    cout << setw(6) << " ";
+    for (int k = 0; k != len_n%6; ++k)
+      cout << setw(20) << i * 6 + k;
+    cout << endl;
+
+    for (int j = 0; j != len_m; ++j) {
+      cout << setw(6) << j;
+      for (int k = 0; k != len_n%6; ++k)
+        cout << setw(20) << setprecision(10) << *element_ptr(i * 6 + k, j);
+      cout << endl;
+    }
+    cout << endl;
+  }
+}
+
 
 shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset) const {
   const MatView tmp = this->slice(offset, offset+n);
@@ -421,3 +464,4 @@ shared_ptr<const Matrix> Matrix::form_density_rhf(const int n, const int offset)
   *out *= 2.0;
   return out;
 }
+

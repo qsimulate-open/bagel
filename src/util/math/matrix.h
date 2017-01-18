@@ -116,6 +116,8 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     bool is_hermitian(const double thresh = 1.0e-8) const override { return is_symmetric(thresh); }
     bool is_identity(const double thresh = 1.0e-8) const override;
 
+    virtual void print(const std::string tag = "", int len = 0) const override;
+
     using Matrix_base<double>::ax_plus_y;
     using Matrix_base<double>::dot_product;
     void ax_plus_y(const double a, const Matrix& o) { this->ax_plus_y_impl(a, o); }
