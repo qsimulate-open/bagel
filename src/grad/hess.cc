@@ -194,21 +194,15 @@ void Hess::compute() {
     // print frequencies
     cout << "    * Eigenvalues (Hartree/(bohr^2 amu)" << endl;
     for (int i = 0; i != 3*natom; ++i) {
-      cout << setw(20) << setprecision(7) << eig(i);
+      cout << setw(20) << setprecision(15) << eig(i);
     }
     cout << endl << endl;
 
-   double hartree2joule = 4.35974e-18;
-   double amu2kilogram = 1.66054e-27;
-   double bohr2meter = 1.889725989e10;
-   double c = 2.998e+10;
 
-    cout << "    * Eigenvalues (J/(bohr^2 kg)" << endl;
+    cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
     for (int i = 0; i != 3*natom; ++i) {
-        cout << setw(20) << setprecision(7) << sqrt((eig(i) * hartree2joule) / amu2kilogram ) * bohr2meter * (1/(2*pi__*c)) ;
-    //  cout << setw(20) << setprecision(7) << sqrt(eig(i) * au2joule__) * au2wavenumber__ * (1/au2meter__);
+      cout << setw(20) << setprecision(7) << sqrt((eig(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
     }
     cout << endl << endl;
-
   }
 }
