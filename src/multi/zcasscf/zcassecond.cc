@@ -89,11 +89,13 @@ void ZCASSecond::compute() {
         halfc.push_back(i->apply_J());
     }
 
-    list<shared_ptr<RelDFHalf>> halfac_0j;
-    tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
     list<shared_ptr<const RelDFHalf>> halfac;
-    for (auto& i : halfac_0j)
-      halfac.push_back(i->apply_JJ());
+    {
+      list<shared_ptr<RelDFHalf>> halfac_0j;
+      tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
+      for (auto& i : halfac_0j)
+        halfac.push_back(i->apply_JJ());
+    }
 
     // Fock and Q vector with Coulomb only
     shared_ptr<const ZMatrix> cfock_c = cfock;
