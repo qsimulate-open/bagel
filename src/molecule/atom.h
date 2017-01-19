@@ -45,6 +45,7 @@ class Atom {
     std::shared_ptr<const ECP> ecp_parameters_;
     std::shared_ptr<const SOECP> so_parameters_;
     int atom_number_;
+    double averaged_mass_;
     double atom_charge_;
     double atom_exponent_;
     int nbasis_;
@@ -101,6 +102,7 @@ class Atom {
 
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}
+    double averaged_mass() const { return averaged_mass_;}
     double atom_charge() const { return atom_charge_;}
 
     double atom_exponent() const { return atom_exponent_; }

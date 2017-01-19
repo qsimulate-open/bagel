@@ -28,6 +28,8 @@
 #include <src/grad/finite.h>
 #include <src/wfn/construct_method.h>
 #include <src/grad/gradeval.h>
+#include <src/util/atommap.h>
+#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
@@ -68,6 +70,7 @@ void Hess::compute() {
     cout << "  Analytical Hessian is not implemented" << endl;
 
   hess_ = make_shared<Matrix>(3*natom,3*natom);
+  mw_hess_ = make_shared<Matrix>(3*natom,3*natom);
 
   if (numhess_) {
     dx_ = idata_->get<double>("dx", 0.001);
@@ -125,6 +128,7 @@ void Hess::compute() {
           for (int k = 0; k != natom; ++k) {  // atom j
             for (int l = 0; l != 3; ++l) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
               step = step + 1;
             }
           }
@@ -158,6 +162,7 @@ void Hess::compute() {
           for (int k = 0; k != natom; ++k) {  // atom j
             for (int l = 0; l != 3; ++l) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
+              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
               step = step + 1;
             }
           }
@@ -169,38 +174,41 @@ void Hess::compute() {
     muffle_->unmute();
 
     //print hessian
-    cout << endl;
-    cout << "    * Numerical Hessian matrix";
-    for (int i = 0; i != 3*natom; ++i) {
-      cout << endl << "      ";
-      for (int j = 0; j != 3*natom; ++j){
-        cout << setw(20) << setprecision(7) << (*hess_)(j,i);
-      }
-    }
-    cout << endl << endl;
-    //print symmetrized hessian
-    cout << endl;
-    cout << "    * Symmetrized Numerical Hessian matrix";
-    for (int j = 0; j != 3*geom_->natom(); ++j) {
-      cout << endl << "      ";
-      for (int i = 0; i != 3*geom_->natom(); ++i){
-        cout << setw(20) << setprecision(7) <<  ((*hess_)(i,j) + (*hess_)(j,i)) / 2.0 ;
-      }
-    }
+    hess_->print("Numerical Hessian matrix", 3*natom);
+
+    //print mass weighted hessian
+    mw_hess_->print("Mass Weighted Numerical Hessian Matrix", 3*natom);
+
+    //symmetrize mass weighted hessian
+    mw_hess_->symmetrize();
+    mw_hess_->print("Symmetrized Mass Weighted Numerical Hessian Matrix", 3*natom);
+    cout << "    (masses averaged over the natural occurance of isotopes)";
     cout << endl << endl;
 
-//diagonalize as a test
-    Matrix hij(3*natom,3*natom);
+    //TODO: Project out rotations and translations
+
+    //diagonalize mass weighted hessian
     VectorB eig(3*natom);
-    for (int i = 0; i != 3*natom; ++i) {
-      cout << endl << "      ";
-      for (int j = 0; j != 3*natom; ++j){
-        hij(j,i) = (*hess_)(j,i);
-      }
-    }
-    hij.diagonalize(eig);
+    mw_hess_->diagonalize(eig);
 
-    //TODO: mass weight hessian
-    //TODO: project out rotational and translational DOF
+    // print frequencies
+    cout << "    * Eigenvalues (Hartree/(bohr^2 amu)" << endl;
+    for (int i = 0; i != 3*natom; ++i) {
+      cout << setw(20) << setprecision(7) << eig(i);
+    }
+    cout << endl << endl;
+
+   double hartree2joule = 4.35974e-18;
+   double amu2kilogram = 1.66054e-27;
+   double bohr2meter = 1.889725989e10;
+   double c = 2.998e+10;
+
+    cout << "    * Eigenvalues (J/(bohr^2 kg)" << endl;
+    for (int i = 0; i != 3*natom; ++i) {
+        cout << setw(20) << setprecision(7) << sqrt((eig(i) * hartree2joule) / amu2kilogram ) * bohr2meter * (1/(2*pi__*c)) ;
+    //  cout << setw(20) << setprecision(7) << sqrt(eig(i) * au2joule__) * au2wavenumber__ * (1/au2meter__);
+    }
+    cout << endl << endl;
+
   }
 }

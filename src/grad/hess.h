@@ -27,6 +27,7 @@
 
 #include <src/wfn/reference.h>
 #include <src/util/muffle.h>
+#include <src/util/atommap.h>
 
 namespace bagel {
 
@@ -39,6 +40,7 @@ class Hess {
     bool numhess_;
     bool numforce_;
     std::shared_ptr<Matrix> hess_;
+    std::shared_ptr<Matrix> mw_hess_;
 
     double dx_;
     double energy_;
