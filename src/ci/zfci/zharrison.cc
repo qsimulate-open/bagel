@@ -403,14 +403,21 @@ pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
   {
     auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
     copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
-    rdm1->scale(-1.0);
+
+    VectorB tmp_occ(norb_*2);
+    auto tmp_natorb = make_shared<QuatMatrix>(*rdm1);
+    assert(tmp_natorb->is_t_symmetric(1.0e-6));
+    tmp_natorb->diagonalize(tmp_occ);
     for (int i = 0; i != norb_; ++i)
-      rdm1->element(i,i) += 1.0;
-    natorb = make_shared<QuatMatrix>(*rdm1);
-    natorb->diagonalize(occup);
+      tmp_occ[i+norb_] = tmp_occ[i];
+
+    // rearrange eigenvectors
+    natorb = tmp_natorb->clone();
     for (int i = 0; i != norb_; ++i) {
-      occup[i] = 1.0-occup[i];
-      occup[i+norb_] = occup[i];
+      occup[i] = tmp_occ[norb_-i-1];
+      occup[norb_+i] = tmp_occ[norb_*2-i-1];
+      natorb->copy_block(0,       i, 2*norb_, 1, tmp_natorb->slice(  norb_-i-1,   norb_-i));
+      natorb->copy_block(0, norb_+i, 2*norb_, 1, tmp_natorb->slice(2*norb_-i-1, 2*norb_-i));
     }
   }
   // update rdm1_av_expanded_
