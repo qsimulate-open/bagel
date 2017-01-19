@@ -80,12 +80,14 @@ void ZCASSecond::compute() {
     }
 
     // half-transformed integrals (with JJ)
-    list<shared_ptr<RelDFHalf>> halfc_1j;
-    if (nclosed_)
-      halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
     list<shared_ptr<const RelDFHalf>> halfc;
-    for (auto& i : halfc_1j)
-      halfc.push_back(i->apply_J());
+    {
+      list<shared_ptr<RelDFHalf>> halfc_1j;
+      if (nclosed_)
+        halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
+      for (auto& i : halfc_1j)
+        halfc.push_back(i->apply_J());
+    }
 
     list<shared_ptr<RelDFHalf>> halfac_0j;
     tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
