@@ -225,16 +225,15 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
 
   timer.tick_print(printtag + ": metric multiply");
 
-  // split
+  // split and factorize before computing K operators
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    factorize(half_complex_exch);
   }
   half_complex.clear();
 
-  // before computing K operators, we factorize half_complex
-  factorize(half_complex_exch);
   assert(gaunt  || half_complex_exch.size() == 8);
   assert(!gaunt || half_complex_exch.size() == 24);
 

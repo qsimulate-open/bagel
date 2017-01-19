@@ -140,9 +140,9 @@ tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
   for (auto& i : half_complex) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
+    DFock::factorize(half_complex_exch);
   }
   half_complex.clear();
-  DFock::factorize(half_complex_exch);
 
   if (breit) {
     // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects
