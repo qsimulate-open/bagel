@@ -53,8 +53,8 @@ class Box {
     int nsize_, msize_;
 
     std::vector<std::shared_ptr<ZMatrix>> box_olm_;
-    std::vector<std::complex<double>> olm_ji_;
-    std::vector<std::complex<double>> mlm_ji_;
+    std::vector<std::shared_ptr<ZMatrix>> olm_ji_;
+    std::vector<std::shared_ptr<ZMatrix>> mlm_ji_;
     std::vector<std::array<int, 2>> offsets_;
     std::vector<std::pair<int, int>> coffsets_s_, coffsets_u_;
     void get_offsets();
@@ -70,7 +70,7 @@ class Box {
     std::vector<std::complex<double>> multipole_;
     std::vector<std::complex<double>> localJ_;
     void compute_M2M(std::shared_ptr<const Matrix> density);
-    void compute_M2M_X(const VectorB& ocoeff_i, const VectorB& ocoeff_j);
+    void compute_M2M_X(std::shared_ptr<const Matrix> ocoeff_si, std::shared_ptr<const Matrix> ocoeff_uj);
     void compute_multipolesX();
     void sort_sp();
     std::vector<std::complex<double>> shift_multipoles(const std::vector<std::complex<double>>& oa, std::array<double, 3> rab) const;
@@ -86,7 +86,7 @@ class Box {
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den, const double schwarz_thresh = 0.0) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
-    std::shared_ptr<const ZVectorB> compute_Fock_ffX(const VectorB& ocoeff_i) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff_ti) const;
 
 
   public:
@@ -123,10 +123,10 @@ class Box {
     std::vector<std::complex<double>>& localJ() { return localJ_; }
     const std::vector<std::complex<double>>& localJ() const { return localJ_; }
 
-    const std::vector<std::complex<double>>& olm_ji() const { return olm_ji_; }
-    std::vector<std::complex<double>>& olm_ji() { return olm_ji_; }
-    const std::vector<std::complex<double>>& mlm_ji() const { return mlm_ji_; }
-    std::vector<std::complex<double>>& mlm_ji() { return mlm_ji_; }
+    const std::vector<std::shared_ptr<ZMatrix>>& olm_ji() const { return olm_ji_; }
+    std::vector<std::shared_ptr<ZMatrix>>& olm_ji() { return olm_ji_; }
+    const std::vector<std::shared_ptr<ZMatrix>>& mlm_ji() const { return mlm_ji_; }
+    std::vector<std::shared_ptr<ZMatrix>>& mlm_ji() { return mlm_ji_; }
     const std::vector<std::shared_ptr<ZMatrix>>& box_olm() const { return box_olm_; }
     std::vector<std::shared_ptr<ZMatrix>>& box_olm() { return box_olm_; }
     std::shared_ptr<ZMatrix> box_olm(const int i) const { return box_olm_[i]; }

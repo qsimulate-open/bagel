@@ -267,14 +267,29 @@ void FMM::M2M(shared_ptr<const Matrix> mat, const bool dox) const {
 }
 
 
-void FMM::M2M_X(const VectorB& c_si, const VectorB& c_uj) const {
+void FMM::M2M_X(shared_ptr<const Matrix> ocoeff_si, shared_ptr<const Matrix> ocoeff_uj) const {
 
   Timer m2mtime;
 
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (i % mpi__->size() == mpi__->rank())
+      box_[i]->compute_multipolesX();
+
+  for (int i = 0; i != nbranch_[0]; ++i) {
+    for (auto& block : box_[i]->box_olm())
+      mpi__->broadcast(block->data(), block->size(), i % mpi__->size());
+  }
+
   int icnt = 0;
   for (int i = 0; i != ns_+1; ++i) {
-    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-      box_[icnt]->compute_M2M_X(c_si, c_uj);
+    int j0 = icnt;
+    for (int j = 0; j != nbranch_[i]; ++j, ++icnt) {
+      if (j % mpi__->size() == mpi__->rank())
+        box_[icnt]->compute_M2M_X(ocoeff_si, ocoeff_uj);
+    }
+    for (int j = 0; j != nbranch_[i]; ++j, ++j0)
+      for (auto& block : box_[j0]->olm_ji())
+        mpi__->broadcast(block->data(), block->size(), j % mpi__->size());
   }
   m2mtime.tick_print("M2M-X pass");
   assert(icnt == nbox_);
@@ -384,50 +399,26 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
 shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shared_ptr<const Matrix> overlap) const {
 
-  const bool dox = (do_exchange_ && ocoeff) ? true : false;
-  if (!dox)
+  if (!do_exchange_ || !ocoeff)
     return make_shared<const Matrix>(overlap->ndim(), overlap->mdim());
 
   Timer ktime;
   const int nocc = ocoeff->mdim();
-  const int nmult = (lmax_+1)*(lmax_+1);
-  assert(ocoeff->ndim() == nbasis_);
-
-  Timer mtime;
-  for (int i = 0; i != nbranch_[0]; ++i)
-    box_[i]->compute_multipolesX();
-
-  for (int i = 0; i != nbranch_[0]; ++i)
-    for (int k = 0; k != nmult; ++k)
-      mpi__->broadcast(box_[i]->box_olm(k)->data(), nmult, i % mpi__->size());
-
-  mtime.tick_print("Compute multipoles for X");
-
   auto krj_ff = make_shared<ZMatrix>(nbasis_, nocc);
-  int u = 0;
-  for (int j = 0; j != nocc; ++j) {
-    for (int i = 0; i != nocc; ++i, ++u) {
-      if (u % mpi__->size() == mpi__->rank()) {
-        VectorB c_uj(nbasis_);
-        VectorB c_si(nbasis_);
-        for (int p = 0; p != nbasis_; ++p) {
-          c_uj[p] = ocoeff->element(p, j);
-          c_si[p] = ocoeff->element(p, i);
-        }
-        M2M_X(c_si, c_uj);
-        M2L(true);
-        L2L(true);
 
-        for (int n = 0; n != nbranch_[0]; ++n) {
-          shared_ptr<const ZVectorB> ffx = box_[n]->compute_Fock_ffX(c_uj);
-          transform(krj_ff->data()+j*nbasis_, krj_ff->data()+(j+1)*nbasis_, ffx->data(), krj_ff->data()+j*nbasis_, std::plus<complex<double>>());
-        }
-      }
+  auto ocoeff_sj = make_shared<const Matrix>(*ocoeff);
+  auto ocoeff_ui = make_shared<const Matrix>(*ocoeff);
+  M2M_X(ocoeff_sj, ocoeff_ui);
+  M2L(true);
+  L2L(true);
+
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (i % mpi__->size() == mpi__->rank()) {
+      auto ffx = box_[i]->compute_Fock_ffX(ocoeff_sj);
+      krj_ff->add_block(1.0, 0, 0, nbasis_, nocc, ffx->data());
     }
-  }
-  krj_ff->allreduce();
-  auto krj = make_shared<const ZMatrix>(*krj_ff);
 
+  auto krj = make_shared<const ZMatrix>(*krj_ff);
   auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
   auto tmp = make_shared<ZMatrix>(nocc, nocc);
   zgemm3m_("T", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj_ff->data(), nbasis_, 0.0, tmp->data(), nocc);
