@@ -30,6 +30,7 @@
 #include <src/molecule/petite.h>
 #include <src/util/math/xyzfile.h>
 #include <src/util/serialization.h>
+#include <src/opt/constraint.h>
 
 namespace bagel {
 
@@ -161,8 +162,13 @@ class Molecule {
     void merge_obs_aux();
 
     // transformation matrices for the internal coordinate for geometry optimization
-    // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+    // ninternal runs fast (and cartsize slower) (weighted Wilson B)
+    std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(
+        std::shared_ptr<const Matrix> prev = nullptr,
+        std::vector<std::shared_ptr<const OptExpBonds>> explicit_bond = std::vector<std::shared_ptr<const OptExpBonds>>(),
+        std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>()) const;
+    // driver for compute B matrix for redundant coordinate (original Wilson B)
+    std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
     // Split up the atoms into several Molecule objects
     // To limit the memory requirement of integral evaluation

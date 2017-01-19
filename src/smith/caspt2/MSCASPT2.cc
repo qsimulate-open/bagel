@@ -63,6 +63,36 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm4all_ = cas.rdm4all_;
 }
 
+void MSCASPT2::MSCASPT2::solve_dm() {
+  {
+    const int nstates = info_->ciwfn()->nstates();
+    const int targetJ = info_->target();
+    const int targetI = info_->target2();
+
+    shared_ptr<Tensor> resultv = den1->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && ist != istate)
+            continue;
+          const double isheffJ = (*heff_)(istate, targetJ);
+          const double isheffI = (*heff_)(istate, targetI);
+          const double ijvJI = (jheffJ*isheffI - jheffI*isheffJ) * 0.5;
+          l2 = t2all_[istate]->at(ist); // careful
+
+          shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+          resultv->ax_plus_y(ijvJI, den1);
+        }
+      }
+    }
+    vden1_ = resultv->matrix();
+  }
+}
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
   Timer timer;
@@ -201,6 +231,211 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
             while (!dec->done())
               dec->next_compute();
             blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
+        }
+      }
+
+      // derivative with respect to M
+      for (int mst = 0; mst != nstates; ++mst) {
+        if (info_->sssr() && nst != mst)
+          continue;
+
+        l2 = lall_[mst]->at(nst);
+        dec = make_deci3q(/*zero*/true);
+        while (!dec->done())
+          dec->next_compute();
+
+        l2 = lall_[nst]->at(mst);
+        dec = make_deci4q(false);
+        while (!dec->done())
+          dec->next_compute();
+
+        for (int lst = 0; lst != nstates; ++lst) {
+          if (info_->sssr() && (nst != lst || mst != lst))
+            continue;
+
+          e0_ = e0all_[lst] - info_->shift();
+          l2 = lall_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+
+          l2 = t2all_[lst]->at(nst);
+          t2 = lall_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+        }
+        blas::ax_plus_y_n(1.0, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+      }
+      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass
+                          << "   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
+      timer.tick_print(ss.str());
+    }
+  }
+}
+
+void MSCASPT2::MSCASPT2::solve_nacme() {
+  Timer timer;
+  const int nstates = info_->ciwfn()->nstates();
+  const int targetJ = info_->target();
+  const int targetI = info_->target2();
+
+  // first-order energy from the energy expression
+  {
+    shared_ptr<Tensor> result = den1->clone();
+    shared_ptr<Tensor> resultv = den1->clone();
+    shared_ptr<Tensor> result2 = Den1->clone();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && ist != istate)
+            continue;
+          const double isheffJ = (*heff_)(istate, targetJ);
+          const double isheffI = (*heff_)(istate, targetI);
+          const double ijhJI = (jheffJ*isheffI + jheffI*isheffJ) * 0.5;
+          const double ijvJI = (jheffJ*isheffI - jheffI*isheffJ) * 0.5;
+          l2 = t2all_[istate]->at(ist); // careful
+
+          shared_ptr<Queue> queue = make_density1q(true, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+          result->ax_plus_y(ijhJI, den1);
+          resultv->ax_plus_y(ijvJI, den1);
+
+          shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
+          while (!queue2->done())
+            queue2->next_compute();
+          result2->ax_plus_y(ijhJI, Den1);
+        }
+      }
+    }
+    den1_ = result->matrix();
+    vden1_ = resultv->matrix();
+    Den1_ = result2;
+  }
+
+  // second-order contribution from the lambda terms
+  {
+    den2->zero();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        set_rdm(jst, ist);
+        for (int istate = 0; istate != nstates; ++istate) { // state of T
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
+          l2 = lall_[istate]->at(ist);
+          t2 = t2all_[istate]->at(jst);
+          shared_ptr<Queue> queue = make_densityq(false, ist == jst);
+          while (!queue->done())
+            queue->next_compute();
+        }
+      }
+    }
+    den2_ = den2->matrix();
+  }
+  // first-order contribution from the lambda terms
+  {
+    den1->zero();
+    Den1->zero();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        if (info_->sssr() && jst != ist)
+          continue;
+        set_rdm(jst, ist);
+
+        l2 = lall_[jst]->at(ist);
+        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
+        while (!queue->done())
+          queue->next_compute();
+
+        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
+        while (!queue2->done())
+          queue2->next_compute();
+      }
+    }
+    den1_->ax_plus_y(1.0, den1->matrix());
+    Den1_->ax_plus_y(1.0, Den1);
+  }
+  // because of the convention...
+  den1_->scale(0.5);
+  Den1_->scale(0.5);
+  timer.tick_print("Correlated density matrix evaluation");
+
+  // CI derivative..
+  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
+  // outer most look over RDM derivatives
+  for (int nst = 0; nst != nstates; ++nst) {
+    const size_t cisize = ci_deriv_->data(nst)->size();
+    const size_t cimax = 1000; // TODO interface to the input
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+    const double nheffJ = (*heff_)(nst, targetJ);
+    const double nheffI = (*heff_)(nst, targetI);
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
+
+      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
+
+      // output area
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+
+      shared_ptr<Queue> dec;
+
+      for (int lst = 0; lst != nstates; ++lst) {
+        const double lheffJ = (*heff_)(lst, targetJ);
+        const double lheffI = (*heff_)(lst, targetI);
+
+        const double lnhJI  = (lheffJ * nheffI + lheffI * nheffJ) * 0.5;
+        const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
+        // derivative with respect to M
+        for (int mst = 0; mst != nstates; ++mst) {
+          const double mheffJ = (*heff_)(mst, targetJ);
+          const double mheffI = (*heff_)(mst, targetI);
+
+          const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
+
+          // <N|T_LN H|I>
+          if (!info_->sssr() || nst == lst) {
+            l2 = t2all_[lst]->at(nst);
+            dec = make_deci3q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(lmhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
+
+          // <I|T_LM H|N>
+          if (!info_->sssr() || mst == lst) {
+            l2 = t2all_[lst]->at(mst);
+            dec = make_deci4q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(lnhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+          }
+
+          // -2Es <N|T_LN T_LM|I>
+          if (!info_->sssr() || (mst == lst && nst == lst)) {
+            e0_ = 2.0*info_->shift();
+            l2 = t2all_[lst]->at(nst);
+            t2 = t2all_[lst]->at(mst);
+            dec = make_deci2q(/*zero*/true);
+            while (!dec->done())
+              dec->next_compute();
+            blas::ax_plus_y_n(llhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
           }
         }
       }

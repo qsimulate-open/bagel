@@ -30,14 +30,14 @@ using namespace std;
 using namespace bagel;
 
 SphMultipole::SphMultipole(shared_ptr<const Geometry> g, shared_ptr<const Matrix> d, const int rank)
-  : geom_(g), density_(d), rank_(rank) { 
+  : geom_(g), density_(d), rank_(rank) {
 
   if (rank_ > 3)
     throw logic_error("Higher-order multipole moments not available");
 }
 
 vector<complex<double>> SphMultipole::compute() const { // slow
-  
+
   const size_t size = (rank_+1)*(rank_+1);
   vector<complex<double>> out(size);
 
@@ -80,7 +80,7 @@ vector<complex<double>> SphMultipole::compute() const { // slow
   const double mpole11c = (-1.0 * out[3] + out[1]).real();
   const double mpole11s = (-1.0 * out[3] - out[1]).imag();
   const double mpole10 = out[2].real();
-  cout << "           (" << setw(12) << setprecision(6) << mpole11c << ", " << setw(12) 
+  cout << "           (" << setw(12) << setprecision(6) << mpole11c << ", " << setw(12)
                                                         << mpole11s << ", " << setw(12)
                                                         << mpole10 << ") a.u." << endl << endl;
 
@@ -118,7 +118,7 @@ vector<complex<double>> SphMultipole::compute() const { // slow
     if (abs(mpole22c) > 1e-7) cout << " Q22c = " << setw(11) << mpole22c << ",";
     if (abs(mpole22s) > 1e-7) cout << " Q22s = " << setw(11) << mpole22s;
     cout << ") a.u." << endl;
-  } 
+  }
 
   if (rank_ > 2) {
     // nuclear contribution
@@ -141,7 +141,7 @@ vector<complex<double>> SphMultipole::compute() const { // slow
     }
 
     // Stone's convention
-    const double mpole33c = sqrt(0.1)*(qm[0]-3.0*qm[2]) - 6.0*sqrt(10.0)*(-1.0*out[15]+out[9]).real(); 
+    const double mpole33c = sqrt(0.1)*(qm[0]-3.0*qm[2]) - 6.0*sqrt(10.0)*(-1.0*out[15]+out[9]).real();
     const double mpole33s = sqrt(0.1)*(3.0*qm[1]-qm[3]) - 6.0*sqrt(10.0)*(-1.0*out[15]-out[9]).imag();
     const double mpole32c = sqrt(0.6)*(qm[4]-qm[6]) - 2.0*sqrt(15.0)*(out[14]+out[10]).real();
     const double mpole32s = 2.0*sqrt(0.6)*qm[5] - 2.0*sqrt(15.0)*(out[14]-out[10]).imag();

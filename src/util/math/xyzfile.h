@@ -38,11 +38,11 @@ class XYZFile : public Matrix {
     XYZFile(const size_t natom, const double a = 0.0) : Matrix(3, natom, true) { fill(a); }
     XYZFile(const XYZFile& o) : Matrix(o) { assert(o.ndim() == 3 && localized_); }
     XYZFile(const Matrix& o) : Matrix(o) { localize(); assert(o.ndim() == 3); }
-    XYZFile(XYZFile&& o) : Matrix(std::move(o)) { }
 
     std::shared_ptr<XYZFile> clone() const;
 
     void print(const std::string in = "", const int dum = 0) const override;
+    double maximum(int atomno) const;
 
     // this function assumes that double[] has data_.size()*data_size() elements.
     std::shared_ptr<XYZFile> transform(const std::shared_ptr<const Matrix>, const bool transpose) const;

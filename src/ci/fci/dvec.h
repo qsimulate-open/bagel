@@ -27,6 +27,7 @@
 #define BAGEL_FCI_DVEC_H
 
 #include <src/ci/fci/civec.h>
+#include <src/util/math/matrix.h>
 
 // I forgot why I named this class "Dvector"...
 // Basically Dvector is a vector of Civec, with some utility functions.
@@ -143,7 +144,23 @@ class Dvector : public btas::Tensor3<DataType> {
     void project_out(std::shared_ptr<const Dvector<DataType>> o);
     void project_out_all(std::shared_ptr<const Dvector<DataType>> o);
     void synchronize();
+    void rotate(std::shared_ptr<const Matrix> msrot);
     void print(const double thresh = 0.05) const;
+    void print(const bool sort) const;
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T, double>::value>::type
+            >
+    void match (std::shared_ptr<Dvector<double>>& ref);
+
+    template<typename T = DataType,
+             class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type
+            >
+    void match (std::shared_ptr<Dvector<std::complex<double>>>& ref) {  }
+
+    void match (std::shared_ptr<Dvector<DataType>>& ref) {
+      match<DataType, void> (ref);
+    }
 };
 
 using Dvec = Dvector<double>;

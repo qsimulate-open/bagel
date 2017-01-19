@@ -7427,7 +7427,7 @@ bool minnlciteration(const minnlcstate &state)
 
 
 void minnlcoptimize(minnlcstate &state,
-    void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
+    std::function<void(const real_1d_array &x, real_1d_array &fi, void *ptr)> fvec,
     void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
@@ -7462,7 +7462,7 @@ void minnlcoptimize(minnlcstate &state,
 
 
 void minnlcoptimize(minnlcstate &state,
-    void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
+    std::function<void(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr)> jac,
     void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
@@ -8663,7 +8663,7 @@ bool minnsiteration(const minnsstate &state)
 
 
 void minnsoptimize(minnsstate &state,
-    void (*fvec)(const real_1d_array &x, real_1d_array &fi, void *ptr),
+    std::function<void(const real_1d_array &x, real_1d_array &fi, void *ptr)> fvec,
     void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {
@@ -8698,7 +8698,7 @@ void minnsoptimize(minnsstate &state,
 
 
 void minnsoptimize(minnsstate &state,
-    void  (*jac)(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr),
+    std::function<void(const real_1d_array &x, real_1d_array &fi, real_2d_array &jac, void *ptr)> jac,
     void  (*rep)(const real_1d_array &x, double func, void *ptr),
     void *ptr)
 {

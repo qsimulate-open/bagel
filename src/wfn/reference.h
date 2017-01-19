@@ -159,6 +159,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // returns an occ-occ sized 1RDM
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const RDM<1>> o) const;
+    std::shared_ptr<Matrix> rdm1_mat_tr(std::shared_ptr<const RDM<1>> o) const;
     std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_->at(irdm)); }
     std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 

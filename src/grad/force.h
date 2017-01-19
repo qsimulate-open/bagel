@@ -34,6 +34,7 @@ class Force {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+    bool numerical_;		// numerical or analytical gradient?
 
   public:
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

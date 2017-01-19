@@ -85,6 +85,36 @@ void Smith::compute() {
       sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
       sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
     }
+  } else if (algo_->info()->nacm()) {
+    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    assert(algop);
+
+    algop->solve_nacme();
+    dm1_ = algop->rdm12();
+    dm11_ = algop->rdm11();
+    vd1_ = algop->vden1();
+    dm2_ = algop->rdm21();
+    dcheck_ = algop->dcheck();
+
+    // compute <1|1>
+    wf1norm_ = algop->correlated_norm();
+    // convert ci derivative tensor to civec
+    cider_ = algop->ci_deriv();
+    foeig_ = algop->e0all();
+    xmsrot_ = algop->xmsrot();
+    heffrot_ = algop->heffrot();
+    msrot_ = algop->msrot();
+    coeff_ = algop->coeff();
+  } else if (algo_->info()->method() == "caspt2") {
+    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    if (algo_->info()->target2() != -1) {
+      algop->solve_dm();
+      msrot_ = algop->msrot();
+      xmsrot_ = algop->xmsrot();
+      heffrot_ = algop->heffrot();
+      coeff_ = algop->coeff();
+      vd1_ = algop->vden1();
+    }
   }
 #else
   throw logic_error("You must enable SMITH during compilation for this method to be available.");

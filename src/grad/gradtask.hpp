@@ -97,6 +97,22 @@ class GradTask1 : public GradTask {
     void compute();
 };
 
+/// 2-index 1-electron derivative overlap
+class GradTask1s : public GradTask {
+  private:
+    std::array<std::shared_ptr<const Shell>, 2> shell_;
+    std::shared_ptr<const Matrix> eden_;
+
+    // implemented in gradeval_base.h
+    template<typename TBatch>
+    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
+
+  public:
+    GradTask1s(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
+              const std::shared_ptr<const Matrix> vmat, GradEval_base* p)
+      : GradTask(a, o, p), shell_(s), eden_(vmat) { }
+    void compute();
+};
 
 /// 2-index 1-electron finite-nucleus NAI gradient integrals
 class GradTask1f : public GradTask {
