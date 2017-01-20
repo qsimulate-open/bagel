@@ -186,11 +186,6 @@ void Hess::compute() {
     cout << endl << endl;
 
     //TODO: Project out rotations and translations
-    // first need to shift to center of mass
-
-    for (int i = 0; i != 3*natom; ++i) {
-    }
-    cout << endl << endl;
 
     //diagonalize mass weighted hessian
     // eig(i) in Hartree/bohr^2*amu
@@ -198,6 +193,11 @@ void Hess::compute() {
     mw_hess_->diagonalize(eig);
 
     // v = sqrt (eig) / (2 pi c )
+      cout << setw(20) << setprecision(15) << eig(i);
+    }
+    cout << endl << endl;
+
+
     cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
     for (int i = 0; i != 3*natom; ++i) {
       cout << setw(20) << setprecision(7) << sqrt((eig(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
