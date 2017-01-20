@@ -31,8 +31,8 @@ using namespace bagel;
 const static int batchsize = 250;
 
 DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb)
-  : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
+             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb, const bool store_half_gaunt)
+  : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), store_half_gaunt_(store_half_gaunt), robust_(robust) {
 
   assert(breit ? gaunt : true);
   two_electron_part(coeff, scale_exch, scale_coulomb);
@@ -44,7 +44,7 @@ DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const 
 DFock::DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
              std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
              const double scale_exch, const double scale_coulomb)
-  : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), robust_(false) {
+  : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), store_half_gaunt_(false), robust_(false) {
 
   // will use the zgemm3m-like algorithm
   for (auto& i : int1c)
@@ -301,11 +301,11 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
     }
   };
 
-  if (store_half_) {
-    if (!gaunt)
-      store_half_ints(half_coulomb_, half_complex_exch);
-    else
-      store_half_ints(half_gaunt_, half_complex_exch);
+  if (store_half_ && !gaunt)
+    store_half_ints(half_coulomb_, half_complex_exch);
+  if (store_half_gaunt_ && gaunt) {
+    assert(store_half_);
+    store_half_ints(half_gaunt_, half_complex_exch);
     if (breit)
       store_half_ints(half_breit_, half_complex_exch2);
   }
