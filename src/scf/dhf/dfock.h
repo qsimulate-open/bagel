@@ -45,6 +45,7 @@ class DFock : public ZMatrix {
 
     // when gradient is requested, we store half-transformed integrals
     bool store_half_;
+    bool store_half_gaunt_;
     std::list<std::shared_ptr<RelDFHalf>> half_coulomb_;
     std::list<std::shared_ptr<RelDFHalf>> half_gaunt_;
     std::list<std::shared_ptr<RelDFHalf>> half_breit_;
@@ -54,11 +55,11 @@ class DFock : public ZMatrix {
 
   public:
     DFock(std::shared_ptr<const Geometry> a,  std::shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0);
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false);
     // same as above
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0)
-     : DFock(a, hc, *coeff, gaunt, breit, store_half, robust, scale_exch, scale_coulomb) {
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false)
+     : DFock(a, hc, *coeff, gaunt, breit, store_half, robust, scale_exch, scale_coulomb, store_half_gaunt) {
     }
     // DFock from half-transformed integrals
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
@@ -82,8 +83,8 @@ class DFock : public ZMatrix {
     static std::list<std::shared_ptr<RelDFHalf>> make_half_complex(std::list<std::shared_ptr<RelDF>>, std::shared_ptr<const ZMatrix>);
 
     std::list<std::shared_ptr<RelDFHalf>> half_coulomb() const { assert(store_half_); return half_coulomb_; }
-    std::list<std::shared_ptr<RelDFHalf>> half_gaunt() const { assert(store_half_); return half_gaunt_; }
-    std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_); return half_breit_; }
+    std::list<std::shared_ptr<RelDFHalf>> half_gaunt() const { assert(store_half_gaunt_); return half_gaunt_; }
+    std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_gaunt_); return half_breit_; }
 
     void build_j(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
                  const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const int number_of_j = 1);
