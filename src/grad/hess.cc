@@ -193,6 +193,7 @@ void Hess::compute() {
     mw_hess_->diagonalize(eig);
 
     // v = sqrt (eig) / (2 pi c )
+    for (int i = 0; i != natom; ++i) {
       cout << setw(20) << setprecision(15) << eig(i);
     }
     cout << endl << endl;
