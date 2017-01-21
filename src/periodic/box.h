@@ -125,9 +125,12 @@ class Box {
 
     const std::vector<std::shared_ptr<ZMatrix>>& olm_ji() const { return olm_ji_; }
     std::vector<std::shared_ptr<ZMatrix>>& olm_ji() { return olm_ji_; }
+    int olm_ji_size() const { return olm_ji_[0]->size(); }
     const std::vector<std::shared_ptr<ZMatrix>>& mlm_ji() const { return mlm_ji_; }
+    std::shared_ptr<ZMatrix> olm_ji(const int i) const { return olm_ji_[i]; }
     std::vector<std::shared_ptr<ZMatrix>>& mlm_ji() { return mlm_ji_; }
     const std::vector<std::shared_ptr<ZMatrix>>& box_olm() const { return box_olm_; }
+    int box_olm_size() const { return box_olm_[0]->size(); }
     std::vector<std::shared_ptr<ZMatrix>>& box_olm() { return box_olm_; }
     std::shared_ptr<ZMatrix> box_olm(const int i) const { return box_olm_[i]; }
 

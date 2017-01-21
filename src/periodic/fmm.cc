@@ -36,7 +36,8 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-static const double tolgd__ = 1e-9;
+const static int batchsize = 200;
+
 const static Legendre plm;
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws, const bool ex)
@@ -57,8 +58,6 @@ void FMM::init() {
     nsh += a->shells().size();
 
   const int nsp = geom_->nshellpair();
-  base_extent_ = sqrt(2.0) * boost::math::erf_inv(1.0-tolgd__);
-
 #if 0
   double maxext = 0;
   for (int i = 1; i != nsp_; ++i)
@@ -136,6 +135,7 @@ void FMM::get_boxes() {
   assert(nleaf == boxid.size() && nleaf <= nsp_);
 
   // get leaves
+  nleaf_ = nleaf;
   vector<vector<int>> leaves(nleaf);
   for (int isp = 0; isp != nsp_; ++isp) {
     const int n = ibox[isp];
@@ -243,24 +243,22 @@ void FMM::get_boxes() {
 }
 
 
-void FMM::M2M(shared_ptr<const Matrix> mat, const bool dox) const {
+void FMM::M2M(shared_ptr<const Matrix> density, const bool dox) const {
 
   Timer m2mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
     if (i % mpi__->size() == mpi__->rank())
-      box_[i]->compute_M2M(mat);
+      box_[i]->compute_M2M(density);
 
-  for (int i = 0; i != nbranch_[0]; ++i) {
+  for (int i = 0; i != nbranch_[0]; ++i)
     mpi__->broadcast(box_[i]->multipole().data(), box_[i]->multipole().size(), i % mpi__->size());
-    mpi__->broadcast(box_[i]->localJ().data(), box_[i]->localJ().size(), i % mpi__->size());
-  }
 
   m2mtime.tick_print("Compute multipoles");
 
   int icnt = nbranch_[0];
   for (int i = 1; i != ns_+1; ++i) {
     for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
-      box_[icnt]->compute_M2M(mat);
+      box_[icnt]->compute_M2M(density);
   }
   m2mtime.tick_print("M2M pass");
   assert(icnt == nbox_);
@@ -271,25 +269,10 @@ void FMM::M2M_X(shared_ptr<const Matrix> ocoeff_si, shared_ptr<const Matrix> oco
 
   Timer m2mtime;
 
-  for (int i = 0; i != nbranch_[0]; ++i)
-    if (i % mpi__->size() == mpi__->rank())
-      box_[i]->compute_multipolesX();
-
-  for (int i = 0; i != nbranch_[0]; ++i) {
-    for (auto& block : box_[i]->box_olm())
-      mpi__->broadcast(block->data(), block->size(), i % mpi__->size());
-  }
-
   int icnt = 0;
   for (int i = 0; i != ns_+1; ++i) {
-    int j0 = icnt;
-    for (int j = 0; j != nbranch_[i]; ++j, ++icnt) {
-      if (j % mpi__->size() == mpi__->rank())
-        box_[icnt]->compute_M2M_X(ocoeff_si, ocoeff_uj);
-    }
-    for (int j = 0; j != nbranch_[i]; ++j, ++j0)
-      for (auto& block : box_[j0]->olm_ji())
-        mpi__->broadcast(block->data(), block->size(), j % mpi__->size());
+    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
+      box_[icnt]->compute_M2M_X(ocoeff_si, ocoeff_uj);
   }
   m2mtime.tick_print("M2M-X pass");
   assert(icnt == nbox_);
@@ -405,19 +388,31 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   Timer ktime;
   const int nocc = ocoeff->mdim();
   auto krj_ff = make_shared<ZMatrix>(nbasis_, nocc);
+  const int nbatch = (nocc-1) / batchsize+1;
+  StaticDist dist(nocc, nbatch);
+  vector<pair<size_t, size_t>> table = dist.atable();
 
-  auto ocoeff_sj = make_shared<const Matrix>(*ocoeff);
-  auto ocoeff_ui = make_shared<const Matrix>(*ocoeff);
-  M2M_X(ocoeff_sj, ocoeff_ui);
-  M2L(true);
-  L2L(true);
-
+  int ibatch = 0;
+  Timer mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
-    if (i % mpi__->size() == mpi__->rank()) {
-      auto ffx = box_[i]->compute_Fock_ffX(ocoeff_sj);
-      krj_ff->add_block(1.0, 0, 0, nbasis_, nocc, ffx->data());
-    }
+    box_[i]->compute_multipolesX();
+  mtime.tick_print("Compute multipoles");
 
+  for (auto& itable : table) {
+    cout << ibatch << " ** " << itable.first << "    *    " << itable.second << endl;
+    ++ibatch;
+    auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
+    auto ocoeff_sj = make_shared<const Matrix>(*ocoeff);
+
+    M2M_X(ocoeff_sj, ocoeff_ui);
+    M2L(true);
+    L2L(true);
+    for (int i = 0; i != nbranch_[0]; ++i)
+      if (i % mpi__->size() == mpi__->rank()) {
+        auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
+        krj_ff->add_block(1.0, 0, itable.first, nbasis_, itable.second, ffx->data());
+      }
+  }
   auto krj = make_shared<const ZMatrix>(*krj_ff);
   auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
   auto tmp = make_shared<ZMatrix>(nocc, nocc);
