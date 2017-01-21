@@ -222,8 +222,9 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat) const {
-  cout << "    o Connectivitiy analysis" << endl;
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
+  if (verbose)
+    cout << "    o Connectivitiy analysis" << endl;
 
   // list of primitive internals
   array<vector<vector<int>>,3> prims;
@@ -263,6 +264,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
       if (((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) || expbond) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
+        if (verbose)
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
 
@@ -505,7 +507,8 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     if (eig(i) < 1.0e-10)
       cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
-  cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
+  if (verbose)
+    cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
   // bbslice = U
   // form B = U^+ Bprim

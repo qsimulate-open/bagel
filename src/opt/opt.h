@@ -118,6 +118,8 @@ class Opt {
     std::shared_ptr<XYZFile> get_step_rfo();
     std::shared_ptr<XYZFile> get_step_rfos();
 
+    std::shared_ptr<XYZFile> iterate_displ();
+
     void hessian_update();
     void hessian_update_bfgs(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> hs);
     void hessian_update_sr1(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);

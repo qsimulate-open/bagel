@@ -144,9 +144,9 @@ void Opt::compute() {
 
     if (internal_) {
       if (redundant_)
-        displ = displ->transform(bmat_red_[1], false);      // should be done iteratively, currently just 1st order
+        displ = displ->transform(bmat_red_[1], false);
       else
-        displ = displ->transform(bmat_[1], false);
+        displ = iterate_displ();
     }
 
     current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
@@ -571,6 +571,31 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
     predictedchange_ = qg + 0.5 * qhq;
   }
 
+  return displ;
+}
+
+shared_ptr<XYZFile> Opt::iterate_displ() {
+  shared_ptr<Geometry> currentv = make_shared<Geometry>(*current_);
+  auto displ = make_shared<XYZFile>(*displ_);
+  auto dqc = make_shared<XYZFile>(*displ_);
+  shared_ptr<const XYZFile> qc = current_->xyz();
+  qc = qc->transform(bmat_[0], true);
+  cout << endl << "  === Displacement transformation iteration === " << endl << endl;
+  Timer timer;
+  for (int i = 0; i != maxiter_; ++i) {
+    displ = displ->transform(bmat_[1], false);
+    currentv = make_shared<Geometry>(*currentv, displ, make_shared<const PTree>(), /*rotate=*/true, /*nodf=*/true);
+    bmat_ = currentv->compute_internal_coordinate(bmat_[0], bonds_, constraints_, /*verbose=*/false);
+    shared_ptr<const XYZFile> qcurrent = currentv->xyz();
+    qcurrent = qcurrent->transform(bmat_[0], true);
+    auto qdiff = make_shared<XYZFile>(currentv->natom());
+    *qdiff = *qcurrent - *qc;
+    *displ = *dqc - *qdiff;
+    cout << setw(7) << i << setprecision(10) << setw(15) << displ->norm() << setw(10) << setprecision(2) << timer.tick() << endl;
+    if (displ->norm() < 1.0e-8) break;
+  }
+  *displ = *(currentv->xyz()) - *(current_->xyz());
+  cout << endl << endl;
   return displ;
 }
 
