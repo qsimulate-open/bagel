@@ -69,10 +69,12 @@ shared_ptr<GradFile> GradEval_base::contract_nacme   (const shared_ptr<const Mat
     vector<shared_ptr<GradTask>> task  = contract_grad2e(o);			// two-electron part from qrs
     vector<shared_ptr<GradTask>> task2 = contract_grad1e(d, w);			// one-electron part
     vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);		// two-electron part from qq
-    vector<shared_ptr<GradTask>> task4 = contract_grad1e_sigma(v);		// one-electron part from basis function derivative
     task.insert(task.end(), task2.begin(), task2.end());
     task.insert(task.end(), task3.begin(), task3.end());
-    task.insert(task.end(), task4.begin(), task4.end());
+    if (v) {
+      vector<shared_ptr<GradTask>> task4 = contract_grad1e_sigma(v);		// one-electron part from basis function derivative
+      task.insert(task.end(), task4.begin(), task4.end());
+    }
 
     TaskQueue<shared_ptr<GradTask>> tq(move(task));
     tq.compute();

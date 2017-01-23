@@ -36,7 +36,7 @@ using namespace bagel;
 
 shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
 
-  // Find conical intersection by gradient projection method (Schlegel)
+  // Find conical intersection by gradient projection method (Bearpark, Robb, Schlegel)
 
   auto out = make_shared<GradFile>(current_->natom());
   int n3 = current_->natom() * 3;
@@ -77,13 +77,13 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
-  auto x1 = std::make_shared<GradFile>(*cgrad2 - *cgrad1);
-  auto xf = std::make_shared<GradFile>(*x1);
-  auto xg = std::make_shared<GradFile>(*cgrad1);
+  auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
+  auto xf = make_shared<GradFile>(*x1);
+  auto xg = make_shared<GradFile>(*cgrad1);
   const double en  = en2 - en1;
   double x1norm = x1->norm();
   double x2norm = x2->norm();
-  xf->scale(-2.0 * en / x1norm);
+  xf->scale(2.0 * en / x1norm);
   x1->scale(1.0 / x1norm);
   x2->scale(1.0 / x2norm);
 

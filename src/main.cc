@@ -141,12 +141,7 @@ int main(int argc, char** argv) {
         auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
 
-      } else if (title == "force") {
-
-        auto opt = make_shared<Force>(itree, geom, ref);
-        opt->compute();
-
-      } else if (title == "nacme") {
+      } else if (title == "force" || title == "nacme" || title == "dgrad") {
 
         auto opt = make_shared<Force>(itree, geom, ref);
         opt->compute();

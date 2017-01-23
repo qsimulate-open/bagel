@@ -107,6 +107,11 @@ shared_ptr<GradFile> Force::compute() {
       auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype);
       out = force->compute();
 
+    } else if (method == "casscf" && jobtitle == "dgrad") {
+
+      auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2);
+      out = force->compute();
+
     } else if (method == "casscf") {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
