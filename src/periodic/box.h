@@ -67,17 +67,17 @@ class Box {
     void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const int ws);
     void get_inter(const std::vector<std::shared_ptr<Box>>& box, const int ws);
 
-    std::vector<std::complex<double>> multipole_;
-    std::vector<std::complex<double>> localJ_;
+    std::shared_ptr<ZVectorB> multipole_;
+    std::shared_ptr<ZVectorB> localJ_;
     void compute_M2M(std::shared_ptr<const Matrix> density);
-    void compute_M2M_X(std::shared_ptr<const Matrix> ocoeff_si, std::shared_ptr<const Matrix> ocoeff_uj);
+    void compute_M2M_X(std::shared_ptr<const Matrix> ocoeff_sj, std::shared_ptr<const Matrix> ocoeff_ui);
     void compute_multipolesX();
     void sort_sp();
-    std::vector<std::complex<double>> shift_multipoles(const std::vector<std::complex<double>>& oa, std::array<double, 3> rab) const;
+    std::shared_ptr<const ZVectorB> shift_multipoles(std::shared_ptr<const ZVectorB> oa, std::array<double, 3> rab) const;
     std::vector<std::shared_ptr<const ZMatrix>> shift_multipolesX(const std::vector<std::shared_ptr<ZMatrix>>& oa, std::array<double, 3> rab) const;
-    std::vector<std::complex<double>> shift_localL(const std::vector<std::complex<double>>& mr, std::array<double, 3> rb) const;
+    std::shared_ptr<const ZVectorB> shift_localL(std::shared_ptr<const ZVectorB> mr, std::array<double, 3> rb) const;
     std::vector<std::shared_ptr<const ZMatrix>> shift_localLX(const std::vector<std::shared_ptr<ZMatrix>>& mr, std::array<double, 3> rb) const;
-    std::vector<std::complex<double>> shift_localM(const std::vector<std::complex<double>>& olm, std::array<double, 3> r12) const;
+    std::shared_ptr<const ZVectorB> shift_localM(std::shared_ptr<const ZVectorB> olm, std::array<double, 3> r12) const;
     std::vector<std::shared_ptr<const ZMatrix>> shift_localMX(const std::vector<std::shared_ptr<ZMatrix>>& olm, std::array<double, 3> r12) const;
     void compute_M2L();
     void compute_M2L_X();
@@ -118,10 +118,8 @@ class Box {
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     const std::array<std::shared_ptr<const Shell>, 2>& shells(const int i) const { return sp_[i]->shells(); }
 
-    std::vector<std::complex<double>>& multipole() { return multipole_; }
-    const std::vector<std::complex<double>>& multipole() const { return multipole_; }
-    std::vector<std::complex<double>>& localJ() { return localJ_; }
-    const std::vector<std::complex<double>>& localJ() const { return localJ_; }
+    std::shared_ptr<ZVectorB> multipole() const { return multipole_; }
+    std::shared_ptr<ZVectorB> localJ() const { return localJ_; }
 
     const std::vector<std::shared_ptr<ZMatrix>>& olm_ji() const { return olm_ji_; }
     std::vector<std::shared_ptr<ZMatrix>>& olm_ji() { return olm_ji_; }

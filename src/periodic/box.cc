@@ -33,12 +33,14 @@
 #include <src/util/taskqueue.h>
 #include <mutex>
 #include <src/util/timer.h>
+#include <src/util/math/factorial.h>
 
 using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
+const static Factorial f;
 
 void Box::init() {
 
@@ -67,8 +69,8 @@ void Box::init() {
   }
 
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
-  multipole_.resize(nmult_); fill_n(multipole_.begin(), nmult_, 0.0);
-  localJ_.resize(nmult_);    fill_n(localJ_.begin(), nmult_, 0.0);
+  multipole_ = make_shared<ZVectorB>(nmult_);
+  localJ_ = make_shared<ZVectorB>(nmult_);
 }
 
 
@@ -169,7 +171,7 @@ void Box::sort_sp() {
 
 void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
-  fill(multipole_.begin(), multipole_.end(), 0.0);
+  multipole_->fill(0.0);
 
   if (nchild() == 0) { // leaf
     TaskQueue<function<void(void)>> tasks(nsp());
@@ -179,22 +181,22 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
       tasks.emplace_back(
         [this, &v, &density, &jmutex]() {
-          vector<complex<double>> olm(nmult_);
+          auto olm = make_shared<ZVectorB>(nmult_);
           MultipoleBatch mpole(v->shells(), centre_, lmax_);
           mpole.compute();
           const int dimb0 = v->shell(0)->nbasis();
           const int dimb1 = v->shell(1)->nbasis();
-          vector<const complex<double>*> dat(nmult_);
-          for (int i = 0; i != nmult_; ++i)
-            dat[i] = mpole.data() + mpole.size_block()*i;
 
           lock_guard<mutex> lock(jmutex);
-          for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
-            for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
-              for (int k = 0; k != mpole.num_blocks(); ++k)
-                olm[k] += conj(*dat[k]++ * density->element(i,j));
+          for (int k = 0; k != mpole.num_blocks(); ++k) {
+            size_t cnt = 0;
+            for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i) {
+              (*olm)(k) += conj(blas::dot_product_noconj(mpole.data() + mpole.size_block()*k + cnt, dimb0, density->element_ptr(v->offset(0), i)));
+              cnt += dimb0;
+            }
+          }
 
-          transform(multipole_.begin(), multipole_.end(), olm.begin(), multipole_.begin(), std::plus<complex<double>>());
+          blas::ax_plus_y_n(1.0, olm->data(), nmult_, multipole_->data());
         }
       );
     }
@@ -206,8 +208,8 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       r12[0] = c->centre(0) - centre_[0];
       r12[1] = c->centre(1) - centre_[1];
       r12[2] = c->centre(2) - centre_[2];
-      vector<complex<double>> smoment = shift_multipoles(c->multipole(), r12);
-      blas::ax_plus_y_n(1.0, smoment.data(), nmult_, multipole_.data());
+      shared_ptr<const ZVectorB> smoment = shift_multipoles(c->multipole(), r12);
+      blas::ax_plus_y_n(1.0, smoment->data(), nmult_, multipole_->data());
     }
   }
 }
@@ -245,8 +247,9 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
 
     for (int k = 0; k != nmult_; ++k) {
       auto olm_si = make_shared<ZMatrix>(nsize_, ocoeff_ui->mdim());
-      zgemm3m_("N", "N", nsize_, ocoeff_ui->mdim(), msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_si->data(), nsize_);
-      zgemm3m_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_[k]->data(), ocoeff_sj->mdim());
+//      zgemm3m_("N", "N", nsize_, ocoeff_ui->mdim(), msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_si->data(), nsize_);
+//      zgemm3m_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_[k]->data(), ocoeff_sj->mdim());
+      olm_ji_[k] = make_shared<ZMatrix>(*zc_sj % *(box_olm_[k]) * *zc_ui);
     }
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
@@ -317,8 +320,8 @@ void Box::compute_L2L() {
     r12[0] = centre_[0] - parent_->centre(0);
     r12[1] = centre_[1] - parent_->centre(1);
     r12[2] = centre_[2] - parent_->centre(2);
-    vector<complex<double>> slocal = shift_localL(parent_->localJ(), r12);
-    blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
+    shared_ptr<const ZVectorB> slocal = shift_localL(parent_->localJ(), r12);
+    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
   }
 }
 
@@ -344,7 +347,7 @@ void Box::compute_M2L_X() {
 
 void Box::compute_M2L() {
 
-  fill(localJ_.begin(), localJ_.end(), 0.0);
+  localJ_->fill(0.0);
 
   // from interaction list
   for (auto& it : inter_) {
@@ -352,8 +355,8 @@ void Box::compute_M2L() {
     r12[0] = centre_[0] - it->centre(0);
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
-    vector<complex<double>> slocal = shift_localM(it->multipole(), r12);
-    blas::ax_plus_y_n(1.0, slocal.data(), nmult_, localJ_.data());
+    shared_ptr<const ZVectorB> slocal = shift_localM(it->multipole(), r12);
+    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
   }
 }
 
@@ -526,33 +529,32 @@ void Box::print_box() const {
 
 
 // M2L: given O(a) and R(a-b) get M(b)
-vector<complex<double>> Box::shift_localM(const vector<complex<double>>& olm, array<double, 3> r12) const {
+shared_ptr<const ZVectorB> Box::shift_localM(shared_ptr<const ZVectorB> olm, array<double, 3> r12) const {
 
   const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
   const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
   const double phi = atan2(r12[1], r12[0]);
 
-  vector<complex<double>> mb(nmult_, 0);
+  auto mb = make_shared<ZVectorB>(nmult_);
+  unique_ptr<double[]> plm0(new double[(2*lmax_+1)*(2*lmax_+1)]);
+  for (int l = 0; l != 2*lmax_+1; ++l)
+    for (int m = 0; m <= 2 * l; ++m)
+      plm0[l*l+m] = plm.compute(l, abs(m-l), ctheta);
 
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m) {
-
-      for (int j = 0; j <= lmax_; ++j) {
+    const double phase_l = (1-((l&1)<<1));
+    for (int j = 0; j <= lmax_; ++j) {
+      const int a = l + j;
+      const double rr = 1.0 / pow(r, a + 1);
+      for (int m = 0; m <= 2 * l; ++m) {
         for (int k = 0; k <= 2 * j; ++k) {
 
-          const int a = l + j;
           const int b = m - l + k - j;
 
-          double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
-          double ft = 1.0;
-          for (int i = 1; i <= a - abs(b); ++i) {
-            prefactor *= ft;
-            ++ft;
-          }
-          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-          const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-          const complex<double> Mab(real, imag);
-          mb[l*l+m] += pow(-1.0, l) * Mab * olm[j*j+k];
+          double prefactor = plm0[a*a+a+b] * rr * f(a-abs(b));
+          const double phase = phase_l * (1-((b&1)<<1));
+          const complex<double> Mab = phase * polar(prefactor, b*phi);
+          (*mb)(l*l+m) += Mab * (*olm)(j*j+k);
         }
       }
     }
@@ -563,34 +565,37 @@ vector<complex<double>> Box::shift_localM(const vector<complex<double>>& olm, ar
 
 
 // M2M: given O(a) and R(b-a) get O(b)
-vector<complex<double>> Box::shift_multipoles(const vector<complex<double>>& oa, array<double, 3> rab) const {
+shared_ptr<const ZVectorB> Box::shift_multipoles(const shared_ptr<const ZVectorB> oa, array<double, 3> rab) const {
 
   const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
   const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
   const double phi = atan2(rab[1], rab[0]);
 
-  vector<complex<double>> ob(nmult_, 0);
+  auto ob = make_shared<ZVectorB>(nmult_);
+  unique_ptr<double[]> plm0(new double[nmult_]);
+  for (int l = 0; l != lmax_+1; ++l)
+    for (int m = 0; m <= 2 * l; ++m)
+      plm0[l*l+m] = plm.compute(l, abs(m-l), ctheta);
 
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m) {
+    for (int j = 0; j <= lmax_; ++j) {
+      const int a = l - j;
+      const double rr = pow(r, a);
 
-      for (int j = 0; j <= lmax_; ++j) {
+      for (int m = 0; m <= 2 * l; ++m) {
         for (int k = 0; k <= 2 * j; ++k) {
-
-          const int a = l - j;
           const int b = m - l - k + j;
           if (abs(b) <= a && a >= 0) {
-            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double prefactor = rr * plm0[a*a+a+b];
             double ft = 1.0;
             for (int i = 1; i <= a + abs(b); ++i) {
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> Oab(real, -imag);
+            const double phase = (1-((b&1)<<1));
+            const complex<double> Oab = phase * polar(prefactor, -b*phi);
 
-            ob[l*l+m] += Oab * oa[j*j+k];
+            (*ob)(l*l+m) += Oab * (*oa)(j*j+k);
           }
 
         }
@@ -603,13 +608,13 @@ vector<complex<double>> Box::shift_multipoles(const vector<complex<double>>& oa,
 
 
 // L2L: given M(r) and R(b) get M(r-b)
-vector<complex<double>> Box::shift_localL(const vector<complex<double>>& mr, array<double, 3> rb) const {
+shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr, array<double, 3> rb) const {
 
   const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
   const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
   const double phi = atan2(rb[1], rb[0]);
 
-  vector<complex<double>> mrb(nmult_, 0);
+  auto mrb = make_shared<ZVectorB>(nmult_);
 
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
@@ -630,7 +635,7 @@ vector<complex<double>> Box::shift_localL(const vector<complex<double>>& mr, arr
             const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
             const complex<double> Oab(real, -imag);
 
-            mrb[l*l+m] += Oab * mr[j*j+k];
+            (*mrb)(l*l+m) += Oab * (*mr)(j*j+k);
           }
 
         }
@@ -667,7 +672,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
         for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
           for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
             for (int k = 0; k != mpole.num_blocks(); ++k)
-              out->element(i, j) += conj(*dat[k]++) * localJ_[k];
+              out->element(i, j) += conj(*dat[k]++) * (*localJ_)(k);
       }
     );
   }
@@ -958,4 +963,5 @@ void Box::get_offsets() {
     }
   }
   msize_ = jsize;
+  assert(nsize_ == msize_);
 }
