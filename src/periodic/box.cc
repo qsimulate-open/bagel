@@ -59,7 +59,7 @@ void Box::init() {
 
   extent_ = 0;
   for (auto& i : sp_) {
-    if (i->schwarz() < 1e-15) continue;
+    if (i->schwarz() < schwarz_thresh_) continue;
     double tmp = 0;
     for (int j = 0; j != 3; ++j)
       tmp += pow(i->centre(j)-centre_[j], 2.0);
@@ -177,7 +177,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
     TaskQueue<function<void(void)>> tasks(nsp());
     mutex jmutex;
     for (auto& v : sp_) {
-      if (v->schwarz() < 1e-15) continue;
+      if (v->schwarz() < schwarz_thresh_) continue;
 
       tasks.emplace_back(
         [this, &v, &density, &jmutex]() {
@@ -247,9 +247,9 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
 
     for (int k = 0; k != nmult_; ++k) {
       auto olm_si = make_shared<ZMatrix>(nsize_, ocoeff_ui->mdim());
-//      zgemm3m_("N", "N", nsize_, ocoeff_ui->mdim(), msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_si->data(), nsize_);
-//      zgemm3m_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_[k]->data(), ocoeff_sj->mdim());
-      olm_ji_[k] = make_shared<ZMatrix>(*zc_sj % *(box_olm_[k]) * *zc_ui);
+      zgemm3m_("N", "N", nsize_, ocoeff_ui->mdim(), msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ui->data(), msize_, 0.0, olm_si->data(), nsize_);
+      zgemm3m_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_[k]->data(), ocoeff_sj->mdim());
+      //olm_ji_[k] = make_shared<ZMatrix>(*zc_sj % *(box_olm_[k]) * *zc_ui);
     }
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
@@ -278,7 +278,7 @@ void Box::compute_multipolesX() {
   TaskQueue<function<void(void)>> tasks(nsp());
   int isp = 0;
   for (auto& v : sp_) {
-    if (v->schwarz() < 1e-15) continue;
+    if (v->schwarz() < schwarz_thresh_) continue;
 
     tasks.emplace_back(
       [this, &v, isp]() {
@@ -361,7 +361,7 @@ void Box::compute_M2L() {
 }
 
 
-shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, vector<double>& max_den, const double schwarz_thresh) const {
+shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, vector<double>& max_den) const {
 
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -374,7 +374,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
 
   int ntask = 0;
   for (auto& v01 : sp_) {
-    if (v01->schwarz() < 1e-15) continue;
+    if (v01->schwarz() < schwarz_thresh_) continue;
     const int i0 = v01->shell_ind(1);
 
     const int i1 = v01->shell_ind(0);
@@ -385,7 +385,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
 
     for (auto& neigh : neigh_) {
       for (auto& v23 : neigh->sp()) {
-        if (v23->schwarz() < 1e-15) continue;
+        if (v23->schwarz() < schwarz_thresh_) continue;
         const int i2 = v23->shell_ind(1);
         if (i2 < i0) continue;
         const int i3 = v23->shell_ind(0);
@@ -403,7 +403,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
                                          max(density_03, density_12)),
                                          max(density_13, density_23));
         const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
-        const bool skip_schwarz = integral_bound < schwarz_thresh;
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
         if (skip_schwarz) continue;
         ++ntask;
       }
@@ -414,7 +414,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
   mutex jmutex;
 
   for (auto& v01 : sp_) {
-    if (v01->schwarz() < 1e-15) continue;
+    if (v01->schwarz() < schwarz_thresh_) continue;
     shared_ptr<const Shell> b0 = v01->shell(1);
     const int i0 = v01->shell_ind(1);
     const int b0offset = v01->offset(1);
@@ -431,7 +431,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
 
     for (auto& neigh : neigh_) {
       for (auto& v23 : neigh->sp()) {
-        if (v23->schwarz() < 1e-15) continue;
+        if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
         const int i2 = v23->shell_ind(1);
         if (i2 < i0) continue;
@@ -457,7 +457,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
                                          max(density_03, density_12)),
                                          max(density_13, density_23));
         const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
-        const bool skip_schwarz = integral_bound < schwarz_thresh;
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
         if (skip_schwarz) continue;
 
         array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
@@ -538,8 +538,11 @@ shared_ptr<const ZVectorB> Box::shift_localM(shared_ptr<const ZVectorB> olm, arr
   auto mb = make_shared<ZVectorB>(nmult_);
   unique_ptr<double[]> plm0(new double[(2*lmax_+1)*(2*lmax_+1)]);
   for (int l = 0; l != 2*lmax_+1; ++l)
-    for (int m = 0; m <= 2 * l; ++m)
-      plm0[l*l+m] = plm.compute(l, abs(m-l), ctheta);
+    for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
   for (int l = 0; l <= lmax_; ++l) {
     const double phase_l = (1-((l&1)<<1));
@@ -548,13 +551,10 @@ shared_ptr<const ZVectorB> Box::shift_localM(shared_ptr<const ZVectorB> olm, arr
       const double rr = 1.0 / pow(r, a + 1);
       for (int m = 0; m <= 2 * l; ++m) {
         for (int k = 0; k <= 2 * j; ++k) {
-
           const int b = m - l + k - j;
-
           double prefactor = plm0[a*a+a+b] * rr * f(a-abs(b));
-          const double phase = phase_l * (1-((b&1)<<1));
-          const complex<double> Mab = phase * polar(prefactor, b*phi);
-          (*mb)(l*l+m) += Mab * (*olm)(j*j+k);
+          const complex<double> Mab = polar(prefactor, b*phi);
+          (*mb)(l*l+m) += phase_l*Mab * (*olm)(j*j+k);
         }
       }
     }
@@ -574,8 +574,11 @@ shared_ptr<const ZVectorB> Box::shift_multipoles(const shared_ptr<const ZVectorB
   auto ob = make_shared<ZVectorB>(nmult_);
   unique_ptr<double[]> plm0(new double[nmult_]);
   for (int l = 0; l != lmax_+1; ++l)
-    for (int m = 0; m <= 2 * l; ++m)
-      plm0[l*l+m] = plm.compute(l, abs(m-l), ctheta);
+    for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
   for (int l = 0; l <= lmax_; ++l) {
     for (int j = 0; j <= lmax_; ++j) {
@@ -592,9 +595,7 @@ shared_ptr<const ZVectorB> Box::shift_multipoles(const shared_ptr<const ZVectorB
               prefactor /= ft;
               ++ft;
             }
-            const double phase = (1-((b&1)<<1));
-            const complex<double> Oab = phase * polar(prefactor, -b*phi);
-
+            const complex<double> Oab = polar(prefactor, -b*phi);
             (*ob)(l*l+m) += Oab * (*oa)(j*j+k);
           }
 
@@ -616,25 +617,29 @@ shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr
 
   auto mrb = make_shared<ZVectorB>(nmult_);
 
-  for (int l = 0; l <= lmax_; ++l) {
+  unique_ptr<double[]> plm0(new double[nmult_]);
+  for (int l = 0; l != lmax_+1; ++l)
     for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
-      for (int j = 0; j <= lmax_; ++j) {
+  for (int l = 0; l <= lmax_; ++l) {
+    for (int j = 0; j <= lmax_; ++j) {
+      const int a = j - l;
+      const double rr = pow(r, a);
+      for (int m = 0; m <= 2 * l; ++m) {
         for (int k = 0; k <= 2 * j; ++k) {
-
-          const int a = j - l;
           const int b = k - j - m + l;
           if (abs(b) <= a && a >= 0) {
-            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double prefactor = rr * plm0[a*a+a+b];
             double ft = 1.0;
             for (int i = 1; i <= a + abs(b); ++i) {
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> Oab(real, -imag);
-
+            const complex<double> Oab = polar(prefactor, -b*phi);
             (*mrb)(l*l+m) += Oab * (*mr)(j*j+k);
           }
 
@@ -656,7 +661,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
   TaskQueue<function<void(void)>> tasks(nsp());
   mutex jmutex;
   for (auto& v : sp_) {
-    if (v->schwarz() < 1e-15) continue;
+    if (v->schwarz() < schwarz_thresh_) continue;
 
     tasks.emplace_back(
       [this, &out, &v, &density, &jmutex]() {
@@ -727,7 +732,7 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
   mutex jmutex;
 
   for (auto& v01 : sp_) {
-    if (v01->schwarz() < 1e-15) continue;
+    if (v01->schwarz() < schwarz_thresh_) continue;
     shared_ptr<const Shell> b0 = v01->shell(1);
     const int b0offset = v01->offset(1);
     const int b0size = b0->nbasis();
@@ -738,7 +743,7 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
 
     for (auto& inter : inter_) {
       for (auto& v23 : inter->sp()) {
-        if (v23->schwarz() < 1e-15) continue;
+        if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
         const int b2offset = v23->offset(1);
         const int b2size = b2->nbasis();
@@ -793,28 +798,30 @@ vector<shared_ptr<const ZMatrix>> Box::shift_multipolesX(const vector<shared_ptr
   const double phi = atan2(rab[1], rab[0]);
 
   vector<shared_ptr<const ZMatrix>> ob(nmult_);
+  unique_ptr<double[]> plm0(new double[nmult_]);
+  for (int l = 0; l != lmax_+1; ++l)
+    for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
-
       auto out = make_shared<ZMatrix>(oa[0]->ndim(), oa[0]->mdim());
-
       for (int j = 0; j <= lmax_; ++j) {
+        const int a = l - j;
+        const double rr = pow(r, a);
         for (int k = 0; k <= 2 * j; ++k) {
-
-          const int a = l - j;
           const int b = m - l - k + j;
           if (abs(b) <= a && a >= 0) {
-            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double prefactor = rr * plm0[a*a+a+b];
             double ft = 1.0;
             for (int i = 1; i <= a + abs(b); ++i) {
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> Oab(real, -imag);
-
+            const complex<double> Oab = polar(prefactor, -b*phi);
             out->add_block(Oab, 0, 0, oa[0]->ndim(), oa[0]->mdim(), oa[j*j+k]->data());
           }
 
@@ -836,34 +843,34 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localLX(const vector<shared_ptr<ZMa
   const double phi = atan2(rb[1], rb[0]);
 
   vector<shared_ptr<const ZMatrix>> mrb(nmult_);
+  unique_ptr<double[]> plm0(new double[nmult_]);
+  for (int l = 0; l != lmax_+1; ++l)
+    for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
   for (int l = 0; l <= lmax_; ++l) {
     for (int m = 0; m <= 2 * l; ++m) {
-
       auto out = make_shared<ZMatrix>(mr[0]->ndim(), mr[0]->mdim());
-
       for (int j = 0; j <= lmax_; ++j) {
+        const int a = j - l;
+        const double rr = pow(r, a);
         for (int k = 0; k <= 2 * j; ++k) {
-
-          const int a = j - l;
           const int b = k - j - m + l;
           if (abs(b) <= a && a >= 0) {
-            double prefactor = pow(r, a) * plm.compute(a, abs(b), ctheta);
+            double prefactor = rr * plm0[a*a+a+b];
             double ft = 1.0;
             for (int i = 1; i <= a + abs(b); ++i) {
               prefactor /= ft;
               ++ft;
             }
-            const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-            const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-            const complex<double> Oab(real, -imag);
-
+            const complex<double> Oab = polar(prefactor, -b*phi);
             out->add_block(Oab, 0, 0, mr[0]->ndim(), mr[0]->mdim(),  mr[j*j+k]->data());
           }
-
         }
       }
-
       mrb[l*l+m] = make_shared<const ZMatrix>(*out);
     }
   }
@@ -880,34 +887,30 @@ vector<shared_ptr<const ZMatrix>> Box::shift_localMX(const vector<shared_ptr<ZMa
   const double phi = atan2(r12[1], r12[0]);
 
   vector<shared_ptr<const ZMatrix>> mb(nmult_);
+  unique_ptr<double[]> plm0(new double[(2*lmax_+1)*(2*lmax_+1)]);
+  for (int l = 0; l != 2*lmax_+1; ++l)
+    for (int m = 0; m <= 2 * l; ++m) {
+      const int b = m-l;
+      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
+      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
+    }
 
   for (int l = 0; l <= lmax_; ++l) {
-    for (int m = 0; m <= 2 * l; ++m) {
- 
-      auto out = make_shared<ZMatrix>(olm[0]->ndim(), olm[0]->mdim());
-
-      for (int j = 0; j <= lmax_; ++j) {
+    const double phase_l = (1-((l&1)<<1));
+    for (int j = 0; j <= lmax_; ++j) {
+      const int a = l + j;
+      const double rr = 1.0 / pow(r, a + 1);
+      for (int m = 0; m <= 2 * l; ++m) {
+        auto out = make_shared<ZMatrix>(olm[0]->ndim(), olm[0]->mdim());
         for (int k = 0; k <= 2 * j; ++k) {
-
-          const int a = l + j;
           const int b = m - l + k - j;
 
-          double prefactor = plm.compute(a, abs(b), ctheta) / pow(r, a + 1);
-          double ft = 1.0;
-          for (int i = 1; i <= a - abs(b); ++i) {
-            prefactor *= ft;
-            ++ft;
-          }
-          const double real = (b >= 0) ? (prefactor * cos(abs(b) * phi)) : (pow(-1.0, b) * prefactor * cos(abs(b) * phi));
-          const double imag = (b >= 0) ? (prefactor * sin(abs(b) * phi)) : (pow(-1.0, b+1) * prefactor * sin(abs(b) * phi));
-          const complex<double> Mab(real, imag);
-
-          const complex<double> coeff = pow(-1.0, l) * Mab;
-          out->add_block(coeff, 0, 0, olm[0]->ndim(), olm[0]->mdim(),  olm[j*j+k]->data());
+          double prefactor = plm0[a*a+a+b] * rr * f(a-abs(b));
+          const complex<double> Mab = phase_l * polar(prefactor, b*phi);
+          out->add_block(Mab, 0, 0, olm[0]->ndim(), olm[0]->mdim(),  olm[j*j+k]->data());
         }
+        mb[l*l+m] = make_shared<const ZMatrix>(*out);
       }
-
-      mb[l*l+m] = make_shared<const ZMatrix>(*out);
     }
   }
 

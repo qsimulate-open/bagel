@@ -151,7 +151,7 @@ void FMM::get_boxes() {
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
     array<int, 3> id = boxid[il];
-    auto newbox = make_shared<Box>(0, il, id, lmax_, sp);
+    auto newbox = make_shared<Box>(0, il, id, lmax_, sp, thresh_);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -184,7 +184,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp());
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp(), thresh_);
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -227,7 +227,7 @@ void FMM::get_boxes() {
     icnt += nbranch_[ir];
   }
 
-#if 0
+#if 1
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
@@ -283,15 +283,20 @@ void FMM::M2L(const bool dox) const {
 
   Timer m2ltime;
 
+  TaskQueue<function<void(void)>> tasks(nbox_);
   if (!dox) {
     for (auto& b : box_)
-      b->compute_M2L();
-
+      tasks.emplace_back(
+        [this, b]() { b->compute_M2L(); }
+      );
+    tasks.compute();
     m2ltime.tick_print("M2L pass");
   } else {
     for (auto& b : box_)
-      b->compute_M2L_X();
-
+      tasks.emplace_back(
+        [this, b]() { b->compute_M2L_X(); }
+      );
+    tasks.compute();
     m2ltime.tick_print("M2L-X pass");
   }
 }
@@ -360,7 +365,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     auto ff = make_shared<ZMatrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_Fock_nf(density, maxden, geom_->schwarz_thresh());
+        auto ei = box_[i]->compute_Fock_nf(density, maxden);
         out->add_block(1.0, 0, 0, nbasis_, nbasis_, ei->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         ff->add_block(1.0, 0, 0, nbasis_, nbasis_, ffi->data());

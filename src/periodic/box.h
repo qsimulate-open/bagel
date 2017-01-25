@@ -46,7 +46,7 @@ class Box {
     std::vector<std::shared_ptr<const Box>> neigh_;
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
-    double thresh_, extent_;
+    double thresh_, extent_, schwarz_thresh_;
     int nbasis0_, nbasis1_;
     int nmult_;
     int nocc_;
@@ -84,14 +84,15 @@ class Box {
     void compute_L2L();
     void compute_L2L_X();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
-    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den, const double schwarz_thresh = 0.0) const;
+    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const ZMatrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff_ti) const;
 
 
   public:
-    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>())
-     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp) { }
+    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+        const double thresh = 0.0)
+     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), schwarz_thresh_(thresh) { }
 
     ~Box() { }
 
