@@ -26,6 +26,7 @@
 #define __SRC_GRAD_FORCE_H
 
 #include <src/wfn/reference.h>
+#include <src/util/muffle.h>
 
 namespace bagel {
 

@@ -328,13 +328,15 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   // compute unrelaxed transition dipole...
   shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
   {
-    Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), "Transition dipole moment");
+    string tdmlabel = "Transition dipole moment between " + to_string(target_state1_) + " - " + to_string(target_state2_);
+    Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), tdmlabel);
     auto moment = dipole.compute();
 
     const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
     const double fnm = (2.0 / 3.0) * egap * r2;
 
-    cout << "    * Oscillator strength for the associated transition: " << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+    cout << "    * Oscillator strength for transition between " << target_state1_ << " - "
+      << target_state2_ << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
   }
 
   // solve CP-CASSCF

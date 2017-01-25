@@ -45,6 +45,12 @@ void XYZFile::print(const string in, const int dummy) const {
   }
 }
 
+void XYZFile::print_export(const string in, const int dummy) const {
+  auto matform = make_shared<Matrix>(3, mdim());
+  matform->add_block(1.0, 0, 0, 3, mdim(), *this);
+  matform->print();
+}
+
 
 shared_ptr<XYZFile> XYZFile::transform(const shared_ptr<const Matrix> a, const bool transpose) const {
   // a is ncart * ninternal quantity

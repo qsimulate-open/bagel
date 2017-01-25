@@ -203,14 +203,16 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   const MatView ocoeff = coeff->slice(0, nocc);
 
   {
+    string tdmlabel = "Transition dipole moment between " + to_string(target_state1_) + " - " + to_string(target_state2_);
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
-    Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
+    Dipole dipole(geom_, dtotao, tdmlabel);
     auto moment = dipole.compute();
 
     const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
     const double fnm = (2.0 / 3.0) * egap * r2;
 
-    cout << "    * Oscillator strength for the associated transition: " << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+    cout << "    * Oscillator strength for transition between " << target_state1_ << " - "
+      << target_state2_ << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
   }
 
   // compute Yrs

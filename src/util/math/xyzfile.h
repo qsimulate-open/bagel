@@ -42,6 +42,7 @@ class XYZFile : public Matrix {
     std::shared_ptr<XYZFile> clone() const;
 
     void print(const std::string in = "", const int dum = 0) const override;
+    void print_export(const std::string in = "", const int dum = 0) const;
     double maximum(int atomno) const;
 
     // this function assumes that double[] has data_.size()*data_size() elements.

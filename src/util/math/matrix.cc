@@ -416,7 +416,9 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 #endif
 
 void Matrix::print (const string tag, int len) const {
-  cout << endl << "  ++ " << tag << " ++" << endl << endl;
+  if (tag != "")
+    cout << endl << "  ++ " << tag << " ++" << endl << endl;
+
   int len_n, len_m;
 
   if (len == 0 || (len > mdim() && len > ndim())) {
@@ -440,8 +442,8 @@ void Matrix::print (const string tag, int len) const {
     cout << endl;
   }
 
-  if (len_m%6) {
-    int i = len_m/6;
+  if (len_n%6) {
+    int i = len_n/6;
     cout << setw(6) << " ";
     for (int k = 0; k != len_n%6; ++k)
       cout << setw(20) << i * 6 + k;

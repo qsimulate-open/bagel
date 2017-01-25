@@ -32,8 +32,7 @@ using namespace std;
 using namespace bagel;
 
 Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
-  if (geom_->dkh())
-    throw runtime_error("Analytical gradients have not been implemented with the DKH Hamiltonian yet");
+
 }
 
 
@@ -43,6 +42,12 @@ shared_ptr<GradFile> Force::compute() {
   const string jobtitle = to_lower(idata_->get<string>("title", ""));
   const int target2= idata_->get<int>("target2", 1);
   const int nacmtype = idata_->get<int>("nacmtype", 0);
+  const bool export_grad = idata_->get<bool>("export", false);
+#ifndef DISABLE_SERIALIZATION
+  const bool refsave = idata_->get<bool>("save_ref", false);
+  string refname;
+  if (refsave) refname = idata_->get<string>("ref_out", "reference");
+#endif
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -76,56 +81,67 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "rohf") {
 
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "hf") {
 
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "ks") {
 
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "dhf") {
 
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "mp2") {
 
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "casscf" && jobtitle == "nacme") {
 
       auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "casscf" && jobtitle == "dgrad") {
 
       auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "casscf") {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "caspt2" && jobtitle == "nacme") {
 
       auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype);
       out = force->compute();
+      ref = force->ref();
 
     } else if (method == "caspt2") {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
       out = force->compute();
+      ref = force->ref();
 
     }
     else {
@@ -144,6 +160,7 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<FiniteGrad>(method, cinput, geom_, ref_, target, dx);
       out = force->compute();
+      ref = force->ref();
 
     } else if (jobtitle == "nacme") {
 
@@ -151,14 +168,41 @@ shared_ptr<GradFile> Force::compute() {
 
         auto force = make_shared<FiniteNacm<CASSCF>>(method, cinput, geom_, ref_, target, target2, dx);
         out = force->compute();
+        ref = force->ref();
 
       } else if (method == "caspt2") {
 
         auto force = make_shared<FiniteNacm<CASPT2Energy>>(method, cinput, geom_, ref_, target, target2, dx);
         out = force->compute();
+        ref = force->ref();
 
       }
     }
+  }
+#ifndef DISABLE_SERIALIZATION
+  if (refsave) {
+    OArchive archive(refname);
+    archive << ref;
+  }
+#endif
+
+  if (export_grad) {
+    shared_ptr<Muffle> gradmuffle;
+    string mufflename = to_upper(jobtitle) + "_" + to_string(target);
+    if (jobtitle == "nacme") mufflename += ("_" + to_string(target2));
+    mufflename += ".out";
+    gradmuffle = make_shared<Muffle>(mufflename);
+    gradmuffle->mute();
+
+    out->print_export();
+    gradmuffle->unmute();
+
+    shared_ptr<Muffle> enermuffle;
+    enermuffle = make_shared<Muffle>("ENERGY.out");
+    enermuffle->mute();
+    for (int istate = 0; istate != ref->nstate(); ++istate)
+      cout << setw(20) << setprecision(10) << ref->energy(istate) << endl;
+    enermuffle->unmute();
   }
   return out;
 }
