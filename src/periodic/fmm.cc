@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 200;
+const static int batchsize = 150;
 
 const static Legendre plm;
 
@@ -406,7 +406,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
-      auto ocoeff_sj = make_shared<const Matrix>(*ocoeff);
+      shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
       M2M_X(ocoeff_sj, ocoeff_ui);
       M2L(true);
@@ -433,7 +433,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose()) - (*zsc * *kij ^ *zsc));
   
   ktime.tick_print("FMM-K");
-  return make_shared<const Matrix>(*out->get_real_part());
+  return out->get_real_part();
 }
 
 
