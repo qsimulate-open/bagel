@@ -687,7 +687,6 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
 
 shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_ti) const {
 
-  cout << "going into _ffX" << endl;
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(ocoeff_ti->ndim(), ocoeff_ti->mdim());
 
@@ -702,19 +701,20 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_
   assert(start == msize_ && ocoeff_ti->mdim() == olm_mdim_);
   auto zc_ti = make_shared<const ZMatrix>(*c_ti, 1.0);
  
-  cout << "going into _ffX:zgemm_" << endl;
-  auto krj = make_shared<ZMatrix>(nsize_, ocoeff_ti->mdim());
+  auto krj = make_shared<ZMatrix>(nsize_, olm_ndim_);
   for (int k = 0; k != nmult_; ++k) {
     auto olm_ri = make_shared<ZMatrix>(nsize_, ocoeff_ti->mdim());
     zgemm3m_("N", "N", nsize_, ocoeff_ti->mdim(), msize_, 1.0, box_olm_[k]->data(), nsize_, zc_ti->data(), msize_, 0.0, olm_ri->data(), nsize_);
     zgemm3m_("N", "T", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, olm_ri->data(), nsize_, mlm_ji_->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
   }
-  cout << "finishing _ffX:zgemm_" << endl;
 
-  for (auto& cj : coffsets_s_)
-    out->copy_block(cj.first, 0, cj.second, ocoeff_ti->mdim(), krj->data()); 
+  start = 0;
+  for (auto& cj : coffsets_s_) {
+    auto sub_krj = krj->cut(start, start+cj.second);
+    out->copy_block(cj.first, 0, cj.second, ocoeff_ti->mdim(), sub_krj->data());
+    start += cj.second;
+  }
 
-  cout << "finishing _ffX" << endl;
   return out;
 }
 
