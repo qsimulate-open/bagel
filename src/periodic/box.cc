@@ -577,10 +577,10 @@ shared_ptr<const ZVectorB> Box::shift_multipoles(const shared_ptr<const ZVectorB
       plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
     }
 
-  unique_ptr<double[]> invfac(new double[2*lmax_]);
-  fill_n(invfac.get(), 2*lmax_, 1.0);
-  for (int i = 1; i != 2*lmax_; ++i)
-    for (int j = i; j != 2*lmax_; ++j)
+  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
+  fill_n(invfac.get(), 2*lmax_+1, 1.0);
+  for (int i = 1; i <= 2*lmax_; ++i)
+    for (int j = i; j <= 2*lmax_; ++j)
       invfac[j] /= i;
 
   for (int l = 0; l <= lmax_; ++l) {
@@ -622,10 +622,10 @@ shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr
       plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
     }
 
-  unique_ptr<double[]> invfac(new double[2*lmax_]);
-  fill_n(invfac.get(), 2*lmax_, 1.0);
-  for (int i = 1; i != 2*lmax_; ++i)
-    for (int j = i; j != 2*lmax_; ++j)
+  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
+  fill_n(invfac.get(), 2*lmax_+1, 1.0);
+  for (int i = 1; i <= 2*lmax_; ++i)
+    for (int j = i; j <= 2*lmax_; ++j)
       invfac[j] /= i;
 
   for (int l = 0; l <= lmax_; ++l) {
@@ -807,10 +807,10 @@ shared_ptr<const ZMatrix> Box::shift_multipolesX(shared_ptr<const ZMatrix> oa, a
       plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
     }
 
-  unique_ptr<double[]> invfac(new double[2*lmax_]);
-  fill_n(invfac.get(), 2*lmax_, 1.0);
-  for (int i = 1; i != 2*lmax_; ++i)
-    for (int j = i; j != 2*lmax_; ++j)
+  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
+  fill_n(invfac.get(), 2*lmax_+1, 1.0);
+  for (int i = 1; i <= 2*lmax_; ++i)
+    for (int j = i; j <= 2*lmax_; ++j)
       invfac[j] /= i;
 
   ZMatrix lmjk(nmult_, nmult_);
@@ -853,10 +853,10 @@ shared_ptr<const ZMatrix> Box::shift_localLX(const shared_ptr<const ZMatrix> mr,
       plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
     }
 
-  unique_ptr<double[]> invfac(new double[2*lmax_]);
-  fill_n(invfac.get(), 2*lmax_, 1.0);
-  for (int i = 1; i != 2*lmax_; ++i)
-    for (int j = i; j != 2*lmax_; ++j)
+  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
+  fill_n(invfac.get(), 2*lmax_+1, 1.0);
+  for (int i = 1; i <= 2*lmax_; ++i)
+    for (int j = i; j <= 2*lmax_; ++j)
       invfac[j] /= i;
 
   ZMatrix lmjk(nmult_, nmult_);
