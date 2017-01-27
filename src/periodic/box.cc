@@ -634,10 +634,10 @@ shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr
       const double rr = pow(r, a);
       if (a < 0) continue;
       for (int m = 0; m <= 2 * l; ++m) {
-        const int lo = max(-a, m-l-j);
-        const int hi = min( a, m-l+j);
+        const int lo = max(-a, l-m-j);
+        const int hi = min( a, l-m+j);
         for (int b = lo; b <= hi; ++b) {
-          const int k = m - l - b + j;
+          const int k = m - l + b + j;
           const double prefactor = rr * plm0[a*a+a+b] * invfac[a+abs(b)];
           const complex<double> Oab = polar(prefactor, -b*phi);
           (*mrb)(l*l+m) += Oab * (*mr)(j*j+k);
@@ -866,10 +866,10 @@ shared_ptr<const ZMatrix> Box::shift_localLX(const shared_ptr<const ZMatrix> mr,
       const double rr = pow(r, a);
       if (a < 0) continue;
       for (int m = 0; m <= 2 * l; ++m) {
-        const int lo = max(-a, m-l-j);
-        const int hi = min( a, m-l+j);
+        const int lo = max(-a, l-m-j);
+        const int hi = min( a, l-m+j);
         for (int b = lo; b <= hi; ++b) {
-          const int k = m - l - b + j;
+          const int k = m - l + b + j;
           const double prefactor = rr * plm0[a*a+a+b] * invfac[a+abs(b)];
           const complex<double> Oab = polar(prefactor, -b*phi);
           lmjk.element(l*l+m, j*j+k) = Oab;        
