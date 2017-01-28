@@ -259,8 +259,8 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       r12[2] = c->centre(2) - centre_[2];
 
       shared_ptr<const ZMatrix> smoment = shift_multipolesX(c->olm_ji(), r12);
-      //olm_ji_->add_block(1.0, 0, 0, olm_ji_->ndim(), olm_ji_->mdim(), smoment->data());
-      blas::ax_plus_y_n(1.0, smoment->data(), olm_ji_->size(), olm_ji_->data());
+      olm_ji_->add_block(1.0, 0, 0, olm_ji_->ndim(), olm_ji_->mdim(), smoment->data());
+      //blas::ax_plus_y_n(1.0, smoment->data(), olm_ji_->size(), olm_ji_->data());
     }
   }
 }
@@ -305,8 +305,8 @@ void Box::compute_L2L_X() {
     r12[1] = centre_[1] - parent_->centre(1);
     r12[2] = centre_[2] - parent_->centre(2);
     shared_ptr<const ZMatrix> slocal = shift_localLX(parent_->mlm_ji(), r12);
-    //mlm_ji_->add_block(1.0, 0, 0, mlm_ji_->ndim(), mlm_ji_->mdim(), slocal->data());
-    blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
+    mlm_ji_->add_block(1.0, 0, 0, mlm_ji_->ndim(), mlm_ji_->mdim(), slocal->data());
+    //blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
   }
 }
 
@@ -336,8 +336,8 @@ void Box::compute_M2L_X() {
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
     shared_ptr<const ZMatrix> slocal = shift_localMX(it->olm_ji(), r12);
-    //mlm_ji_->add_block(1.0, 0, 0, mlm_ji_->ndim(), mlm_ji_->mdim(), slocal->data());
-    blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
+    mlm_ji_->add_block(1.0, 0, 0, mlm_ji_->ndim(), mlm_ji_->mdim(), slocal->data());
+    //blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
   }
 }
 
@@ -358,7 +358,7 @@ void Box::compute_M2L() {
 }
 
 
-shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, vector<double>& max_den) const {
+shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
@@ -366,8 +366,8 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
 
   // NF: 4c integrals
   const int shift = sizeof(int) * 4;
-  const int nsh = sqrt(max_den.size());
-  assert (nsh*nsh == max_den.size());
+  const int nsh = sqrt(max_den->size());
+  assert (nsh*nsh == max_den->size());
 
   int ntask = 0;
   for (auto& v01 : sp_) {
@@ -378,7 +378,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
     if (i1 < i0) continue;
 
     const int i01 = i0 * nsh + i1;
-    const double density_01 = max_den[i01] * 4.0;
+    const double density_01 = (*max_den)(i01) * 4.0;
 
     for (auto& neigh : neigh_) {
       for (auto& v23 : neigh->sp()) {
@@ -390,11 +390,11 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
         const int i23 = i2 * nsh + i3;
         if (i23 < i01) continue;
 
-        const double density_23 = max_den[i23] * 4.0;
-        const double density_02 = max_den[i0 * nsh + i2];
-        const double density_03 = max_den[i0 * nsh + i3];
-        const double density_12 = max_den[i1 * nsh + i2];
-        const double density_13 = max_den[i1 * nsh + i3];
+        const double density_23 = (*max_den)(i23) * 4.0;
+        const double density_02 = (*max_den)(i0 * nsh + i2);
+        const double density_03 = (*max_den)(i0 * nsh + i3);
+        const double density_12 = (*max_den)(i1 * nsh + i2);
+        const double density_13 = (*max_den)(i1 * nsh + i3);
 
         const double mulfactor = max(max(max(density_01, density_02),
                                          max(density_03, density_12)),
@@ -424,7 +424,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
     const int b1size = b1->nbasis();
 
     const int i01 = i0 * nsh + i1;
-    const double density_01 = max_den[i01] * 4.0;
+    const double density_01 = (*max_den)(i01) * 4.0;
 
     for (auto& neigh : neigh_) {
       for (auto& v23 : neigh->sp()) {
@@ -444,11 +444,11 @@ shared_ptr<const ZMatrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density,
         const int i23 = i2 * nsh + i3;
         if (i23 < i01) continue;
 
-        const double density_23 = max_den[i23] * 4.0;
-        const double density_02 = max_den[i0 * nsh + i2];
-        const double density_03 = max_den[i0 * nsh + i3];
-        const double density_12 = max_den[i1 * nsh + i2];
-        const double density_13 = max_den[i1 * nsh + i3];
+        const double density_23 = (*max_den)(i23) * 4.0;
+        const double density_02 = (*max_den)(i0 * nsh + i2);
+        const double density_03 = (*max_den)(i0 * nsh + i3);
+        const double density_12 = (*max_den)(i1 * nsh + i2);
+        const double density_13 = (*max_den)(i1 * nsh + i3);
 
         const double mulfactor = max(max(max(density_01, density_02),
                                          max(density_03, density_12)),

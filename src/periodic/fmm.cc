@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 150;
+const static int batchsize = 100;
 
 const static Legendre plm;
 
@@ -342,7 +342,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   if (density) {
     assert(nbasis_ == density->ndim());
-    vector<double> maxden(geom_->nshellpair());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
     const double* density_data = density->data();
     for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
       shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
@@ -359,7 +359,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
         for (int i1 = offset1; i1 != offset1 + size1; ++i1)
           denmax = max(denmax, fabs(density_data[i0n + i1]));
       }
-      maxden[i01] = denmax;
+      (*maxden)(i01) = denmax;
     }
 
     auto ff = make_shared<ZMatrix>(nbasis_, nbasis_);
@@ -381,18 +381,18 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
   nftime.tick_print("near-field");
   fmmtime.tick_print("FMM-J");
 
-  return make_shared<const Matrix>(*out->get_real_part());
+  return out->get_real_part();
 }
 
 
 shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shared_ptr<const Matrix> overlap) const {
 
   if (!do_exchange_ || !ocoeff)
-    return make_shared<const Matrix>(overlap->ndim(), overlap->mdim());
+    return overlap->clone();
 
   Timer ktime;
   const int nocc = ocoeff->mdim();
-  auto krj_ff = make_shared<ZMatrix>(nbasis_, nocc);
+  auto krj = make_shared<ZMatrix>(nbasis_, nocc);
   const int nbatch = (nocc-1) / batchsize+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
@@ -413,17 +413,15 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       L2L(true);
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
-        krj_ff->add_block(1.0, 0, itable.first, nbasis_, itable.second, ffx->data());
+        krj->add_block(1.0, 0, itable.first, nbasis_, itable.second, ffx->data());
       }
     }
   }
-  krj_ff->allreduce();
+  krj->allreduce();
 
-  auto krj = make_shared<const ZMatrix>(*krj_ff);
   auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
-  auto tmp = make_shared<ZMatrix>(nocc, nocc);
-  zgemm3m_("T", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj_ff->data(), nbasis_, 0.0, tmp->data(), nocc);
-  auto kij = make_shared<const ZMatrix>(*tmp);
+  auto kij = make_shared<ZMatrix>(nocc, nocc);
+  zgemm3m_("T", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj->data(), nbasis_, 0.0, kij->data(), nocc);
 
   auto sc = make_shared<Matrix>(nbasis_, nocc);
   dgemm_("N", "N", nbasis_, nocc, nbasis_, 1.0, overlap->data(), nbasis_, ocoeff->data(), nbasis_, 0.0, sc->data(), nbasis_);
