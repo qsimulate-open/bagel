@@ -331,7 +331,7 @@ void FMM::L2L(const bool dox) const {
 
 shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
 
-  auto out = make_shared<ZMatrix>(nbasis_, nbasis_);
+  auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
  
   Timer fmmtime;
@@ -364,7 +364,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
       (*maxden)(i01) = denmax;
     }
 
-    auto ff = make_shared<ZMatrix>(nbasis_, nbasis_);
+    auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf(density, maxden);
@@ -384,7 +384,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
   nftime.tick_print("near-field");
   fmmtime.tick_print("FMM-J");
 
-  return out->get_real_part();
+  return out;
 }
 
 
@@ -395,7 +395,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
   Timer ktime;
   const int nocc = ocoeff->mdim();
-  auto krj = make_shared<ZMatrix>(nbasis_, nocc);
+  auto krj = make_shared<Matrix>(nbasis_, nocc);
   const int nbatch = (nocc-1) / batchsize+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
@@ -422,16 +422,15 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   }
   krj->allreduce();
 
-  auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
-  auto kij = make_shared<const ZMatrix>(*zocoeff % *krj);
+  Timer projtime;
+  auto kij = make_shared<const Matrix>(*ocoeff % *krj);
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
-  auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
-  auto zsck = make_shared<const ZMatrix>(*zsc ^ *krj);
-  auto krs = make_shared<const ZMatrix>(*zsck + *(zsck->transpose_conjg()) - (*zsc * *kij ^ *zsc));
-  assert(krs->get_imag_part()->rms() < 1e-8);
+  auto sck = make_shared<const Matrix>(*sc ^ *krj);
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
+  projtime.tick_print("Krs from Krj");
   
   ktime.tick_print("FMM-K");
-  return krs->get_real_part();
+  return krs;
 }
 
 
