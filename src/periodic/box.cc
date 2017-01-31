@@ -715,8 +715,6 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
 shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_ti) const {
 
   assert(nchild() == 0);
-  auto out = make_shared<ZMatrix>(ocoeff_ti->ndim(), ocoeff_ti->mdim());
-
   vector<shared_ptr<ZMatrix>> box_olm(nmult_);
   for (int k = 0; k != nmult_; ++k)
     box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
@@ -759,10 +757,11 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_
     zgemm3m_("N", "C", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, olm_ri->data(), nsize_, mlm_ji_->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
   }
 
+  auto out = make_shared<ZMatrix>(ocoeff_ti->ndim(), olm_ndim_);
   start = 0;
   for (auto& cj : coffsets_s_) {
     auto sub_krj = krj->cut(start, start+cj.second);
-    out->copy_block(cj.first, 0, cj.second, ocoeff_ti->mdim(), sub_krj->data());
+    out->copy_block(cj.first, 0, cj.second, olm_ndim_, sub_krj->data());
     start += cj.second;
   }
 

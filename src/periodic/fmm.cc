@@ -341,7 +341,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   Timer nftime;
 
-#if 0
+#if 1
   if (density) {
     assert(nbasis_ == density->ndim());
     auto maxden = make_shared<VectorB>(geom_->nshellpair());
@@ -415,30 +415,23 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       L2L(true);
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
-        krj->add_block(1.0, 0, itable.first, nbasis_, itable.second, ffx->data());
+        assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
+        krj->add_block(1.0, 0, 0, nbasis_, nocc, ffx->data());
       }
     }
   }
   krj->allreduce();
 
   auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
-#if 0
-  auto kij = make_shared<ZMatrix>(nocc, nocc);
-  zgemm3m_("C", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj->data(), nbasis_, 0.0, kij->data(), nocc);
-
-  auto sc = make_shared<Matrix>(nbasis_, nocc);
-  dgemm_("N", "N", nbasis_, nocc, nbasis_, 1.0, overlap->data(), nbasis_, ocoeff->data(), nbasis_, 0.0, sc->data(), nbasis_);
-  auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
-#endif
-
-  auto kij = make_shared<ZMatrix>(*zocoeff * *krj);
-  auto sc = make_shared<Matrix>(*overlap * *ocoeff);
+  auto kij = make_shared<const ZMatrix>(*zocoeff % *krj);
+  auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
   auto zsck = make_shared<const ZMatrix>(*zsc ^ *krj);
-  auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose_conjg()) - (*zsc * *kij ^ *zsc));
+  auto krs = make_shared<const ZMatrix>(*zsck + *(zsck->transpose_conjg()) - (*zsc * *kij ^ *zsc));
+  assert(krs->get_imag_part()->rms() < 1e-8);
   
   ktime.tick_print("FMM-K");
-  return out->get_real_part();
+  return krs->get_real_part();
 }
 
 
