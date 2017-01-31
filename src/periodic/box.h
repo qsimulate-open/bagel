@@ -91,8 +91,8 @@ class Box {
 
   public:
     Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0)
-     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), schwarz_thresh_(thresh) { }
+        const double thresh = 0.0, const double schwarz = 0.0)
+     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
 
     ~Box() { }
 

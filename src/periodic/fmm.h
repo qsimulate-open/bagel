@@ -53,7 +53,6 @@ class FMM {
     int ws_;
     double base_extent_;
     bool do_exchange_;
-    std::vector<std::shared_ptr<const ZMatrix>> olm_ri_;
 
     void init();
     void get_boxes();

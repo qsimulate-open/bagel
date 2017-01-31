@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 100;
+const static int batchsize = 20;
 
 const static Legendre plm;
 
@@ -107,7 +107,7 @@ void FMM::get_boxes() {
 
   // find out unempty leaves
   vector<array<int, 3>> boxid; // max dimension 2**(ns+1)-1
-  vector<int> ibox(nsp_);
+  unique_ptr<int[]> ibox(new int[nsp_]);
 
   map<array<int, 3>, int> treemap;
   assert(treemap.empty());
@@ -151,7 +151,7 @@ void FMM::get_boxes() {
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
     array<int, 3> id = boxid[il];
-    auto newbox = make_shared<Box>(0, il, id, lmax_, sp, thresh_);
+    auto newbox = make_shared<Box>(0, il, id, lmax_, sp, thresh_, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -184,7 +184,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp(), thresh_);
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -228,6 +228,7 @@ void FMM::get_boxes() {
   }
 
 #if 1
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
@@ -340,6 +341,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   Timer nftime;
 
+#if 0
   if (density) {
     assert(nbasis_ == density->ndim());
     auto maxden = make_shared<VectorB>(geom_->nshellpair());
@@ -377,6 +379,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     out->fill_upper();
     *out += *ff;
   }
+#endif
 
   nftime.tick_print("near-field");
   fmmtime.tick_print("FMM-J");
@@ -399,8 +402,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
   Timer mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
-    box_[i]->compute_multipolesX();
-  mtime.tick_print("Compute multipoles");
+    box_[i]->get_offsets();
 
   int u = 0;
   for (auto& itable : table) {
@@ -420,15 +422,20 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   krj->allreduce();
 
   auto zocoeff = make_shared<const ZMatrix>(*ocoeff, 1.0);
+#if 0
   auto kij = make_shared<ZMatrix>(nocc, nocc);
-  zgemm3m_("T", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj->data(), nbasis_, 0.0, kij->data(), nocc);
+  zgemm3m_("C", "N", nocc, nocc, nbasis_, 1.0, zocoeff->data(), nbasis_, krj->data(), nbasis_, 0.0, kij->data(), nocc);
 
   auto sc = make_shared<Matrix>(nbasis_, nocc);
   dgemm_("N", "N", nbasis_, nocc, nbasis_, 1.0, overlap->data(), nbasis_, ocoeff->data(), nbasis_, 0.0, sc->data(), nbasis_);
   auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
+#endif
 
+  auto kij = make_shared<ZMatrix>(*zocoeff * *krj);
+  auto sc = make_shared<Matrix>(*overlap * *ocoeff);
+  auto zsc = make_shared<const ZMatrix>(*sc, 1.0);
   auto zsck = make_shared<const ZMatrix>(*zsc ^ *krj);
-  auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose()) - (*zsc * *kij ^ *zsc));
+  auto out = make_shared<const ZMatrix>(*zsck + *(zsck->transpose_conjg()) - (*zsc * *kij ^ *zsc));
   
   ktime.tick_print("FMM-K");
   return out->get_real_part();
