@@ -87,6 +87,8 @@ void ZCASSecond::compute() {
         halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
       for (auto& i : halfc_1j)
         halfc.push_back(i->apply_J());
+      if (nclosed_)
+        dynamic_pointer_cast<const DFock>(cfockao)->discard_half();
     }
 
     list<shared_ptr<const RelDFHalf>> halfac;

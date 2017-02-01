@@ -44,11 +44,12 @@ class DFock : public ZMatrix {
     void driver(std::shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, const double scale_exchange, const double scale_coulomb);
 
     // when gradient is requested, we store half-transformed integrals
-    bool store_half_;
-    bool store_half_gaunt_;
-    std::list<std::shared_ptr<RelDFHalf>> half_coulomb_;
-    std::list<std::shared_ptr<RelDFHalf>> half_gaunt_;
-    std::list<std::shared_ptr<RelDFHalf>> half_breit_;
+    // TODO want to avoid "mutable" but this lets us discard integrals later to free up memory
+    mutable bool store_half_;
+    mutable bool store_half_gaunt_;
+    mutable std::list<std::shared_ptr<RelDFHalf>> half_coulomb_;
+    mutable std::list<std::shared_ptr<RelDFHalf>> half_gaunt_;
+    mutable std::list<std::shared_ptr<RelDFHalf>> half_breit_;
 
     // if true, do not use bra-ket symmetry in the exchange build (only useful for breit when accurate orbitals are needed).
     bool robust_;
@@ -85,6 +86,14 @@ class DFock : public ZMatrix {
     std::list<std::shared_ptr<RelDFHalf>> half_coulomb() const { assert(store_half_); return half_coulomb_; }
     std::list<std::shared_ptr<RelDFHalf>> half_gaunt() const { assert(store_half_gaunt_); return half_gaunt_; }
     std::list<std::shared_ptr<RelDFHalf>> half_breit() const { assert(store_half_gaunt_); return half_breit_; }
+
+    void discard_half() const {
+      store_half_ = false;
+      store_half_gaunt_ = false;
+      half_coulomb_.clear();
+      half_gaunt_.clear();
+      half_breit_.clear();
+    }
 
     void build_j(std::list<std::shared_ptr<RelDFHalf>> half1, std::list<std::shared_ptr<RelDFHalf>> half2, std::shared_ptr<const ZMatrix> coeff,
                  const bool gaunt, const bool breit, const double scale_coulomb = 1.0, const int number_of_j = 1);
