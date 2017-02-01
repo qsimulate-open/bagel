@@ -61,6 +61,12 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm2all_ = cas.rdm2all_;
   rdm3all_ = cas.rdm3all_;
   rdm4all_ = cas.rdm4all_;
+
+  den0ci = cas.rdm0_->clone();
+  den1ci = cas.rdm1_->clone();
+  den2ci = cas.rdm2_->clone();
+  den3ci = cas.rdm3_->clone();
+  den4ci = cas.rdm4_->clone();
 }
 
 void MSCASPT2::MSCASPT2::solve_dm() {
