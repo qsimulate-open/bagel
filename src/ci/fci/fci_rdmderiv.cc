@@ -85,6 +85,66 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
+shared_ptr<Matrix> FCI::rdm3deriv(const int target, const size_t offset, const size_t size) const {
+#ifndef HAVE_MPI_H
+  throw logic_error("FCI::rdm3deriv should not be called without MPI");
+#endif
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(target);
+
+  const size_t norb2 = norb_*norb_;
+  const size_t norb3 = norb2*norb_;
+  const size_t norb4 = norb2*norb2;
+  const size_t norb5 = norb3*norb2;
+  const size_t norb6 = norb4*norb2;
+
+  // first make <I|i+j|0>
+  auto dbra = rdm1deriv(target);
+  // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
+  auto ebra = rdm2deriv(target);
+
+  // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
+  // K is reduced to (offset, offset+size)
+  auto fbra = make_shared<Matrix>(size, norb6);
+  {
+    RMAWindow_bare<double> fbra_win(size*norb6);
+    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
+    auto tmp2 = make_shared<Civec>(cbra->det());
+    int ijkl = 0;
+    for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
+      if (ijkl % mpi__->size() != mpi__->rank()) continue;
+      const int j = ijkl/norb3;
+      const int i = ijkl/norb2-j*norb_;
+      const int l = ijkl/norb_-i*norb_-j*norb2;
+      const int k = ijkl-l*norb_-i*norb2-j*norb3;
+      tmp->zero();
+      tmp2->zero();
+      sigma_2a1(*iter, tmp);
+      sigma_2a2(*iter, tmp);
+      vector<shared_ptr<RMATask<double>>> tasks;
+      for (int m = 0; m != norb_; ++m)
+        for (int n = 0; n != norb_; ++n) {
+          if (k == n)
+            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(m+norb_*(l+norb_*(i+norb_*j))));
+          if (i == n)
+            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(k+norb_*(l+norb_*(m+norb_*j))));
+          // put this to the window
+          for (int inode = 0; inode != mpi__->size(); ++inode)
+            tasks.push_back(fbra_win.rma_rput(tmp->data(m+norb_*n)->data() + offset, inode, size*(ijkl+norb4*m+norb5*n), size));
+        }
+      // wait till all the work is done
+      for (auto& itask : tasks)
+        itask->wait();
+    }
+    fbra_win.fence();
+    copy_n(fbra_win.local_data(), size*norb6, fbra->data());
+  }
+
+  return fbra;
+}
+
+
 tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm34deriv should not be called without MPI");

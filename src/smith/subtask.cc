@@ -31,6 +31,14 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+template class SubTask_Merged_<2,1,5,double>;
+template class SubTask_Merged_<4,1,5,double>;
+template class SubTask_Merged_<6,1,5,double>;
+template class SubTask_Merged_<8,1,5,double>;
+template class SubTask_Merged_<2,2,5,double>;
+template class SubTask_Merged_<4,2,5,double>;
+template class SubTask_Merged_<6,2,5,double>;
+template class SubTask_Merged_<8,2,5,double>;
 template class SubTask_<1,1,double>;
 template class SubTask_<1,2,double>;
 template class SubTask_<1,3,double>;
