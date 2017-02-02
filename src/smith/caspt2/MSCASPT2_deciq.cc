@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: MSCASPT2_deciqq.cc
+// Filename: MSCASPT2_deciq.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -27,11 +27,7 @@
 
 
 #include <src/smith/caspt2/MSCASPT2.h>
-#include <src/smith/caspt2/MSCASPT2_tasks7.h>
-#include <src/smith/caspt2/MSCASPT2_tasks8.h>
-#include <src/smith/caspt2/MSCASPT2_tasks9.h>
-#include <src/smith/caspt2/MSCASPT2_tasks10.h>
-#include <src/smith/caspt2/MSCASPT2_tasks11.h>
+#include <src/smith/caspt2/MSCASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,22 +38,14 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
 
   auto deciq = make_shared<Queue>();
-  auto tensor314 = vector<shared_ptr<Tensor>>{deci};
+  auto tensor314 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci};
   auto task314 = make_shared<Task314>(tensor314, reset);
   deciq->add_task(task314);
 
-  vector<IndexRange> I324_index = {ci_};
-  auto I324 = make_shared<Tensor>(I324_index);
-  auto tensor315 = vector<shared_ptr<Tensor>>{deci, I324};
-  auto task315 = make_shared<Task315>(tensor315, cindex);
-  task315->add_dep(task314);
-  deciq->add_task(task315);
-
   vector<IndexRange> I325_index = {active_, active_, active_, active_};
   auto I325 = make_shared<Tensor>(I325_index);
-  auto tensor316 = vector<shared_ptr<Tensor>>{I324, Gamma110_(), I325};
+  auto tensor316 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I325, f1_};
   auto task316 = make_shared<Task316>(tensor316, cindex);
-  task315->add_dep(task316);
   task316->add_dep(task314);
   deciq->add_task(task316);
 
@@ -69,9 +57,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I328_index = {active_, active_, active_, active_};
   auto I328 = make_shared<Tensor>(I328_index);
-  auto tensor318 = vector<shared_ptr<Tensor>>{I324, Gamma111_(), I328};
+  auto tensor318 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I328};
   auto task318 = make_shared<Task318>(tensor318, cindex);
-  task315->add_dep(task318);
   task318->add_dep(task314);
   deciq->add_task(task318);
 
@@ -91,9 +78,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I332_index = {active_, active_, active_, active_, active_, active_};
   auto I332 = make_shared<Tensor>(I332_index);
-  auto tensor321 = vector<shared_ptr<Tensor>>{I324, Gamma112_(), I332};
+  auto tensor321 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I332};
   auto task321 = make_shared<Task321>(tensor321, cindex);
-  task315->add_dep(task321);
   task321->add_dep(task314);
   deciq->add_task(task321);
 
@@ -113,9 +99,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I336_index = {active_, active_, active_, active_};
   auto I336 = make_shared<Tensor>(I336_index);
-  auto tensor324 = vector<shared_ptr<Tensor>>{I324, Gamma113_(), I336};
+  auto tensor324 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I336};
   auto task324 = make_shared<Task324>(tensor324, cindex);
-  task315->add_dep(task324);
   task324->add_dep(task314);
   deciq->add_task(task324);
 
@@ -149,9 +134,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I340_index = {active_, active_, active_, active_, active_, active_};
   auto I340 = make_shared<Tensor>(I340_index);
-  auto tensor329 = vector<shared_ptr<Tensor>>{I324, Gamma114_(), I340};
+  auto tensor329 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I340};
   auto task329 = make_shared<Task329>(tensor329, cindex);
-  task315->add_dep(task329);
   task329->add_dep(task314);
   deciq->add_task(task329);
 
@@ -171,9 +155,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I344_index = {active_, active_, active_, active_, active_, active_};
   auto I344 = make_shared<Tensor>(I344_index);
-  auto tensor332 = vector<shared_ptr<Tensor>>{I324, Gamma115_(), I344};
+  auto tensor332 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I344, f1_};
   auto task332 = make_shared<Task332>(tensor332, cindex);
-  task315->add_dep(task332);
   task332->add_dep(task314);
   deciq->add_task(task332);
 
@@ -185,9 +168,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I347_index = {active_, active_, active_, active_, active_, active_};
   auto I347 = make_shared<Tensor>(I347_index);
-  auto tensor334 = vector<shared_ptr<Tensor>>{I324, Gamma116_(), I347};
+  auto tensor334 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I347};
   auto task334 = make_shared<Task334>(tensor334, cindex);
-  task315->add_dep(task334);
   task334->add_dep(task314);
   deciq->add_task(task334);
 
@@ -227,9 +209,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I351_index = {active_, active_, active_, active_};
   auto I351 = make_shared<Tensor>(I351_index);
-  auto tensor340 = vector<shared_ptr<Tensor>>{I324, Gamma117_(), I351};
+  auto tensor340 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I351};
   auto task340 = make_shared<Task340>(tensor340, cindex);
-  task315->add_dep(task340);
   task340->add_dep(task314);
   deciq->add_task(task340);
 
@@ -293,9 +274,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I359_index = {active_, active_, active_, active_, active_, active_};
   auto I359 = make_shared<Tensor>(I359_index);
-  auto tensor349 = vector<shared_ptr<Tensor>>{I324, Gamma119_(), I359};
+  auto tensor349 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I359};
   auto task349 = make_shared<Task349>(tensor349, cindex);
-  task315->add_dep(task349);
   task349->add_dep(task314);
   deciq->add_task(task349);
 
@@ -315,9 +295,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I371_index = {active_, active_, active_, active_};
   auto I371 = make_shared<Tensor>(I371_index);
-  auto tensor352 = vector<shared_ptr<Tensor>>{I324, Gamma122_(), I371};
+  auto tensor352 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I371};
   auto task352 = make_shared<Task352>(tensor352, cindex);
-  task315->add_dep(task352);
   task352->add_dep(task314);
   deciq->add_task(task352);
 
@@ -393,9 +372,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I379_index = {active_, active_};
   auto I379 = make_shared<Tensor>(I379_index);
-  auto tensor363 = vector<shared_ptr<Tensor>>{I324, Gamma124_(), I379};
+  auto tensor363 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I379, f1_};
   auto task363 = make_shared<Task363>(tensor363, cindex);
-  task315->add_dep(task363);
   task363->add_dep(task314);
   deciq->add_task(task363);
 
@@ -413,9 +391,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I385_index = {active_, active_};
   auto I385 = make_shared<Tensor>(I385_index);
-  auto tensor366 = vector<shared_ptr<Tensor>>{I324, Gamma126_(), I385};
+  auto tensor366 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I385};
   auto task366 = make_shared<Task366>(tensor366, cindex);
-  task315->add_dep(task366);
   task366->add_dep(task314);
   deciq->add_task(task366);
 
@@ -519,9 +496,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I409_index = {active_, active_, active_, active_};
   auto I409 = make_shared<Tensor>(I409_index);
-  auto tensor381 = vector<shared_ptr<Tensor>>{I324, Gamma132_(), I409};
+  auto tensor381 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I409};
   auto task381 = make_shared<Task381>(tensor381, cindex);
-  task315->add_dep(task381);
   task381->add_dep(task314);
   deciq->add_task(task381);
 
@@ -541,9 +517,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I433_index = {active_, active_, active_, active_, active_, active_};
   auto I433 = make_shared<Tensor>(I433_index);
-  auto tensor384 = vector<shared_ptr<Tensor>>{I324, Gamma138_(), I433};
+  auto tensor384 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I433};
   auto task384 = make_shared<Task384>(tensor384, cindex);
-  task315->add_dep(task384);
   task384->add_dep(task314);
   deciq->add_task(task384);
 
@@ -563,9 +538,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I437_index = {active_, active_, active_, active_};
   auto I437 = make_shared<Tensor>(I437_index);
-  auto tensor387 = vector<shared_ptr<Tensor>>{I324, Gamma139_(), I437};
+  auto tensor387 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I437};
   auto task387 = make_shared<Task387>(tensor387, cindex);
-  task315->add_dep(task387);
   task387->add_dep(task314);
   deciq->add_task(task387);
 
@@ -585,9 +559,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I445_index = {active_, active_, active_, active_};
   auto I445 = make_shared<Tensor>(I445_index);
-  auto tensor390 = vector<shared_ptr<Tensor>>{I324, Gamma141_(), I445};
+  auto tensor390 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I445, f1_};
   auto task390 = make_shared<Task390>(tensor390, cindex);
-  task315->add_dep(task390);
   task390->add_dep(task314);
   deciq->add_task(task390);
 
@@ -599,9 +572,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I448_index = {active_, active_, active_, active_};
   auto I448 = make_shared<Tensor>(I448_index);
-  auto tensor392 = vector<shared_ptr<Tensor>>{I324, Gamma142_(), I448};
+  auto tensor392 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I448};
   auto task392 = make_shared<Task392>(tensor392, cindex);
-  task315->add_dep(task392);
   task392->add_dep(task314);
   deciq->add_task(task392);
 
@@ -647,9 +619,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I456_index = {active_, active_, active_, active_};
   auto I456 = make_shared<Tensor>(I456_index);
-  auto tensor399 = vector<shared_ptr<Tensor>>{I324, Gamma144_(), I456};
+  auto tensor399 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I456, f1_};
   auto task399 = make_shared<Task399>(tensor399, cindex);
-  task315->add_dep(task399);
   task399->add_dep(task314);
   deciq->add_task(task399);
 
@@ -673,9 +644,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I459_index = {active_, active_, active_, active_};
   auto I459 = make_shared<Tensor>(I459_index);
-  auto tensor403 = vector<shared_ptr<Tensor>>{I324, Gamma145_(), I459};
+  auto tensor403 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I459};
   auto task403 = make_shared<Task403>(tensor403, cindex);
-  task315->add_dep(task403);
   task403->add_dep(task314);
   deciq->add_task(task403);
 
@@ -799,9 +769,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I467_index = {active_, active_, active_, active_, active_, active_};
   auto I467 = make_shared<Tensor>(I467_index);
-  auto tensor421 = vector<shared_ptr<Tensor>>{I324, Gamma147_(), I467};
+  auto tensor421 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I467};
   auto task421 = make_shared<Task421>(tensor421, cindex);
-  task315->add_dep(task421);
   task421->add_dep(task314);
   deciq->add_task(task421);
 
@@ -821,9 +790,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I471_index = {active_, active_};
   auto I471 = make_shared<Tensor>(I471_index);
-  auto tensor424 = vector<shared_ptr<Tensor>>{I324, Gamma148_(), I471};
+  auto tensor424 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I471};
   auto task424 = make_shared<Task424>(tensor424, cindex);
-  task315->add_dep(task424);
   task424->add_dep(task314);
   deciq->add_task(task424);
 
@@ -1019,9 +987,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I521_index = {active_, active_, active_, active_, active_, active_};
   auto I521 = make_shared<Tensor>(I521_index);
-  auto tensor452 = vector<shared_ptr<Tensor>>{I324, Gamma161_(), I521};
+  auto tensor452 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I521};
   auto task452 = make_shared<Task452>(tensor452, cindex);
-  task315->add_dep(task452);
   task452->add_dep(task314);
   deciq->add_task(task452);
 
@@ -1041,9 +1008,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I541_index = {active_, active_, active_, active_, active_, active_};
   auto I541 = make_shared<Tensor>(I541_index);
-  auto tensor455 = vector<shared_ptr<Tensor>>{I324, Gamma166_(), I541};
+  auto tensor455 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I541};
   auto task455 = make_shared<Task455>(tensor455, cindex);
-  task315->add_dep(task455);
   task455->add_dep(task314);
   deciq->add_task(task455);
 
@@ -1063,9 +1029,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I545_index = {active_, active_, active_, active_, active_, active_};
   auto I545 = make_shared<Tensor>(I545_index);
-  auto tensor458 = vector<shared_ptr<Tensor>>{I324, Gamma167_(), I545};
+  auto tensor458 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I545};
   auto task458 = make_shared<Task458>(tensor458, cindex);
-  task315->add_dep(task458);
   task458->add_dep(task314);
   deciq->add_task(task458);
 
@@ -1085,9 +1050,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I549_index = {active_, active_, active_, active_, active_, active_};
   auto I549 = make_shared<Tensor>(I549_index);
-  auto tensor461 = vector<shared_ptr<Tensor>>{I324, Gamma168_(), I549};
+  auto tensor461 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I549, f1_};
   auto task461 = make_shared<Task461>(tensor461, cindex);
-  task315->add_dep(task461);
   task461->add_dep(task314);
   deciq->add_task(task461);
 
@@ -1099,9 +1063,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I552_index = {active_, active_, active_, active_, active_, active_};
   auto I552 = make_shared<Tensor>(I552_index);
-  auto tensor463 = vector<shared_ptr<Tensor>>{I324, Gamma169_(), I552};
+  auto tensor463 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I552};
   auto task463 = make_shared<Task463>(tensor463, cindex);
-  task315->add_dep(task463);
   task463->add_dep(task314);
   deciq->add_task(task463);
 
@@ -1141,9 +1104,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I556_index = {active_, active_, active_, active_};
   auto I556 = make_shared<Tensor>(I556_index);
-  auto tensor469 = vector<shared_ptr<Tensor>>{I324, Gamma170_(), I556};
+  auto tensor469 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I556};
   auto task469 = make_shared<Task469>(tensor469, cindex);
-  task315->add_dep(task469);
   task469->add_dep(task314);
   deciq->add_task(task469);
 
@@ -1233,9 +1195,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I592_index;
   auto I592 = make_shared<Tensor>(I592_index);
-  auto tensor482 = vector<shared_ptr<Tensor>>{I324, Gamma179_(), I592};
+  auto tensor482 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I592, f1_};
   auto task482 = make_shared<Task482>(tensor482, cindex);
-  task315->add_dep(task482);
   task482->add_dep(task314);
   deciq->add_task(task482);
 
@@ -1258,9 +1219,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
   }
   shared_ptr<Task485> task485;
   if (diagonal) {
-    auto tensor485 = vector<shared_ptr<Tensor>>{I324, rdm0deriv_, I598};
+    auto tensor485 = vector<shared_ptr<Tensor>>{den0ci, I598};
     task485 = make_shared<Task485>(tensor485, cindex);
-    task315->add_dep(task485);
     task485->add_dep(task314);
     deciq->add_task(task485);
   }
@@ -1295,9 +1255,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
   }
   shared_ptr<Task488> task488;
   if (diagonal) {
-    auto tensor488 = vector<shared_ptr<Tensor>>{I324, rdm0deriv_, I602};
+    auto tensor488 = vector<shared_ptr<Tensor>>{den0ci, I602};
     task488 = make_shared<Task488>(tensor488, cindex);
-    task315->add_dep(task488);
     task488->add_dep(task314);
     deciq->add_task(task488);
   }
@@ -1332,9 +1291,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
   }
   shared_ptr<Task491> task491;
   if (diagonal) {
-    auto tensor491 = vector<shared_ptr<Tensor>>{I324, rdm0deriv_, I606};
+    auto tensor491 = vector<shared_ptr<Tensor>>{den0ci, I606};
     task491 = make_shared<Task491>(tensor491, cindex);
-    task315->add_dep(task491);
     task491->add_dep(task314);
     deciq->add_task(task491);
   }
@@ -1369,9 +1327,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
   }
   shared_ptr<Task494> task494;
   if (diagonal) {
-    auto tensor494 = vector<shared_ptr<Tensor>>{I324, rdm0deriv_, I610};
+    auto tensor494 = vector<shared_ptr<Tensor>>{den0ci, I610};
     task494 = make_shared<Task494>(tensor494, cindex);
-    task315->add_dep(task494);
     task494->add_dep(task314);
     deciq->add_task(task494);
   }
@@ -1401,9 +1358,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I654_index = {active_, active_};
   auto I654 = make_shared<Tensor>(I654_index);
-  auto tensor497 = vector<shared_ptr<Tensor>>{I324, Gamma191_(), I654};
+  auto tensor497 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I654, f1_};
   auto task497 = make_shared<Task497>(tensor497, cindex);
-  task315->add_dep(task497);
   task497->add_dep(task314);
   deciq->add_task(task497);
 
@@ -1421,9 +1377,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::make_deciq(const bool reset, const bool di
 
   vector<IndexRange> I696_index = {active_, active_, active_, active_};
   auto I696 = make_shared<Tensor>(I696_index);
-  auto tensor500 = vector<shared_ptr<Tensor>>{I324, Gamma202_(), I696};
+  auto tensor500 = vector<shared_ptr<Tensor>>{den0ci, den1ci, den2ci, den3ci, den4ci, I696, f1_};
   auto task500 = make_shared<Task500>(tensor500, cindex);
-  task315->add_dep(task500);
   task500->add_dep(task314);
   deciq->add_task(task500);
 

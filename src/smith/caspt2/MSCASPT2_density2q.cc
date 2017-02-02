@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: MSCASPT2_density2qq.cc
+// Filename: MSCASPT2_density2q.cc
 // Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -27,8 +27,7 @@
 
 
 #include <src/smith/caspt2/MSCASPT2.h>
-#include <src/smith/caspt2/MSCASPT2_tasks6.h>
-#include <src/smith/caspt2/MSCASPT2_tasks7.h>
+#include <src/smith/caspt2/MSCASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;
