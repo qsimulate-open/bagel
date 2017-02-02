@@ -466,7 +466,6 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
         e0_ = e0all_[lst] - info_->shift();
         l2 = lall_[lst]->at(nst);
         t2 = t2all_[lst]->at(mst);
-        // make_deciq has a problem.....
         dec = make_deciq(false);
         while (!dec->done())
           dec->next_compute();

@@ -41,7 +41,7 @@ void Task901::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
-  
+
   std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0)]);
   sort_indices<0,0,1,1,1>(i0data, i0data_sorted, ci0.size());
@@ -63,7 +63,7 @@ void Task902::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
-  
+
   for (auto& x0 : *range_[1]) {
     for (auto& x1 : *range_[1]) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1);
@@ -90,7 +90,7 @@ void Task903::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
-  
+
   for (auto& x0 : *range_[1]) {
     for (auto& x1 : *range_[1]) {
       for (auto& x2 : *range_[1]) {
@@ -122,7 +122,7 @@ void Task904::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
-  
+
   for (auto& x0 : *range_[1]) {
     for (auto& x1 : *range_[1]) {
       for (auto& x2 : *range_[1]) {
@@ -157,7 +157,7 @@ void Task905::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
   std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
-  
+
   for (auto& x0 : *range_[1]) {
     for (auto& x1 : *range_[1]) {
       for (auto& x2 : *range_[1]) {

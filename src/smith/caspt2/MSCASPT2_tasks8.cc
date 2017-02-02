@@ -105,7 +105,7 @@ void Task352::Task_local::compute() {
       for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
         for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix3+x3.size()*(ix2)] += 
+            o1data[ix3+x3.size()*(ix2)] +=
               2.0 * i0data_sorted[ix3+x3.size()*(ix2+x2.size()*(ix1+x0.size()*(ix1)))];
           }
         }
@@ -120,7 +120,7 @@ void Task352::Task_local::compute() {
       for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
         for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix3+x3.size()*(ix1)] += 
+            o1data[ix3+x3.size()*(ix1)] +=
               -1.0 * i0data_sorted[ix3+x3.size()*(ix2+x2.size()*(ix2+x0.size()*(ix1)))];
           }
         }
@@ -430,7 +430,7 @@ void Task363::Task_local::compute() {
     for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-          o1data[ix2+x2.size()*(ix1)] += 
+          o1data[ix2+x2.size()*(ix1)] +=
             2.0 * fdata[ix2+x2.size()*(ix1)] * i0data_sorted[ix3+x0.size()*(ix3)];
         }
       }
@@ -443,7 +443,7 @@ void Task363::Task_local::compute() {
     std::fill_n(o0data.get(), out(0)->get_size(), 0.0);
     for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
       for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-        o0data[0] += 
+        o0data[0] +=
           2.0 * fdata[ix3+x2.size()*(ix1)] * i0data_sorted[ix1+x0.size()*(ix3)];
       }
     }
@@ -455,7 +455,7 @@ void Task363::Task_local::compute() {
     for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-          o1data[ix2+x2.size()*(ix3)] += 
+          o1data[ix2+x2.size()*(ix3)] +=
             -1.0 * fdata[ix2+x2.size()*(ix1)] * i0data_sorted[ix1+x0.size()*(ix3)];
         }
       }
@@ -468,7 +468,7 @@ void Task363::Task_local::compute() {
     for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
       for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-          o1data[ix0+x0.size()*(ix1)] += 
+          o1data[ix0+x0.size()*(ix1)] +=
             -1.0 * fdata[ix3+x2.size()*(ix1)] * i0data_sorted[ix0+x0.size()*(ix3)];
         }
       }
@@ -482,7 +482,7 @@ void Task363::Task_local::compute() {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
           for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
-            o2data[ix0+x0.size()*(ix3+x3.size()*(ix2+x2.size()*(ix1)))] += 
+            o2data[ix0+x0.size()*(ix3+x3.size()*(ix2+x2.size()*(ix1)))] +=
               -1.0 * fdata[ix2+x2.size()*(ix1)] * i0data_sorted[ix0+x0.size()*(ix3)];
           }
         }
@@ -564,7 +564,7 @@ void Task366::Task_local::compute() {
       std::unique_ptr<double[]> o0data(new double[out(0)->get_size()]);
       std::fill_n(o0data.get(), out(0)->get_size(), 0.0);
       for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-        o0data[0] += 
+        o0data[0] +=
           2.0 * i0data_sorted[ix1+x0.size()*(ix1)];
       }
       out(0)->add_block(o0data);
@@ -959,7 +959,7 @@ void Task381::Task_local::compute() {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix3+x3.size()*(ix2)] += 
+            o1data[ix3+x3.size()*(ix2)] +=
               1.0 * i0data_sorted[ix3+x3.size()*(ix1+x1.size()*(ix1+x0.size()*(ix2)))];
           }
         }
@@ -974,7 +974,7 @@ void Task381::Task_local::compute() {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix3+x3.size()*(ix1)] += 
+            o1data[ix3+x3.size()*(ix1)] +=
               -2.0 * i0data_sorted[ix3+x3.size()*(ix1+x1.size()*(ix2+x0.size()*(ix2)))];
           }
         }
@@ -1066,7 +1066,7 @@ void Task384::Task_local::compute() {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
           for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
             for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-              o1data[ix5+x5.size()*(ix0)] += 
+              o1data[ix5+x5.size()*(ix0)] +=
                 -2.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix3+x1.size()*(ix3+x3.size()*(ix4+x2.size()*(ix0)))))];
             }
           }
@@ -1084,7 +1084,7 @@ void Task384::Task_local::compute() {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o2data[ix5+x5.size()*(ix4+x4.size()*(ix2+x2.size()*(ix0)))] += 
+                o2data[ix5+x5.size()*(ix4+x4.size()*(ix2+x2.size()*(ix0)))] +=
                   -2.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix3+x1.size()*(ix3+x3.size()*(ix2+x2.size()*(ix0)))))];
               }
             }
@@ -1102,7 +1102,7 @@ void Task384::Task_local::compute() {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
           for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
             for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-              o1data[ix5+x5.size()*(ix0)] += 
+              o1data[ix5+x5.size()*(ix0)] +=
                 1.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix4+x1.size()*(ix3+x3.size()*(ix3+x2.size()*(ix0)))))];
             }
           }
@@ -1120,7 +1120,7 @@ void Task384::Task_local::compute() {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o2data[ix5+x5.size()*(ix3+x3.size()*(ix2+x2.size()*(ix0)))] += 
+                o2data[ix5+x5.size()*(ix3+x3.size()*(ix2+x2.size()*(ix0)))] +=
                   1.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix4+x1.size()*(ix3+x3.size()*(ix2+x2.size()*(ix0)))))];
               }
             }
@@ -1139,7 +1139,7 @@ void Task384::Task_local::compute() {
           for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o2data[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix0)))] += 
+                o2data[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix0)))] +=
                   1.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix3+x3.size()*(ix3+x2.size()*(ix0)))))];
               }
             }
@@ -1158,7 +1158,7 @@ void Task384::Task_local::compute() {
           for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o2data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix3)))] += 
+                o2data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix3)))] +=
                   1.0 * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix3+x3.size()*(ix4+x2.size()*(ix0)))))];
               }
             }
@@ -1249,7 +1249,7 @@ void Task387::Task_local::compute() {
       for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
         for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix2+x2.size()*(ix0)] += 
+            o1data[ix2+x2.size()*(ix0)] +=
               -2.0 * i0data_sorted[ix3+x1.size()*(ix3+x3.size()*(ix2+x2.size()*(ix0)))];
           }
         }
@@ -1264,7 +1264,7 @@ void Task387::Task_local::compute() {
       for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
           for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-            o1data[ix1+x1.size()*(ix0)] += 
+            o1data[ix1+x1.size()*(ix0)] +=
               1.0 * i0data_sorted[ix1+x1.size()*(ix3+x3.size()*(ix3+x2.size()*(ix0)))];
           }
         }
@@ -1358,7 +1358,7 @@ void Task390::Task_local::compute() {
         for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix2)))] += 
+              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix2)))] +=
                 2.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix0+x0.size()*(ix4+x1.size()*(ix4)))];
             }
           }
@@ -1374,7 +1374,7 @@ void Task390::Task_local::compute() {
       for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
         for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
           for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-            o1data[ix5+x5.size()*(ix0)] += 
+            o1data[ix5+x5.size()*(ix0)] +=
               2.0 * fdata[ix4+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix0+x0.size()*(ix2+x1.size()*(ix4)))];
           }
         }
@@ -1390,7 +1390,7 @@ void Task390::Task_local::compute() {
         for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix4)))] += 
+              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix4)))] +=
                 -1.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix0+x0.size()*(ix2+x1.size()*(ix4)))];
             }
           }
@@ -1407,7 +1407,7 @@ void Task390::Task_local::compute() {
         for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-              o2data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix2)))] += 
+              o2data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix2)))] +=
                 -1.0 * fdata[ix4+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix4)))];
             }
           }
@@ -1425,7 +1425,7 @@ void Task390::Task_local::compute() {
           for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
             for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o3data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix4+x4.size()*(ix3+x3.size()*(ix2)))))] += 
+                o3data[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix4+x4.size()*(ix3+x3.size()*(ix2)))))] +=
                   -1.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix0+x0.size()*(ix1+x1.size()*(ix4)))];
               }
             }
@@ -1483,7 +1483,7 @@ void Task392::Task_local::compute() {
       for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
         for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-            o1data[ix3+x3.size()*(ix0)] += 
+            o1data[ix3+x3.size()*(ix0)] +=
               2.0 * i0data_sorted[ix3+x3.size()*(ix0+x0.size()*(ix2+x1.size()*(ix2)))];
           }
         }
@@ -1687,7 +1687,7 @@ void Task399::Task_local::compute() {
         for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix2)))] += 
+              o2data[ix5+x5.size()*(ix0+x0.size()*(ix3+x3.size()*(ix2)))] +=
                 1.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix4+x1.size()*(ix0)))];
             }
           }
@@ -1703,7 +1703,7 @@ void Task399::Task_local::compute() {
       for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
         for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
           for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-            o1data[ix5+x5.size()*(ix0)] += 
+            o1data[ix5+x5.size()*(ix0)] +=
               1.0 * fdata[ix4+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix2+x1.size()*(ix0)))];
           }
         }
@@ -1719,7 +1719,7 @@ void Task399::Task_local::compute() {
         for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-              o2data[ix5+x5.size()*(ix4+x4.size()*(ix3+x3.size()*(ix0)))] += 
+              o2data[ix5+x5.size()*(ix4+x4.size()*(ix3+x3.size()*(ix0)))] +=
                 1.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix2+x1.size()*(ix0)))];
             }
           }
@@ -1736,7 +1736,7 @@ void Task399::Task_local::compute() {
         for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
           for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-              o2data[ix5+x5.size()*(ix2+x2.size()*(ix1+x1.size()*(ix0)))] += 
+              o2data[ix5+x5.size()*(ix2+x2.size()*(ix1+x1.size()*(ix0)))] +=
                 1.0 * fdata[ix4+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix0)))];
             }
           }
@@ -1754,7 +1754,7 @@ void Task399::Task_local::compute() {
           for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
             for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
               for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-                o3data[ix5+x5.size()*(ix4+x4.size()*(ix3+x3.size()*(ix2+x2.size()*(ix1+x1.size()*(ix0)))))] += 
+                o3data[ix5+x5.size()*(ix4+x4.size()*(ix3+x3.size()*(ix2+x2.size()*(ix1+x1.size()*(ix0)))))] +=
                   1.0 * fdata[ix3+x3.size()*(ix2)] * i0data_sorted[ix5+x5.size()*(ix4+x4.size()*(ix1+x1.size()*(ix0)))];
               }
             }
