@@ -101,7 +101,7 @@ void MSCASPT2::MSCASPT2::solve_dm() {
 }
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv_3_multipass(int nst, int mst, double factor) {
-  const size_t cisize = ci_deriv_->data(0)->size();
+  const size_t cisize = ci_deriv_->data(nst)->size();
   const size_t cimax = 1000;
   const size_t npass = (cisize-1)/cimax+1;
   const size_t chunk = (cisize-1)/npass+1;
@@ -122,7 +122,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv_3_multipass(int nst, int mst, double facto
 }
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(int nst, int mst, double factor) {
-  const size_t cisize = ci_deriv_->data(0)->size();
+  const size_t cisize = ci_deriv_->data(nst)->size();
   const size_t cimax = 1000;
   const size_t npass = (cisize-1)/cimax+1;
   const size_t chunk = (cisize-1)/npass+1;

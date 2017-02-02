@@ -32,6 +32,19 @@ using namespace bagel;
 using namespace bagel::SMITH;
 using namespace bagel::SMITH::MSCASPT2;
 
+Task400::Task400(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
+  out_ = t[0];
+  in_ = in;
+  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
+  for (auto& x4 : *range[1])
+    for (auto& x5 : *range[1])
+      for (auto& x0 : *range[1])
+        for (auto& x1 : *range[1])
+          if (t[0]->is_local(x1, x0, x5, x4))
+            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, x0, x5, x4}}, in, t[0], range));
+}
+
 Task401::Task401(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
@@ -634,19 +647,6 @@ Task449::Task449(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         for (auto& x1 : *range[1])
           if (t[0]->is_local(x1, a4, c2, a3))
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, a4, c2, a3}}, in, t[0], range));
-}
-
-Task450::Task450(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-  out_ = t[0];
-  in_ = in;
-  subtasks_.reserve(range[0]->nblock()*range[2]->nblock()*range[2]->nblock()*range[1]->nblock());
-  for (auto& c2 : *range[0])
-    for (auto& a1 : *range[2])
-      for (auto& a3 : *range[2])
-        for (auto& x1 : *range[1])
-          if (t[0]->is_local(x1, a3, a1, c2))
-            subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, a3, a1, c2}}, in, t[0], range));
 }
 
 #endif

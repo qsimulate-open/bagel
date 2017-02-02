@@ -695,19 +695,4 @@ Task349::Task349(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x3, x2, x4, x1, x0}}, in, out, range));
 }
 
-Task350::Task350(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
-  array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
-  out_ = t[0];
-  in_ = in;
-  subtasks_.reserve(range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock()*range[1]->nblock());
-  for (auto& x0 : *range[1])
-    for (auto& x1 : *range[1])
-      for (auto& x2 : *range[1])
-        for (auto& x3 : *range[1])
-          for (auto& x4 : *range[1])
-            for (auto& x5 : *range[1])
-              if (t[0]->is_local(x5, x4, x3, x2, x1, x0))
-                subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x4, x3, x2, x1, x0}}, in, t[0], range));
-}
-
 #endif
