@@ -139,6 +139,7 @@ tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
+    i.reset();
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
     DFock::factorize(half_complex_exch);
   }
