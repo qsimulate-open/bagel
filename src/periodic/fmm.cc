@@ -40,8 +40,8 @@ const static int batchsize = 100;
 
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws, const bool ex)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex) {
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws, const bool ex, const int lmax_k)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k) {
 
   init();
 }
@@ -151,7 +151,7 @@ void FMM::get_boxes() {
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
     array<int, 3> id = boxid[il];
-    auto newbox = make_shared<Box>(0, il, id, lmax_, sp, thresh_, geom_->schwarz_thresh());
+    auto newbox = make_shared<Box>(0, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -184,7 +184,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
+                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -232,8 +232,15 @@ void FMM::get_boxes() {
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
+    int nsp_neigh = 0;
+    for (auto& n : b->neigh())
+      nsp_neigh += n->nsp();
+    int nsp_inter = 0;
+    for (auto& i : b->interaction_list())
+      nsp_inter += i->nsp();
     cout << i << " rank = " << b->rank() << " extent = " << b->extent() << " nsp = " << b->nsp()
-         << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " ninter = " << b->ninter()
+         << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
+         << " ninter = " << b->ninter() << " nsp " << nsp_inter
          << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
          << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
     ++i;
@@ -422,13 +429,9 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
-      cout << "Starting M2M_X..." << endl;
       M2M_X(ocoeff_sj, ocoeff_ui);
-      cout << "Finishing M2M_X and starting M2L_X..." << endl;
       M2L(true);
-      cout << "Finishing M2M_X and starting L2L_X..." << endl;
       L2L(true);
-      cout << "Assembling Krj... " << endl;
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
@@ -440,9 +443,14 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+#if 0
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
+#else
+  auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
+  krs->copy_block(0, 0, nocc, nocc, kij->data());
+#endif
   projtime.tick_print("Krs from Krj");
   
   ktime.tick_print("FMM-K");

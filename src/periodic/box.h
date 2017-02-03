@@ -36,7 +36,7 @@ namespace bagel {
 class Box {
   friend class FMM;
   protected:
-    int rank_, boxid_, lmax_;
+    int rank_, boxid_, lmax_, lmax_k_;
     std::array<int, 3> tvec_;
     std::array<double, 3> centre_;
     double boxsize_;
@@ -48,7 +48,7 @@ class Box {
 
     double thresh_, extent_, schwarz_thresh_;
     int nbasis0_, nbasis1_;
-    int nmult_;
+    int nmult_, nmult_k_;
     int nocc_;
     size_t nsize_, msize_, olm_ndim_, olm_mdim_, olm_size_block_;
 
@@ -90,9 +90,9 @@ class Box {
 
 
   public:
-    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
         const double thresh = 0.0, const double schwarz = 0.0)
-     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
+     : rank_(n), boxid_(id), lmax_(lmax), lmax_k_(lmax_k), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
 
     ~Box() { }
 
