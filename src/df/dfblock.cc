@@ -107,6 +107,18 @@ shared_ptr<DFBlock> DFBlock::merge(std::shared_ptr<const DFBlock> o) const {
 }
 
 
+shared_ptr<DFBlock> DFBlock::slice_b1(const int slice_start, const int slice_size) const {
+  assert(slice_start >= 0 && slice_start + slice_size <= b1size());
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), slice_size, b2size(), astart_, b1start_, b2start_, averaged_);
+  const int size1 = asize() * slice_size;
+  const int size2 = asize() * b1size();
+  for (int i = 0; i != b2size(); ++i) {
+    std::copy_n(data() + asize()*slice_start + i*size2, size1, out->data() + i*size1);
+  }
+  return out;
+}
+
+
 shared_ptr<DFBlock> DFBlock::clone() const {
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), b2size(), astart_, b1start_, b2start_, averaged_);
   out->zero();
