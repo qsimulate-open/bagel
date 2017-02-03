@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 20;
+const static int batchsize = 100;
 
 const static Legendre plm;
 
@@ -228,7 +228,7 @@ void FMM::get_boxes() {
   }
 
 #if 1
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << endl;
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " *** BATCHSIZE " << batchsize << endl;
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
@@ -364,13 +364,14 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
       (*maxden)(i01) = denmax;
     }
 
+    resources__->proc()->cout_on();
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf(density, maxden);
-        out->add_block(1.0, 0, 0, nbasis_, nbasis_, ei->data());
+        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
-        ff->add_block(1.0, 0, 0, nbasis_, nbasis_, ffi->data());
+        blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
       }
     out->allreduce();
     ff->allreduce();
@@ -382,6 +383,13 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 #endif
 
   nftime.tick_print("near-field");
+  for (int i = 0; i < mpi__->size(); ++i) {
+    if (i==mpi__->rank())
+      cout << "rank " << mpi__->rank() << " broadcast size " << out->size() << endl;
+    mpi__->barrier();
+    this_thread::sleep_for(10 * sleeptime__);
+  }
+  resources__->proc()->cout_off();
   fmmtime.tick_print("FMM-J");
 
   return out;
@@ -405,14 +413,22 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
     box_[i]->get_offsets();
 
   int u = 0;
+  int ibatch = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
+      cout << " * Batch " << ibatch << " from " << ibatch*batchsize << " to " << (ibatch+1)*batchsize
+           << " * slice " << itable.first << " to " << itable.first+itable.second << " of COEFF mdim " << ocoeff->mdim() << endl;
+      ++ibatch;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
+      cout << "Starting M2M_X..." << endl;
       M2M_X(ocoeff_sj, ocoeff_ui);
+      cout << "Finishing M2M_X and starting M2L_X..." << endl;
       M2L(true);
+      cout << "Finishing M2M_X and starting L2L_X..." << endl;
       L2L(true);
+      cout << "Assembling Krj... " << endl;
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
