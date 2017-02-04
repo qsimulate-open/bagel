@@ -71,6 +71,11 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> den2ci;
     std::shared_ptr<Tensor> den3ci;
     std::shared_ptr<Tensor> den4ci;
+    std::shared_ptr<Tensor> den0cit;
+    std::shared_ptr<Tensor> den1cit;
+    std::shared_ptr<Tensor> den2cit;
+    std::shared_ptr<Tensor> den3cit;
+    std::shared_ptr<Tensor> den4cit;
 
     // storage for output
     std::shared_ptr<Matrix> den1_;
@@ -165,7 +170,8 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> contract_rdm_deriv(const int number = 4, const bool reset = true, const bool diagonal = true);
-    void do_rdm_deriv_3_multipass(int nst, int mst, double factor);
+    void zero_total();
+    void add_total(double factor);
     void do_rdm_deriv_multipass(int nst, int mst, double factor);
 
     // same function as that implemented in SpinFreeMethod

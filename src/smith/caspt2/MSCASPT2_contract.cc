@@ -42,34 +42,34 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, const bool 
   auto task900 = make_shared<Task900>(tensor900, reset);
   contract->add_task(task900);
 
-  auto tensor901 = vector<shared_ptr<Tensor>>{deci, rdm0deriv_, den0ci};
+  auto tensor901 = vector<shared_ptr<Tensor>>{deci, rdm0deriv_, den0cit};
   auto task901 = make_shared<Task901>(tensor901, cindex);
   task901->add_dep(task900);
   contract->add_task(task901);
 
   if (number >= 1) {
-    auto tensor902 = vector<shared_ptr<Tensor>>{deci, rdm1deriv_, den1ci};
+    auto tensor902 = vector<shared_ptr<Tensor>>{deci, rdm1deriv_, den1cit};
     auto task902 = make_shared<Task902>(tensor902, cindex);
     task902->add_dep(task900);
     contract->add_task(task902);
   }
 
   if (number >= 2) {
-    auto tensor903 = vector<shared_ptr<Tensor>>{deci, rdm2deriv_, den2ci};
+    auto tensor903 = vector<shared_ptr<Tensor>>{deci, rdm2deriv_, den2cit};
     auto task903 = make_shared<Task903>(tensor903, cindex);
     task903->add_dep(task900);
     contract->add_task(task903);
   }
 
   if (number >= 3) {
-    auto tensor904 = vector<shared_ptr<Tensor>>{deci, rdm3deriv_, den3ci};
+    auto tensor904 = vector<shared_ptr<Tensor>>{deci, rdm3deriv_, den3cit};
     auto task904 = make_shared<Task904>(tensor904, cindex);
     task904->add_dep(task900);
     contract->add_task(task904);
   }
 
   if (number >= 4) {
-    auto tensor905 = vector<shared_ptr<Tensor>>{deci, rdm4deriv_, den4ci};
+    auto tensor905 = vector<shared_ptr<Tensor>>{deci, rdm4deriv_, den4cit};
     auto task905 = make_shared<Task905>(tensor905, cindex);
     task905->add_dep(task900);
     contract->add_task(task905);

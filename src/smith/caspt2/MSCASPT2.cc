@@ -67,6 +67,13 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   den2ci = cas.rdm2_->clone();
   den3ci = cas.rdm3_->clone();
   den4ci = cas.rdm3_->clone();
+
+  // Total tensor (that is summed up)
+  den0cit = cas.rdm0_->clone();
+  den1cit = cas.rdm1_->clone();
+  den2cit = cas.rdm2_->clone();
+  den3cit = cas.rdm3_->clone();
+  den4cit = cas.rdm3_->clone();
 }
 
 void MSCASPT2::MSCASPT2::solve_dm() {
@@ -100,25 +107,20 @@ void MSCASPT2::MSCASPT2::solve_dm() {
   }
 }
 
-void MSCASPT2::MSCASPT2::do_rdm_deriv_3_multipass(int nst, int mst, double factor) {
-  const size_t cisize = ci_deriv_->data(nst)->size();
-  const size_t cimax = 1000;
-  const size_t npass = (cisize-1)/cimax+1;
-  const size_t chunk = (cisize-1)/npass+1;
+void MSCASPT2::MSCASPT2::add_total(double factor) {
+  den0cit->ax_plus_y(factor, den0ci);
+  den1cit->ax_plus_y(factor, den1ci);
+  den2cit->ax_plus_y(factor, den2ci);
+  den3cit->ax_plus_y(factor, den3ci);
+  den4cit->ax_plus_y(factor, den4ci);
+}
 
-  for (int ipass = 0; ipass != npass; ++ipass) {
-    const size_t offset = ipass * chunk;
-    const size_t size = min(chunk, cisize-offset);
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, nst, offset, size);
-    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-    deci->allocate();
-    shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/3, /*reset=*/true);
-    while (!queue->done())
-      queue->next_compute();
-    blas::ax_plus_y_n(factor, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-  }
-
+void MSCASPT2::MSCASPT2::zero_total() {
+  den0cit->zero();
+  den1cit->zero();
+  den2cit->zero();
+  den3cit->zero();
+  den4cit->zero();
 }
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(int nst, int mst, double factor) {
@@ -226,21 +228,22 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
   // CI derivative..
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
 
-  for (int nst = 0; nst != nstates; ++nst) {
-    const double nheff = (*heff_)(nst, target);
+  for (int mst = 0; mst != nstates; ++mst) {
+    const double mheff = (*heff_)(mst, target);
     shared_ptr<Queue> dec;
 
-    for (int lst = 0; lst != nstates; ++lst) {
-      const double lheff = (*heff_)(lst, target);
-      for (int mst = 0; mst != nstates; ++mst) {
-        const double mheff = (*heff_)(mst, target);
+    for (int nst = 0; nst != nstates; ++nst) {
+      const double nheff = (*heff_)(nst, target);
+      zero_total();
 
+      for (int lst = 0; lst != nstates; ++lst) {
+        const double lheff = (*heff_)(lst, target);
         if (!info_->sssr() || nst == lst) {
           l2 = t2all_[lst]->at(nst);
           dec = make_deci3q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, lheff*mheff);
+          add_total(lheff*mheff);
         }
 
         if (!info_->sssr() || mst == lst) {
@@ -248,7 +251,7 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           dec = make_deci4q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, lheff*nheff);
+          add_total(lheff*nheff);
         }
 
         if (!info_->sssr() || (mst == lst && nst == lst)) {
@@ -258,51 +261,51 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           dec = make_deci2q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, lheff*lheff);
+          add_total(lheff*lheff);
         }
       }
-    }
 
-    for (int mst = 0; mst != nstates; ++mst) {
-      if (info_->sssr() && nst != mst)
-        continue;
-
-      l2 = lall_[mst]->at(nst);
-      dec = make_deci3q(/*zero*/true);
-      while (!dec->done())
-        dec->next_compute();
-
-      l2 = lall_[nst]->at(mst);
-      dec = make_deci4q(false);
-      while (!dec->done())
-        dec->next_compute();
-
-      for (int lst = 0; lst != nstates; ++lst) {
-        if (info_->sssr() && (nst != lst || mst != lst))
-          continue;
-
-        e0_ = e0all_[lst] - info_->shift();
-        l2 = lall_[lst]->at(nst);
-        t2 = t2all_[lst]->at(mst);
-        dec = make_deciq(false);
-        while (!dec->done())
-          dec->next_compute();
-        dec = make_deci2q(false);
+      if (!info_->sssr() || nst == mst) {
+        l2 = lall_[mst]->at(nst);
+        dec = make_deci3q(/*zero*/true);
         while (!dec->done())
           dec->next_compute();
 
-        l2 = t2all_[lst]->at(nst);
-        t2 = lall_[lst]->at(mst);
-        dec = make_deciq(false);
+        l2 = lall_[nst]->at(mst);
+        dec = make_deci4q(false);
         while (!dec->done())
           dec->next_compute();
-        dec = make_deci2q(false);
-        while (!dec->done())
-          dec->next_compute();
+
+        for (int lst = 0; lst != nstates; ++lst) {
+          if (info_->sssr() && (nst != lst || mst != lst))
+            continue;
+
+          e0_ = e0all_[lst] - info_->shift();
+          l2 = lall_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+
+          l2 = t2all_[lst]->at(nst);
+          t2 = lall_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+        }
+        add_total(1.0);
       }
+
       do_rdm_deriv_multipass(nst, mst, 1.0);
     }
-    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
+
+    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
     timer.tick_print(ss.str());
   }
 }
@@ -400,21 +403,21 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
   // CI derivative..
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
 
-  for (int nst = 0; nst != nstates; ++nst) {
-    const double nheffJ = (*heff_)(nst, targetJ);
-    const double nheffI = (*heff_)(nst, targetI);
+  for (int mst = 0; mst != nstates; ++mst) {
+    const double mheffJ = (*heff_)(mst, targetJ);
+    const double mheffI = (*heff_)(mst, targetI);
     shared_ptr<Queue> dec;
 
-    for (int lst = 0; lst != nstates; ++lst) {
-      const double lheffJ = (*heff_)(lst, targetJ);
-      const double lheffI = (*heff_)(lst, targetI);
+    for (int nst = 0; nst != nstates; ++nst) {
+      const double nheffJ = (*heff_)(nst, targetJ);
+      const double nheffI = (*heff_)(nst, targetI);
+      zero_total();
 
-      const double lnhJI  = (lheffJ * nheffI + lheffI * nheffJ) * 0.5;
-      const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
-      for (int mst = 0; mst != nstates; ++mst) {
-        const double mheffJ = (*heff_)(mst, targetJ);
-        const double mheffI = (*heff_)(mst, targetI);
-
+      for (int lst = 0; lst != nstates; ++lst) {
+        const double lheffJ = (*heff_)(lst, targetJ);
+        const double lheffI = (*heff_)(lst, targetI);
+        const double lnhJI  = (lheffJ * nheffI + lheffI * nheffJ) * 0.5;
+        const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
         const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
 
         if (!info_->sssr() || nst == lst) {
@@ -422,7 +425,7 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
           dec = make_deci3q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, lmhJI);
+          add_total(lmhJI);
         }
 
         if (!info_->sssr() || mst == lst) {
@@ -430,7 +433,7 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
           dec = make_deci4q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, lnhJI);
+          add_total(lnhJI);
         }
 
         if (!info_->sssr() || (mst == lst && nst == lst)) {
@@ -440,51 +443,51 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
           dec = make_deci2q(/*zero=*/true);
           while (!dec->done())
             dec->next_compute();
-          do_rdm_deriv_3_multipass(nst, mst, llhJI);
+          add_total(llhJI);
         }
       }
-    }
 
-    for (int mst = 0; mst != nstates; ++mst) {
-      if (info_->sssr() && nst != mst)
-        continue;
-
-      l2 = lall_[mst]->at(nst);
-      dec = make_deci3q(/*zero*/true);
-      while (!dec->done())
-        dec->next_compute();
-
-      l2 = lall_[nst]->at(mst);
-      dec = make_deci4q(false);
-      while (!dec->done())
-        dec->next_compute();
-
-      for (int lst = 0; lst != nstates; ++lst) {
-        if (info_->sssr() && (nst != lst || mst != lst))
-          continue;
-
-        e0_ = e0all_[lst] - info_->shift();
-        l2 = lall_[lst]->at(nst);
-        t2 = t2all_[lst]->at(mst);
-        dec = make_deciq(false);
-        while (!dec->done())
-          dec->next_compute();
-        dec = make_deci2q(false);
+      if (!info_->sssr() || nst == mst) {
+        l2 = lall_[mst]->at(nst);
+        dec = make_deci3q(/*zero*/true);
         while (!dec->done())
           dec->next_compute();
 
-        l2 = t2all_[lst]->at(nst);
-        t2 = lall_[lst]->at(mst);
-        dec = make_deciq(false);
+        l2 = lall_[nst]->at(mst);
+        dec = make_deci4q(false);
         while (!dec->done())
           dec->next_compute();
-        dec = make_deci2q(false);
-        while (!dec->done())
-          dec->next_compute();
+
+        for (int lst = 0; lst != nstates; ++lst) {
+          if (info_->sssr() && (nst != lst || mst != lst))
+            continue;
+
+          e0_ = e0all_[lst] - info_->shift();
+          l2 = lall_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+
+          l2 = t2all_[lst]->at(nst);
+          t2 = lall_[lst]->at(mst);
+          dec = make_deciq(false);
+          while (!dec->done())
+            dec->next_compute();
+          dec = make_deci2q(false);
+          while (!dec->done())
+            dec->next_compute();
+        }
+        add_total(1.0);
       }
+
       do_rdm_deriv_multipass(nst, mst, 1.0);
     }
-    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
+
+    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
     timer.tick_print(ss.str());
   }
 }
