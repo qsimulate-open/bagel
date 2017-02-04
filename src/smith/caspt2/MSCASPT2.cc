@@ -74,6 +74,12 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   den2cit = cas.rdm2_->clone();
   den3cit = cas.rdm3_->clone();
   den4cit = cas.rdm3_->clone();
+
+  den0ciall = make_shared<Vec<Tensor>>();
+  den1ciall = make_shared<Vec<Tensor>>();
+  den2ciall = make_shared<Vec<Tensor>>();
+  den3ciall = make_shared<Vec<Tensor>>();
+  den4ciall = make_shared<Vec<Tensor>>();
 }
 
 void MSCASPT2::MSCASPT2::solve_dm() {
@@ -123,26 +129,39 @@ void MSCASPT2::MSCASPT2::zero_total() {
   den4cit->zero();
 }
 
-void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(int nst, int mst, double factor) {
-  const size_t cisize = ci_deriv_->data(nst)->size();
-  const size_t cimax = 1000;
-  const size_t npass = (cisize-1)/cimax+1;
-  const size_t chunk = (cisize-1)/npass+1;
+void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(double factor) {
+  const int nstates = info_->ciwfn()->nstates();
 
-  for (int ipass = 0; ipass != npass; ++ipass) {
-    const size_t offset = ipass * chunk;
-    const size_t size = min(chunk, cisize-offset);
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
-    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-    deci->allocate();
-    shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*reset=*/true);
-    while (!queue->done())
-      queue->next_compute();
-    blas::ax_plus_y_n(factor, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+  for (int nst = 0; nst != nstates; ++nst) {
+    const size_t cisize = ci_deriv_->data(nst)->size();
+    const size_t cimax = 1000;
+    const size_t npass = (cisize-1)/cimax+1;
+    const size_t chunk = (cisize-1)/npass+1;
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t offset = ipass * chunk;
+      const size_t size = min(chunk, cisize-offset);
+      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
+
+      for (int mst = 0; mst != nstates; ++mst) {
+        den0cit = den0ciall->at(nst, mst);
+        den1cit = den1ciall->at(nst, mst);
+        den2cit = den2ciall->at(nst, mst);
+        den3cit = den3ciall->at(nst, mst);
+        den4cit = den4ciall->at(nst, mst);
+        mpi__->barrier();
+
+        deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+        deci->allocate();
+        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*reset=*/true);
+        while (!queue->done())
+          queue->next_compute();
+        blas::ax_plus_y_n(factor, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+      }
+    }
   }
-
 }
+
 
 void MSCASPT2::MSCASPT2::solve_deriv() {
   Timer timer;
@@ -302,12 +321,19 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
         add_total(1.0);
       }
 
-      do_rdm_deriv_multipass(nst, mst, 1.0);
+      den0ciall->emplace(nst, mst, den0cit->copy());
+      den1ciall->emplace(nst, mst, den1cit->copy());
+      den2ciall->emplace(nst, mst, den2cit->copy());
+      den3ciall->emplace(nst, mst, den3cit->copy());
+      den4ciall->emplace(nst, mst, den4cit->copy());
     }
 
     stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
     timer.tick_print(ss.str());
   }
+
+  do_rdm_deriv_multipass(1.0);
+  timer.tick_print("CI derivative contraction");
 }
 
 void MSCASPT2::MSCASPT2::solve_nacme() {
@@ -484,12 +510,19 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
         add_total(1.0);
       }
 
-      do_rdm_deriv_multipass(nst, mst, 1.0);
+      den0ciall->emplace(nst, mst, den0cit->copy());
+      den1ciall->emplace(nst, mst, den1cit->copy());
+      den2ciall->emplace(nst, mst, den2cit->copy());
+      den3ciall->emplace(nst, mst, den3cit->copy());
+      den4ciall->emplace(nst, mst, den4cit->copy());
     }
 
     stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
     timer.tick_print(ss.str());
   }
+
+  do_rdm_deriv_multipass(1.0);
+  timer.tick_print("CI derivative contraction");
 }
 
 #endif

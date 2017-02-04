@@ -66,6 +66,11 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+    std::shared_ptr<Vec<Tensor>> den0ciall;
+    std::shared_ptr<Vec<Tensor>> den1ciall;
+    std::shared_ptr<Vec<Tensor>> den2ciall;
+    std::shared_ptr<Vec<Tensor>> den3ciall;
+    std::shared_ptr<Vec<Tensor>> den4ciall;
     std::shared_ptr<Tensor> den0ci;
     std::shared_ptr<Tensor> den1ci;
     std::shared_ptr<Tensor> den2ci;
@@ -172,7 +177,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> contract_rdm_deriv(const int number = 4, const bool reset = true, const bool diagonal = true);
     void zero_total();
     void add_total(double factor);
-    void do_rdm_deriv_multipass(int nst, int mst, double factor);
+    void do_rdm_deriv_multipass(double factor);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
