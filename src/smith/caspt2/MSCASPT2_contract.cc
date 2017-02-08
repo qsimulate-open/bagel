@@ -62,8 +62,6 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
   }
 
   if (number >= 3) {
-    // RDM3deriv contraction without rdm3deriv_
-
     vector<IndexRange> I900_index = {ci_, active_, active_};
     auto I900 = make_shared<Tensor>(I900_index);
     auto tensor914 = vector<shared_ptr<Tensor>>{deci, I900};
@@ -81,15 +79,53 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
     auto task916 = make_shared<Task916>(tensor916, cindex);
     task916->add_dep(task900);
     contract->add_task(task916);
-
   }
 
   if (number >= 4) {
+    vector<IndexRange> I901_index = {ci_, active_, active_};
+    auto I901 = make_shared<Tensor>(I901_index);
+    auto tensor917 = vector<shared_ptr<Tensor>>{deci, I901};
+    auto task917 = make_shared<Task914>(tensor917, cindex, ciwfn);
+    task917->add_dep(task900);
+    contract->add_task(task917);
 
-    auto tensor905 = vector<shared_ptr<Tensor>>{deci, rdm4deriv_, den4cit};
-    auto task905 = make_shared<Task905>(tensor905, cindex);
-    task905->add_dep(task900);
-    contract->add_task(task905);
+    auto tensor918 = vector<shared_ptr<Tensor>>{I901, rdm3fderiv_, den4cit};
+    auto task918 = make_shared<Task918>(tensor918, cindex);
+    task917->add_dep(task918);
+    task918->add_dep(task900);
+    contract->add_task(task918);
+
+    vector<IndexRange> I902_index = {ci_, active_, active_};
+    auto I902 = make_shared<Tensor>(I902_index);
+    auto tensor919 = vector<shared_ptr<Tensor>>{deci, I902};
+    auto task919 = make_shared<Task914>(tensor919, cindex, ciwfn);
+    task919->add_dep(task900);
+    contract->add_task(task919);
+
+    vector<IndexRange> I903_index = {ci_, active_, active_, active_, active_};
+    auto I903 = make_shared<Tensor>(I903_index);
+    auto tensor920 = vector<shared_ptr<Tensor>>{I902, I903, den4cit};
+    auto task920 = make_shared<Task915>(tensor920, cindex);
+    task919->add_dep(task920);
+    task920->add_dep(task900);
+    contract->add_task(task920);
+
+    auto tensor921 = vector<shared_ptr<Tensor>>{I903, rdm2deriv_, f1_};
+    auto task921 = make_shared<Task921>(tensor921, cindex);
+    task920->add_dep(task921);
+    task921->add_dep(task900);
+    contract->add_task(task921);
+
+    auto tensor922 = vector<shared_ptr<Tensor>>{deci, I903, den4cit};
+    auto task922 = make_shared<Task916>(tensor922, cindex);
+    task922->add_dep(task921);
+    task922->add_dep(task900);
+    contract->add_task(task922);
+
+    auto tensor923 = vector<shared_ptr<Tensor>>{deci, rdm3fderiv_, den4cit};
+    auto task923 = make_shared<Task923>(tensor923, cindex);
+    task923->add_dep(task900);
+    contract->add_task(task923);
   }
 
   return contract;

@@ -85,7 +85,7 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
-shared_ptr<Matrix> FCI::rdm3deriv(const int target, const size_t offset, const size_t size) const {
+shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm3deriv should not be called without MPI");
 #endif
@@ -96,19 +96,16 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, const size_t offset, const s
   const size_t norb2 = norb_*norb_;
   const size_t norb3 = norb2*norb_;
   const size_t norb4 = norb2*norb2;
-  const size_t norb5 = norb3*norb2;
-  const size_t norb6 = norb4*norb2;
 
   // first make <I|i+j|0>
   auto dbra = rdm1deriv(target);
   // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
   auto ebra = rdm2deriv(target);
 
-  // third make <K|m+k+i+jln|0>  =  <K|m+n|J><J|k+i+jl|0> - delta_nk<K|m+i+jl|0> - delta_ni<K|k+m+jl|0>
-  // K is reduced to (offset, offset+size)
-  auto fbra = make_shared<Matrix>(size, norb6);
+  // third we make [L|k+i+jl|0] (TODO I guess that this also can be improved)
+  auto fock_fbra = make_shared<Matrix>(size, norb4);
   {
-    RMAWindow_bare<double> fbra_win(size*norb6);
+    RMAWindow_bare<double> fock_fbra_win(size*norb4);
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
     auto tmp2 = make_shared<Civec>(cbra->det());
     int ijkl = 0;
@@ -129,19 +126,21 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, const size_t offset, const s
             tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(m+norb_*(l+norb_*(i+norb_*j))));
           if (i == n)
             tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(k+norb_*(l+norb_*(m+norb_*j))));
-          // put this to the window
-          for (int inode = 0; inode != mpi__->size(); ++inode)
-            tasks.push_back(fbra_win.rma_rput(tmp->data(m+norb_*n)->data() + offset, inode, size*(ijkl+norb4*m+norb5*n), size));
+          // axpy for Fock-weighted 3RDM derivative
+          tmp2->ax_plus_y(fock->element(m,n), tmp->data(m+norb_*n));
         }
+      for (int inode = 0; inode != mpi__->size(); ++inode)
+        tasks.push_back(fock_fbra_win.rma_rput(tmp2->data() + offset, inode, size*ijkl, size));
       // wait till all the work is done
       for (auto& itask : tasks)
         itask->wait();
     }
-    fbra_win.fence();
-    copy_n(fbra_win.local_data(), size*norb6, fbra->data());
+    fock_fbra_win.fence();
+    copy_n(fock_fbra_win.local_data(), size*norb4, fock_fbra->data());
   }
 
-  return fbra;
+
+  return fock_fbra;
 }
 
 

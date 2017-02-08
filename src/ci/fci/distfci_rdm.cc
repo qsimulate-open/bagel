@@ -109,7 +109,7 @@ shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
 }
 
 
-shared_ptr<Matrix> DistFCI::rdm3deriv(const int istate, const size_t offset, const size_t size) const {
+shared_ptr<Matrix> DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
   return nullptr;
 }
 

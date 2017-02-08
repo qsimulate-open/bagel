@@ -88,7 +88,7 @@ class FCI : public FCI_base<Civec,Dvec> {
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const override;
-    std::shared_ptr<Matrix> rdm3deriv(const int istate, const size_t offset, const size_t size) const override;
+    std::shared_ptr<Matrix> rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
     // 4RDM derivative is precontracted by an Fock operator
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;

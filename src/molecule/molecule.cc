@@ -682,7 +682,8 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
+          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
+          if (*c > *j) continue;
           if (*c == *k || *k == *i) continue;
           if (*j == *k) continue;
 #if 0

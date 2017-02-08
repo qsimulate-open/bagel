@@ -25,7 +25,8 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-
+#include <memory>
+#include <src/smith/smith_util.h>
 #include <src/smith/caspt2/MSCASPT2.h>
 #include <src/smith/caspt2/MSCASPT2_contract_tasks.h>
 
@@ -188,6 +189,7 @@ void Task905::Task_local::compute() {
 void Task914::Task_local::compute() {
   const Index ci0 = b(0);
 
+  auto odata = make_shared<VectorB>(ciwfn_->det()->size());
   int jx0 = 0;
   for (auto& x0 : *range_[1]) {
     int jx1 = 0;
@@ -198,52 +200,44 @@ void Task914::Task_local::compute() {
       const int lena = ciwfn_->det()->lena();
       const int lenb = ciwfn_->det()->lenb();
 
-      int jci1 = 0;
-      for (auto& ci1 : *range_[3]) {
-        const int ci1offset = ci1.size() * jci1;
-        std::unique_ptr<double[]> odata(new double[out()->get_size(ci1)]);
-        std::fill_n(odata.get(), out()->get_size(ci1), 0.0);
-
-        for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
-          int x0p = ix0 + x0offset;
-          for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-            int x1p = ix1 + x1offset;
-            for (auto& iter : ciwfn_->det()->phia(x0p, x1p)) {
-              size_t iaJ = iter.source;
-              size_t iaK = iter.target;
-              double sign = static_cast<double>(iter.sign);
-              for (size_t ib = 0; ib != lenb; ++ib) {
-                size_t iK = ib+iaK*lenb;
-                size_t iJ = ib+iaJ*lenb;
-                if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
-                if (iJ < ci1offset || iJ >= (ci1offset + ci1.size())) continue;
-
-                odata[iJ-ci1offset] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
-              }
+      for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+        int x0p = ix0 + x0offset;
+        for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+          int x1p = ix1 + x1offset;
+          for (auto& iter : ciwfn_->det()->phia(x0p, x1p)) {
+            size_t iaJ = iter.source;
+            size_t iaK = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            for (size_t ib = 0; ib != lenb; ++ib) {
+              size_t iK = ib+iaK*lenb;
+              size_t iJ = ib+iaJ*lenb;
+              if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
+              (*odata)[iJ] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
             }
+          }
 
-            for (auto& iter : ciwfn_->det()->phib(x0p, x1p)) {
-              size_t ibJ = iter.source;
-              size_t ibK = iter.target;
-              double sign = static_cast<double>(iter.sign);
-              for (size_t ia = 0; ia != lena; ++ia) {
-                size_t iK = ibK+ia*lenb;
-                size_t iJ = ibJ+ia*lenb;
-                if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
-                if (iJ < ci1offset || iJ >= (ci1offset + ci1.size())) continue;
-
-                odata[iJ-ci1offset] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
-              }
+          for (auto& iter : ciwfn_->det()->phib(x0p, x1p)) {
+            size_t ibJ = iter.source;
+            size_t ibK = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            for (size_t ia = 0; ia != lena; ++ia) {
+              size_t iK = ibK+ia*lenb;
+              size_t iJ = ibJ+ia*lenb;
+              if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
+              (*odata)[iJ] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
             }
           }
         }
-        out()->add_block(odata, ci1);
-        ++jci1;
       }
       ++jx1;
     }
     ++jx0;
   }
+  vector<IndexRange> o1 = {*range_[3]};
+  const btas::CRange<1> range1(ciwfn_->det()->size());
+  std::static_pointer_cast<btas::Tensor1<double>>(odata)->resize(range1);
+  auto odata_fill = fill_block<1,double>(odata, {0}, o1);
+  out()->ax_plus_y(1.0, odata_fill);
 }
 
 
@@ -317,6 +311,118 @@ void Task916::Task_local::compute() {
       std::unique_ptr<double[]> i1data = in(1)->get_block(x2, x4, x0, x1, x4, x3);
       std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x2, x4, x0, x1, x4, x3)]);
       sort_indices<2,3,0,5,1,4,0,1,1,1>(i1data, i1data_sorted, x2.size(), x4.size(), x0.size(), x1.size(), x4.size(), x3.size());
+      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+            for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+              for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+                for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+                  odata[ici0] -= i0data[ici0+ci0.size()*(ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3)))]
+                               * i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  out()->add_block(odata, ci0);
+}
+
+
+void Task918::Task_local::compute() {
+  const Index ci0 = b(0);
+  const Index x0 = b(1);
+  const Index x1 = b(2);
+
+  std::unique_ptr<double[]> odata(new double[out()->get_size(ci0, x0, x1)]);
+  std::fill_n(odata.get(), out()->get_size(ci0, x0, x1), 0.0);
+  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0, x0, x1)]);
+  std::fill_n(odata_sorted.get(), out()->get_size(ci0, x0, x1), 0.0);
+
+  for (auto& x2 : *range_[1]) {
+    for (auto& x3 : *range_[1]) {
+      for (auto& x4 : *range_[1]) {
+        for (auto& x5 : *range_[1]) {
+          std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x2, x3, x4, x5);
+          std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x2, x3, x4, x5)]);
+          sort_indices<1,2,3,4,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x2.size(), x3.size(), x4.size(), x5.size());
+
+          std::unique_ptr<double[]> i1data = in(1)->get_block(x2, x3, x4, x5, x0, x1);
+          std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x2, x3, x4, x5, x0, x1)]);
+          sort_indices<0,1,2,3,4,5,0,1,1,1>(i1data, i1data_sorted, x2.size(), x3.size(), x4.size(), x5.size(), x0.size(), x1.size());
+
+          dgemm_("T", "N", ci0.size(), x0.size()*x1.size(), x2.size()*x3.size()*x4.size()*x5.size(),
+                 1.0, i0data_sorted, x2.size()*x3.size()*x4.size()*x5.size(),
+                 i1data_sorted, x2.size()*x3.size()*x4.size()*x5.size(), 1.0, odata_sorted, ci0.size());
+        }
+      }
+    }
+  }
+
+  sort_indices<0,1,2,1,1,1,1>(odata_sorted, odata, ci0.size(), x0.size(), x1.size());
+  out()->add_block(odata, ci0, x0, x1);
+}
+
+
+void Task921::Task_local::compute() {
+  const Index ci0 = b(0);
+  const Index x0 = b(1);
+  const Index x1 = b(2);
+  const Index x2 = b(3);
+  const Index x3 = b(4);
+
+  std::unique_ptr<double[]> odata(new double[out()->get_size(ci0, x0, x1, x2, x3)]);
+  std::fill_n(odata.get(), out()->get_size(ci0, x0, x1, x2, x3), 0.0);
+
+  for (auto& x4 : *range_[1]) {
+    std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x4);
+    std::unique_ptr<double[]> fdata = in(1)->get_block(x4, x3);
+
+    dgemm_("N", "N", ci0.size()*x0.size()*x1.size()*x2.size(), x3.size(), x4.size(),
+          -1.0, i0data, ci0.size()*x0.size()*x1.size()*x2.size(),
+           fdata, x4.size(), 1.0, odata, ci0.size()*x0.size()*x1.size()*x2.size());
+  }
+
+  out()->add_block(odata, ci0, x0, x1, x2, x3);
+}
+
+void Task923::Task_local::compute() {
+  const Index ci0 = b(0);
+  const Index x0 = b(1);
+  const Index x1 = b(2);
+  const Index x2 = b(3);
+  const Index x3 = b(4);
+
+  std::unique_ptr<double[]> odata(new double[out()->get_size(ci0)]);
+  std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
+  std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x3);
+
+  for (auto& x4 : *range_[1]) {
+    {
+      std::unique_ptr<double[]> i1data = in(1)->get_block(x4, x3, x0, x1, x2, x4);
+      std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x4, x3, x0, x1, x2, x4)]);
+      sort_indices<2,3,4,1,0,5,0,1,1,1>(i1data, i1data_sorted, x4.size(), x3.size(), x0.size(), x1.size(), x2.size(), x4.size());
+      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+            for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
+              for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
+                for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+                  odata[ici0] -= i0data[ici0+ci0.size()*(ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3)))]
+                               * i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    {
+      std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, x4, x3, x2, x4);
+      std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, x4, x3, x2, x4)]);
+      sort_indices<0,1,4,3,2,5,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), x4.size(), x3.size(), x2.size(), x4.size());
       for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
         for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
           for (int ix2 = 0; ix2 != x2.size(); ++ix2) {

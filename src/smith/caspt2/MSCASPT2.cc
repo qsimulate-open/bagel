@@ -131,36 +131,27 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(double factor) {
   const int nstates = info_->ciwfn()->nstates();
-  const int nact = info_->nact();
-  const double actsize = 270000.0 / (double)(nact * nact * nact * nact * nact * nact);
   Timer timer;
 
   for (int nst = 0; nst != nstates; ++nst) {
     const size_t cisize = ci_deriv_->data(nst)->size();
-    const size_t cimax = nact > 8 ? 1000 * (size_t)actsize : 1000;
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
-      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
+    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
+      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, 0, cisize);
+    for (int mst = 0; mst != nstates; ++mst) {
+      den0cit = den0ciall->at(nst, mst);
+      den1cit = den1ciall->at(nst, mst);
+      den2cit = den2ciall->at(nst, mst);
+      den3cit = den3ciall->at(nst, mst);
+      den4cit = den4ciall->at(nst, mst);
+      mpi__->barrier();
 
-      for (int mst = 0; mst != nstates; ++mst) {
-        den0cit = den0ciall->at(nst, mst);
-        den1cit = den1ciall->at(nst, mst);
-        den2cit = den2ciall->at(nst, mst);
-        den3cit = den3ciall->at(nst, mst);
-        den4cit = den4ciall->at(nst, mst);
-        mpi__->barrier();
-
-        deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-        deci->allocate();
-        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*reset=*/true);
-        while (!queue->done())
-          queue->next_compute();
-        blas::ax_plus_y_n(factor, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+      deci->allocate();
+      shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*reset=*/true);
+      while (!queue->done()) {
+        queue->next_compute();
       }
+      blas::ax_plus_y_n(factor, deci->vectorb()->data(), cisize, ci_deriv_->data(mst)->data());
     }
   }
 }
