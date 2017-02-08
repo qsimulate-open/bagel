@@ -131,10 +131,13 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(double factor) {
   const int nstates = info_->ciwfn()->nstates();
+  const int nact = info_->nact();
+  const double actsize = 270000.0 / (double)(nact * nact * nact * nact * nact * nact);
+  Timer timer;
 
   for (int nst = 0; nst != nstates; ++nst) {
     const size_t cisize = ci_deriv_->data(nst)->size();
-    const size_t cimax = 1000;
+    const size_t cimax = nact > 8 ? 1000 * (size_t)actsize : 1000;
     const size_t npass = (cisize-1)/cimax+1;
     const size_t chunk = (cisize-1)/npass+1;
     for (int ipass = 0; ipass != npass; ++ipass) {
@@ -153,7 +156,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv_multipass(double factor) {
 
         deci = make_shared<Tensor>(vector<IndexRange>{ci_});
         deci->allocate();
-        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*reset=*/true);
+        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
         blas::ax_plus_y_n(factor, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);

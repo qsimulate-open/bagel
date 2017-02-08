@@ -33,7 +33,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, const bool reset, const bool diagonal) {
+shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<const CIWfn> ciwfn, const bool reset, const bool diagonal) {
 
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
 
@@ -62,13 +62,30 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, const bool 
   }
 
   if (number >= 3) {
-    auto tensor904 = vector<shared_ptr<Tensor>>{deci, rdm3deriv_, den3cit};
-    auto task904 = make_shared<Task904>(tensor904, cindex);
-    task904->add_dep(task900);
-    contract->add_task(task904);
+    // RDM3deriv contraction without rdm3deriv_
+
+    vector<IndexRange> I900_index = {ci_, active_, active_};
+    auto I900 = make_shared<Tensor>(I900_index);
+    auto tensor914 = vector<shared_ptr<Tensor>>{deci, I900};
+    auto task914 = make_shared<Task914>(tensor914, cindex, ciwfn);
+    task914->add_dep(task900);
+    contract->add_task(task914);
+
+    auto tensor915 = vector<shared_ptr<Tensor>>{I900, rdm2deriv_, den3cit};
+    auto task915 = make_shared<Task915>(tensor915, cindex);
+    task914->add_dep(task915);
+    task915->add_dep(task900);
+    contract->add_task(task915);
+
+    auto tensor916 = vector<shared_ptr<Tensor>>{deci, rdm2deriv_, den3cit};
+    auto task916 = make_shared<Task916>(tensor916, cindex);
+    task916->add_dep(task900);
+    contract->add_task(task916);
+
   }
 
   if (number >= 4) {
+
     auto tensor905 = vector<shared_ptr<Tensor>>{deci, rdm4deriv_, den4cit};
     auto task905 = make_shared<Task905>(tensor905, cindex);
     task905->add_dep(task900);

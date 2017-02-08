@@ -174,7 +174,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> contract_rdm_deriv(const int number = 4, const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> contract_rdm_deriv(const int number = 4, const std::shared_ptr<const CIWfn> ciwfn = std::make_shared<const CIWfn>(), const bool reset = true, const bool diagonal = true);
     void zero_total();
     void add_total(double factor);
     void do_rdm_deriv_multipass(double factor);
