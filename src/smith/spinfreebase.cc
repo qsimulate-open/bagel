@@ -422,7 +422,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
                    shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size) {
 
-  auto ci = IndexRange(size, info->maxtile());
+  auto ci = IndexRange(size, info->cimaxtile());
   auto rci = make_shared<const IndexRange>(ci);
 
   const int nact = info->nact();
@@ -484,7 +484,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   SpinFreeMethod<double>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
                    shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size) {
 
-  auto ci = IndexRange(size, info->maxtile());
+  auto ci = IndexRange(size, info->cimaxtile());
   auto rci = make_shared<const IndexRange>(ci);
 
   const int nact = info->nact();
