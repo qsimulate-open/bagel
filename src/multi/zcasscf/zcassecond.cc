@@ -79,6 +79,8 @@ void ZCASSecond::compute() {
     if (gradient < thresh_) {
       muffle_->unmute();
       cout << endl << "    * Second-order optimization converged. *   " << endl << endl;
+      if (nclosed_)
+        dynamic_pointer_cast<const DFock>(cfockao)->discard_half();
       break;
     }
 
