@@ -26,6 +26,7 @@
 #include <src/molecule/shellpair.h>
 #include <src/integral/os/multipolebatch.h>
 #include <src/integral/rys/eribatch.h>
+#include <src/integral/libint/libint.h>
 
 using namespace std;
 using namespace bagel;
