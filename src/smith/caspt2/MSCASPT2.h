@@ -178,7 +178,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> contract_rdm_deriv(const int number = 4, const std::shared_ptr<const CIWfn> ciwfn = std::make_shared<const CIWfn>(), const bool reset = true, const bool diagonal = true);
     void zero_total();
     void add_total(double factor);
-    void do_rdm_deriv_multipass(double factor);
+    void do_rdm_deriv(double factor);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {

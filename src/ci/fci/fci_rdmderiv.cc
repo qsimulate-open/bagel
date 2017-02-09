@@ -102,43 +102,71 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
   // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
   auto ebra = rdm2deriv(target);
 
-  // third we make [L|k+i+jl|0] (TODO I guess that this also can be improved)
+  // third we make [L|k+i+jl|0]
   auto fock_fbra = make_shared<Matrix>(size, norb4);
+  auto fock_ebra = make_shared<Dvec>(cbra->det(), norb2);
+  {
+    auto fock_ebra_mat = make_shared<Matrix>(size, norb2);
+    // first form [J|k+l|0] = <J|m+k+ln|0> f_mn
+    RMAWindow_bare<double> fock_ebra_win(size*norb2);
+    auto tmp = make_shared<Civec>(cbra->det());
+    for (int kl = 0; kl != norb2; ++kl) {
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      if (kl % mpi__->size() != mpi__->rank()) continue;
+      tmp->zero();
+      vector<shared_ptr<RMATask<double>>> tasks;
+      for (int m = 0; m != norb_; ++m) {
+        for (int n = 0; n != norb_; ++n) {
+          int klmn = l*norb3 + k*norb2 + n*norb_ + m;
+          tmp->ax_plus_y(fock->element(m,n), ebra->data(klmn));
+        }
+      }
+      for (int inode = 0; inode != mpi__->size(); ++inode)
+        tasks.push_back(fock_ebra_win.rma_rput(tmp->data(), inode, size*kl, size));
+      for (auto& itask : tasks)
+        itask->wait();
+    }
+    fock_ebra_win.fence();
+    copy_n(fock_ebra_win.local_data(), size*norb2, fock_ebra_mat->data());
+    for (int kl = 0; kl != norb2; ++kl)
+      copy_n(fock_ebra_mat->element_ptr(0,kl), size, fock_ebra->data(kl)->data());
+  }
   {
     RMAWindow_bare<double> fock_fbra_win(size*norb4);
     auto tmp = make_shared<Dvec>(cbra->det(), norb2);
     auto tmp2 = make_shared<Civec>(cbra->det());
-    int ijkl = 0;
-    for (auto iter = ebra->dvec().begin(); iter != ebra->dvec().end(); ++iter, ++ijkl) {
-      if (ijkl % mpi__->size() != mpi__->rank()) continue;
-      const int j = ijkl/norb3;
-      const int i = ijkl/norb2-j*norb_;
-      const int l = ijkl/norb_-i*norb_-j*norb2;
-      const int k = ijkl-l*norb_-i*norb2-j*norb3;
+    // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
+    int kl = 0;
+    for (auto iter = fock_ebra->dvec().begin(); iter != fock_ebra->dvec().end(); ++iter, ++kl) {
+      if (kl % mpi__->size() != mpi__->rank()) continue;
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
       tmp->zero();
-      tmp2->zero();
       sigma_2a1(*iter, tmp);
       sigma_2a2(*iter, tmp);
       vector<shared_ptr<RMATask<double>>> tasks;
-      for (int m = 0; m != norb_; ++m)
-        for (int n = 0; n != norb_; ++n) {
-          if (k == n)
-            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(m+norb_*(l+norb_*(i+norb_*j))));
-          if (i == n)
-            tmp->data(m+norb_*n)->ax_plus_y(-1.0, ebra->data(k+norb_*(l+norb_*(m+norb_*j))));
-          // axpy for Fock-weighted 3RDM derivative
-          tmp2->ax_plus_y(fock->element(m,n), tmp->data(m+norb_*n));
+      for (int i = 0; i != norb_; ++i) {
+        for (int j = 0; j != norb_; ++j) {
+          if (j == k) {
+            tmp->data(i+norb_*j)->ax_plus_y(-1.0, fock_ebra->data(i+norb_*l));
+          }
+          tmp2->zero();
+          for (int n = 0; n != norb_; ++n) {
+            int klin = l*norb3+k*norb2+n*norb_+i;
+            tmp2->ax_plus_y(fock->element(j,n), ebra->data(klin));
+          }
+          tmp->data(i+norb_*j)->ax_plus_y(-1.0, tmp2);
+          for (int inode = 0; inode != mpi__->size(); ++inode)
+            tasks.push_back(fock_fbra_win.rma_rput(tmp->data(i+norb_*j)->data(), inode, size*(kl+norb2*i+norb3*j), size));
         }
-      for (int inode = 0; inode != mpi__->size(); ++inode)
-        tasks.push_back(fock_fbra_win.rma_rput(tmp2->data() + offset, inode, size*ijkl, size));
-      // wait till all the work is done
+      }
       for (auto& itask : tasks)
         itask->wait();
     }
     fock_fbra_win.fence();
     copy_n(fock_fbra_win.local_data(), size*norb4, fock_fbra->data());
   }
-
 
   return fock_fbra;
 }
