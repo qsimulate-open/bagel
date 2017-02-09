@@ -131,14 +131,11 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const int nstates = info_->ciwfn()->nstates();
-  Timer timer;
 
   for (int nst = 0; nst != nstates; ++nst) {
     const size_t cisize = ci_deriv_->data(nst)->size();
     tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
       = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, 0, cisize);
-    stringstream ss; ss << "RDM derivative feeding     (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
-    timer.tick_print(ss.str());
     for (int mst = 0; mst != nstates; ++mst) {
       den0cit = den0ciall->at(nst, mst);
       den1cit = den1ciall->at(nst, mst);
@@ -150,16 +147,10 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
       deci = make_shared<Tensor>(vector<IndexRange>{ci_});
       deci->allocate();
       shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*reset=*/true);
-      int qno = 0;
-      while (!queue->done()) {
-        stringstream pp; pp << "Queue number " << ++qno;
+      while (!queue->done())
         queue->next_compute();
-        timer.tick_print(pp.str());
-      }
       blas::ax_plus_y_n(factor, deci->vectorb()->data(), cisize, ci_deriv_->data(mst)->data());
     }
-    stringstream dd; dd << "CI derivative contract     (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
-    timer.tick_print(dd.str());
   }
 }
 

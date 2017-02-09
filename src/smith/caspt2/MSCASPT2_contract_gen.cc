@@ -97,15 +97,7 @@ Task914::Task914(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
-
-  subtasks_.reserve(range[3]->nblock());
-  int jci0 = 0;
-  for (auto& ci0 : *range[3]) {
-    int ci0offset = jci0 * ci0.size();
-    if (t[0]->is_local(ci0))
-      subtasks_.push_back(make_shared<Task_local>(array<const Index,1>{{ci0}}, in, t[0], range, ciwfn, ci0offset));
-    ++jci0;
-  }
+  subtasks_.push_back(make_shared<Task_local>(in, t[0], range, ciwfn));
 }
 
 Task915::Task915(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {

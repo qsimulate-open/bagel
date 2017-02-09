@@ -130,6 +130,26 @@ double Tensor_<DataType>::orthog(const list<shared_ptr<const Tensor_<DataType>>>
 
 
 template <typename DataType>
+shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix_3index() const {
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 3);
+
+  const int off0 = o[0].front().offset();
+  const int off1 = o[1].front().offset();
+  const int off2 = o[2].front().offset();
+  auto out = make_shared<MatType>(o[0].size(), o[1].size()*o[2].size());
+  for (auto& i2 : o[2].range())
+    for (auto& i1 : o[1].range())
+      for (auto& i0 : o[0].range()) {
+        out->copy_block(i0.offset()-off0, (i1.offset()-off1) * (i2.offset()-off2),
+                        i0.size(), i1.size()*i2.size(), get_block(i0, i1, i2).get());
+      }
+
+  return out;
+}
+
+
+template <typename DataType>
 shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix() const {
   vector<IndexRange> o = indexrange();
   assert(o.size() == 2);

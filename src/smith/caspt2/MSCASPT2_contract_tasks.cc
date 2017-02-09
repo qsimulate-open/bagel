@@ -187,59 +187,49 @@ void Task905::Task_local::compute() {
 }
 
 void Task914::Task_local::compute() {
-  const Index ci0 = b(0);
+  const int size = ciwfn_->det()->size();
+  const int lena = ciwfn_->det()->lena();
+  const int lenb = ciwfn_->det()->lenb();
+  const int norb = ciwfn_->nact();
+  const int norb2 = norb*norb;
+  auto odata = std::make_shared<VectorB>(size);
+  auto in0_mat = in(0)->matrix_3index();
 
-  auto odata = make_shared<VectorB>(ciwfn_->det()->size());
-  int jx0 = 0;
-  for (auto& x0 : *range_[1]) {
-    int jx1 = 0;
-    const int x0offset = x0.size() * jx0;
-    for (auto& x1 : *range_[1]) {
-      const int x1offset = x1.size() * jx1;
-      std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1);
-      const int lena = ciwfn_->det()->lena();
-      const int lenb = ciwfn_->det()->lenb();
+  for (int ij = 0; ij != norb2; ++ij) {
+    if (ij % mpi__->size() != mpi__->rank()) continue;
+    const int j = ij/norb;
+    const int i = ij-j*norb;
 
-      for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
-        int x0p = ix0 + x0offset;
-        for (int ix1 = 0; ix1 != x1.size(); ++ix1) {
-          int x1p = ix1 + x1offset;
-          for (auto& iter : ciwfn_->det()->phia(x0p, x1p)) {
-            size_t iaJ = iter.source;
-            size_t iaK = iter.target;
-            double sign = static_cast<double>(iter.sign);
-            for (size_t ib = 0; ib != lenb; ++ib) {
-              size_t iK = ib+iaK*lenb;
-              size_t iJ = ib+iaJ*lenb;
-              if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
-              (*odata)[iJ] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
-            }
-          }
-
-          for (auto& iter : ciwfn_->det()->phib(x0p, x1p)) {
-            size_t ibJ = iter.source;
-            size_t ibK = iter.target;
-            double sign = static_cast<double>(iter.sign);
-            for (size_t ia = 0; ia != lena; ++ia) {
-              size_t iK = ibK+ia*lenb;
-              size_t iJ = ibJ+ia*lenb;
-              if (iK < ci0offset_ || iK >= (ci0offset_ + ci0.size())) continue;
-              (*odata)[iJ] += sign * i0data[(iK-ci0offset_)+ci0.size()*(ix0+x0.size()*ix1)];
-            }
-          }
-        }
+    for (auto& iter : ciwfn_->det()->phia(i,j)) {
+      size_t iaJ = iter.source;
+      size_t iaK = iter.target;
+      double sign = static_cast<double>(iter.sign);
+      for (size_t ib = 0; ib != lenb; ++ib) {
+        size_t iK = ib+iaK*lenb;
+        size_t iJ = ib+iaJ*lenb;
+        (*odata)[iJ] += sign * in0_mat->element(iK,ij);
       }
-      ++jx1;
     }
-    ++jx0;
+
+    for (size_t ia = 0; ia != lena; ++ia) {
+      for (auto& iter : ciwfn_->det()->phib(i,j)) {
+        size_t ibJ = iter.source;
+        size_t ibK = iter.target;
+        double sign = static_cast<double>(iter.sign);
+        size_t iK = ibK+ia*lenb;
+        size_t iJ = ibJ+ia*lenb;
+        (*odata)[iJ] += sign * in0_mat->element(iK,ij);
+      }
+    }
   }
+  odata->allreduce();
+
   vector<IndexRange> o1 = {*range_[3]};
   const btas::CRange<1> range1(ciwfn_->det()->size());
   std::static_pointer_cast<btas::Tensor1<double>>(odata)->resize(range1);
   auto odata_fill = fill_block<1,double>(odata, {0}, o1);
   out()->ax_plus_y(1.0, odata_fill);
 }
-
 
 void Task915::Task_local::compute() {
   const Index ci0 = b(0);
