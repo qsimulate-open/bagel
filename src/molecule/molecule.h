@@ -48,6 +48,9 @@ class Molecule {
     int lmax_;
     int aux_lmax_;
 
+    // FMM
+    bool dofmm_;
+
     // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int>> offsets_;
     std::vector<std::vector<int>> aux_offsets_;
@@ -75,9 +78,6 @@ class Molecule {
 
     // external magnetic field
     std::array<double,3> magnetic_field_;
-
-    // FMM
-    bool dofmm_;
 
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();

@@ -92,16 +92,16 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   }
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
-  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, shared_ptr<Dvec> tmp) {
+  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, shared_ptr<Dvec> tmp, const int dsize, const int offset) {
     int ijkl = 0;
-    int ij = 0;
-    for (auto iter = d->dvec().begin(); iter != d->dvec().end(); ++iter, ++ij) {
-      if (ij % mpi__->size() == mpi__->rank()) {
+    for (int ij = offset; ij != offset + dsize; ++ij) {
+      if ((ij-offset) % mpi__->size() == mpi__->rank()) {
         const int j = ij/norb_;
         const int i = ij-j*norb_;
         tmp->zero();
-        sigma_2a1(*iter, tmp);
-        sigma_2a2(*iter, tmp);
+        auto iter = d->data(ij);
+        sigma_2a1(iter, tmp);
+        sigma_2a2(iter, tmp);
         int kl = 0;
         for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
           copy_n((*t)->data(), e->ndim(), e->element_ptr(0,ijkl));
@@ -116,25 +116,85 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     }
     e->allreduce();
   };
-  auto ebra = make_shared<Matrix>(cbra->det()->size(), norb_*norb_*norb_*norb_);
-  auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  make_evec(dbra, ebra, tmp);
 
-  shared_ptr<Matrix> eket = ebra;
-  if (cbra != cket) {
-    eket = ebra->clone();
-    make_evec(dket, eket, tmp);
+  // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
+  // {ij} will be divided into multiple passes. (rather than {I}, because the data is saved in Dvec)
+  const size_t ndet = cbra->det()->size();
+  const size_t norb2 = norb_ * norb_;
+  const size_t ijmax = 635040001;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = ijnum / ijmax + 1;
+  const size_t nsize = (norb2 - 1) / npass + 1;
+  if (npass > 1)
+    cout << "    - RDM3 and 4 evaluation will be done with " << npass << " passes" << endl;
+
+  for (int ipass = 0; ipass != npass; ++ipass) {
+    int ioffset = ipass*nsize;
+    int isize = (ipass==(npass-1)) ? (norb2-ioffset) : nsize;
+    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
+    auto eket = make_shared<Matrix>(ndet, norb2*isize);
+    make_evec(dket, eket, tmp, isize, ioffset);
+
+    auto dbram = make_shared<Matrix>(ndet, norb2);
+    copy_n(dbra->data(0)->data(), dbram->size(), dbram->data());
+
+    // put in third-order RDM: <0|E_mn|I><I|E_ij,kl|0> (kl is only within the pass)
+    auto tmp3 = make_shared<Matrix>(*dbram % *eket);
+    // TODO primitive design
+    for (int kl = ioffset; kl != ioffset+isize; ++kl) {
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      for (int i = 0; i != norb_; ++i)
+        for (int j = 0; j != norb_; ++j) {
+          const int ijkl = (i+j*norb_)+(kl-ioffset)*norb2;
+          for (int m = 0; m != norb_; ++m)
+            for (int n = 0; n != norb_; ++n) {
+              const int mn = m+n*norb_;
+              rdm3->element(n,m,i,j,k,l) = tmp3->element(mn, ijkl);
+            }
+        }
+    }
+
+    // put in fourth-order RDM: <0|E_ij,kl|I><I|E_mn,op|0>
+    if (npass==1) {
+      shared_ptr<Matrix> ebra = eket;
+      if (cbra != cket) {
+        ebra = eket->clone();
+        make_evec(dbra, ebra, tmp, norb2, 0);
+      }
+      auto tmp4 = make_shared<Matrix>(*ebra % *eket);
+      sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
+    } else {
+      for (int jpass = 0; jpass != npass; ++jpass) {
+        int joffset = jpass*nsize;
+        int jsize = (jpass==(npass-1)) ? (norb2-joffset) : nsize;
+        auto ebra = make_shared<Matrix>(ndet, norb2*jsize);
+        make_evec(dbra, ebra, tmp, jsize, joffset);
+        auto tmp4 = make_shared<Matrix>(*ebra % *eket);
+        // TODO primitive design
+        for (int op = ioffset; op != ioffset+isize; ++op) {
+          const int p = op/norb_;
+          const int o = op-p*norb_;
+          for (int m = 0; m != norb_; ++m)
+            for (int n = 0; n != norb_; ++n) {
+              const int mnop = (op-ioffset) * norb2 + (m+n*norb_);
+              for (int k = 0; k != norb_; ++k)
+                for (int l = 0; l != norb_; ++l) {
+                  for (int ij = joffset; ij != joffset+jsize; ++ij) {
+                    const int j = ij/norb_;
+                    const int i = ij-j*norb_;
+                    const int ijkl = (ij-joffset) * norb2 + (k+l*norb_);
+                    rdm4->element(j,i,l,k,m,n,o,p) = tmp4->element(ijkl, mnop);
+                  }
+              }
+            }
+        }
+      }
+    }
   }
 
-  // size of the RI space
-  auto dbram = make_shared<Matrix>(dbra->det()->size(), norb_*norb_);
-  copy_n(dbra->data(0)->data(), dbram->size(), dbram->data());
-
-  // first form <0|E_mn|I><I|E_ij,kl|0>
+  // The remaining terms can be evaluated without multipassing
   {
-    auto tmp3 = make_shared<Matrix>(*dbram % *eket);
-    sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
-
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
     // we assume that rdm2_[ist] is set
     for (int i0 = 0; i0 != norb_; ++i0)
@@ -146,10 +206,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
           }
   }
 
-  // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
   {
-    auto tmp4 = make_shared<Matrix>(*ebra % *eket);
-    sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
     for (int l = 0; l != norb_; ++l)
       for (int k = 0; k != norb_; ++k)
         for (int j = 0; j != norb_; ++j)
