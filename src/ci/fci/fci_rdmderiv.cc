@@ -85,6 +85,71 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
+shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size) const {
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(target);
+
+  // make  <I|E_ij|0>
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  const int norb2 = norb_ * norb_;
+  const int lena = cc_->det()->lena();
+  const int lenb = cc_->det()->lenb();
+  auto emat = make_shared<Matrix>(size, norb2*norb2);
+
+  for (int ij = 0; ij != norb2; ++ij) {
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
+
+    for (int kl = 0; kl != norb2; ++kl) {
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      const int klij = kl+ij*norb2;
+      if (klij % mpi__->size() != mpi__->rank()) continue;
+
+      for (auto& iter : cc_->det()->phia(k,l)) {
+        size_t iaJ = iter.source;
+        size_t iaI = iter.target;
+        double sign = static_cast<double>(iter.sign);
+        for (size_t ib = 0; ib != lenb; ++ib) {
+          size_t iI = ib + iaI*lenb;
+          size_t iJ = ib + iaJ*lenb;
+          if ((iJ - offset) < size)
+            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
+        }
+      }
+
+      for (size_t ia = 0; ia != lena; ++ia) {
+        for (auto& iter : cc_->det()->phib(k,l)) {
+          size_t ibJ = iter.source;
+          size_t ibI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          size_t iI = ibI + ia*lenb;
+          size_t iJ = ibJ + ia*lenb;
+          if ((iJ - offset) < size)
+            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
+        }
+      }
+
+      if (i == l) {
+        const int kj = k+j*norb_;
+        for (size_t iJ = offset; iJ != offset+size; ++iJ) {
+          emat->element(iJ-offset, klij) -= dbra->data(kj)->data(iJ);
+        }
+      }
+    }
+  }
+  emat->allreduce();
+
+  return emat;
+}
+
+
 shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm3deriv should not be called without MPI");
@@ -99,74 +164,90 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
 
   // first make <I|i+j|0>
   auto dbra = rdm1deriv(target);
-  // second make <J|k+i+jl|0> = <J|k+l|I><I|i+j|0> - delta_li <J|k+j|0>
-  auto ebra = rdm2deriv(target);
 
-  // third we make [L|k+i+jl|0]
+  const size_t ndet = cbra->det()->size();
+  const size_t ijmax = 635040001;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = ijnum / ijmax + 1;
+  const size_t nsize = ndet / npass + 1;
+
+  // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing)
+  auto fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
+  for (size_t ipass = 0; ipass != npass; ++ipass) {
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    shared_ptr<Matrix> ebra;
+    ebra = rdm2deriv_offset(target, ioffset, isize);
+
+    for (size_t kl = 0; kl != norb2; ++kl) {
+      if (kl % mpi__->size() != mpi__->rank()) continue;
+      for (size_t mn = 0; mn != norb2; ++mn) {
+        const size_t n = mn/norb_;
+        const size_t m = mn-n*norb_;
+        const size_t klmn = kl * norb2 + mn;
+        for (size_t iI = 0; iI != isize; ++iI)
+          fock_ebra_mat->element(iI+ioffset,kl) += fock->element(m,n) * ebra->element(iI,klmn);
+      }
+    }
+    fock_ebra_mat->allreduce();
+  }
+
+  // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
   auto fock_fbra = make_shared<Matrix>(size, norb4);
-  auto fock_ebra = make_shared<Dvec>(cbra->det(), norb2);
-  {
-    auto fock_ebra_mat = make_shared<Matrix>(size, norb2);
-    // first form [J|k+l|0] = <J|m+k+ln|0> f_mn
-    RMAWindow_bare<double> fock_ebra_win(size*norb2);
-    auto tmp = make_shared<Civec>(cbra->det());
+  // set ebra within the pass now
+  auto ebra = rdm2deriv_offset(target, offset, size);
+  const int lena = cc_->det()->lena();
+  const int lenb = cc_->det()->lenb();
+
+  for (int ij = 0; ij != norb2; ++ij) {
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
+
     for (int kl = 0; kl != norb2; ++kl) {
       const int l = kl/norb_;
       const int k = kl-l*norb_;
-      if (kl % mpi__->size() != mpi__->rank()) continue;
-      tmp->zero();
-      vector<shared_ptr<RMATask<double>>> tasks;
-      for (int m = 0; m != norb_; ++m) {
-        for (int n = 0; n != norb_; ++n) {
-          int klmn = l*norb3 + k*norb2 + n*norb_ + m;
-          tmp->ax_plus_y(fock->element(m,n), ebra->data(klmn));
+      const int klij = kl+ij*norb2;
+      if (klij % mpi__->size() != mpi__->rank()) continue;
+
+      for (auto& iter : cc_->det()->phia(k,l)) {
+        size_t iaJ = iter.source;
+        size_t iaI = iter.target;
+        double sign = static_cast<double>(iter.sign);
+        for (size_t ib = 0; ib != lenb; ++ib) {
+          size_t iI = ib + iaI*lenb;
+          size_t iJ = ib + iaJ*lenb;
+          if ((iJ - offset) < size)
+            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
         }
       }
-      for (int inode = 0; inode != mpi__->size(); ++inode)
-        tasks.push_back(fock_ebra_win.rma_rput(tmp->data(), inode, size*kl, size));
-      for (auto& itask : tasks)
-        itask->wait();
-    }
-    fock_ebra_win.fence();
-    copy_n(fock_ebra_win.local_data(), size*norb2, fock_ebra_mat->data());
-    for (int kl = 0; kl != norb2; ++kl)
-      copy_n(fock_ebra_mat->element_ptr(0,kl), size, fock_ebra->data(kl)->data());
-  }
-  {
-    RMAWindow_bare<double> fock_fbra_win(size*norb4);
-    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
-    auto tmp2 = make_shared<Civec>(cbra->det());
-    // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
-    int kl = 0;
-    for (auto iter = fock_ebra->dvec().begin(); iter != fock_ebra->dvec().end(); ++iter, ++kl) {
-      if (kl % mpi__->size() != mpi__->rank()) continue;
-      const int l = kl/norb_;
-      const int k = kl-l*norb_;
-      tmp->zero();
-      sigma_2a1(*iter, tmp);
-      sigma_2a2(*iter, tmp);
-      vector<shared_ptr<RMATask<double>>> tasks;
-      for (int i = 0; i != norb_; ++i) {
-        for (int j = 0; j != norb_; ++j) {
-          if (j == k) {
-            tmp->data(i+norb_*j)->ax_plus_y(-1.0, fock_ebra->data(i+norb_*l));
-          }
-          tmp2->zero();
-          for (int n = 0; n != norb_; ++n) {
-            int klin = l*norb3+k*norb2+n*norb_+i;
-            tmp2->ax_plus_y(fock->element(j,n), ebra->data(klin));
-          }
-          tmp->data(i+norb_*j)->ax_plus_y(-1.0, tmp2);
-          for (int inode = 0; inode != mpi__->size(); ++inode)
-            tasks.push_back(fock_fbra_win.rma_rput(tmp->data(i+norb_*j)->data(), inode, size*(kl+norb2*i+norb3*j), size));
+
+      for (size_t ia = 0; ia != lena; ++ia) {
+        for (auto& iter : cc_->det()->phib(k,l)) {
+          size_t ibJ = iter.source;
+          size_t ibI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          size_t iI = ibI + ia*lenb;
+          size_t iJ = ibJ + ia*lenb;
+          if ((iJ - offset) < size)
+            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
         }
       }
-      for (auto& itask : tasks)
-        itask->wait();
+
+      if (i == l) {
+        const int kj = k+j*norb_;
+        for (size_t iJ = 0; iJ != size; ++iJ) {
+          fock_fbra->element(iJ, klij) -= fock_ebra_mat->element(iJ+offset,kj);
+        }
+      }
+
+      for (int n = 0; n != norb_; ++n) {
+        int ijkn = j*norb3+i*norb2+n*norb_+k;
+        for (size_t iJ = 0; iJ != size; ++iJ)
+          fock_fbra->element(iJ, klij) -= ebra->element(iJ, ijkn) * fock->element(l,n);
+      }
     }
-    fock_fbra_win.fence();
-    copy_n(fock_fbra_win.local_data(), size*norb4, fock_fbra->data());
   }
+  fock_fbra->allreduce();
 
   return fock_fbra;
 }

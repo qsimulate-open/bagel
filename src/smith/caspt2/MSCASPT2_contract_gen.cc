@@ -93,11 +93,11 @@ Task905::Task905(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
       subtasks_.push_back(make_shared<Task_local>(array<const Index,1>{{ci0}}, in, t[0], range));
 }
 
-Task914::Task914(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range, shared_ptr<const CIWfn> ciwfn) {
+Task914::Task914(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,5> range, shared_ptr<const CIWfn> ciwfn, const size_t offset, const size_t size) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
-  subtasks_.push_back(make_shared<Task_local>(in, t[0], range, ciwfn));
+  subtasks_.push_back(make_shared<Task_local>(in, t[0], range, ciwfn, offset, size));
 }
 
 Task915::Task915(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {

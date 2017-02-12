@@ -33,9 +33,10 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<const CIWfn> ciwfn, const bool reset, const bool diagonal) {
+shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<const CIWfn> ciwfn, int offset, int size, const bool reset, const bool diagonal) {
 
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
+  array<shared_ptr<const IndexRange>,5> findex = {{rclosed_, ractive_, rvirt_, rci_, rcifull_}};
 
   auto contract = make_shared<Queue>();
   auto tensor900 = vector<shared_ptr<Tensor>>{deci};
@@ -64,8 +65,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
   if (number >= 3) {
     vector<IndexRange> I900_index = {ci_, active_, active_};
     auto I900 = make_shared<Tensor>(I900_index);
-    auto tensor914 = vector<shared_ptr<Tensor>>{deci, I900};
-    auto task914 = make_shared<Task914>(tensor914, cindex, ciwfn);
+    auto tensor914 = vector<shared_ptr<Tensor>>{decifull, I900};
+    auto task914 = make_shared<Task914>(tensor914, findex, ciwfn, offset, size);
     task914->add_dep(task900);
     contract->add_task(task914);
 
@@ -84,8 +85,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
   if (number >= 4) {
     vector<IndexRange> I901_index = {ci_, active_, active_};
     auto I901 = make_shared<Tensor>(I901_index);
-    auto tensor917 = vector<shared_ptr<Tensor>>{deci, I901};
-    auto task917 = make_shared<Task914>(tensor917, cindex, ciwfn);
+    auto tensor917 = vector<shared_ptr<Tensor>>{decifull, I901};
+    auto task917 = make_shared<Task914>(tensor917, findex, ciwfn, offset, size);
     task917->add_dep(task900);
     contract->add_task(task917);
 
@@ -97,8 +98,8 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
 
     vector<IndexRange> I902_index = {ci_, active_, active_};
     auto I902 = make_shared<Tensor>(I902_index);
-    auto tensor919 = vector<shared_ptr<Tensor>>{deci, I902};
-    auto task919 = make_shared<Task914>(tensor919, cindex, ciwfn);
+    auto tensor919 = vector<shared_ptr<Tensor>>{decifull, I902};
+    auto task919 = make_shared<Task914>(tensor919, findex, ciwfn, offset, size);
     task919->add_dep(task900);
     contract->add_task(task919);
 

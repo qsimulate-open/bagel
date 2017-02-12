@@ -131,25 +131,45 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const int nstates = info_->ciwfn()->nstates();
-
+  Timer timer;
   for (int nst = 0; nst != nstates; ++nst) {
-    const size_t cisize = ci_deriv_->data(nst)->size();
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, 0, cisize);
-    for (int mst = 0; mst != nstates; ++mst) {
-      den0cit = den0ciall->at(nst, mst);
-      den1cit = den1ciall->at(nst, mst);
-      den2cit = den2ciall->at(nst, mst);
-      den3cit = den3ciall->at(nst, mst);
-      den4cit = den4ciall->at(nst, mst);
-      mpi__->barrier();
+    const size_t ndet = ci_deriv_->data(nst)->size();
+    const size_t nact  = info_->nact();
+    const size_t norb2 = nact*nact;
+    const size_t ijmax = 635040001;
+    const size_t ijnum = ndet * norb2 * norb2;
+    const size_t npass = ijnum / ijmax + 1;
+    const size_t nsize = ndet / npass + 1;
+    if (npass > 1)
+      cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
 
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-      shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*reset=*/true);
-      while (!queue->done())
-        queue->next_compute();
-      blas::ax_plus_y_n(factor, deci->vectorb()->data(), cisize, ci_deriv_->data(mst)->data());
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t ioffset = ipass * nsize;
+      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+      tie(ci_, rci_, cifull_, rcifull_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, ioffset, isize, ndet);
+      for (int mst = 0; mst != nstates; ++mst) {
+        den0cit = den0ciall->at(nst, mst);
+        den1cit = den1ciall->at(nst, mst);
+        den2cit = den2ciall->at(nst, mst);
+        den3cit = den3ciall->at(nst, mst);
+        den4cit = den4ciall->at(nst, mst);
+        mpi__->barrier();
+
+        deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+        deci->allocate();
+        decifull = make_shared<Tensor>(vector<IndexRange>{cifull_});
+        decifull->allocate();
+        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+        while (!queue->done())
+          queue->next_compute();
+        blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);
+        blas::ax_plus_y_n(factor, decifull->vectorb()->data(), ndet, ci_deriv_->data(mst)->data());
+      }
+      if (npass > 1) {
+        stringstream ss; ss << "  Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+        timer.tick_print(ss.str());
+      }
     }
   }
 }

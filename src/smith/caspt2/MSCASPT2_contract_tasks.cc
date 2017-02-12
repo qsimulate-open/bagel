@@ -187,12 +187,12 @@ void Task905::Task_local::compute() {
 }
 
 void Task914::Task_local::compute() {
-  const int size = ciwfn_->det()->size();
+  const int detsize = ciwfn_->det()->size();
   const int lena = ciwfn_->det()->lena();
   const int lenb = ciwfn_->det()->lenb();
   const int norb = ciwfn_->nact();
   const int norb2 = norb*norb;
-  auto odata = std::make_shared<VectorB>(size);
+  auto odata = std::make_shared<VectorB>(detsize);
   auto in0_mat = in(0)->matrix_3index();
 
   for (int ij = 0; ij != norb2; ++ij) {
@@ -207,7 +207,8 @@ void Task914::Task_local::compute() {
       for (size_t ib = 0; ib != lenb; ++ib) {
         size_t iK = ib+iaK*lenb;
         size_t iJ = ib+iaJ*lenb;
-        (*odata)[iJ] += sign * in0_mat->element(iK,ij);
+        if ((iK - offset_) < size_)
+          (*odata)[iJ] += sign * in0_mat->element(iK-offset_,ij);
       }
     }
 
@@ -218,14 +219,15 @@ void Task914::Task_local::compute() {
         double sign = static_cast<double>(iter.sign);
         size_t iK = ibK+ia*lenb;
         size_t iJ = ibJ+ia*lenb;
-        (*odata)[iJ] += sign * in0_mat->element(iK,ij);
+        if ((iK - offset_) < size_)
+          (*odata)[iJ] += sign * in0_mat->element(iK-offset_,ij);
       }
     }
   }
   odata->allreduce();
 
-  vector<IndexRange> o1 = {*range_[3]};
-  const btas::CRange<1> range1(ciwfn_->det()->size());
+  vector<IndexRange> o1 = {*range_[4]};
+  const btas::CRange<1> range1(detsize);
   std::static_pointer_cast<btas::Tensor1<double>>(odata)->resize(range1);
   auto odata_fill = fill_block<1,double>(odata, {0}, o1);
   out()->ax_plus_y(1.0, odata_fill);
