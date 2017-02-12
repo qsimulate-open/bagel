@@ -91,106 +91,94 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     sigma_2a2(cket, dket);
   }
 
-  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
-  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, shared_ptr<Dvec> tmp, const int dsize, const int offset) {
-    int ijkl = 0;
-    for (int ij = offset; ij != offset + dsize; ++ij) {
-      if ((ij-offset) % mpi__->size() == mpi__->rank()) {
-        const int j = ij/norb_;
-        const int i = ij-j*norb_;
-        tmp->zero();
-        auto iter = d->data(ij);
-        sigma_2a1(iter, tmp);
-        sigma_2a2(iter, tmp);
-        int kl = 0;
-        for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-          copy_n((*t)->data(), e->ndim(), e->element_ptr(0,ijkl));
-          const int l = kl/norb_;
-          const int k = kl-l*norb_;
-          if (l == i)
-            blas::ax_plus_y_n(-1.0, d->data(k+j*norb_)->data(), e->ndim(), e->element_ptr(0,ijkl));
+  // second make <J|E_kl|I><I|E_ij|0> - delta_il <J|E_kj|0>
+  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, const int dsize, const int offset) {
+    const int norb2 = norb_ * norb_;
+    const int lena = cc_->det()->lena();
+    const int lenb = cc_->det()->lenb();
+
+    for (int ij = 0; ij != norb2; ++ij) {
+      if (ij % mpi__->size() != mpi__->rank()) continue;
+      const int j = ij/norb_;
+      const int i = ij-j*norb_;
+
+      for (int kl = 0; kl != norb2; ++kl) {
+        const int l = kl/norb_;
+        const int k = kl-l*norb_;
+        const int klij = kl+ij*norb2;
+
+        for (auto& iter : cc_->det()->phia(k,l)) {
+          size_t iaJ = iter.source;
+          size_t iaI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          for (size_t ib = 0; ib != lenb; ++ib) {
+            size_t iI = ib + iaI*lenb;
+            size_t iJ = ib + iaJ*lenb;
+            if ((iJ - offset) < dsize)
+              e->element(iJ-offset, klij) += sign * d->data(ij)->data(iI);
+          }
         }
-      } else {
-        ijkl += tmp->dvec().size();
+
+        for (size_t ia = 0; ia != lena; ++ia) {
+          for (auto& iter : cc_->det()->phib(k,l)) {
+            size_t ibJ = iter.source;
+            size_t ibI = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            size_t iI = ibI + ia*lenb;
+            size_t iJ = ibJ + ia*lenb;
+            if ((iJ - offset) < dsize)
+              e->element(iJ-offset, klij) += sign * d->data(ij)->data(iI);
+          }
+        }
+
+        if (i == l) {
+          const int kj = k+j*norb_;
+          for (size_t iJ = offset; iJ != offset+dsize; ++iJ) {
+            e->element(iJ-offset, klij) -= d->data(kj)->data(iJ);
+          }
+        }
       }
     }
     e->allreduce();
   };
 
   // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
-  // {ij} will be divided into multiple passes. (rather than {I}, because the data is saved in Dvec)
   const size_t ndet = cbra->det()->size();
   const size_t norb2 = norb_ * norb_;
   const size_t ijmax = 635040001;
   const size_t ijnum = ndet * norb2 * norb2;
   const size_t npass = ijnum / ijmax + 1;
-  const size_t nsize = (norb2 - 1) / npass + 1;
-  if (npass > 1)
+  const size_t nsize = ndet / npass + 1;
+  Timer timer;
+  if (npass > 1 && (ist == 0) && (jst == 0))
     cout << "    - RDM3 and 4 evaluation will be done with " << npass << " passes" << endl;
 
-  for (int ipass = 0; ipass != npass; ++ipass) {
-    int ioffset = ipass*nsize;
-    int isize = (ipass==(npass-1)) ? (norb2-ioffset) : nsize;
-    auto tmp = make_shared<Dvec>(cbra->det(), norb2);
-    auto eket = make_shared<Matrix>(ndet, norb2*isize);
-    make_evec(dket, eket, tmp, isize, ioffset);
+  rdm3->zero();
+  rdm4->zero();
 
-    auto dbram = make_shared<Matrix>(ndet, norb2);
-    copy_n(dbra->data(0)->data(), dbram->size(), dbram->data());
+  // multipassing through {I}
+  for (size_t ipass = 0; ipass != npass; ++ipass) {
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    auto eket = make_shared<Matrix>(isize, norb2*norb2);
+    make_evec(dket, eket, isize, ioffset);
+ 
+    auto dbram = make_shared<Matrix>(isize, norb2);
+    for (size_t ij = 0; ij != norb2; ++ij)
+      copy_n(&(dbra->data(ij)->data(ioffset)), isize, dbram->element_ptr(0, ij));
 
-    // put in third-order RDM: <0|E_mn|I><I|E_ij,kl|0> (kl is only within the pass)
+    // put in third-order RDM: <0|E_mn|I><I|E_ij,kl|0>
     auto tmp3 = make_shared<Matrix>(*dbram % *eket);
-    // TODO primitive design
-    for (int kl = ioffset; kl != ioffset+isize; ++kl) {
-      const int l = kl/norb_;
-      const int k = kl-l*norb_;
-      for (int i = 0; i != norb_; ++i)
-        for (int j = 0; j != norb_; ++j) {
-          const int ijkl = (i+j*norb_)+(kl-ioffset)*norb2;
-          for (int m = 0; m != norb_; ++m)
-            for (int n = 0; n != norb_; ++n) {
-              const int mn = m+n*norb_;
-              rdm3->element(n,m,i,j,k,l) = tmp3->element(mn, ijkl);
-            }
-        }
-    }
-
+    sort_indices<1,0,2,1,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb2*norb2);
+ 
     // put in fourth-order RDM: <0|E_ij,kl|I><I|E_mn,op|0>
-    if (npass==1) {
-      shared_ptr<Matrix> ebra = eket;
-      if (cbra != cket) {
-        ebra = eket->clone();
-        make_evec(dbra, ebra, tmp, norb2, 0);
-      }
-      auto tmp4 = make_shared<Matrix>(*ebra % *eket);
-      sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
-    } else {
-      for (int jpass = 0; jpass != npass; ++jpass) {
-        int joffset = jpass*nsize;
-        int jsize = (jpass==(npass-1)) ? (norb2-joffset) : nsize;
-        auto ebra = make_shared<Matrix>(ndet, norb2*jsize);
-        make_evec(dbra, ebra, tmp, jsize, joffset);
-        auto tmp4 = make_shared<Matrix>(*ebra % *eket);
-        // TODO primitive design
-        for (int op = ioffset; op != ioffset+isize; ++op) {
-          const int p = op/norb_;
-          const int o = op-p*norb_;
-          for (int m = 0; m != norb_; ++m)
-            for (int n = 0; n != norb_; ++n) {
-              const int mnop = (op-ioffset) * norb2 + (m+n*norb_);
-              for (int k = 0; k != norb_; ++k)
-                for (int l = 0; l != norb_; ++l) {
-                  for (int ij = joffset; ij != joffset+jsize; ++ij) {
-                    const int j = ij/norb_;
-                    const int i = ij-j*norb_;
-                    const int ijkl = (ij-joffset) * norb2 + (k+l*norb_);
-                    rdm4->element(j,i,l,k,m,n,o,p) = tmp4->element(ijkl, mnop);
-                  }
-              }
-            }
-        }
-      }
+    shared_ptr<Matrix> ebra = eket;
+    if (cbra != cket) {
+      ebra = eket->clone();
+      make_evec(dbra, ebra, isize, ioffset);
     }
+    auto tmp4 = make_shared<Matrix>(*ebra % *eket);
+    sort_indices<1,0,3,2,4,1,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
   }
 
   // The remaining terms can be evaluated without multipassing
