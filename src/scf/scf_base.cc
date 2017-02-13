@@ -38,7 +38,7 @@ using namespace bagel;
 
 template <typename MatType, typename OvlType, typename HcType, class Enable>
 SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> re, const bool need_schwarz)
- : Method(idat, geom, re), eig_(geom->nbasis()) {
+ : Method(idat, make_shared<const Geometry>(*geom, array<double, 3>{{-geom->charge_center()[0], -geom->charge_center()[1], -geom->charge_center()[2]}}), re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("gradient", false);
@@ -64,7 +64,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   if (dofmm_) {
     const bool dodf = idata_->get<bool>("df", true);
     if (dodf) throw runtime_error("FMM only works without DF now");
-    fmm_ = make_shared<const FMM>(geom, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
+    fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
                                         idata_->get<int>("ws", 0), idata_->get<bool>("exchange", false), idata_->get<int>("lmax_exchange", 10));
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
