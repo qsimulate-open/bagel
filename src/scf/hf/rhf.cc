@@ -76,8 +76,10 @@ void RHF::compute() {
             focka = make_shared<const Fock<0>>(geom_, hcore_, aden, schwarz_);
           }
         } else {
-          shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden);
-          focka = make_shared<const Matrix>(*hcore_ + *tmp);
+          shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM(aden);
+          //shared_ptr<const Matrix> tmpK = fmm_->compute_K_ff(aden, overlap_);
+          focka = make_shared<const Matrix>(*hcore_ + *tmpJ);
+//          focka = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK * 0.5);
         }
         fock = focka->distmatrix();
       }

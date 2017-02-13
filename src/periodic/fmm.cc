@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 100;
+const static int batchsize = 50;
 
 const static Legendre plm;
 
@@ -228,7 +228,9 @@ void FMM::get_boxes() {
   }
 
 #if 1
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " *** BATCHSIZE " << batchsize << endl;
+  cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " *** BATCHSIZE " << batchsize << " lmax " << lmax_ << " lmax_k " << lmax_k_
+       << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
   int i = 0;
   for (auto& b : box_) {
     const bool ipar = (b->parent()) ? true : false;
@@ -371,7 +373,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
       (*maxden)(i01) = denmax;
     }
 
-    resources__->proc()->cout_on();
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
@@ -390,16 +391,90 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 #endif
 
   nftime.tick_print("near-field");
+  resources__->proc()->cout_on();
   for (int i = 0; i < mpi__->size(); ++i) {
-    if (i==mpi__->rank())
-      cout << "rank " << mpi__->rank() << " broadcast size " << out->size() << endl;
+      //cout << "rank " << mpi__->rank() << " broadcast size " << out->size() << endl;
     mpi__->barrier();
     this_thread::sleep_for(10 * sleeptime__);
   }
   resources__->proc()->cout_off();
+
+  ///// DEBUG
+  double enj = 0.0;
+  for (int i = 0; i != nbranch_[0]; ++i)
+    enj += box_[i]->coulomb_ff();
+  cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
+
   fmmtime.tick_print("FMM-J");
 
   return out;
+}
+
+
+shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> density, shared_ptr<const Matrix> overlap) const {
+
+  if (!do_exchange_ || !density)
+    return overlap->clone();
+
+  Timer ktime;
+  shared_ptr<Matrix> coeff = density->copy();
+  *coeff *= -1.0;
+  int nocc = 0;
+  {
+    VectorB vec(density->ndim());
+    coeff->diagonalize(vec);
+    for (int i = 0; i != density->ndim(); ++i) {
+      if (vec[i] < -1.0e-8) {
+        ++nocc;
+        const double fac = std::sqrt(-vec(i));
+        for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](double& i) { i *= fac; });
+      } else { break; }
+    }
+  }
+  auto ocoeff = make_shared<const Matrix>(coeff->slice(0,nocc));
+
+  auto krj = make_shared<Matrix>(nbasis_, nocc);
+  const int nbatch = (nocc-1) / batchsize+1;
+  StaticDist dist(nocc, nbatch);
+  vector<pair<size_t, size_t>> table = dist.atable();
+
+  Timer mtime;
+  for (int i = 0; i != nbranch_[0]; ++i)
+    box_[i]->get_offsets();
+
+  double enk = 0.0;
+  int u = 0;
+  for (auto& itable : table) {
+    if (u++ % mpi__->size() == mpi__->rank()) {
+      auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
+      shared_ptr<const Matrix> ocoeff_sj = ocoeff;
+
+      M2M_X(ocoeff_sj, ocoeff_ui);
+      M2L(true);
+      L2L(true);
+      Timer assembletime;
+      for (int i = 0; i != nbranch_[0]; ++i) {
+        auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
+        assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
+        blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
+        enk += box_[i]->exchange_ff();
+      }
+      assembletime.tick_print("Building Krj");
+    }
+  }
+  krj->allreduce();
+  mpi__->allreduce(&enk, 1);
+  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
+
+  Timer projtime;
+  auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+  auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
+  auto sck = make_shared<const Matrix>(*sc ^ *krj);
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
+  projtime.tick_print("Krs from Krj");
+
+  ktime.tick_print("FMM-K");
+  return krs;
 }
 
 
@@ -419,31 +494,33 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   for (int i = 0; i != nbranch_[0]; ++i)
     box_[i]->get_offsets();
 
+  double enk = 0.0;
   int u = 0;
-  int ibatch = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-      cout << " * Batch " << ibatch << " from " << ibatch*batchsize << " to " << (ibatch+1)*batchsize
-           << " * slice " << itable.first << " to " << itable.first+itable.second << " of COEFF mdim " << ocoeff->mdim() << endl;
-      ++ibatch;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
       M2M_X(ocoeff_sj, ocoeff_ui);
       M2L(true);
       L2L(true);
+      Timer assembletime;
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
-        krj->add_block(1.0, 0, 0, nbasis_, nocc, ffx->data());
+        blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
+        enk += box_[i]->exchange_ff();
       }
+      assembletime.tick_print("Building Krj");
     }
   }
   krj->allreduce();
+  mpi__->allreduce(&enk, 1);
+  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
-#if 0
+#if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
