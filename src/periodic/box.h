@@ -87,10 +87,12 @@ class Box {
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff_ti) const;
-
+    double coulomb_ff() const;
+    double exchange_ff() const;
 
   public:
-    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10,
+        const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
         const double thresh = 0.0, const double schwarz = 0.0)
      : rank_(n), boxid_(id), lmax_(lmax), lmax_k_(lmax_k), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
 

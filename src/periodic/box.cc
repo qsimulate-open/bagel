@@ -123,7 +123,7 @@ bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - box->centre(i), 2);
 
-  const bool out = (sqrt(rr) <= (1+ws)*(extent_ + box->extent()));
+  const bool out = (sqrt(rr) <= (1.2+ws)*(extent_ + box->extent()));
 #endif
 
 #if 0
@@ -138,7 +138,6 @@ bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
 
   return out;
 }
-
 
 void Box::get_inter(const vector<shared_ptr<Box>>& box, const int ws) {
 
@@ -274,7 +273,6 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
     for (int k = 0; k != nmult_k_; ++k) {
       auto olm_si = make_shared<const ZMatrix>(*(box_olm[k]) * *zc_ui);
       zgemm3m_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_->data()+k*olm_size_block_, ocoeff_sj->mdim());
-
     }
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
@@ -1007,7 +1005,7 @@ void Box::get_offsets() {
       offsets_[isp][1] = shells.find(key)->second;
     } else {
       shells.insert(shells.end(), pair<int, int>(key, njshell));
-      offsets_[isp][0] = jsize;
+      offsets_[isp][1] = jsize;
 
       coffsets_u_.resize(njshell+1);
       auto cj = make_pair<int, int>(sp_[isp]->offset(1), sp_[isp]->shell(1)->nbasis());
@@ -1019,4 +1017,19 @@ void Box::get_offsets() {
   }
   msize_ = jsize;
   assert(nsize_ == msize_);
+}
+
+
+double Box::coulomb_ff() const {
+ 
+  const complex<double> en = blas::dot_product(multipole_->data(), nmult_, localJ_->data());
+  assert(abs(en.imag()) < 1e-10);
+  return en.real();
+}
+
+
+double Box::exchange_ff() const {
+  const complex<double> en = olm_ji_->dot_product(*mlm_ji_);
+  assert(abs(en.imag()) < 1e-10);
+  return en.real();
 }
