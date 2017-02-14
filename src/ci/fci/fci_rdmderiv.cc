@@ -85,6 +85,174 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
+shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size) const {
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(target);
+
+  // make  <I|E_ij|0>
+  auto dbra = make_shared<Dvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  const int norb2 = norb_ * norb_;
+  const int lena = cc_->det()->lena();
+  const int lenb = cc_->det()->lenb();
+  auto emat = make_shared<Matrix>(size, norb2*norb2);
+
+  for (int ij = 0; ij != norb2; ++ij) {
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
+
+    for (int kl = 0; kl != norb2; ++kl) {
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      const int klij = kl+ij*norb2;
+      if (klij % mpi__->size() != mpi__->rank()) continue;
+
+      for (auto& iter : cc_->det()->phia(k,l)) {
+        size_t iaJ = iter.source;
+        size_t iaI = iter.target;
+        double sign = static_cast<double>(iter.sign);
+        for (size_t ib = 0; ib != lenb; ++ib) {
+          size_t iI = ib + iaI*lenb;
+          size_t iJ = ib + iaJ*lenb;
+          if ((iJ - offset) < size)
+            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
+        }
+      }
+
+      for (size_t ia = 0; ia != lena; ++ia) {
+        for (auto& iter : cc_->det()->phib(k,l)) {
+          size_t ibJ = iter.source;
+          size_t ibI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          size_t iI = ibI + ia*lenb;
+          size_t iJ = ibJ + ia*lenb;
+          if ((iJ - offset) < size)
+            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
+        }
+      }
+
+      if (i == l) {
+        const int kj = k+j*norb_;
+        for (size_t iJ = offset; iJ != offset+size; ++iJ) {
+          emat->element(iJ-offset, klij) -= dbra->data(kj)->data(iJ);
+        }
+      }
+    }
+  }
+  emat->allreduce();
+
+  return emat;
+}
+
+
+shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
+#ifndef HAVE_MPI_H
+  throw logic_error("FCI::rdm3deriv should not be called without MPI");
+#endif
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<Civec> cbra = cc_->data(target);
+
+  const size_t norb2 = norb_*norb_;
+  const size_t norb3 = norb2*norb_;
+  const size_t norb4 = norb2*norb2;
+
+  // first make <I|i+j|0>
+  auto dbra = rdm1deriv(target);
+
+  const size_t ndet = cbra->det()->size();
+  const size_t ijmax = 635040001;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
+
+  // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing)
+  auto fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
+  for (size_t ipass = 0; ipass != npass; ++ipass) {
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    shared_ptr<Matrix> ebra;
+    ebra = rdm2deriv_offset(target, ioffset, isize);
+
+    for (size_t kl = 0; kl != norb2; ++kl) {
+      if (kl % mpi__->size() != mpi__->rank()) continue;
+      for (size_t mn = 0; mn != norb2; ++mn) {
+        const size_t n = mn/norb_;
+        const size_t m = mn-n*norb_;
+        const size_t klmn = kl * norb2 + mn;
+        for (size_t iI = 0; iI != isize; ++iI)
+          fock_ebra_mat->element(iI+ioffset,kl) += fock->element(m,n) * ebra->element(iI,klmn);
+      }
+    }
+  }
+  fock_ebra_mat->allreduce();
+
+  // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
+  auto fock_fbra = make_shared<Matrix>(size, norb4);
+  // set ebra within the pass now
+  auto ebra = rdm2deriv_offset(target, offset, size);
+  const int lena = cc_->det()->lena();
+  const int lenb = cc_->det()->lenb();
+
+  for (int ij = 0; ij != norb2; ++ij) {
+    if (ij % mpi__->size() != mpi__->rank()) continue;
+    const int j = ij/norb_;
+    const int i = ij-j*norb_;
+
+    for (int kl = 0; kl != norb2; ++kl) {
+      const int l = kl/norb_;
+      const int k = kl-l*norb_;
+      const int klij = kl+ij*norb2;
+
+      for (auto& iter : cc_->det()->phia(k,l)) {
+        size_t iaJ = iter.source;
+        size_t iaI = iter.target;
+        double sign = static_cast<double>(iter.sign);
+        for (size_t ib = 0; ib != lenb; ++ib) {
+          size_t iI = ib + iaI*lenb;
+          size_t iJ = ib + iaJ*lenb;
+          if ((iJ - offset) < size)
+            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
+        }
+      }
+
+      for (size_t ia = 0; ia != lena; ++ia) {
+        for (auto& iter : cc_->det()->phib(k,l)) {
+          size_t ibJ = iter.source;
+          size_t ibI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          size_t iI = ibI + ia*lenb;
+          size_t iJ = ibJ + ia*lenb;
+          if ((iJ - offset) < size)
+            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
+        }
+      }
+
+      if (i == l) {
+        const int kj = k+j*norb_;
+        for (size_t iJ = 0; iJ != size; ++iJ) {
+          fock_fbra->element(iJ, klij) -= fock_ebra_mat->element(iJ+offset,kj);
+        }
+      }
+
+      for (int n = 0; n != norb_; ++n) {
+        const size_t ijkn = j*norb3+i*norb2+n*norb_+k;
+        for (size_t iJ = 0; iJ != size; ++iJ)
+          fock_fbra->element(iJ, klij) -= ebra->element(iJ, ijkn) * fock->element(l,n);
+      }
+    }
+  }
+  fock_fbra->allreduce();
+
+  return fock_fbra;
+}
+
+
 tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm34deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm34deriv should not be called without MPI");

@@ -54,9 +54,9 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   for (auto& i : *rdm2_)
     mpi__->broadcast(i.second->data(), i.second->size(), 0);
   if (rdm1_av_)
-    mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm1_av_->data()), rdm1_av_->size(), 0);
   if (rdm2_av_)
-    mpi__->broadcast_force(rdm2_av_->data(), rdm2_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm2_av_->data()), rdm2_av_->size(), 0);
 
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
@@ -112,6 +112,15 @@ shared_ptr<Matrix> Reference::rdm1_mat(shared_ptr<const RDM<1>> active) const {
   }
 }
 
+shared_ptr<Matrix> Reference::rdm1_mat_tr(shared_ptr<const RDM<1>> active) const {
+  if (nact_)
+    return active->rdm1_mat_tr(nclosed_);
+  else {
+    auto out = make_shared<Matrix>(nocc(), nocc());
+    for (int i = 0; i != nclosed_; ++i) out->element(i,i) = 0.0;	// unnecessary and silly: just to make it sure
+    return out;
+  }
+}
 
 shared_ptr<const Dvec> Reference::civectors() const {
   return ciwfn_->civectors();
@@ -127,6 +136,18 @@ shared_ptr<Dvec> Reference::rdm1deriv(const int istate) const {
 shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
   FCI_bare fci(ciwfn_);
   return fci.rdm2deriv(istate);
+}
+
+
+shared_ptr<Matrix> Reference::rdm2deriv_offset(const int istate, const size_t offset, const size_t size) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm2deriv_offset(istate, offset, size);
+}
+
+
+shared_ptr<Matrix> Reference::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm3deriv(istate, fock, offset, size);
 }
 
 

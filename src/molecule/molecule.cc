@@ -222,10 +222,12 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
+  if (verbose)
+    cout << "    o Connectivitiy analysis" << endl;
 
-array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev) const {
-  cout << "    o Connectivitiy analysis" << endl;
-
+  // list of primitive internals
+  array<vector<vector<int>>,3> prims;
   vector<vector<double>> out;
   const size_t size = natom()*3;
 
@@ -239,6 +241,14 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   vector<double> hessprim;
   hessprim.reserve(natom()*3 * 10);
 
+  // (1) make c-matrix from constraint data
+  // (2) Schmidt orthogonalization ---> (ninternal - nconstraint) + nconstraint vector generated
+  // (3) in eigenvector following ---> generate Hessian and follow eigenvector (p,n) n eigenvector
+  //
+  // List of primitive internals should be generated first
+//        Quatern<double> ip = (atoms_[(*c)->pair(0)])->position();
+//        Quatern<double> jp = (atoms_[(*c)->pair(1)])->position();
+
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     const double radiusi = (*i)->atom()->cov_radius();
@@ -246,9 +256,15 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
     for (++j ; j != nodes.end(); ++j) {
       const double radiusj = (*j)->atom()->cov_radius();
 
-      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
+      bool expbond = false;
+      if (explicit_bond.size())
+        for (auto e : explicit_bond)
+          if ((e->pair(0) == (*i)->num()) && (e->pair(1) == (*j)->num())) expbond = true;
+
+      if (((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) || expbond) {
         (*i)->add_connected(*j);
         (*j)->add_connected(*i);
+        if (verbose)
         cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
                                     setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
 
@@ -258,10 +274,13 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
 
         Quatern<double> ip = (*i)->atom()->position();
         Quatern<double> jp = (*j)->atom()->position();
+
         jp -= ip;  // jp is a vector from i to j
         jp.normalize();
         vector<double> current(size);
         const double fac = adf_rho(*i, *j);
+
+        // use baker, temporarily
         current[3*(*i)->num()+0] =  jp[1]*fac;
         current[3*(*i)->num()+1] =  jp[2]*fac;
         current[3*(*i)->num()+2] =  jp[3]*fac;
@@ -269,12 +288,17 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
         current[3*(*j)->num()+1] = -jp[2]*fac;
         current[3*(*j)->num()+2] = -jp[3]*fac;
         out.push_back(current);
+
+        vector<int> prim(2);
+        prim[0] = (*i)->num();
+        prim[1] = (*j)->num();
+        prims[0].push_back(prim);
       }
     }
   }
 
   if (!molecule_details::is_one_molecule(nodes))
-    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule.");
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
 
   // then bond angles A-O-B (A<B)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
@@ -314,6 +338,12 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
           current[3*(*c)->num() + ic] = st2[ic+1]*fac;
         }
         out.push_back(current);
+
+        vector<int> prim(3);
+        prim[0] = (*i)->num();
+        prim[1] = (*c)->num();
+        prim[2] = (*j)->num();
+        prims[1].push_back(prim);
       }
     }
   }
@@ -325,8 +355,10 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-//        if (!((*k)->connected_with(*j))) continue;
-          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
+//          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
+//        Only proper dihedrals
+          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
+          if (*c > *j) continue;
           if (*c == *k || *k == *i) continue;
           if (*j == *k) continue;
 #if 0
@@ -377,14 +409,79 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
             assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
           }
           out.push_back(current);
+          vector<int> prim(4);
+          prim[0] = (*i)->num();
+          prim[1] = (*c)->num();
+          prim[2] = (*j)->num();
+          prim[3] = (*k)->num();
+          prims[2].push_back(prim);
         }
       }
     }
   }
+#if 0
+  cout << " # primitive, bond = " << prims[0].size() << "  angle = " << prims[1].size() << "  torsion = " << prims[2].size() << endl;
+  cout << "   List of Primitive Stretches : " << endl;
+  for (auto i : prims[0]) {
+    cout << "   " << i[0] << "   " << i[1] << endl;
+  }
+  cout << "   List of Primitive Bends : " << endl;
+  for (auto i : prims[1]) {
+    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] << endl;
+  }
+  cout << "   List of Primitive Torsions : " << endl;
+  for (auto i : prims[2]) {
+    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] <<  "   " << i[3] << endl;
+  }
+#endif
 
   // debug output
   const int primsize = out.size();
   const int cartsize = 3*natom();
+
+  bool constrained = cmat.size() ? true : false;
+  vector<vector<double>> cvec;
+  if (constrained) {
+    for (auto c : cmat) {
+      if (c->type() == "bond") {
+        int count = 0;
+        for (auto p : prims[0]) {
+          if (((c->pair(0) == p[0]) && (c->pair(1) == p[1])) ||
+              ((c->pair(0) == p[1]) && (c->pair(1) == p[0]))) {
+            vector<double> current(primsize);
+            current[count] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      } else if (c->type() == "angle") {
+        int count = 0;
+        for (auto p : prims[1]) {
+          if ((c->pair(1) == p[1]) &&
+              (((c->pair(0) == p[0]) && (c->pair(2) == p[2])) ||
+               ((c->pair(0) == p[2]) && (c->pair(2) == p[0])))) {
+            vector<double> current(primsize);
+            current[count+prims[0].size()] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      } else if (c->type() == "torsion") {
+        int count = 0;
+        for (auto p : prims[2]) {
+          if ((((c->pair(1) == p[1]) && (c->pair(2) == p[2])) &&
+               ((c->pair(0) == p[0]) && (c->pair(3) == p[3]))) ||
+              (((c->pair(1) == p[2]) && (c->pair(2) == p[1])) &&
+               ((c->pair(0) == p[3]) && (c->pair(3) == p[0])))) {
+            vector<double> current(primsize);
+            current[count+prims[0].size()+prims[1].size()] = 1.0;
+            cvec.push_back(current);
+          }
+          ++count;
+        }
+      }
+    }
+  }
 
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
@@ -410,10 +507,34 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
     if (eig(i) < 1.0e-10)
       cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
-  cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
+  if (verbose)
+    cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
+  // bbslice = U
   // form B = U^+ Bprim
   Matrix bbslice = bb.slice(0,ninternal);
+
+  if (constrained) {
+    cout << "      Imposing Constraints with Schmidt Orthogonalization " << endl;
+    auto cdag = make_shared<Matrix>(primsize, cmat.size());
+    double *citer = cdag->data();
+    for (auto i = cvec.begin(); i != cvec.end(); ++i, citer += primsize)
+      copy (i->begin(), i->end(), citer);
+    cdag->broadcast();
+    auto umat = make_shared<Matrix>(bbslice);
+    auto vmat = make_shared<Matrix>(*(umat->merge(cdag)));
+
+    for (int i = vmat->mdim()-1; i != -1; --i) {
+      for (int j = vmat->mdim()-1; j != i; --j) {
+        const double a = blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,j));
+        blas::ax_plus_y_n(-a, vmat->element_ptr(0,j), vmat->ndim(), vmat->element_ptr(0,i));
+      }
+      const double b = 1.0 / sqrt(blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,i)));
+      for_each(vmat->element_ptr(0,i), vmat->element_ptr(0,i+1), [&b](double &a) { a *= b; });
+    }
+    bbslice = vmat->slice(cmat.size(), ninternal+cmat.size());
+  }
+
   auto bnew = make_shared<Matrix>(bdag * bbslice);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
@@ -430,10 +551,20 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
     }
   }
   Matrix hess = bbslice % scale;
+
+  shared_ptr<Matrix> hessc;
+  if (constrained)
+    hessc = make_shared<Matrix>(*(hess.resize(hess.ndim()+cmat.size(), hess.mdim()+cmat.size())));
+  for (int i = 0; i != cmat.size(); ++i) {
+    // let me assume that they are arranged well (will make a map)
+    hessc->element(i + ninternal, ninternal - cmat.size() + i) = 1.0;
+    hessc->element(ninternal - cmat.size() + i, i + ninternal) = 1.0;
+  }
   hess.sqrt();
   *bnew = *bnew * hess;
   hess.inverse();
   *bdmnew = *bdmnew * hess;
+  auto hessout = make_shared<Matrix>(hess);
 
   // if this is not the first time, make sure that the change is minimum
   if (prev) {
@@ -453,7 +584,205 @@ array<shared_ptr<const Matrix>,2> Molecule::compute_internal_coordinate(shared_p
   bnew->broadcast();
   bdmnew->broadcast();
 
-  return array<shared_ptr<const Matrix>,2>{{bnew, bdmnew}};
+  return array<shared_ptr<const Matrix>,3>{{bnew, bdmnew, hessout}};
+}
+
+array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_ptr<const Matrix> prev) const {
+  // Using original B by E B Wilson (Chapter 4)
+  cout << "    o Connectivitiy analysis" << endl;
+
+  vector<vector<double>> out;
+  vector<double> val;
+  const size_t size = natom()*3;
+
+  list<shared_ptr<Node>> nodes;
+  int n = 0;
+  for (auto i = atoms_.begin(); i != atoms_.end(); ++i, ++n) {
+    if ((*i)->dummy()) throw runtime_error("haven't thought about internal coordinate with dummy atoms (or gradient in general)");
+    nodes.push_back(make_shared<Node>(*i, n));
+  }
+
+  // first pick up bonds
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    const double radiusi = (*i)->atom()->cov_radius();
+    auto j = i;
+    for (++j ; j != nodes.end(); ++j) {
+      const double radiusj = (*j)->atom()->cov_radius();
+
+      if ((*i)->atom()->distance((*j)->atom()) < (radiusi+radiusj)*1.3) {
+        (*i)->add_connected(*j);
+        (*j)->add_connected(*i);
+
+        cout << "       bond:  " << setw(6) << (*i)->num() << setw(6) << (*j)->num() << "     bond length" <<
+                                    setw(10) << setprecision(4) << (*i)->atom()->distance((*j)->atom()) << " bohr" << endl;
+
+        Quatern<double> ip = (*i)->atom()->position();
+        Quatern<double> jp = (*j)->atom()->position();
+        jp -= ip;  // jp is a vector from i to j
+        jp.normalize();
+        vector<double> current(size);
+        current[3*(*i)->num()+0] =  jp[1];
+        current[3*(*i)->num()+1] =  jp[2];
+        current[3*(*i)->num()+2] =  jp[3];
+        current[3*(*j)->num()+0] = -jp[1];
+        current[3*(*j)->num()+1] = -jp[2];
+        current[3*(*j)->num()+2] = -jp[3];
+        out.push_back(current);
+
+        const double length = (*i)->atom()->distance((*j)->atom());
+        val.push_back(length);
+      }
+    }
+  }
+
+  if (!molecule_details::is_one_molecule(nodes))
+    throw runtime_error("Internal coordinate transformation currently requires that we have only one molecule -- consider using \"explicitbond\".");
+
+  // then bond angles A-O-B (A<B)
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    auto j = i;
+    for (++j; j != nodes.end(); ++j) {
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
+      for (auto c = center.begin(); c != center.end(); ++c) {
+        const double theta = (*c)->atom()->angle((*i)->atom(), (*j)->atom());
+#if 0
+        cout << "       angle: " << setw(6) << (*c)->num() << setw(6) << (*i)->num() << setw(6) << (*j)->num() <<
+                "     angle" << setw(10) << setprecision(4) << theta << " deg" << endl;
+#endif
+        Quatern<double> op = (*c)->atom()->position();
+        Quatern<double> ap = (*i)->atom()->position();
+        Quatern<double> bp = (*j)->atom()->position();
+        Quatern<double> e21 = ap - op;
+        Quatern<double> e23 = bp - op;
+        const double r21 = e21.norm();
+        const double r23 = e23.norm();
+        e21.normalize();
+        e23.normalize();
+        const double rad = theta/rad2deg__;
+        Quatern<double> st1 = (e21 * cos(rad) - e23) / (r21 * sin(rad));
+        Quatern<double> st3 = (e23 * cos(rad) - e21) / (r23 * sin(rad));
+        Quatern<double> st2 = (st1 + st3) * (-1.0);
+        vector<double> current(size);
+        for (int ic = 0; ic != 3; ++ic) {
+          current[3*(*i)->num() + ic] = st1[ic+1];
+          current[3*(*j)->num() + ic] = st3[ic+1];
+          current[3*(*c)->num() + ic] = st2[ic+1];
+        }
+        out.push_back(current);
+
+        val.push_back(rad);
+      }
+    }
+  }
+
+  // then dihedral angle (i-c-j-k)
+  for (auto i = nodes.begin(); i != nodes.end(); ++i) {
+    for (auto j = nodes.begin(); j != nodes.end(); ++j) {
+      if (*i == *j) continue;
+      std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
+      for (auto k = nodes.begin(); k != nodes.end(); ++k) {
+        for (auto c = center.begin(); c != center.end(); ++c) {
+          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
+          if (*c > *j) continue;
+          if (*c == *k || *k == *i) continue;
+          if (*j == *k) continue;
+#if 0
+          cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
+                  "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
+#endif
+          const double dihed = (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom())/rad2deg__;
+          Quatern<double> ap = (*i)->atom()->position();
+          Quatern<double> bp = (*c)->atom()->position();
+          Quatern<double> cp = (*j)->atom()->position();
+          Quatern<double> dp = (*k)->atom()->position();
+          Quatern<double> eab = bp - ap;
+          Quatern<double> ebc = cp - bp;
+          Quatern<double> edc = cp - dp;
+          Quatern<double> ecb = bp - cp;
+          const double rab = eab.norm();
+          const double rbc = ebc.norm();
+          const double rcd = edc.norm();
+          eab.normalize();
+          ebc.normalize();
+          edc.normalize();
+          ecb.normalize();
+          Quatern<double> rotabc = (eab*(-1.0)) * ebc; rotabc[0] = 0.0;
+          Quatern<double> rotbcd = (edc*(-1.0)) * ecb; rotbcd[0] = 0.0;
+          const double tabc = atan2(rotabc.norm(), -eab.dot_product(ebc));
+          const double tbcd = atan2(rotbcd.norm(), -edc.dot_product(ecb));
+
+          Quatern<double> sa = (eab * ebc) / (-rab*::pow(::sin(tabc), 2.0));
+          Quatern<double> sd = (edc * ecb) / (-rcd*::pow(::sin(tbcd), 2.0));
+          Quatern<double> sb = (eab * ebc) * ((rbc-rab*::cos(tabc)) / (rab*rbc*::pow(::sin(tabc), 2.0)))
+                             + (edc * ecb) * (::cos(tbcd) / (rbc*::pow(::sin(tbcd), 2.0)));
+          Quatern<double> sc = (eab * ebc) * (::cos(tabc) / (rbc*::pow(::sin(tabc), 2.0)))
+                             + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
+          vector<double> current(size);
+          for (int ic = 0; ic != 3; ++ic) {
+            current[3*(*i)->num() + ic] = sa[ic+1];
+            current[3*(*c)->num() + ic] = sb[ic+1];
+            current[3*(*j)->num() + ic] = sc[ic+1];
+            current[3*(*k)->num() + ic] = sd[ic+1];
+            assert(fabs(sa[ic+1]+sb[ic+1]+sc[ic+1]+sd[ic+1]) < 1.0e-8);
+          }
+          out.push_back(current);
+
+          val.push_back(dihed);
+        }
+      }
+    }
+  }
+
+  // debug output
+  const int primsize = out.size();
+  const int cartsize = 3*natom();
+  cout << "      Redundant internal coordinate generated (dim = " << primsize << ")" << endl;
+
+  Matrix minv(cartsize, cartsize);
+  minv.zero();
+  for (int i = 0; i != natom(); ++i) {
+    minv(i*3+0,i*3+0) = 1.0;
+    minv(i*3+1,i*3+1) = 1.0;
+    minv(i*3+2,i*3+2) = 1.0;
+  }
+
+  // By convention, bdag is B^+ here
+  Matrix bdag(cartsize, primsize);
+  double* biter = bdag.data();
+  for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
+    copy(i->begin(), i->end(), biter);
+
+  bdag.broadcast();
+
+  // (-1.0) is a trick to make it (K L), not (L K)
+  Matrix g = bdag % minv * bdag * (-1.0);
+  VectorB geig(primsize);
+  g.diagonalize(geig);
+
+#ifndef HAVE_SCALAPACK
+  g.broadcast();
+  mpi__->broadcast(geig.data(), primsize, 0);
+#endif
+
+  // pseudoinvert g
+  Matrix ml(primsize, primsize);
+  ml.zero();
+  auto values = make_shared<Matrix>(3, primsize/3+1);
+
+  for (int i = 0; i != primsize; ++i) {
+    values->element(i%3,i/3) = val[i];
+    geig(i) *= -1.0;
+    if (fabs(geig(i)) < 1.0e-8) { geig(i) = 0.0; ml(i,i) = 0.0; }
+    else ml(i,i) = 1.0 / geig(i);
+  }
+  Matrix ginv = g * ml ^ g;
+  auto bmat = make_shared<Matrix>(*bdag.transpose());
+  auto ubgnew = make_shared<Matrix>(minv * bdag * ginv);
+
+  bmat->broadcast();
+  ubgnew->broadcast();
+
+  return array<shared_ptr<const Matrix>,4>{{bmat, ubgnew, values, nullptr}};
 }
 
 

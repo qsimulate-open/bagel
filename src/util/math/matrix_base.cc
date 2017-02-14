@@ -241,8 +241,8 @@ template<typename DataType>
 void Matrix_base<DataType>::setlocal_(const unique_ptr<DataType[]>& local) {
   zero();
 
-  const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
+  const size_t localrow = get<0>(localsize_);
+  const size_t localcol = get<1>(localsize_);
 
   const int nblock = localrow/blocksize__;
   const int mblock = localcol/blocksize__;
@@ -274,8 +274,8 @@ void Matrix_base<DataType>::setlocal_(const unique_ptr<DataType[]>& local) {
 
 template<typename DataType>
 unique_ptr<DataType[]> Matrix_base<DataType>::getlocal() const {
-  const int localrow = get<0>(localsize_);
-  const int localcol = get<1>(localsize_);
+  const size_t localrow = get<0>(localsize_);
+  const size_t localcol = get<1>(localsize_);
 
   unique_ptr<DataType[]> local(new DataType[localrow*localcol]);
 

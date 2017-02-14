@@ -79,7 +79,7 @@ class Lattice {
 
   public:
     Lattice() { }
-    Lattice(const std::shared_ptr<const Geometry> g, const int k_parameter, const int extent = 0, const bool dofmm = false, 
+    Lattice(const std::shared_ptr<const Geometry> g, const int k_parameter, const int extent = 0, const bool dofmm = false,
             const std::tuple<int, int, bool, bool, double>& fmmp = std::tuple<int, int, bool, bool, double>());
     virtual ~Lattice() { }
 

@@ -40,6 +40,7 @@ struct AtomMap {
     std::map<std::string, double> bsradii;
     std::map<std::string, double> cov_radii;
     std::map<std::string, double> nuclear_exponents;
+    std::map<std::string, double> averaged_masses;
     std::map<std::string, int> angmap;
     std::map<std::string, double> hfccp;
     std::map<std::string, std::tuple<int,int,int,int>> nclosed;
@@ -52,6 +53,7 @@ struct AtomMap {
     double radius(const std::string) const;
     double cov_radius(const std::string) const;
     double nuclear_exponent(const std::string) const;
+    double averaged_mass(const std::string) const;
 
     bool hfcc_exists(const std::string) const;
     double hfcc_pfac(const std::string) const;

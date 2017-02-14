@@ -548,7 +548,7 @@ shared_ptr<const ZMatrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density)
   assert(nchild() == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
 
-  // compute multipoles again - not efficient - for now 
+  // compute multipoles again - not efficient - for now
   TaskQueue<function<void(void)>> tasks(nsp());
   mutex jmutex;
   for (auto& v : sp_) {

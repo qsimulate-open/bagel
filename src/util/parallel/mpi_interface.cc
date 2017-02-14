@@ -108,158 +108,63 @@ void MPI_Interface::barrier() const {
 }
 
 
-// barrier without locking mutex all the time
-void MPI_Interface::soft_barrier() {
-  vector<int> receive; receive.reserve(size_);
-  vector<size_t> msg(size_);
-  for (int i = 0; i != size_; ++i) {
-    if (i == rank_) continue;
-    // using the biggest tag value
-    request_send(&msg[rank_], 1, i, tag_ub_);
-    receive.push_back(request_recv(&msg[i], 1, i, tag_ub_));
-  }
-  bool done;
-  do {
-    done = true;
-    for (auto& i : receive)
-      if (!test(i)) { done = false; break; }
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-}
-
-
-void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
-#ifdef HAVE_MPI_H
-  MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
-#endif
-}
-
-
-void MPI_Interface::reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const {
-#ifdef HAVE_MPI_H
-  MPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif
-}
-
-int MPI_Interface::ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) {
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Ireduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
-}
-
-
 void MPI_Interface::allreduce(double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::allreduce(int* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
 #endif
-}
-
-
-int MPI_Interface::iallreduce(size_t* a, const size_t size) {
-  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Iallreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
-}
-
-
-void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
-  vector<size_t> receive;
-  vector<size_t> msg(size_*size);
-  for (int i = 0; i != size_; ++i) {
-    if (i == rank_) continue;
-    request_send(a, size, i, tag_ub_-1);
-    receive.push_back(request_recv(&msg[i*size], size, i, tag_ub_-1));
-  }
-  bool done;
-  do {
-    done = true;
-    for (auto& i : receive)
-      if (!test(i)) { done = false; break; }
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-  for (int i = 0; i != size_; ++i)
-    if (i != rank_) {
-      for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
-    }
 }
 
 
 void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
-  MPI_Bcast(static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, root, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, root, MPI_COMM_WORLD);
 #endif
 }
 
 
 void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Bcast(static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
-#endif
-}
-
-
-int MPI_Interface::ibroadcast(double* a, const size_t size, const int root) {
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Ibcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
-}
-
-
-void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
-#ifdef HAVE_MPI_H
-  // sometimes we need to broadcast const objects for consistency...
-  double* aa = const_cast<double*>(a);
-  MPI_Bcast(static_cast<void*>(aa), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
 #endif
 }
 

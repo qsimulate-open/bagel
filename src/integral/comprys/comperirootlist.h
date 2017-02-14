@@ -72,7 +72,7 @@ namespace bagel {
   };
 
   const static ComplexERIRootList complexeriroot__;
- 
+
 }
 
 #endif

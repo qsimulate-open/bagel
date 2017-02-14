@@ -40,7 +40,7 @@ using namespace std;
 using namespace bagel;
 
 CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
-  : Method(inp, geom, ref) {
+  : CASPT2Deriv(inp, geom, ref) {
 #ifdef COMPILE_SMITH
   Timer timer;
 

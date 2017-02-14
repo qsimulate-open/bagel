@@ -42,6 +42,18 @@ class GOverlapBatch : public OSInt {
 
 };
 
+class GDerivOverBatch : public OSInt {
+  protected:
+    int nblocks() const override { return 6; }
+    int nrank() const override { return 1; }
+
+  public:
+    GDerivOverBatch(const std::array<std::shared_ptr<const Shell>,2>& o) : OSInt(o) { common_init(); }
+
+    void compute();
+
+};
+
 }
 
 #endif

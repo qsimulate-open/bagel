@@ -87,8 +87,8 @@ class Matrix_base : public btas::Tensor2<DataType> {
     Matrix_base<DataType>& operator=(Matrix_base<DataType>&& o);
 
     size_t size() const { return ndim()*mdim(); }
-    int ndim() const { return this->extent(0); }
-    int mdim() const { return this->extent(1); }
+    size_t ndim() const { return this->extent(0); }
+    size_t mdim() const { return this->extent(1); }
 
     void fill_upper();
     void fill_upper_conjg();
@@ -225,8 +225,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
       assert(jblock >= 0 && iblock >= 0);
       assert(i >= 0 && j + jblock <= mdim());
       assert(i + iblock <= j);
+      const int n = ndim();
+      const int m = mdim();
       auto low0 = {0, 0}, low1 = {0, j}, low2 = {0, i+iblock}, low3 = {0, i}, low4 = {0, j+jblock};
-      auto up0 = {ndim(), i}, up1 = {ndim(), j+jblock}, up2 = {ndim(), j}, up3 = {ndim(), i+iblock}, up4 = {ndim(), mdim()};
+      auto up0 = {n, i}, up1 = {n, j+jblock}, up2 = {n, j}, up3 = {n, i+iblock}, up4 = {n, m};
       auto out = std::make_shared<T>(ndim(), mdim(), localized_);
       out->copy_block(0,                   0, ndim(),                 i, btas::make_rwview(this->range().slice(low0, up0), this->storage()));
       out->copy_block(0,                   i, ndim(),            jblock, btas::make_rwview(this->range().slice(low1, up1), this->storage()));

@@ -63,8 +63,8 @@ class Geometry : public Molecule {
     bool use_ecp_basis_;
 
     // Lattice parameters
-    std::vector<std::array<double, 3>> primitive_vectors_;
     bool do_periodic_df_;
+    std::vector<std::array<double, 3>> primitive_vectors_;
 
     // Schwarz, multipoles
     void get_shellpairs();

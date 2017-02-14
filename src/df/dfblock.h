@@ -136,6 +136,7 @@ class DFBlock : public btas::Tensor3<double> {
     std::shared_ptr<DFBlock> apply_uhf_2RDM(const btas::Tensor2<double>&, const btas::Tensor2<double>&) const;
     std::shared_ptr<DFBlock> apply_2RDM(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
     std::shared_ptr<DFBlock> apply_2RDM(const btas::Tensor4<double>& rdm) const;
+    std::shared_ptr<DFBlock> apply_2RDM_tr(const btas::Tensor4<double>& rdm, const btas::Tensor2<double>& rdm1, const int nclosed, const int nact) const;
 
     // Form 2- and 4-index integrals
     std::shared_ptr<Matrix> form_2index(const std::shared_ptr<const DFBlock> o, const double a) const;

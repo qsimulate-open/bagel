@@ -439,7 +439,7 @@ void ASD_base::print_states(const Matrix& cc, const vector<double>& energies, co
 
 void ASD_base::print_property(const string label, shared_ptr<const Matrix> property , const int nstates) const {
   const string indent("   ");
-  const int nprint = min(nstates, property->ndim());
+  const int nprint = min(nstates, static_cast<int>(property->ndim()));
 
   cout << indent << " " << label << "    |0>";
   for (int istate = 1; istate < nprint; ++istate) cout << "         |" << istate << ">";

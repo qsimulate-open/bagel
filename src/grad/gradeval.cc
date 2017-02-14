@@ -42,7 +42,7 @@ shared_ptr<GradFile> GradEval<RHF>::compute() {
   const bool external_half = static_cast<bool>(task_->half());
   shared_ptr<const DFHalfDist> half;
   if (external_half) {
-    half = task_->half(); 
+    half = task_->half();
     task_->discard_half();
   } else {
     half = geom_->df()->compute_half_transform(coeff_occ);

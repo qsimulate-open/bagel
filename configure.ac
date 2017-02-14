@@ -35,7 +35,6 @@ if test x${with_mpi} != xno; then
     CXXFLAGS="${CXXFLAGS}"
 fi
 AX_CXX_COMPILE_STDCXX_11([noext])
-CPPFLAGS="-std=c++11 ${CPPFLAGS}"
 
 LT_INIT([disable-static])
 AC_CONFIG_MACRO_DIR([m4])
@@ -138,6 +137,10 @@ if test "x${use_mkl}" = xyes; then
         fi
     fi
 fi
+
+# ZGEMM3M is provided by MKL, OpenBLAS and perhaps others.
+AC_CHECK_FUNC([zgemm3m_], [AC_DEFINE([HAVE_ZGEMM3M], [1], [Define if zgemm3m_ is present in BLAS .])])
+
 if test "x${with_mpi}" != xno; then
     AC_CHECK_HEADERS([mpi.h], [], [AC_MSG_ERROR([mpi.h not found or not working])], [])
 fi

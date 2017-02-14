@@ -26,6 +26,7 @@
 #define __SRC_GRAD_FORCE_H
 
 #include <src/wfn/reference.h>
+#include <src/util/muffle.h>
 
 namespace bagel {
 
@@ -34,6 +35,7 @@ class Force {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+    bool numerical_;		// numerical or analytical gradient?
 
   public:
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);

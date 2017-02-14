@@ -74,7 +74,7 @@ ZMatrix::ZMatrix(const DistZMatrix& o) : Matrix_base<complex<double>>(o.ndim(), 
 ZMatView ZMatrix::slice(const int mstart, const int mend) {
   assert(mstart >= 0 && mend <= mdim());
   auto low = {0, mstart};
-  auto up  = {ndim(), mend};
+  auto up  = {static_cast<int>(ndim()), mend};
   return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
 }
 
@@ -82,7 +82,7 @@ ZMatView ZMatrix::slice(const int mstart, const int mend) {
 const ZMatView ZMatrix::slice(const int mstart, const int mend) const {
   assert(mstart >= 0 && mend <= mdim());
   auto low = {0, mstart};
-  auto up  = {ndim(), mend};
+  auto up  = {static_cast<int>(ndim()), mend};
   return ZMatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
 }
 

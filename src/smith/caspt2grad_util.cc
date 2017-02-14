@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
-shared_ptr<Matrix> CASPT2Grad::diagonal_D1() const {
+shared_ptr<Matrix> CASPT2Deriv::diagonal_D1() const {
 #ifdef COMPILE_SMITH
   vector<IndexRange> ind = d2_->indexrange();
   if (!(ind[0] == ind[2] && ind[1] == ind[3])) throw logic_error("wrong");
@@ -57,7 +57,7 @@ shared_ptr<Matrix> CASPT2Grad::diagonal_D1() const {
 }
 
 
-shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
+shared_ptr<Matrix> CASPT2Deriv::spin_density_unrelaxed() const {
 #ifdef COMPILE_SMITH
   const int nele_act = fci_->det()->nelea() + fci_->det()->neleb();
   const int nclosed = ref_->nclosed();
@@ -119,7 +119,7 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_unrelaxed() const {
 
 
 // relaxation part of the spin density
-shared_ptr<Matrix> CASPT2Grad::spin_density_relax(shared_ptr<const RDM<1>> zrdm1, shared_ptr<const RDM<2>> zrdm2, shared_ptr<const Matrix> zmat) const {
+shared_ptr<Matrix> CASPT2Deriv::spin_density_relax(shared_ptr<const RDM<1>> zrdm1, shared_ptr<const RDM<2>> zrdm2, shared_ptr<const Matrix> zmat) const {
 #ifdef COMPILE_SMITH
   // zrdm1 and 2 are defined only withtin the active space
   const int nele_act = fci_->det()->nelea() + fci_->det()->neleb();
@@ -157,7 +157,7 @@ shared_ptr<Matrix> CASPT2Grad::spin_density_relax(shared_ptr<const RDM<1>> zrdm1
 }
 
 
-shared_ptr<DFFullDist> CASPT2Grad::contract_D1(shared_ptr<const DFFullDist> full) const {
+shared_ptr<DFFullDist> CASPT2Deriv::contract_D1(shared_ptr<const DFFullDist> full) const {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();

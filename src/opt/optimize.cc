@@ -23,8 +23,8 @@
 //
 
 #include <string>
-#include <src/opt/optimize.h>
 #include <src/opt/opt.h>
+#include <src/opt/optimize.h>
 
 using namespace std;
 using namespace bagel;
@@ -45,54 +45,8 @@ void Optimize::compute() {
 
   shared_ptr<const PTree> methodblock = idata_->get_child("method");
 
-  if (method == "uhf") {
-
-    auto opt = make_shared<Opt<UHF>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "rohf") {
-
-    auto opt = make_shared<Opt<ROHF>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "hf") {
-
-    auto opt = make_shared<Opt<RHF>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "ks") {
-
-    auto opt = make_shared<Opt<KS>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "dhf") {
-
-    auto opt = make_shared<Opt<Dirac>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "mp2") {
-
-    auto opt = make_shared<Opt<MP2Grad>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "casscf") {
-
-    auto opt = make_shared<Opt<CASSCF>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  } else if (method == "caspt2") {
-
-    auto opt = make_shared<Opt<CASPT2Grad>>(idata_, methodblock, geom_, ref_);
-    opt->compute();
-    geom_ = opt->geometry();
-
-  }
+  auto opt = make_shared<Opt>(idata_, methodblock, geom_, ref_);
+  opt->compute();
+  geom_ = opt->geometry();
 
 }

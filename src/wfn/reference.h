@@ -147,6 +147,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     // returns an occ-occ sized 1RDM
     std::shared_ptr<Matrix> rdm1_mat(std::shared_ptr<const RDM<1>> o) const;
+    std::shared_ptr<Matrix> rdm1_mat_tr(std::shared_ptr<const RDM<1>> o) const;
     std::shared_ptr<Matrix> rdm1_mat(const int irdm) const { return rdm1_mat(rdm1_->at(irdm)); }
     std::shared_ptr<Matrix> rdm1_mat() const { return rdm1_mat(rdm1_av_); }
 
@@ -160,6 +161,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<const Dvec> civectors() const;
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
+    std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t offset, const size_t size) const;
+    std::shared_ptr<Matrix> rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
     // 4RDM derivative is precontracted by the Fock matrix
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;

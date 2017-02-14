@@ -30,6 +30,7 @@
 #include <src/molecule/petite.h>
 #include <src/util/math/xyzfile.h>
 #include <src/util/serialization.h>
+#include <src/opt/constraint.h>
 
 namespace bagel {
 
@@ -46,6 +47,9 @@ class Molecule {
     int naux_;
     int lmax_;
     int aux_lmax_;
+
+    // FMM
+    bool dofmm_;
 
     // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int>> offsets_;
@@ -74,9 +78,6 @@ class Molecule {
 
     // external magnetic field
     std::array<double,3> magnetic_field_;
-
-    // FMM
-    bool dofmm_;
 
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
@@ -161,8 +162,14 @@ class Molecule {
     void merge_obs_aux();
 
     // transformation matrices for the internal coordinate for geometry optimization
-    // ninternal runs fast (and cartsize slower)
-    std::array<std::shared_ptr<const Matrix>,2> compute_internal_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
+    // ninternal runs fast (and cartsize slower) (weighted Wilson B)
+    std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(
+        std::shared_ptr<const Matrix> prev = nullptr,
+        std::vector<std::shared_ptr<const OptExpBonds>> explicit_bond = std::vector<std::shared_ptr<const OptExpBonds>>(),
+        std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>(),
+        bool verbose = true) const;
+    // driver for compute B matrix for redundant coordinate (original Wilson B)
+    std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 
     // Split up the atoms into several Molecule objects
     // To limit the memory requirement of integral evaluation

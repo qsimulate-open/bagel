@@ -33,11 +33,15 @@
 #include <src/integral/libint/libint.h>
 #include <boys.h>
 
+#if LIBINT2_CGSHELL_ORDERING != LIBINT2_CGSHELL_ORDERING_BAGEL
+# error "incompatible Libint2 library, must support BAGEL cartesian Gaussian shell ordering"
+#endif
+
 using namespace std;
 using namespace bagel;
 
 const static CarSphList carsphlist;
-const static libint2::FmEval_Chebyshev3<double> fmeval(18);
+const static libint2::FmEval_Chebyshev7<double> fmeval(18);
 
 Libint::Libint(const array<shared_ptr<const Shell>,4>& shells, const double dum,  shared_ptr<StackMem> stack)
  : RysInt(shells, stack) {

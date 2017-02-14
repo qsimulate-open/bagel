@@ -66,6 +66,21 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+    std::shared_ptr<Vec<Tensor>> den0ciall;
+    std::shared_ptr<Vec<Tensor>> den1ciall;
+    std::shared_ptr<Vec<Tensor>> den2ciall;
+    std::shared_ptr<Vec<Tensor>> den3ciall;
+    std::shared_ptr<Vec<Tensor>> den4ciall;
+    std::shared_ptr<Tensor> den0ci;
+    std::shared_ptr<Tensor> den1ci;
+    std::shared_ptr<Tensor> den2ci;
+    std::shared_ptr<Tensor> den3ci;
+    std::shared_ptr<Tensor> den4ci;
+    std::shared_ptr<Tensor> den0cit;
+    std::shared_ptr<Tensor> den1cit;
+    std::shared_ptr<Tensor> den2cit;
+    std::shared_ptr<Tensor> den3cit;
+    std::shared_ptr<Tensor> den4cit;
 
     // storage for output
     std::shared_ptr<Matrix> den1_;
@@ -73,6 +88,8 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<Matrix> dcheck_;
+    // for derivative coupling only
+    std::shared_ptr<Matrix> vden1_;
 
     // passed from CASPT2
     std::vector<std::shared_ptr<MultiTensor>> t2all_;
@@ -87,6 +104,7 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
     std::shared_ptr<Tensor> rdm3deriv_;
+    std::shared_ptr<Tensor> rdm3fderiv_;
     std::shared_ptr<Tensor> rdm4deriv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
@@ -157,6 +175,10 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> contract_rdm_deriv(const int number, const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
+    void zero_total();
+    void add_total(double factor);
+    void do_rdm_deriv(double factor);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
@@ -173,10 +195,13 @@ class MSCASPT2 {
     ~MSCASPT2() {}
 
     void solve_deriv();
+    void solve_nacme();
+    void solve_dm();
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
+    std::shared_ptr<const Matrix> vden1() const { return vden1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
 };
