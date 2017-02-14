@@ -74,27 +74,14 @@ class MPI_Interface {
     // collective functions
     // barrier
     void barrier() const;
-    // barrier but with less mutex lock
-    void soft_barrier();
-    // sum reduce to the root process
-    void reduce(double*, const size_t size, const int root) const;
-    // sum reduce and scatter to each process
-    void reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const;
-    int ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts);
     // sum reduce and broadcast to each process
     void allreduce(int*, const size_t size) const;
     void allreduce(double*, const size_t size) const;
     void allreduce(std::complex<double>*, const size_t size) const;
-    int iallreduce(size_t*, const size_t size);
-    // all reduce but with less mutex lock
-    void soft_allreduce(size_t*, const size_t size);
     // broadcast
     void broadcast(size_t*, const size_t size, const int root) const;
     void broadcast(double*, const size_t size, const int root) const;
     void broadcast(std::complex<double>*, const size_t size, const int root) const;
-    int ibroadcast(double*, const size_t size, const int root);
-    // broadcast of const objects. Use with caution...
-    void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const;
     void allgather(const std::complex<double>* send, const size_t ssize, std::complex<double>* rec, const size_t rsize) const;
     void allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const;
