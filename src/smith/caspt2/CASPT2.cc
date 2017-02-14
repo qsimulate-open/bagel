@@ -171,6 +171,17 @@ void CASPT2::CASPT2::solve() {
     }
     cout << endl << endl;
 
+    if (xmsmat_) {
+      cout << endl;
+      cout << "    * XMS-CASPT2 rotation matrix";
+      for (int ist = 0; ist != nstates_; ++ist) {
+        cout << endl << "      ";
+        for (int jst = 0; jst != nstates_; ++jst)
+          cout << setw(20) << setprecision(10) << msrot()->element(ist, jst);
+      }
+      cout << endl << endl;
+    }
+
     // energy printout
     for (int istate = 0; istate != nstates_; ++istate)
       cout << "    * MS-CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;

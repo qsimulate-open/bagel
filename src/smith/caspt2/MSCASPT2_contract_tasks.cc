@@ -282,22 +282,21 @@ void Task916::Task_local::compute() {
       sort_indices<0,3,4,5,1,2,0,1,1,1>(i1data, i1data_sorted, x0.size(), x4.size(), x4.size(), x1.size(), x2.size(), x3.size());
       std::unique_ptr<double[]> i2data = in(1)->get_block(x2, x4, x0, x1, x4, x3);
       sort_indices<2,3,0,5,1,4,1,1,1,1>(i2data, i1data_sorted, x2.size(), x4.size(), x0.size(), x1.size(), x4.size(), x3.size());
-      std::unique_ptr<double[]> i1data_target(new double[in(1)->get_size(x0, x1, x2, x3, x4)]);
+      std::unique_ptr<double[]> i1data_target(new double[in(1)->get_size(x0, x1, x2, x3)]);
+      std::fill_n(i1data_target.get(), in(1)->get_size(x0, x1, x2, x3), 0.0);
       for (int ix4 = 0; ix4 != x4.size(); ++ix4)
         for (int ix3 = 0; ix3 != x3.size(); ++ix3)
           for (int ix2 = 0; ix2 != x2.size(); ++ix2)
             for (int ix1 = 0; ix1 != x1.size(); ++ix1)
               for (int ix0 = 0; ix0 != x0.size(); ++ix0)
-                i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*ix4)))]
-                  = i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
-      std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0, x4)]);
-      dgemm_("T", "N", ci0.size(), x4.size(), x0.size()*x1.size()*x2.size()*x3.size(),
+                i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3))]
+                  += i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
+      std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0)]);
+      dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size()*x2.size()*x3.size(),
             -1.0, i0data_sorted, x0.size()*x1.size()*x2.size()*x3.size(),
              i1data_target, x0.size()*x1.size()*x2.size()*x3.size(), 0.0, odata_sorted, ci0.size());
-      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-        for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
-          odata[ici0] += odata_sorted[ici0+ci0.size()*ix4];
-        }
+      for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+        odata[ici0] += odata_sorted[ici0];
       }
     }
   }
@@ -374,7 +373,6 @@ void Task923::Task_local::compute() {
   std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x3);
   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x0, x1, x2, x3)]);
   sort_indices<1,2,3,4,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
-
   for (auto& x4 : *range_[1]) {
     {
       std::unique_ptr<double[]> i1data = in(1)->get_block(x4, x3, x0, x1, x2, x4);
@@ -382,22 +380,21 @@ void Task923::Task_local::compute() {
       sort_indices<2,3,4,1,0,5,0,1,1,1>(i1data, i1data_sorted, x4.size(), x3.size(), x0.size(), x1.size(), x2.size(), x4.size());
       std::unique_ptr<double[]> i2data = in(1)->get_block(x0, x1, x4, x3, x2, x4);
       sort_indices<0,1,4,3,2,5,1,1,1,1>(i2data, i1data_sorted, x0.size(), x1.size(), x4.size(), x3.size(), x2.size(), x4.size());
-      std::unique_ptr<double[]> i1data_target(new double[in(1)->get_size(x0, x1, x2, x3, x4)]);
+      std::unique_ptr<double[]> i1data_target(new double[in(1)->get_size(x0, x1, x2, x3)]);
+      std::fill_n(i1data_target.get(), in(1)->get_size(x0, x1, x2, x3), 0.0);
       for (int ix4 = 0; ix4 != x4.size(); ++ix4)
         for (int ix3 = 0; ix3 != x3.size(); ++ix3)
           for (int ix2 = 0; ix2 != x2.size(); ++ix2)
             for (int ix1 = 0; ix1 != x1.size(); ++ix1)
               for (int ix0 = 0; ix0 != x0.size(); ++ix0)
-                i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*ix4)))]
-                  = i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
-      std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0, x4)]);
-      dgemm_("T", "N", ci0.size(), x4.size(), x0.size()*x1.size()*x2.size()*x3.size(),
+                i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3))]
+                  += i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
+      std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0)]);
+      dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size()*x2.size()*x3.size(),
             -1.0, i0data_sorted, x0.size()*x1.size()*x2.size()*x3.size(),
              i1data_target, x0.size()*x1.size()*x2.size()*x3.size(), 0.0, odata_sorted, ci0.size());
-      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-        for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
-          odata[ici0] += odata_sorted[ici0+ci0.size()*ix4];
-        }
+      for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
+        odata[ici0] += odata_sorted[ici0];
       }
     }
   }
