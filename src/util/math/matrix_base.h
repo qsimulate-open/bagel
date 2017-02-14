@@ -86,7 +86,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     Matrix_base<DataType>& operator=(const Matrix_base<DataType>& o);
     Matrix_base<DataType>& operator=(Matrix_base<DataType>&& o);
 
-    size_t size() const { return ndim()*mdim(); }
+    size_t size() const { return static_cast<size_t>(ndim())*mdim(); }
     int ndim() const { return this->extent(0); }
     int mdim() const { return this->extent(1); }
 
