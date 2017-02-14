@@ -102,7 +102,7 @@ void Box::insert_parent(shared_ptr<const Box> parent) {
 }
 
 
-void Box::get_neigh(const vector<shared_ptr<Box>>& box, const int ws) {
+void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
 
   neigh_.resize(box.size());
   int nn = 0;
@@ -116,14 +116,14 @@ void Box::get_neigh(const vector<shared_ptr<Box>>& box, const int ws) {
 }
 
 
-bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
+bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
 
 #if 1
   double rr = 0;
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - box->centre(i), 2);
 
-  const bool out = (sqrt(rr) <= (1.2+ws)*(extent_ + box->extent()));
+  const bool out = (sqrt(rr) <= (1.0+ws)*(extent_ + box->extent()));
 #endif
 
 #if 0
@@ -139,7 +139,7 @@ bool Box::is_neigh(shared_ptr<const Box> box, const int ws) const {
   return out;
 }
 
-void Box::get_inter(const vector<shared_ptr<Box>>& box, const int ws) {
+void Box::get_inter(const vector<shared_ptr<Box>>& box, const double ws) {
 
   inter_.resize(box.size());
   int ni = 0;

@@ -63,9 +63,9 @@ class Box {
     void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
     void insert_child(std::shared_ptr<const Box> = NULL);
     void insert_parent(std::shared_ptr<const Box> parent = NULL);
-    bool is_neigh(std::shared_ptr<const Box> b, const int ws) const;
-    void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const int ws);
-    void get_inter(const std::vector<std::shared_ptr<Box>>& box, const int ws);
+    bool is_neigh(std::shared_ptr<const Box> b, const double ws) const;
+    void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const double ws);
+    void get_inter(const std::vector<std::shared_ptr<Box>>& box, const double ws);
 
     std::shared_ptr<ZVectorB> multipole_;
     std::shared_ptr<ZVectorB> localJ_;

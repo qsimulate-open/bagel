@@ -61,7 +61,7 @@ vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, const ar
 }
 
 
-bool ShellPair::is_neighbour(shared_ptr<const ShellPair> sp, const int ws) const {
+bool ShellPair::is_neighbour(shared_ptr<const ShellPair> sp, const double ws) const {
 
   array<double, 3> v;
   v[0] = centre_[0] - sp->centre(0);
