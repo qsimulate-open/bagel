@@ -41,6 +41,7 @@ class Hess {
     bool numforce_;
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
+    std::shared_ptr<Matrix> proj_hess_;
 
     double dx_;
     double energy_;

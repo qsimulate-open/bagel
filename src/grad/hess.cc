@@ -82,7 +82,6 @@ void Hess::compute() {
     muffle_ = make_shared<Muffle>("freq.log");
     int counter = 0;
     int step = 0;
-
     if (numforce_) {
       const string method = to_lower(cinput->get<string>("title", ""));
       const int target = idata_->get<int>("target", 0);
@@ -173,36 +172,155 @@ void Hess::compute() {
     }
     muffle_->unmute();
 
-    //print hessian
-    hess_->print("Numerical Hessian matrix", 3*natom);
-
-    //print mass weighted hessian
-    mw_hess_->print("Mass Weighted Numerical Hessian Matrix", 3*natom);
-
     //symmetrize mass weighted hessian
     mw_hess_->symmetrize();
-    mw_hess_->print("Symmetrized Mass Weighted Numerical Hessian Matrix", 3*natom);
     cout << "    (masses averaged over the natural occurance of isotopes)";
     cout << endl << endl;
+    mw_hess_->print("Symmetrized Mass Weighted Hessian", 3*natom);
 
-    //TODO: Project out rotations and translations
+    // calculate center of mass
+    VectorB num(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
+    VectorB center(3);
+    double total_mass = 0;
+    // compute center of mass
+    for (int i = 0; i!= natom; ++i) {
+      for (int j = 0; j != 3; ++j) {
+        num(j) += geom_->atoms(i)->averaged_mass() * geom_->atoms(i)->position(j);
+      }
+      total_mass += geom_->atoms(i)->averaged_mass();
+    }
 
-    //diagonalize mass weighted hessian
+    for (int j = 0; j!= 3; ++j) {
+      center(j) = num(j)/total_mass;
+    }
+
+    // shift center coordinate system to center of mass
+    for (int i = 0; i != natom; ++i) {
+      for (int j = 0; j != 3; ++j) {
+        displ->element(j,i) = -1.0 * center(j);
+      }
+    }
+    auto geom_center = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+
+    cout << "    * Projecting out Translational Degrees of Freedom " << endl;
+    auto identity =  make_shared<Matrix>(3*natom,3*natom);
+    for (int ist = 0; ist!= 3*natom; ++ist) {
+      for (int jst = 0; jst != 3*natom; ++jst) {
+        if (jst == ist)
+          (*identity)(jst,ist) = 1;
+      }
+    }
+    // 3N by 3 matrix P_trans
+    auto proj_trans =  make_shared<Matrix>(3,3*natom);
+    for (int i = 0; i!= natom; ++i) {
+      for (int j = 0; j != 3; ++ j) {
+        (*proj_trans)(j, 3*i+j) = sqrt(geom_->atoms(i)->averaged_mass());
+      }
+    }
+
+    cout << "    * Projecting out Rotational Degrees of Freedom " << endl;
+
+    // 3N by 3 matrix P of orthogonal vectors about the XYZ axes
+    auto proj_rot = make_shared<Matrix>(3,3*natom);
+    for (int i = 0; i != natom; ++i) {
+      (*proj_rot)(0,3*i) = 0;
+      (*proj_rot)(0,3*i+1) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(2));
+      (*proj_rot)(0,3*i+2) = sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(1);
+
+      (*proj_rot)(1,3*i) =  sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(2);
+      (*proj_rot)(1,3*i+1) = 0;
+      (*proj_rot)(1,3*i+2) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(0));
+
+      (*proj_rot)(2,3*i) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(1));
+      (*proj_rot)(2,3*i+1) = sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(0);
+      (*proj_rot)(2,3*i+2) = 0;
+    }
+
+    auto proj_total = make_shared<Matrix>(6, 3*natom);
+    for (int i = 0; i != 3*natom; ++i) {
+      (*proj_total)(0, i) = (*proj_trans)(0,i);
+      (*proj_total)(1, i) = (*proj_trans)(1,i);
+      (*proj_total)(2, i) = (*proj_trans)(2,i);
+      (*proj_total)(3, i) = (*proj_rot)(0,i);
+      (*proj_total)(4, i) = (*proj_rot)(1,i);
+      (*proj_total)(5, i) = (*proj_rot)(2,i);
+    }
+
+    //normalize the set of six orthogonal vectors
+    double trans1 = 0;
+    double trans2 = 0;
+    double trans3 = 0;
+    double rot1 = 0;
+    double rot2 = 0;
+    double rot3 = 0;
+
+    // sum of the square of each vector
+    for (int i = 0; i != 3*natom; ++i) {
+      trans1 += (*proj_total)(0,i) * (*proj_total)(0,i);
+      trans2 += (*proj_total)(1,i) * (*proj_total)(1,i);
+      trans3 += (*proj_total)(2,i) * (*proj_total)(2,i);
+      rot1 += (*proj_total)(3,i) * (*proj_total)(3,i);
+      rot2 += (*proj_total)(4,i) * (*proj_total)(4,i);
+      rot3 += (*proj_total)(5,i) * (*proj_total)(5,i);
+    }
+
+    auto proj_norm = make_shared<Matrix>(6, 3*natom);
+    for (int i = 0; i != 3*natom; ++i) {
+      (*proj_norm)(0,i) = (*proj_total)(0,i) / sqrt(trans1);
+      (*proj_norm)(1,i) = (*proj_total)(1,i) / sqrt(trans2);
+      (*proj_norm)(2,i) = (*proj_total)(2,i) / sqrt(trans3);
+      (*proj_norm)(3,i) = (*proj_total)(3,i) / sqrt(rot1);
+      (*proj_norm)(4,i) = (*proj_total)(4,i) / sqrt(rot2);
+      if (rot3 != 0)
+        (*proj_norm)(5,i) = (*proj_total)(5,i) / sqrt(rot3);
+    }
+
+    //TODO: insert check that they are orthogonal. If not, print a warning.
+
+    auto proj_hess_ = make_shared<Matrix>(3*natom,3*natom);
+    *proj_hess_ = (*identity - *proj_norm % *proj_norm) % *mw_hess_ * (*identity - *proj_norm % *proj_norm);
+
+    //diagonalize hessian
     // eig(i) in Hartree/bohr^2*amu
     VectorB eig(3*natom);
-    mw_hess_->diagonalize(eig);
+    proj_hess_->diagonalize(eig);
 
-    // v = sqrt (eig) / (2 pi c )
-    for (int i = 0; i != natom; ++i) {
-      cout << setw(20) << setprecision(15) << eig(i);
+    // frequency = sqrt(eig) / (2*pi*c ) (convert units to wavenumbers)
+    cout << "******DEBUG:  Eigenvalues in hartree/bohr^2*amu" <<endl;
+    for (int i = 0; i != 3*natom; ++i) {
+      cout << setw(20) << setprecision(20) << eig(i) << endl;
     }
     cout << endl << endl;
 
+    //TODO: Fix printing in output. (don't print 5 or 6 that are 0, but large imaginary modes should be printed)
+    //TODO: Print vibrational modes to molden file
+    //TODO: Print warning if eignvalues are larger than a threshold
+    cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
+    for (int i = 0; i != 3*natom; ++i) {
+      cout << setw(20) << setprecision(2) << sqrt((eig(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
+    }
+    cout << endl << endl;
+
+#if 1
+    cout << " **********  DEBUG: generating frequencies using the mw-hessian and not projecting out terms *********** " << endl;
+    //diagonalize mass weighted hessian
+    // old(i) in Hartree/bohr^2*amu
+    VectorB old(3*natom);
+    mw_hess_->diagonalize(old);
+
+    // v = sqrt (oldeig) / (2 pi c )
+    cout << "    * Eigenvalues in hartree/bohr^2*amu" <<endl;
+    for (int i = 0; i != 3*natom; ++i) {
+     cout << setw(20) << setprecision(20) << old(i) << endl;
+    }
+    cout << endl << endl;
 
     cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
     for (int i = 0; i != 3*natom; ++i) {
-      cout << setw(20) << setprecision(7) << sqrt((eig(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
+      cout << setw(20) << setprecision(2) << sqrt((old(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
     }
     cout << endl << endl;
+#endif
+
   }
 }
