@@ -54,9 +54,9 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   for (auto& i : *rdm2_)
     mpi__->broadcast(i.second->data(), i.second->size(), 0);
   if (rdm1_av_)
-    mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm1_av_->data()), rdm1_av_->size(), 0);
   if (rdm2_av_)
-    mpi__->broadcast_force(rdm2_av_->data(), rdm2_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm2_av_->data()), rdm2_av_->size(), 0);
 
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
