@@ -187,18 +187,18 @@ void Task905::Task_local::compute() {
 }
 
 void Task914::Task_local::compute() {
-  const int detsize = ciwfn_->det()->size();
-  const int lena = ciwfn_->det()->lena();
-  const int lenb = ciwfn_->det()->lenb();
-  const int norb = ciwfn_->nact();
-  const int norb2 = norb*norb;
+  const size_t detsize = ciwfn_->det()->size();
+  const size_t lena = ciwfn_->det()->lena();
+  const size_t lenb = ciwfn_->det()->lenb();
+  const size_t norb = ciwfn_->nact();
+  const size_t norb2 = norb*norb;
   auto odata = std::make_shared<VectorB>(detsize);
   auto in0_mat = in(0)->matrix_3index();
 
-  for (int ij = 0; ij != norb2; ++ij) {
+  for (size_t ij = 0; ij != norb2; ++ij) {
     if (ij % mpi__->size() != mpi__->rank()) continue;
-    const int j = ij/norb;
-    const int i = ij-j*norb;
+    const size_t j = ij/norb;
+    const size_t i = ij-j*norb;
 
     for (auto& iter : ciwfn_->det()->phia(i,j)) {
       size_t iaJ = iter.source;
@@ -225,12 +225,7 @@ void Task914::Task_local::compute() {
     }
   }
   odata->allreduce();
-
-  vector<IndexRange> o1 = {*range_[4]};
-  const btas::CRange<1> range1(detsize);
-  std::static_pointer_cast<btas::Tensor1<double>>(odata)->resize(range1);
-  auto odata_fill = fill_block<1,double>(odata, {0}, o1);
-  out()->ax_plus_y(1.0, odata_fill);
+  blas::ax_plus_y_n(1.0, odata->data(), detsize, bdata_->data());
 }
 
 void Task915::Task_local::compute() {

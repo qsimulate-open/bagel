@@ -45,7 +45,8 @@ class Task900 : public Task {
     const bool reset_;
 
     void compute_() {
-      if (reset_) deci_->zero();
+      if (reset_)
+        deci_->zero();
     }
 
   public:
@@ -240,8 +241,9 @@ class Task914 : public Task {
 
     class Task_local : public SubTask<1,1> {
       protected:
-        const std::array<std::shared_ptr<const IndexRange>,5> range_;
+        const std::array<std::shared_ptr<const IndexRange>,4> range_;
         std::shared_ptr<const CIWfn> ciwfn_;
+        std::shared_ptr<VectorB> bdata_;
         size_t offset_;
         size_t size_;
 
@@ -250,9 +252,9 @@ class Task914 : public Task {
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
 
       public:
-        Task_local(const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out,
-                   std::array<std::shared_ptr<const IndexRange>,5>& ran, std::shared_ptr<const CIWfn> ciwfn, const size_t offset, const size_t size)
-          : SubTask<1,1>(std::array<const Index, 1>(), in, out), range_(ran) { ciwfn_ = ciwfn; offset_ = offset; size_ = size; }
+        Task_local(const std::array<std::shared_ptr<const Tensor>,1>& in, std::shared_ptr<Tensor>& out, std::array<std::shared_ptr<const IndexRange>,4>& ran,
+            std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const size_t offset, const size_t size)
+          : SubTask<1,1>(std::array<const Index, 1>(), in, out), range_(ran) { ciwfn_ = ciwfn; bdata_ = bdata; offset_ = offset; size_ = size; }
 
         void compute() override;
     };
@@ -268,7 +270,7 @@ class Task914 : public Task {
     }
 
   public:
-    Task914(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,5> range, std::shared_ptr<const CIWfn> ciwfn, const size_t offset, const size_t size);
+    Task914(std::vector<std::shared_ptr<Tensor>> t, std::array<std::shared_ptr<const IndexRange>,4> range, std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const size_t offset, const size_t size);
     ~Task914() {}
 
 };

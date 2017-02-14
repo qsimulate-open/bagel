@@ -40,12 +40,10 @@ class MSCASPT2 {
     IndexRange active_;
     IndexRange closed_;
     IndexRange ci_;
-    IndexRange cifull_;
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
     std::shared_ptr<const IndexRange> rci_;
-    std::shared_ptr<const IndexRange> rcifull_;
 
     std::shared_ptr<const Matrix> heff_;
     std::shared_ptr<const Matrix> fockact_;
@@ -63,7 +61,6 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> den2;
     std::shared_ptr<Tensor> Den1;
     std::shared_ptr<Tensor> deci;
-    std::shared_ptr<Tensor> decifull;
     std::shared_ptr<Tensor> rdm0_;
     std::shared_ptr<Tensor> rdm1_;
     std::shared_ptr<Tensor> rdm2_;
@@ -178,7 +175,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> contract_rdm_deriv(const int number, const std::shared_ptr<const CIWfn> ciwfn, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> contract_rdm_deriv(const int number, const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
     void zero_total();
     void add_total(double factor);
     void do_rdm_deriv(double factor);

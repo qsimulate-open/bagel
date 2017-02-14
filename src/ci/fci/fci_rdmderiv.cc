@@ -168,8 +168,8 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
   const size_t ndet = cbra->det()->size();
   const size_t ijmax = 635040001;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ijnum / ijmax + 1;
-  const size_t nsize = ndet / npass + 1;
+  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
 
   // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing)
   auto fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
@@ -200,6 +200,7 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
   const int lenb = cc_->det()->lenb();
 
   for (int ij = 0; ij != norb2; ++ij) {
+    if (ij % mpi__->size() != mpi__->rank()) continue;
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
@@ -207,7 +208,6 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
-      if (klij % mpi__->size() != mpi__->rank()) continue;
 
       for (auto& iter : cc_->det()->phia(k,l)) {
         size_t iaJ = iter.source;
@@ -241,7 +241,7 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
       }
 
       for (int n = 0; n != norb_; ++n) {
-        int ijkn = j*norb3+i*norb2+n*norb_+k;
+        const size_t ijkn = j*norb3+i*norb2+n*norb_+k;
         for (size_t iJ = 0; iJ != size; ++iJ)
           fock_fbra->element(iJ, klij) -= ebra->element(iJ, ijkn) * fock->element(l,n);
       }

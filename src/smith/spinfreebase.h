@@ -153,11 +153,11 @@ class SpinFreeMethod {
       feed_rdm_deriv(std::shared_ptr<const SMITH_Info<DataType>> info, const IndexRange& active,
                      std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size);
     // it can do only to up to RDM3 derivatives
-    static std::tuple<IndexRange, std::shared_ptr<const IndexRange>, IndexRange, std::shared_ptr<const IndexRange>,
+    static std::tuple<IndexRange, std::shared_ptr<const IndexRange>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>>
       feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<DataType>> info, const IndexRange& active,
-                     std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size, const size_t fullsize);
+                     std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size);
 
 };
 
@@ -173,22 +173,20 @@ std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor
   SpinFreeMethod<double>::feed_rdm_deriv(std::shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
                                          std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size);
 template<>
-std::tuple<IndexRange, std::shared_ptr<const IndexRange>, IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>,
+std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>,
                         std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>>
   SpinFreeMethod<double>::feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
-                                           std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size,
-                                           const size_t fullsize);
+                                           std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size);
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>,
           std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>>
   SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(std::shared_ptr<const SMITH_Info<std::complex<double>>> info, const IndexRange& active,
                                                        std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size);
 template<>
-std::tuple<IndexRange, std::shared_ptr<const IndexRange>, IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<std::complex<double>>>,
+std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<std::complex<double>>>,
           std::shared_ptr<Tensor_<std::complex<double>>>,std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>>
   SpinFreeMethod<std::complex<double>>::feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<std::complex<double>>> info, const IndexRange& active,
-                                                       std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size,
-                                                       const size_t fullsize);
+                                                       std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size);
 
 extern template class SpinFreeMethod<double>;
 extern template class SpinFreeMethod<std::complex<double>>;

@@ -134,9 +134,9 @@ shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix_3index
   vector<IndexRange> o = indexrange();
   assert(o.size() == 3);
 
-  const int off0 = o[0].front().offset();
-  const int off1 = o[1].front().offset();
-  const int off2 = o[2].front().offset();
+  const size_t off0 = o[0].front().offset();
+  const size_t off1 = o[1].front().offset();
+  const size_t off2 = o[2].front().offset();
   auto out = make_shared<MatType>(o[0].size(), o[1].size()*o[2].size());
   for (auto& i2 : o[2].range())
     for (auto& i1 : o[1].range())

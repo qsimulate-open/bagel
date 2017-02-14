@@ -50,9 +50,10 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (is_same<DataType,complex<double>>::value)
     closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
+  // TODO should test min(10,max)
+  active_ = IndexRange(info_->nact(), 12, closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+    active_.merge(IndexRange(info_->nact(), 12, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
                                                                                             ncore2+closed_.size()));
 
   virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
@@ -479,15 +480,13 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
 
 
 template<>
-tuple<IndexRange, shared_ptr<const IndexRange>, IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
+tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
                    shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>>
   SpinFreeMethod<double>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
-                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, const size_t fullsize) {
+                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size) {
 
   auto ci = IndexRange(size, info->cimaxtile());
   auto rci = make_shared<const IndexRange>(ci);
-  auto cifull = IndexRange(fullsize, info->cimaxtile());
-  auto rcifull = make_shared<const IndexRange>(cifull);
 
   const int nact = info->nact();
   auto rdm0d = make_shared<VectorB>(size);
@@ -531,7 +530,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, IndexRange, shared_ptr<const Ind
   auto rdm2deriv = fill_block<5,double>(rdm2d, inpoff5, o5);
   auto rdm3fderiv = fill_block<5,double>(rdm3fd, inpoff5, o5);
 
-  return tie(ci, rci, cifull, rcifull, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv);
+  return tie(ci, rci, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv);
 }
 
 
@@ -555,15 +554,15 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<doubl
 
 
 template<>
-tuple<IndexRange, shared_ptr<const IndexRange>, IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>,
+tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>,
           shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>>
   SpinFreeMethod<complex<double>>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
-          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, const size_t fullsize) {
+          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size) {
   throw logic_error("SpinFreeMethod::feed_rdm_deriv_3 is not implemented for relativistic cases.");
   IndexRange d;
   shared_ptr<IndexRange> du;
   shared_ptr<Tensor_<complex<double>>> dum;
-  return tie(d, du, d, du, dum, dum, dum, dum);
+  return tie(d, du, dum, dum, dum, dum);
 }
 
 

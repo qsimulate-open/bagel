@@ -100,12 +100,12 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     for (int ij = 0; ij != norb2; ++ij) {
       const int j = ij/norb_;
       const int i = ij-j*norb_;
+      if (ij % mpi__->size() != mpi__->rank()) continue;
 
       for (int kl = 0; kl != norb2; ++kl) {
         const int l = kl/norb_;
         const int k = kl-l*norb_;
         const int klij = kl+ij*norb2;
-        if (klij % mpi__->size() != mpi__->rank()) continue;
 
         for (auto& iter : cc_->det()->phia(k,l)) {
           size_t iaJ = iter.source;
@@ -147,8 +147,8 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   const size_t norb2 = norb_ * norb_;
   const size_t ijmax = 635040001;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ijnum / ijmax + 1;
-  const size_t nsize = ndet / npass + 1;
+  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
   Timer timer;
   if (npass > 1) {
     cout << "    * Third and fourth order RDM (" << setw(2) << ist + 1 << "," << setw(2) << jst + 1 << ") evaluation" << endl;
@@ -172,10 +172,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     // put in third-order RDM: <0|E_mn|I><I|E_ij,kl|0>
     auto tmp3 = make_shared<Matrix>(*dbram % *eket);
     sort_indices<1,0,2,1,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb2*norb2);
-    if (npass > 1) {
-      stringstream ss; ss << "RDM3 evaluation (" << setw(3) << ipass + 1 << " / " << npass << ")";
-      timer.tick_print(ss.str());
-    }
  
     // put in fourth-order RDM: <0|E_ij,kl|I><I|E_mn,op|0>
     shared_ptr<Matrix> ebra = eket;
@@ -183,10 +179,26 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       ebra = eket->clone();
       make_evec(dbra, ebra, isize, ioffset);
     }
+#if 0
+    auto tmp4 = make_shared<Matrix>(norb2*norb2, norb2*norb2);
+    cout << " allocated tmp4" << endl;
+    const int l = ebra->mdim();
+    const int n = eket->mdim();
+    const int m = ebra->ndim();
+    cout << " setted lmn " << endl;
+    std::unique_ptr<double[]> locala = ebra->getlocal();
+    std::unique_ptr<double[]> localb = eket->getlocal();
+    std::unique_ptr<double[]> localc = tmp4->getlocal();
+    cout << " called all getlocals " << endl;
+    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), ebra->desc().data(), localb.get(), eket->desc().data(), 0.0, localc.get(), tmp4->desc().data());
+    cout << " pdgemm " << endl;
+    tmp4->setlocal(localc);
+    cout << " setlocal " << endl;
+#endif
     auto tmp4 = make_shared<Matrix>(*ebra % *eket);
     sort_indices<1,0,3,2,4,1,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
     if (npass > 1) {
-      stringstream ss; ss << "RDM4 evaluation (" << setw(3) << ipass + 1 << " / " << npass << ")";
+      stringstream ss; ss << "RDM evaluation (" << setw(2) << ipass + 1 << "/" << setw(2) << npass << ")";
       timer.tick_print(ss.str());
     }
   }
