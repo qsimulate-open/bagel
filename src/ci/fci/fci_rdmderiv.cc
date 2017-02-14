@@ -189,8 +189,8 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
           fock_ebra_mat->element(iI+ioffset,kl) += fock->element(m,n) * ebra->element(iI,klmn);
       }
     }
-    fock_ebra_mat->allreduce();
   }
+  fock_ebra_mat->allreduce();
 
   // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
   auto fock_fbra = make_shared<Matrix>(size, norb4);
