@@ -390,7 +390,7 @@ class Task921 : public Task {
   protected:
     std::shared_ptr<Tensor> out_;
     std::array<std::shared_ptr<const Tensor>,2> in_;
-    class Task_local : public SubTask<5,2> {
+    class Task_local : public SubTask<6,2> {
       protected:
         const std::array<std::shared_ptr<const IndexRange>,4> range_;
 
@@ -399,9 +399,9 @@ class Task921 : public Task {
         std::shared_ptr<Tensor> out() { return this->out_tensor(); }
 
       public:
-        Task_local(const std::array<const Index,5>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
+        Task_local(const std::array<const Index,6>& block, const std::array<std::shared_ptr<const Tensor>,2>& in, std::shared_ptr<Tensor>& out,
                    std::array<std::shared_ptr<const IndexRange>,4>& ran)
-          : SubTask<5,2>(block, in, out), range_(ran) { }
+          : SubTask<6,2>(block, in, out), range_(ran) { }
 
         void compute() override;
     };
@@ -458,7 +458,6 @@ class Task923 : public Task {
     ~Task923() {}
 
 };
-
 
 
 }

@@ -179,22 +179,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       ebra = eket->clone();
       make_evec(dbra, ebra, isize, ioffset);
     }
-#if 0
-    auto tmp4 = make_shared<Matrix>(norb2*norb2, norb2*norb2);
-    cout << " allocated tmp4" << endl;
-    const int l = ebra->mdim();
-    const int n = eket->mdim();
-    const int m = ebra->ndim();
-    cout << " setted lmn " << endl;
-    std::unique_ptr<double[]> locala = ebra->getlocal();
-    std::unique_ptr<double[]> localb = eket->getlocal();
-    std::unique_ptr<double[]> localc = tmp4->getlocal();
-    cout << " called all getlocals " << endl;
-    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), ebra->desc().data(), localb.get(), eket->desc().data(), 0.0, localc.get(), tmp4->desc().data());
-    cout << " pdgemm " << endl;
-    tmp4->setlocal(localc);
-    cout << " setlocal " << endl;
-#endif
     auto tmp4 = make_shared<Matrix>(*ebra % *eket);
     sort_indices<1,0,3,2,4,1,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
     if (npass > 1) {

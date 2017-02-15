@@ -102,21 +102,21 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(int number, shared_ptr<
     task919->add_dep(task900);
     contract->add_task(task919);
 
-    vector<IndexRange> I903_index = {ci_, active_, active_, active_, active_};
+    vector<IndexRange> I903_index = {active_, active_, active_, active_, active_, active_};
     auto I903 = make_shared<Tensor>(I903_index);
-    auto tensor920 = vector<shared_ptr<Tensor>>{I902, I903, den4cit};
+    auto tensor920 = vector<shared_ptr<Tensor>>{I902, rdm2deriv_, I903};
     auto task920 = make_shared<Task915>(tensor920, cindex);
     task919->add_dep(task920);
     task920->add_dep(task900);
     contract->add_task(task920);
 
-    auto tensor921 = vector<shared_ptr<Tensor>>{I903, rdm2deriv_, f1_};
+    auto tensor921 = vector<shared_ptr<Tensor>>{I903, den4cit, f1_};
     auto task921 = make_shared<Task921>(tensor921, cindex);
     task920->add_dep(task921);
     task921->add_dep(task900);
     contract->add_task(task921);
 
-    auto tensor922 = vector<shared_ptr<Tensor>>{deci, I903, den4cit};
+    auto tensor922 = vector<shared_ptr<Tensor>>{deci, rdm2deriv_, I903};
     auto task922 = make_shared<Task916>(tensor922, cindex);
     task922->add_dep(task921);
     task922->add_dep(task900);
