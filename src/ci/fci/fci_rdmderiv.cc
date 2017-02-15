@@ -103,6 +103,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
   auto emat = make_shared<Matrix>(size, norb2*norb2);
 
   for (int ij = 0; ij != norb2; ++ij) {
+    if (ij % mpi__->size() != mpi__->rank()) continue;
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
@@ -110,7 +111,6 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
-      if (klij % mpi__->size() != mpi__->rank()) continue;
 
       for (auto& iter : cc_->det()->phia(k,l)) {
         size_t iaJ = iter.source;
