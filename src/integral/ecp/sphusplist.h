@@ -36,7 +36,7 @@ namespace bagel {
 struct SphUSPList {
   private:
 
-    std::function<std::vector<double>(const int)> sphuspfunc[10];
+    std::function<std::vector<double>(const int)> sphuspfunc[11];
 
     static std::vector<double> sphusp_0(const int);
     static std::vector<double> sphusp_1(const int);
