@@ -40,8 +40,6 @@ void Task901::Task_local::compute() {
 
   std::unique_ptr<double[]> odata(new double[out()->get_size(ci0)]);
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
-  std::unique_ptr<double[]> odata_sorted(new double[out()->get_size(ci0)]);
-  std::fill_n(odata_sorted.get(), out()->get_size(ci0), 0.0);
 
   std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0)]);
@@ -50,10 +48,8 @@ void Task901::Task_local::compute() {
   std::unique_ptr<double[]> i1data = in(1)->get_block();
   std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size()]);
   sort_indices<0,1,1,1>(i1data, i1data_sorted);
-  dgemm_("T", "N", ci0.size(), 1, 1, 1.0, i0data_sorted, 1,
-         i1data_sorted, 1, 1.0, odata_sorted, ci0.size());
 
-  sort_indices<0,1,1,1,1>(odata_sorted, odata, ci0.size());
+  blas::ax_plus_y_n(i1data_sorted[0], i0data_sorted.get(), ci0.size(), odata.get());
   out()->add_block(odata, ci0);
 }
 
@@ -69,14 +65,12 @@ void Task902::Task_local::compute() {
     for (auto& x1 : *range_[1]) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1);
       std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x0, x1)]);
-      sort_indices<1,2,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size());
+      sort_indices<0,1,2,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size());
 
       std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1);
       std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1)]);
       sort_indices<0,1,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size());
-      dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size(),
-             1.0, i0data_sorted, x0.size()*x1.size(),
-             i1data_sorted, x0.size()*x1.size(), 1.0, odata_sorted, ci0.size());
+      dgemv_("N", ci0.size(), x0.size()*x1.size(), 1.0, i0data_sorted, ci0.size(), i1data_sorted, 1, 0.0, odata_sorted, 1);
     }
   }
 
@@ -98,14 +92,12 @@ void Task903::Task_local::compute() {
         for (auto& x3 : *range_[1]) {
           std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x3);
           std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x0, x1, x2, x3)]);
-          sort_indices<1,2,3,4,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
+          sort_indices<0,1,2,3,4,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
 
           std::unique_ptr<double[]> i1data = in(1)->get_block(x0, x1, x2, x3);
           std::unique_ptr<double[]> i1data_sorted(new double[in(1)->get_size(x0, x1, x2, x3)]);
           sort_indices<0,1,2,3,0,1,1,1>(i1data, i1data_sorted, x0.size(), x1.size(), x2.size(), x3.size());
-          dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size()*x2.size()*x3.size(),
-                 1.0, i0data_sorted, x0.size()*x1.size()*x2.size()*x3.size(),
-                 i1data_sorted, x0.size()*x1.size()*x2.size()*x3.size(), 1.0, odata_sorted, ci0.size());
+          dgemv_("N", ci0.size(), x0.size()*x1.size()*x2.size()*x3.size(), 1.0, i0data_sorted, ci0.size(), i1data_sorted, 1, 0.0, odata_sorted, 1);
         }
       }
     }
@@ -273,7 +265,7 @@ void Task916::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x3);
   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x0, x1, x2, x3)]);
-  sort_indices<1,2,3,4,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
+  sort_indices<0,1,2,3,4,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
 
   for (auto& x4 : *range_[1]) {
     {
@@ -292,12 +284,8 @@ void Task916::Task_local::compute() {
                 i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3))]
                   += i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
       std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0)]);
-      dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size()*x2.size()*x3.size(),
-            -1.0, i0data_sorted, x0.size()*x1.size()*x2.size()*x3.size(),
-             i1data_target, x0.size()*x1.size()*x2.size()*x3.size(), 0.0, odata_sorted, ci0.size());
-      for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
-        odata[ici0] += odata_sorted[ici0];
-      }
+      dgemv_("N", ci0.size(), x0.size()*x1.size()*x2.size()*x3.size(), -1.0, i0data_sorted, ci0.size(), i1data_target, 1, 0.0, odata_sorted, 1);
+      blas::ax_plus_y_n(1.0, odata_sorted.get(), ci0.size(), odata.get());
     }
   }
   out()->add_block(odata, ci0);
@@ -372,7 +360,7 @@ void Task923::Task_local::compute() {
   std::fill_n(odata.get(), out()->get_size(ci0), 0.0);
   std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1, x2, x3);
   std::unique_ptr<double[]> i0data_sorted(new double[in(0)->get_size(ci0, x0, x1, x2, x3)]);
-  sort_indices<1,2,3,4,0,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
+  sort_indices<0,1,2,3,4,0,1,1,1>(i0data, i0data_sorted, ci0.size(), x0.size(), x1.size(), x2.size(), x3.size());
   for (auto& x4 : *range_[1]) {
     {
       std::unique_ptr<double[]> i1data = in(1)->get_block(x4, x3, x0, x1, x2, x4);
@@ -390,12 +378,8 @@ void Task923::Task_local::compute() {
                 i1data_target[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*ix3))]
                   += i1data_sorted[ix0+x0.size()*(ix1+x1.size()*(ix2+x2.size()*(ix3+x3.size()*(ix4+x4.size()*ix4))))];
       std::unique_ptr<double[]> odata_sorted(new double[in(1)->get_size(ci0)]);
-      dgemm_("T", "N", ci0.size(), 1, x0.size()*x1.size()*x2.size()*x3.size(),
-            -1.0, i0data_sorted, x0.size()*x1.size()*x2.size()*x3.size(),
-             i1data_target, x0.size()*x1.size()*x2.size()*x3.size(), 0.0, odata_sorted, ci0.size());
-      for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
-        odata[ici0] += odata_sorted[ici0];
-      }
+      dgemv_("N", ci0.size(), x0.size()*x1.size()*x2.size()*x3.size(), -1.0, i0data_sorted, ci0.size(), i1data_target, 1, 0.0, odata_sorted, 1);
+      blas::ax_plus_y_n(1.0, odata_sorted.get(), ci0.size(), odata.get());
     }
   }
   out()->add_block(odata, ci0);
