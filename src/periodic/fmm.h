@@ -53,7 +53,7 @@ class FMM {
     int ws_;
     double base_extent_;
     bool do_exchange_;
-    std::vector<std::shared_ptr<const ZMatrix>> olm_ri_;
+    int lmax_k_;
 
     void init();
     void get_boxes();
@@ -64,7 +64,7 @@ class FMM {
 
   public:
     FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH,
-        const int ws = 0, const bool do_exchange = false);
+        const int ws = 0, const bool do_exchange = false, const int lmax_k = 10);
     ~FMM() { }
 
     const std::array<double, 3>& centre() const { return centre_; }
@@ -72,6 +72,7 @@ class FMM {
     bool do_exchange() const { return do_exchange_; }
     std::shared_ptr<const Matrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr) const;
     std::shared_ptr<const Matrix> compute_K_ff(std::shared_ptr<const Matrix> ocoeff, std::shared_ptr<const Matrix> overlap) const;
+    std::shared_ptr<const Matrix> compute_K_ff_from_den(std::shared_ptr<const Matrix> density, std::shared_ptr<const Matrix> overlap) const;
     void print_boxes(const int i) const;
 };
 

@@ -61,7 +61,7 @@ vector<shared_ptr<const ZMatrix>> ShellPair::multipoles(const int lmax, const ar
 }
 
 
-bool ShellPair::is_neighbour(shared_ptr<const ShellPair> sp, const int ws) const {
+bool ShellPair::is_neighbour(shared_ptr<const ShellPair> sp, const double ws) const {
 
   array<double, 3> v;
   v[0] = centre_[0] - sp->centre(0);
@@ -80,6 +80,7 @@ void ShellPair::init() {
   shared_ptr<const Shell> b1 = shells_[1];
   nbasis0_ = b0->nbasis();
   nbasis1_ = b1->nbasis();
+  assert(b0->angular_number() < 7 && b1->angular_number() < 7);
 
   #if 1
   // centre
@@ -106,6 +107,7 @@ void ShellPair::init() {
   const double lnthresh = log(thresh_);
 
   // extent
+  array<double, 7> scale = {{1.0, 1.1781, 1.3333, 1.4726, 1.7181, 1.8286}};
   extent_ = 0;
   const double tol = 20.0 / log10(exp(1));
   for (auto& expi0 : exp0) {
@@ -132,6 +134,7 @@ void ShellPair::init() {
       if (extent01 > extent_) extent_ = extent01;
     }
   }
+  extent_ *= scale[b0->angular_number()] * scale[b1->angular_number()];
 
   // schwarz
   array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};

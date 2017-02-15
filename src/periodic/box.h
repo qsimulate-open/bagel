@@ -36,7 +36,7 @@ namespace bagel {
 class Box {
   friend class FMM;
   protected:
-    int rank_, boxid_, lmax_;
+    int rank_, boxid_, lmax_, lmax_k_;
     std::array<int, 3> tvec_;
     std::array<double, 3> centre_;
     double boxsize_;
@@ -48,7 +48,7 @@ class Box {
 
     double thresh_, extent_, schwarz_thresh_;
     int nbasis0_, nbasis1_;
-    int nmult_;
+    int nmult_, nmult_k_;
     int nocc_;
     size_t nsize_, msize_, olm_ndim_, olm_mdim_, olm_size_block_;
 
@@ -63,9 +63,9 @@ class Box {
     void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
     void insert_child(std::shared_ptr<const Box> = NULL);
     void insert_parent(std::shared_ptr<const Box> parent = NULL);
-    bool is_neigh(std::shared_ptr<const Box> b, const int ws) const;
-    void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const int ws);
-    void get_inter(const std::vector<std::shared_ptr<Box>>& box, const int ws);
+    bool is_neigh(std::shared_ptr<const Box> b, const double ws) const;
+    void get_neigh(const std::vector<std::shared_ptr<Box>>& box, const double ws);
+    void get_inter(const std::vector<std::shared_ptr<Box>>& box, const double ws);
 
     std::shared_ptr<ZVectorB> multipole_;
     std::shared_ptr<ZVectorB> localJ_;
@@ -84,15 +84,17 @@ class Box {
     void compute_L2L();
     void compute_L2L_X();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
-    std::shared_ptr<const ZMatrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::vector<double>& max_den) const;
-    std::shared_ptr<const ZMatrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
-    std::shared_ptr<const ZMatrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff_ti) const;
-
+    std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
+    std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
+    std::shared_ptr<const Matrix> compute_Fock_ffX(std::shared_ptr<const Matrix> ocoeff_ti) const;
+    double coulomb_ff() const;
+    double exchange_ff() const;
 
   public:
-    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0)
-     : rank_(n), boxid_(id), lmax_(lmax), tvec_(v), sp_(sp), schwarz_thresh_(thresh) { }
+    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10,
+        const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+        const double thresh = 0.0, const double schwarz = 0.0)
+     : rank_(n), boxid_(id), lmax_(lmax), lmax_k_(lmax_k), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
 
     ~Box() { }
 
