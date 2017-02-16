@@ -107,7 +107,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
-    for (int kl = 0; kl != norb2; ++kl) {
+    for (int kl = ij; kl != norb2; ++kl) {
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
@@ -145,6 +145,14 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
     }
   }
   emat->allreduce();
+
+  for (size_t ij = 0; ij != norb2; ++ij)
+    for (size_t kl = 0; kl != ij; ++kl) {
+      size_t klij = kl + ij*norb2;
+      size_t ijkl = ij + kl*norb2;
+      for (size_t iJ = 0; iJ != size; ++iJ)
+        emat->element(iJ,klij) = emat->element(iJ,ijkl);
+    }
 
   return emat;
 }

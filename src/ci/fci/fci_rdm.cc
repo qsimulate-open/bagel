@@ -98,11 +98,11 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     const int lenb = cc_->det()->lenb();
 
     for (int ij = 0; ij != norb2; ++ij) {
+      if (ij % mpi__->size() != mpi__->rank()) continue;
       const int j = ij/norb_;
       const int i = ij-j*norb_;
-      if (ij % mpi__->size() != mpi__->rank()) continue;
 
-      for (int kl = 0; kl != norb2; ++kl) {
+      for (int kl = ij; kl != norb2; ++kl) {
         const int l = kl/norb_;
         const int k = kl-l*norb_;
         const int klij = kl+ij*norb2;
@@ -139,7 +139,16 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
         }
       }
     }
+
     e->allreduce();
+
+    for (size_t ij = 0; ij != norb2; ++ij)
+      for (size_t kl = 0; kl != ij; ++kl) {
+        size_t klij = kl + ij*norb2;
+        size_t ijkl = ij + kl*norb2;
+        for (size_t iJ = 0; iJ != dsize; ++iJ)
+          e->element(iJ,klij) = e->element(iJ,ijkl);
+      }
   };
 
   // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
