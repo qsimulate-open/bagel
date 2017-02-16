@@ -313,7 +313,16 @@ void MOFock<complex<double>>::init() {
     assert(fcl->is_t_symmetric(1.0e-6));
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
+    if (ncore)
+      cout << endl << "  Core orbital energies: " << endl;
+    for (int i = 0; i != ncore+nclosed; ++i) {
+      if (i == ncore)
+        cout << endl << "  Closed orbital energies: " << endl;
+      cout << "    " << i+1 << "  " << setw(12) << setprecision(4) << fixed << eig[i] << endl;
+    }
+    cout << endl;
   }
+
   const int nvirt = info_->nvirt();
   const int nvirtall = nvirt+info_->nfrozenvirt();
   if (nvirtall > 1) {
@@ -328,6 +337,13 @@ void MOFock<complex<double>>::init() {
       cout << "       - Truncating virtual orbitals: " << setw(20) << setprecision(10) << eig[nvirt] << endl;
       newcoeff = newcoeff->slice_copy(0, (nocc+nvirt)*2);
     }
+    cout << endl << "  Virtual orbital energies: " << endl;
+    for (int i = 0; i != nvirtall; ++i) {
+      if (i == nvirt)
+        cout << endl << "  Deleted orbital energies: " << endl;
+      cout << "    " << nvirtall - i << "  " << setw(12) << setprecision(4) << fixed << eig[i] << endl;
+    }
+    cout << endl;
   }
 
   // **** CAUTION **** updating the coefficient
