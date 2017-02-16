@@ -67,9 +67,9 @@ AX_BOOST_BASE([1.53], [], [AC_MSG_ERROR("BOOST version >= 1.53.0 required.")])
 # on some platforms boost shared libs will depend on C++ shared libraries ... switch to C++
 AC_LANG_PUSH([C++])
 
-AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
-    AC_CHECK_LIB(boost_serialization-mt, main, , [
-        AC_CHECK_LIB(boost_serialization, main, , [
+AC_CHECK_LIB(boost_serialization, main, , [
+    AC_CHECK_LIB(boost_serialization-gcc-mt, main, , [
+        AC_CHECK_LIB(boost_serialization-mt, main, , [
             AC_MSG_ERROR("Linking against boost::serialization library failed.") ])])])
 echo -n "checking if boost::serialization works... "
 AC_RUN_IFELSE([AC_LANG_PROGRAM([[@%:@include<fstream>
@@ -87,14 +87,14 @@ AC_MSG_WARN([
 test boost::serialization failed. Make sure that boost was compiled by the same compiler.
 ])
 fi
-AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
-    AC_CHECK_LIB(boost_regex-mt, main, , [
-        AC_CHECK_LIB(boost_regex, main, , [
+AC_CHECK_LIB(boost_regex, main, , [
+    AC_CHECK_LIB(boost_regex-gcc-mt, main, , [
+        AC_CHECK_LIB(boost_regex-mt, main, , [
             AC_MSG_ERROR("Linking against boost::regex library failed.") ])])])
 
-AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
-    AC_CHECK_LIB(boost_unit_test_framework-mt, main, , [
-        AC_CHECK_LIB(boost_unit_test_framework, main, , [
+AC_CHECK_LIB(boost_unit_test_framework, main, , [
+    AC_CHECK_LIB(boost_unit_test_framework-gcc-mt, main, , [
+        AC_CHECK_LIB(boost_unit_test_framework-mt, main, , [
             AC_MSG_ERROR("Linking against boost::unit_test_framework library failed.") ])])])
 
 
