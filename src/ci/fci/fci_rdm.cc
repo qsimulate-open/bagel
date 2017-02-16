@@ -151,7 +151,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t norb2 = norb_ * norb_;
-  const size_t ijmax = 635040001;
+  const size_t ijmax = 635040001 * 2;
   const size_t ijnum = ndet * norb2 * norb2;
   const size_t npass = (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
