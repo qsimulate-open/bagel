@@ -14,7 +14,7 @@
 
 {
   "title"  : "zcasscf",
-  "algorithm" : "superci",
+  "algorithm" : "second",
   "save_ref" : "true",
   "ref_out" : "zcas_test",
   "state" : [1],
@@ -37,7 +37,7 @@
 
 {
   "title"  : "zcasscf",
-  "algorithm" : "bfgs",
+  "algorithm" : "second",
   "load_ref" : "true",
   "ref_in" : "zcas_test",
   "sort_by_coeff" : "false",

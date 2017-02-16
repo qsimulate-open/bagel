@@ -22,7 +22,7 @@
 
 {
   "title" : "zcasscf",
-  "algorithm" : "bfgs",
+  "algorithm" : "second",
   "only_electrons" : "true",
   "nact" : 0,
   "nact_cas" : 2,
