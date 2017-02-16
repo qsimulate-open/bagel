@@ -212,7 +212,7 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
-    for (int kl = 0; kl != norb2; ++kl) {
+    for (int kl = ij; kl != norb2; ++kl) {
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
@@ -256,6 +256,14 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
     }
   }
   fock_fbra->allreduce();
+
+  for (size_t ij = 0; ij != norb2; ++ij)
+    for (size_t kl = 0; kl != ij; ++kl) {
+      size_t klij = kl + ij*norb2;
+      size_t ijkl = ij + kl*norb2;
+      for (size_t iJ = 0; iJ != size; ++iJ)
+        fock_fbra->element(iJ,klij) = fock_fbra->element(iJ,ijkl);
+    }
 
   return fock_fbra;
 }
