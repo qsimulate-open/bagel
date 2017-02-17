@@ -483,6 +483,7 @@ AtomMap::AtomMap () {
   nuclear_exponents.emplace("hn", 1.1905722195E+08);
   nuclear_exponents.emplace("mt", 1.1878724932E+08);
 
+  averaged_masses.emplace("q", 0.0);
   averaged_masses.emplace("h", 1.008);
   averaged_masses.emplace("he", 4.00);
   averaged_masses.emplace("li", 6.94);
