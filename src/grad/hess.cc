@@ -30,6 +30,7 @@
 #include <src/grad/gradeval.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
+#include <src/util/timer.h>
 
 using namespace std;
 using namespace bagel;
@@ -40,6 +41,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
 void Hess::compute() {
   auto input = idata_->get_child("method");
   const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
+  Timer timer;
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -101,7 +103,7 @@ void Hess::compute() {
 
       for (int i = 0; i != natom; ++i) {  // atom i
         for (int j = 0; j != 3; ++j) { //xyz
-          // displace +dx
+
           displ->element(j,i) = dx_;
           auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_plus->print_atoms();
@@ -137,13 +139,17 @@ void Hess::compute() {
       }
 
     } else {  //finite difference with analytical gradients
-
       for (int i = 0; i != natom; ++i) {  // atom i
         for (int j = 0; j != 3; ++j) { //xyz
+          // displace +dx
+          muffle_->mute();
+
           //displace +dx
           displ->element(j,i) = dx_;
           auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_plus->print_atoms();
+          if (ref_)
+            ref_ = ref_->project_coeff(geom_plus);
 
           auto plus = make_shared<Force>(idata_, geom_plus, ref_);
           shared_ptr<GradFile> outplus = plus->compute();
@@ -152,6 +158,8 @@ void Hess::compute() {
           displ->element(j,i) = -dx_;
           auto geom_minus = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
           geom_minus->print_atoms();
+          if (ref_)
+            ref_ = ref_->project_coeff(geom_minus);
 
           auto minus = make_shared<Force>(idata_, geom_minus, ref_);
           shared_ptr<GradFile> outminus = minus->compute();
@@ -167,12 +175,15 @@ void Hess::compute() {
           }
           step = 0;
           counter = counter + 1;
+          muffle_->unmute();
+          stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
+          timer.tick_print(ss.str());
         }
       }
     }
-    muffle_->unmute();
 
     //symmetrize mass weighted hessian
+    hess_->print("Hessian");
     mw_hess_->symmetrize();
     cout << "    (masses averaged over the natural occurance of isotopes)";
     cout << endl << endl;
@@ -301,6 +312,46 @@ void Hess::compute() {
     }
     cout << endl << endl;
 
+    cout << "    * Vibrational frequencies (cm**-1) and corresponding eigenvectors" << endl << endl;
+
+    int len_n = proj_hess_->ndim();
+    int len_m = proj_hess_->mdim();
+
+    for (int i = 0; i != len_m/6; ++i) {
+      cout << setw(6) << " ";
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << i * 6 + k;
+      cout << endl << setw(6) << "Freq";
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+      cout << endl << endl;
+      for (int j = 0; j != len_n; ++j) {
+        cout << setw(6) << j;
+        for (int k = 0; k != 6; ++k)
+          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
+        cout << endl;
+      }
+      cout << endl;
+    }
+
+    if (len_m%6) {
+      int i = len_m/6;
+      cout << setw(6) << " ";
+      for (int k = 0; k != len_m%6; ++k)
+        cout << setw(20) << i * 6 + k;
+      cout << endl << setw(6) << "Freq";
+      for (int k = 0; k != len_m%6; ++k)
+        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+      cout << endl << endl;
+
+      for (int j = 0; j != len_n; ++j) {
+        cout << setw(6) << j;
+        for (int k = 0; k != len_m%6; ++k)
+          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
+        cout << endl;
+      }
+      cout << endl;
+    }
 #if 1
     cout << " **********  DEBUG: generating frequencies using the mw-hessian and not projecting out terms *********** " << endl;
     //diagonalize mass weighted hessian
