@@ -99,14 +99,14 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     int no = 0;
 
     for (int ij = 0; ij != norb2; ++ij) {
-      if (ij % mpi__->size() != mpi__->rank()) {
-        no += (norb2 - ij);
-        continue;
-      }
       const int j = ij/norb_;
       const int i = ij-j*norb_;
 
       for (int kl = ij; kl != norb2; ++kl) {
+        if ((kl - ij) % mpi__->size() != mpi__->rank()) {
+          ++no;
+          continue;
+        }
         const int l = kl/norb_;
         const int k = kl-l*norb_;
 
