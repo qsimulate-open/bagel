@@ -30,40 +30,16 @@ using namespace bagel;
 
 
 void CASBFGS::compute() {
-  const string algo = idata_->get<string>("bfgstype", "bagel");
-  if (algo != "bagel" && algo != "alglib")
-    throw runtime_error("unknown BFGS type specified");
-  // first do BFGS2 (alglib version)
-  if (algo != "bagel") {
-    auto idata = make_shared<PTree>(*idata_);
-    idata->erase("conv_ignore");
-    idata->put("conv_ignore", true);
-    auto bfgs = make_shared<CASBFGS2>(idata, geom_, ref_);
-    bfgs->compute();
-    refout_ = bfgs->conv_to_ref();
+  auto idata = make_shared<PTree>(*idata_);
+  idata->erase("active");
+  idata->erase("restart");
+  auto bfgs = make_shared<CASBFGS1>(idata, geom_, ref_);
+  bfgs->compute();
+  refout_ = bfgs->conv_to_ref();
 
-    if (!bfgs->only_energy_converged()) {
-      fci_ = bfgs->fci();
-      energy_ = bfgs->energy();
-      rms_grad_ = bfgs->rms_grad();
-      return;
-    }
-  } else {
-    refout_ = ref_;
-  }
-  // second do BAGEL's native BFGS
-  {
-    auto idata = make_shared<PTree>(*idata_);
-    idata->erase("active");
-    idata->erase("restart");
-    auto bfgs = make_shared<CASBFGS1>(idata, geom_, refout_);
-    bfgs->compute();
-    refout_ = bfgs->conv_to_ref();
-
-    fci_ = bfgs->fci();
-    energy_ = bfgs->energy();
-    rms_grad_ = bfgs->rms_grad();
-  }
+  fci_ = bfgs->fci();
+  energy_ = bfgs->energy();
+  rms_grad_ = bfgs->rms_grad();
 }
 
 
