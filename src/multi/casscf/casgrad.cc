@@ -51,10 +51,8 @@ void GradEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -238,10 +236,8 @@ void NacmEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -428,10 +424,8 @@ void FiniteNacm<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -462,10 +456,8 @@ void DgradEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
