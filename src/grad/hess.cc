@@ -286,8 +286,6 @@ void Hess::compute() {
         (*proj_norm)(5,i) = (*proj_total)(5,i) / sqrt(rot3);
     }
 
-    //TODO: insert check that they are orthogonal. If not, print a warning.
-
     auto proj_hess_ = make_shared<Matrix>(3*natom,3*natom);
     *proj_hess_ = (*identity - *proj_norm % *proj_norm) % *mw_hess_ * (*identity - *proj_norm % *proj_norm);
 
@@ -295,22 +293,6 @@ void Hess::compute() {
     // eig(i) in Hartree/bohr^2*amu
     VectorB eig(3*natom);
     proj_hess_->diagonalize(eig);
-
-    // frequency = sqrt(eig) / (2*pi*c ) (convert units to wavenumbers)
-    cout << "******DEBUG:  Eigenvalues in hartree/bohr^2*amu" <<endl;
-    for (int i = 0; i != 3*natom; ++i) {
-      cout << setw(20) << setprecision(20) << eig(i) << endl;
-    }
-    cout << endl << endl;
-
-    //TODO: Fix printing in output. (don't print 5 or 6 that are 0, but large imaginary modes should be printed)
-    //TODO: Print vibrational modes to molden file
-    //TODO: Print warning if eignvalues are larger than a threshold
-    cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
-    for (int i = 0; i != 3*natom; ++i) {
-      cout << setw(20) << setprecision(2) << sqrt((eig(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
-    }
-    cout << endl << endl;
 
     cout << "    * Vibrational frequencies (cm**-1) and corresponding eigenvectors" << endl << endl;
 
@@ -352,26 +334,6 @@ void Hess::compute() {
       }
       cout << endl;
     }
-#if 1
-    cout << " **********  DEBUG: generating frequencies using the mw-hessian and not projecting out terms *********** " << endl;
-    //diagonalize mass weighted hessian
-    // old(i) in Hartree/bohr^2*amu
-    VectorB old(3*natom);
-    mw_hess_->diagonalize(old);
-
-    // v = sqrt (oldeig) / (2 pi c )
-    cout << "    * Eigenvalues in hartree/bohr^2*amu" <<endl;
-    for (int i = 0; i != 3*natom; ++i) {
-     cout << setw(20) << setprecision(20) << old(i) << endl;
-    }
-    cout << endl << endl;
-
-    cout << "    * Vibrational Frequencies (wavenumbers)" << endl;
-    for (int i = 0; i != 3*natom; ++i) {
-      cout << setw(20) << setprecision(2) << sqrt((old(i) * au2joule__) / amu2kilogram__ ) / (100.0 * au2meter__ * 2.0 * pi__ * csi__);
-    }
-    cout << endl << endl;
-#endif
 
   }
 }
