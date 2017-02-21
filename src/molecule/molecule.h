@@ -80,7 +80,7 @@ class Molecule {
     std::array<double,3> magnetic_field_;
 
     // Computes the nuclear repulsion energy.
-    double compute_nuclear_repulsion();
+    double compute_nuclear_repulsion(const bool skip_self_interaction = true);
 
     // Constructor helpers
     void common_init1();
