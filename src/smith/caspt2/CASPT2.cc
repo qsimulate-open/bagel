@@ -58,6 +58,45 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 }
 
 
+void CASPT2::CASPT2::do_rdm_deriv(double factor) {
+  Timer timer(1);
+  const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t nact  = info_->nact();
+  const size_t norb2 = nact*nact;
+  const size_t ijmax = 635040001;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
+  if (npass > 1)
+    cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
+
+  for (int ipass = 0; ipass != npass; ++ipass) {
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
+      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, 0, ioffset, isize);
+    den0cit = den0ci;
+    den1cit = den1ci;
+    den2cit = den2ci;
+    den3cit = den3ci;
+    den4cit = den4ci;
+    mpi__->barrier();
+
+    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+    deci->allocate();
+    auto bdata = make_shared<VectorB>(ndet);
+    shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+    while (!queue->done())
+      queue->next_compute();
+    blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(0)->data()+ioffset);
+    blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
+    if (npass > 1) {
+      stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+      timer.tick_print(ss.str());
+    }
+  }
+}
+
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
@@ -361,27 +400,22 @@ void CASPT2::CASPT2::solve_deriv() {
 
     // first make ci_deriv_
     ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
-    const size_t cisize = ci_deriv_->data(0)->size();
 
-    const size_t cimax = 1000; // TODO interface to the input
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
+    // then form deci0 - 4
+    den0ci = rdm0_->clone();
+    den1ci = rdm1_->clone();
+    den2ci = rdm2_->clone();
+    den3ci = rdm3_->clone();
+    den4ci = rdm3_->clone();
+    shared_ptr<Queue> dec = make_deciq(/*reset = */true);
+    while (!dec->done())
+      dec->next_compute();
+    timer.tick_print("CI derivative evaluation");
 
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
+    // and contract them with rdm derivs
+    do_rdm_deriv(1.0);
 
-      feed_rdm_deriv(offset, size); // this set ci_
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-      shared_ptr<Queue> dec = make_deciq();
-      while (!dec->done())
-        dec->next_compute();
-      copy_n(deci->vectorb()->data(), size, ci_deriv_->data(0)->data()+offset);
-
-      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
-      timer.tick_print(ss.str());
-    }
+    timer.tick_print("CI derivative contraction");
     cout << endl;
   } else {
     // in case when CASPT2 is not variational...

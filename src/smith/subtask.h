@@ -82,6 +82,7 @@ class SubTask_Merged_ {
 };
 
 namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace CASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
 namespace MSCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MSCASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
 namespace SPCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
