@@ -31,7 +31,7 @@ using namespace bagel;
 template <typename DataType>
 Dvector<DataType>::Dvector(shared_ptr<const Determinants> det, const size_t ij)
   : btas::Tensor3<DataType>(det->lenb(), det->lena(), ij), det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-  fill(begin(), end(), DataType(0.0));
+  zero();
   DataType* tmp = data();
   for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
   dvec_.push_back(make_shared<Civector<DataType>>(det_, tmp));
