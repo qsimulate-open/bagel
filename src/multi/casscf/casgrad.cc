@@ -303,7 +303,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
 
   // determinant term (1)
-  if (nacmtype_ == 0 || nacmtype == 2)
+  if (nacmtype_ == 0 || nacmtype_ == 2)
     g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
