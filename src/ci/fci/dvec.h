@@ -151,15 +151,24 @@ class Dvector : public btas::Tensor3<DataType> {
     template<typename T = DataType,
              class = typename std::enable_if<std::is_same<T, double>::value>::type
             >
-    void match (std::shared_ptr<Dvector<double>>& ref);
+    void match (std::shared_ptr<Dvector<double>>& ref) {
+      assert(data(0)->size() == ref->data(0)->size() && dvec().size() == ref->dvec().size());
+      const size_t detsize = ref->data(0)->size();
 
-    template<typename T = DataType,
-             class = typename std::enable_if<std::is_same<T, std::complex<double>>::value>::type
-            >
-    void match (std::shared_ptr<Dvector<std::complex<double>>>& ref) {  }
-
-    void match (std::shared_ptr<Dvector<DataType>>& ref) {
-      match<DataType, void> (ref);
+      std::vector<int> horizontal(detsize);
+      for (size_t i = 0; i != detsize; ++i)
+        horizontal[i] = (data(0)->data(i) * ref->data(0)->data(i) < 0.0) ? -1 : 1;
+      // for all determinants, do "horizontal matching"
+      for (auto& iter : dvec_)
+        for (size_t i = 0; i != detsize; ++i)
+          iter->data(i) = iter->data(i) * horizontal[i];
+      // then "vertical matching" at one shot
+      for (size_t i = 0; i != dvec().size(); ++i) {
+        double comp = 0.0;
+        for (size_t j = 0; j != detsize; ++j)
+          comp += data(i)->data(j) * ref->data(i)->data(j);
+        if (comp < 0.0) data(i)->scale(-1.0);
+      }
     }
 };
 
