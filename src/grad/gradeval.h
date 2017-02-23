@@ -105,6 +105,7 @@ class NacmEval : public GradEval_base {
     double energy2_;
     int target_state1_;
     int target_state2_;
+    // nacmtype is 0 (full derivative coupling), 1 (interstate coupling) or 2 (full derivative coupling with built-in ETF factor: see Subotnik)
     int nacmtype_;
 
     void init() {
