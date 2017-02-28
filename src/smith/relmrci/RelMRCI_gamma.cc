@@ -32,7 +32,7 @@
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-using namespace bagel::SMITH::RelMRCI;
+using bagel::SMITH::RelMRCI::FutureTensor;
 
 shared_ptr<FutureTensor> RelMRCI::RelMRCI::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};

@@ -53,6 +53,8 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   maxiter_ = idat->get<int>("maxiter", 100);
   maxstep_ = idat->get<double>("maxstep", 0.1);
   scratch_ = idat->get<bool>("scratch", false);
+  numerical_ = idat->get<bool>("numerical", false);
+  numerical_dx_ = idat->get<double>("numerical_dx", 0.001);
 
   constrained_ = idat->get<bool>("constrained", false);
   if (constrained_) {

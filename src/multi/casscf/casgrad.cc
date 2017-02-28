@@ -51,10 +51,8 @@ void GradEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -238,10 +236,8 @@ void NacmEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -307,7 +303,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
 
   // determinant term (1)
-  if (nacmtype_ == 0)
+  if (nacmtype_ == 0 || nacmtype_ == 2)
     g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
@@ -428,10 +424,8 @@ void FiniteNacm<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -462,10 +456,8 @@ void DgradEval<CASSCF>::init() {
     task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
   else if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
+  else if (algorithm == "bfgs")
     task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
