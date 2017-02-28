@@ -1029,7 +1029,7 @@ double Box::coulomb_ff() const {
 
 
 double Box::exchange_ff() const {
-  const complex<double> en = olm_ji_->dot_product(*mlm_ji_);
+  const complex<double> en = 0.5*olm_ji_->dot_product(*mlm_ji_);
   assert(abs(en.imag()) < 1e-10);
   return en.real();
 }

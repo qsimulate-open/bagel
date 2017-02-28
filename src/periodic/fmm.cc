@@ -362,7 +362,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
       shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
       const int offset1 = geom_->shellpair(i01)->offset(0);
-      const int size1 = sh0->nbasis();
+      const int size1 = sh1->nbasis();
 
       double denmax = 0.0;
       for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
