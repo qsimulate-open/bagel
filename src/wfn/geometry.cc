@@ -625,14 +625,14 @@ vector<double> Geometry::schwarz() const {
  #ifdef LIBINT_INTERFACE
         Libint eribatch(input);
  #else
-        ERIBatch eribatch(input, 1.0);
+        ERIBatch eribatch(input, 0.0);
  #endif
         eribatch.compute();
         const double* eridata = eribatch.data();
         const int datasize = eribatch.data_size();
         double cmax = 0.0;
         for (int xi = 0; xi != datasize; ++xi, ++eridata) {
-          const double absed = fabs(*eridata);
+          const double absed = sqrt(abs(*eridata));
           if (absed > cmax) cmax = absed;
         }
         schwarz[i0 * size + i1] = cmax;
