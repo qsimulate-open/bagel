@@ -159,37 +159,17 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     if (additional_den)
       *zcore += *additional_den;
     shared_ptr<Matrix> rot;
-
-    // find good lambda that makes zcore positive definite
-    double lambda = 1.0;
-
-    for (int i = 0; i != zmaxiter; ++i) {
-      shared_ptr<Matrix> rotq;
-      VectorB eig(nocca);
-      if (nact) {
-        rotq = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());
-      } else {
-        rotq = make_shared<Matrix>(*zcore);
-        for (int i = 0; i != nclosed; ++i)
-          rotq->element(i,i) += 2.0 * lambda;
-      }
-      rotq->diagonalize(eig);
-      if (eig[0] < -numerical_zero__) lambda *= 0.5;
-      else break;
-    }
-
     if (nact) {
-      rot = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());     // trick to make it positive definite
+      rot = make_shared<Matrix>(*zcore + *ref_->rdm1_mat()); // trick to make it positive definite
     } else {
       rot = make_shared<Matrix>(*zcore);
       for (int i = 0; i != nclosed; ++i)
-        rot->element(i,i) += 2.0 * lambda;
+        rot->element(i,i) += 2.0;
     }
     rot->sqrt();
     rot->scale(1.0/sqrt(2.0));
     auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ocoeff * *rot, false, true);
-    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate for the "trick"
-    gzcore->scale(1.0 / lambda);
+    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate
   }
 
   // gradient Y and y

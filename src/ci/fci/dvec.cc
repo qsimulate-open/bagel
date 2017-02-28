@@ -31,7 +31,7 @@ using namespace bagel;
 template <typename DataType>
 Dvector<DataType>::Dvector(shared_ptr<const Determinants> det, const size_t ij)
   : btas::Tensor3<DataType>(det->lenb(), det->lena(), ij), det_(det), lena_(det->lena()), lenb_(det->lenb()), ij_(ij) {
-  zero();
+  fill(begin(), end(), DataType(0.0));
   DataType* tmp = data();
   for (int i = 0; i != ij_; ++i, tmp += lenb_*lena_)
   dvec_.push_back(make_shared<Civector<DataType>>(det_, tmp));
@@ -218,6 +218,42 @@ shared_ptr<Dvector<DataType>> Dvector<DataType>::extract_state(const vector<int>
     copy_n(data(input[i])->data(), lenb_*lena_, out->data(i)->data());
     //out->data(i) = data(input[i])->copy();
   return out;
+}
+
+
+template<typename DataType>
+template<typename T, class>
+void Dvector<DataType>::match(shared_ptr<Dvector<double>>& ref) {
+  assert(data(0)->size() == ref->data(0)->size());
+  assert(dvec().size() == ref->dvec().size());
+
+  const size_t detsize = ref->data(0)->size();
+  const size_t detnumb = dvec().size();
+
+  vector<int> horizontal(detsize);
+
+  for (size_t i = 0; i != detsize; ++i) {
+    double comp = data(0)->data(i) * ref->data(0)->data(i);
+    if (comp < 0.0) horizontal[i] = -1;
+    else horizontal[i] = 1;
+  }
+
+  // for all determinants, do "horizontal matching"
+
+  for (auto& iter : dvec_)
+    for (size_t i = 0; i != detsize; ++i)
+      iter->data(i) = iter->data(i) * double(horizontal[i]);
+
+  // then "vertical matching" at one shot
+
+  for (size_t i = 0; i != detnumb; ++i) {
+    double comp = 0.0;
+    for (size_t j = 0; j != detsize; ++j) {
+      comp += data(i)->data(j) * ref->data(i)->data(j);
+    }
+    if (comp < 0.0) data(i)->scale(-1.0);
+  }
+
 }
 
 

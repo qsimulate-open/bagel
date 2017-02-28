@@ -45,7 +45,6 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
       if (name_ == key) basis_ = i->data();
     }
   atom_number_ = atommap_.atom_number(name_);
-  averaged_mass_ = atommap_.averaged_mass(name_);
 
   position_ = inp->get_array<double,3>("xyz");
 

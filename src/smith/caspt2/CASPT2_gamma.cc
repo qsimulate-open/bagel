@@ -26,12 +26,13 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 #include <src/smith/caspt2/CASPT2.h>
-#include <src/smith/caspt2/CASPT2_tasks.h>
+#include <src/smith/caspt2/CASPT2_tasks1.h>
+#include <src/smith/caspt2/CASPT2_tasks2.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-using bagel::SMITH::CASPT2::FutureTensor;
+using namespace bagel::SMITH::CASPT2;
 
 shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};
@@ -186,22 +187,22 @@ shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma32_() {
   return make_shared<FutureTensor>(*Gamma32, task16);
 }
 
-shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma35_() {
-  vector<IndexRange> Gamma35_index = {active_, active_, active_, active_};
-  auto Gamma35 = make_shared<Tensor>(Gamma35_index);
-  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma35, rdm1_, rdm2_};
-  auto task17 = make_shared<Task17>(tensor17, pindex);
-  return make_shared<FutureTensor>(*Gamma35, task17);
-}
-
 shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma34_() {
   vector<IndexRange> Gamma34_index = {active_, active_, active_, active_};
   auto Gamma34 = make_shared<Tensor>(Gamma34_index);
   array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
-  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma34, rdm1_, rdm2_, rdm3_, f1_};
+  auto tensor17 = vector<shared_ptr<Tensor>>{Gamma34, rdm1_, rdm2_, rdm3_, f1_};
+  auto task17 = make_shared<Task17>(tensor17, pindex);
+  return make_shared<FutureTensor>(*Gamma34, task17);
+}
+
+shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma35_() {
+  vector<IndexRange> Gamma35_index = {active_, active_, active_, active_};
+  auto Gamma35 = make_shared<Tensor>(Gamma35_index);
+  array<shared_ptr<const IndexRange>,3> pindex = {{rclosed_, ractive_, rvirt_}};
+  auto tensor18 = vector<shared_ptr<Tensor>>{Gamma35, rdm1_, rdm2_};
   auto task18 = make_shared<Task18>(tensor18, pindex);
-  return make_shared<FutureTensor>(*Gamma34, task18);
+  return make_shared<FutureTensor>(*Gamma35, task18);
 }
 
 shared_ptr<FutureTensor> CASPT2::CASPT2::Gamma37_() {

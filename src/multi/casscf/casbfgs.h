@@ -83,6 +83,19 @@ class CASBFGS1 : public CASBFGS_base {
     void compute() override;
 };
 
+
+// uses alglib's BFGS
+class CASBFGS2 : public CASBFGS_base {
+  protected:
+    bool only_energy_converged_;
+  public:
+    CASBFGS2(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
+     : CASBFGS_base(idat, geom, ref), only_energy_converged_(false) { }
+
+    void compute() override;
+    bool only_energy_converged() const { return only_energy_converged_; }
+};
+
 }
 
 #endif

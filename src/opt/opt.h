@@ -67,9 +67,6 @@ class Opt {
     double maxstep_;
     bool scratch_;
 
-    bool numerical_;
-    double numerical_dx_;
-
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
 

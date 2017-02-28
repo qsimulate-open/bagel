@@ -38,14 +38,14 @@ const static AtomMap atommap_;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Molecule)
 
-double Molecule::compute_nuclear_repulsion(const bool skip_self_interaction) {
+double Molecule::compute_nuclear_repulsion() {
   double out = 0.0;
   for (auto iter = atoms_.begin(); iter != atoms_.end(); ++iter) {
     double c = (*iter)->atom_charge();
     if ((*iter)->use_ecp_basis()) c -= (*iter)->ecp_parameters()->ecp_ncore();
     for (auto titer = iter + 1; titer != atoms_.end(); ++titer) {
       // nuclear repulsion between dummy atoms are not computed here (as in Molpro)
-      if (!skip_self_interaction || (!(*iter)->dummy() || !(*titer)->dummy())) {
+      if (!(*iter)->dummy() || !(*titer)->dummy()) {
         const double dist = (*iter)->distance(*titer);
         double tc = (*titer)->atom_charge();
         if ((*titer)->use_ecp_basis()) tc -= (*titer)->ecp_parameters()->ecp_ncore();

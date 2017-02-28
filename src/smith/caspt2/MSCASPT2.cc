@@ -159,7 +159,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         deci = make_shared<Tensor>(vector<IndexRange>{ci_});
         deci->allocate();
         auto bdata = make_shared<VectorB>(ndet);
-        shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+        shared_ptr<Queue> queue = contract_rdm_deriv(/*upto=*/4, /*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
         blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);

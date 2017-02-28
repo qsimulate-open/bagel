@@ -228,7 +228,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
 
-  if (nacmtype_== 0 || nacmtype_ == 2)
+  if (nacmtype_==0)
     task_->augment_Y(d0ms, g0, g1, halfj);
 
   timer.tick_print("Yrs non-Lagrangian terms");

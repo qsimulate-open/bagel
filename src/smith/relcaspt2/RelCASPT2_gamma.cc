@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-using bagel::SMITH::RelCASPT2::FutureTensor;
+using namespace bagel::SMITH::RelCASPT2;
 
 shared_ptr<FutureTensor> RelCASPT2::RelCASPT2::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_};

@@ -106,11 +106,11 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
-    for (int kl = ij; kl != norb2; ++kl) {
-      if ((kl - ij) % mpi__->size() != mpi__->rank()) continue;
+    for (int kl = 0; kl != norb2; ++kl) {
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
+      if (klij % mpi__->size() != mpi__->rank()) continue;
 
       for (auto& iter : cc_->det()->phia(k,l)) {
         size_t iaJ = iter.source;
@@ -145,14 +145,6 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
     }
   }
   emat->allreduce();
-
-  for (size_t ij = 0; ij != norb2; ++ij)
-    for (size_t kl = 0; kl != ij; ++kl) {
-      size_t klij = kl + ij*norb2;
-      size_t ijkl = ij + kl*norb2;
-      for (size_t iJ = 0; iJ != size; ++iJ)
-        emat->element(iJ,klij) = emat->element(iJ,ijkl);
-    }
 
   return emat;
 }
@@ -208,11 +200,11 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
   const int lenb = cc_->det()->lenb();
 
   for (int ij = 0; ij != norb2; ++ij) {
+    if (ij % mpi__->size() != mpi__->rank()) continue;
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
-    for (int kl = ij; kl != norb2; ++kl) {
-      if ((kl - ij) % mpi__->size() != mpi__->rank()) continue;
+    for (int kl = 0; kl != norb2; ++kl) {
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
@@ -256,14 +248,6 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
     }
   }
   fock_fbra->allreduce();
-
-  for (size_t ij = 0; ij != norb2; ++ij)
-    for (size_t kl = 0; kl != ij; ++kl) {
-      size_t klij = kl + ij*norb2;
-      size_t ijkl = ij + kl*norb2;
-      for (size_t iJ = 0; iJ != size; ++iJ)
-        fock_fbra->element(iJ,klij) = fock_fbra->element(iJ,ijkl);
-    }
 
   return fock_fbra;
 }

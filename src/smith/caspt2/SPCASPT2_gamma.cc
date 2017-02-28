@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-using bagel::SMITH::SPCASPT2::FutureTensor;
+using namespace bagel::SMITH::SPCASPT2;
 
 shared_ptr<FutureTensor> SPCASPT2::SPCASPT2::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_, active_, active_};
