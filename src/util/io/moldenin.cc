@@ -203,7 +203,7 @@ void MoldenIn::read() {
       getline(ifs, line);
 
       regex atom_line("(\\d+)\\s*\\S*");
-      regex shell_line("([spdf])\\s+(\\d+)\\s*\\S*");
+      regex shell_line("([spdfg])\\s+(\\d+)\\s*\\S*");
       regex exp_line("(\\S+)\\s+(\\S+)");
       regex Dd("[Dd]");
 
