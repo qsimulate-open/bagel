@@ -40,7 +40,7 @@ const static int batchsize = 50;
 
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const int ws, const bool ex, const int lmax_k)
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws, const bool ex, const int lmax_k)
  : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k) {
 
   init();

@@ -50,7 +50,7 @@ class FMM {
 
     std::vector<std::shared_ptr<Box>> box_;
     double thresh_;
-    int ws_;
+    double ws_;
     double base_extent_;
     bool do_exchange_;
     int lmax_k_;
@@ -64,7 +64,7 @@ class FMM {
 
   public:
     FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH,
-        const int ws = 0, const bool do_exchange = false, const int lmax_k = 10);
+        const double ws = 1.0, const bool do_exchange = false, const int lmax_k = 10);
     ~FMM() { }
 
     const std::array<double, 3>& centre() const { return centre_; }
