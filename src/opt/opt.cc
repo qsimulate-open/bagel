@@ -93,7 +93,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     thresh_displ_ = idat->get<double>("maxdisp", 0.0012);
     thresh_echange_ = idat->get<double>("maxchange", 0.000001);
   }
-  algorithm_ = idat->get<string>("algorithm", "ef");
+  algorithm_ = idat->get<string>("algorithm", "rfo");
   adaptive_ = idat->get<bool>("adaptive", true);
   opttype_ = idat->get<string>("opttype", "energy");
 #ifndef DISABLE_SERIALIZATION
