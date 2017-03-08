@@ -15,8 +15,6 @@
 {
   "title"  : "casscf",
   "nstate" : 1,
-  "algorithm" : "hybrid",
-  "maxiter_switch" : 5,
   "nact"   : 0,
   "nact_cas" : 2,
   "nclosed" : 1
