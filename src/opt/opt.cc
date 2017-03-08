@@ -51,7 +51,6 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   internal_ = idat->get<bool>("internal", true);
   redundant_ = idat->get<bool>("redundant", false);
   maxiter_ = idat->get<int>("maxiter", 100);
-  maxstep_ = idat->get<double>("maxstep", 0.1);
   scratch_ = idat->get<bool>("scratch", false);
   numerical_ = idat->get<bool>("numerical", false);
   numerical_dx_ = idat->get<double>("numerical_dx", 0.001);
@@ -93,9 +92,10 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     thresh_displ_ = idat->get<double>("maxdisp", 0.0012);
     thresh_echange_ = idat->get<double>("maxchange", 0.000001);
   }
-  algorithm_ = idat->get<string>("algorithm", "rfo");
-  adaptive_ = idat->get<bool>("adaptive", true);
   opttype_ = idat->get<string>("opttype", "energy");
+  maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
+  algorithm_ = idat->get<string>("algorithm", opttype_ == "energy" ? "ef" : "rfo");
+  adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
 #ifndef DISABLE_SERIALIZATION
   refsave_ = idat->get<bool>("save_ref", false);
   if (refsave_) refname_ = idat->get<string>("ref_out", "reference");
@@ -602,9 +602,9 @@ shared_ptr<XYZFile> Opt::iterate_displ() {
 }
 
 void Opt::do_adaptive() {
-  // Fletcher's adaptive stepsize algorithm
+  // Fletcher's adaptive stepsize algorithm, works with rfo
 
-  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos" || algorithm_ == "ef") && opttype_ == "energy";
+  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
 
   if (algo) {
     realchange_ = en_ - en_prev_;
