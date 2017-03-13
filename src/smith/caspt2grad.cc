@@ -256,7 +256,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto dtotao = make_shared<Matrix>(*coeff * *dtot ^ *coeff);
   {
     Dipole dipole(geom_, dtotao, "CASPT2 relaxed");
-    dipole.compute();
+    dipole_ = dipole.compute();
   }
 
   // xmat in the AO basis

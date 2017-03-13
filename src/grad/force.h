@@ -35,12 +35,17 @@ class Force {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+
     bool numerical_;		// numerical or analytical gradient?
+    std::vector<double> energy_;
+    std::vector<double> force_dipole_;
 
   public:
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     std::shared_ptr<GradFile> compute();
+//    std::shared_ptr<const Reference> ref() const { return ref_; }
+    const std::vector<double>& force_dipole() const { return force_dipole_; }
 
 };
 

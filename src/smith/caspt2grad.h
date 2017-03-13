@@ -102,6 +102,7 @@ class CASPT2Grad : public CASPT2Deriv {
     // XMS density if available
     std::shared_ptr<const Matrix> dcheck_;
     double energy_;
+    std::vector<double> dipole_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -111,6 +112,8 @@ class CASPT2Grad : public CASPT2Deriv {
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     double energy() const { return energy_; }
+    const std::vector<double>& dipole() const { return dipole_; }
+    double dipole(const int i) const { return dipole_[i]; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
@@ -156,6 +159,7 @@ class CASPT2Nacm : public CASPT2Deriv {
 
     double energy(const int i) const { return energy_[i]; }
     const std::vector<double>& energy() const { return energy_; }
+
 
     double foeig(const int i) const { return foeig_.at(i); }
     double cieig(const int i) const { return cieig_.at(i); }

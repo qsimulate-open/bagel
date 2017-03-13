@@ -31,6 +31,7 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/timer.h>
+#include <src/prop/multipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -73,10 +74,14 @@ void Hess::compute() {
 
   hess_ = make_shared<Matrix>(3*natom,3*natom);
   mw_hess_ = make_shared<Matrix>(3*natom,3*natom);
+  auto cartesian = make_shared<Matrix>(3,3*natom); //matrix of dmu/dR
 
   if (numhess_) {
     dx_ = idata_->get<double>("dx", 0.001);
     cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
+
+    std::vector<double> dipole_minus;
+    std::vector<double> dipole_plus;
 
     auto displ = std::make_shared<XYZFile>(natom);
     displ->scale(0.0);
@@ -85,6 +90,7 @@ void Hess::compute() {
     int counter = 0;
     int step = 0;
     if (numforce_) {
+      muffle_->mute();
       const string method = to_lower(cinput->get<string>("title", ""));
       const int target = idata_->get<int>("target", 0);
       double energy_ref;
@@ -93,6 +99,7 @@ void Hess::compute() {
 
       energy_method = construct_method(method, idata_, geom_, ref_);
       energy_method->compute();
+
       ref_ = energy_method->conv_to_ref();
       energy_ref = ref_->energy(target);
 
@@ -114,6 +121,8 @@ void Hess::compute() {
           auto plus = make_shared<FiniteGrad>(method, cinput, geom_plus, refgrad_plus, target, dx_);
           shared_ptr<GradFile> outplus = plus->compute();
 
+//          dipole_plus = plus->ref()->dipole();
+
           //displace -dx
           displ->element(j,i) = -dx_;
           auto geom_minus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
@@ -124,17 +133,22 @@ void Hess::compute() {
 
           auto minus = make_shared<FiniteGrad>(method, cinput, geom_minus, refgrad_minus, target, dx_);
           shared_ptr<GradFile> outminus = minus->compute();
+
+//          dipole_minus = minus->ref()->dipole();
+
           displ->element(j,i) = 0.0;
 
           for (int k = 0; k != natom; ++k) {  // atom j
             for (int l = 0; l != 3; ++l) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
               (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
+//              (*cartesian)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
               step = step + 1;
             }
           }
           step = 0;
           counter = counter + 1;
+          muffle_->unmute();
         }
       }
 
@@ -153,6 +167,9 @@ void Hess::compute() {
 
           auto plus = make_shared<Force>(idata_, geom_plus, ref_);
           shared_ptr<GradFile> outplus = plus->compute();
+          dipole_plus = plus->force_dipole();
+cout << "hess.cc dipole  " << endl;
+cout << "DEBUG Dipole plus " << dipole_plus[0] << " " << dipole_plus[1] << " " << dipole_plus[2] << endl;
 
           // displace -dx
           displ->element(j,i) = -dx_;
@@ -163,6 +180,7 @@ void Hess::compute() {
 
           auto minus = make_shared<Force>(idata_, geom_minus, ref_);
           shared_ptr<GradFile> outminus = minus->compute();
+          dipole_minus = minus->force_dipole();
 
           displ->element(j,i) = 0.0;
 
@@ -170,6 +188,7 @@ void Hess::compute() {
             for (int l = 0; l != 3; ++l) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
               (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
+              (*cartesian)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
               step = step + 1;
             }
           }
@@ -181,6 +200,16 @@ void Hess::compute() {
         }
       }
     }
+
+#if 1
+cout << "DEBUG INTENSITY MATRIX in CARTESIAN " << endl;
+for (int j = 0; j != 3; ++j) {
+  cout << endl << "      ";
+    for (int i = 0; i != 3*natom; ++i)
+      cout << setw(20) << setprecision(10) << (*cartesian)(j,i);
+}
+  cout << endl << endl;
+#endif
 
     //symmetrize mass weighted hessian
     hess_->print("Hessian");
@@ -294,6 +323,26 @@ void Hess::compute() {
     VectorB eig(3*natom);
     proj_hess_->diagonalize(eig);
 
+#if 1
+    // intensities in normal coordinates : cartesian * proj_hess_
+    auto normal = make_shared<Matrix>(3,3*natom); //matrix of dmu/dR
+    *normal =*cartesian ^ *proj_hess_;
+
+    VectorB dmudq(3*natom); //norm of the derivative of the dipole wrt normal mode
+    double c;
+
+    for (int i = 0; i != 3*natom; ++i) {
+      for (int j = 0; j != 3; ++j) {
+        c += (*normal)(j,i) * (*normal)(j,i);
+      }
+      dmudq(i) = sqrt(c);
+      c = 0;
+cout << "DEBUG dMudQ of i " << i << " " << setprecision(10) << dmudq(i) <<endl;
+    }
+#endif
+
+// NOTES ON UNITS: 1 Debye2-angstrom-2-amu-1 = 42.2561 km-mol-1 = 5.82573 x 10-3 cm-2-atm-1 at STP
+
     cout << "    * Vibrational frequencies (cm**-1) and corresponding eigenvectors" << endl << endl;
 
     int len_n = proj_hess_->ndim();
@@ -307,6 +356,15 @@ void Hess::compute() {
       for (int k = 0; k != 6; ++k)
         cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
       cout << endl << endl;
+#if 0
+// add printing of intensity terms:
+      for (int k = 0; k != 6; ++k)
+        cout << endl << setw(6) << "|dDIP/dQ| (in Debye)";
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << setprecision(10) << dmudq(i*6+k);
+      cout << endl << endl;
+// printing of dDIP/DQ ends
+#endif
       for (int j = 0; j != len_n; ++j) {
         cout << setw(6) << j;
         for (int k = 0; k != 6; ++k)

@@ -51,6 +51,7 @@ class GradEval : public GradEval_base {
 
     double energy_;
     int target_state_;
+    std::vector<double> dipole_;
 
     void init() {
       if (geom_->external())
@@ -76,6 +77,8 @@ class GradEval : public GradEval_base {
     std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
 
     double energy() const { return energy_; }
+    const std::vector<double>& dipole() const { return dipole_; }
+    double dipole(int i) const { return dipole_[i]; }
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
