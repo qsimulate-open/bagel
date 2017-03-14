@@ -117,7 +117,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
           for (size_t ib = 0; ib != lenb; ++ib) {
             size_t iI = ib + iaI*lenb;
             size_t iJ = ib + iaJ*lenb;
-            if ((iJ - offset) < dsize)
+            if ((iJ - offset) < dsize && iJ >= offset)
               e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
           }
         }
@@ -129,7 +129,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
             double sign = static_cast<double>(iter.sign);
             size_t iI = ibI + ia*lenb;
             size_t iJ = ibJ + ia*lenb;
-            if ((iJ - offset) < dsize)
+            if ((iJ - offset) < dsize && iJ >= offset)
               e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
           }
         }

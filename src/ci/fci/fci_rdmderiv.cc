@@ -119,7 +119,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
         for (size_t ib = 0; ib != lenb; ++ib) {
           size_t iI = ib + iaI*lenb;
           size_t iJ = ib + iaJ*lenb;
-          if ((iJ - offset) < size)
+          if ((iJ - offset) < size && iJ >= offset)
             emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
         }
       }
@@ -131,16 +131,14 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
           double sign = static_cast<double>(iter.sign);
           size_t iI = ibI + ia*lenb;
           size_t iJ = ibJ + ia*lenb;
-          if ((iJ - offset) < size)
+          if ((iJ - offset) < size && iJ >= offset)
             emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
         }
       }
 
       if (i == l) {
         const int kj = k+j*norb_;
-        for (size_t iJ = offset; iJ != offset+size; ++iJ) {
-          emat->element(iJ-offset, klij) -= dbra->data(kj)->data(iJ);
-        }
+        blas::ax_plus_y_n(-1.0, &(dbra->data(kj)->data(offset)), size, emat->element_ptr(0, klij));
       }
     }
   }
@@ -158,7 +156,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
 }
 
 
-shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm3deriv should not be called without MPI");
 #endif
@@ -179,26 +177,31 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
   const size_t npass = (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
 
-  // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing)
-  auto fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
-  for (size_t ipass = 0; ipass != npass; ++ipass) {
-    const size_t ioffset = ipass * nsize;
-    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-    shared_ptr<Matrix> ebra;
-    ebra = rdm2deriv_offset(target, ioffset, isize);
-
-    for (size_t kl = 0; kl != norb2; ++kl) {
-      if (kl % mpi__->size() != mpi__->rank()) continue;
-      for (size_t mn = 0; mn != norb2; ++mn) {
-        const size_t n = mn/norb_;
-        const size_t m = mn-n*norb_;
-        const size_t klmn = kl * norb2 + mn;
-        for (size_t iI = 0; iI != isize; ++iI)
-          fock_ebra_mat->element(iI+ioffset,kl) += fock->element(m,n) * ebra->element(iI,klmn);
+  shared_ptr<Matrix> fock_ebra_mat;
+  if (fock_ebra_in) {
+    // recycle [J|k+l|0] from the previous pass
+    fock_ebra_mat = make_shared<Matrix>(*fock_ebra_in);
+  } else {
+    // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing with <J| )
+    fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
+    for (size_t ipass = 0; ipass != npass; ++ipass) {
+      const size_t ioffset = ipass * nsize;
+      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+      shared_ptr<Matrix> ebra;
+      ebra = rdm2deriv_offset(target, ioffset, isize);
+      for (size_t kl = 0; kl != norb2; ++kl) {
+        if (kl % mpi__->size() != mpi__->rank()) continue;
+        for (size_t mn = 0; mn != norb2; ++mn) {
+          const size_t n = mn/norb_;
+          const size_t m = mn-n*norb_;
+          const size_t klmn = kl * norb2 + mn;
+          for (size_t iI = 0; iI != isize; ++iI)
+            fock_ebra_mat->element(iI+ioffset,kl) += fock->element(m,n) * ebra->element(iI,klmn);
+        }
       }
     }
+    fock_ebra_mat->allreduce();
   }
-  fock_ebra_mat->allreduce();
 
   // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
   auto fock_fbra = make_shared<Matrix>(size, norb4);
@@ -221,10 +224,11 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
         size_t iaJ = iter.source;
         size_t iaI = iter.target;
         double sign = static_cast<double>(iter.sign);
+
         for (size_t ib = 0; ib != lenb; ++ib) {
           size_t iI = ib + iaI*lenb;
           size_t iJ = ib + iaJ*lenb;
-          if ((iJ - offset) < size)
+          if ((iJ - offset) < size && iJ >= offset)
             fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
         }
       }
@@ -236,16 +240,14 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
           double sign = static_cast<double>(iter.sign);
           size_t iI = ibI + ia*lenb;
           size_t iJ = ibJ + ia*lenb;
-          if ((iJ - offset) < size)
+          if ((iJ - offset) < size && iJ >= offset)
             fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
         }
       }
 
       if (i == l) {
         const int kj = k+j*norb_;
-        for (size_t iJ = 0; iJ != size; ++iJ) {
-          fock_fbra->element(iJ, klij) -= fock_ebra_mat->element(iJ+offset,kj);
-        }
+        blas::ax_plus_y_n(-1.0, fock_ebra_mat->element_ptr(offset, kj), size, fock_fbra->element_ptr(0, klij));
       }
 
       for (int n = 0; n != norb_; ++n) {
@@ -265,7 +267,7 @@ shared_ptr<Matrix> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> foc
         fock_fbra->element(iJ,klij) = fock_fbra->element(iJ,ijkl);
     }
 
-  return fock_fbra;
+  return make_tuple(fock_ebra_mat, fock_fbra);
 }
 
 

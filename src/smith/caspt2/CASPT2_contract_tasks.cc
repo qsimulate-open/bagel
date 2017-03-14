@@ -199,7 +199,7 @@ void Task914::Task_local::compute() {
       for (size_t ib = 0; ib != lenb; ++ib) {
         size_t iK = ib+iaK*lenb;
         size_t iJ = ib+iaJ*lenb;
-        if ((iK - offset_) < size_)
+        if ((iK - offset_) < size_ && iK >= offset_)
           (*odata)[iJ] += sign * in0_mat->element(iK-offset_,ij);
       }
     }
@@ -211,7 +211,7 @@ void Task914::Task_local::compute() {
         double sign = static_cast<double>(iter.sign);
         size_t iK = ibK+ia*lenb;
         size_t iJ = ibJ+ia*lenb;
-        if ((iK - offset_) < size_)
+        if ((iK - offset_) < size_ && iK >= offset_)
           (*odata)[iJ] += sign * in0_mat->element(iK-offset_,ij);
       }
     }
