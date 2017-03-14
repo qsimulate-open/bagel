@@ -99,6 +99,7 @@ shared_ptr<GradFile> Force::compute() {
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
       out = force->compute();
       ref = force->ref();
+      force_dipole_ = force->dipole();
 
     } else if (method == "ks") {
 

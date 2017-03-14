@@ -168,8 +168,6 @@ void Hess::compute() {
           auto plus = make_shared<Force>(idata_, geom_plus, ref_);
           shared_ptr<GradFile> outplus = plus->compute();
           dipole_plus = plus->force_dipole();
-cout << "hess.cc dipole  " << endl;
-cout << "DEBUG Dipole plus " << dipole_plus[0] << " " << dipole_plus[1] << " " << dipole_plus[2] << endl;
 
           // displace -dx
           displ->element(j,i) = -dx_;
@@ -200,16 +198,6 @@ cout << "DEBUG Dipole plus " << dipole_plus[0] << " " << dipole_plus[1] << " " <
         }
       }
     }
-
-#if 1
-cout << "DEBUG INTENSITY MATRIX in CARTESIAN " << endl;
-for (int j = 0; j != 3; ++j) {
-  cout << endl << "      ";
-    for (int i = 0; i != 3*natom; ++i)
-      cout << setw(20) << setprecision(10) << (*cartesian)(j,i);
-}
-  cout << endl << endl;
-#endif
 
     //symmetrize mass weighted hessian
     hess_->print("Hessian");
@@ -323,52 +311,64 @@ for (int j = 0; j != 3; ++j) {
     VectorB eig(3*natom);
     proj_hess_->diagonalize(eig);
 
-#if 1
-    // intensities in normal coordinates : cartesian * proj_hess_
-    auto normal = make_shared<Matrix>(3,3*natom); //matrix of dmu/dR
-    *normal =*cartesian ^ *proj_hess_;
-
-    VectorB dmudq(3*natom); //norm of the derivative of the dipole wrt normal mode
-    double c;
-
-    for (int i = 0; i != 3*natom; ++i) {
-      for (int j = 0; j != 3; ++j) {
-        c += (*normal)(j,i) * (*normal)(j,i);
-      }
-      dmudq(i) = sqrt(c);
-      c = 0;
-cout << "DEBUG dMudQ of i " << i << " " << setprecision(10) << dmudq(i) <<endl;
+    cout << endl << " Mass Weighted Hessian Eigenvalues" << endl; // units Hartree/bohr^2*amu
+    for (int i = 0; i != 3*natom; ++i ) {
+      cout << setw(10) << setprecision(5) << eig(i);
     }
-#endif
+    cout << endl;
 
-// NOTES ON UNITS: 1 Debye2-angstrom-2-amu-1 = 42.2561 km-mol-1 = 5.82573 x 10-3 cm-2-atm-1 at STP
+    proj_hess_->print("Mass Weighted Hessian Eigenvectors", 3*natom);
 
-    cout << "    * Vibrational frequencies (cm**-1) and corresponding eigenvectors" << endl << endl;
+    //convert mw eigenvectors to normalized cartesian modes
+    auto eigvec_cart = make_shared<Matrix>(3*natom,3*natom);
 
-    int len_n = proj_hess_->ndim();
-    int len_m = proj_hess_->mdim();
+    counter = 0.0;
+    step = 0.0;
+    for (int i = 0; i != natom; ++i) {
+      for (int j = 0; j != 3; ++j) {
+        for (int k = 0; k != natom; ++k) {
+          for (int l = 0; l != 3; ++l) {
+            (*eigvec_cart)(step,counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->averaged_mass());
+            step = step + 1;
+          }
+        }
+        step = 0;
+        counter = counter + 1;
+      }
+    }
+
+    // calculate IR intensities: (N*pi/3c^2) * (dmu/dq)^2
+    auto normal = make_shared<Matrix>(3,3*natom); //matrix of dmu/dQ
+    *normal =*cartesian * *eigvec_cart;  // units (e bohr / bohr) * 1/sqrt(amu)
+
+    VectorB dmudq2(3*natom); //square of the dipole derivatives in hartree * bohr / amu
+    for (int i = 0; i != 3*natom; ++i) { // total for each mode:
+        dmudq2(i) =((*normal)(0,i)*(*normal)(0,i) + (*normal)(1,i)*(*normal)(1,i) + (*normal)(2,i)*(*normal)(2,i));
+    }
+
+    cout << "    * Vibrational frequencies, IR intensities, and corresponding cartesian eigenvectors" << endl << endl;
+
+    int len_n = eigvec_cart->ndim();
+    int len_m = eigvec_cart->mdim();
 
     for (int i = 0; i != len_m/6; ++i) {
-      cout << setw(6) << " ";
+      cout << setw(15) << " ";
       for (int k = 0; k != 6; ++k)
         cout << setw(20) << i * 6 + k;
-      cout << endl << setw(6) << "Freq";
+      cout << endl << setw(15) << "Freq (cm**-1)";
       for (int k = 0; k != 6; ++k)
-        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+        cout << setw(20) << setprecision(2) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+      cout << endl;
+
+      cout << endl << setw(15) << "IR Int. (km/mol)";
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << setprecision(2) <<(fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k)) : (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k))) : 0) ;
       cout << endl << endl;
-#if 0
-// add printing of intensity terms:
-      for (int k = 0; k != 6; ++k)
-        cout << endl << setw(6) << "|dDIP/dQ| (in Debye)";
-      for (int k = 0; k != 6; ++k)
-        cout << setw(20) << setprecision(10) << dmudq(i*6+k);
-      cout << endl << endl;
-// printing of dDIP/DQ ends
-#endif
+
       for (int j = 0; j != len_n; ++j) {
-        cout << setw(6) << j;
+        cout << setw(15) << j;
         for (int k = 0; k != 6; ++k)
-          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
+          cout << setw(20) << setprecision(5) << eigvec_cart->element(j, i*6+k);
         cout << endl;
       }
       cout << endl;
@@ -376,18 +376,23 @@ cout << "DEBUG dMudQ of i " << i << " " << setprecision(10) << dmudq(i) <<endl;
 
     if (len_m%6) {
       int i = len_m/6;
-      cout << setw(6) << " ";
+      cout << setw(15) << " ";
       for (int k = 0; k != len_m%6; ++k)
         cout << setw(20) << i * 6 + k;
-      cout << endl << setw(6) << "Freq";
+      cout << endl << setw(15) << "Freq (cm**-1)";
       for (int k = 0; k != len_m%6; ++k)
-        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+        cout << setw(20) << setprecision(2) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+      cout << endl ;
+
+      cout << endl << setw(15) << "IR Int. (a.u.)";
+      for (int k = 0; k != len_m%6; ++k)
+        cout << setw(20) << setprecision(2) <<(fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k)) : (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k))) : 0) ;
       cout << endl << endl;
 
       for (int j = 0; j != len_n; ++j) {
-        cout << setw(6) << j;
+        cout << setw(15) << j;
         for (int k = 0; k != len_m%6; ++k)
-          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
+          cout << setw(20) << setprecision(5) << eigvec_cart->element(j, i*6+k);
         cout << endl;
       }
       cout << endl;
