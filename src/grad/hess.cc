@@ -337,13 +337,20 @@ void Hess::compute() {
       }
     }
 
-    // calculate IR intensities: (N*pi/3c^2) * (dmu/dq)^2
-    auto normal = make_shared<Matrix>(3,3*natom); //matrix of dmu/dQ
+    // calculate IR intensities:
+    auto normal = make_shared<Matrix>(3,3*natom); //dipole derivatives for the normal modes dmu/dQ
     *normal =*cartesian * *eigvec_cart;  // units (e bohr / bohr) * 1/sqrt(amu)
 
-    VectorB dmudq2(3*natom); //square of the dipole derivatives in hartree * bohr / amu
-    for (int i = 0; i != 3*natom; ++i) { // total for each mode:
+    VectorB dmudq2(3*natom); //square of the dipole derivative in hartree*bohr/amu
+    for (int i = 0; i != 3*natom; ++i)
         dmudq2(i) =((*normal)(0,i)*(*normal)(0,i) + (*normal)(1,i)*(*normal)(1,i) + (*normal)(2,i)*(*normal)(2,i));
+
+    std::vector<double> ir;
+    ir.resize(3*natom);
+
+    //IR intensity: N*pi/3*c^2 * (dmu/dQ)^2
+    for (int i = 0; i != 3*natom; ++i) {
+      ir[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i) : ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i)) : 0) ;
     }
 
     cout << "    * Vibrational frequencies, IR intensities, and corresponding cartesian eigenvectors" << endl << endl;
@@ -352,21 +359,26 @@ void Hess::compute() {
     int len_m = eigvec_cart->mdim();
 
     for (int i = 0; i != len_m/6; ++i) {
-      cout << setw(15) << " ";
+      cout << setw(17) << " ";
       for (int k = 0; k != 6; ++k)
         cout << setw(20) << i * 6 + k;
-      cout << endl << setw(15) << "Freq (cm**-1)";
+      cout << endl << setw(17) << "Freq (cm**-1)";
       for (int k = 0; k != 6; ++k)
         cout << setw(20) << setprecision(2) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
       cout << endl;
 
-      cout << endl << setw(15) << "IR Int. (km/mol)";
+      cout << endl << setw(17) << "IR Int. (km/mol)";
       for (int k = 0; k != 6; ++k)
-        cout << setw(20) << setprecision(2) <<(fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k)) : (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k))) : 0) ;
+        cout << setw(20) << setprecision(2) << ir[i*6+k] ;
+      cout << endl;
+
+      cout << setw(17) << "Rel. IR Int.";
+      for (int k = 0; k != 6; ++k)
+        cout << setw(20) << setprecision(2) << (ir[i*6+k]/(*std::max_element(ir.begin(), ir.end())))*100 ;
       cout << endl << endl;
 
       for (int j = 0; j != len_n; ++j) {
-        cout << setw(15) << j;
+        cout << setw(17) << j;
         for (int k = 0; k != 6; ++k)
           cout << setw(20) << setprecision(5) << eigvec_cart->element(j, i*6+k);
         cout << endl;
@@ -376,21 +388,26 @@ void Hess::compute() {
 
     if (len_m%6) {
       int i = len_m/6;
-      cout << setw(15) << " ";
+      cout << setw(17) << " ";
       for (int k = 0; k != len_m%6; ++k)
         cout << setw(20) << i * 6 + k;
-      cout << endl << setw(15) << "Freq (cm**-1)";
+      cout << endl << setw(17) << "Freq (cm**-1)";
       for (int k = 0; k != len_m%6; ++k)
         cout << setw(20) << setprecision(2) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
       cout << endl ;
 
-      cout << endl << setw(15) << "IR Int. (a.u.)";
+      cout << endl << setw(17) << "IR Int. (a.u.)";
       for (int k = 0; k != len_m%6; ++k)
-        cout << setw(20) << setprecision(2) <<(fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k)) : (((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3 * 1000 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i*6+k))) : 0) ;
+        cout << setw(20) << setprecision(2) << ir[i*6+k] ;
+      cout << endl;
+
+      cout << setw(17) << "Rel. IR Int.";
+      for (int k = 0; k != len_m%6; ++k)
+        cout << setw(20) << setprecision(2) << (ir[i*6+k]/(*std::max_element(ir.begin(), ir.end())))*100 ;
       cout << endl << endl;
 
       for (int j = 0; j != len_n; ++j) {
-        cout << setw(15) << j;
+        cout << setw(17) << j;
         for (int k = 0; k != len_m%6; ++k)
           cout << setw(20) << setprecision(5) << eigvec_cart->element(j, i*6+k);
         cout << endl;
