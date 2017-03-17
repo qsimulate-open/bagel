@@ -107,8 +107,9 @@ void ShellPair::init() {
   const double lnthresh = log(thresh_);
 
   // extent
-  array<double, 7> scale = {{1.0, 1.1781, 1.3333, 1.4726, 1.7181, 1.8286}};
-  extent_ = 0;
+//  array<double, 7> scale = {{1.0, 1.1781, 1.3333, 1.4726, 1.7181, 1.8286}};
+  double extentA = 0.0;
+  double extentB = 0.0;
   const double tol = 20.0 / log10(exp(1));
   for (auto& expi0 : exp0) {
     for (auto& expi1 : exp1) {
@@ -118,23 +119,36 @@ void ShellPair::init() {
       const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
       const double r01 = sqrt((-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv);
 
+      array<double, 3> P;
+      P[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
+      P[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
+      P[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
+
       array<double, 3> r0;
-      r0[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - b0->position(0);
-      r0[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - b0->position(1);
-      r0[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - b0->position(2);
+      r0[0] = P[0] - b0->position(0);
+      r0[1] = P[1] - b0->position(1);
+      r0[2] = P[2] - b0->position(2);
       const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
 
       array<double, 3> r1;
-      r1[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - b1->position(0);
-      r1[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - b1->position(1);
-      r1[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - b1->position(2);
+      r1[0] = P[0] - b1->position(0);
+      r1[1] = P[1] - b1->position(1);
+      r1[2] = P[2] - b1->position(2);
       const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
 
-      const double extent01 = (d0 < d1) ? (r01 + d0) : (r01 + d1);
-      if (extent01 > extent_) extent_ = extent01;
+      extentA = max(r01 + d0, extentA);
+      extentB = max(r01 + d1, extentB);
     }
   }
-  extent_ *= scale[b0->angular_number()] * scale[b1->angular_number()];
+  extent_ = min(extentA, extentB);
+//  extent_ *= scale[b0->angular_number()] * scale[b1->angular_number()];
+#if 0
+  if (extentA < extentB) {
+     centre_ = b0->position();
+  } else {
+     centre_ = b1->position();
+  }
+#endif
 
   // schwarz
   array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
