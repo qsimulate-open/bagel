@@ -247,6 +247,10 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       ++isp;
     }
     tasks.compute();
+    for (auto& olm : box_olm)
+      for (size_t i = 0; i != msize_; ++i)
+        for (size_t j = 0; j != nsize_; ++j)
+          olm->element(i, j) = detail::conj(olm->element(j, i));
 
     auto c_sj = make_shared<Matrix>(nsize_, ocoeff_sj->mdim(), true);
     int start = 0;
@@ -707,7 +711,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) 
 }
 
 
-shared_ptr<const Matrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_ti) const {
+shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_ti) const {
 
   assert(nchild() == 0);
   vector<shared_ptr<ZMatrix>> box_olm(nmult_k_);
@@ -733,6 +737,10 @@ shared_ptr<const Matrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_t
     ++isp;
   }
   tasks.compute();
+  for (auto& olm : box_olm)
+    for (size_t i = 0; i != msize_; ++i)
+      for (size_t j = 0; j != nsize_; ++j)
+        olm->element(i, j) = detail::conj(olm->element(j, i));
 
   auto c_ti = make_shared<Matrix>(msize_, ocoeff_ti->mdim(), true);
   int start = 0;
@@ -748,10 +756,8 @@ shared_ptr<const Matrix> Box::compute_Fock_ffX(shared_ptr<const Matrix> ocoeff_t
   auto krj = make_shared<ZMatrix>(nsize_, olm_ndim_, true);
   for (int k = 0; k != nmult_k_; ++k) {
     auto olm_ri = make_shared<const ZMatrix>(*(box_olm[k]) * *zc_ti);
-    zgemm3m_("N", "C", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, olm_ri->data(), nsize_, mlm_ji_->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
+    zgemm3m_("N", "T", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, olm_ri->data(), nsize_, mlm_ji_->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
   }
-  // hack
-  krj = krj->get_conjg();
 
   assert(krj->get_imag_part()->rms() < 1e-10);
   auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_, true);
@@ -1032,4 +1038,287 @@ double Box::exchange_ff() const {
   const complex<double> en = 0.5*olm_ji_->dot_product(*mlm_ji_);
   assert(abs(en.imag()) < 1e-10);
   return en.real();
+}
+
+
+shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
+
+  assert(nchild() == 0);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim(), true);
+  out->zero();
+
+  // NF: 4c integrals
+  const int shift = sizeof(int) * 4;
+  const int nsh = sqrt(max_den->size());
+  assert (nsh*nsh == max_den->size());
+
+  int ntask = 0;
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < thresh_) continue;
+    const int i0 = v01->shell_ind(1);
+
+    const int i1 = v01->shell_ind(0);
+    if (i1 < i0) continue;
+
+    const int i01 = i0 * nsh + i1;
+    const double density_01 = (*max_den)(i01) * 4.0;
+
+    for (auto& neigh : neigh_) {
+      for (auto& v23 : neigh->sp()) {
+        if (v23->schwarz() < thresh_) continue;
+        const int i2 = v23->shell_ind(1);
+        if (i2 < i0) continue;
+        const int i3 = v23->shell_ind(0);
+        if (i3 < i2) continue;
+        const int i23 = i2 * nsh + i3;
+        if (i23 < i01) continue;
+
+        const double density_23 = (*max_den)(i23) * 4.0;
+
+        const double mulfactor = max(density_01, density_23);
+        const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
+        if (skip_schwarz) continue;
+        ++ntask;
+      }
+    }
+  }
+
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
+
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < thresh_) continue;
+    shared_ptr<const Shell> b0 = v01->shell(1);
+    const int i0 = v01->shell_ind(1);
+    const int b0offset = v01->offset(1);
+    const int b0size = b0->nbasis();
+
+    shared_ptr<const Shell> b1 = v01->shell(0);
+    const int i1 = v01->shell_ind(0);
+    if (i1 < i0) continue;
+    const int b1offset = v01->offset(0);
+    const int b1size = b1->nbasis();
+
+    const int i01 = i0 * nsh + i1;
+    const double density_01 = (*max_den)(i01) * 4.0;
+
+    for (auto& neigh : neigh_) {
+      for (auto& v23 : neigh->sp()) {
+        if (v23->schwarz() < thresh_) continue;
+        shared_ptr<const Shell> b2 = v23->shell(1);
+        const int i2 = v23->shell_ind(1);
+        if (i2 < i0) continue;
+        const int b2offset = v23->offset(1);
+        const int b2size = b2->nbasis();
+
+        shared_ptr<const Shell> b3 = v23->shell(0);
+        const int i3 = v23->shell_ind(0);
+        if (i3 < i2) continue;
+        const int b3offset = v23->offset(0);
+        const int b3size = b3->nbasis();
+
+        const int i23 = i2 * nsh + i3;
+        if (i23 < i01) continue;
+
+        const double density_23 = (*max_den)(i23) * 4.0;
+
+        const double mulfactor = max(density_01, density_23);
+        const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
+        if (skip_schwarz) continue;
+
+        array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+        tasks.emplace_back(
+          [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
+
+            ERIBatch eribatch(input, mulfactor);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+
+            const double* density_data = density->data();
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              const int j0n = j0 * density->ndim();
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                if (j1 < j0) {
+                  eridata += b2size * b3size;
+                  continue;
+                }
+                const unsigned int nj01 = (j0 << shift) + j1;
+                const double scale01 = (j0 == j1) ? 0.5 : 1.0;
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  const int j2n = j2 * density->ndim();
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    if (j3 < j2) continue;
+                    const unsigned int nj23 = (j2 << shift) + j3;
+                    if (nj23 < nj01 && i01 == i23) continue;
+                    const double scale23 = (j2 == j3) ? 0.5 : 1.0;
+                    const double scale = (nj01 == nj23) ? 0.25 : 0.5;
+
+                    const double eri = *eridata;
+                    const double intval = eri * scale * scale01 * scale23;
+                    const double intval4 = 4.0 * intval;
+                    out->element(j1, j0) += density_data[j2n + j3] * intval4;
+                    out->element(j3, j2) += density_data[j0n + j1] * intval4;
+                  }
+                }
+              }
+            }
+
+          }
+        );
+
+      }
+    }
+  }
+
+  tasks.compute();
+
+  return out;
+}
+
+
+shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
+
+  assert(nchild() == 0);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim(), true);
+  out->zero();
+
+  // NF: 4c integrals
+  const int shift = sizeof(int) * 4;
+  const int nsh = sqrt(max_den->size());
+  assert (nsh*nsh == max_den->size());
+
+  int ntask = 0;
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < thresh_) continue;
+    const int i0 = v01->shell_ind(1);
+
+    const int i1 = v01->shell_ind(0);
+    if (i1 < i0) continue;
+
+    const int i01 = i0 * nsh + i1;
+    for (auto& neigh : neigh_) {
+      for (auto& v23 : neigh->sp()) {
+        if (v23->schwarz() < thresh_) continue;
+        const int i2 = v23->shell_ind(1);
+        if (i2 < i0) continue;
+        const int i3 = v23->shell_ind(0);
+        if (i3 < i2) continue;
+        const int i23 = i2 * nsh + i3;
+        if (i23 < i01) continue;
+
+        const double density_02 = (*max_den)(i0 * nsh + i2);
+        const double density_03 = (*max_den)(i0 * nsh + i3);
+        const double density_12 = (*max_den)(i1 * nsh + i2);
+        const double density_13 = (*max_den)(i1 * nsh + i3);
+
+        const double mulfactor = max(max(density_13, density_02),
+                                     max(density_03, density_12));
+        const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
+        if (skip_schwarz) continue;
+        ++ntask;
+      }
+    }
+  }
+
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
+
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < thresh_) continue;
+    shared_ptr<const Shell> b0 = v01->shell(1);
+    const int i0 = v01->shell_ind(1);
+    const int b0offset = v01->offset(1);
+    const int b0size = b0->nbasis();
+
+    shared_ptr<const Shell> b1 = v01->shell(0);
+    const int i1 = v01->shell_ind(0);
+    if (i1 < i0) continue;
+    const int b1offset = v01->offset(0);
+    const int b1size = b1->nbasis();
+
+    const int i01 = i0 * nsh + i1;
+    for (auto& neigh : neigh_) {
+      for (auto& v23 : neigh->sp()) {
+        if (v23->schwarz() < thresh_) continue;
+        shared_ptr<const Shell> b2 = v23->shell(1);
+        const int i2 = v23->shell_ind(1);
+        if (i2 < i0) continue;
+        const int b2offset = v23->offset(1);
+        const int b2size = b2->nbasis();
+
+        shared_ptr<const Shell> b3 = v23->shell(0);
+        const int i3 = v23->shell_ind(0);
+        if (i3 < i2) continue;
+        const int b3offset = v23->offset(0);
+        const int b3size = b3->nbasis();
+
+        const int i23 = i2 * nsh + i3;
+        if (i23 < i01) continue;
+
+        const double density_02 = (*max_den)(i0 * nsh + i2);
+        const double density_03 = (*max_den)(i0 * nsh + i3);
+        const double density_12 = (*max_den)(i1 * nsh + i2);
+        const double density_13 = (*max_den)(i1 * nsh + i3);
+
+        const double mulfactor = max(max(density_13, density_02),
+                                     max(density_03, density_12));
+        const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+        const bool skip_schwarz = integral_bound < schwarz_thresh_;
+        if (skip_schwarz) continue;
+
+        array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+        tasks.emplace_back(
+          [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
+
+            ERIBatch eribatch(input, mulfactor);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+
+            const double* density_data = density->data();
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              const int j0n = j0 * density->ndim();
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                if (j1 < j0) {
+                  eridata += b2size * b3size;
+                  continue;
+                }
+                const int j1n = j1 * density->ndim();
+                const unsigned int nj01 = (j0 << shift) + j1;
+                const double scale01 = (j0 == j1) ? 0.5 : 1.0;
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    if (j3 < j2) continue;
+                    const unsigned int nj23 = (j2 << shift) + j3;
+                    if (nj23 < nj01 && i01 == i23) continue;
+                    const double scale23 = (j2 == j3) ? 0.5 : 1.0;
+                    const double scale = (nj01 == nj23) ? 0.25 : 0.5;
+
+                    const double eri = *eridata;
+                    const double intval = eri * scale * scale01 * scale23;
+                    out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
+                    out->element(j3, j0) -= density_data[j1n + j2] * intval;
+                    out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
+                    out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+                  }
+                }
+              }
+            }
+
+          }
+        );
+
+      }
+    }
+  }
+
+  tasks.compute();
+
+  return out;
 }

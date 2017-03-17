@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 50;
+const static int batchsize = 100;
 
 const static Legendre plm;
 
@@ -229,7 +229,7 @@ void FMM::get_boxes() {
 
 #if 1
   cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " *** BATCHSIZE " << batchsize << " lmax " << lmax_ << " lmax_k " << lmax_k_
+  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " *** BATCHSIZE " << batchsize << " lmax " << lmax_ << " lmax_k " << lmax_k_
        << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
   int i = 0;
   for (auto& b : box_) {
@@ -384,6 +384,9 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     out->allreduce();
     ff->allreduce();
 
+    const double enj = 0.5*density->dot_product(*ff);
+    cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
+
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
@@ -398,12 +401,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     this_thread::sleep_for(10 * sleeptime__);
   }
   resources__->proc()->cout_off();
-
-  ///// DEBUG
-  double enj = 0.0;
-  for (int i = 0; i != nbranch_[0]; ++i)
-    enj += box_[i]->coulomb_ff();
-  cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
 
   fmmtime.tick_print("FMM-J");
 
@@ -442,7 +439,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   for (int i = 0; i != nbranch_[0]; ++i)
     box_[i]->get_offsets();
 
-  double enk = 0.0;
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
@@ -454,17 +450,14 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
       L2L(true);
       Timer assembletime;
       for (int i = 0; i != nbranch_[0]; ++i) {
-        auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
+        auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
         blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
-        enk += box_[i]->exchange_ff();
       }
       assembletime.tick_print("Building Krj");
     }
   }
   krj->allreduce();
-  mpi__->allreduce(&enk, 1);
-  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
@@ -472,6 +465,9 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
   projtime.tick_print("Krs from Krj");
+
+  const double enk = 0.5*density->dot_product(*krs);
+  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
 
   ktime.tick_print("FMM-K");
   return krs;
@@ -494,7 +490,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   for (int i = 0; i != nbranch_[0]; ++i)
     box_[i]->get_offsets();
 
-  double enk = 0.0;
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
@@ -506,17 +501,14 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       L2L(true);
       Timer assembletime;
       for (int i = 0; i != nbranch_[0]; ++i) {
-        auto ffx = box_[i]->compute_Fock_ffX(ocoeff_ui);
+        auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
-        blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
-        enk += box_[i]->exchange_ff();
+        blas::ax_plus_y_n(2.0, ffx->data(), nbasis_*nocc, krj->data());
       }
       assembletime.tick_print("Building Krj");
     }
   }
   krj->allreduce();
-  mpi__->allreduce(&enk, 1);
-  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
@@ -530,6 +522,10 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 #endif
   projtime.tick_print("Krs from Krj");
   
+  shared_ptr<const Matrix> density = ocoeff->form_density_rhf(nocc);
+  const double enk = 0.5*density->dot_product(*krs);
+  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
+
   ktime.tick_print("FMM-K");
   return krs;
 }
@@ -548,4 +544,120 @@ void FMM::print_boxes(const int i) const {
     if (b->rank() > i) break;
   }
 
+}
+
+
+shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> density) const {
+
+  auto out = make_shared<Matrix>(nbasis_, nbasis_);
+  out->zero();
+ 
+  Timer nftime;
+  if (density) {
+    assert(nbasis_ == density->ndim());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
+    const double* density_data = density->data();
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
+      const int size0 = sh0->nbasis();
+
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
+      const int size1 = sh1->nbasis();
+
+      double denmax = 0.0;
+      for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
+        const int i0n = i0 * density->ndim();
+        for (int i1 = offset1; i1 != offset1 + size1; ++i1)
+          denmax = max(denmax, fabs(density_data[i0n + i1]));
+      }
+      (*maxden)(i01) = denmax;
+    }
+
+    for (int i = 0; i != nbranch_[0]; ++i)
+      if (i % mpi__->size() == mpi__->rank()) {
+        auto ei = box_[i]->compute_Fock_nf_K(density, maxden);
+        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
+      }
+    out->allreduce();
+
+    for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
+    out->fill_upper();
+  }
+
+  nftime.tick_print("near-field-K");
+  resources__->proc()->cout_on();
+  for (int i = 0; i < mpi__->size(); ++i) {
+    mpi__->barrier();
+    this_thread::sleep_for(10 * sleeptime__);
+  }
+  resources__->proc()->cout_off();
+
+  return out;
+}
+
+
+shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> density) const {
+
+  auto out = make_shared<Matrix>(nbasis_, nbasis_);
+  out->zero();
+ 
+  Timer fmmtime;
+  M2M(density);
+  M2L();
+  L2L();
+
+  Timer nftime;
+
+  if (density) {
+    assert(nbasis_ == density->ndim());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
+    const double* density_data = density->data();
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
+      const int size0 = sh0->nbasis();
+
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
+      const int size1 = sh1->nbasis();
+
+      double denmax = 0.0;
+      for (int i0 = offset0; i0 != offset0 + size0; ++i0) {
+        const int i0n = i0 * density->ndim();
+        for (int i1 = offset1; i1 != offset1 + size1; ++i1)
+          denmax = max(denmax, fabs(density_data[i0n + i1]));
+      }
+      (*maxden)(i01) = denmax;
+    }
+
+    auto ff = make_shared<Matrix>(nbasis_, nbasis_);
+    for (int i = 0; i != nbranch_[0]; ++i)
+      if (i % mpi__->size() == mpi__->rank()) {
+        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
+        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
+        auto ffi = box_[i]->compute_Fock_ff(density);
+        blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
+      }
+    out->allreduce();
+    ff->allreduce();
+
+    const double enj = 0.5*density->dot_product(*ff);
+    cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
+
+    for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
+    out->fill_upper();
+    *out += *ff;
+  }
+
+  nftime.tick_print("near-field-J");
+  resources__->proc()->cout_on();
+  for (int i = 0; i < mpi__->size(); ++i) {
+    mpi__->barrier();
+    this_thread::sleep_for(10 * sleeptime__);
+  }
+  resources__->proc()->cout_off();
+
+  return out;
 }
