@@ -44,7 +44,6 @@ class Force {
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     std::shared_ptr<GradFile> compute();
-//    std::shared_ptr<const Reference> ref() const { return ref_; }
     const std::vector<double>& force_dipole() const { return force_dipole_; }
 
 };

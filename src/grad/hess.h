@@ -42,6 +42,10 @@ class Hess {
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
     std::shared_ptr<Matrix> proj_hess_;
+    std::shared_ptr<Matrix> eigvec_cart_;
+
+    std::vector<double> ir_;
+    std::vector<double> freq_;
 
     double dx_;
     double energy_;
@@ -53,6 +57,10 @@ class Hess {
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute();
+
+    const std::shared_ptr<Matrix>& eigvec_cart() const { return eigvec_cart_; }
+    const std::vector<double>& ir() const { return ir_; }
+    const std::vector<double>& freq() const { return freq_; }
 
 };
 
