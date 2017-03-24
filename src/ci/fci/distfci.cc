@@ -205,11 +205,13 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
 
   // Spin adapt detseeds
   int oindex = 0;
-  vector<bitset<nbit__>> done;
+  vector<bitset<nbit__>> done_open;
+  vector<bitset<nbit__>> done_closed;
   for (auto& it : bits) {
     bitset<nbit__> alpha = it.second;
     bitset<nbit__> beta = it.first;
     bitset<nbit__> open_bit = (alpha^beta);
+    bitset<nbit__> closed_bit = (alpha&beta);
 
     // This can happen if all possible determinants are checked without finding nstate acceptable ones.
     if (alpha.count() + beta.count() != nelea_ + neleb_)
@@ -221,8 +223,9 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     if (unpairalpha-unpairbeta < nelea_-neleb_) continue;
 
     // check if this orbital configuration is already used
-    if (find(done.begin(), done.end(), open_bit) != done.end()) continue;
-    done.push_back(open_bit);
+    if ((find(done_open.begin(), done_open.end(), open_bit) != done_open.end()) && (find(done_closed.begin(), done_closed.end(), closed_bit) != done_closed.end())) continue;
+    done_open.push_back(open_bit);
+    done_closed.push_back(closed_bit);
 
     pair<vector<tuple<int, int, int>>, double> adapt = det()->spin_adapt(nelea_-neleb_, alpha, beta);
     const double fac = adapt.second;
@@ -236,7 +239,7 @@ void DistFCI::generate_guess(const int nspin, const int nstate, vector<shared_pt
     out[oindex]->spin_decontaminate();
 
     cout << "     guess " << setw(3) << oindex << ":   closed " <<
-          setw(20) << left << print_bit(alpha&beta, det()->norb()) << " open " << setw(20) << print_bit(open_bit, det()->norb()) << right << endl;
+          setw(20) << left << print_bit(closed_bit, norb_) << " open " << setw(20) << print_bit(open_bit, norb_) << right << endl;
 
     ++oindex;
     if (oindex == nstate) break;
