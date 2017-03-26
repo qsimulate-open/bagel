@@ -50,10 +50,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (is_same<DataType,complex<double>>::value)
     closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  // TODO should test min(10,max)
-  active_ = IndexRange(info_->nact(), 12, closed_.nblock(), ncore2+closed_.size());
+  active_ = IndexRange(info_->nact(), min(8,max), closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), 12, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+    active_.merge(IndexRange(info_->nact(), min(8,max), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
                                                                                             ncore2+closed_.size()));
 
   virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());

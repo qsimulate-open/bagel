@@ -164,6 +164,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
+
         blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);
         blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
       }
@@ -333,6 +334,10 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
         }
         add_total(1.0);
       }
+
+      // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4cit->scale(den4factor);
 
       den0ciall->emplace(nst, mst, den0cit->copy());
       den1ciall->emplace(nst, mst, den1cit->copy());
