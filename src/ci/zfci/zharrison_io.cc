@@ -38,10 +38,6 @@ void ZHarrison::dump_ints() const {
   // kramers_coeff(0) accesses the + functions
   cout << "Number of AO basis functions: " << jop_->coeff()->ndim() << endl; // ndim is length of first index
   cout << "Number of MO basis functions to dump: " << jop_->coeff()->mdim()/2 << endl; //mdim for length for second index
-  // cout << "Size of core fock: " << jop_->core_fock()->ndim() << jop_->core_fock()->mdim() << endl; // Fock matrix is in the AO basis
-  // To extract elements of the MO coefficient matrix, they can be accessed one-by-one with
-  // cout << "coeff kramers + " << jop_->kramers_coeff(0)->element(0,1) << endl; (AO index 0, MO index 1)
-  // cout << "coeff kramers + " << jop_->kramers_coeff(1)->element(1,2) << endl; (AO index 1, MO index 2)
 
   ofstream fs("FCIDUMP");
 
@@ -52,8 +48,7 @@ void ZHarrison::dump_ints() const {
   complex<double> val;
   complex<double> tval;
 
-  if (fs.is_open())
-  {
+  if (fs.is_open()) {
 
     fs << " &FCI NORB= " << norb_*2 << ",NELEC= " << nele_ << ",ORBSYM= ";
     for (int i = 0; i != norb_*2; ++i)
@@ -89,33 +84,16 @@ void ZHarrison::dump_ints() const {
       if ( jfac == 1) cout << "+ )" << endl;
       else cout << "- )" << endl;
 
-//      fs << endl;
-//      if ( k2fac == 1) fs << "( + ";
-//      else fs << "( - ";
-//      if ( j2fac == 1) fs << "+ |";
-//      else fs << "- |";
-//      if ( kfac == 1) fs << " + ";
-//      else fs << " - ";
-//      if ( jfac == 1) fs << "+ )" << endl;
-//      else fs << "- )" << endl;
-//      fs << endl;
-
-      for (int j = 0; j != norb_; ++j) {
-        for (int j2 = 0; j2 != norb_; ++j2) {
-          for (int k = 0; k != norb_; ++k) {
+      for (int j = 0; j != norb_; ++j)
+        for (int j2 = 0; j2 != norb_; ++j2)
+          for (int k = 0; k != norb_; ++k)
             for (int k2 = 0; k2 != norb_; ++k2) {
               val = tmp->element(k2+norb_*k, j2+norb_*j);
               if (abs(val) > 1.0e-9) {
                 fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
                   << 2*j2+j2fac << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
-                //fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
-                //  << 2*k+kfac << setw(4) << 2*j2+j2fac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
               }
             }
-          }
-        }
-      }
-
     }
 
     tval = 0.0;
@@ -140,7 +118,58 @@ void ZHarrison::dump_ints() const {
     }
     fs << "(" << jop_->core_energy()  + geom_->nuclear_repulsion() << ",0.0)" << "   0   0   0   0" << endl;
     fs.close();
-//    cout << "tval: " << tval << endl;
   }
   else throw runtime_error("Unable to open file");
+}
+
+
+void ZHarrison::read_external_rdm12_av(const string& file) {
+  rdm1_av_expanded_ = make_shared<ZRDM<1>>(norb_*2);
+  rdm2_av_expanded_ = make_shared<ZRDM<2>>(norb_*2);
+
+  // feed RDM1
+  {
+    ifstream fs(file + ".rdm1"); 
+    if (!fs.is_open()) throw runtime_error(file + ".rdm1 cannot be opened");
+    string line;
+    while (getline(fs, line)) {
+      stringstream ss(line);
+      int i, j;
+      double re, im;
+      ss >> i >> j >> re >> im;
+      const int ii = ((i-1)/2) + ((i-1)%2)*norb_;
+      const int jj = ((j-1)/2) + ((j-1)%2)*norb_;
+      const complex<double> dat(re, im);
+      rdm1_av_expanded_->element(ii, jj) = dat; 
+      rdm1_av_expanded_->element(jj, ii) = conj(dat);
+    }
+    fs.close();
+  }
+  {
+    ifstream fs(file + ".rdm2"); 
+    if (!fs.is_open()) throw runtime_error(file + ".rdm2 cannot be opened");
+    string line;
+    while (getline(fs, line)) {
+      stringstream ss(line);
+      int i, j, k, l;
+      double re, im;
+      // assuming that the 2RDM is dumped as i+ j+ k l -> i k j l
+      ss >> i >> j >> k >> l >> re >> im;
+      const int ii = ((i-1)/2) + ((i-1)%2)*norb_;
+      const int jj = ((j-1)/2) + ((j-1)%2)*norb_;
+      const int kk = ((k-1)/2) + ((k-1)%2)*norb_;
+      const int ll = ((l-1)/2) + ((l-1)%2)*norb_;
+      const complex<double> dat(re, im);
+      rdm2_av_expanded_->element(ii, kk, jj, ll) = dat; 
+      rdm2_av_expanded_->element(ii, ll, jj, kk) = -dat; 
+      rdm2_av_expanded_->element(jj, kk, ii, ll) = -dat; 
+      rdm2_av_expanded_->element(jj, ll, ii, kk) = dat; 
+
+      rdm2_av_expanded_->element(kk, ii, ll, jj) = conj(dat);
+      rdm2_av_expanded_->element(kk, jj, ll, ii) = -conj(dat);
+      rdm2_av_expanded_->element(ll, ii, kk, jj) = -conj(dat);
+      rdm2_av_expanded_->element(ll, jj, kk, ii) = conj(dat);
+    }
+    fs.close();
+  }
 }

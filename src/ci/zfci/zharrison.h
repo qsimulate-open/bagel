@@ -217,6 +217,9 @@ class ZHarrison : public Method {
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
+    // read state averaged RDM1 and 2 and set to rdm1_av_expanded_ and rdm2_av_expanded_ 
+    void read_external_rdm12_av(const std::string& file); 
+
     std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
 
     // interface functions

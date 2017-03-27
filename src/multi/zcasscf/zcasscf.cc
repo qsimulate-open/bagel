@@ -36,8 +36,17 @@
 using namespace std;
 using namespace bagel;
 
-ZCASSCF::ZCASSCF(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
+ZCASSCF::ZCASSCF(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("relref");
+    shared_ptr<RelReference> r;
+    ar >> r;
+    ref_ = ref = r;
+  }
+
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
@@ -75,8 +84,8 @@ void ZCASSCF::init() {
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  gaunt_ = idata_->get<bool>("gaunt",relref->gaunt());
-  breit_ = idata_->get<bool>("breit",relref->breit());
+  gaunt_ = idata_->get<bool>("gaunt", relref->gaunt());
+  breit_ = idata_->get<bool>("breit", relref->breit());
 
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
@@ -163,7 +172,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff)
+  if (!kramers_coeff && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space

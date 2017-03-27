@@ -50,6 +50,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // enforce time-reversal symmetry
     bool tsymm_;
 
+    // RDMs are given externally (e.g., FCIQMC)
+    std::string external_rdm_;
+
     double thresh_;
     double thresh_micro_;
 
@@ -87,7 +90,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<RelCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
 
   public:
-    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr);
+    ZCASSCF(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     virtual void compute() override = 0;
 
