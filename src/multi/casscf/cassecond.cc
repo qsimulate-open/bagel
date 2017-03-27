@@ -46,8 +46,7 @@ void CASSecond::compute() {
       fci_->compute_rdm12();
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
-      occup_ = natorb.second;
-      if (natocc_) print_natocc();
+      if (natocc_) print_natocc(natorb.second);
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }

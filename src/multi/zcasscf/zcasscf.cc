@@ -226,13 +226,13 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
 }
 
 
-void ZCASSCF::print_natocc() const {
-  assert(occup_.size() > 0);
+void ZCASSCF::print_natocc(const VectorB& occup) const {
+  assert(occup.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = tsymm_ ? occup_.size() / 2 : occup_.size();
+  const int num = tsymm_ ? occup.size() / 2 : occup.size();
   for (int i = 0; i != num; ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
   cout << "  ============================================ " << endl;
 }
 

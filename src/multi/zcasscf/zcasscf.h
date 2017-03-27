@@ -62,7 +62,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
-    VectorB occup_;
 
     void print_header() const;
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
@@ -98,7 +97,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
-    void print_natocc() const;
+    void print_natocc(const VectorB& ocup) const;
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -112,7 +111,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
-    double occup(const int i) const { return occup_[i]; }
     bool tsymm() const { return tsymm_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }

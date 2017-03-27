@@ -36,6 +36,7 @@ void ZCASSecond::compute() {
   Timer timer;
 
   const bool only_electrons = idata_->get<bool>("only_electrons", false);
+  const bool read_rdm = idata_->get<bool>("read_rdm", false);
 
   muffle_->mute();
   for (int iter = 0; iter != max_iter_; ++iter) {
@@ -44,12 +45,15 @@ void ZCASSecond::compute() {
     {
       if (iter) fci_->update(coeff_);
       Timer fci_time(0);
-      fci_->compute();
-      fci_->compute_rdm12();
-      auto natorb = fci_->natorb_convert();
-      coeff_ = update_coeff(coeff_, natorb.first);
-      occup_ = natorb.second;
-      if (natocc_) print_natocc();
+      if (!read_rdm) {
+        fci_->compute();
+        fci_->compute_rdm12();
+        auto natorb = fci_->natorb_convert();
+        coeff_ = update_coeff(coeff_, natorb.first);
+        if (natocc_) print_natocc(natorb.second);
+      } else {
+        assert(false);
+      }
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
