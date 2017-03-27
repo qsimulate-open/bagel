@@ -109,7 +109,7 @@ shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
 }
 
 
-shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset) const {
+shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel) const {
   return nullptr;
 }
 

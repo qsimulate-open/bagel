@@ -85,7 +85,7 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
 }
 
 
-shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size) const {
+shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size, const bool parallel) const {
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
@@ -100,14 +100,14 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
   const int norb2 = norb_ * norb_;
   const int lena = cc_->det()->lena();
   const int lenb = cc_->det()->lenb();
-  auto emat = make_shared<Matrix>(size, norb2*norb2);
+  auto emat = make_shared<Matrix>(size, norb2*norb2, /*local=*/!parallel);
 
   for (int ij = 0; ij != norb2; ++ij) {
     const int j = ij/norb_;
     const int i = ij-j*norb_;
 
     for (int kl = ij; kl != norb2; ++kl) {
-      if ((kl - ij) % mpi__->size() != mpi__->rank()) continue;
+      if (((kl - ij) % mpi__->size() != mpi__->rank()) && parallel) continue;
       const int l = kl/norb_;
       const int k = kl-l*norb_;
       const int klij = kl+ij*norb2;
@@ -142,7 +142,9 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
       }
     }
   }
-  emat->allreduce();
+
+  if (parallel)
+    emat->allreduce();
 
   for (size_t ij = 0; ij != norb2; ++ij)
     for (size_t kl = 0; kl != ij; ++kl) {
@@ -171,10 +173,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
   // first make <I|i+j|0>
   auto dbra = rdm1deriv(target);
 
+  // Fock-weighted 2RDM derivative construction is multipassed and parallelized:
+  //  (1) When ndet > 1000, (ndet < 1000 -> so fast, almost no gain)
+  //  and (2) When we have processes more than one
+  //  OR  (3) When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t ijmax = 635040001;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 1000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
 
   shared_ptr<Matrix> fock_ebra_mat;
@@ -185,12 +191,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
     // form [J|k+l|0] = <J|m+k+ln|0> f_mn (multipassing with <J| )
     fock_ebra_mat = make_shared<Matrix>(ndet, norb2);
     for (size_t ipass = 0; ipass != npass; ++ipass) {
+      if (ipass % mpi__->size() != mpi__->rank()) continue;
+
       const size_t ioffset = ipass * nsize;
       const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
       shared_ptr<Matrix> ebra;
-      ebra = rdm2deriv_offset(target, ioffset, isize);
+      ebra = rdm2deriv_offset(target, ioffset, isize, /*parallel=*/false);
       for (size_t kl = 0; kl != norb2; ++kl) {
-        if (kl % mpi__->size() != mpi__->rank()) continue;
         for (size_t mn = 0; mn != norb2; ++mn) {
           const size_t n = mn/norb_;
           const size_t m = mn-n*norb_;
