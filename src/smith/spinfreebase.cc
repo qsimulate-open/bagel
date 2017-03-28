@@ -283,7 +283,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
       shared_ptr<RDM<3>> frdm4 = rdm3->clone();
       auto rdm4v = group(group(*rdm4, 6,8), 0,6);

@@ -44,12 +44,16 @@ void ZCASSecond::compute() {
     {
       if (iter) fci_->update(coeff_);
       Timer fci_time(0);
-      fci_->compute();
-      fci_->compute_rdm12();
+      if (external_rdm_.empty()) {
+        fci_->compute();
+        fci_->compute_rdm12();
+      } else {
+        if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
+        fci_->read_external_rdm12_av(external_rdm_); 
+      }
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
-      occup_ = natorb.second;
-      if (natocc_) print_natocc();
+      if (natocc_) print_natocc(natorb.second);
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -96,7 +100,8 @@ void ZCASSecond::compute() {
     shared_ptr<const ZMatrix> afock_c = afock;
     shared_ptr<const ZMatrix> qxr_c = qxr;
     if (gaunt_) {
-      cfock_c = make_shared<ZMatrix>(*coeff_ % DFock(geom_, hcore_, coeff_->slice(0, nclosed_*2), false, false, false, false) * *coeff_);
+      cfock_c = nclosed_ ? make_shared<ZMatrix>(*coeff_ % DFock(geom_, hcore_, coeff_->slice(0, nclosed_*2), false, false, false, false) * *coeff_)
+                         : make_shared<ZMatrix>(*coeff_ % *hcore_ * *coeff_);
       afock_c = make_shared<ZMatrix>(*coeff_ % *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av(), /*coulomb only*/true) * *coeff_);
       qxr_c = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, false, false)->get_conjg();
     }
@@ -169,14 +174,14 @@ void ZCASSecond::compute() {
     kramers_adapt(R, nvirt_);
     coeff_ = make_shared<RelCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
 
-    if (iter == max_iter_-1)
+    if (iter == max_iter_-1 && external_rdm_.empty())
       throw runtime_error("Max iteration reached during the second optimization.");
   }
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
   muffle_->unmute();
-  if (nact_) {
+  if (nact_ && external_rdm_.empty()) {
     fci_->update(coeff_);
     fci_->compute();
     fci_->compute_rdm12();
