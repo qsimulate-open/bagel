@@ -27,6 +27,7 @@
 #include <src/wfn/rdm.h>
 #include <src/util/math/algo.h>
 #include <src/util/parallel/rmawindow.h>
+#include <src/util/taskqueue.h>
 
 using namespace std;
 using namespace bagel;
@@ -84,6 +85,63 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
   return ebra;
 }
 
+namespace bagel {
+  class RDM2derivTask {
+    protected:
+      const int ij_;
+      const int kl_;
+      shared_ptr<Matrix> emat_;
+      shared_ptr<const Dvec> dbra_;
+      shared_ptr<const Dvec> cc_;
+      const int norb_;
+      const int size_;
+      const int offset_;
+    public:
+      RDM2derivTask(const int ij, const int kl, shared_ptr<Matrix> e, shared_ptr<const Dvec> d, shared_ptr<const Dvec> cc, const int norb, const int size, const int offset)
+        : ij_(ij), kl_(kl), emat_(e), dbra_(d), cc_(cc), norb_(norb), size_(size), offset_(offset) { }
+
+      void compute() {
+        const int lena = cc_->det()->lena();
+        const int lenb = cc_->det()->lenb();
+        const int norb2 = norb_ * norb_;
+        const int j = ij_/norb_;
+        const int i = ij_-j*norb_;
+        const int l = kl_/norb_;
+        const int k = kl_-l*norb_;
+        const int klij = kl_+ij_*norb2;
+
+        for (auto& iter : cc_->det()->phia(k,l)) {
+          size_t iaJ = iter.source;
+          size_t iaI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          for (size_t ib = 0; ib != lenb; ++ib) {
+            size_t iI = ib + iaI*lenb;
+            size_t iJ = ib + iaJ*lenb;
+            if ((iJ - offset_) < size_ && iJ >= offset_)
+              emat_->element(iJ-offset_, klij) += sign * dbra_->data(ij_)->data(iI);
+          }
+        }
+
+        for (size_t ia = 0; ia != lena; ++ia) {
+          for (auto& iter : cc_->det()->phib(k,l)) {
+            size_t ibJ = iter.source;
+            size_t ibI = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            size_t iI = ibI + ia*lenb;
+            size_t iJ = ibJ + ia*lenb;
+            if ((iJ - offset_) < size_ && iJ >= offset_)
+              emat_->element(iJ-offset_, klij) += sign * dbra_->data(ij_)->data(iI);
+          }
+        }
+
+        if (i == l) {
+          const int kj = k+j*norb_;
+          blas::ax_plus_y_n(-1.0, &(dbra_->data(kj)->data(offset_)), size_, emat_->element_ptr(0, klij));
+        }
+      }
+  };
+}
+
 
 shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size, const bool parallel) const {
 
@@ -98,50 +156,16 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
   sigma_2a2(cbra, dbra);
 
   const int norb2 = norb_ * norb_;
-  const int lena = cc_->det()->lena();
-  const int lenb = cc_->det()->lenb();
   auto emat = make_shared<Matrix>(size, norb2*norb2, /*local=*/!parallel);
 
+  TaskQueue<RDM2derivTask> task(norb2*(norb2+1)/2);
   for (int ij = 0; ij != norb2; ++ij) {
-    const int j = ij/norb_;
-    const int i = ij-j*norb_;
-
     for (int kl = ij; kl != norb2; ++kl) {
-      if (((kl - ij) % mpi__->size() != mpi__->rank()) && parallel) continue;
-      const int l = kl/norb_;
-      const int k = kl-l*norb_;
-      const int klij = kl+ij*norb2;
-
-      for (auto& iter : cc_->det()->phia(k,l)) {
-        size_t iaJ = iter.source;
-        size_t iaI = iter.target;
-        double sign = static_cast<double>(iter.sign);
-        for (size_t ib = 0; ib != lenb; ++ib) {
-          size_t iI = ib + iaI*lenb;
-          size_t iJ = ib + iaJ*lenb;
-          if ((iJ - offset) < size && iJ >= offset)
-            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
-        }
-      }
-
-      for (size_t ia = 0; ia != lena; ++ia) {
-        for (auto& iter : cc_->det()->phib(k,l)) {
-          size_t ibJ = iter.source;
-          size_t ibI = iter.target;
-          double sign = static_cast<double>(iter.sign);
-          size_t iI = ibI + ia*lenb;
-          size_t iJ = ibJ + ia*lenb;
-          if ((iJ - offset) < size && iJ >= offset)
-            emat->element(iJ-offset, klij) += sign * dbra->data(ij)->data(iI);
-        }
-      }
-
-      if (i == l) {
-        const int kj = k+j*norb_;
-        blas::ax_plus_y_n(-1.0, &(dbra->data(kj)->data(offset)), size, emat->element_ptr(0, klij));
-      }
+      if (((kl-ij) % mpi__->size() == mpi__->rank()) || !parallel)
+        task.emplace_back(ij, kl, emat, dbra, cc_, norb_, size, offset);
     }
   }
+  task.compute();
 
   if (parallel)
     emat->allreduce();
@@ -157,6 +181,72 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
   return emat;
 }
 
+namespace bagel {
+  class RDM3derivTask {
+    protected:
+      const int ij_;
+      const int kl_;
+      shared_ptr<Matrix> fock_fbra_;
+      shared_ptr<const Matrix> fock_ebra_mat_;
+      shared_ptr<const Matrix> ebra_;
+      shared_ptr<const Matrix> fock_;
+      shared_ptr<const Dvec> cc_;
+      const int norb_;
+      const int size_;
+      const int offset_;
+    public:
+      RDM3derivTask(const int ij, const int kl, shared_ptr<Matrix> f, shared_ptr<const Matrix> fe, shared_ptr<const Matrix> e, shared_ptr<const Matrix> fock, shared_ptr<const Dvec> cc, const int norb, const int size, const int offset)
+        : ij_(ij), kl_(kl), fock_fbra_(f), fock_ebra_mat_(fe), ebra_(e), fock_(fock), cc_(cc), norb_(norb), size_(size), offset_(offset) { }
+
+      void compute() {
+        const size_t norb2 = norb_*norb_;
+        const size_t norb3 = norb2*norb_;
+        const int lena = cc_->det()->lena();
+        const int lenb = cc_->det()->lenb();
+        const int j = ij_/norb_;
+        const int i = ij_-j*norb_;
+        const int l = kl_/norb_;
+        const int k = kl_-l*norb_;
+        const int klij = kl_+ij_*norb2;
+
+        for (auto& iter : cc_->det()->phia(k,l)) {
+          size_t iaJ = iter.source;
+          size_t iaI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+
+          for (size_t ib = 0; ib != lenb; ++ib) {
+            size_t iI = ib + iaI*lenb;
+            size_t iJ = ib + iaJ*lenb;
+            if ((iJ - offset_) < size_ && iJ >= offset_)
+              fock_fbra_->element(iJ-offset_, klij) += sign * fock_ebra_mat_->element(iI,ij_);
+          }
+        }
+
+        for (size_t ia = 0; ia != lena; ++ia) {
+          for (auto& iter : cc_->det()->phib(k,l)) {
+            size_t ibJ = iter.source;
+            size_t ibI = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            size_t iI = ibI + ia*lenb;
+            size_t iJ = ibJ + ia*lenb;
+            if ((iJ - offset_) < size_ && iJ >= offset_)
+              fock_fbra_->element(iJ-offset_, klij) += sign * fock_ebra_mat_->element(iI,ij_);
+          }
+        }
+
+        if (i == l) {
+          const int kj = k+j*norb_;
+          blas::ax_plus_y_n(-1.0, fock_ebra_mat_->element_ptr(offset_, kj), size_, fock_fbra_->element_ptr(0, klij));
+        }
+
+        for (int n = 0; n != norb_; ++n) {
+          const size_t ijkn = j*norb3+i*norb2+n*norb_+k;
+          for (size_t iJ = 0; iJ != size_; ++iJ)
+            fock_fbra_->element(iJ, klij) -= ebra_->element(iJ, ijkn) * fock_->element(l,n);
+        }
+      }
+  };
+}
 
 tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
 #ifndef HAVE_MPI_H
@@ -167,7 +257,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
   shared_ptr<Civec> cbra = cc_->data(target);
 
   const size_t norb2 = norb_*norb_;
-  const size_t norb3 = norb2*norb_;
   const size_t norb4 = norb2*norb2;
 
   // first make <I|i+j|0>
@@ -214,56 +303,16 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
   auto fock_fbra = make_shared<Matrix>(size, norb4);
   // set ebra within the pass now
   auto ebra = rdm2deriv_offset(target, offset, size);
-  const int lena = cc_->det()->lena();
-  const int lenb = cc_->det()->lenb();
 
+  // RDM3deriv contruction is task-base threaded
+  TaskQueue<RDM3derivTask> task(norb2*(norb2+1)/2);
   for (int ij = 0; ij != norb2; ++ij) {
-    const int j = ij/norb_;
-    const int i = ij-j*norb_;
-
     for (int kl = ij; kl != norb2; ++kl) {
-      if ((kl - ij) % mpi__->size() != mpi__->rank()) continue;
-      const int l = kl/norb_;
-      const int k = kl-l*norb_;
-      const int klij = kl+ij*norb2;
-
-      for (auto& iter : cc_->det()->phia(k,l)) {
-        size_t iaJ = iter.source;
-        size_t iaI = iter.target;
-        double sign = static_cast<double>(iter.sign);
-
-        for (size_t ib = 0; ib != lenb; ++ib) {
-          size_t iI = ib + iaI*lenb;
-          size_t iJ = ib + iaJ*lenb;
-          if ((iJ - offset) < size && iJ >= offset)
-            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
-        }
-      }
-
-      for (size_t ia = 0; ia != lena; ++ia) {
-        for (auto& iter : cc_->det()->phib(k,l)) {
-          size_t ibJ = iter.source;
-          size_t ibI = iter.target;
-          double sign = static_cast<double>(iter.sign);
-          size_t iI = ibI + ia*lenb;
-          size_t iJ = ibJ + ia*lenb;
-          if ((iJ - offset) < size && iJ >= offset)
-            fock_fbra->element(iJ-offset, klij) += sign * fock_ebra_mat->element(iI,ij);
-        }
-      }
-
-      if (i == l) {
-        const int kj = k+j*norb_;
-        blas::ax_plus_y_n(-1.0, fock_ebra_mat->element_ptr(offset, kj), size, fock_fbra->element_ptr(0, klij));
-      }
-
-      for (int n = 0; n != norb_; ++n) {
-        const size_t ijkn = j*norb3+i*norb2+n*norb_+k;
-        for (size_t iJ = 0; iJ != size; ++iJ)
-          fock_fbra->element(iJ, klij) -= ebra->element(iJ, ijkn) * fock->element(l,n);
-      }
+      if ((kl-ij) % mpi__->size() == mpi__->rank())
+        task.emplace_back(ij, kl, fock_fbra, fock_ebra_mat, ebra, fock, cc_, norb_, size, offset);
     }
   }
+  task.compute();
   fock_fbra->allreduce();
 
   for (size_t ij = 0; ij != norb2; ++ij)
