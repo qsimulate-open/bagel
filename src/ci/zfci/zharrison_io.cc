@@ -22,6 +22,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#include <map>
 #include <src/ci/zfci/zharrison.h>
 
 using namespace std;
@@ -41,13 +42,6 @@ void ZHarrison::dump_ints() const {
 
   ofstream fs("FCIDUMP");
 
-  int jfac;
-  int j2fac;
-  int kfac;
-  int k2fac;
-  complex<double> val;
-  complex<double> tval;
-
   if (fs.is_open()) {
 
     fs << " &FCI NORB= " << norb_*2 << ",NELEC= " << nele_ << ",ORBSYM= ";
@@ -64,31 +58,20 @@ void ZHarrison::dump_ints() const {
       if (!jop_->mo2e()->exist(i)) continue;
       cout << "Writing 2e integral block " << i+1 << " / 16 : ";
       shared_ptr<const ZMatrix> tmp = jop_->mo2e(i);
-      // assuming here that the fastest bit in i corresponds to the slowest orbital
-      // in mo2e
-      if ((i & 1) == 1) { jfac = 1; } // j is a plus kramers spinor
-      else jfac = 2;              // j is a minus kramers spinor
-      if ((i & 2) == 2) { j2fac = 1; }
-      else j2fac = 2;
-      if ((i & 4) == 4) { kfac = 1; }
-      else kfac = 2;
-      if((i & 8) == 8) { k2fac = 1; }
-      else k2fac = 2;
+      // assuming here that the fastest bit in i corresponds to the slowest orbital in mo2e
+      const int jfac  = 2 - (i & 1);
+      const int j2fac = 2 - (i & 2)/2;
+      const int kfac  = 2 - (i & 4)/4;
+      const int k2fac = 2 - (i & 8)/8;
 
-      if ( k2fac == 1) cout << "( + ";
-      else cout << "( - ";
-      if ( j2fac == 1) cout << "+ |";
-      else cout << "- |";
-      if ( kfac == 1) cout << " + ";
-      else cout << " - ";
-      if ( jfac == 1) cout << "+ )" << endl;
-      else cout << "- )" << endl;
+      const map<int,string> pm{{1, "+"}, {2, "-"}};
+      cout << "( " << pm.at(k2fac) << " " << pm.at(j2fac) << " | " << pm.at(kfac) << " " << pm.at(jfac) << " )" << endl;
 
       for (int j = 0; j != norb_; ++j)
         for (int j2 = 0; j2 != norb_; ++j2)
           for (int k = 0; k != norb_; ++k)
             for (int k2 = 0; k2 != norb_; ++k2) {
-              val = tmp->element(k2+norb_*k, j2+norb_*j);
+              const complex<double> val = tmp->element(k2+norb_*k, j2+norb_*j);
               if (abs(val) > 1.0e-9) {
                 fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
                   << 2*j2+j2fac << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
@@ -96,30 +79,27 @@ void ZHarrison::dump_ints() const {
             }
     }
 
-    tval = 0.0;
+    complex<double> tval = 0.0;
     for (int i = 0; i != 4; ++i) {
       if (!jop_->mo1e()->exist(i)) continue;
       cout << "Writing 1e integral block " << i+1 << " / 4" << endl;
       shared_ptr<const ZMatrix> tmp = jop_->mo1e(i);
 
-      if ((i & 1) == 1) {jfac = 1; }
-      else jfac = 2;
-      if ((i & 2) == 2) {kfac = 1; }
-      else kfac = 2;
+      const int jfac = 2 - (i & 1);
+      const int kfac = 2 - (i & 2)/2;
 
-      for (int j = 0; j != norb_; ++j) {
+      for (int j = 0; j != norb_; ++j)
         for (int k = 0; k != norb_; ++k) {
-          val = tmp->element(k, j);
+          const complex<double> val = tmp->element(k, j);
           if (abs(val) > 1.0e-9)
             fs << val << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << "   0   0" << endl;
           if ((j == k) && ((i == 0) || (i == 3))) tval += val;
         }
-      }
     }
     fs << "(" << jop_->core_energy()  + geom_->nuclear_repulsion() << ",0.0)" << "   0   0   0   0" << endl;
     fs.close();
   }
-  else throw runtime_error("Unable to open file");
+  else throw runtime_error("Unable to open file: ZHarrison::dump_ints");
 }
 
 
