@@ -103,53 +103,110 @@ void ZHarrison::dump_ints() const {
 }
 
 
+std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const string& file) const {
+  auto out = make_shared<Kramers<4,ZRDM<2>>>();
+  auto tmp = make_shared<ZRDM<2>>(norb_); 
+  out->add(KTag<4>("0000"), tmp->clone());
+  out->add(KTag<4>("0001"), tmp->clone());
+  out->add(KTag<4>("0101"), tmp->clone());
+  out->add(KTag<4>("0010"), tmp->clone());
+  out->add(KTag<4>("0011"), tmp->clone());
+  out->add(KTag<4>("0111"), tmp->clone());
+  out->add(KTag<4>("1010"), tmp->clone());
+  out->add(KTag<4>("1011"), tmp->clone());
+  out->add(KTag<4>("1111"), tmp);
+
+  ifstream fs(file + ".rdm2"); 
+  if (!fs.is_open()) throw runtime_error(file + ".rdm2 cannot be opened");
+  string line;
+  while (getline(fs, line)) {
+    stringstream ss(line);
+    int i, j, k, l;
+    double re, im;
+    // assuming that the 2RDM is dumped as i+ j+ k l -> i k j l
+    ss >> i >> j >> k >> l >> re >> im;
+    const int ii = (i-1)/2;
+    const int jj = (j-1)/2;
+    const int kk = (k-1)/2;
+    const int ll = (l-1)/2;
+    const int ti = (i-1)%2;
+    const int tj = (j-1)%2;
+    const int tk = (k-1)%2;
+    const int tl = (l-1)%2;
+    const complex<double> dat(re, im);
+    {
+      const KTag<4> t{ti, tk, tj, tl}; 
+      if (out->exist(t)) out->at(t)->element(ii, kk, jj, ll) = dat; 
+    } {
+      const KTag<4> t{ti, tl, tj, tk}; 
+      if (out->exist(t)) out->at(t)->element(ii, ll, jj, kk) = -dat; 
+    } {
+      const KTag<4> t{tj, tk, ti, tl};
+      if (out->exist(t)) out->at(t)->element(jj, kk, ii, ll) = -dat; 
+    } {
+      const KTag<4> t{tj, tl, ti, tk};
+      if (out->exist(t)) out->at(t)->element(jj, ll, ii, kk) = dat; 
+    } {
+      const KTag<4> t{tk, ti, tl, tj};
+      if (out->exist(t)) out->at(t)->element(kk, ii, ll, jj) = conj(dat);
+    } {
+      const KTag<4> t{tk, tj, tl, ti};
+      if (out->exist(t)) out->at(t)->element(kk, jj, ll, ii) = -conj(dat);
+    } {
+      const KTag<4> t{tl, ti, tk, tj};
+      if (out->exist(t)) out->at(t)->element(ll, ii, kk, jj) = -conj(dat);
+    } {
+      const KTag<4> t{tl, tj, tk, ti};
+      if (out->exist(t)) out->at(t)->element(ll, jj, kk, ii) = conj(dat);
+    }
+  }
+
+  out->emplace_perm({0,1,2,3},  1.0);
+  out->emplace_perm({0,3,2,1}, -1.0);
+  out->emplace_perm({2,1,0,3}, -1.0);
+  out->emplace_perm({2,3,0,1},  1.0);
+  return out;
+}
+
+std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const string& file) const {
+  auto out = make_shared<Kramers<2,ZRDM<1>>>();
+  auto tmp = make_shared<ZRDM<1>>(norb_); 
+  out->add(KTag<2>("00"), tmp->clone());
+  out->add(KTag<2>("01"), tmp->clone());
+  out->add(KTag<2>("10"), tmp->clone());
+  out->add(KTag<2>("11"), tmp);
+
+  ifstream fs(file + ".rdm1"); 
+  if (!fs.is_open()) throw runtime_error(file + ".rdm1 cannot be opened");
+  string line;
+  while (getline(fs, line)) {
+    stringstream ss(line);
+    int i, j;
+    double re, im;
+    ss >> i >> j >> re >> im;
+
+    const int ii = (i-1)/2;
+    const int jj = (j-1)/2;
+    const complex<double> dat(re, im);
+    const int ti = (i-1)%2;
+    const int tj = (j-1)%2;
+    const KTag<2> tag1{ti, tj};
+    const KTag<2> tag2{tj, ti};
+    assert(out->exist(tag1));
+    assert(out->exist(tag2));
+    out->at(tag1)->element(ii, jj) = dat; 
+    out->at(tag2)->element(jj, ii) = conj(dat);
+  }
+  return out;
+}
+
+
 void ZHarrison::read_external_rdm12_av(const string& file) {
-  rdm1_av_expanded_ = make_shared<ZRDM<1>>(norb_*2);
   rdm2_av_expanded_ = make_shared<ZRDM<2>>(norb_*2);
 
   // feed RDM1
-  {
-    ifstream fs(file + ".rdm1"); 
-    if (!fs.is_open()) throw runtime_error(file + ".rdm1 cannot be opened");
-    string line;
-    while (getline(fs, line)) {
-      stringstream ss(line);
-      int i, j;
-      double re, im;
-      ss >> i >> j >> re >> im;
-      const int ii = ((i-1)/2) + ((i-1)%2)*norb_;
-      const int jj = ((j-1)/2) + ((j-1)%2)*norb_;
-      const complex<double> dat(re, im);
-      rdm1_av_expanded_->element(ii, jj) = dat; 
-      rdm1_av_expanded_->element(jj, ii) = conj(dat);
-    }
-    fs.close();
-  }
-  {
-    ifstream fs(file + ".rdm2"); 
-    if (!fs.is_open()) throw runtime_error(file + ".rdm2 cannot be opened");
-    string line;
-    while (getline(fs, line)) {
-      stringstream ss(line);
-      int i, j, k, l;
-      double re, im;
-      // assuming that the 2RDM is dumped as i+ j+ k l -> i k j l
-      ss >> i >> j >> k >> l >> re >> im;
-      const int ii = ((i-1)/2) + ((i-1)%2)*norb_;
-      const int jj = ((j-1)/2) + ((j-1)%2)*norb_;
-      const int kk = ((k-1)/2) + ((k-1)%2)*norb_;
-      const int ll = ((l-1)/2) + ((l-1)%2)*norb_;
-      const complex<double> dat(re, im);
-      rdm2_av_expanded_->element(ii, kk, jj, ll) = dat; 
-      rdm2_av_expanded_->element(ii, ll, jj, kk) = -dat; 
-      rdm2_av_expanded_->element(jj, kk, ii, ll) = -dat; 
-      rdm2_av_expanded_->element(jj, ll, ii, kk) = dat; 
-
-      rdm2_av_expanded_->element(kk, ii, ll, jj) = conj(dat);
-      rdm2_av_expanded_->element(kk, jj, ll, ii) = -conj(dat);
-      rdm2_av_expanded_->element(ll, ii, kk, jj) = -conj(dat);
-      rdm2_av_expanded_->element(ll, jj, kk, ii) = conj(dat);
-    }
-    fs.close();
-  }
+  rdm1_av_ = read_external_rdm1(file);
+  rdm1_av_expanded_ = expand_kramers<1,complex<double>>(rdm1_av_, norb_);
+  rdm2_av_ = read_external_rdm2(file);
+  rdm2_av_expanded_ = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
 }
