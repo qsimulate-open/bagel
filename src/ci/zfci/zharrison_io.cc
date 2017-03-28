@@ -175,7 +175,7 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
   ifstream fs(ss.str()); 
-  if (!fs.is_open()) throw runtime_error(file + ".rdm4 cannot be opened");
+  if (!fs.is_open()) throw runtime_error(file + ".rdm3 cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);

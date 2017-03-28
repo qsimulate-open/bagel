@@ -41,13 +41,14 @@ class ZCASNoopt : public ZCASSCF {
 
     void compute() override {
       Timer fci_time(0);
-      fci_->compute();
-      fci_time.tick_print("ZFCI");
-      std::cout << " Computing RDMs from FCI calculation " << std::endl;
-      if (external_rdm_.empty())
+      if (external_rdm_.empty()) {
+        std::cout << " Computing RDMs from FCI calculation " << std::endl;
+        fci_->compute();
         fci_->compute_rdm12();
-      else
+        fci_time.tick_print("ZFCI");
+      } else {
         fci_->read_external_rdm12_av(external_rdm_);
+      }
       fci_time.tick_print("RDMs");
       energy_ = fci_->energy();
     }
