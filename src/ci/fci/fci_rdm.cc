@@ -103,10 +103,6 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       const int i = ij-j*norb_;
 
       for (int kl = ij; kl != norb2; ++kl) {
-        if ((kl - ij) % mpi__->size() != mpi__->rank()) {
-          ++no;
-          continue;
-        }
         const int l = kl/norb_;
         const int k = kl-l*norb_;
 
@@ -143,17 +139,17 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
         ++no;
       }
     }
-
-    e->allreduce();
-
   };
 
-  // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
+  // RDM3, RDM4 construction is multipassed and parallelized:
+  //  (1) When ndet > 1000, (ndet < 1000 -> too small, almost no gain)
+  //  and (2) When we have processes more than one
+  //  OR  (3) When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t norb2 = norb_ * norb_;
   const size_t ijmax = 635040001 * 2;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 1000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
   Timer timer;
   if (npass > 1) {
@@ -166,19 +162,21 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 
   // multipassing through {I}
   for (size_t ipass = 0; ipass != npass; ++ipass) {
+    if (ipass % mpi__->size() != mpi__->rank()) continue;
+
     const size_t ioffset = ipass * nsize;
     const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
     const size_t halfsize = norb2 * (norb2 + 1) / 2;
-    auto eket_half = make_shared<Matrix>(isize, halfsize);
+    auto eket_half = make_shared<Matrix>(isize, halfsize, /*local=*/true);
     make_evec_half(dket, eket_half, isize, ioffset);
  
-    auto dbram = make_shared<Matrix>(isize, norb2);
+    auto dbram = make_shared<Matrix>(isize, norb2, /*local=*/true);
     for (size_t ij = 0; ij != norb2; ++ij)
       copy_n(&(dbra->data(ij)->data(ioffset)), isize, dbram->element_ptr(0, ij));
 
     // put in third-order RDM: <0|E_mn|I><I|E_ij < kl|0>
     auto tmp3 = make_shared<Matrix>(*dbram % *eket_half);
-    auto tmp3_full = make_shared<Matrix>(norb2, norb2 * norb2);
+    auto tmp3_full = make_shared<Matrix>(norb2, norb2 * norb2, /*local=*/true);
 
     for (size_t mn = 0; mn != norb2; ++mn) {
       int no = 0;
@@ -201,7 +199,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       make_evec_half(dbra, ebra_half, isize, ioffset);
     }
     auto tmp4 = make_shared<Matrix>(*ebra_half % *eket_half);
-    auto tmp4_full = make_shared<Matrix>(norb2 * norb2, norb2 * norb2);
+    auto tmp4_full = make_shared<Matrix>(norb2 * norb2, norb2 * norb2, /*local=*/true);
 
     {
       int nklij = 0;
@@ -226,10 +224,13 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       }
     }
     sort_indices<1,0,3,2,4,1,1,1,1>(tmp4_full->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
-    if (npass > 1) {
-      stringstream ss; ss << "RDM evaluation (" << setw(2) << ipass + 1 << "/" << setw(2) << npass << ")";
-      timer.tick_print(ss.str());
-    }
+  }
+
+  rdm3->allreduce();
+  rdm4->allreduce();
+
+  if (npass > 1) {
+    timer.tick_print("RDM evaluation (multipassing)");
   }
 
   // The remaining terms can be evaluated without multipassing
