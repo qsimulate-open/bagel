@@ -27,6 +27,8 @@
 
 #include <src/smith/smith_info.h>
 #include <src/wfn/relcoeff.h>
+#include <src/ci/fci/fci.h>
+#include <src/ci/zfci/zharrison.h>
 
 using namespace std;
 using namespace bagel;
@@ -89,24 +91,30 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
 
 
 template<>
-tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
-  return ref_->rdm12(ist, jst, recompute);
+tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
+  FCI_bare fci(ciwfn());
+  fci.compute_rdm12(ist, jst);
+  auto r1 = fci.rdm1(ist, jst);
+  auto r2 = fci.rdm2(ist, jst);
+  return make_tuple(r1, r2);
 }
 
 
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
-  return ref_->rdm34(ist, jst);
+  FCI_bare fci(ciwfn());
+  fci.compute_rdm12(ist, jst); // TODO stupid code
+  return fci.rdm34(ist, jst);
 }
 
 
 template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
-  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst, const bool) const {
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm1 = ref->rdm1(ist, jst);
-  auto rdm2 = ref->rdm2(ist, jst);
+  ZFCI_bare fci(ciwfn());
+  auto rdm1 = fci.rdm1(ist, jst);
+  auto rdm2 = fci.rdm2(ist, jst);
   return make_tuple(rdm1, rdm2);
 }
 
@@ -115,9 +123,9 @@ template<>
 tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm3 = ref->rdm3(ist, jst);
-  auto rdm4 = ref->rdm4(ist, jst);
+  ZFCI_bare fci(ciwfn());
+  auto rdm3 = fci.rdm3(ist, jst);
+  auto rdm4 = fci.rdm4(ist, jst);
   return make_tuple(rdm3, rdm4);
 }
 
