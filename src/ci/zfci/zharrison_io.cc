@@ -118,7 +118,7 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm4";
   ifstream fs(ss.str()); 
-  if (!fs.is_open()) throw runtime_error(file + ".rdm4 cannot be opened");
+  if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);
@@ -175,7 +175,7 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
   ifstream fs(ss.str()); 
-  if (!fs.is_open()) throw runtime_error(file + ".rdm3 cannot be opened");
+  if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);
@@ -231,7 +231,7 @@ std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const int ist,
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm2";
   ifstream fs(ss.str()); 
-  if (!fs.is_open()) throw runtime_error(file + ".rdm2 cannot be opened");
+  if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);
@@ -283,7 +283,7 @@ std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const int ist,
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm1";
   ifstream fs(ss.str()); 
-  if (!fs.is_open()) throw runtime_error(file + ".rdm1 cannot be opened");
+  if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);
