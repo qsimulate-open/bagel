@@ -219,10 +219,10 @@ class ZHarrison : public Method {
 
     // read state averaged RDM1 and 2 and set to rdm1_av_expanded_ and rdm2_av_expanded_ 
     void read_external_rdm12_av(const std::string& file); 
-    std::shared_ptr<Kramers<2,ZRDM<1>>> read_external_rdm1(const std::string& file) const;
-    std::shared_ptr<Kramers<4,ZRDM<2>>> read_external_rdm2(const std::string& file) const;
-    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const std::string& file) const;
-    std::shared_ptr<Kramers<8,ZRDM<4>>> read_external_rdm4(const std::string& file) const;
+    std::shared_ptr<Kramers<2,ZRDM<1>>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
 
     std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
 

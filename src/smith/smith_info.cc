@@ -70,6 +70,10 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  external_rdm_ = idata->get<string>("external_rdm", "");
+  if (!external_rdm_.empty() && is_same<DataType,double>::value) 
+    throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
+
   // These are not input parameters (set automatically)
   target_  = idata->get<int>("_target", -1);
   grad_    = idata->get<bool>("_grad", false);
@@ -113,8 +117,15 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm1 = fci.rdm1(ist, jst);
-  auto rdm2 = fci.rdm2(ist, jst);
+  shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
+  shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
+  if (external_rdm_.empty()) {
+    rdm1 = fci.rdm1(ist, jst);
+    rdm2 = fci.rdm2(ist, jst);
+  } else {
+    rdm1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm1, rdm2);
 }
 
@@ -124,8 +135,15 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm3 = fci.rdm3(ist, jst);
-  auto rdm4 = fci.rdm4(ist, jst);
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
+  if (external_rdm_.empty()) {
+    rdm3 = fci.rdm3(ist, jst);
+    rdm4 = fci.rdm4(ist, jst);
+  } else {
+    rdm3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    rdm4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm3, rdm4);
 }
 
