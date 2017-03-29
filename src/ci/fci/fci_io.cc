@@ -81,9 +81,8 @@ void FCI::dump_ints() const {
 }
 
 
-#if 0
-std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist, const int jst, const string& file) const {
-  auto out = make_shared<Kramers<8,ZRDM<4>>>();
+std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, const string& file) const {
+  auto out = make_shared<RDM<4>>(norb_);
 
   map<array<int,4>,double> elem;
   elem.emplace(array<int,4>{{0,1,2,3}},  1.0); elem.emplace(array<int,4>{{0,1,3,2}}, -1.0); elem.emplace(array<int,4>{{0,2,1,3}}, -1.0);
@@ -102,51 +101,28 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
   while (getline(fs, line)) {
     stringstream ss(line);
     int i, j, k, l, m, n, o, p;
-    double re, im;
+    double dat;
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
-    ss >> i >> j >> k >> o >> l >> m >> n >> p >> re >> im;
-    map<int,pair<int,int>> mij{{0,{(i-1)/2,(i-1)%2}}, {1,{(j-1)/2,(j-1)%2}}, {2,{(k-1)/2,(k-1)%2}}, {2,{(o-1)/2,(o-1)%2}}};
-    map<int,pair<int,int>> mkl{{0,{(l-1)/2,(l-1)%2}}, {1,{(m-1)/2,(m-1)%2}}, {2,{(n-1)/2,(n-1)%2}}, {2,{(p-1)/2,(p-1)%2}}};
-    const complex<double> dat(re, im);
+    ss >> i >> j >> k >> o >> l >> m >> n >> p >> dat;
+    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_ && m <= norb_ & n <= norb_ && o <= norb_ & p <= norb_);
+    map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}, {2,o-1}};
+    map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}, {2,p-1}};
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
-        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second || mij[eij.first[2]].second > mij[eij.first[3]].second || 
-            mkl[ekl.first[0]].second > mkl[ekl.first[1]].second || mkl[ekl.first[1]].second > mkl[ekl.first[2]].second || mkl[ekl.first[2]].second > mkl[ekl.first[3]].second) continue;
-
-        const KTag<8> t{mij[eij.first[0]].second, mkl[ekl.first[0]].second, mij[eij.first[1]].second, mkl[ekl.first[1]].second,
-                        mij[eij.first[2]].second, mkl[ekl.first[2]].second, mij[eij.first[3]].second, mkl[ekl.first[3]].second};
-        if (!out->exist(t))
-          out->add(t, make_shared<ZRDM<4>>(norb_));
-        out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first,
-                            mij[eij.first[2]].first, mkl[ekl.first[2]].first, mij[eij.first[3]].first, mkl[ekl.first[3]].first)
+        out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]], mij[eij.first[3]], mkl[ekl.first[3]])
           = eij.second * ekl.second * dat; 
-
-        const KTag<8> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
-                         mkl[ekl.first[2]].second, mij[eij.first[2]].second, mkl[ekl.first[3]].second, mij[eij.first[3]].second};
-        if (!out->exist(t2))
-          out->add(t2, make_shared<ZRDM<4>>(norb_));
-        out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
-                             mkl[ekl.first[2]].first, mij[eij.first[2]].first, mkl[ekl.first[3]].first, mij[eij.first[3]].first)
-          = eij.second * ekl.second * conj(dat);
+        if (ist == jst)
+          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]], mkl[ekl.first[3]], mij[eij.first[3]])
+            = eij.second * ekl.second * dat;
       }
-    }
-  }
-  for (auto& i : elem) {
-    for (auto& j : elem) {
-      vector<int> perm(8);
-      for (int k = 0; k != 4; ++k) {
-        perm[k*2]   = j.first[k]*2;
-        perm[k*2+1] = i.first[k]*2+1;
-      }
-      out->emplace_perm(perm, j.second*i.second);
     }
   }
   return out;
 }
 
 
-std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist, const int jst, const string& file) const {
-  auto out = make_shared<Kramers<6,ZRDM<3>>>();
+std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, const string& file) const {
+  auto out = make_shared<RDM<3>>(norb_);
 
   map<array<int,3>,double> elem;
   elem.emplace(array<int,3>{{0,1,2}},  1.0); elem.emplace(array<int,3>{{0,2,1}}, -1.0); elem.emplace(array<int,3>{{1,0,2}}, -1.0);
@@ -159,48 +135,24 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
   while (getline(fs, line)) {
     stringstream ss(line);
     int i, j, k, l, m, n;
-    double re, im;
+    double dat;
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
-    ss >> i >> j >> k >> l >> m >> n >> re >> im;
-    map<int,pair<int,int>> mij{{0,{(i-1)/2,(i-1)%2}}, {1,{(j-1)/2,(j-1)%2}}, {2,{(k-1)/2,(k-1)%2}}};
-    map<int,pair<int,int>> mkl{{0,{(l-1)/2,(l-1)%2}}, {1,{(m-1)/2,(m-1)%2}}, {2,{(n-1)/2,(n-1)%2}}};
-    const complex<double> dat(re, im);
+    ss >> i >> j >> k >> l >> m >> n >> dat;
+    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_ && m <= norb_ & n <= norb_);
+    map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}};
+    map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}};
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
-        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second || 
-            mkl[ekl.first[0]].second > mkl[ekl.first[1]].second || mkl[ekl.first[1]].second > mkl[ekl.first[2]].second) continue;
-
-        const KTag<6> t{mij[eij.first[0]].second, mkl[ekl.first[0]].second, mij[eij.first[1]].second, mkl[ekl.first[1]].second,
-                        mij[eij.first[2]].second, mkl[ekl.first[2]].second};
-        if (!out->exist(t))
-          out->add(t, make_shared<ZRDM<3>>(norb_));
-        out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first,
-                            mij[eij.first[2]].first, mkl[ekl.first[2]].first)
+        out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]])
           = eij.second * ekl.second * dat; 
-
-        const KTag<6> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
-                         mkl[ekl.first[2]].second, mij[eij.first[2]].second};
-        if (!out->exist(t2))
-          out->add(t2, make_shared<ZRDM<3>>(norb_));
-        out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
-                             mkl[ekl.first[2]].first, mij[eij.first[2]].first)
-          = eij.second * ekl.second * conj(dat);
+        if (ist == jst)
+          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]])
+            = eij.second * ekl.second * dat;
       }
-    }
-  }
-  for (auto& i : elem) {
-    for (auto& j : elem) {
-      vector<int> perm(6);
-      for (int k = 0; k != 3; ++k) {
-        perm[k*2]   = j.first[k]*2;
-        perm[k*2+1] = i.first[k]*2+1;
-      }
-      out->emplace_perm(perm, j.second*i.second);
     }
   }
   return out;
 }
-#endif
 
 
 std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, const string& file) const {
