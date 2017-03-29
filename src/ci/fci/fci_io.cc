@@ -77,7 +77,7 @@ void FCI::dump_ints() const {
     fs << jop_->core_energy()  + geom_->nuclear_repulsion() << "   0   0   0   0" << endl;
     fs.close();
   }
-  else throw runtime_error("Unable to open file: ZHarrison::dump_ints");
+  else throw runtime_error("Unable to open file: FCI::dump_ints");
 }
 
 
@@ -219,6 +219,7 @@ std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, co
     double dat;
     // assuming that the 2RDM is dumped as i+ j+ k l -> i k j l
     ss >> i >> j >> k >> l >> dat;
+    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_);
     map<int,int> mij{{0,i-1}, {1,j-1}};
     map<int,int> mkl{{0,k-1}, {1,l-1}};
     for (auto& eij : elem) {
@@ -246,6 +247,7 @@ std::shared_ptr<RDM<1>> FCI::read_external_rdm1(const int ist, const int jst, co
     int i, j;
     double dat;
     ss >> i >> j >> dat; 
+    assert(i <= norb_ && j <= norb_);
     out->element(i-1, j-1) = dat; 
     out->element(j-1, i-1) = dat;
   }

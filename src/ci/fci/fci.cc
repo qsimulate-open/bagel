@@ -49,7 +49,7 @@ HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
-    throw Termination("Relativistic MO integrals are dumped on a file.");
+    throw Termination("MO integrals are dumped on a file.");
   }
 }
 
@@ -61,7 +61,7 @@ KnowlesHandy::KnowlesHandy(shared_ptr<const PTree> a, shared_ptr<const Geometry>
     OArchive ar("ref");
     ar << ref_;
     dump_ints();
-    throw Termination("Relativistic MO integrals are dumped on a file.");
+    throw Termination("MO integrals are dumped on a file.");
   }
 }
 
