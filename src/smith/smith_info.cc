@@ -99,9 +99,16 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
 template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst);
-  auto r1 = fci.rdm1(ist, jst);
-  auto r2 = fci.rdm2(ist, jst);
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  } else {
+    r1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    r2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(r1, r2);
 }
 
@@ -109,8 +116,16 @@ tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rd
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34(ist, jst);
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<const RDM<4>> r4;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4) = fci.rdm34(ist, jst);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
+  return make_tuple(r3, r4);
 }
 
 
