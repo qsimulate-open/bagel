@@ -306,8 +306,6 @@ std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const int ist,
 
 
 void ZHarrison::read_external_rdm12_av(const string& file) {
-  rdm2_av_expanded_ = make_shared<ZRDM<2>>(norb_*2);
-
   // feed RDM1
   rdm1_av_ = read_external_rdm1(/*TODO*/0, 0, file);
   rdm1_av_expanded_ = expand_kramers<1,complex<double>>(rdm1_av_, norb_);

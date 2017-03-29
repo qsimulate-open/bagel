@@ -35,6 +35,13 @@ using namespace bagel;
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("ref");
+    ar >> ref_;
+  }
+
   // drop the reference if restart is requested
   if (idata_->get<bool>("restart", false))
     ref_ = nullptr;
