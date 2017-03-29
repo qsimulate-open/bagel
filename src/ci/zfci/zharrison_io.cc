@@ -141,13 +141,15 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
                             mij[eij.first[2]].first, mkl[ekl.first[2]].first, mij[eij.first[3]].first, mkl[ekl.first[3]].first)
           = eij.second * ekl.second * dat; 
 
-        const KTag<8> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
-                         mkl[ekl.first[2]].second, mij[eij.first[2]].second, mkl[ekl.first[3]].second, mij[eij.first[3]].second};
-        if (!out->exist(t2))
-          out->add(t2, make_shared<ZRDM<4>>(norb_));
-        out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
-                             mkl[ekl.first[2]].first, mij[eij.first[2]].first, mkl[ekl.first[3]].first, mij[eij.first[3]].first)
-          = eij.second * ekl.second * conj(dat);
+        if (ist == jst) {
+          const KTag<8> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
+                           mkl[ekl.first[2]].second, mij[eij.first[2]].second, mkl[ekl.first[3]].second, mij[eij.first[3]].second};
+          if (!out->exist(t2))
+            out->add(t2, make_shared<ZRDM<4>>(norb_));
+          out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
+                               mkl[ekl.first[2]].first, mij[eij.first[2]].first, mkl[ekl.first[3]].first, mij[eij.first[3]].first)
+            = eij.second * ekl.second * conj(dat);
+        }
       }
     }
   }
@@ -199,13 +201,15 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
                             mij[eij.first[2]].first, mkl[ekl.first[2]].first)
           = eij.second * ekl.second * dat; 
 
-        const KTag<6> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
-                         mkl[ekl.first[2]].second, mij[eij.first[2]].second};
-        if (!out->exist(t2))
-          out->add(t2, make_shared<ZRDM<3>>(norb_));
-        out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
-                             mkl[ekl.first[2]].first, mij[eij.first[2]].first)
-          = eij.second * ekl.second * conj(dat);
+        if (ist == jst) {
+          const KTag<6> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
+                           mkl[ekl.first[2]].second, mij[eij.first[2]].second};
+          if (!out->exist(t2))
+            out->add(t2, make_shared<ZRDM<3>>(norb_));
+          out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first,
+                               mkl[ekl.first[2]].first, mij[eij.first[2]].first)
+            = eij.second * ekl.second * conj(dat);
+        }
       }
     }
   }
@@ -253,11 +257,13 @@ std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const int ist,
         out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first)
           = eij.second * ekl.second * dat; 
 
-        const KTag<4> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second};
-        if (!out->exist(t2))
-          out->add(t2, make_shared<ZRDM<2>>(norb_));
-        out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first)
-          = eij.second * ekl.second * conj(dat);
+        if (ist == jst) {
+          const KTag<4> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second};
+          if (!out->exist(t2))
+            out->add(t2, make_shared<ZRDM<2>>(norb_));
+          out->at(t2)->element(mkl[ekl.first[0]].first, mij[eij.first[0]].first, mkl[ekl.first[1]].first, mij[eij.first[1]].first)
+            = eij.second * ekl.second * conj(dat);
+        }
       }
     }
   }
@@ -299,11 +305,11 @@ std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const int ist,
     const int ti = (i-1)%2;
     const int tj = (j-1)%2;
     const KTag<2> tag1{ti, tj};
-    const KTag<2> tag2{tj, ti};
-    assert(out->exist(tag1));
-    assert(out->exist(tag2));
     out->at(tag1)->element(ii, jj) = dat; 
-    out->at(tag2)->element(jj, ii) = conj(dat);
+    if (ist == jst) {
+      const KTag<2> tag2{tj, ti};
+      out->at(tag2)->element(jj, ii) = conj(dat);
+    }
   }
   return out;
 }

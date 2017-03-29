@@ -226,8 +226,9 @@ std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, co
       for (auto& ekl : elem) {
         out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]])
           = eij.second * ekl.second * dat; 
-        out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]])
-          = eij.second * ekl.second * dat;
+        if (ist == jst)
+          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]])
+            = eij.second * ekl.second * dat;
       }
     }
   }
@@ -249,7 +250,8 @@ std::shared_ptr<RDM<1>> FCI::read_external_rdm1(const int ist, const int jst, co
     ss >> i >> j >> dat; 
     assert(i <= norb_ && j <= norb_);
     out->element(i-1, j-1) = dat; 
-    out->element(j-1, i-1) = dat;
+    if (ist == jst)
+      out->element(j-1, i-1) = dat;
   }
   return out;
 }
