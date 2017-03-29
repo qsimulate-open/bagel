@@ -23,84 +23,65 @@
 //
 
 #include <map>
-#include <src/ci/zfci/zharrison.h>
+#include <src/ci/fci/fci.h>
 
 using namespace std;
 using namespace bagel;
 
 // The following code is due to George Booth
 
-// Write relativistic integrals to an file in chemists notation suitable for reading into NECI
-void ZHarrison::dump_ints() const {
+// Write integrals to an file in chemists notation suitable for reading into NECI
+void FCI::dump_ints() const {
 
   cout << "" << endl;
-  cout << "Writing relativistic integrals to FCIDUMP.REL file" << endl;
+  cout << "Writing integrals to FCIDUMP file" << endl;
   cout << setprecision(10) << endl;
-  // kramers_coeff(0) accesses the + functions
-  cout << "Number of AO basis functions: " << jop_->coeff()->ndim() << endl; // ndim is length of first index
-  cout << "Number of MO basis functions to dump: " << jop_->coeff()->mdim()/2 << endl; //mdim for length for second index
+  cout << "Number of AO basis functions: " << jop_->coeff()->ndim() << endl;
+  cout << "Number of MO basis functions to dump: " << jop_->coeff()->mdim() << endl;
 
   ofstream fs("FCIDUMP");
 
   if (fs.is_open()) {
 
-    fs << " &FCI NORB= " << norb_*2 << ",NELEC= " << nele_ << ",ORBSYM= ";
-    for (int i = 0; i != norb_*2; ++i)
+    fs << " &FCI NORB= " << norb_ << ",NELEC= " << det_->nelea() + det_->neleb() << ",ORBSYM= ";
+    for (int i = 0; i != norb_; ++i)
       fs << "1, ";
     fs << endl;
     fs << " ISYM= 0 ," << endl;
-    fs << " TREL=.TRUE." << endl;
+    fs << " TREL=.FALSE." << endl;
     fs << " &END" << endl;
 
     fs << setw(20) << setprecision(15);
 
-    for (int i = 0; i != 16; ++i) {
-      if (!jop_->mo2e()->exist(i)) continue;
-      cout << "Writing 2e integral block " << i+1 << " / 16 : ";
-      shared_ptr<const ZMatrix> tmp = jop_->mo2e(i);
-      // assuming here that the fastest bit in i corresponds to the slowest orbital in mo2e
-      const int jfac  = 2 - (i & 1);
-      const int j2fac = 2 - (i & 2)/2;
-      const int kfac  = 2 - (i & 4)/4;
-      const int k2fac = 2 - (i & 8)/8;
+    cout << "Writing 2e integral block " << endl;
 
-      const map<int,string> pm{{1, "+"}, {2, "-"}};
-      cout << "( " << pm.at(k2fac) << " " << pm.at(j2fac) << " | " << pm.at(kfac) << " " << pm.at(jfac) << " )" << endl;
-
-      for (int j = 0; j != norb_; ++j)
-        for (int j2 = 0; j2 != norb_; ++j2)
-          for (int k = 0; k != norb_; ++k)
-            for (int k2 = 0; k2 != norb_; ++k2) {
-              const complex<double> val = tmp->element(k2+norb_*k, j2+norb_*j);
-              if (abs(val) > 1.0e-9) {
-                fs << setw(20) << val << setw(4) << 2*k2+k2fac << setw(4)
-                  << 2*j2+j2fac << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << endl;   // electron 1, electron 2
-              }
+    for (int j = 0; j != norb_; ++j)
+      for (int j2 = 0; j2 != norb_; ++j2)
+        for (int k = 0; k != norb_; ++k)
+          for (int k2 = 0; k2 != norb_; ++k2) {
+            const double val = jop_->mo2e(k2, k, j2, j);
+            if (abs(val) > 1.0e-9) {
+              fs << setw(20) << val << setw(4) << k2 << setw(4)
+                 << k << setw(4) << j2 << setw(4) << j << endl;   // electron 1, electron 2
             }
-    }
+          }
 
-    for (int i = 0; i != 4; ++i) {
-      if (!jop_->mo1e()->exist(i)) continue;
-      cout << "Writing 1e integral block " << i+1 << " / 4" << endl;
-      shared_ptr<const ZMatrix> tmp = jop_->mo1e(i);
+    cout << "Writing 1e integral block " << endl;
 
-      const int jfac = 2 - (i & 1);
-      const int kfac = 2 - (i & 2)/2;
-
-      for (int j = 0; j != norb_; ++j)
-        for (int k = 0; k != norb_; ++k) {
-          const complex<double> val = tmp->element(k, j);
-          if (abs(val) > 1.0e-9)
-            fs << val << setw(4) << 2*k+kfac << setw(4) << 2*j+jfac << "   0   0" << endl;
-        }
-    }
-    fs << "(" << jop_->core_energy()  + geom_->nuclear_repulsion() << ",0.0)" << "   0   0   0   0" << endl;
+    for (int j = 0; j != norb_; ++j)
+      for (int k = 0; k != norb_; ++k) {
+        const double val = jop_->mo1e(min(k,j), max(k,j));
+        if (abs(val) > 1.0e-9)
+          fs << val << setw(4) << k << setw(4) << j << "   0   0" << endl;
+      }
+    fs << jop_->core_energy()  + geom_->nuclear_repulsion() << "   0   0   0   0" << endl;
     fs.close();
   }
   else throw runtime_error("Unable to open file: ZHarrison::dump_ints");
 }
 
 
+#if 0
 std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist, const int jst, const string& file) const {
   auto out = make_shared<Kramers<8,ZRDM<4>>>();
 
@@ -314,3 +295,4 @@ void ZHarrison::read_external_rdm12_av(const string& file) {
   rdm2_av_ = read_external_rdm2(/*TODO*/0, 0, file);
   rdm2_av_expanded_ = expand_kramers<2,complex<double>>(rdm2_av_, norb_);
 }
+#endif

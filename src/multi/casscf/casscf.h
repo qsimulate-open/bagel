@@ -56,6 +56,9 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     std::shared_ptr<const Coeff> coeff_;
 
+    // RDMs are given externally (e.g., FCIQMC)
+    std::string external_rdm_;
+
     std::shared_ptr<FCI> fci_;
     void print_header() const;
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
