@@ -50,10 +50,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (is_same<DataType,complex<double>>::value)
     closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  // TODO should test min(10,max)
-  active_ = IndexRange(info_->nact(), 12, closed_.nblock(), ncore2+closed_.size());
+  active_ = IndexRange(info_->nact(), min(10,max), closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), 12, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+    active_.merge(IndexRange(info_->nact(), min(10,max), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
                                                                                             ncore2+closed_.size()));
 
   virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
@@ -284,7 +283,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
       shared_ptr<RDM<3>> frdm4 = rdm3->clone();
       auto rdm4v = group(group(*rdm4, 6,8), 0,6);
@@ -504,15 +503,14 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   }
 
   shared_ptr<Matrix> rdm2d;
-  rdm2d = info->ref()->rdm2deriv_offset(istate, offset, size);
   shared_ptr<Matrix> rdm2fd;
   shared_ptr<Matrix> rdm3fd;
 
-  // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn ....
+  // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn.
   if (reset)
-    tie(rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
   else
-    tie(rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
 
   vector<IndexRange> o1 = {ci};
   vector<IndexRange> o3 = {ci, active, active};

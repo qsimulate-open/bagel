@@ -59,6 +59,7 @@ class Opt {
 
     std::string algorithm_;
     std::string method_;
+    std::string hess_update_;
 
     int maxiter_;
     double thresh_grad_;
@@ -66,6 +67,7 @@ class Opt {
     double thresh_echange_;
     double maxstep_;
     bool scratch_;
+    bool mass_weight_;
 
     bool numerical_;
     double numerical_dx_;
@@ -87,11 +89,15 @@ class Opt {
     bool adaptive_;
     // whether we save reference or not
     bool refsave_;
+    // whether we use ab initio hessian or approximate hessian
+    bool hess_approx_;
     std::string refname_;
     size_t size_;
     // nonadiabatic coupling type used in conical
     int nacmtype_;
     double thielc3_, thielc4_;
+    // MEP direction
+    int mep_direction_;
 
     Timer timer_;
 
@@ -129,6 +135,8 @@ class Opt {
     void hessian_update_psb(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
 
     void do_adaptive();
+    void do_optimize();
+    void do_mep(std::shared_ptr<XYZFile> mep_start);
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);

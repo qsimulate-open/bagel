@@ -54,7 +54,6 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     bool conv_ignore_;
     bool natocc_;
 
-    VectorB occup_;
     std::shared_ptr<const Coeff> coeff_;
 
     std::shared_ptr<FCI> fci_;
@@ -105,9 +104,6 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
 
-    void set_occup(const VectorB& o) { occup_ = o; }
-    double occup(const int i) const { return occup_(i); }
-
     double energy(const int i) const { return energy_[i]; }
     double energy_av() const { return blas::average(energy_); }
     const std::vector<double>& energy() const { return energy_; }
@@ -115,17 +111,12 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     std::shared_ptr<Matrix> compute_active_fock(const MatView acoeff, std::shared_ptr<const RDM<1>> rdm1) const;
 
-    // TODO I need this function in CP-CASSCF, but only for denominator. Should be separated.
-    void one_body_operators(std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&, std::shared_ptr<Matrix>&,
-                            std::shared_ptr<RotFile>&, const bool superci=true) const;
     std::shared_ptr<Matrix> ao_rdm1(std::shared_ptr<const RDM<1>> rdm1, const bool inactive_only = false) const;
     std::shared_ptr<const Matrix> hcore() const { return hcore_; }
 
     std::shared_ptr<const Coeff> coeff() const { return coeff_; }
-    void print_natocc() const;
+    void print_natocc(const VectorB& occup) const;
 };
-
-static const double occup_thresh = 1.0e-10;
 
 }
 

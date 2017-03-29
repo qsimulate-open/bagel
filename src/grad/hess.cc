@@ -308,8 +308,7 @@ cout << " mass atom k    " << i << "   "   << geom_->atoms(k)->averaged_mass() <
         (*proj_norm)(5,i) = (*proj_total)(5,i) / sqrt(rot3);
     }
 
-    auto proj_hess_ = make_shared<Matrix>(3*natom,3*natom);
-    *proj_hess_ = (*identity - *proj_norm % *proj_norm) % *mw_hess_ * (*identity - *proj_norm % *proj_norm);
+    proj_hess_ = make_shared<Matrix>((*identity - *proj_norm % *proj_norm) % *mw_hess_ * (*identity - *proj_norm % *proj_norm));
 
     //diagonalize hessian
     // eig(i) in Hartree/bohr^2*amu
