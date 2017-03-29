@@ -87,12 +87,14 @@ shared_ptr<GradFile> Force::compute() {
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
       out = force->compute();
       ref = force->ref();
+      force_dipole_ = force->dipole();
 
     } else if (method == "rohf") {
 
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
       out = force->compute();
       ref = force->ref();
+      force_dipole_ = force->dipole();
 
     } else if (method == "hf") {
 
@@ -106,6 +108,7 @@ shared_ptr<GradFile> Force::compute() {
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
       out = force->compute();
       ref = force->ref();
+      force_dipole_ = force->dipole();
 
     } else if (method == "dhf") {
 
@@ -118,6 +121,7 @@ shared_ptr<GradFile> Force::compute() {
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
       out = force->compute();
       ref = force->ref();
+      force_dipole_ = force->dipole();
 
     } else if (method == "casscf" && jobtitle == "nacme") {
 

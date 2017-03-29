@@ -92,7 +92,7 @@ void KS::compute() {
   // by default we compute dipoles
   if (!geom_->external()) {
     Dipole mu(geom_, aodensity_);
-    mu.compute();
+    scf_dipole_ = mu.compute();
   }
 }
 

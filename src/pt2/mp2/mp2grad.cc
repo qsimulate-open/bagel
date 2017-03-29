@@ -274,7 +274,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
   {
     Dipole dipole(geom_, dtotao, "MP2 relaxed");
-    dipole.compute();
+    dipole_ = dipole.compute();
   }
 
   ////////////////////////////////////////////////////////////////////////////

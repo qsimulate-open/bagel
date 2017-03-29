@@ -187,6 +187,10 @@ void Hess::compute() {
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
               (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
               (*cartesian)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
+cout << " *********** DEBUG HESSIAN *********** " <<endl;
+cout << " mw_hess_ counter step    " << counter << "   "  << step <<  "   "  << (*mw_hess_)(counter,step) << endl;
+cout << " mass atom i    " << i << "   "   << geom_->atoms(i)->averaged_mass() << endl;
+cout << " mass atom k    " << i << "   "   << geom_->atoms(k)->averaged_mass() << endl;
               step = step + 1;
             }
           }
@@ -201,6 +205,7 @@ void Hess::compute() {
 
     //symmetrize mass weighted hessian
     hess_->print("Hessian");
+    mw_hess_->print("Mass Weighted Hessian", 3*natom);
     mw_hess_->symmetrize();
     cout << "    (masses averaged over the natural occurance of isotopes)";
     cout << endl << endl;
