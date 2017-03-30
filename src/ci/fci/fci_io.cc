@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: zharrison_io.cc
-// Copyright (C) 2016 Toru Shiozaki
+// Filename: fci_io.cc
+// Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
