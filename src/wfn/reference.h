@@ -174,7 +174,7 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
     std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t offset, const size_t size) const;
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const;
     // 4RDM derivative is precontracted by the Fock matrix
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>

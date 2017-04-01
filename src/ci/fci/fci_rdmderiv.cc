@@ -156,7 +156,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
   sigma_2a2(cbra, dbra);
 
   const int norb2 = norb_ * norb_;
-  auto emat = make_shared<Matrix>(size, norb2*norb2, /*local=*/!parallel);
+  auto emat = make_shared<Matrix>(size, norb2*norb2, /*local=*/true);
 
   TaskQueue<RDM2derivTask> task(norb2*(norb2+1)/2);
   for (int ij = 0; ij != norb2; ++ij) {
@@ -248,7 +248,7 @@ namespace bagel {
   };
 }
 
-tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
 #ifndef HAVE_MPI_H
   throw logic_error("FCI::rdm3deriv should not be called without MPI");
 #endif
@@ -300,8 +300,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
   }
 
   // then form [L|k+i+jl|0] <- <L|i+j|K>[K|k+l|0] + ...
-  auto fock_fbra = make_shared<Matrix>(size, norb4);
-  // set ebra within the pass now
+  auto fock_fbra = make_shared<Matrix>(size, norb4, /*local=*/true);
+  // Set ebra within the pass. This is 2RDM derivative
   auto ebra = rdm2deriv_offset(target, offset, size);
 
   // RDM3deriv contruction is task-base threaded
@@ -323,7 +323,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(const int target, sh
         fock_fbra->element(iJ,klij) = fock_fbra->element(iJ,ijkl);
     }
 
-  return make_tuple(fock_ebra_mat, fock_fbra);
+  return make_tuple(ebra, fock_ebra_mat, fock_fbra);
 }
 
 

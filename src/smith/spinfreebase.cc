@@ -503,15 +503,14 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   }
 
   shared_ptr<Matrix> rdm2d;
-  rdm2d = info->ref()->rdm2deriv_offset(istate, offset, size);
   shared_ptr<Matrix> rdm2fd;
   shared_ptr<Matrix> rdm3fd;
 
-  // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn ....
+  // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn.
   if (reset)
-    tie(rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
   else
-    tie(rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
 
   vector<IndexRange> o1 = {ci};
   vector<IndexRange> o3 = {ci, active, active};

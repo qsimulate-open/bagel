@@ -165,7 +165,7 @@ class FCI_base : public Method {
     virtual std::shared_ptr<Dvec> rdm1deriv(const int istate) const = 0;
     virtual std::shared_ptr<Dvec> rdm2deriv(const int istate) const = 0;
     virtual std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel = true) const = 0;
-    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const = 0;
 
     // 4RDM derivative is precontracted by an Fock operator
