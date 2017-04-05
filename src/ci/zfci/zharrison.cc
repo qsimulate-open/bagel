@@ -134,6 +134,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
 
   update(coeff);
 
+#ifndef DISABLE_SERIALIZATION
   // if integral dump is requested, do it here, and throw Termination
   if (idata_->get<bool>("only_ints", false)) {
     OArchive ar("relcoeff");
@@ -141,6 +142,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
     dump_ints();
     throw Termination("Relativistic MO integrals are dumped on a file.");
   }
+#endif
 }
 
 
