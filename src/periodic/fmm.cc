@@ -436,8 +436,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   vector<pair<size_t, size_t>> table = dist.atable();
 
   Timer mtime;
-  //for (int i = 0; i != nbranch_[0]; ++i)
-  //  box_[i]->get_offsets();
 
   int u = 0;
   for (auto& itable : table) {
@@ -487,8 +485,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   vector<pair<size_t, size_t>> table = dist.atable();
 
   Timer mtime;
-  //for (int i = 0; i != nbranch_[0]; ++i)
-  //  box_[i]->get_offsets();
 
   int u = 0;
   for (auto& itable : table) {

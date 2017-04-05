@@ -48,7 +48,7 @@ class Box {
 
     double thresh_, extent_, schwarz_thresh_;
     int nbasis0_, nbasis1_;
-    int nmult_, nmult_k_;
+    int nmult_;
     int nocc_;
     size_t nsize_, msize_, olm_ndim_, olm_mdim_, olm_size_block_;
 
@@ -57,7 +57,6 @@ class Box {
     std::shared_ptr<ZMatrix> mlm_ji_;
     std::vector<std::array<int, 2>> offsets_;
     std::vector<std::pair<int, int>> coffsets_s_, coffsets_u_;
-    void get_offsets();
 
     void init();
     void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
@@ -74,11 +73,11 @@ class Box {
     void compute_multipolesX();
     void sort_sp();
     std::shared_ptr<const ZVectorB> shift_multipoles(std::shared_ptr<const ZVectorB> oa, std::array<double, 3> rab) const;
-    std::shared_ptr<const ZMatrix> shift_multipolesX(std::shared_ptr<const ZMatrix> oa, std::array<double, 3> rab) const;
+    std::shared_ptr<const ZMatrix> shift_multipolesX(const int lmax, std::shared_ptr<const ZMatrix> oa, std::array<double, 3> rab) const;
     std::shared_ptr<const ZVectorB> shift_localL(std::shared_ptr<const ZVectorB> mr, std::array<double, 3> rb) const;
-    std::shared_ptr<const ZMatrix> shift_localLX(std::shared_ptr<const ZMatrix> mr, std::array<double, 3> rb) const;
+    std::shared_ptr<const ZMatrix> shift_localLX(const int lmax, std::shared_ptr<const ZMatrix> mr, std::array<double, 3> rb) const;
     std::shared_ptr<const ZVectorB> shift_localM(std::shared_ptr<const ZVectorB> olm, std::array<double, 3> r12) const;
-    std::shared_ptr<const ZMatrix> shift_localMX(std::shared_ptr<const ZMatrix> olm, std::array<double, 3> r12) const;
+    std::shared_ptr<const ZMatrix> shift_localMX(const int lmax, std::shared_ptr<const ZMatrix> olm, std::array<double, 3> r12) const;
     void compute_M2L();
     void compute_M2L_X();
     void compute_L2L();
