@@ -174,6 +174,57 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
   multipole_->fill(0.0);
 
   if (nchild() == 0) { // leaf
+//debug
+#if 0
+    get_offsets();
+    vector<shared_ptr<ZMatrix>> box_olm(nmult_);
+    for (int k = 0; k != nmult_k_; ++k)
+      box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
+
+    TaskQueue<function<void(void)>> tasks(nsp());
+    int isp = 0;
+    for (auto& v : sp_) {
+      if (v->schwarz() < thresh_) continue;
+
+      tasks.emplace_back(
+        [this, &v, isp, box_olm]() {
+          MultipoleBatch mpole(v->shells(), centre_, lmax_k_);
+          mpole.compute();
+          for (int k = 0; k != nmult_k_; ++k) {
+            const int nstart = offsets_[isp][0];
+            const int mstart = offsets_[isp][1];
+            box_olm[k]->add_block(1.0, nstart, mstart, v->shell(0)->nbasis(), v->shell(1)->nbasis(), mpole.data(k));
+          }
+        }
+      );
+      ++isp;
+    }
+    tasks.compute();
+
+    // get sub density
+    auto subden = make_shared<Matrix>(nsize_, msize_);
+    int n = 0;
+    for (auto& c0 : coffsets_s_) {
+      const int ndim = c0.second;
+      int m = 0;
+      for (auto& c1 : coffsets_u_) {
+        const int mdim = c1.second;
+        shared_ptr<const Matrix> tmp = density->get_submatrix(c0.first, c1.first, ndim, mdim);
+        assert(c0.first+ndim <= density->ndim());
+        assert(c1.first+mdim <= density->mdim());
+        assert(n+ndim <= nsize_ && m+mdim <=  msize_);
+        subden->copy_block(n, m, ndim, mdim, tmp->data());
+        m += mdim;
+      }
+      assert(m == msize_);
+      n += ndim;
+    }
+    assert(n == nsize_);
+
+    for (int k = 0; k != nmult_; ++k)
+      (*multipole_)(k) = conj(blas::dot_product_noconj(subden->data(), nsize_*msize_, box_olm[k]->data()));
+//end debug
+#else
     TaskQueue<function<void(void)>> tasks(nsp());
     mutex jmutex;
     for (auto& v : sp_) {
@@ -201,6 +252,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       );
     }
     tasks.compute();
+#endif
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -220,19 +272,44 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
 
   olm_ndim_ = ocoeff_sj->mdim();  olm_mdim_ = ocoeff_ui->mdim();
   olm_size_block_ = olm_ndim_ * olm_mdim_;
-  olm_ji_ = make_shared<ZMatrix>(olm_size_block_, nmult_k_, true);
+  olm_ji_ = make_shared<ZMatrix>(olm_size_block_, nmult_k_);
 
   if (nchild() == 0) { // leaf
+#if 1
+    TaskQueue<function<void(void)>> tasks(nsp());
+    for (auto& v : sp_) {
+      if (v->schwarz() < thresh_) continue;
+
+      tasks.emplace_back(
+        [this, &v, &ocoeff_sj, &ocoeff_ui]() {
+          MultipoleBatch mpole(v->shells(), centre_, lmax_k_);
+          mpole.compute();
+          const int dimb0 = v->shell(0)->nbasis();
+          const int dimb1 = v->shell(1)->nbasis();
+          assert(mpole.size_block() == dimb0*dimb1);
+          shared_ptr<const Matrix> sj = ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0);
+          auto zsj = make_shared<const ZMatrix>(*sj, 1.0);
+          shared_ptr<const Matrix> ui = ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1);
+          auto zui = make_shared<const ZMatrix>(*ui, 1.0);
+          for (int k = 0; k != nmult_k_; ++k) {
+            ZMatrix olm_si(dimb0, ocoeff_ui->mdim());
+            zgemm3m_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, mpole.data()+mpole.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.data(), dimb0);
+            zgemm3m_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.data(), dimb0, 0.0, olm_ji_->data()+k*olm_size_block_, ocoeff_sj->mdim());
+          }
+        }
+      );
+    }
+    tasks.compute();
+#else
     vector<shared_ptr<ZMatrix>> box_olm(nmult_k_);
     for (int k = 0; k != nmult_k_; ++k)
-      box_olm[k] = make_shared<ZMatrix>(nsize_, msize_, true);
+      box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
 
-    //cout << "BOX with nsize = " << nsize_ << " msize = " << msize_ << " nsp = " << sp_.size() << endl;
     TaskQueue<function<void(void)>> tasks(nsp());
     int isp = 0;
     for (auto& v : sp_) {
       if (v->schwarz() < thresh_) continue;
-
+ 
       tasks.emplace_back(
         [this, &v, isp, box_olm]() {
           MultipoleBatch mpole(v->shells(), centre_, lmax_k_);
@@ -278,6 +355,7 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       auto olm_si = make_shared<const ZMatrix>(*(box_olm[k]) * *zc_ui);
       zgemm3m_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), nsize_, 1.0, zc_sj->data(), nsize_, olm_si->data(), nsize_, 0.0, olm_ji_->data()+k*olm_size_block_, ocoeff_sj->mdim());
     }
+#endif
   } else { // shift children's multipoles
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> c = child(n);
@@ -299,7 +377,7 @@ void Box::compute_multipolesX() {
   get_offsets();
   box_olm_.resize(nmult_k_);
   for (int k = 0; k != nmult_k_; ++k)
-    box_olm_[k] = make_shared<ZMatrix>(nsize_, msize_, true);
+    box_olm_[k] = make_shared<ZMatrix>(nsize_, msize_);
 
   TaskQueue<function<void(void)>> tasks(nsp());
   int isp = 0;
@@ -386,7 +464,7 @@ void Box::compute_M2L() {
 shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
-  auto out = make_shared<Matrix>(density->ndim(), density->mdim(), true);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
 
   // NF: 4c integrals
@@ -714,9 +792,41 @@ shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) 
 shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_ti) const {
 
   assert(nchild() == 0);
+#if 1
+  auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_);
+  assert(ocoeff_ti->mdim() == olm_mdim_);
+  TaskQueue<function<void(void)>> tasks(nsp());
+  for (auto& v : sp_) {
+    if (v->schwarz() < thresh_) continue;
+
+    tasks.emplace_back(
+      [this, &v, &ocoeff_ti, &out]() {
+        MultipoleBatch mpole(v->shells(), centre_, lmax_k_);
+        mpole.compute();
+        const int dimb0 = v->shell(0)->nbasis();
+        const int dimb1 = v->shell(1)->nbasis();
+        assert(mpole.size_block() == dimb0*dimb1);
+        shared_ptr<const Matrix> ti = ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1);
+        auto zti = make_shared<const ZMatrix>(*ti, 1.0);
+
+        auto krj = make_shared<Matrix>(dimb0, olm_ndim_);
+        for (int k = 0; k != nmult_k_; ++k) {
+          ZMatrix olm_ri(dimb0, ocoeff_ti->mdim());
+          zgemm3m_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, mpole.data()+mpole.size_block()*k, dimb0, zti->data(), dimb1, 0.0, olm_ri.data(), dimb0);
+          dgemm_("N", "T", dimb0, olm_ndim_, ocoeff_ti->mdim(), 1.0, (olm_ri.get_real_part())->data(), dimb0, 
+                                              (mlm_ji_->get_real_part())->data()+k*olm_size_block_, olm_ndim_,  1.0, krj->data(), dimb0);
+          dgemm_("N", "T", dimb0, olm_ndim_, ocoeff_ti->mdim(), 1.0, (olm_ri.get_imag_part())->data(), dimb0, 
+                                              (mlm_ji_->get_imag_part())->data()+k*olm_size_block_, olm_ndim_, -1.0, krj->data(), dimb0);
+        }
+        out->copy_block(v->offset(0), 0, dimb0, olm_ndim_, krj->data());
+      }
+    );
+  }
+  tasks.compute();
+#else
   vector<shared_ptr<ZMatrix>> box_olm(nmult_k_);
   for (int k = 0; k != nmult_k_; ++k)
-    box_olm[k] = make_shared<ZMatrix>(nsize_, msize_, true);
+    box_olm[k] = make_shared<ZMatrix>(nsize_, msize_);
 
   TaskQueue<function<void(void)>> tasks(nsp());
   int isp = 0;
@@ -737,12 +847,8 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
     ++isp;
   }
   tasks.compute();
-  for (auto& olm : box_olm)
-    for (size_t i = 0; i != msize_; ++i)
-      for (size_t j = 0; j != nsize_; ++j)
-        olm->element(i, j) = detail::conj(olm->element(j, i));
 
-  auto c_ti = make_shared<Matrix>(msize_, ocoeff_ti->mdim(), true);
+  auto c_ti = make_shared<Matrix>(msize_, ocoeff_ti->mdim());
   int start = 0;
   for (auto& ci : coffsets_u_) {
     const int mdim = ci.second;
@@ -753,20 +859,23 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
   assert(start == msize_ && ocoeff_ti->mdim() == olm_mdim_);
   auto zc_ti = make_shared<const ZMatrix>(*c_ti, 1.0);
  
-  auto krj = make_shared<ZMatrix>(nsize_, olm_ndim_, true);
+  auto krj = make_shared<Matrix>(nsize_, olm_ndim_);
   for (int k = 0; k != nmult_k_; ++k) {
     auto olm_ri = make_shared<const ZMatrix>(*(box_olm[k]) * *zc_ti);
-    zgemm3m_("N", "T", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, olm_ri->data(), nsize_, mlm_ji_->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
+    dgemm_("N", "T", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, (olm_ri->get_real_part())->data(), nsize_,
+                     (mlm_ji_->get_real_part())->data()+k*olm_size_block_, olm_ndim_, 1.0, krj->data(), nsize_);
+    dgemm_("N", "T", nsize_, olm_ndim_, ocoeff_ti->mdim(), 1.0, (olm_ri->get_imag_part())->data(), nsize_,
+                     (mlm_ji_->get_imag_part())->data()+k*olm_size_block_, olm_ndim_, -1.0, krj->data(), nsize_);
   }
 
-  assert(krj->get_imag_part()->rms() < 1e-10);
-  auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_, true);
+  auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_);
   start = 0;
   for (auto& cj : coffsets_s_) {
-    auto sub_krj = krj->get_real_part()->cut(start, start+cj.second);
+    auto sub_krj = krj->cut(start, start+cj.second);
     out->copy_block(cj.first, 0, cj.second, olm_ndim_, sub_krj->data());
     start += cj.second;
   }
+#endif
 
   return out;
 }
@@ -987,7 +1096,7 @@ void Box::get_offsets() {
     if (sh_found) {
       offsets_[isp][0] = shells.find(key)->second;
     } else {
-      shells.insert(shells.end(), pair<int, int>(key, nishell));
+      shells.insert(shells.end(), pair<int, int>(key, isize));
       offsets_[isp][0] = isize;
 
       coffsets_s_.resize(nishell+1);
@@ -1010,7 +1119,7 @@ void Box::get_offsets() {
     if (sh_found) {
       offsets_[isp][1] = shells.find(key)->second;
     } else {
-      shells.insert(shells.end(), pair<int, int>(key, njshell));
+      shells.insert(shells.end(), pair<int, int>(key, jsize));
       offsets_[isp][1] = jsize;
 
       coffsets_u_.resize(njshell+1);
@@ -1044,7 +1153,7 @@ double Box::exchange_ff() const {
 shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
-  auto out = make_shared<Matrix>(density->ndim(), density->mdim(), true);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
 
   // NF: 4c integrals
@@ -1183,7 +1292,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density
 shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
-  auto out = make_shared<Matrix>(density->ndim(), density->mdim(), true);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
 
   // NF: 4c integrals

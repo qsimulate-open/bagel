@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 100;
+const static int batchsize = 50;
 
 const static Legendre plm;
 
@@ -436,8 +436,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   vector<pair<size_t, size_t>> table = dist.atable();
 
   Timer mtime;
-  for (int i = 0; i != nbranch_[0]; ++i)
-    box_[i]->get_offsets();
+  //for (int i = 0; i != nbranch_[0]; ++i)
+  //  box_[i]->get_offsets();
 
   int u = 0;
   for (auto& itable : table) {
@@ -463,7 +463,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
-  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - (*sc * *kij ^ *sc));
   projtime.tick_print("Krs from Krj");
 
   const double enk = 0.5*density->dot_product(*krs);
@@ -487,12 +487,13 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   vector<pair<size_t, size_t>> table = dist.atable();
 
   Timer mtime;
-  for (int i = 0; i != nbranch_[0]; ++i)
-    box_[i]->get_offsets();
+  //for (int i = 0; i != nbranch_[0]; ++i)
+  //  box_[i]->get_offsets();
 
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
+      cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
@@ -512,10 +513,18 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+// check kij is symmetric
+  auto kji = kij->transpose();
+  const double err = (*kij - *kji).rms();
+  if (err > 1e-10) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(15) << err << endl;
+
 #if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
-  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose_conjg()) - (*sc * *kij ^ *sc));
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
+  auto ksr = krs->transpose();
+  const double errk = (*krs - *ksr).rms();
+  if (errk > 1e-10) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(15) << errk << endl;
 #else
   auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
   krs->copy_block(0, 0, nocc, nocc, kij->data());
