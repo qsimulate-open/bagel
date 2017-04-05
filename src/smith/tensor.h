@@ -57,7 +57,7 @@ class Tensor_ {
     bool allocated_;
 
   public:
-    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = std::unordered_set<size_t>(), const bool alloc = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
