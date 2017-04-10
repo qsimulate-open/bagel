@@ -92,20 +92,23 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   }
 
   // second make <J|E_kl|I><I|E_ij|0> - delta_il <J|E_kj|0>
-  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, const int dsize, const int offset) {
+  auto make_evec_half = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, const int dsize, const int offset) {
     const int norb2 = norb_ * norb_;
     const int lena = cc_->det()->lena();
     const int lenb = cc_->det()->lenb();
+    int no = 0;
 
     for (int ij = 0; ij != norb2; ++ij) {
       const int j = ij/norb_;
       const int i = ij-j*norb_;
-      if (ij % mpi__->size() != mpi__->rank()) continue;
 
-      for (int kl = 0; kl != norb2; ++kl) {
+      for (int kl = ij; kl != norb2; ++kl) {
+        if ((kl - ij) % mpi__->size() != mpi__->rank()) {
+          ++no;
+          continue;
+        }
         const int l = kl/norb_;
         const int k = kl-l*norb_;
-        const int klij = kl+ij*norb2;
 
         for (auto& iter : cc_->det()->phia(k,l)) {
           size_t iaJ = iter.source;
@@ -115,7 +118,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
             size_t iI = ib + iaI*lenb;
             size_t iJ = ib + iaJ*lenb;
             if ((iJ - offset) < dsize)
-              e->element(iJ-offset, klij) += sign * d->data(ij)->data(iI);
+              e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
           }
         }
 
@@ -127,25 +130,28 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
             size_t iI = ibI + ia*lenb;
             size_t iJ = ibJ + ia*lenb;
             if ((iJ - offset) < dsize)
-              e->element(iJ-offset, klij) += sign * d->data(ij)->data(iI);
+              e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
           }
         }
 
         if (i == l) {
           const int kj = k+j*norb_;
           for (size_t iJ = offset; iJ != offset+dsize; ++iJ) {
-            e->element(iJ-offset, klij) -= d->data(kj)->data(iJ);
+            e->element(iJ-offset, no) -= d->data(kj)->data(iJ);
           }
         }
+        ++no;
       }
     }
+
     e->allreduce();
+
   };
 
   // When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (which is 635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t norb2 = norb_ * norb_;
-  const size_t ijmax = 635040001;
+  const size_t ijmax = 635040001 * 2;
   const size_t ijnum = ndet * norb2 * norb2;
   const size_t npass = (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
@@ -162,41 +168,64 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   for (size_t ipass = 0; ipass != npass; ++ipass) {
     const size_t ioffset = ipass * nsize;
     const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-    auto eket = make_shared<Matrix>(isize, norb2*norb2);
-    make_evec(dket, eket, isize, ioffset);
+    const size_t halfsize = norb2 * (norb2 + 1) / 2;
+    auto eket_half = make_shared<Matrix>(isize, halfsize);
+    make_evec_half(dket, eket_half, isize, ioffset);
  
     auto dbram = make_shared<Matrix>(isize, norb2);
     for (size_t ij = 0; ij != norb2; ++ij)
       copy_n(&(dbra->data(ij)->data(ioffset)), isize, dbram->element_ptr(0, ij));
 
-    // put in third-order RDM: <0|E_mn|I><I|E_ij,kl|0>
-    auto tmp3 = make_shared<Matrix>(*dbram % *eket);
-    sort_indices<1,0,2,1,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb2*norb2);
- 
-    // put in fourth-order RDM: <0|E_ij,kl|I><I|E_mn,op|0>
-    shared_ptr<Matrix> ebra = eket;
-    if (cbra != cket) {
-      ebra = eket->clone();
-      make_evec(dbra, ebra, isize, ioffset);
+    // put in third-order RDM: <0|E_mn|I><I|E_ij < kl|0>
+    auto tmp3 = make_shared<Matrix>(*dbram % *eket_half);
+    auto tmp3_full = make_shared<Matrix>(norb2, norb2 * norb2);
+
+    for (size_t mn = 0; mn != norb2; ++mn) {
+      int no = 0;
+      for (size_t ij = 0; ij != norb2; ++ij) {
+        for (size_t kl = ij; kl != norb2; ++kl) {
+          int ijkl = ij + kl*norb2;
+          int klij = kl + ij*norb2;
+          tmp3_full->element(mn, ijkl) = tmp3->element(mn, no);
+          tmp3_full->element(mn, klij) = tmp3->element(mn, no);
+          ++no;
+        }
+      }
     }
-#if 0
-    auto tmp4 = make_shared<Matrix>(norb2*norb2, norb2*norb2);
-    cout << " allocated tmp4" << endl;
-    const int l = ebra->mdim();
-    const int n = eket->mdim();
-    const int m = ebra->ndim();
-    cout << " setted lmn " << endl;
-    std::unique_ptr<double[]> locala = ebra->getlocal();
-    std::unique_ptr<double[]> localb = eket->getlocal();
-    std::unique_ptr<double[]> localc = tmp4->getlocal();
-    cout << " called all getlocals " << endl;
-    pdgemm_("T", "N", l, n, m, 1.0, locala.get(), ebra->desc().data(), localb.get(), eket->desc().data(), 0.0, localc.get(), tmp4->desc().data());
-    cout << " pdgemm " << endl;
-    tmp4->setlocal(localc);
-    cout << " setlocal " << endl;
-#endif
-    auto tmp4 = make_shared<Matrix>(*ebra % *eket);
-    sort_indices<1,0,3,2,4,1,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
+    sort_indices<1,0,2,1,1,1,1>(tmp3_full->data(), rdm3->data(), norb_, norb_, norb2*norb2);
+ 
+    // put in fourth-order RDM: <0|E_ij > kl|I><I|E_mn < op|0>
+    shared_ptr<Matrix> ebra_half = eket_half;
+    if (cbra != cket) {
+      ebra_half = eket_half->clone();
+      make_evec_half(dbra, ebra_half, isize, ioffset);
+    }
+    auto tmp4 = make_shared<Matrix>(*ebra_half % *eket_half);
+    auto tmp4_full = make_shared<Matrix>(norb2 * norb2, norb2 * norb2);
+
+    {
+      int nklij = 0;
+      for (size_t kl = 0; kl != norb2; ++kl) {
+        for (size_t ij = kl; ij != norb2; ++ij) {
+          int nmnop = 0;
+          int klij = kl+ij*norb2;
+          int ijkl = ij+kl*norb2;
+          for (size_t mn = 0; mn != norb2; ++mn) {
+            for (size_t op = mn; op != norb2; ++op) {
+              int mnop = mn + op*norb2;
+              int opmn = op + mn*norb2;
+              tmp4_full->element(ijkl, mnop) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(klij, mnop) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(ijkl, opmn) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(klij, opmn) = tmp4->element(nklij, nmnop);
+              ++nmnop;
+            }
+          }
+          ++nklij;
+        }
+      }
+    }
+    sort_indices<1,0,3,2,4,1,1,1,1>(tmp4_full->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
     if (npass > 1) {
       stringstream ss; ss << "RDM evaluation (" << setw(2) << ipass + 1 << "/" << setw(2) << npass << ")";
       timer.tick_print(ss.str());

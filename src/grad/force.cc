@@ -43,6 +43,7 @@ shared_ptr<GradFile> Force::compute() {
   const int target2= idata_->get<int>("target2", 1);
   const int nacmtype = idata_->get<int>("nacmtype", 0);
   const bool export_grad = idata_->get<bool>("export", false);
+  const bool export_single = idata_->get<bool>("export_single", false);
 #ifndef DISABLE_SERIALIZATION
   const bool refsave = idata_->get<bool>("save_ref", false);
   string refname;
@@ -191,16 +192,22 @@ shared_ptr<GradFile> Force::compute() {
 #endif
 
   if (export_grad) {
+    if (export_single) {
+      shared_ptr<Muffle> wholemuffle;
+      wholemuffle = make_shared<Muffle>("FORCE.out");
+      wholemuffle->mute();
+      cout << setw(20) << setprecision(10) << ref->energy(target) << endl;
+      out->print_export();
+      wholemuffle->unmute();
+    }
     shared_ptr<Muffle> gradmuffle;
     string mufflename = to_upper(jobtitle) + "_" + to_string(target);
     if (jobtitle == "nacme") mufflename += ("_" + to_string(target2));
     mufflename += ".out";
     gradmuffle = make_shared<Muffle>(mufflename);
     gradmuffle->mute();
-
     out->print_export();
     gradmuffle->unmute();
-
     shared_ptr<Muffle> enermuffle;
     enermuffle = make_shared<Muffle>("ENERGY.out");
     enermuffle->mute();

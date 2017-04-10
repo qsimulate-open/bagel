@@ -53,6 +53,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
   cout << "  Reference energy is " << energy_ << endl << endl;
 
+  Timer timer;
   muffle_ = make_shared<Muffle>("finite.log");
 
   for (int i = 0; i != geom_->natom(); ++i) {
@@ -90,7 +91,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
       displ->element(j,i) = 0.0;
       muffle_->unmute();
-      cout << "  Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
+      stringstream ss; ss << "Finite difference evaluation (" << setw(2) << i*3+j+1 << " / " << geom_->natom() * 3 << ")";
+      timer.tick_print(ss.str());
     }
   }
 
@@ -134,6 +136,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   gmo->zero();
 
   assert(norb==(nocc-nclosed));
+  Timer timer;
   muffle_ = make_shared<Muffle>("finite.log");
 
   for (int i = 0; i != geom_->natom(); ++i) {
@@ -229,7 +232,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         }
       }
       muffle_->unmute();
-      cout << "  Finite difference evaluation " << setw(5) << i*3+j+1 << " / " << geom_->natom() * 3 << endl;
+      stringstream ss; ss << "Finite difference evaluation (" << setw(2) << i*3+j+1 << " / " << geom_->natom() * 3 << ")";
+      timer.tick_print(ss.str());
     }
   }
   grad_ci->print(": CI term without orbital relaxation, <cJ|d/dXa cI>", 0);
