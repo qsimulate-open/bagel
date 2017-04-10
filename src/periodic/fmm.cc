@@ -500,7 +500,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
         assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
-        blas::ax_plus_y_n(2.0, ffx->data(), nbasis_*nocc, krj->data());
+        blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
       }
       assembletime.tick_print("Building Krj");
     }
@@ -512,7 +512,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 // check kij is symmetric
   auto kji = kij->transpose();
   const double err = (*kij - *kji).rms();
-  if (err > 1e-10) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(15) << err << endl;
+  if (err > 1e-15) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
 #if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
