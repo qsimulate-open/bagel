@@ -136,6 +136,7 @@ shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix_3index
   const size_t off0 = o[0].front().offset();
   const size_t off1 = o[1].front().offset();
   const size_t off2 = o[2].front().offset();
+
   auto out = make_shared<MatType>(o[0].size(), o[1].size()*o[2].size());
   for (auto& i2 : o[2].range())
     for (auto& i1 : o[1].range())
@@ -144,7 +145,7 @@ shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix_3index
         for (size_t io2 = 0; io2 != i2.size(); ++io2)
           for (size_t io1 = 0; io1 != i1.size(); ++io1)
             copy_n(&(input[0+i0.size()*(io1+i1.size()*io2)]),
-                   i0.size(), out->element_ptr(i0.offset()-off0, io1+i1.offset()-off1 + i1.size()*(io2+i2.offset()-off2)));
+                   i0.size(), out->element_ptr(i0.offset()-off0, io1+i1.offset()-off1 + o[1].size()*(io2+i2.offset()-off2)));
       }
 
   return out;

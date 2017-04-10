@@ -24,9 +24,7 @@
 
 
 #include <src/scf/hf/fock.h>
-#include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cassecond.h>
-#include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/grad/gradeval.h>
 #include <src/grad/finite.h>
@@ -47,14 +45,10 @@ void GradEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
-    task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
+    throw runtime_error("gradient code should not be called with noopt");
   else
     throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
 
@@ -232,14 +226,10 @@ void NacmEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
-    task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
+    throw runtime_error("NACME code should not be called with noopt");
   else
     throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
 
@@ -420,12 +410,8 @@ void FiniteNacm<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -452,12 +438,8 @@ void DgradEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else

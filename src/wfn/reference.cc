@@ -145,9 +145,10 @@ shared_ptr<Matrix> Reference::rdm2deriv_offset(const int istate, const size_t of
 }
 
 
-shared_ptr<Matrix> Reference::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>
+Reference::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
   FCI_bare fci(ciwfn_);
-  return fci.rdm3deriv(istate, fock, offset, size);
+  return fci.rdm3deriv(istate, fock, offset, size, fock_ebra_in);
 }
 
 

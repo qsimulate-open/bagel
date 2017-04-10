@@ -146,8 +146,10 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     for (int ipass = 0; ipass != npass; ++ipass) {
       const size_t ioffset = ipass * nsize;
       const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, ioffset, isize);
+
+      // If it is the first time for this state, compute fock-weighted 2RDM derivative and save it
+      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
       for (int mst = 0; mst != nstates; ++mst) {
         den0cit = den0ciall->at(nst, mst);
         den1cit = den1ciall->at(nst, mst);
@@ -162,6 +164,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
+
         blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);
         blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
       }
@@ -331,6 +334,10 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
         }
         add_total(1.0);
       }
+
+      // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4cit->scale(den4factor);
 
       den0ciall->emplace(nst, mst, den0cit->copy());
       den1ciall->emplace(nst, mst, den1cit->copy());

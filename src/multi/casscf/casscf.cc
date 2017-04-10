@@ -35,6 +35,13 @@ using namespace bagel;
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("ref");
+    ar >> ref_;
+  }
+
   // drop the reference if restart is requested
   if (idata_->get<bool>("restart", false))
     ref_ = nullptr;
@@ -198,92 +205,6 @@ std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared
 }
 
 
-void CASSCF::one_body_operators(shared_ptr<Matrix>& f, shared_ptr<Matrix>& fact, shared_ptr<Matrix>& factp, shared_ptr<Matrix>& gaa,
-                                shared_ptr<RotFile>& d, const bool superci) const {
-
-  shared_ptr<Matrix> finact;
-
-  // get quantity Q_xr = 2(xs|tu)P_rs,tu (x=general)
-  // note: this should be after natorb transformation.
-  auto qxr = make_shared<Qvec>(coeff_->mdim(), nact_, coeff_, nclosed_, fci_, fci_->rdm2_av());
-
-  {
-    // Fock operators
-    // make a matrix that contains rdm1_av
-    auto rdm1mat = make_shared<Matrix>(nact_, nact_);
-    copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
-    rdm1mat->sqrt();
-    rdm1mat->scale(1.0/sqrt(2.0));
-    auto acoeff = coeff_->slice(nclosed_, nclosed_+nact_);
-
-    finact = make_shared<Matrix>(*coeff_ % *fci_->jop()->core_fock() * *coeff_);
-    auto fact_ao = make_shared<Fock<1>>(geom_, hcore_->clone(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
-    f = make_shared<Matrix>(*finact + *coeff_% *fact_ao * *coeff_);
-  }
-  {
-    // active-x Fock operator Dts finact_sx + Qtx
-    fact = qxr->copy();// nmo_ runs first
-    for (int i = 0; i != nact_; ++i)
-      daxpy_(nmo_, occup_(i), finact->element_ptr(0,nclosed_+i), 1, fact->data()+i*nmo_, 1);
-  }
-
-  {
-    // active Fock' operator (Fts+Fst) / (ns+nt)
-    factp = make_shared<Matrix>(nact_, nact_);
-    for (int i = 0; i != nact_; ++i)
-      for (int j = 0; j != nact_; ++j) {
-#if 1
-        if (occup_(i)+occup_(j) > occup_thresh)
-          factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) / (occup_(i)+occup_(j));
-        else
-          factp->element(j,i) = 0.0;
-#else
-        factp->element(j,i) = (fact->element(j+nclosed_,i)+fact->element(i+nclosed_,j)) *0.5;
-#endif
-      }
-  }
-
-  // G matrix (active-active) Drs,tu Factp_tu - delta_rs nr sum_v Factp_vv
-  gaa = factp->clone();
-  dgemv_("N", nact_*nact_, nact_*nact_, 1.0, fci_->rdm2_av()->data(), nact_*nact_, factp->data(), 1, 0.0, gaa->data(), 1);
-  double p = 0.0;
-  for (int i = 0; i != nact_; ++i) p += occup_(i) * factp->element(i,i);
-  for (int i = 0; i != nact_; ++i) gaa->element(i,i) -= occup_(i) * p;
-
-  // denominator
-  auto denom = make_shared<RotFile>(nclosed_, nact_, nvirt_);
-  fill_n(denom->data(), denom->size(), 1.0e100);
-
-  double* target = denom->ptr_va();
-  for (int i = 0; i != nact_; ++i) {
-    if (occup_(i) > occup_thresh) {
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = (gaa->element(i,i) + occup_(i)*f->element(j+nocc_, j+nocc_)) / (superci ? occup_(i) : 1.0);
-    } else {
-      for (int j = 0; j != nvirt_; ++j, ++target)
-        *target = 1.0/occup_thresh;
-    }
-  }
-
-  target = denom->ptr_vc();
-  for (int i = 0; i != nclosed_; ++i)
-    for (int j = 0; j != nvirt_; ++j, ++target)
-      *target = (f->element(j+nocc_, j+nocc_) - f->element(i, i)) / (superci ? 2.0 : 1.0);
-
-  target = denom->ptr_ca();
-  for (int i = 0; i != nact_; ++i) {
-    if (2.0-occup_(i) > occup_thresh) {
-      for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = ((f->element(nclosed_+i,nclosed_+i)*2.0-fact->element(i+nclosed_,i)) - f->element(j, j)*(2.0-occup_(i))) / (superci ? 2.0-occup_(i) : 1.0);
-    } else {
-      for (int j = 0; j != nclosed_; ++j, ++target)
-        *target = 1.0/occup_thresh;
-    }
-  }
-  d = denom;
-}
-
-
 shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
   auto cnew = make_shared<Coeff>(*cold);
   int nbas = cold->ndim();
@@ -351,12 +272,12 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
 }
 
 
-void CASSCF::print_natocc() const {
-  assert(occup_.size() > 0);
+void CASSCF::print_natocc(const VectorB& occup) const {
+  assert(occup.size() > 0);
   cout << " " << endl;
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  for (int i=0; i!=occup_.size(); ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+  for (int i=0; i!=occup.size(); ++i)
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
   cout << "  ============================================ " << endl;
 }

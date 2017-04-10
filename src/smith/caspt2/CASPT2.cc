@@ -73,8 +73,8 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   for (int ipass = 0; ipass != npass; ++ipass) {
     const size_t ioffset = ipass * nsize;
     const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, 0, ioffset, isize);
+    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
+      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, 0, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
     den0cit = den0ci;
     den1cit = den1ci;
     den2cit = den2ci;
@@ -86,10 +86,13 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
     deci->allocate();
     auto bdata = make_shared<VectorB>(ndet);
     shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+
     while (!queue->done())
       queue->next_compute();
+
     blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(0)->data()+ioffset);
     blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
+
     if (npass > 1) {
       stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
       timer.tick_print(ss.str());
@@ -411,6 +414,10 @@ void CASPT2::CASPT2::solve_deriv() {
     while (!dec->done())
       dec->next_compute();
     timer.tick_print("CI derivative evaluation");
+
+    // when active is divided into the blocks, den4ci is evaluated (activeblock)**2 times
+    double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+    den4ci->scale(den4factor);
 
     // and contract them with rdm derivs
     do_rdm_deriv(1.0);

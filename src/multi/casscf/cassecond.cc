@@ -42,12 +42,16 @@ void CASSecond::compute() {
     {
       if (iter) fci_->update(coeff_);
       Timer fci_time(0);
-      fci_->compute();
-      fci_->compute_rdm12();
-      auto natorb = fci_->natorb_convert(sort_by_coeff_);
+      if (external_rdm_.empty()) {
+        fci_->compute();
+        fci_->compute_rdm12();
+      } else {
+        if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
+        fci_->read_external_rdm12_av(external_rdm_); 
+      }
+      auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
-      occup_ = natorb.second;
-      if (natocc_) print_natocc();
+      if (natocc_) print_natocc(natorb.second);
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -123,7 +127,7 @@ void CASSecond::compute() {
 
     coeff_ = make_shared<Coeff>(*coeff_ * R);
 
-    if (iter == max_iter_-1)
+    if (iter == max_iter_-1 && external_rdm_.empty())
       throw runtime_error("Max iteration reached during the second optimization.");
   }
   muffle_->unmute();
@@ -133,9 +137,11 @@ void CASSecond::compute() {
 
   // this is not needed for energy, but for consistency we want to have this...
   // update construct Jop from scratch
-  fci_->update(coeff_);
-  fci_->compute();
-  fci_->compute_rdm12();
+  if (nact_ && external_rdm_.empty()) {
+    fci_->update(coeff_);
+    fci_->compute();
+    fci_->compute_rdm12();
+  }
 
   // calculate the HFCCs
   if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {

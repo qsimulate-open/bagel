@@ -342,6 +342,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
+  dkh_ = o.dkh_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -349,7 +350,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  dofmm_ = geominfo->get<bool>("cfmm", false);
+  dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   // check if a magnetic field has been supplied

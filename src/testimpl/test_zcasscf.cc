@@ -69,13 +69,10 @@ double relcas_energy(std::string inp) {
       ref = scf->conv_to_ref();
 
     } else if (method == "casscf") {
-      std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
-        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      }
+      auto cas = std::make_shared<CASSecond>(itree, geom, ref);
+      cas->compute();
+      ref = cas->conv_to_ref();
+      energy = ref->energy(0);
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
