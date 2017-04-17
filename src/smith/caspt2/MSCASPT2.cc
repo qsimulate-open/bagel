@@ -136,7 +136,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     const size_t ndet = ci_deriv_->data(nst)->size();
     const size_t nact  = info_->nact();
     const size_t norb2 = nact*nact;
-    const size_t ijmax = 635040001;
+    const size_t ijmax = 317520001;
     const size_t ijnum = ndet * norb2 * norb2;
     const size_t npass = (ijnum-1) / ijmax + 1;
     const size_t nsize = (ndet-1) / npass + 1;
@@ -527,6 +527,10 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
         }
         add_total(1.0);
       }
+
+      // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4cit->scale(den4factor);
 
       den0ciall->emplace(nst, mst, den0cit->copy());
       den1ciall->emplace(nst, mst, den1cit->copy());

@@ -440,7 +440,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 
   // Half transformed DF vector
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->apply_JJ()->compute_second_transform(acoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*rdm2);
   amat->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *half->form_2index(fulld, 1.0));
 

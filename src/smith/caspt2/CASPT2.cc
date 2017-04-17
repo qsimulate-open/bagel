@@ -257,7 +257,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor>>(30, s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
@@ -488,7 +488,7 @@ void CASPT2::CASPT2::solve_deriv() {
   auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
     shared_ptr<const Matrix> jop = ref->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
     auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
-    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->apply_J()->compute_second_transform(coeff)->swap();
     shared_ptr<DFFullDist> full2 = full->copy();
     full2->rotate_occ1(moden);
     *out += *full->form_2index(full2, -0.5);
@@ -678,7 +678,7 @@ void CASPT2::CASPT2::solve_nacme() {
   auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
     shared_ptr<const Matrix> jop = ref->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
     auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
-    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->apply_J()->compute_second_transform(coeff)->swap();
     shared_ptr<DFFullDist> full2 = full->copy();
     full2->rotate_occ1(moden);
     *out += *full->form_2index(full2, -0.5);

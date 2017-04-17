@@ -65,17 +65,18 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
       ref_ = extract_ref(rdm_states);
   }
 
-  thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
-  shift_  = idata->get<double>("shift", 0.0);
-  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
-  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
-
   // These are not input parameters (set automatically)
   target_  = idata->get<int>("_target", -1);
   grad_    = idata->get<bool>("_grad", false);
   target2_ = idata->get<int>("_target2", -1);
   nacm_    = idata->get<bool>("_nacm", false);
   nacmtype_= idata->get<int>("_nacmtype", 0);
+
+  thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
+  shift_  = idata->get<double>("shift", 0.0);
+  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
+
   assert(!(grad_ && target_ < 0));
   assert(!(nacm_ && target2_ < 0));
 }

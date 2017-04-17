@@ -97,7 +97,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   }
   opttype_ = idat->get<string>("opttype", "energy");
   maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
-  algorithm_ = idat->get<string>("algorithm", opttype_ == "energy" ? "ef" : "rfo");
+  algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
 #ifndef DISABLE_SERIALIZATION
   refsave_ = idat->get<bool>("save_ref", false);
