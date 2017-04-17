@@ -101,6 +101,15 @@ class FCI : public FCI_base<Civec,Dvec> {
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+
+    // interface functions
+    // read state averaged RDM1 and 2 and set to rdm1_av_expanded_ and rdm2_av_expanded_ 
+    void read_external_rdm12_av(const std::string& file); 
+    std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
+    void dump_ints() const;
 };
 
 

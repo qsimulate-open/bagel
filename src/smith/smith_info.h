@@ -62,6 +62,8 @@ class SMITH_Info {
 
     double thresh_overlap_;
 
+    std::string external_rdm_;
+
   public:
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);

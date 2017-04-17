@@ -77,6 +77,12 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  external_rdm_ = idata->get<string>("external_rdm", "");
+  if (external_rdm_.empty() && !ciwfn()->civectors())
+    throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");  
+  if (!external_rdm_.empty() && is_same<DataType,double>::value) 
+    throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
+
   assert(!(grad_ && target_ < 0));
   assert(!(nacm_ && target2_ < 0));
 }
@@ -94,9 +100,16 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
 template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst);
-  auto r1 = fci.rdm1(ist, jst);
-  auto r2 = fci.rdm2(ist, jst);
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  } else {
+    r1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    r2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(r1, r2);
 }
 
@@ -104,8 +117,16 @@ tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rd
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34(ist, jst);
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<const RDM<4>> r4;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4) = fci.rdm34(ist, jst);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
+  return make_tuple(r3, r4);
 }
 
 
@@ -114,8 +135,15 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm1 = fci.rdm1(ist, jst);
-  auto rdm2 = fci.rdm2(ist, jst);
+  shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
+  shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
+  if (external_rdm_.empty()) {
+    rdm1 = fci.rdm1(ist, jst);
+    rdm2 = fci.rdm2(ist, jst);
+  } else {
+    rdm1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm1, rdm2);
 }
 
@@ -125,8 +153,15 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm3 = fci.rdm3(ist, jst);
-  auto rdm4 = fci.rdm4(ist, jst);
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
+  if (external_rdm_.empty()) {
+    rdm3 = fci.rdm3(ist, jst);
+    rdm4 = fci.rdm4(ist, jst);
+  } else {
+    rdm3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    rdm4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm3, rdm4);
 }
 

@@ -23,9 +23,12 @@
 //
 
 #include <src/ci/fci/fci.h>
+#include <src/ci/fci/harrison.h>
+#include <src/ci/fci/knowles.h>
 #include <src/ci/fci/space.h>
 #include <src/ci/fci/modelci.h>
 #include <src/util/combination.hpp>
+#include <src/util/exception.h>
 
 using namespace std;
 using namespace bagel;
@@ -35,7 +38,31 @@ BOOST_CLASS_EXPORT_IMPLEMENT(FCI)
 FCI::FCI(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r,
          const int ncore, const int norb, const int nstate, const bool store)
  : FCI_base(idat, g, r, ncore, norb, nstate, store) {
- common_init();
+  common_init();
+}
+
+HarrisonZarrabian::HarrisonZarrabian(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
+                                     const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
+  space_ = make_shared<HZSpace>(det_);
+  update(ref_->coeff());
+  if (idata_->get<bool>("only_ints", false)) {
+    OArchive ar("ref");
+    ar << ref_;
+    dump_ints();
+    throw Termination("MO integrals are dumped on a file.");
+  }
+}
+
+
+KnowlesHandy::KnowlesHandy(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
+                           const int ncore, const int nocc, const int nstate, const bool store) : FCI(a, g, b, ncore, nocc, nstate, store) {
+  update(ref_->coeff());
+  if (idata_->get<bool>("only_ints", false)) {
+    OArchive ar("ref");
+    ar << ref_;
+    dump_ints();
+    throw Termination("MO integrals are dumped on a file.");
+  }
 }
 
 
@@ -95,6 +122,7 @@ void FCI::common_init() {
 
   // construct a determinant space in which this FCI will be performed.
   det_ = make_shared<const Determinants>(norb_, nelea_, neleb_);
+
 }
 
 
