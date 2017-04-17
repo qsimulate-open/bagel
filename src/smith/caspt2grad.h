@@ -64,6 +64,8 @@ class CASPT2Deriv : public Method {
     int target_;
     double thresh_;
 
+    int maxziter_;
+
     // properties
     bool do_hyperfine_;
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
@@ -85,6 +87,8 @@ class CASPT2Deriv : public Method {
     int ncore() const { return ncore_; }
     int target() const { return target_; }
     double thresh() const { return thresh_; }
+
+    int maxziter() const { return maxziter_; }
 
     bool do_hyperfine() const { return do_hyperfine_; }
 

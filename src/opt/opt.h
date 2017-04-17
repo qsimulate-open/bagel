@@ -62,6 +62,7 @@ class Opt {
     std::string hess_update_;
 
     int maxiter_;
+    int maxziter_;
     double thresh_grad_;
     double thresh_displ_;
     double thresh_echange_;

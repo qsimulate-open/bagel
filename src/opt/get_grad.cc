@@ -47,32 +47,32 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
   double en1 = 0.0, en2 = 0.0;
 
   if (method_ == "casscf") {
-    GradEval<CASSCF> eval1(cinput, current_, ref, target_state_);
+    GradEval<CASSCF> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
     prev_ref_ = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASSCF> eval2(cinput, current_, refs, target_state2_);
+    GradEval<CASSCF> eval2(cinput, current_, refs, target_state2_, maxziter_);
     cgrad2 = eval2.compute();
     refs = eval1.ref();
     en1 = eval2.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_);
+    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_, maxziter_);
     x2 = evaln.compute();
   } else if (method_ == "caspt2") {
-    GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_);
+    GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
     prev_ref_ = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASPT2Grad> eval2(cinput, current_, refs, target_state2_);
+    GradEval<CASPT2Grad> eval2(cinput, current_, refs, target_state2_, maxziter_);
     cgrad2 = eval2.compute();
     refs = eval1.ref();
     en1 = eval2.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_);
+    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_, maxziter_);
     x2 = evaln.compute();
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
@@ -146,21 +146,21 @@ shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<c
 
     } else if (method_ == "mp2") {
 
-      GradEval<MP2Grad> eval(cinput, current_, ref, target_state_);
+      GradEval<MP2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
       prev_ref_ = eval.ref();
       en_ = eval.energy();
 
     } else if (method_ == "casscf") {
 
-      GradEval<CASSCF> eval(cinput, current_, ref, target_state_);
+      GradEval<CASSCF> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
       prev_ref_ = eval.ref();
       en_ = eval.energy();
 
     } else if (method_ == "caspt2") {
 
-      GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_);
+      GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
       prev_ref_ = eval.ref();
       en_ = eval.energy();

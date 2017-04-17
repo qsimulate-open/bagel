@@ -52,6 +52,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   internal_ = idat->get<bool>("internal", true);
   redundant_ = idat->get<bool>("redundant", false);
   maxiter_ = idat->get<int>("maxiter", 100);
+  maxziter_ = idat->get<int>("maxziter", 100);
   scratch_ = idat->get<bool>("scratch", false);
   numerical_ = idat->get<bool>("numerical", false);
   numerical_dx_ = idat->get<double>("numerical_dx", 0.001);

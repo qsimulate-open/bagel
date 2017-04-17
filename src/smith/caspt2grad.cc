@@ -63,6 +63,8 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   target_ = inp->get<int>("_target");
   do_hyperfine_ = inp->get<bool>("hyperfine", false);
 
+  maxziter_ = inp->get<int>("_maxziter");
+
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
@@ -227,7 +229,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck(), /*xms*/!!task_->dcheck());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), task_->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 
