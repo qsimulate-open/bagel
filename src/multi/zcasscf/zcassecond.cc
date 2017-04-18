@@ -60,7 +60,6 @@ void ZCASSecond::compute() {
       if (natocc_) print_natocc(natorb.second);
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
-      if (natocc_) print_natocc();
     }
 
     shared_ptr<const ZMatrix> cfockao = fci_->jop()->core_fock();
