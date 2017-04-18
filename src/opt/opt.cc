@@ -125,8 +125,8 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   } else if (opttype_ != "energy" && opttype_ != "transition") {
     throw runtime_error("Optimization type should be: \"energy\", \"transition\", \"conical\", or \"mep\"");
   }
-
 }
+
 
 void Opt::compute() {
   auto displ = make_shared<XYZFile>(current_->natom());
@@ -174,5 +174,88 @@ void Opt::compute() {
     archive << prev_ref_;
   }
 #endif
+}
+
+
+void Opt::print_header() const {
+  if (opttype_ == "energy" || opttype_ == "transition") {
+    cout << endl << "  *** Geometry optimization started ***" << endl <<
+                              "     iter         energy               grad rms       time"
+    << endl << endl;
+  } else if (opttype_ == "conical") {
+    cout << endl << "  *** Conical intersection optimization started ***" << endl <<
+                              "     iter         energy             gap energy            grad rms       time"
+    << endl << endl;
+  }
+}
+
+
+void Opt::print_iteration_energy(const double residual, const double time) const {
+  cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
+                           << setw(20) << setprecision(8) << fixed << residual
+                           << setw(12) << setprecision(2) << fixed << time << endl;
+}
+
+
+void Opt::print_iteration_conical(const double residual, const double time) const {
+  cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
+                           << setw(20) << setprecision(8) << fixed << egap_
+                           << setw(20) << setprecision(8) << fixed << residual
+                           << setw(12) << setprecision(2) << fixed << time << endl;
+}
+
+
+void Opt::print_history_molden() const {
+  const int nopt = prev_en_.size();
+  if (nopt != prev_xyz_.size() || nopt != prev_grad_.size())
+    throw logic_error("error print_history_molden()"); 
+  stringstream ss;
+  ss << " [MOLDEN FORMAT]" << endl;
+  ss << " [N_GEO]"         << endl;
+  ss << setw(20) << nopt   << endl;
+  ss << " [GEOCONV]"       << endl;
+  ss << " energy"          << endl;
+  for (auto& i : prev_en_)
+    ss << scientific << setprecision(20) << i << endl;
+  ss << " max-force"       << endl;
+  for (auto& i : prev_grad_)
+    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) / au2angstrom__ << endl; 
+  ss << " rms-force"       << endl;
+  for (auto& i : prev_grad_)
+    ss << fixed << setw(15) << setprecision(10) << i->rms() / au2angstrom__ << endl; 
+  ss << " max-step"        << endl;
+  for (auto& i : prev_displ_)
+    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) * au2angstrom__ << endl; 
+  ss << " rms-step"        << endl;
+  for (auto& i : prev_displ_)
+    ss << fixed << setw(15) << setprecision(10) << i->rms() * au2angstrom__ << endl; 
+
+  ss << " [GEOMETRIES] (XYZ)" << endl;
+  const int natom = current_->natom();
+  for (int i = 0; i != nopt; ++i) {
+    ss << setw(4) << natom << endl;
+    ss << setw(30) << setprecision(20) << prev_en_.at(i) << endl;
+    for (int j = 0; j != natom; ++j) {
+      string name = current_->atoms(j)->name();
+      name[0] = toupper(name[0]);
+      ss << name << setw(20) << setprecision(10) << prev_xyz_.at(i)->element(0, j) * au2angstrom__
+                 << setw(20) << setprecision(10) << prev_xyz_.at(i)->element(1, j) * au2angstrom__
+                 << setw(20) << setprecision(10) << prev_xyz_.at(i)->element(2, j) * au2angstrom__ << endl;
+    }
+  }
+
+  ss << " [FORCES]" << endl;
+  for (int i = 0; i != nopt; ++i) {
+    ss << "point" << setw(4) << i << endl;
+    ss << setw(4) << natom << endl;
+    for (int j = 0; j != natom; ++j) {
+      ss << setw(20) << setprecision(10) << prev_grad_.at(i)->element(0, j) / au2angstrom__
+         << setw(20) << setprecision(10) << prev_grad_.at(i)->element(1, j) / au2angstrom__
+         << setw(20) << setprecision(10) << prev_grad_.at(i)->element(2, j) / au2angstrom__ << endl;
+    }
+  }
+  
+  ofstream fs("opt_history.molden");
+  fs << ss.str();
 }
 
