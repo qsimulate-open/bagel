@@ -40,13 +40,13 @@ using namespace bagel;
 
 void Opt::do_optimize() {
   auto displ = make_shared<XYZFile>(current_->natom());
-  print_header();
 
   muffle_ = make_shared<Muffle>("opt.log");
+  muffle_->unmute();
+
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
     shared_ptr<const XYZFile> xyz = current_->xyz(); 
     prev_xyz_.push_back(xyz);
-    muffle_->mute();
 
     displ = displ_;
 
@@ -143,8 +143,12 @@ void Opt::do_optimize() {
     cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << (convergeenergy? "Yes" : "No") << endl << endl;
 
     muffle_->unmute();
+    if (iter_ == 1)
+      print_header();
     prev_en_.push_back(en_);
     print_iteration(rms, timer_.tick());
+
+    muffle_->mute();
 
     if (convergegrad && (convergedispl || convergeenergy)) break;
   }
