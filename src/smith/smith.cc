@@ -32,6 +32,8 @@
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/caspt2/SPCASPT2.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
+#include <src/smith/casa/CASA.h>
+#include <src/smith/relcasa/RelCASA.h>
 using namespace bagel::SMITH;
 #endif
 using namespace std;
@@ -46,6 +48,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
+  } else if (method == "casa") {
+    algo_ = make_shared<CASA::CASA>(info);
   } else if (method == "mrci") {
     algo_ = make_shared<MRCI::MRCI>(info);
   } else {
@@ -123,6 +127,8 @@ void Smith::compute() {
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
+  if (!dynamic_pointer_cast<const RelReference>(r))
+    throw runtime_error("Relativistic correlation methods require a fully relativistic reference wavefunction.");
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
   // make a smith_info class
@@ -130,6 +136,8 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
   if (method == "caspt2") {
     algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+  } else if (method == "casa") {
+    algo_ = make_shared<RelCASA::RelCASA>(info);
   } else if (method == "mrci") {
     algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {

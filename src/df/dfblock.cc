@@ -90,6 +90,35 @@ shared_ptr<DFBlock> DFBlock::transform_third(const MatView cmat, const bool tran
 }
 
 
+shared_ptr<DFBlock> DFBlock::merge(std::shared_ptr<const DFBlock> o) const {
+  assert(asize() == o->asize() && b2size() == o->b2size());
+  assert(astart() == o->astart() && b1start() == o->b1start() && b2start() == o->b2start());
+  assert(adist_shell_ == o->adist_shell_ && adist_ == o->adist_ && averaged_ == o->averaged_);
+
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size() + o->b1size(), b2size(), astart_, b1start_, b2start_, averaged_);
+  const int size1 = asize() * b1size();
+  const int size2 = o->asize() * o->b1size();
+  const int size3 = size1 + size2;
+  for (int i = 0; i != b2size(); ++i) {
+    std::copy_n(   data() + i*size1, size1, out->data() + i*size3);
+    std::copy_n(o->data() + i*size2, size2, out->data() + i*size3 + size1);
+  }
+  return out;
+}
+
+
+shared_ptr<DFBlock> DFBlock::slice_b1(const int slice_start, const int slice_size) const {
+  assert(slice_start >= 0 && slice_start + slice_size <= b1size());
+  auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), slice_size, b2size(), astart_, b1start_, b2start_, averaged_);
+  const int size1 = asize() * slice_size;
+  const int size2 = asize() * b1size();
+  for (int i = 0; i != b2size(); ++i) {
+    std::copy_n(data() + asize()*slice_start + i*size2, size1, out->data() + i*size1);
+  }
+  return out;
+}
+
+
 shared_ptr<DFBlock> DFBlock::clone() const {
   auto out = make_shared<DFBlock>(adist_shell_, adist_, asize(), b1size(), b2size(), astart_, b1start_, b2start_, averaged_);
   out->zero();

@@ -104,7 +104,7 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
     double dat;
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
     ss >> i >> j >> k >> o >> l >> m >> n >> p >> dat;
-    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_ && m <= norb_ & n <= norb_ && o <= norb_ & p <= norb_);
+    assert(i <= norb_ && j <= norb_ && k <= norb_ && l <= norb_ && m <= norb_ && n <= norb_ && o <= norb_ && p <= norb_);
     map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}, {2,o-1}};
     map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}, {2,p-1}};
     for (auto& eij : elem) {
@@ -138,7 +138,7 @@ std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, co
     double dat;
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
     ss >> i >> j >> k >> l >> m >> n >> dat;
-    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_ && m <= norb_ & n <= norb_);
+    assert(i <= norb_ && j <= norb_ && k <= norb_ && l <= norb_ && m <= norb_ && n <= norb_);
     map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}};
     map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}};
     for (auto& eij : elem) {
@@ -171,7 +171,7 @@ std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, co
     double dat;
     // assuming that the 2RDM is dumped as i+ j+ k l -> i k j l
     ss >> i >> j >> k >> l >> dat;
-    assert(i <= norb_ && j <= norb_ && k <= norb_ & l <= norb_);
+    assert(i <= norb_ && j <= norb_ && k <= norb_ && l <= norb_);
     map<int,int> mij{{0,i-1}, {1,j-1}};
     map<int,int> mkl{{0,k-1}, {1,l-1}};
     for (auto& eij : elem) {
