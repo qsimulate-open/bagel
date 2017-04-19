@@ -163,12 +163,11 @@ class Opt {
     void print_history_molden() const;
 
     void print_iteration(const double residual, const double time) {
-      if (opttype_ == "energy" || opttype_ == "transition") {
+      if (opttype_ == "energy" || opttype_ == "transition")
         print_iteration_energy(residual, time);
-        print_history_molden();
-      } else if (opttype_ == "conical") {
+      else if (opttype_ == "conical")
         print_iteration_conical(residual, time);
-      }
+      print_history_molden();
     }
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }
