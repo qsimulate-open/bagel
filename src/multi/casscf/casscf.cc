@@ -141,7 +141,11 @@ void CASSCF::common_init() {
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
+#ifdef HAVE_MPI_H
+    fci_ = make_shared<DistFCI>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#else
     fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#endif
   }
   muffle_->unmute();
 

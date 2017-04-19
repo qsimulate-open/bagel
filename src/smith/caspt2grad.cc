@@ -171,7 +171,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
-  shared_ptr<FCI> fci = task_->fci();
+  shared_ptr<DistFCI> fci = task_->fci();
 
   const int nclosed = ref->nclosed();
   const int nact = ref->nact();

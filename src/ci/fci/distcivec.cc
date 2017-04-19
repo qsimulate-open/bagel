@@ -38,6 +38,20 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det)
   this->initialize();
 }
 
+template<typename DataType>
+DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
+  : RMAWindow<DataType>(), det_(civ->det()), lena_(civ->det()->lena()), lenb_(civ->det()->lenb()), dist_(lena_, mpi__->size()),
+    astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
+  if (size() == 0)
+    throw runtime_error("Use either Knowles or Harrison for FCI");
+  // create an window
+  this->initialize();
+  // fill up with initial data in civ
+  for (int i = 0; i != mpi__->size(); ++i)
+    this->rma_rput(civ->data(), i, dist_.start(i)*lenb_, dist_.size(i)*lenb_);
+  fence();
+}
+
 
 template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {

@@ -140,8 +140,10 @@ class FCI_base : public Method {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
     std::shared_ptr<const MOFile> jop() const { return jop_; }
-    std::shared_ptr<const CivecType> denom() const { return denom_; }
-    std::shared_ptr<const DvecType> civectors() const { return cc_; }
+    virtual std::shared_ptr<const Civec> denom() const = 0;
+    std::shared_ptr<const CivecType> denom_native() const { return denom_; }
+    virtual std::shared_ptr<const Dvec> civectors() const = 0;
+    std::shared_ptr<const DvecType> civectors_native() const { return cc_; }
 
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }

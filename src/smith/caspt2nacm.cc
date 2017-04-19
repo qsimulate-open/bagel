@@ -178,7 +178,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
-  shared_ptr<FCI> fci = task_->fci();
+  shared_ptr<DistFCI> fci = task_->fci();
 
   const double egap = energy2_ - energy1_;
 

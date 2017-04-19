@@ -26,7 +26,9 @@
 #ifndef __SRC_GRAD_CPCASSCF_H
 #define __SRC_GRAD_CPCASSCF_H
 
+#include <src/ci/fci/distfci.h>
 #include <src/ci/fci/fci.h>
+#include <src/ci/fci/knowles.h>
 #include <src/util/math/pairfile.h>
 #include <src/multi/casscf/qvec.h>
 
@@ -48,6 +50,9 @@ class CPCASSCF {
 
     std::shared_ptr<const Reference> ref_;
     std::shared_ptr<const Geometry> geom_;
+#ifdef HAVE_MPI_H
+    std::shared_ptr<DistFCI> fci_native_;
+#endif
     std::shared_ptr<FCI> fci_;
 
     int ncore_;
@@ -61,8 +66,13 @@ class CPCASSCF {
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>> compute_orb_denom_and_fock() const;
 
   public:
+#ifdef HAVE_MPI_H
+    CPCASSCF(std::shared_ptr<const PairFile<Matrix, Dvec>> grad, std::shared_ptr<const Dvec> c, std::shared_ptr<const DFHalfDist> halfj,
+             std::shared_ptr<const Reference> g, std::shared_ptr<DistFCI> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
+#else
     CPCASSCF(std::shared_ptr<const PairFile<Matrix, Dvec>> grad, std::shared_ptr<const Dvec> c, std::shared_ptr<const DFHalfDist> halfj,
              std::shared_ptr<const Reference> g, std::shared_ptr<FCI> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
+#endif
 
     // tuple of Z, z, and X.
     std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>

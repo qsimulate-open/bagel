@@ -66,6 +66,8 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
 
     // FCI compute function using DistCivec
     void compute() override;
+    std::shared_ptr<const Civec> denom() const override;
+    std::shared_ptr<const Dvec> civectors() const override;
 
     void update(std::shared_ptr<const Matrix>) override;
 
@@ -75,6 +77,10 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
       compute_rdm12_from_civec(std::shared_ptr<const DistCivec> cbra, std::shared_ptr<const DistCivec> cket) const override;
+
+    // overloading this
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o) const;
 
     void sigma_2a1(std::shared_ptr<const DistCivec> c, std::shared_ptr<DistDvec> d) const;
     void sigma_2a2(std::shared_ptr<const DistCivec> c, std::shared_ptr<DistDvec> d) const;
@@ -90,7 +96,17 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
+    std::shared_ptr<const Dvec> conv_to_dvec() const;
+    std::shared_ptr<const DistDvec> dvec_to_distdvec(std::shared_ptr<const Dvec> c) const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
+
+    // should code RDM reader for DistFCI
+    void read_external_rdm12_av(const std::string& file) { }
+    std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<1>>(); }
+    std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<2>>(); }
+    std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<3>>(); }
+    std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<4>>(); }
+    void dump_ints() const { }
 };
 
 }

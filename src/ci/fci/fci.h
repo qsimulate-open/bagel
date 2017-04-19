@@ -70,6 +70,9 @@ class FCI : public FCI_base<Civec,Dvec> {
 
     virtual ~FCI() { }
     virtual void compute() override;
+    std::shared_ptr<const Civec> denom() const override { return denom_; }
+    std::shared_ptr<const Dvec> civectors() const override { return cc_; }
+
     virtual void update(std::shared_ptr<const Matrix>) = 0;
 
     // virtual application of Hamiltonian
