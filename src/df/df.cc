@@ -183,13 +183,13 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
-shared_ptr<DFHalfDist> DFHalfDist::merge(shared_ptr<DFHalfDist> o) const {
+shared_ptr<DFHalfDist> DFHalfDist::merge_b1(shared_ptr<DFHalfDist> o) const {
   assert(naux() == o->naux() && nindex2() == o->nindex2());
   assert(block().size() == o->block().size());
 
   auto out = make_shared<DFHalfDist>(df_, nindex1() + o->nindex1());
   for (int i = 0; i != block_.size(); ++i)
-    out->add_block(block(i)->merge(o->block(i)));
+    out->add_block(block(i)->merge_b1(o->block(i)));
   return out;
 }
 

@@ -90,7 +90,7 @@ shared_ptr<DFBlock> DFBlock::transform_third(const MatView cmat, const bool tran
 }
 
 
-shared_ptr<DFBlock> DFBlock::merge(std::shared_ptr<const DFBlock> o) const {
+shared_ptr<DFBlock> DFBlock::merge_b1(std::shared_ptr<const DFBlock> o) const {
   assert(asize() == o->asize() && b2size() == o->b2size());
   assert(astart() == o->astart() && b1start() == o->b1start() && b2start() == o->b2start());
   assert(adist_shell_ == o->adist_shell_ && adist_ == o->adist_ && averaged_ == o->averaged_);

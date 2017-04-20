@@ -296,7 +296,7 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
       assert(save.size() == input.size());
       auto iex = input.begin();
       for (auto& ist : save) {
-        ist = ist->merge(*iex);
+        ist = ist->merge_b1(*iex);
         iex++;
       }
     }
