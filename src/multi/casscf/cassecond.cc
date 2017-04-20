@@ -49,7 +49,7 @@ void CASSecond::compute() {
         if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
         fci_->read_external_rdm12_av(external_rdm_); 
       }
-      auto natorb = fci_->natorb_convert(sort_by_coeff_);
+      auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
       if (natocc_) print_natocc(natorb.second);
       fci_time.tick_print("FCI and RDMs");

@@ -50,7 +50,7 @@ class RelMOFile {
     bool tsymm_;
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nfence, const bool store_c, const bool store_g);
+    void init(const int nstart, const int nfence, const bool store);
 
     // hamiltoniam data
     std::shared_ptr<Kramers<2,ZMatrix>> mo1e_;
@@ -99,8 +99,8 @@ class RelJop : public RelMOFile {
 
   public:
     RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff,
-      const bool gaunt, const bool breit, const bool tsymm = true, const bool store_c = false, const bool store_g = false)
-      : RelMOFile(geom, coeff, gaunt, breit, tsymm) { init(nstart, nfence, store_c, store_g); }
+      const bool gaunt, const bool breit, const bool tsymm = true, const bool store = false)
+      : RelMOFile(geom, coeff, gaunt, breit, tsymm) { init(nstart, nfence, store); }
 };
 
 }

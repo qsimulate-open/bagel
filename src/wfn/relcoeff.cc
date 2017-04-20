@@ -266,7 +266,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
                           shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
 
   // quaternion diagonalization has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
-  assert((nact_ != 1 || !tsymm));
+  assert((nact_ > 1 || !tsymm));
   assert(nbasis_ == geom->nbasis());
 
   shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);

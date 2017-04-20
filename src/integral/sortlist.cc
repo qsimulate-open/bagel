@@ -57,16 +57,6 @@ SortList::SortList(const bool spherical) {
     sortfunc[ANG_HRR_END * 5 + 5] = &sort_indices_55_sph;
     sortfunc[ANG_HRR_END * 5 + 6] = &sort_indices_56_sph;
     sortfunc[ANG_HRR_END * 6 + 6] = &sort_indices_66_sph;
-#ifdef COMPILE_J_ORB
-    sortfunc[ANG_HRR_END * 0 + 7] = &sort_indices_07_sph;
-    sortfunc[ANG_HRR_END * 1 + 7] = &sort_indices_17_sph;
-    sortfunc[ANG_HRR_END * 2 + 7] = &sort_indices_27_sph;
-    sortfunc[ANG_HRR_END * 3 + 7] = &sort_indices_37_sph;
-    sortfunc[ANG_HRR_END * 4 + 7] = &sort_indices_47_sph;
-    sortfunc[ANG_HRR_END * 5 + 7] = &sort_indices_57_sph;
-    sortfunc[ANG_HRR_END * 6 + 7] = &sort_indices_67_sph;
-    sortfunc[ANG_HRR_END * 7 + 7] = &sort_indices_77_sph;
-#endif
   } else {
     sortfunc[ANG_HRR_END * 0 + 0] = &sort_indices_00;
     sortfunc[ANG_HRR_END * 0 + 1] = &sort_indices_01;
@@ -96,16 +86,6 @@ SortList::SortList(const bool spherical) {
     sortfunc[ANG_HRR_END * 5 + 5] = &sort_indices_55;
     sortfunc[ANG_HRR_END * 5 + 6] = &sort_indices_56;
     sortfunc[ANG_HRR_END * 6 + 6] = &sort_indices_66;
-#ifdef COMPILE_J_ORB
-    sortfunc[ANG_HRR_END * 0 + 7] = &sort_indices_07;
-    sortfunc[ANG_HRR_END * 1 + 7] = &sort_indices_17;
-    sortfunc[ANG_HRR_END * 2 + 7] = &sort_indices_27;
-    sortfunc[ANG_HRR_END * 3 + 7] = &sort_indices_37;
-    sortfunc[ANG_HRR_END * 4 + 7] = &sort_indices_47;
-    sortfunc[ANG_HRR_END * 5 + 7] = &sort_indices_57;
-    sortfunc[ANG_HRR_END * 6 + 7] = &sort_indices_67;
-    sortfunc[ANG_HRR_END * 7 + 7] = &sort_indices_77;
-#endif
   }
 }
 
@@ -140,16 +120,6 @@ CSortList::CSortList(const bool spherical) {
     sortfunc[ANG_HRR_END * 5 + 5] = &sort_indices_55_sph;
     sortfunc[ANG_HRR_END * 5 + 6] = &sort_indices_56_sph;
     sortfunc[ANG_HRR_END * 6 + 6] = &sort_indices_66_sph;
-#ifdef COMPILE_J_ORB
-    sortfunc[ANG_HRR_END * 0 + 7] = &sort_indices_07_sph;
-    sortfunc[ANG_HRR_END * 1 + 7] = &sort_indices_17_sph;
-    sortfunc[ANG_HRR_END * 2 + 7] = &sort_indices_27_sph;
-    sortfunc[ANG_HRR_END * 3 + 7] = &sort_indices_37_sph;
-    sortfunc[ANG_HRR_END * 4 + 7] = &sort_indices_47_sph;
-    sortfunc[ANG_HRR_END * 5 + 7] = &sort_indices_57_sph;
-    sortfunc[ANG_HRR_END * 6 + 7] = &sort_indices_67_sph;
-    sortfunc[ANG_HRR_END * 7 + 7] = &sort_indices_77_sph;
-#endif
   } else {
     sortfunc[ANG_HRR_END * 0 + 0] = &sort_indices_00;
     sortfunc[ANG_HRR_END * 0 + 1] = &sort_indices_01;
@@ -179,15 +149,5 @@ CSortList::CSortList(const bool spherical) {
     sortfunc[ANG_HRR_END * 5 + 5] = &sort_indices_55;
     sortfunc[ANG_HRR_END * 5 + 6] = &sort_indices_56;
     sortfunc[ANG_HRR_END * 6 + 6] = &sort_indices_66;
-#ifdef COMPILE_J_ORB
-    sortfunc[ANG_HRR_END * 0 + 7] = &sort_indices_07;
-    sortfunc[ANG_HRR_END * 1 + 7] = &sort_indices_17;
-    sortfunc[ANG_HRR_END * 2 + 7] = &sort_indices_27;
-    sortfunc[ANG_HRR_END * 3 + 7] = &sort_indices_37;
-    sortfunc[ANG_HRR_END * 4 + 7] = &sort_indices_47;
-    sortfunc[ANG_HRR_END * 5 + 7] = &sort_indices_57;
-    sortfunc[ANG_HRR_END * 6 + 7] = &sort_indices_67;
-    sortfunc[ANG_HRR_END * 7 + 7] = &sort_indices_77;
-#endif
   }
 }

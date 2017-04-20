@@ -2772,7 +2772,7 @@ void Task29::Task_local::compute() {
   const Index x3 = b(3);
   const Index x1 = b(4);
   const Index x0 = b(5);
-  // tensor label: Gamma105
+  // tensor label: Gamma143
   std::unique_ptr<std::complex<double>[]> odata(new std::complex<double>[out()->get_size(x2, x5, x4, x3, x1, x0)]);
   std::fill_n(odata.get(), out()->get_size(x2, x5, x4, x3, x1, x0), 0.0);
   {
@@ -2840,7 +2840,7 @@ void Task29::Task_local::compute() {
     }
   }
   {
-    if (x4 == x5 && x1 == x3) {
+    if (x1 == x3 && x4 == x5) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x2, x0);
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -2872,7 +2872,7 @@ void Task29::Task_local::compute() {
     }
   }
   {
-    if (x4 == x5 && x2 == x3) {
+    if (x2 == x3 && x4 == x5) {
       std::unique_ptr<std::complex<double>[]> i0data = in(0)->get_block(x1, x0);
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i1 = 0; i1 != x1.size(); ++i1) {

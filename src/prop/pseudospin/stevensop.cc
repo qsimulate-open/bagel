@@ -56,8 +56,8 @@ double compute_alpha(const int k, const int q) {
 double compute_Nk0(const int k) {
   assert (k >= 0);
   const double twok = pow(2.0,k);
-  const double nkk_denomenator = twok * fact(k);
-  const double out = 1.0 / nkk_denomenator;
+  const double Nkk_denomenator = twok * fact(k);
+  const double out = 1.0 / Nkk_denomenator;
   return out;
 }
 
@@ -97,8 +97,8 @@ long long greatest_common_factor(const long long a, const long long b) {
   return b == 0 ? a : greatest_common_factor(b, a % b);
 }
 
-// fkq is the greatest common factor of all a(k, q; m, i) with the same k, q
-long long compute_fkq(const vector<vector<long long>>& input) {
+// Fkq is the greatest common factor of all a(k, q; m, i) with the same k, q
+long long compute_Fkq(const vector<vector<long long>>& input) {
   long long out = abs(input[0][0]);
   for(int m = 0; m != input.size(); ++m)
     for(int i = 0; i != input[m].size(); ++i)
@@ -125,7 +125,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
 
     // Requires factorial of k
     // Above k = 12, coefficients become so large that long long fails to capture them.
-    // Potentially we could tabulate a(k, q; m) / fkq or something, but for now this is fine.
+    // Potentially we could tabulate a(k, q; m) / Fkq or something, but for now this is fine.
     const int kmax = min(fact.max(), 13);
     if (k >= kmax)
       throw runtime_error("Sorry, numerical issues currently limit us to Stevens operators of order " + to_string(kmax - 1) + " and lower");
@@ -133,8 +133,8 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
       throw runtime_error("Ranks of Extended Stevens Operators must be whole numbers.");
 
     vector<double> alpha(k + 1);
-    vector<double> nkq(k + 1);  // positive q
-    vector<double> nk_q(k + 1); // negative q
+    vector<double> Nkq(k + 1);  // positive q
+    vector<double> Nk_q(k + 1); // negative q
 
     // a(k, q; m) in Ryabov's notation
     // access is akqm[q][m]
@@ -147,11 +147,11 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
     vector<vector<vector<long long>>> akqmi(k + 1);
 
     alpha[0] = 1.0;
-    nkq[0] = compute_Nk0(k);
+    Nkq[0] = compute_Nk0(k);
 
     for (int q = 1; q <= k; ++q) {
       alpha[q] = compute_alpha(k, q);
-      nkq[q] = -1.0 * nkq[q-1] * sqrt((k + q) * (k - q + 1.0));
+      Nkq[q] = -1.0 * Nkq[q-1] * sqrt((k + q) * (k - q + 1.0));
     }
 
     for (int q = k; q >= 0; --q) {
@@ -161,7 +161,7 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
 
       vector<vector<long long>> akqmi_current(k - q + 1);
 
-      nk_q[q] = nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
+      Nk_q[q] = Nkq[q] * ((k % 2 == 0) ? 1.0 : -1.0);
 
       for (int m = 0; m <= k - q; ++m) {
         if (q == k)
@@ -176,42 +176,42 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
         ak_qm_current[m] = akqm_current[m] * (m % 2 == 0 ? 1.0 : -1.0);
       }
 
-      const long long fkq = compute_fkq(akqmi_current);
+      const long long Fkq = compute_Fkq(akqmi_current);
 
       akqm[q] = akqm_current;
       akqmi[q] = akqmi_current;
       ak_qm[q] = ak_qm_current;
 
-      shared_ptr<ZMatrix> tkq = spin_plus()->clone();
-      shared_ptr<ZMatrix> tk_q = spin_plus()->clone();
+      shared_ptr<ZMatrix> Tkq = spin_plus()->clone();
+      shared_ptr<ZMatrix> Tk_q = spin_plus()->clone();
       const double sign1 = (q % 2 == 0) ? 1.0 : -1.0;
 
       for (int m = 0; m <= k - q; ++m) {
         // Need spin-z matrix to power of m and spin-plus to power of q
-        shared_ptr<ZMatrix> szm = spin_xyz(2)->clone();
-        shared_ptr<ZMatrix> spq = spin_xyz(2)->clone();
-        szm->unit();
-        spq->unit();
+        shared_ptr<ZMatrix> Szm = spin_xyz(2)->clone();
+        shared_ptr<ZMatrix> Spq = spin_xyz(2)->clone();
+        Szm->unit();
+        Spq->unit();
         for (int i = 0; i != m; ++i)
-          *szm *= *spin_xyz(2);
+          *Szm *= *spin_xyz(2);
         for (int i = 0; i != q; ++i)
-          *spq *= *spin_plus();
+          *Spq *= *spin_plus();
 
         const double sign2 = ((k - m) % 2 == 0) ? 1.0 : -1.0;
-        const double coeff = sign1 * sign2 * nkq[q] * akqm[q][m];
-        *tkq += (coeff * *szm * *spq);
+        const double coeff = sign1 * sign2 * Nkq[q] * akqm[q][m];
+        *Tkq += (coeff * *Szm * *Spq);
       }
 
-      *tk_q = sign1 * *tkq->transpose_conjg();
+      *Tk_q = sign1 * *Tkq->transpose_conjg();
 
-      const double ckq = alpha[q] / (nkq[q] * fkq);
+      const double ckq = alpha[q] / (Nkq[q] * Fkq);
 
-      auto ocos_kq = make_shared<const ZMatrix>(complex<double>(0.5,  0.0) * ckq * (*tkq + *tkq->transpose_conjg()));
-      auto osin_kq = make_shared<const ZMatrix>(complex<double>(0.0, -0.5) * ckq * (*tkq - *tkq->transpose_conjg()));
+      auto Ocos_kq = make_shared<const ZMatrix>(complex<double>(0.5,  0.0) * ckq * (*Tkq + *Tkq->transpose_conjg()));
+      auto Osin_kq = make_shared<const ZMatrix>(complex<double>(0.0, -0.5) * ckq * (*Tkq - *Tkq->transpose_conjg()));
 
-      stevensop.push_back(Stevens_Operator(ocos_kq, k, q));
+      stevensop.push_back(Stevens_Operator(Ocos_kq, k, q));
       if (q != 0)
-        stevensop.push_back(Stevens_Operator(osin_kq, k, -q));
+        stevensop.push_back(Stevens_Operator(Osin_kq, k, -q));
     }
   }
   return stevensop;

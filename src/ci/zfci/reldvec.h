@@ -59,6 +59,7 @@ class RelDvector {
     std::shared_ptr<RelDvector<DataType>> clone() const;
     std::shared_ptr<RelDvector<DataType>> copy() const;
 
+    std::shared_ptr<RelDvector<DataType>> extract_state(const int istate) const;
     std::shared_ptr<RelDvector<DataType>> extract_state(const std::vector<int> input) const;
 
     std::shared_ptr<Dvector<DataType>> find(int a, int b) { return dvecs_.at({a, b}); }

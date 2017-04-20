@@ -57,7 +57,7 @@ class Tensor_ {
     bool allocated_;
 
   public:
-    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = std::unordered_set<size_t>(), const bool alloc = false);
+    Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = {}, const bool alloc = false);
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
@@ -129,12 +129,10 @@ extern template class Tensor_<double>;
 extern template class Tensor_<std::complex<double>>;
 
 namespace CASPT2 { using Tensor = Tensor_<double>; }
-namespace CASA { using Tensor = Tensor_<double>; }
 namespace SPCASPT2 { using Tensor = Tensor_<double>; }
 namespace MSCASPT2 { using Tensor = Tensor_<double>; }
 namespace MRCI   { using Tensor = Tensor_<double>; }
 namespace RelCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
-namespace RelCASA { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelSPCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelMSCASPT2 { using Tensor = Tensor_<std::complex<double>>; }
 namespace RelMRCI   { using Tensor = Tensor_<std::complex<double>>; }

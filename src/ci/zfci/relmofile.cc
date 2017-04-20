@@ -43,7 +43,7 @@ RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const Rel
 
 
 // nstart and nfence are based on the convention in Dirac calculations
-void RelMOFile::init(const int nstart, const int nfence, const bool store_c, const bool store_g) {
+void RelMOFile::init(const int nstart, const int nfence, const bool store) {
   // first compute all the AO integrals in core
   nbasis_ = geom_->nbasis();
   nocc_ = (nfence - nstart)/2;
@@ -59,7 +59,7 @@ void RelMOFile::init(const int nstart, const int nfence, const bool store_c, con
 
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, store_c, /*robust*/breit_, /*scale_J*/1.0, /*scale_K*/1.0, store_g);
+    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, store, /*robust*/breit_);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -139,11 +139,10 @@ tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
-    i.reset();
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    DFock::factorize(half_complex_exch);
   }
   half_complex.clear();
+  DFock::factorize(half_complex_exch);
 
   if (breit) {
     // TODO Not the best implementation -- one could avoid apply_J to half-transformed objects

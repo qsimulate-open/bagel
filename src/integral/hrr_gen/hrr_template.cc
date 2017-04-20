@@ -23,7 +23,7 @@
 //
 
 
-#include "../rys/eribatch.h"
+#include "eribatch.h"
 #include <algorithm>
 
 using namespace std;

@@ -68,23 +68,10 @@ class Matrix_base : public btas::Tensor2<DataType> {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int file_version) {
-      boost::serialization::split_member(ar, *this, file_version);
-    }
-
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<btas::Tensor2<DataType>>(*this) >> localized_;
+      ar & boost::serialization::base_object<btas::Tensor2<DataType>>(*this) & localized_;
 #ifdef HAVE_SCALAPACK
-      if (!localized_) {
-        desc_ = mpi__->descinit(ndim(), mdim());
-        localsize_ = mpi__->numroc(ndim(), mdim());
-      }
+      ar & desc_ & localsize_;
 #endif
-    }
-
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<btas::Tensor2<DataType>>(*this) << localized_;
     }
 
   public:
