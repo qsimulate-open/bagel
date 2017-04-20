@@ -51,7 +51,7 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
   for (int ia = 0; ia != lena_; ++ia)
     if (is_local(ia))
       for (int ib = 0; ib != lenb_; ++ib)
-        set_local(ia - astart_, ib, civ->data(ia + ib*lenb_));
+        set_local(ia - astart_, ib, civ->data(ib + ia*lenb_));
   fence();
 }
 
@@ -60,7 +60,7 @@ template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   auto out = make_shared<Civector<DataType>>(det_);
   copy_n(data(), dist_.size(mpi__->rank()) * lenb_, out->element_ptr(0, astart_));
-  mpi__->allreduce(out->data(), lena_*lenb_);
+  mpi__->allreduce(out->data(), global_size());
 
   return out;
 }
