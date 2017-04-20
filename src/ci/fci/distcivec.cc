@@ -59,20 +59,8 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
 template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   auto out = make_shared<Civector<DataType>>(det_);
-
-  vector<DataType> data;
-  const DataType* d = local_data();
-
-  for (size_t ia = astart_; ia != aend_; ++ia)
-    for (size_t ib = 0; ib != lenb_; ++ib, ++d)
-      data.push_back(*d);
-
-  vector<size_t> nelements(mpi__->size(), 0);
-  const size_t nn = data.size();
-  mpi__->allgather(&nn, 1, nelements.data(), 1);
-  const size_t chunk = *max_element(nelements.begin(), nelements.end());
-
-  mpi__->allgather(data.data(), chunk, out->data(), chunk);
+  copy_n(data(), dist_.size(mpi__->rank()) * lenb_, out->element_ptr(0, astart_));
+  mpi__->allreduce(out->data(), lena_*lenb_);
 
   return out;
 }
