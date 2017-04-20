@@ -77,7 +77,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   } else {
 
     if (!geomin->magnetism() || !geom_->magnetism())
-      throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
+      throw runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
     RelOverlap_London sinv = overlap;
