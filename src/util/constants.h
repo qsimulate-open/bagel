@@ -36,8 +36,8 @@ namespace bagel {
 *  Internal constants                                       *
 ************************************************************/
 static constexpr int NDEBUG_PRINT = 1;
-static constexpr int ANG_HRR_END = 8;
-static constexpr int ANG_VRR_END = 16;
+static constexpr int ANG_HRR_END = 7;
+static constexpr int ANG_VRR_END = 14;
 static constexpr int RYS_MAX = 21;
 static constexpr double PRIM_SCREEN_THRESH = 1.0e-12;
 

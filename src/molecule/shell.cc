@@ -222,11 +222,11 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
   auto range = contraction_ranges_.begin();
   const int nang = angular_number();
 
-  double tmp0[82];
-  double tmpx[82];
-  double tmpy[82];
-  double tmpz[82];
-  static_assert(82 > (ANG_HRR_END+1)*(ANG_HRR_END+1), "ANG_HRR_END is assumed to be 8");
+  double tmp0[65];
+  double tmpx[65];
+  double tmpy[65];
+  double tmpz[65];
+  static_assert(65 > (ANG_HRR_END+1)*(ANG_HRR_END+1), "ANG_HRR_END is assumed to be 7");
   double powx[11], powy[11], powz[11];
   powx[0] =  powy[0] = powz[0] = 0.0;
   for (int i = 0; i != angular_number()+1; ++i) {
@@ -301,8 +301,8 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
                                       const double& x, const double& y, const double& z) const {
   const double rr = x*x+y*y+z*z;
   auto range = contraction_ranges_.begin();
-  double tmp[6][65];
-  assert(65 > ANG_HRR_END*ANG_HRR_END);
+  double tmp[6][50];
+  assert(50 > ANG_HRR_END*ANG_HRR_END);
 
   const int nxyz = nbasis() / num_contracted();
   const int nang = angular_number();

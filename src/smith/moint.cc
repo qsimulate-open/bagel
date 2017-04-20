@@ -310,26 +310,14 @@ void MOFock<complex<double>>::init() {
   auto newcoeff = coeff_->copy();
   if (nclosed > 1) {
     auto fcl = make_shared<QuatMatrix>(*forig.get_submatrix(0, 0, (ncore+nclosed)*2, (ncore+nclosed)*2));
-    assert(fcl->is_t_symmetric(1.0e-6));
     fcl->diagonalize(eig);
     newcoeff->copy_block(0, 0, newcoeff->ndim(), (ncore+nclosed)*2, newcoeff->slice(0, (ncore+nclosed)*2) * *fcl);
-    if (ncore)
-      cout << endl << "  Core orbital energies: " << endl;
-    for (int i = 0; i != ncore+nclosed; ++i) {
-      if (i == ncore)
-        cout << endl << "  Closed orbital energies: " << endl;
-      cout << "    " << i+1 << "  " << setw(12) << setprecision(4) << fixed << eig[i] << endl;
-    }
-    cout << endl;
   }
-
   const int nvirt = info_->nvirt();
   const int nvirtall = nvirt+info_->nfrozenvirt();
   if (nvirtall > 1) {
     auto fvirt = make_shared<QuatMatrix>(*forig.get_submatrix(nocc*2, nocc*2, nvirtall*2, nvirtall*2));
-    assert(fvirt->is_t_symmetric(1.0e-6));
     fvirt->diagonalize(eig);
-
     const ZMatrix crot = coeff_->slice(nocc*2, (nocc+nvirtall)*2) * *fvirt;
     newcoeff->copy_block(0, nocc*2,       newcoeff->ndim(), nvirt, crot.slice(0, nvirt));
     newcoeff->copy_block(0, nocc*2+nvirt, newcoeff->ndim(), nvirt, crot.slice(nvirtall, nvirtall+nvirt));
@@ -337,13 +325,6 @@ void MOFock<complex<double>>::init() {
       cout << "       - Truncating virtual orbitals: " << setw(20) << setprecision(10) << eig[nvirt] << endl;
       newcoeff = newcoeff->slice_copy(0, (nocc+nvirt)*2);
     }
-    cout << endl << "  Virtual orbital energies: " << endl;
-    for (int i = 0; i != nvirtall; ++i) {
-      if (i == nvirt)
-        cout << endl << "  Deleted orbital energies: " << endl;
-      cout << "    " << nvirtall - i << "  " << setw(12) << setprecision(4) << fixed << eig[i] << endl;
-    }
-    cout << endl;
   }
 
   // **** CAUTION **** updating the coefficient
@@ -354,19 +335,6 @@ void MOFock<complex<double>>::init() {
 
   if (!f->is_hermitian()) throw logic_error("Fock is not Hermitian");
   if (!h1->is_hermitian()) throw logic_error("Hcore is not Hermitian");
-
-  if (info_->block_diag_fock()) {
-    cout << "  * Removing off-diagonal blocks of the relativistic Fock matrix" << endl;
-    if (to_lower(info_->method()) == "casa")
-      cout << "    CAS/A with these blocks neglected is equivalent to partially contracted NEVPT2." << endl;
-    auto fsave = f->copy();
-    f->zero();
-    const int nc = 2;
-    assert(f->ndim() == f->mdim() && f->ndim() == nc * info_->nocc() + nc * info_->nvirt());
-    f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
-    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
-    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
-  }
 
   data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
   h1_   = fill_block<2,complex<double>>(h1->get_conjg(), {0,0}, blocks_);
@@ -437,19 +405,6 @@ void MOFock<double>::init() {
   coeff_ = newcoeff;
   auto f  = make_shared<Matrix>(*coeff_ % *fock1 * *coeff_);
   auto h1 = make_shared<Matrix>(*coeff_ % *cfock * *coeff_);
-
-  if (info_->block_diag_fock()) {
-    cout << "  * Removing off-diagonal blocks of the (nonrel) Fock matrix" << endl;
-    if (to_lower(info_->method()) == "casa")
-      cout << "    CAS/A with these blocks neglected is equivalent to partially contracted NEVPT2." << endl;
-    auto fsave = f->copy();
-    f->zero();
-    const int nc = 1;
-    assert(f->ndim() == f->mdim() && f->ndim() == nc * info_->nocc() + nc * info_->nvirt());
-    f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
-    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
-    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
-  }
 
   data_ = fill_block<2,double>(f, {0,0}, blocks_);
   h1_   = fill_block<2,double>(h1, {0,0}, blocks_);

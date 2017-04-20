@@ -27,13 +27,9 @@
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zcassecond.h>
 #include <src/scf/dhf/population_analysis.h>
-#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
-
-// TODO batch size should be automatically determined by the memory size etc. (like in DFock)
-const static int batchsize = 250;
 
 void ZCASSecond::compute() {
   assert(nvirt_ && nact_);
@@ -82,30 +78,22 @@ void ZCASSecond::compute() {
     if (gradient < thresh_) {
       muffle_->unmute();
       cout << endl << "    * Second-order optimization converged. *   " << endl << endl;
-      if (nclosed_)
-        dynamic_pointer_cast<const DFock>(cfockao)->discard_half();
       break;
     }
 
     // half-transformed integrals (with JJ)
+    list<shared_ptr<RelDFHalf>> halfc_1j;
+    if (nclosed_)
+      halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
     list<shared_ptr<const RelDFHalf>> halfc;
-    {
-      list<shared_ptr<RelDFHalf>> halfc_1j;
-      if (nclosed_)
-        halfc_1j = dynamic_pointer_cast<const DFock>(cfockao)->half_coulomb();
-      for (auto& i : halfc_1j)
-        halfc.push_back(i->apply_J());
-      if (nclosed_)
-        dynamic_pointer_cast<const DFock>(cfockao)->discard_half();
-    }
+    for (auto& i : halfc_1j)
+      halfc.push_back(i->apply_J());
 
+    list<shared_ptr<RelDFHalf>> halfac_0j;
+    tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
     list<shared_ptr<const RelDFHalf>> halfac;
-    {
-      list<shared_ptr<RelDFHalf>> halfac_0j;
-      tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
-      for (auto& i : halfac_0j)
-        halfac.push_back(i->apply_JJ());
-    }
+    for (auto& i : halfac_0j)
+      halfac.push_back(i->apply_JJ());
 
     // Fock and Q vector with Coulomb only
     shared_ptr<const ZMatrix> cfock_c = cfock;
@@ -209,18 +197,6 @@ void ZCASSecond::compute() {
     muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }
-
-  // TODO When the Property class is implemented, this should be one
-  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
-  if (aniso_data) {
-    if (geom_->magnetism()) {
-      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
-    } else {
-      const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
-      Pseudospin ps(nspin, geom_, fci_->conv_to_ciwfn(), aniso_data);
-      ps.compute(energy_, coeff_->active_part());
-    }
-  }
 }
 
 
@@ -273,35 +249,16 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   // g(t_vc) operator and g(t_ac) operator
   if (nclosed_) {
     auto tcoeff = make_shared<ZMatrix>(*vcoeff * *vc + *acoeff * *ca->transpose_conjg());
-
-    const int noccupied = tcoeff->mdim();
-    int nbatch = (noccupied-1) / batchsize+1;
-    StaticDist dist(noccupied, nbatch);
-    vector<pair<size_t, size_t>> table = dist.atable();
-
-    for (auto& itable : table) {
-      shared_ptr<const ZMatrix> tcoeff_slice = (nbatch == 1) ? tcoeff : make_shared<ZMatrix>(tcoeff->slice(itable.first, itable.first+itable.second));
-      shared_ptr<const ZMatrix> ccoeff_slice = (nbatch == 1) ? ccoeff : make_shared<ZMatrix>(ccoeff->slice(itable.first, itable.first+itable.second));
-
-      list<shared_ptr<RelDFHalf>> tmp;
-      tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff_slice, false, false);
-      list<shared_ptr<const RelDFHalf>> halftc_slice;
-      for (auto& i : tmp)
-        halftc_slice.push_back(i);
-
-      list<shared_ptr<const RelDFHalf>> halfc_slice;
-      if (nbatch == 1)
-        halfc_slice = halfc;
-      else
-        for (auto& i : halfc)
-          halfc_slice.push_back(i->slice_b1(itable.first, itable.second));
-
-      const ZMatrix gt = *compute_gd(halftc_slice, halfc_slice, ccoeff_slice, tcoeff_slice);
-      sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
-      sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
-      sigma->ax_plus_y_va(4.0, *vcoeff % gt * *acoeff * rdm1);
-      sigma->ax_plus_y_ca(-4.0, *ccoeff % gt * *acoeff * rdm1);
-    }
+    list<shared_ptr<RelDFHalf>> tmp;
+    tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
+    list<shared_ptr<const RelDFHalf>> halftc;
+    for (auto& i : tmp)
+      halftc.push_back(i);
+    const ZMatrix gt = *compute_gd(halftc, halfc, ccoeff, tcoeff);
+    sigma->ax_plus_y_ca(4.0, *ccoeff % gt * *acoeff);
+    sigma->ax_plus_y_vc(4.0, *vcoeff % gt * *ccoeff);
+    sigma->ax_plus_y_va(4.0, *vcoeff % gt * *acoeff * rdm1);
+    sigma->ax_plus_y_ca(-4.0, *ccoeff % gt * *acoeff * rdm1);
   }
 
   // g(t_va - t_ca)

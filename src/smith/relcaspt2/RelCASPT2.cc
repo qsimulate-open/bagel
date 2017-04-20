@@ -28,14 +28,13 @@
 
 #include <src/smith/relcaspt2/RelCASPT2.h>
 #include <src/util/math/linearRM.h>
-#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
 RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
-  nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
+  nstates_ = ref->ciwfn()->nstates();
   auto eig = f1_->diag();
   eig_.resize(eig.size());
   for (int i = 0; i != eig.size(); ++i)
@@ -44,15 +43,13 @@ RelCASPT2::RelCASPT2::RelCASPT2(shared_ptr<const SMITH_Info<std::complex<double>
   // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
     auto tmp = make_shared<MultiTensor>(nstates_);
-    auto tmp2 = make_shared<MultiTensor>(nstates_);
-
-    for (int j = 0; j != nstates_; ++j)
-      if (!info_->sssr() || i == j) {
-        (*tmp)[j] = init_amplitude();
-        (*tmp2)[j] = init_residual();
-      }
-
+    for (auto& j : *tmp)
+      j = init_amplitude();
     t2all_.push_back(tmp);
+
+    auto tmp2 = make_shared<MultiTensor>(nstates_);
+    for (auto& j : *tmp2)
+      j = init_residual();
     sall_.push_back(tmp2);
     rall_.push_back(tmp2->clone());
   }
@@ -103,7 +100,7 @@ void RelCASPT2::RelCASPT2::solve() {
         complex<double> nn = 0.0;
         for (int jst = 0; jst != nstates_; ++jst) { // bra
           for (int ist = 0; ist != nstates_; ++ist) { // ket
-            if (info_->sssr() && (jst != istate || ist != jstate))
+            if (info_->sssr() && (jst != istate || ist != istate))
               continue;
             set_rdm(jst, ist);
             t2 = t2all_[jstate]->at(ist);
@@ -127,41 +124,42 @@ void RelCASPT2::RelCASPT2::solve() {
   }
 
   // MS-CASPT2
+  if (info_->shift() && info_->do_ms())
+    cout << "    MS-RelCASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
+  if (info_->do_ms() && info_->sssr())
+    for (int istate = 0; istate != nstates_; ++istate) //K states
+      for (int jst=0; jst != nstates_; ++jst) // <jst|
+        if (info_->sssr() && jst != istate) {
+          set_rdm(jst, istate);
+          s = sall_[istate]->at(jst);
+          shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+          while(!sourceq->done())
+            sourceq->next_compute();
+        }
+
   if (info_->do_ms() && nstates_ > 1) {
     heff_ = make_shared<ZMatrix>(nstates_, nstates_);
 
-    if (info_->shift())
-      cout << "    MS-RelCASPT2:  Applying levelshift correction to " << (info_->shift_diag() ? "diagonal" : "all" ) <<  " elements of the effective Hamiltonian."  << endl << endl;
-
     for (int ist = 0; ist != nstates_; ++ist) {
-      auto sist = make_shared<MultiTensor>(nstates_);
-      for (int jst=0; jst != nstates_; ++jst) {
-        if (sall_[ist]->at(jst)) {
-          sist->at(jst) = sall_[ist]->at(jst);
-        } else {
-          set_rdm(jst, ist);
-          s = init_residual();
-          shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-          while(!sourceq->done())
-            sourceq->next_compute();
-          sist->at(jst) = s;
-        }
-      }
-
       for (int jst = 0; jst != nstates_; ++jst) {
         if (ist == jst) {
           // set diagonal elements
           (*heff_)(ist, ist) = pt2energy_[ist];
-        } else {
+        } else if (ist < jst) {
           // set off-diag elements
           // 1/2 [ <1g | H | Oe> + <0g |H | 1e > ]
-          (*heff_)(jst, ist) = std::conj(dot_product_transpose(sist, t2all_[jst])) + (*eref_)(jst, ist);
+          (*heff_)(jst, ist) = 0.5*(std::conj(dot_product_transpose(sall_[ist], t2all_[jst]))
+                                  + dot_product_transpose(sall_[jst], t2all_[ist]))
+                                  + (*eref_)(jst, ist);
           if (!info_->shift_diag())
             (*heff_)(jst, ist) -= shift_correction[jst+nstates_*ist]*info_->shift();
+
+          (*heff_)(ist, jst) = std::conj((*heff_)(jst, ist));
+          assert(std::abs((0.5*(std::conj(dot_product_transpose(sall_[jst], t2all_[ist])) + dot_product_transpose(sall_[ist], t2all_[jst]))
+                           + (*eref_)(ist, jst) - (info_->shift_diag() ? 0.0 : shift_correction[ist+nstates_*jst]*info_->shift())) - (*heff_)(ist, jst)) < 1.0e-6);
         }
       }
     }
-    heff_->hermite();
 
     // print out the effective Hamiltonian
     cout << endl;
@@ -196,18 +194,6 @@ void RelCASPT2::RelCASPT2::solve() {
     heff_->element(0,0) = 1.0;
   }
   energy_ = pt2energy_;
-
-  // TODO When the Property class is implemented, this should be one
-  if (info_->aniso_data()) {
-    if (info_->geom()->magnetism()) {
-      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
-    } else {
-      shared_ptr<const RelCIWfn> new_ciwfn = info_->do_ms() ? rotate_ciwfn(info_->ciwfn(), *heff_) : info_->ciwfn();
-      const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
-      Pseudospin ps(nspin, info_->geom(), new_ciwfn, info_->aniso_data());
-      ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
-    }
-  }
 }
 
 
@@ -233,7 +219,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_li
       update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(30, s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
@@ -250,7 +236,6 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_li
           t2 = t[i]->at(ist);
           r = rall_[i]->at(jst);
 
-          // compute residuals named r for each K
           e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())

@@ -29,7 +29,6 @@
 #include <src/util/math/davidson.h>
 #include <src/smith/extrap.h>
 #include <src/smith/relmrci/RelMRCI.h>
-#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
@@ -220,23 +219,11 @@ void RelMRCI::RelMRCI::solve() {
       eref /= c;
       const double eq = energy_[i]+core_nuc + (energy_[i]+core_nuc-eref)*(1.0-c)/c;
       print_iteration(0, eq, 0.0, 0.0, i);
-      energy_q[i] = eq;
     }
     cout << endl;
 
   }
   timer.tick_print("MRCI+Q energy evaluation");
-
-  // TODO When the Property class is implemented, this should be one
-  if (info_->aniso_data()) {
-    if (info_->geom()->magnetism()) {
-      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
-    } else {
-      const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
-      Pseudospin ps(nspin, info_->geom(), info_->ciwfn(), info_->aniso_data());
-      ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
-    }
-  }
 }
 
 

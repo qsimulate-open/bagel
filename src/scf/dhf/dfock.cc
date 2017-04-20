@@ -31,8 +31,8 @@ using namespace bagel;
 const static int batchsize = 250;
 
 DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb, const bool store_half_gaunt)
-  : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), store_half_gaunt_(store_half_gaunt), robust_(robust) {
+             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb)
+  : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), robust_(robust) {
 
   assert(breit ? gaunt : true);
   two_electron_part(coeff, scale_exch, scale_coulomb);
@@ -44,7 +44,7 @@ DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const 
 DFock::DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
              std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
              const double scale_exch, const double scale_coulomb)
-  : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), store_half_gaunt_(false), robust_(false) {
+  : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), robust_(false) {
 
   // will use the zgemm3m-like algorithm
   for (auto& i : int1c)
@@ -225,16 +225,16 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
 
   timer.tick_print(printtag + ": metric multiply");
 
-  // split and factorize before computing K operators
+  // split
   list<shared_ptr<RelDFHalf>> half_complex_exch, half_complex_exch2;
   for (auto& i : half_complex) {
     list<shared_ptr<RelDFHalf>> tmp = i->split(/*docopy=*/false);
-    i.reset();
     half_complex_exch.insert(half_complex_exch.end(), tmp.begin(), tmp.end());
-    factorize(half_complex_exch);
   }
   half_complex.clear();
 
+  // before computing K operators, we factorize half_complex
+  factorize(half_complex_exch);
   assert(gaunt  || half_complex_exch.size() == 8);
   assert(!gaunt || half_complex_exch.size() == 24);
 
@@ -288,27 +288,19 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
   for (auto& i : half_complex_exch2)
     i->discard_sum_diff();
 
-  // This is for gradient and second-order CASSCF calculations
-  auto store_half_ints = [](list<shared_ptr<RelDFHalf>>& save, list<shared_ptr<RelDFHalf>>& input) {
-    if (save.size() == 0) {
-      save = input;
-    } else {
-      assert(save.size() == input.size());
-      auto iex = input.begin();
-      for (auto& ist : save) {
-        ist = ist->merge(*iex);
-        iex++;
-      }
+  // this is for gradient calculations
+  if (store_half_) {
+    for (auto& i : half_complex_exch)
+      i->discard_sum_diff();
+    if (!gaunt)
+      half_coulomb_ = half_complex_exch;
+    else
+      half_gaunt_ = half_complex_exch;
+    if (breit) {
+      for (auto& i : half_complex_exch2)
+        i->discard_sum_diff();
+      half_breit_ = half_complex_exch2;
     }
-  };
-
-  if (store_half_ && !gaunt)
-    store_half_ints(half_coulomb_, half_complex_exch);
-  if (store_half_gaunt_ && gaunt) {
-    assert(store_half_);
-    store_half_ints(half_gaunt_, half_complex_exch);
-    if (breit)
-      store_half_ints(half_breit_, half_complex_exch2);
   }
 }
 

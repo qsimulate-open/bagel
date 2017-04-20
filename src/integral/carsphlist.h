@@ -63,16 +63,6 @@ struct CarSphList {
   static void carsph_55(const int, const double*, double*);
   static void carsph_65(const int, const double*, double*);
   static void carsph_66(const int, const double*, double*);
-#ifdef COMPILE_J_ORB
-  static void carsph_70(const int, const double*, double*);
-  static void carsph_71(const int, const double*, double*);
-  static void carsph_72(const int, const double*, double*);
-  static void carsph_73(const int, const double*, double*);
-  static void carsph_74(const int, const double*, double*);
-  static void carsph_75(const int, const double*, double*);
-  static void carsph_76(const int, const double*, double*);
-  static void carsph_77(const int, const double*, double*);
-#endif
 
   void carsphfunc_call(const unsigned int i, const int a0, const double* a1, double* a2) const {
     return (carsphfunc[i])(a0, a1, a2);
@@ -113,16 +103,6 @@ struct CCarSphList {
   static void carsph_55(const int, const std::complex<double>*, std::complex<double>*);
   static void carsph_65(const int, const std::complex<double>*, std::complex<double>*);
   static void carsph_66(const int, const std::complex<double>*, std::complex<double>*);
-#ifdef COMPILE_J_ORB
-  static void carsph_70(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_71(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_72(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_73(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_74(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_75(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_76(const int, const std::complex<double>*, std::complex<double>*);
-  static void carsph_77(const int, const std::complex<double>*, std::complex<double>*);
-#endif
 
   void carsphfunc_call(const unsigned int i, const int a0, const std::complex<double>* a1, std::complex<double>* a2) const {
     return (carsphfunc[i])(a0, a1, a2);

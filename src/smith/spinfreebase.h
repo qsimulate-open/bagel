@@ -43,7 +43,6 @@ template<typename DataType>
 class SpinFreeMethod {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
-    using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;
 
     IndexRange virt_;
     IndexRange active_;
@@ -108,7 +107,6 @@ class SpinFreeMethod {
     void rotate_xms();
     void feed_rdm_denom();
     void feed_rdm_deriv(const size_t offset, const size_t size);
-    std::shared_ptr<CIWfnT> rotate_ciwfn(std::shared_ptr<const CIWfnT> input, const MatType& rotation) const;
 
     // printing functions called from the solve function of a derived class
     static void print_iteration();
@@ -169,11 +167,9 @@ class SpinFreeMethod {
 template<> void SpinFreeMethod<double>::rotate_xms();
 template<> void SpinFreeMethod<double>::feed_rdm_denom();
 template<> void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size);
-template<> std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const;
 template<> void SpinFreeMethod<std::complex<double>>::rotate_xms();
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom();
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size);
-template<> std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const;
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>,
                         std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>>

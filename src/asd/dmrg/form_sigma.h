@@ -93,7 +93,7 @@ class FormSigmaProdRAS {
     /// depending on what type of PhiIJKLists is given to it.
     void resolve_S_aaa(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiIJKLists& phi_ijk) const;
 
-    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)\f$ and \f$\hat S_p = \sum_{i,j,k}
+    /// Computes \f$\hat S_p = \sum_{i,j,k} i^\dagger_\beta j_\beta k_\alpha (ij|pk)f$ and \f$\hat S_p = \sum_{i,j,k}
     void resolve_S_abb(const RASBlockVectors& cc, RASBlockVectors& sigma, const double* Jp, const PhiKLists& phik, const Sparse_IJ& sparse) const;
 };
 
