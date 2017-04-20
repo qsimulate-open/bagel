@@ -209,9 +209,9 @@ vector<Stevens_Operator> Pseudospin::build_extended_stevens_operators(const vect
       auto ocos_kq = make_shared<const ZMatrix>(complex<double>(0.5,  0.0) * ckq * (*tkq + *tkq->transpose_conjg()));
       auto osin_kq = make_shared<const ZMatrix>(complex<double>(0.0, -0.5) * ckq * (*tkq - *tkq->transpose_conjg()));
 
-      stevensop.push_back(Stevens_Operator(ocos_kq, k, q));
+      stevensop.emplace_back(ocos_kq, k, q);
       if (q != 0)
-        stevensop.push_back(Stevens_Operator(osin_kq, k, -q));
+        stevensop.emplace_back(osin_kq, k, -q);
     }
   }
   return stevensop;
