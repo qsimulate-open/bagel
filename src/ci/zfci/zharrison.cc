@@ -134,17 +134,19 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
 
   update(coeff);
 
-#ifndef DISABLE_SERIALIZATION
   // if integral dump is requested, do it here, and throw Termination
   const bool only_ints = idata_->get<bool>("only_ints", false);
   if (only_ints) {
+#ifndef DISABLE_SERIALIZATION
     OArchive ar("relref");
     auto rout = make_shared<RelReference>(geom_, coeff->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit());
     ar << rout;
     dump_ints();
     throw Termination("Relativistic MO integrals are dumped on a file.");
-  }
+#else
+    throw runtime_error("You must compile with serialization in order to dump MO integrals into a file.");
 #endif
+  }
 }
 
 
