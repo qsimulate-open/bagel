@@ -80,7 +80,7 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals(const bool s
     }
   } else {
     // sort by natural orbital occupation numbers instead
-    int b2n = buf2->ndim();
+    const int b2n = buf2->ndim();
     for (int i = 0; i != buf2->mdim(); ++i) {
       copy_n(buf->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i));
       vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;
