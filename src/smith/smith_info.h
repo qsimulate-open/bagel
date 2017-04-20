@@ -60,12 +60,24 @@ class SMITH_Info {
     bool sssr_;
     bool shift_diag_;
     bool block_diag_fock_;
+    bool restart_;
 
     double thresh_overlap_;
 
     std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
+      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_;
+      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & thresh_overlap_ & aniso_data_;
+    }
+
   public:
+    SMITH_Info() { }
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);
 
@@ -99,6 +111,7 @@ class SMITH_Info {
     bool sssr() const { return sssr_; }
     bool shift_diag() const { return shift_diag_; }
     bool block_diag_fock() const { return block_diag_fock_; }
+    bool restart() const { return restart_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
 
@@ -148,5 +161,9 @@ extern template class SMITH_Info<double>;
 extern template class SMITH_Info<std::complex<double>>;
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH_Info<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH_Info<std::complex<double>>)
 
 #endif

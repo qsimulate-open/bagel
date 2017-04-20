@@ -31,6 +31,7 @@
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
+#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -64,6 +65,15 @@ class RMAWindow {
 
     bool initialized_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      // Do nothing.
+      // initialized_ should be saved by derived class, which calls initialize() upon loading if needed.
+    }
+
   public:
     RMAWindow();
     virtual ~RMAWindow();
@@ -91,8 +101,9 @@ class RMAWindow {
     std::unique_ptr<DataType[]> rma_get(const size_t rank, const size_t off, const size_t size) const;
     void rma_get(DataType*, const size_t key) const;
     void rma_get(DataType*, const size_t rank, const size_t off, const size_t size) const;
-    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key);
+    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key) { rma_put(dat.get(), key); }
     void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_put(dat.get(), rank, off, size); }
+    void rma_put(const DataType* dat, const size_t key);
     void rma_put(const DataType* dat, const size_t rank, const size_t off, const size_t size);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t key);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_add(dat.get(), rank, off, size); }
@@ -138,5 +149,9 @@ extern template class RMAWindow<double>;
 extern template class RMAWindow<std::complex<double>>;
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::RMAWindow<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::RMAWindow<std::complex<double>>)
 
 #endif

@@ -272,4 +272,7 @@ template class StorageIncore<double>;
 template class StorageIncore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+BOOST_CLASS_EXPORT_IMPLEMENT(StorageIncore<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(StorageIncore<complex<double>>)
+
 #endif

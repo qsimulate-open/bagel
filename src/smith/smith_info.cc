@@ -78,6 +78,10 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  // enable restart capability
+  restart_ = idata->get<bool>("restart", false);
+
+  // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
 
   // These are not input parameters (set automatically)
@@ -199,5 +203,8 @@ shared_ptr<const Reference>  SMITH_Info<DataType>::extract_ref(const vector<int>
 template class SMITH_Info<double>;
 template class SMITH_Info<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<complex<double>>)
 
 #endif

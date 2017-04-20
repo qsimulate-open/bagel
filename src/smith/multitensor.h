@@ -43,6 +43,14 @@ class MultiTensor_ {
     // external coefficients
     std::vector<std::shared_ptr<TType>> tensors_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & fac_ & tensors_;
+    }
+
   public:
     MultiTensor_() { }
     MultiTensor_(const int n) : fac_(n, 0.0), tensors_(n) { }
@@ -140,6 +148,9 @@ class MultiTensor_ {
     const DataType& fac(const int i) const { return fac_[i]; }
 };
 
+extern template class MultiTensor_<double>;
+extern template class MultiTensor_<std::complex<double>>;
+
 namespace CASPT2 { using MultiTensor = MultiTensor_<double>; }
 namespace CASA { using MultiTensor = MultiTensor_<double>; }
 namespace MSCASPT2  { using MultiTensor = MultiTensor_<double>; }
@@ -151,6 +162,10 @@ namespace RelMSCASPT2  { using MultiTensor = MultiTensor_<std::complex<double>>;
 
 }
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::MultiTensor_<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::MultiTensor_<std::complex<double>>)
 
 #endif
 

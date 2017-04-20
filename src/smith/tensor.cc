@@ -184,4 +184,7 @@ template class Tensor_<double>;
 template class Tensor_<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+BOOST_CLASS_EXPORT_IMPLEMENT(Tensor_<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(Tensor_<complex<double>>)
+
 #endif

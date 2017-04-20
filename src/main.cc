@@ -103,14 +103,19 @@ int main(int argc, char** argv) {
         if (!itree->get<string>("molden_file", "").empty())
           ref = make_shared<Reference>(geom, itree);
       } else {
-        if (!geom) throw runtime_error("molecule block is missing");
-        if (!itree->get<bool>("df",true)) dodf = false;
-        if (!itree->get<bool>("cfmm", false)) dofmm = true;
-        if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        if (!geom) {
+          if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue"))
+            throw runtime_error("molecule block is missing");
+        } else {
+          if (!itree->get<bool>("df",true)) dodf = false;
+          if (!itree->get<bool>("cfmm", false)) dofmm = true;
+          if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        }
       }
 
       if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
-        throw runtime_error(title + " needs a reference");
+        if (itree->get<string>("method", "") != "continue")
+          throw runtime_error(title + " needs a reference");
 
       // most methods are constructed here
       method = construct_method(title, itree, geom, ref);
