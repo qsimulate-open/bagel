@@ -38,6 +38,7 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det)
   this->initialize();
 }
 
+
 template<typename DataType>
 DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
   : RMAWindow<DataType>(), det_(civ->det()), lena_(civ->det()->lena()), lenb_(civ->det()->lenb()), dist_(lena_, mpi__->size()),
@@ -47,8 +48,10 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
   // create an window
   this->initialize();
   // fill up with initial data in civ
-  for (int i = 0; i != mpi__->size(); ++i)
-    this->rma_rput(civ->data(), i, dist_.start(i)*lenb_, dist_.size(i)*lenb_);
+  for (int ia = 0; ia != lena_; ++ia)
+    if (is_local(ia))
+      for (int ib = 0; ib != lenb_; ++ib)
+        set_local(ia - astart_, ib, civ->data(ia + ib*lenb_));
   fence();
 }
 
@@ -56,9 +59,21 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
 template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   auto out = make_shared<Civector<DataType>>(det_);
-  for (int i = 0; i != mpi__->size(); ++i)
-    this->rma_rget(out->data(), i, dist_.start(i)*lenb_, dist_.size(i)*lenb_);
-  fence();
+
+  vector<DataType> data;
+  const DataType* d = local_data();
+
+  for (size_t ia = astart_; ia != aend_; ++ia)
+    for (size_t ib = 0; ib != lenb_; ++ib, ++d)
+      data.push_back(*d);
+
+  vector<size_t> nelements(mpi__->size(), 0);
+  const size_t nn = data.size();
+  mpi__->allgather(&nn, 1, nelements.data(), 1);
+  const size_t chunk = *max_element(nelements.begin(), nelements.end());
+
+  mpi__->allgather(data.data(), chunk, out->data(), chunk);
+
   return out;
 }
 
