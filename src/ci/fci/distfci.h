@@ -100,13 +100,13 @@ class DistFCI : public FCI_base<DistCivec,DistDvec> {
     std::shared_ptr<const DistDvec> dvec_to_distdvec(std::shared_ptr<const Dvec> c) const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
-    // should code RDM reader for DistFCI
-    void read_external_rdm12_av(const std::string& file) { }
-    std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<1>>(); }
-    std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<2>>(); }
-    std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<3>>(); }
-    std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) { return std::make_shared<RDM<4>>(); }
-    void dump_ints() const { }
+    // RDM reader for DistFCI: currently same with FCI
+    void read_external_rdm12_av(const std::string& file);
+    std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
+    void dump_ints() const;
 };
 
 }
