@@ -6,7 +6,7 @@ filename = "gvrr.cc"
 
 ss = "\
 //\n\
-// BAGEL - Parallel electron correlation program.\n\
+// BAGEL - Brilliantly Advanced General Electronic Structure Library\n\
 // Filename: " + filename + "\n\
 // Copyright (C) 2012 Toru Shiozaki\n\
 //\n\
@@ -15,19 +15,18 @@ ss = "\
 //\n\
 // This file is part of the BAGEL package.\n\
 //\n\
-// The BAGEL package is free software; you can redistribute it and/or modify\n\
-// it under the terms of the GNU Library General Public License as published by\n\
-// the Free Software Foundation; either version 3, or (at your option)\n\
-// any later version.\n\
+// This program is free software: you can redistribute it and/or modify\n\
+// it under the terms of the GNU General Public License as published by\n\
+// the Free Software Foundation, either version 3 of the License, or\n\
+// (at your option) any later version.\n\
 //\n\
-// The BAGEL package is distributed in the hope that it will be useful,\n\
+// This program is distributed in the hope that it will be useful,\n\
 // but WITHOUT ANY WARRANTY; without even the implied warranty of\n\
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n\
-// GNU Library General Public License for more details.\n\
+// GNU General Public License for more details.\n\
 //\n\
-// You should have received a copy of the GNU Library General Public License\n\
-// along with the BAGEL package; see COPYING.  If not, write to\n\
-// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.\n\
+// You should have received a copy of the GNU General Public License\n\
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.\n\
 //\n\
 \n\
 #include <src/integral/rys/gradbatch.h>\n\
@@ -43,11 +42,11 @@ static const Comb comb;\n\
 \n\
 void GradBatch::perform_VRR() {\n\
 #ifndef LIBINT_INTERFACE\n\
-  const int acsize = size_block_ / primsize_;\n\
   const int a = basisinfo_[0]->angular_number();\n\
   const int b = basisinfo_[1]->angular_number();\n\
   const int c = basisinfo_[2]->angular_number();\n\
   const int d = basisinfo_[3]->angular_number();\n\
+  const int acsize = (a+1)*(a+2)*(b+1)*(b+2)*(c+1)*(c+2)*(d+1)*(d+2)/16;\n\
 \n\
   const int isize = (amax_ + 1) * (cmax_ + 1);\n\
   double* const workx = stack_->get(isize*rank_*3);\n\
@@ -65,20 +64,20 @@ void GradBatch::perform_VRR() {\n\
   double* const trans2x = stack_->get((cmax_+1)*c2*d2);\n\
   double* const trans2y = stack_->get((cmax_+1)*c2*d2);\n\
   double* const trans2z = stack_->get((cmax_+1)*c2*d2);\n\
-  fill(transx,  transx +(amax_+1)*a2*b2, 0.0);\n\
-  fill(transy,  transy +(amax_+1)*a2*b2, 0.0);\n\
-  fill(transz,  transz +(amax_+1)*a2*b2, 0.0);\n\
-  fill(trans2x, trans2x+(cmax_+1)*c2*d2, 0.0);\n\
-  fill(trans2y, trans2y+(cmax_+1)*c2*d2, 0.0);\n\
-  fill(trans2z, trans2z+(cmax_+1)*c2*d2, 0.0);\n\
+  fill_n(transx,  (amax_+1)*a2*b2, 0.0);\n\
+  fill_n(transy,  (amax_+1)*a2*b2, 0.0);\n\
+  fill_n(transz,  (amax_+1)*a2*b2, 0.0);\n\
+  fill_n(trans2x, (cmax_+1)*c2*d2, 0.0);\n\
+  fill_n(trans2y, (cmax_+1)*c2*d2, 0.0);\n\
+  fill_n(trans2z, (cmax_+1)*c2*d2, 0.0);\n\
   // for usual integrals\n\
   for (int ib = 0, k = 0; ib <= b+1; ++ib) {\n\
     for (int ia = 0; ia <= a+1; ++ia, ++k) {\n\
       if (ia == a+1 && ib == b+1) continue;\n\
       for (int i = ia; i <= ia+ib; ++i) {\n\
-        transx[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);\n\
-        transy[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);\n\
-        transz[i + (amax_+1)*k] = comb.c(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);\n\
+        transx[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[0], ia+ib-i);\n\
+        transy[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[1], ia+ib-i);\n\
+        transz[i + (amax_+1)*k] = comb(ib, ia+ib-i) * pow(AB_[2], ia+ib-i);\n\
       }   \n\
     }   \n\
   }\n\
@@ -86,9 +85,9 @@ void GradBatch::perform_VRR() {\n\
     for (int ic = 0; ic <= c+1; ++ic, ++k) {\n\
       if (ic == c+1 && id == d+1) continue;\n\
       for (int i = ic; i <= ic+id; ++i) {\n\
-        trans2x[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[0], ic+id-i);\n\
-        trans2y[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[1], ic+id-i);\n\
-        trans2z[i + (cmax_+1)*k] = comb.c(id, ic+id-i) * pow(CD_[2], ic+id-i);\n\
+        trans2x[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[0], ic+id-i);\n\
+        trans2y[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[1], ic+id-i);\n\
+        trans2z[i + (cmax_+1)*k] = comb(id, ic+id-i) * pow(CD_[2], ic+id-i);\n\
       }   \n\
     }   \n\
   }\n\
@@ -108,11 +107,11 @@ void GradBatch::perform_VRR() {\n\
   const array<bool,4> dummy{{basisinfo_[0]->dummy(), basisinfo_[1]->dummy(), basisinfo_[2]->dummy(), basisinfo_[3]->dummy()}};\n\
   const int hashkey = (a << 24) + (b << 16) + (c << 8) + d;\n"
 
-for a in range(0,7):
- for b in range(0,7):
+for a in range(0,8):
+ for b in range(0,8):
   if a < b: continue
-  for c in range(0,7):
-   for d in range(0,7):
+  for c in range(0,8):
+   for d in range(0,8):
     if c < d: continue
     rank = int(math.ceil((a+b+c+d+2)*0.5-0.001))
     off = 1 << 8
@@ -121,6 +120,9 @@ for a in range(0,7):
     if a == 0 and c == 0:
      ss += "\
   switch (hashkey) {\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#ifdef COMPILE_J_ORB\n"
     ss += "\
   case " + str(key) + " :\n\
     for (int j = 0; j != screening_size_; ++j) {\n\
@@ -131,7 +133,12 @@ for a in range(0,7):
                     exponents_.get()+ii*4, transx, transy, transz, trans2x, trans2y, trans2z, intermediate,\n\
                     final_x, final_y, final_z, final_xa, final_xb, final_xc, final_ya, final_yb, final_yc, final_za, final_zb, final_zc, workx, worky, workz, dummy);\n\
     } break;\n"
+    if a == 7 or c == 7 or c == 7 or d == 7:
+     ss += "\
+#endif\n"
 ss += "\
+  default :\n\
+    assert(false);   // hashkey not found\n\
   }\n\
   stack_->release(b2*a2*c2*d2*rank_, final_zc);\n\
   stack_->release(b2*a2*c2*d2*rank_, final_zb);\n\

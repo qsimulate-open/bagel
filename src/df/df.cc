@@ -183,6 +183,25 @@ shared_ptr<DFHalfDist> DFHalfDist::clone() const {
 }
 
 
+shared_ptr<DFHalfDist> DFHalfDist::merge(shared_ptr<DFHalfDist> o) const {
+  assert(naux() == o->naux() && nindex2() == o->nindex2());
+  assert(block().size() == o->block().size());
+
+  auto out = make_shared<DFHalfDist>(df_, nindex1() + o->nindex1());
+  for (int i = 0; i != block_.size(); ++i)
+    out->add_block(block(i)->merge(o->block(i)));
+  return out;
+}
+
+
+shared_ptr<DFHalfDist> DFHalfDist::slice_b1(const int slice_start, const int slice_size) const {
+  auto out = make_shared<DFHalfDist>(df_, slice_size);
+  for (int i = 0; i != block_.size(); ++i)
+    out->add_block(block(i)->slice_b1(slice_start, slice_size));
+  return out;
+}
+
+
 shared_ptr<DFDist> DFHalfDist::back_transform(const MatView c) const{
   assert(df_->nindex1() == c.extent(0));
   auto out = make_shared<DFDist>(df_);
