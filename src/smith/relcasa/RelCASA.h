@@ -58,7 +58,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
     // for restart capability
-    bool state_begin_;
+    int state_begin_;
 
   private:
     // serialization
@@ -143,11 +143,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     void solve_deriv();
 
     int state_begin() const { return state_begin_; }
-    void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist) {
-      assert(state_begin_ == ist);
-      t2all_[ist] = t2in;
-      state_begin_ += 1;
-    }
+    void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;

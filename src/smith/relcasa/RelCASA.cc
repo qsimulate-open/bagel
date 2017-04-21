@@ -291,6 +291,13 @@ void RelCASA::RelCASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std
 }
 
 
+void RelCASA::RelCASA::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
+  assert(state_begin_ == ist);
+  t2all_[ist] = t2in;
+  state_begin_ += 1;
+}
+
+
 void RelCASA::RelCASA::solve_deriv() {
   throw std::logic_error("Nuclear gradients not implemented for RelCASA");
 }
