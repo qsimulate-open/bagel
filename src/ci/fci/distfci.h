@@ -141,5 +141,14 @@ class DistFCI : public FCI_base {
 
 }
 
-#endif
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::DistFCI)
 
+namespace bagel {
+  template <class T>
+  struct base_of<T, typename std::enable_if<std::is_base_of<DistFCI, T>::value>::type> {
+    typedef DistFCI type;
+  };
+}
+
+#endif

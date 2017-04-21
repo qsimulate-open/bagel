@@ -171,4 +171,3 @@ namespace bagel {
 }
 
 #endif
-
