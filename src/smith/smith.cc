@@ -133,29 +133,32 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
   if (method == "continue") {
     Timer mtimer;
-    string arch = idata_->get<string>("archive");
+    const int state_begin = idata_->get<int>("state_begin", 0);
+    string arch_prefix = idata_->get<string>("archive_location", "") + "RelCASA";
+    string arch = arch_prefix + (mpi__->rank() == 0 ? "_t2full" : "_t2head");
+
     shared_ptr<const SMITH_Info<complex<double>>> info;
     {
-      IArchive archive(arch + "_info");
+      IArchive archive(arch_prefix + "_info");
       shared_ptr<SMITH_Info<complex<double>>> ptr;
       archive >> ptr;
       info = shared_ptr<SMITH_Info<complex<double>>>(ptr);
     }
+    mtimer.tick_print("Load RelSMITH info Archive");
     ref_ = info->ref();
     geom_ = ref_->geom();
     algo_ = make_shared<RelCASA::RelCASA>(info);
-    const int state_begin = idata_->get<int>("state_begin", 0);
     if (state_begin < 0 || state_begin > (info->nact() ? info->ciwfn()->nstates() : 1))
       throw runtime_error("Invalid starting point for RelSMITH continue");
 
+    mtimer.tick_print("Construct RelCASA");
     for (int ist = 0; ist != state_begin; ++ist) {
       IArchive archive(arch + "_" + to_string(ist));
       shared_ptr<MultiTensor_<complex<double>>> t2in;
       archive >> t2in;
       (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
-      cout << " *** After Loading, t2[" << ist << "] norm = " << t2in->norm() << endl;
     }
-    mtimer.tick_print("Load Archive (RelSMITH)");
+    mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");
   } else {
 
     // make a smith_info class

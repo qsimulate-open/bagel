@@ -120,14 +120,16 @@ class StorageIncore : public RMAWindow<DataType> {
       ar << boost::serialization::base_object<RMAWindow<DataType>>(*this);
       ar << RMAWindow<DataType>::initialized_ << totalsize_ << hashtable_ordered;
 
-      // save actual data here, tile by tile
-      for (auto& i : hashtable_ordered) {
-        size_t rank, off, size;
-        std::tie(rank, off, size) = locate(i.first);
-        std::vector<DataType> tmp;
-        tmp.resize(size);
-        rma_get(tmp.data(), i.first);
-        ar << tmp;
+      // Process 0 collects and saves tensor's contents, tile by tile
+      // Other processes do nothing; this requires them to be writing to a different file from Process 0
+      if (mpi__->rank() == 0) {
+        for (auto& i : hashtable_ordered) {
+          size_t rank, off, size;
+          std::tie(rank, off, size) = locate(i.first);
+          std::vector<DataType> tmp(size, 0.0);
+          rma_get(tmp.data(), i.first);
+          ar << tmp;
+        }
       }
       mpi__->barrier();
     }
@@ -165,15 +167,16 @@ class StorageIncore : public RMAWindow<DataType> {
       if (init)
         initialize();
 
-      // load data
-      for (auto& i : hashtable_ordered) {
-        size_t rank, off, size;
-        std::tie(rank, off, size) = locate(i.first);
-        std::vector<DataType> tmp;
-        tmp.resize(size);
-        ar >> tmp;
-        if (mpi__->rank() == 0)
-          rma_put(tmp.data(), i.first);
+      // Process 0 reads and distributes data, tile by tile
+      // Other processes do nothing; this requires them to be reading from shorter archives lacking the stored data
+      if (mpi__->rank() == 0) {
+        for (auto& i : hashtable_ordered) {
+          size_t rank, off, size;
+          std::tie(rank, off, size) = locate(i.first);
+          std::vector<DataType> tmp(size, 0.0);
+          ar >> tmp;
+            rma_put(tmp.data(), i.first);
+        }
       }
       mpi__->barrier();
     }

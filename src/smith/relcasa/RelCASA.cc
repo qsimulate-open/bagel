@@ -190,17 +190,21 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
 
 #ifndef DISABLE_SERIALIZATION
     if (info_->restart() && i > state_begin_) {
-      string arch = "RelCASA";
+      string arch_prefix = "RelCASA";
+      string arch = arch_prefix + (mpi__->rank() == 0 ? "_t2full" : "_t2head");
       if (i == 1) {
-        OArchive archive(arch + "_info");
+        OArchive archive(arch_prefix + "_info");
         archive << info_;
+        mtimer.tick_print("Save RelSMITH info Archive");
       }
-      OArchive archive(arch + "_" + to_string(i - 1));
+      {
+        OArchive archive(arch + "_" + to_string(i - 1));
         archive << t2all_[i - 1];
-
+      }
+      mpi__->barrier();
       for (int ist = 0; ist != t2all_.size(); ++ist)
         cout << fixed << setprecision(8) << " *** After Archiving, t2all_[" << ist << "] norm = " << t2all_[ist]->norm() << endl;
-      mtimer.tick_print("Generating restart archive");
+      mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
     }
 #endif
 
