@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("nh_svp_triplet_gaunt"),    -54.93378556));
   BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),   -149.56647946));
 #ifndef DISABLE_SERIALIZATION
-//BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
+  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_zcasscf_saveref"), -100.03016820));
 #endif
 }
 

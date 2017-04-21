@@ -14,7 +14,7 @@
 
 {
   "title"  : "zcasscf",
-  "algorithm" : "superci",
+  "algorithm" : "second",
   "save_ref" : "true",
   "ref_out" : "zcas_test",
   "state" : [1],
@@ -37,7 +37,7 @@
 
 {
   "title"  : "zcasscf",
-  "algorithm" : "bfgs",
+  "algorithm" : "second",
   "load_ref" : "true",
   "ref_in" : "zcas_test",
   "occ_sort" : "true",
@@ -48,7 +48,7 @@
   "thresh_fci" : 1.0e-9,
   "nact_cas"   : 2,
   "nclosed"  : 4,
-  "maxiter"  : 5,
+  "maxiter"  : 3,
   "maxiter_scf"  : 100,
   "maxiter_fci"  : 100,
   "maxiter_micro" : 20,

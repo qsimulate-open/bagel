@@ -27,7 +27,6 @@
 #include <src/util/exception.h>
 #include <src/util/math/comb.h>
 #include <src/util/math/quatmatrix.h>
-#include <src/prop/pseudospin/pseudospin.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/rel/reloverlap.h>
@@ -39,8 +38,8 @@ using namespace std;
 using namespace bagel;
 
 ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb,
-                     shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store)
- : Method(idat, g, r), ncore_(ncore), norb_(norb), store_half_ints_(store), restarted_(false) {
+                     shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
+ : Method(idat, g, r), ncore_(ncore), norb_(norb), store_half_ints_(store_c), store_gaunt_half_ints_(store_g), restarted_(false) {
   if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
@@ -138,11 +137,15 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   // if integral dump is requested, do it here, and throw Termination
   const bool only_ints = idata_->get<bool>("only_ints", false);
   if (only_ints) {
+#ifndef DISABLE_SERIALIZATION
     OArchive ar("relref");
     auto rout = make_shared<RelReference>(geom_, coeff->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit());
     ar << rout;
     dump_ints();
     throw Termination("Relativistic MO integrals are dumped on a file.");
+#else
+    throw runtime_error("You must compile with serialization in order to dump MO integrals into a file.");
+#endif
   }
 }
 
@@ -388,23 +391,6 @@ void ZHarrison::compute() {
     iprop->print();
   }
 #endif
-
-
-  // TODO When the Property class is implemented, this should be one
-  shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
-  if (aniso_data) {
-    if (geom_->magnetism()) {
-      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
-    } else {
-
-      assert(!idata_->get<bool>("numerical", false));  // This feature is deactivated
-
-      const int nspin = aniso_data->get<int>("nspin", states_.size()-1);
-      Pseudospin ps(nspin, aniso_data);
-      ps.compute(*this);
-
-    }
-  }
 }
 
 
@@ -424,7 +410,7 @@ pair<shared_ptr<ZMatrix>, VectorB> ZHarrison::natorb_convert() {
     auto rdm1 = make_shared<ZMatrix>(norb_*2, norb_*2);
     copy_n(rdm1_av_expanded_->data(), rdm1->size(), rdm1->data());
     rdm1->scale(-1.0);
-    for (int i = 0; i != norb_; ++i)
+    for (int i = 0; i != norb_*2; ++i)
       rdm1->element(i,i) += 1.0;
     natorb = make_shared<QuatMatrix>(*rdm1);
     natorb->diagonalize(occup);
