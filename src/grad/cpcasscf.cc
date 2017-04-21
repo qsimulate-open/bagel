@@ -30,25 +30,17 @@ using namespace std;
 using namespace bagel;
 using namespace btas;
 
-#ifdef HAVE_MPI_H
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<DistFCI> f, const int ncore, shared_ptr<const Matrix> coeff)
+                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, shared_ptr<const Matrix> coeff)
 : grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+
+  // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
   fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
-#else
-CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
-#endif
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
 
-#ifdef HAVE_MPI_H
-  qvec_ = ref_->nact() ? make_shared<Qvec>(coeff_->mdim(), ref_->nact(), coeff_, ref_->nclosed(), fci_native_, ref_->rdm2_av()) : nullptr;
-#else
   qvec_ = ref_->nact() ? make_shared<Qvec>(coeff_->mdim(), ref_->nact(), coeff_, ref_->nclosed(), fci_, ref_->rdm2_av()) : nullptr;
-#endif
 }
 
 

@@ -56,7 +56,7 @@ class CASPT2Deriv : public Method {
     // y from SMITH code
     std::shared_ptr<Dvec> cideriv_;
     // FCI utility
-    std::shared_ptr<DistFCI> fci_;
+    std::shared_ptr<FCI_base> fci_;
 
     // for gradient
     int nstates_;
@@ -81,7 +81,7 @@ class CASPT2Deriv : public Method {
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
-    std::shared_ptr<DistFCI> fci() const { return fci_; }
+    std::shared_ptr<FCI_base> fci() const { return fci_; }
 
     int nstates() const { return nstates_; }
     int ncore() const { return ncore_; }
@@ -183,7 +183,7 @@ class CASPT2Energy : public Method {
     std::shared_ptr<const Matrix> xmsrot_;
     std::shared_ptr<const Matrix> heffrot_;
     std::vector<double> energy_;
-    std::shared_ptr<DistFCI> fci_;
+    std::shared_ptr<FCI_base> fci_;
     std::shared_ptr<Matrix> vd1_;
     double thresh_;
     int target_state1_;

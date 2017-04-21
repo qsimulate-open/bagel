@@ -31,18 +31,38 @@
 
 namespace bagel {
 
-class FCI : public FCI_base<Civec,Dvec> {
+class FCI : public FCI_base {
   protected:
     // properties to be calculated
     std::vector<std::shared_ptr<CIProperties>> properties_;
+    std::shared_ptr<Dvec> cc_;
+    std::shared_ptr<Civec> denom_;
+    std::shared_ptr<DavidsonDiag<Civec>> davidson_;
 
   private:
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive& ar, const unsigned int version) {
-      ar & boost::serialization::base_object<FCI_base<Civec,Dvec>>(*this) & properties_;
+      boost::serialization::split_member(ar, *this, version);
     }
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << boost::serialization::base_object<Method>(*this);
+      ar << max_iter_ << davidson_subspace_ << nguess_ << thresh_ << print_thresh_
+         << nelea_ << neleb_ << ncore_ << norb_ << nstate_ << det_
+         << energy_ << cc_ << rdm1_ << rdm2_ << weight_ << rdm1_av_ << rdm2_av_ << davidson_;
+    }
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      // jop_ and denom_ will be constructed in derived classes
+      ar >> boost::serialization::base_object<Method>(*this);
+      ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
+         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> det_
+         >> energy_ >> cc_ >> rdm1_ >> rdm2_ >> weight_ >> rdm1_av_ >> rdm2_av_ >> davidson_;
+      restarted_ = true;
+    }
+
 
   protected:
     // some init functions
@@ -75,6 +95,9 @@ class FCI : public FCI_base<Civec,Dvec> {
 
     virtual void update(std::shared_ptr<const Matrix>) = 0;
 
+    void compute_rdm12() override;
+    void compute_rdm12(const int ist, const int jst) override;
+
     // virtual application of Hamiltonian
     virtual std::shared_ptr<Dvec> form_sigma(std::shared_ptr<const Dvec> c, std::shared_ptr<const MOFile> jop, const std::vector<int>& conv) const = 0;
 
@@ -86,7 +109,13 @@ class FCI : public FCI_base<Civec,Dvec> {
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const Civec> cbra, std::shared_ptr<const Civec> cket) const override;
+      compute_rdm12_from_civec(std::shared_ptr<const Civec> cbra, std::shared_ptr<const Civec> cket) const;
+
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o) const override;
+
+    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
+      compute_rdm12_last_step(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Civec>) const;
 
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
@@ -107,7 +136,7 @@ class FCI : public FCI_base<Civec,Dvec> {
 
     // interface functions
     // read state averaged RDM1 and 2 and set to rdm1_av_expanded_ and rdm2_av_expanded_ 
-    void read_external_rdm12_av(const std::string& file); 
+    void read_external_rdm12_av(const std::string& file) override;
     std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
