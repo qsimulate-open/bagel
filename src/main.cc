@@ -251,7 +251,6 @@ int main(int argc, char** argv) {
     resources__->proc()->cout_on();
     cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
     resources__->proc()->cout_off();
-    throw;
   } catch (...) {
     throw;
   }
