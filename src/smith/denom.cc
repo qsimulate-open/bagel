@@ -602,7 +602,4 @@ template class Denom<double>;
 template class Denom<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-BOOST_CLASS_EXPORT_IMPLEMENT(Denom<double>)
-BOOST_CLASS_EXPORT_IMPLEMENT(Denom<complex<double>>)
-
 #endif

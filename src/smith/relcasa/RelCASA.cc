@@ -306,6 +306,4 @@ void RelCASA::RelCASA::solve_deriv() {
   throw std::logic_error("Nuclear gradients not implemented for RelCASA");
 }
 
-BOOST_CLASS_EXPORT_IMPLEMENT(RelCASA::RelCASA)
-
 #endif

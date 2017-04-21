@@ -60,31 +60,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     // for restart capability
     int state_begin_;
 
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
-      boost::serialization::split_member(ar, *this, file_version);
-    }
-
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<SpinFreeMethod<std::complex<double>>>(*this);
-      ar << t2 << r << s;                                      // TODO Can we avoid storing these by just loading them in from t2all_, etc.?
-      ar << nstates_ << e0f_ << err_ << pt2energy_ << heff_;
-      ar << t2all_ << rall_ << sall_ << lall_;                 // TODO Probably very expensive to store - can it be avoided?
-    }
-
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      ar >> boost::serialization::base_object<SpinFreeMethod<std::complex<double>>>(*this);
-      ar >> t2 >> r >> s;                                      // TODO Can we avoid storing these by just loading them in from t2all_, etc.?
-      ar >> nstates_ >> e0f_ >> err_ >> pt2energy_ >> heff_;
-      ar >> t2all_ >> rall_ >> sall_ >> lall_;                 // TODO Probably very expensive to store - can it be avoided?
-    }
-
-  protected:
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
     void update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r, const int istate);
 
@@ -135,9 +110,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> s, std::vector<std::shared_ptr<MultiTensor_<std::complex<double>>>> t);
 
   public:
-    RelCASA() { }
     RelCASA(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
-    ~RelCASA() {}
 
     void solve();
     void solve_deriv();
@@ -158,9 +131,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
 }
 }
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SMITH::RelCASA::RelCASA)
 
 #endif
 

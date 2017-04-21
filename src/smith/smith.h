@@ -112,16 +112,7 @@ class RelSmith : public Method {
 #endif
     std::shared_ptr<const ZMatrix> coeff_;
 
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & boost::serialization::base_object<Method>(*this) & algo_ & coeff_;
-    }
-
   public:
-    RelSmith() { }
     RelSmith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override {
@@ -139,9 +130,5 @@ class RelSmith : public Method {
 };
 
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::RelSmith)
-BOOST_CLASS_EXPORT_KEY(bagel::Smith)
 
 #endif

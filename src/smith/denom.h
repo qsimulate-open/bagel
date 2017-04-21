@@ -80,17 +80,6 @@ class Denom {
     void init_xxh_(const int, const int, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                          std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
 
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & fock_ & thresh_;
-      ar & shalf_x_ & shalf_h_ & shalf_xx_ & shalf_hh_ & shalf_xh_ & shalf_xhh_ & shalf_xxh_;
-      ar & work_x_ & work_h_ & work_xx_ & work_hh_ & work_xh_ & work_xhh_ & work_xxh_;
-      ar & denom_x_ & denom_h_ & denom_xx_ & denom_hh_ & denom_xh_ & denom_xhh_ & denom_xxh_;
-    }
-
   public:
     Denom() { }
     Denom(std::shared_ptr<const MatType> fock, const int nstates, const double thresh_overlap);
@@ -137,9 +126,5 @@ extern template class Denom<std::complex<double>>;
 
 }
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::SMITH::Denom<double>)
-BOOST_CLASS_EXPORT_KEY(bagel::SMITH::Denom<std::complex<double>>)
 
 #endif

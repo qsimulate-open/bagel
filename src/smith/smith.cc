@@ -178,6 +178,3 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
   throw logic_error("You must enable SMITH during compilation for this method to be available.");
 #endif
 }
-
-BOOST_CLASS_EXPORT_IMPLEMENT(Smith)
-BOOST_CLASS_EXPORT_IMPLEMENT(RelSmith)
