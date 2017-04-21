@@ -107,6 +107,8 @@ void CASSCF::common_init() {
   conv_ignore_ = idata_->get<bool>("conv_ignore", false);
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
+  // FCI algorithm
+  fci_algorithm_ = idata_->get<string>("fci_algorithm", "knowles");
   // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
   sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
 
@@ -143,7 +145,19 @@ void CASSCF::common_init() {
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+    if (fci_algorithm_ == "knowles" || fci_algorithm_ == "kh" || fci_algorithm_ == "handy") {
+      cout << "    * Using serial Knowles-Handy algorithm in FCI." << endl;
+      fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+    } else if (fci_algorithm_ == "harrison" || fci_algorithm_ == "zarrabian" || fci_algorithm_ == "hz") {
+      cout << "    * Using serial Harrison-Zarrabian algorithm in FCI." << endl;
+      fci_ = make_shared<HarrisonZarrabian>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#ifdef HAVE_MPI_H
+    } else if (fci_algorithm_ == "parallel" || fci_algorithm_ == "dist") {
+      cout << "    * Using parallel algorithm in FCI." << endl;
+      fci_ = make_shared<DistFCI>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#endif
+    } else
+      throw runtime_error("Unknown FCI algorithm specified. " + fci_algorithm_);
   }
   muffle_->unmute();
 

@@ -66,6 +66,27 @@ KnowlesHandy::KnowlesHandy(shared_ptr<const PTree> a, shared_ptr<const Geometry>
 }
 
 
+KnowlesHandy::KnowlesHandy(shared_ptr<const CIWfn> ci, shared_ptr<const Reference> r) {
+  print_thresh_ = 1.0e-8;
+  nelea_ = ci->det()->nelea();
+  neleb_ = ci->det()->neleb();
+  ncore_ = ci->ncore();
+  norb_  = ci->nact();
+  nstate_ = ci->nstates();
+  energy_ = ci->energies();
+  cc_ = ci->civectors()->copy();
+// Since the determinant space might not be compatible, reconstruct determinant space
+  det_ = make_shared<const Determinants>(norb_, nelea_, neleb_, /*compress=*/true, /*mute=*/true);
+  rdm1_ = make_shared<VecRDM<1>>();
+  rdm2_ = make_shared<VecRDM<2>>();
+  ref_ = r;
+  store_half_ints_ = false;
+  weight_ = vector<double>(nstate_, 1.0/static_cast<double>(nstate_));
+  update(ref_->coeff());
+}
+
+
+
 void FCI::common_init() {
   print_header();
 

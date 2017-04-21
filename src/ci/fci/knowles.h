@@ -75,6 +75,8 @@ class KnowlesHandy : public FCI {
     KnowlesHandy(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
         const int ncore = -1, const int nocc = -1, const int nstate = -1, const bool store = false);
 
+    KnowlesHandy(std::shared_ptr<const CIWfn> ci, std::shared_ptr<const Reference> r);
+
     void update(std::shared_ptr<const Matrix>) override;
 };
 

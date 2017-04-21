@@ -32,7 +32,9 @@
 
 #include <src/wfn/reference.h>
 #include <src/util/muffle.h>
+#include <src/ci/fci/distfci.h>
 #include <src/ci/fci/knowles.h>
+#include <src/ci/fci/harrison.h>
 #include <src/multi/casscf/rotfile.h>
 
 namespace bagel {
@@ -59,8 +61,8 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
-
-    std::shared_ptr<FCI> fci_;
+    std::string fci_algorithm_;
+    std::shared_ptr<FCI_base> fci_;
     void print_header() const;
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
     void common_init();
@@ -93,8 +95,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     std::shared_ptr<const Reference> ref() const { return ref_; }
     virtual std::shared_ptr<const Reference> conv_to_ref() const override;
 
-    std::shared_ptr<FCI> fci() { return fci_; }
-    std::shared_ptr<const FCI> fci() const { return fci_; }
+    std::shared_ptr<FCI_base> fci() { return fci_; }
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }

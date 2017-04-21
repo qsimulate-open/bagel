@@ -31,6 +31,7 @@
 #include <src/ci/fci/dist_form_sigma.h>
 #include <src/ci/fci/distfci.h>
 #include <src/ci/fci/space.h>
+#include <src/ci/fci/fci_base.h>
 #include <src/ci/fci/hzdenomtask.h>
 
 using namespace std;
@@ -475,12 +476,63 @@ void DistFCI::compute() {
   }
 }
 
+shared_ptr<const Civec> DistFCI::denom() const {
+  return denom_->civec();
+}
 
 shared_ptr<const CIWfn> DistFCI::conv_to_ciwfn() const {
-  // convert DistDvec to Dvec
+  auto cc = conv_to_dvec();
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc, cc->det());
+}
+
+shared_ptr<const Dvec> DistFCI::civectors() const {
+  auto cc = conv_to_dvec();
+  return cc;
+}
+
+shared_ptr<const Dvec> DistFCI::conv_to_dvec() const {
   vector<shared_ptr<Civec>> vec;
   for (auto& i : cc_->dvec())
     vec.push_back(i->civec());
   auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));
-  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc, cc->det());
+  return cc;
+}
+
+shared_ptr<const DistDvec> DistFCI::dvec_to_distdvec(shared_ptr<const Dvec> c) const {
+  vector<shared_ptr<DistCivec>> vec;
+  for (auto& i : c->dvec())
+    vec.push_back(make_shared<DistCivec>(i));
+  auto cc = make_shared<DistDvec>(Dvector_base<DistCivec>(vec));
+  return cc;
+}
+
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+DistFCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbrab, shared_ptr<const Dvec> dketb, shared_ptr<const Determinants> o) const {
+  auto dbra = dvec_to_distdvec(dbrab);
+  auto dket = dvec_to_distdvec(dketb);
+
+  if (o != nullptr) {
+    dbra->set_det(o);
+    dket->set_det(o);
+  }
+
+  auto rdm1 = make_shared<RDM<1>>(norb_);
+  auto rdm2 = make_shared<RDM<2>>(norb_);
+
+  assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
+
+  for (int i = 0; i != dbra->ij(); ++i) {
+    shared_ptr<RDM<1>> r1;
+    shared_ptr<RDM<2>> r2;
+    tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
+    rdm1->ax_plus_y(weight_[i], r1);
+    rdm2->ax_plus_y(weight_[i], r2);
+  }
+
+  if (o != nullptr) {
+    dbra->set_det(det_);
+    dket->set_det(det_);
+  }
+
+  return tie(rdm1, rdm2);
 }
