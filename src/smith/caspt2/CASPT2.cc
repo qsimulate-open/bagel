@@ -38,7 +38,7 @@ using namespace bagel::SMITH;
 
 CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMethod(ref) {
   eig_ = f1_->diag();
-  nstates_ = ref->ciwfn()->nstates();
+  nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
 
   // MS-CASPT2: t2 and s as MultiTensor (t2all, sall)
   for (int i = 0; i != nstates_; ++i) {
@@ -126,36 +126,32 @@ void CASPT2::CASPT2::solve() {
   cout << endl;
 
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0.0) {
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
-    } else {
-      // will be used in normq
-      n = init_residual();
-      double norm = 0.0;
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
-        }
+    n = init_residual();
+    double norm = 0.0;
+    for (int jst = 0; jst != nstates_; ++jst) { // bra
+      for (int ist = 0; ist != nstates_; ++ist) { // ket
+        if (info_->sssr() && (jst != istate || ist != istate))
+          continue;
+        set_rdm(jst, ist);
+        t2 = t2all_[istate]->at(ist);
+        shared_ptr<Queue> normq = make_normq(true, jst == ist);
+        while (!normq->done())
+          normq->next_compute();
+        norm += dot_product_transpose(n, t2all_[istate]->at(jst));
       }
-
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
-      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout <<endl;
     }
+
+    pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
+    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+    if (info_->shift() != 0.0)
+      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
+    cout << "        reference weight      " << fixed << setw(20) << setprecision(10) << 1.0/(1.0+norm) << endl;
+    cout << endl;
   }
 
   // TODO Implement off-diagonal shift correction for nonrelativistic energy + nuclear gradients
   if (info_->shift() && info_->do_ms() && !info_->shift_diag())
-    cout << "    Applying levelshift correction to diagonal elements of the Hamiltonian only.  (Off-diagonals have only been implemented for relativistic CASPT2.)" << endl << endl;
+    cout << "    Applying levelshift correction to diagonal elements of the Hamiltonian only.  (Off-diagonals have not been implemented for non-relativistic CASPT2.)" << endl << endl;
 
   // MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {

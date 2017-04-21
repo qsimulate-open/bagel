@@ -109,6 +109,8 @@ void CASSCF::common_init() {
   natocc_ = idata_->get<bool>("natocc", false);
   // FCI algorithm
   fci_algorithm_ = idata_->get<string>("fci_algorithm", "knowles");
+  // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
+  sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
@@ -229,15 +231,22 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
 
 shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
-  copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
-  rdm1mat->sqrt();
-  rdm1mat->scale(1.0/sqrt(2.0));
+  if (nact_) {
+    copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+    rdm1mat->sqrt();
+    rdm1mat->scale(1.0/sqrt(2.0));
+  }
   auto ocoeff = coeff_->slice(0, nclosed_);
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nmo_);
 
   VectorB eig(coeff_->mdim());
-  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  Fock<1> fock;
+  if (nact_)
+    fock = Fock<1>(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  else
+    fock = Fock<1>(geom_, ref_->hcore(), nullptr, coeff_->slice_copy(0, nclosed_), false, /*rhf*/true);
+
   Matrix trans(nmo_, nmo_);
   trans.unit();
   if (nclosed_) {
@@ -271,9 +280,9 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
- return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
-              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+  return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                        fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
+               : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
 }
 
 

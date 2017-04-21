@@ -45,6 +45,16 @@ relcaspt2/RelCASPT2_gen6.cc \
 relcaspt2/RelCASPT2_tasks1.cc relcaspt2/RelCASPT2_tasks2.cc relcaspt2/RelCASPT2_tasks3.cc relcaspt2/RelCASPT2_tasks4.cc relcaspt2/RelCASPT2_tasks5.cc \
 relcaspt2/RelCASPT2_tasks6.cc \
 \
+casa/CASA.cc casa/CASA_gamma.cc casa/CASA_residualq.cc casa/CASA_sourceq.cc \
+casa/CASA_gen1.cc casa/CASA_gen2.cc casa/CASA_gen3.cc casa/CASA_gen4.cc casa/CASA_gen5.cc casa/CASA_gen6.cc \
+casa/CASA_tasks1.cc casa/CASA_tasks2.cc casa/CASA_tasks3.cc casa/CASA_tasks4.cc casa/CASA_tasks5.cc casa/CASA_tasks6.cc \
+\
+relcasa/RelCASA.cc relcasa/RelCASA_gamma.cc relcasa/RelCASA_residualq.cc relcasa/RelCASA_sourceq.cc \
+relcasa/RelCASA_gen1.cc relcasa/RelCASA_gen2.cc relcasa/RelCASA_gen3.cc relcasa/RelCASA_gen4.cc relcasa/RelCASA_gen5.cc \
+relcasa/RelCASA_gen6.cc \
+relcasa/RelCASA_tasks1.cc relcasa/RelCASA_tasks2.cc relcasa/RelCASA_tasks3.cc relcasa/RelCASA_tasks4.cc relcasa/RelCASA_tasks5.cc \
+relcasa/RelCASA_tasks6.cc \
+\
 relmrci/RelMRCI.cc relmrci/RelMRCI_gamma.cc relmrci/RelMRCI_sourceq.cc relmrci/RelMRCI_normq.cc \
 relmrci/RelMRCI_residualq1.cc relmrci/RelMRCI_residualq2.cc relmrci/RelMRCI_residualq3.cc \
 relmrci/RelMRCI_residualq4.cc relmrci/RelMRCI_residualq5.cc relmrci/RelMRCI_residualq6.cc \

@@ -77,7 +77,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   } else {
 
     if (!geomin->magnetism() || !geom_->magnetism())
-      throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
+      throw runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
     // in this case we first form overlap matrices
     RelOverlap_London overlap(geomin);
     RelOverlap_London sinv = overlap;
@@ -147,10 +147,10 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
 }
 
 
-shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const {
+shared_ptr<Reference> RelReference::extract_state(const vector<int> input, const bool update_rdms) const {
   ZFCI_bare fci(ciwfn_);
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  cout << " * Extracting CI coefficients from RelReference object for state the following states: ";
+  cout << " * Extracting CI coefficients from RelReference object for the following states: ";
   for (int i = 0; i != input.size(); ++i)
     cout << input[i] << " ";
   cout << endl;
@@ -165,27 +165,16 @@ shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const
                                         make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
 
   // Use extract_average_rdm(...) to get desired RDMs and prepare output
-  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(input));
-  return make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
-}
-
-
-shared_ptr<Reference> RelReference::extract_state(const int istate, const vector<int> input) const {
-  ZFCI_bare fci(ciwfn_);
-  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
-  cout << " * Extracting CI coefficients from RelReference object for state " << istate << "." << endl;
-
-  // Construct a RelCIWfn with only CI coefficients for the desired state
-  auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
-                                        ciwfn_->civectors()->extract_state(istate),
-                                        make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
-
-  // Use extract_average_rdm(...) to get desired RDMs and prepare output
-  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(rdm_state));
-  return make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+  shared_ptr<RelReference> out;
+  if (update_rdms) {
+    shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(input));
+    out = make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                    kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+  } else {
+    out = make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                    kramers_, rdm1_av(), rdm2_av(), newciwfn);
+  }   
+  return out;
 }
 
 

@@ -110,13 +110,16 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int nvirtnr() const { return nvirtnr_; }
     int nbasis() const { return nbasis_; }
     int nstate() const { return nstate_; }
+    int charge() const { return charge_; }
     int max_iter() const { return max_iter_; }
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
     bool tsymm() const { return tsymm_; }
+    std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
+    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
 };
 
 }
