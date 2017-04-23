@@ -133,30 +133,37 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
   if (method == "continue") {
     Timer mtimer;
-    const int state_begin = idata_->get<int>("state_begin", 0);
-    string arch_prefix = idata_->get<string>("archive_location", "") + "RelCASA";
-    string arch = arch_prefix + (mpi__->rank() == 0 ? "_t2full" : "_t2head");
 
     shared_ptr<const SMITH_Info<complex<double>>> info;
+    string arch_prefix = idata_->get<string>("archive_location", "") + "RelCASA";
     {
       IArchive archive(arch_prefix + "_info");
       shared_ptr<SMITH_Info<complex<double>>> ptr;
       archive >> ptr;
+      const int state_begin = idata_->get<int>("state_begin", 0);
+      const int restart_iter = idata_->get<int>("restart_iter", 0);
+      ptr->set_restart_params(state_begin, restart_iter);
       info = shared_ptr<SMITH_Info<complex<double>>>(ptr);
     }
     mtimer.tick_print("Load RelSMITH info Archive");
+
     ref_ = info->ref();
     geom_ = ref_->geom();
     algo_ = make_shared<RelCASA::RelCASA>(info);
-    if (state_begin < 0 || state_begin > (info->nact() ? info->ciwfn()->nstates() : 1))
-      throw runtime_error("Invalid starting point for RelSMITH continue");
 
     mtimer.tick_print("Construct RelCASA");
-    for (int ist = 0; ist != state_begin; ++ist) {
-      IArchive archive(arch + "_" + to_string(ist));
-      shared_ptr<MultiTensor_<complex<double>>> t2in;
-      archive >> t2in;
-      (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
+    for (int ist = 0; ist <= info->state_begin(); ++ist) {
+      if (ist < info->state_begin() || info->restart_iter() > 0) {
+        string arch = arch_prefix + "_t2_" + to_string(ist);
+        if (ist < info->state_begin())
+           arch += "_converged";
+        else
+           arch += "_iter_" + to_string(info->restart_iter());
+        IArchive archive(arch);
+        shared_ptr<MultiTensor_<complex<double>>> t2in;
+        archive >> t2in;
+        (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
+      }
     }
     mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");
   } else {

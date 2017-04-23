@@ -167,16 +167,14 @@ class StorageIncore : public RMAWindow<DataType> {
       if (init)
         initialize();
 
-      // Process 0 reads and distributes data, tile by tile
-      // Other processes do nothing; this requires them to be reading from shorter archives lacking the stored data
-      if (mpi__->rank() == 0) {
-        for (auto& i : hashtable_ordered) {
-          size_t rank, off, size;
-          std::tie(rank, off, size) = locate(i.first);
-          std::vector<DataType> tmp(size, 0.0);
-          ar >> tmp;
-            rma_put(tmp.data(), i.first);
-        }
+      // All processes read the whole archive, and save the data that belong to them
+      for (auto& i : hashtable_ordered) {
+        size_t rank, off, size;
+        std::tie(rank, off, size) = locate(i.first);
+        std::vector<DataType> tmp(size, 0.0);
+        ar >> tmp;
+        if (rank == mpi__->rank())
+          rma_put(tmp.data(), i.first);
       }
       mpi__->barrier();
     }

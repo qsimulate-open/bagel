@@ -64,6 +64,10 @@ class SMITH_Info {
 
     double thresh_overlap_;
 
+    // For restarted jobs
+    int state_begin_;
+    int restart_iter_;
+
     std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
 
   private:
@@ -72,8 +76,8 @@ class SMITH_Info {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
-      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_;
-      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & thresh_overlap_ & aniso_data_;
+      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_ & do_ms_ & do_xms_ & sssr_;
+      ar & shift_diag_ & block_diag_fock_ & restart_ & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_;
     }
 
   public:
@@ -137,6 +141,16 @@ class SMITH_Info {
 
     // TODO Do we want to keep this?  Implemented for debugging, but could be useful in the future
     std::shared_ptr<const Reference> extract_ref(const std::vector<int> states, const bool extract_rdm) const;
+
+    int state_begin() const { return state_begin_; }
+    int restart_iter() const { return restart_iter_; }
+
+    void set_restart_params(const int state, const int iter) {
+      state_begin_ = state;
+      restart_iter_ = iter;
+      if (state_begin_ < 0 || state_begin_ > (nact() ? ciwfn()->nstates() : 1) || restart_iter_ < 0)
+        throw std::runtime_error("Invalid starting point for RelSMITH continue");
+    }
 
     std::shared_ptr<const PTree> aniso_data() const { return aniso_data_; }
 };

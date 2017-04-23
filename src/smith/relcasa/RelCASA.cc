@@ -35,7 +35,6 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 RelCASA::RelCASA::RelCASA(shared_ptr<const SMITH_Info<std::complex<double>>> ref) : SpinFreeMethod(ref) {
-  state_begin_ = 0;
   nstates_ = info_->nact() ? ref->ciwfn()->nstates() : 1;
   auto eig = f1_->diag();
   eig_.resize(eig.size());
@@ -73,7 +72,7 @@ void RelCASA::RelCASA::solve() {
 
   // <proj_jst|H|0_K> set to sall in ms-caspt2
   for (int istate = 0; istate != nstates_; ++istate) { //K states
-    if (istate >= state_begin_)
+    if (istate > info_->state_begin() || (istate == info_->state_begin() && info_->restart_iter() == 0))
       t2all_[istate]->fac(istate) = 0.0;
     sall_[istate]->fac(istate)  = 0.0;
 
@@ -189,22 +188,10 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
   for (int i = 0; i != nstates_; ++i) {  // K states
 
 #ifndef DISABLE_SERIALIZATION
-    if (info_->restart() && i > state_begin_) {
-      string arch_prefix = "RelCASA";
-      string arch = arch_prefix + (mpi__->rank() == 0 ? "_t2full" : "_t2head");
-      if (i == 1) {
-        OArchive archive(arch_prefix + "_info");
-        archive << info_;
-        mtimer.tick_print("Save RelSMITH info Archive");
-      }
-      {
-        OArchive archive(arch + "_" + to_string(i - 1));
-        archive << t2all_[i - 1];
-      }
-      mpi__->barrier();
-      for (int ist = 0; ist != t2all_.size(); ++ist)
-        cout << fixed << setprecision(8) << " *** After Archiving, t2all_[" << ist << "] norm = " << t2all_[ist]->norm() << endl;
-      mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
+    if (i == 0 && info_->restart()) {
+      OArchive archive("RelCASA_info");
+      archive << info_;
+      mtimer.tick_print("Save RelSMITH info Archive");
     }
 #endif
 
@@ -213,14 +200,15 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
     e0_ = e0all_[i] - info_->shift();
     energy_[i] = 0.0;
     // set guess vector
-    if (i >= state_begin_)
+    if (i > info_->state_begin() || (i == info_->state_begin() && info_->restart_iter() == 0))
       t[i]->zero();
+
     if (s[i]->rms() < 1.0e-15) {
       print_iteration(0, 0.0, 0.0, mtimer.tick());
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
-      if (i >= state_begin_)
+      if (i > info_->state_begin() || (i == info_->state_begin() && info_->restart_iter() == 0))
         update_amplitude_casa(t[i], s[i], i);
     }
 
@@ -265,6 +253,24 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
 
+#ifndef DISABLE_SERIALIZATION
+      if (info_->restart()) {
+        string arch = "RelCASA_";
+        if (mpi__->rank() == 0)
+          arch += "t2_" + to_string(i) + (conv ? "_converged" : "_iter_" + to_string(iter));
+        else
+          arch += "temp_trash";
+        {
+          OArchive archive(arch);
+          archive << t2all_[i];
+        }
+        mpi__->barrier();
+        if (conv)
+          mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
+        remove("RelCASA_temp_trash.archive");
+      }
+#endif
+
       // compute delta t2 and update amplitude
       if (!conv) {
         t[i]->zero();
@@ -296,9 +302,8 @@ void RelCASA::RelCASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std
 
 
 void RelCASA::RelCASA::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
-  assert(state_begin_ == ist);
+  assert(ist <= info_->state_begin());
   t2all_[ist] = t2in;
-  state_begin_ += 1;
 }
 
 

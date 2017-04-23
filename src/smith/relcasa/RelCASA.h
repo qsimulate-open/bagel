@@ -57,9 +57,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
-    // for restart capability
-    int state_begin_;
-
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
     void update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shared_ptr<const MultiTensor> r, const int istate);
 
@@ -115,7 +112,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     void solve();
     void solve_deriv();
 
-    int state_begin() const { return state_begin_; }
     void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 
     double accumulate(std::shared_ptr<Queue> queue) {
