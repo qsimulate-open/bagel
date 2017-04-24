@@ -202,10 +202,9 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
         }
       }
     } else if (method == "mrci") {
-      assert(info->ref() && info->ref()->ciwfn());
       string arch = arch_prefix + "_t2_iter_" + to_string(info->restart_iter());
       IArchive archive(arch);
-      for (int ist = 0; ist != info->ref()->ciwfn()->nstates(); ++ist) {
+      for (int ist = 0; ist != info->ciwfn()->nstates(); ++ist) {
         shared_ptr<MultiTensor_<complex<double>>> t2in;
         archive >> t2in;
         (dynamic_pointer_cast<RelMRCI::RelMRCI>(algo_))->load_t2all(t2in, ist);

@@ -92,25 +92,27 @@ void RelMRCI::RelMRCI::solve() {
   DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, 10);
 
   // first iteration is trivial
-  {
-    vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
-    vector<shared_ptr<const Residual<std::complex<double>>>> r0;
-    for (int istate = 0; istate != nstates_; ++istate) {
-      a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
-      r0.push_back(make_shared<Residual<std::complex<double>>>(sall_[istate]->copy(), this));
-    }
-    energy_ = davidson.compute(a0, r0);
-    for (int istate = 0; istate != nstates_; ++istate)
-      assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
-  }
-
-  // set the result to t2
   if (info_->restart_iter() == 0) {
-    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
-    for (int i = 0; i != nstates_; ++i) {
-      t2all_[i]->zero();
-      e0_ = e0all_[i];
-      update_amplitude(t2all_[i], res[i]->tensor());
+    {
+      vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
+      vector<shared_ptr<const Residual<std::complex<double>>>> r0;
+      for (int istate = 0; istate != nstates_; ++istate) {
+        a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+        r0.push_back(make_shared<Residual<std::complex<double>>>(sall_[istate]->copy(), this));
+      }
+      energy_ = davidson.compute(a0, r0);
+      for (int istate = 0; istate != nstates_; ++istate)
+        assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
+    }
+  
+    // set the result to t2
+    if (info_->restart_iter() == 0) {
+      vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
+      for (int i = 0; i != nstates_; ++i) {
+        t2all_[i]->zero();
+        e0_ = e0all_[i];
+        update_amplitude(t2all_[i], res[i]->tensor());
+      }
     }
   }
 
@@ -269,7 +271,7 @@ void RelMRCI::RelMRCI::solve() {
 
 
 void RelMRCI::RelMRCI::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
-  assert(ist <= info_->state_begin());
+  assert(ist >= 0 && ist < nstates_);
   t2all_[ist] = t2in;
 }
 
