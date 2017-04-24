@@ -182,19 +182,18 @@ void RelCASA::RelCASA::solve() {
 vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s, 
                                                                                      vector<shared_ptr<MultiTensor_<complex<double>>>> t) {
   Timer mtimer;
+#ifndef DISABLE_SERIALIZATION
+  if (info_->restart()) {
+    OArchive archive("RelSMITH_info");
+    archive << info_;
+    mtimer.tick_print("Save RelSMITH info Archive");
+  }
+#endif
+
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
   for (int i = 0; i != nstates_; ++i) {  // K states
-
-#ifndef DISABLE_SERIALIZATION
-    if (i == 0 && info_->restart()) {
-      OArchive archive("RelCASA_info");
-      archive << info_;
-      mtimer.tick_print("Save RelSMITH info Archive");
-    }
-#endif
-
     bool conv = false;
     double error = 0.0;
     e0_ = e0all_[i] - info_->shift();

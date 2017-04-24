@@ -61,13 +61,22 @@ void RelMRCI::RelMRCI::solve() {
   Timer timer;
   print_iteration();
 
+#ifndef DISABLE_SERIALIZATION
+  if (info_->restart()) {
+    OArchive archive("RelSMITH_info");
+    archive << info_;
+    timer.tick_print("Save RelSMITH info Archive");
+  }
+#endif
+
   const double core_nuc = core_energy_ + info_->geom()->nuclear_repulsion();
 
   // target state
   for (int istate = 0; istate != nstates_; ++istate) {
     const double refen = info_->ciwfn()->energy(istate) - core_nuc;
     // takes care of ref coefficients
-    t2all_[istate]->fac(istate) = 1.0;
+    if (info_->restart_iter() == 0)
+      t2all_[istate]->fac(istate) = 1.0;
     nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
@@ -96,7 +105,7 @@ void RelMRCI::RelMRCI::solve() {
   }
 
   // set the result to t2
-  {
+  if (info_->restart_iter() == 0) {
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
@@ -184,6 +193,24 @@ void RelMRCI::RelMRCI::solve() {
 
     energy_ = davidson.compute(a0, r0);
 
+#ifndef DISABLE_SERIALIZATION
+      if (info_->restart()) {
+        string arch = "RelMRCI_";
+        if (mpi__->rank() == 0)
+          arch += "t2_iter_" + to_string(iter);
+        else
+          arch += "temp_trash";
+        {
+          OArchive archive(arch);
+          for (int i = 0; i != nstates_; ++i)
+            archive << t2all_[i];
+        }
+        mpi__->barrier();
+        mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
+        remove("RelMRCI_temp_trash.archive");
+      }
+#endif
+
     // find new trial vectors
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
@@ -237,6 +264,12 @@ void RelMRCI::RelMRCI::solve() {
       ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
     }
   }
+}
+
+
+void RelMRCI::RelMRCI::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
+  assert(ist <= info_->state_begin());
+  t2all_[ist] = t2in;
 }
 
 
