@@ -192,33 +192,34 @@ void RelMRCI::RelMRCI::solve() {
     }
 
     energy_ = davidson.compute(a0, r0);
-
-#ifndef DISABLE_SERIALIZATION
-      if (info_->restart()) {
-        string arch = "RelMRCI_";
-        if (mpi__->rank() == 0)
-          arch += "t2_iter_" + to_string(iter);
-        else
-          arch += "temp_trash";
-        {
-          OArchive archive(arch);
-          for (int i = 0; i != nstates_; ++i)
-            archive << t2all_[i];
-        }
-        mpi__->barrier();
-        mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
-        remove("RelMRCI_temp_trash.archive");
-      }
-#endif
-
-    // find new trial vectors
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
-
-      t2all_[i]->zero();
       conv[i] = err < info_->thresh();
+    }
+
+#ifndef DISABLE_SERIALIZATION
+    if (info_->restart()) {
+      string arch = "RelMRCI_";
+      if (mpi__->rank() == 0)
+        arch += "t2_iter_" + to_string(iter);
+      else
+        arch += "temp_trash";
+      {
+        OArchive archive(arch);
+        for (int i = 0; i != nstates_; ++i)
+          archive << t2all_[i];
+      }
+      mpi__->barrier();
+      mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
+      remove("RelMRCI_temp_trash.archive");
+    }
+#endif
+
+    // find new trial vectors
+    for (int i = 0; i != nstates_; ++i) {
+      t2all_[i]->zero();
       if (!conv[i]) {
         e0_ = e0all_[i];
         update_amplitude(t2all_[i], res[i]->tensor());
