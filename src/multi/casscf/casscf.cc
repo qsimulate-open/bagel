@@ -107,14 +107,14 @@ void CASSCF::common_init() {
   conv_ignore_ = idata_->get<bool>("conv_ignore", false);
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
-  // FCI algorithm
-  fci_algorithm_ = idata_->get<string>("fci_algorithm", "knowles");
   // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
   sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
+  // FCI algorithm
+  fci_algorithm_ = idata_->get<string>("fci_algorithm", ((nact_ > 9) && (mpi__->size() >= 8)) ? "parallel" : "knowles");
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
