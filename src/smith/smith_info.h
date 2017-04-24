@@ -61,6 +61,7 @@ class SMITH_Info {
     bool shift_diag_;
     bool block_diag_fock_;
     bool restart_;
+    bool restart_each_iter_;
 
     double thresh_overlap_;
 
@@ -77,7 +78,7 @@ class SMITH_Info {
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
       ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_ & do_ms_ & do_xms_ & sssr_;
-      ar & shift_diag_ & block_diag_fock_ & restart_ & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_;
+      ar & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_ & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_;
     }
 
   public:
@@ -116,6 +117,7 @@ class SMITH_Info {
     bool shift_diag() const { return shift_diag_; }
     bool block_diag_fock() const { return block_diag_fock_; }
     bool restart() const { return restart_; }
+    bool restart_each_iter() const { return restart_each_iter_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
 

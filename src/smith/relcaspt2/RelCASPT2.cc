@@ -284,7 +284,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_li
       conv = error < info_->thresh();
 
 #ifndef DISABLE_SERIALIZATION
-      if (info_->restart()) {
+      if (info_->restart() && (conv || info_->restart_each_iter())) {
         string arch = "RelCASPT2_";
         if (mpi__->rank() == 0)
           arch += "t2_" + to_string(i) + (conv ? "_converged" : "_iter_" + to_string(iter));
