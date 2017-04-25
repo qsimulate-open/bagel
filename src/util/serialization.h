@@ -53,6 +53,7 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 #include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/unordered_set.hpp>
 #endif
 
 // to avoid duplicate serialize functions, we need to include this here
