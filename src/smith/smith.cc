@@ -165,54 +165,33 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
     ref_ = info->ref();
     geom_ = ref_->geom();
     const string method = to_lower(info->method());
-    assert(method == "caspt2" || method == "casa" || method == "mrci");
+    assert(method == "caspt2" || method == "casa");
     if (method == "caspt2") {
       arch_prefix += "RelCASPT2";
     } else if (method == "casa") {
       arch_prefix += "RelCASA";
-    } else if (method == "mrci") {
-      arch_prefix += "RelMRCI";
-      if (info->state_begin() != 0)
-        cout << "  RelMRCI treats all states simultaneously, so \"state_begin\" parameter will be ignored." << endl;
     }
 
     if (method == "caspt2")
       algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
     else if (method == "casa")
       algo_ = make_shared<RelCASA::RelCASA>(info);
-    else if (method == "mrci")
-      algo_ = make_shared<RelMRCI::RelMRCI>(info);
     mtimer.tick_print("Construct " + method + " architecture");
 
-    if (method == "caspt2" || method == "casa") {
-      for (int ist = 0; ist <= info->state_begin(); ++ist) {
-        if (ist < info->state_begin() || info->restart_iter() > 0) {
-          string arch = arch_prefix + "_t2_" + to_string(ist);
-          if (ist < info->state_begin())
-             arch += "_converged";
-          else
-             arch += "_iter_" + to_string(info->restart_iter());
-          IArchive archive(arch);
-          shared_ptr<MultiTensor_<complex<double>>> t2in;
-          archive >> t2in;
-          if (method == "caspt2")
-            (dynamic_pointer_cast<RelCASPT2::RelCASPT2>(algo_))->load_t2all(t2in, ist);
-          else
-            (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
-        }
-      }
-    } else if (method == "mrci") {
-      string arch = arch_prefix + "_t2_iter_" + to_string(info->restart_iter());
-      IArchive archive(arch);
-      for (int ist = 0; ist != info->ciwfn()->nstates(); ++ist) {
+    for (int ist = 0; ist <= info->state_begin(); ++ist) {
+      if (ist < info->state_begin() || info->restart_iter() > 0) {
+        string arch = arch_prefix + "_t2_" + to_string(ist);
+        if (ist < info->state_begin())
+           arch += "_converged";
+        else
+           arch += "_iter_" + to_string(info->restart_iter());
+        IArchive archive(arch);
         shared_ptr<MultiTensor_<complex<double>>> t2in;
         archive >> t2in;
-        (dynamic_pointer_cast<RelMRCI::RelMRCI>(algo_))->load_t2all(t2in, ist);
-      }
-      for (int ist = 0; ist != info->ciwfn()->nstates(); ++ist) {
-        shared_ptr<MultiTensor_<complex<double>>> nin;
-        archive >> nin;
-        (dynamic_pointer_cast<RelMRCI::RelMRCI>(algo_))->load_nall(nin, ist);
+        if (method == "caspt2")
+          (dynamic_pointer_cast<RelCASPT2::RelCASPT2>(algo_))->load_t2all(t2in, ist);
+        else
+          (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
       }
     }
     mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");

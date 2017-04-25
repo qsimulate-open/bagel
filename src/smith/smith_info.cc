@@ -84,6 +84,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   state_begin_ = 0;
   restart_iter_ = 0;
 
+  // Restart with MRCI would require us to load amplitudes from previous iterations into DavidsonDiag
+  // TODO maybe implement this in the future
+  if (restart_ && to_lower(method) == "mrci")
+    throw runtime_error("Restarting is currently only available in SMITH for relativistic perturbation theory methods, not MRCI.");
+
   // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
 

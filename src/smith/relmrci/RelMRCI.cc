@@ -61,24 +61,14 @@ void RelMRCI::RelMRCI::solve() {
   Timer timer;
   print_iteration();
 
-#ifndef DISABLE_SERIALIZATION
-  if (info_->restart()) {
-    OArchive archive("RelSMITH_info");
-    archive << info_;
-    timer.tick_print("Save RelSMITH info Archive");
-  }
-#endif
-
   const double core_nuc = core_energy_ + info_->geom()->nuclear_repulsion();
 
   // target state
   for (int istate = 0; istate != nstates_; ++istate) {
     const double refen = info_->ciwfn()->energy(istate) - core_nuc;
     // takes care of ref coefficients
-    if (info_->restart_iter() == 0)
-      t2all_[istate]->fac(istate) = 1.0;
-    if (info_->restart_iter() == 0)
-      nall_[istate]->fac(istate)  = 1.0;
+    t2all_[istate]->fac(istate) = 1.0;
+    nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
     for (int jst = 0; jst != nstates_; ++jst) {
@@ -93,20 +83,20 @@ void RelMRCI::RelMRCI::solve() {
   DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, 10);
 
   // first iteration is trivial
-  if (info_->restart_iter() == 0) {
-    {
-      vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
-      vector<shared_ptr<const Residual<std::complex<double>>>> r0;
-      for (int istate = 0; istate != nstates_; ++istate) {
-        a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
-        r0.push_back(make_shared<Residual<std::complex<double>>>(sall_[istate]->copy(), this));
-      }
-      energy_ = davidson.compute(a0, r0);
-      for (int istate = 0; istate != nstates_; ++istate)
-        assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
+  {
+    vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
+    vector<shared_ptr<const Residual<std::complex<double>>>> r0;
+    for (int istate = 0; istate != nstates_; ++istate) {
+      a0.push_back(make_shared<Amplitude<std::complex<double>>>(t2all_[istate]->copy(), nall_[istate]->copy(), this));
+      r0.push_back(make_shared<Residual<std::complex<double>>>(sall_[istate]->copy(), this));
     }
+    energy_ = davidson.compute(a0, r0);
+    for (int istate = 0; istate != nstates_; ++istate)
+      assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
+  }
   
-    // set the result to t2
+  // set the result to t2
+  {
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       t2all_[i]->zero();
@@ -209,27 +199,6 @@ void RelMRCI::RelMRCI::solve() {
       }
     }
     if (nstates_ > 1) cout << endl;
-
-#ifndef DISABLE_SERIALIZATION
-    if (info_->restart()) {
-      string arch = "RelMRCI_";
-      if (mpi__->rank() == 0)
-        arch += "t2_iter_" + to_string(iter);
-      else
-        arch += "temp_trash";
-      {
-        OArchive archive(arch);
-        for (int i = 0; i != nstates_; ++i)
-          archive << t2all_[i];
-        for (int i = 0; i != nstates_; ++i)
-          archive << nall_[i];
-      }
-      mpi__->barrier();
-      mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
-      remove("RelMRCI_temp_trash.archive");
-    }
-#endif
-
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
   print_iteration(iter == info_->maxiter());
