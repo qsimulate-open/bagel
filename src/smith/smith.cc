@@ -45,6 +45,8 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 #ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<const SMITH_Info<double>>(r, idata);
+  if (info->restart())
+    cout << " ** Restarting calculations is currently unavailable for non-relativistic SMITH methods.  Serialized archives will not be generated." << endl << endl;
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
