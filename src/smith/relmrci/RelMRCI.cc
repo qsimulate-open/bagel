@@ -94,7 +94,7 @@ void RelMRCI::RelMRCI::solve() {
     for (int istate = 0; istate != nstates_; ++istate)
       assert(fabs(energy_[istate]+core_nuc - info_->ciwfn()->energy(istate)) < 1.0e-8);
   }
-  
+
   // set the result to t2
   {
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
@@ -184,14 +184,13 @@ void RelMRCI::RelMRCI::solve() {
 
     energy_ = davidson.compute(a0, r0);
     vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
-    for (int i = 0; i != nstates_; ++i) {
-      const double err = res[i]->tensor()->rms();
-      print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
-      conv[i] = err < info_->thresh();
-    }
 
     // find new trial vectors
     for (int i = 0; i != nstates_; ++i) {
+      const double err = res[i]->tensor()->rms();
+      print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
+
+      conv[i] = err < info_->thresh();
       t2all_[i]->zero();
       if (!conv[i]) {
         e0_ = e0all_[i];
@@ -199,6 +198,7 @@ void RelMRCI::RelMRCI::solve() {
       }
     }
     if (nstates_ > 1) cout << endl;
+
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
   print_iteration(iter == info_->maxiter());
@@ -237,18 +237,6 @@ void RelMRCI::RelMRCI::solve() {
       ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
     }
   }
-}
-
-
-void RelMRCI::RelMRCI::load_nall(shared_ptr<MultiTensor> nin, const int ist) {
-  assert(ist >= 0 && ist < nstates_);
-  nall_[ist] = nin;
-}
-
-
-void RelMRCI::RelMRCI::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
-  assert(ist >= 0 && ist < nstates_);
-  t2all_[ist] = t2in;
 }
 
 

@@ -74,7 +74,6 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> coeff_;
 
   public:
-    Smith() { }
     Smith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
@@ -130,5 +129,4 @@ class RelSmith : public Method {
 };
 
 }
-
 #endif
