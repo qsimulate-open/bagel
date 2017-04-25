@@ -209,6 +209,11 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
         archive >> t2in;
         (dynamic_pointer_cast<RelMRCI::RelMRCI>(algo_))->load_t2all(t2in, ist);
       }
+      for (int ist = 0; ist != info->ciwfn()->nstates(); ++ist) {
+        shared_ptr<MultiTensor_<complex<double>>> nin;
+        archive >> nin;
+        (dynamic_pointer_cast<RelMRCI::RelMRCI>(algo_))->load_nall(nin, ist);
+      }
     }
     mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");
   }

@@ -77,7 +77,8 @@ void RelMRCI::RelMRCI::solve() {
     // takes care of ref coefficients
     if (info_->restart_iter() == 0)
       t2all_[istate]->fac(istate) = 1.0;
-    nall_[istate]->fac(istate)  = 1.0;
+    if (info_->restart_iter() == 0)
+      nall_[istate]->fac(istate)  = 1.0;
     sall_[istate]->fac(istate)  = refen;
 
     for (int jst = 0; jst != nstates_; ++jst) {
@@ -106,13 +107,11 @@ void RelMRCI::RelMRCI::solve() {
     }
   
     // set the result to t2
-    if (info_->restart_iter() == 0) {
-      vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
-      for (int i = 0; i != nstates_; ++i) {
-        t2all_[i]->zero();
-        e0_ = e0all_[i];
-        update_amplitude(t2all_[i], res[i]->tensor());
-      }
+    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
+    for (int i = 0; i != nstates_; ++i) {
+      t2all_[i]->zero();
+      e0_ = e0all_[i];
+      update_amplitude(t2all_[i], res[i]->tensor());
     }
   }
 
@@ -201,6 +200,16 @@ void RelMRCI::RelMRCI::solve() {
       conv[i] = err < info_->thresh();
     }
 
+    // find new trial vectors
+    for (int i = 0; i != nstates_; ++i) {
+      t2all_[i]->zero();
+      if (!conv[i]) {
+        e0_ = e0all_[i];
+        update_amplitude(t2all_[i], res[i]->tensor());
+      }
+    }
+    if (nstates_ > 1) cout << endl;
+
 #ifndef DISABLE_SERIALIZATION
     if (info_->restart()) {
       string arch = "RelMRCI_";
@@ -212,22 +221,14 @@ void RelMRCI::RelMRCI::solve() {
         OArchive archive(arch);
         for (int i = 0; i != nstates_; ++i)
           archive << t2all_[i];
+        for (int i = 0; i != nstates_; ++i)
+          archive << nall_[i];
       }
       mpi__->barrier();
       mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
       remove("RelMRCI_temp_trash.archive");
     }
 #endif
-
-    // find new trial vectors
-    for (int i = 0; i != nstates_; ++i) {
-      t2all_[i]->zero();
-      if (!conv[i]) {
-        e0_ = e0all_[i];
-        update_amplitude(t2all_[i], res[i]->tensor());
-      }
-    }
-    if (nstates_ > 1) cout << endl;
 
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
@@ -267,6 +268,12 @@ void RelMRCI::RelMRCI::solve() {
       ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
     }
   }
+}
+
+
+void RelMRCI::RelMRCI::load_nall(shared_ptr<MultiTensor> nin, const int ist) {
+  assert(ist >= 0 && ist < nstates_);
+  nall_[ist] = nin;
 }
 
 
