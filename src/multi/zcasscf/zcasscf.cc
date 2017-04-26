@@ -149,7 +149,7 @@ void ZCASSCF::init() {
       c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
 
       scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
-      scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
+      scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
 #ifndef NDEBUG
       ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
       assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
