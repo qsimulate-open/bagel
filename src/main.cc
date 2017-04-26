@@ -149,8 +149,10 @@ int main(int argc, char** argv) {
 
       } else if (title == "hessian") {
 
-        auto opt = make_shared<Hess>(itree, geom, ref);
-        opt->compute();
+        auto hess = make_shared<Hess>(itree, geom, ref);
+        hess->compute();
+        ref = hess->conv_to_ref();
+//        cout << "DEBUG main.cc: after conv_to_rev print one eig vec " << ref->prop_eig()->element(5,0) <<endl;
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");

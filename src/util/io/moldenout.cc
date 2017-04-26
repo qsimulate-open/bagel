@@ -46,6 +46,8 @@ MoldenOut& MoldenOut::operator<< (shared_ptr<const Reference> ref) {
   ref_ = ref;
 
   write_mos();
+  // if write vibrations true .... write_freq();
+  write_freq();
 
   return *this;
 }
@@ -109,7 +111,6 @@ void MoldenOut::write_mos() {
   ofs_ << endl;
   if (is_spherical) ofs_ << "[5D]" << endl;
   ofs_ << "[MO]" << endl;
-
   const int num_mos = ref_->coeff()->mdim();
   int nocc = ref_->nclosed();
 
@@ -145,4 +146,53 @@ void MoldenOut::write_mos() {
       }
     }
   }
+}
+
+void MoldenOut::write_freq() {
+  const int num_atoms = mol_->natom();
+ /************************************************************
+  *  Print FREQ section                                      *
+  ************************************************************/
+  ofs_ << "[FREQ]" << endl;
+  for (int i = 0; i < 3*num_atoms; ++i)
+    ofs_ << setw(16) << setprecision(10) << ref_->prop_freq(i) << endl;
+
+ /************************************************************
+  *  Print INT section                                       *
+  ************************************************************/
+  ofs_ << "[INT]" << endl;
+  for (int i = 0; i < 3*num_atoms; ++i)
+    ofs_ << setw(16) << setprecision(10) << ref_->prop_ir(i) << endl;
+
+ /************************************************************
+  *  Print FR-COORD section                                  *
+  ************************************************************/
+  ofs_ << "[FR-COORD]" << endl;
+  for (int i = 0; i < num_atoms; ++i) {
+     shared_ptr<const Atom> cur_atom = ref_->geom()->atoms(i);
+
+     const string cur_name = cur_atom->name();
+     const array<double,3> cur_pos = cur_atom->position();
+
+     ofs_ << setw(2) << cur_name << setw(20) << setprecision(12) << cur_pos[0]*au2angstrom__
+                                 << setw(20) << setprecision(12) << cur_pos[1]*au2angstrom__
+                                 << setw(20) << setprecision(12) << cur_pos[2]*au2angstrom__ << endl;
+  }
+
+ /************************************************************
+  *  Print FR-NORM-COORD section                             *
+  ************************************************************/
+#if 0
+  ofs_ << "[FR-NORM-COORD]" << endl;
+
+  for (int i = 0; i <3*num_atoms; ++i) { // number of normal modes
+    ofs_ << setw(20) <<  "vibration    " <<  i+1 << endl;
+    for (int j = 0; j < num_atoms; ++j) { // number of atoms
+      ofs_ << setw(20) << setprecision(12) << ref_->prop_eig()->element(i,j*3+0)*au2angstrom__
+                                           << ref_->prop_eig()->element(i,j*3+1)*au2angstrom__
+                                           << ref_->prop_eig()->element(i,j*3+2)*au2angstrom__ << endl;
+    }
+  }
+#endif
+
 }

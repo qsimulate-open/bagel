@@ -36,6 +36,7 @@ class Hess {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Coeff> coeff_;
 
     bool numhess_;
     bool numforce_;
@@ -61,10 +62,7 @@ class Hess {
     std::shared_ptr<const Matrix> proj_hess() const { return proj_hess_; }
 
     void compute();
-
-    const std::shared_ptr<Matrix>& eigvec_cart() const { return eigvec_cart_; }
-    const std::vector<double>& ir() const { return ir_; }
-    const std::vector<double>& freq() const { return freq_; }
+    virtual std::shared_ptr<const Reference> conv_to_ref() const;
 
 };
 
