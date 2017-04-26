@@ -43,6 +43,9 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   shared_ptr<Reference> out;
   const bool giao = (geomin->magnetism() || geom_->magnetism());
+  if ((geomin->magnetism() && !geom_->magnetism()) || (!geomin->magnetism() && geom_->magnetism()))
+    throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
+
   bool moved = false;
   bool newbasis = false;
 
@@ -61,57 +64,39 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     throw runtime_error("changing geometry and basis set at the same time is not allowed");
 
   if (newbasis) {
-    // standard 4-component wavefunction, change of basis
+    // 4-component wavefunction, change of basis
+    // in this case we first form overlap and S^-1 matrices
+    shared_ptr<ZMatrix> sinv;
+    if (giao)
+      sinv = make_shared<RelOverlap_London>(geomin);
+    else
+      sinv = make_shared<RelOverlap>(geomin);
+    shared_ptr<ZMatrix> overlap = sinv->copy();
+    sinv->inverse();
+
+    const int nb = geomin->nbasis();
+    const int mb = geom_->nbasis();
+    ZMatrix mixed(nb*4, mb*4);
+
     if (!giao) {
-      // in this case we first form overlap matrices
-      RelOverlap overlap(geomin);
-      RelOverlap sinv = overlap;
-      sinv.inverse();
 
       MixedBasis<OverlapBatch> smixed(geom_, geomin);
       MixedBasis<KineticBatch> tmixed(geom_, geomin);
-      const int nb = geomin->nbasis();
-      const int mb = geom_->nbasis();
+
       const complex<double> one(1.0);
       const complex<double> sca = one * (0.5/(c__*c__));
-      ZMatrix mixed(nb*4, mb*4);
       mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
       mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
       mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
       mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
-
-      auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
-
-      // make coefficient orthogonal
-      ZMatrix unit = *c % overlap * *c;
-      unit.inverse_half();
-      *c *= unit;
-
-      //const int nchange = geomin->nbasis() - geom_->nbasis();
-      //auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr() + nchange, relcoeff_->nneg() + 2 * nchange);
-      auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
-      out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
-    // 4-component GIAO wavefunction, change of basis
     } else {
-
-      if (!geomin->magnetism() || !geom_->magnetism())
-        throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
-      // in this case we first form overlap matrices
-      RelOverlap_London overlap(geomin);
-      RelOverlap_London sinv = overlap;
-      sinv.inverse();
 
       shared_ptr<const Geometry> relgeomin = geomin->relativistic(false);
       MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, relgeomin);
       MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
 
-      const int nb = geomin->nbasis();
-      const int mb = geom_->nbasis();
       const complex<double> r2 (0.25 / (c__*c__));
       const complex<double> i2 (0.0, r2.real());
-
-      ZMatrix mixed(nb*4, mb*4);
       mixed.copy_block(0,    0, nb, mb, smixed);
       mixed.copy_block(nb,  mb, nb, mb, smixed);
       mixed.add_block( r2, 2*nb, 2*mb, nb, mb, *smallovl.data(0));
@@ -122,44 +107,33 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
       mixed.add_block( i2, 3*nb, 2*mb, nb, mb, *smallovl.data(2));
       mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
       mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
-
-      auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
-
-      // make coefficient orthogonal
-      ZMatrix unit = *c % overlap * *c;
-      unit.inverse_half();
-      *c *= unit;
-
-      //const int nchange = geomin->nbasis() - geom_->nbasis();
-      //auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr() + nchange, relcoeff_->nneg() + 2 * nchange);
-      auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
-      out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
     }
+    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
+
+    // make coefficient orthogonal
+    ZMatrix unit = *c % *overlap * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
   } else {
-    // standard 4-component wavefunction, change of atom positions
+
+    // 4-component wavefunction, change of atom positions
+    shared_ptr<ZMatrix> snew, sold;
     if (!giao) {
-      RelOverlap snew(geomin);
-      RelOverlap sold(geom_);
-      snew.inverse_half();
-      sold.sqrt();
-      auto c = make_shared<ZMatrix>(snew * sold * *relcoeff_);
-
-      auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
-      out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
-    // 4-component GIAO wavefunction, change of atom positions
+      snew = make_shared<RelOverlap>(geomin);
+      sold = make_shared<RelOverlap>(geom_);
     } else {
-      RelOverlap_London snew(geomin);
-      RelOverlap_London sold(geom_);
-      snew.inverse_half();
-      sold.sqrt();
-      auto c = make_shared<ZMatrix>(snew * sold * *relcoeff_);
-
-      auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
-      out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
+      snew = make_shared<RelOverlap_London>(geomin);
+      sold = make_shared<RelOverlap_London>(geom_);
     }
+    snew->inverse_half();
+    sold->sqrt();
+    auto c = make_shared<ZMatrix>(*snew * *sold * *relcoeff_);
+
+    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
   }
   return out;
 }
