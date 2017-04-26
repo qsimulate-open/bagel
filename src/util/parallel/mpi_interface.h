@@ -46,6 +46,7 @@ class MPI_Interface {
     int cnt_;
     // request handles
 #ifdef HAVE_MPI_H
+    MPI_Comm mpi_comm_;
     std::map<int, std::vector<MPI_Request>> request_;
 #endif
     int nprow_;
@@ -104,6 +105,11 @@ class MPI_Interface {
     int context() const { return context_; }
     int myprow() const { return myprow_; }
     int mypcol() const { return mypcol_; }
+
+    // communicators. n is the number of processes per communicator.
+    const MPI_Comm& mpi_comm() const { return mpi_comm_; } 
+    void split(const int n);
+    void merge();
 
     int pnum(const int prow, const int pcol) const;
     std::pair<int,int> numroc(const int, const int) const;
