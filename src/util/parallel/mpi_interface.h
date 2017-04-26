@@ -106,8 +106,10 @@ class MPI_Interface {
     int myprow() const { return myprow_; }
     int mypcol() const { return mypcol_; }
 
+#ifdef HAVE_MPI_H
     // communicators. n is the number of processes per communicator.
     const MPI_Comm& mpi_comm() const { return mpi_comm_; } 
+#endif
     void split(const int n);
     void merge();
 
