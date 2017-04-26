@@ -92,13 +92,13 @@ std::vector<double> reference_ks_opt() {
   out[5] = 0.002208;
   return out;
 }
-std::vector<double> reference_cas_act_opt() {
+std::vector<double> reference_cas_opt() {
   std::vector<double> out(6);
   out[2] = 1.734489;
   out[5] =-0.003832;
   return out;
 }
-std::vector<double> reference_sacas_act_opt() {
+std::vector<double> reference_sacas_opt() {
   std::vector<double> out(6);
   out[2] = 1.702348;
   out[5] =-0.000261;
@@ -150,8 +150,8 @@ BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_aux_opt"),    reference_mp2_aux_opt(),  1.0e-4));
 }
 BOOST_AUTO_TEST_CASE(CASSCF_Opt) {
-    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_act_opt"),    reference_cas_act_opt(),      1.0e-4));
-    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_sacas_act_opt"),  reference_sacas_act_opt(),    1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_opt"),    reference_cas_opt(),      1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_sacas_opt"),  reference_sacas_opt(),    1.0e-4));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

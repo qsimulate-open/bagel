@@ -37,7 +37,7 @@ ZFCI_bare::ZFCI_bare(shared_ptr<const RelCIWfn> ci) {
   norb_  = ci->nact();
   nstate_ = ci->nstates();
   energy_ = ci->energies();
-  cc_ = ci->civectors()->copy();
+  cc_ = ci->civectors() ? ci->civectors()->copy() : nullptr;
   space_ = ci->det()->first;
   int_space_ = ci->det()->second;
   rdm1_.resize(nstate_);

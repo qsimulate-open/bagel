@@ -25,6 +25,7 @@
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/force.h>
+#include <src/grad/hess.h>
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
@@ -151,6 +152,11 @@ int main(int argc, char** argv) {
         auto opt = make_shared<Force>(itree, geom, ref);
         opt->compute();
 
+      } else if (title == "hessian") {
+
+        auto opt = make_shared<Hess>(itree, geom, ref);
+        opt->compute();
+
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
@@ -250,7 +256,6 @@ int main(int argc, char** argv) {
     resources__->proc()->cout_on();
     cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
     resources__->proc()->cout_off();
-    throw;
   } catch (...) {
     throw;
   }

@@ -44,7 +44,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   shared_ptr<Reference> out;
   const bool giao = (geomin->magnetism() || geom_->magnetism());
   if ((geomin->magnetism() && !geom_->magnetism()) || (!geomin->magnetism() && geom_->magnetism()))
-    throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
+    throw runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
 
   bool moved = false;
   bool newbasis = false;

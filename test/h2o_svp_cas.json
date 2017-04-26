@@ -20,7 +20,6 @@
 
 {
   "title" : "casscf",
-  "algorithm" : "second",
   "nact" : 5,
   "nclosed" : 2
 }

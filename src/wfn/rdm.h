@@ -211,6 +211,7 @@ struct fill_in<N,DataType,2> {
 };
 }
 
+
 template<int N, typename DataType>
 std::shared_ptr<RDM<N,DataType>> expand_kramers(std::shared_ptr<const Kramers<2*N,RDM<N,DataType>>> o, const size_t norb) {
 //assert(!(o->begin()->second && o->begin()->second->norb() != norb));

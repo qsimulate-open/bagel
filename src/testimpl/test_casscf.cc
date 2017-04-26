@@ -22,9 +22,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <src/multi/casscf/superci.h>
-#include <src/multi/casscf/casbfgs.h>
-#include <src/multi/casscf/cashybrid.h>
 #include <src/multi/casscf/cassecond.h>
 
 double cas_energy(std::string filename) {
@@ -51,28 +48,10 @@ double cas_energy(std::string filename) {
       ref = hf->conv_to_ref();
 
     } else if (method == "casscf") {
-      std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci") {
-        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      } else if (algorithm == "second") {
-        auto cas = std::make_shared<CASSecond>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      } else if (algorithm == "hybrid") {
-        auto cas = std::make_shared<CASHybrid>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      } else if (algorithm == "bfgs") {
-        auto cas = std::make_shared<CASBFGS>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      }
+      auto cas = std::make_shared<CASSecond>(itree, geom, ref);
+      cas->compute();
+      ref = cas->conv_to_ref();
+      energy = ref->energy(0);
     }
   }
   assert(energy != 0.0);
@@ -83,12 +62,10 @@ double cas_energy(std::string filename) {
 BOOST_AUTO_TEST_SUITE(TEST_CASSCF)
 
 BOOST_AUTO_TEST_CASE(DF_CASSCF) {
-    BOOST_CHECK(compare(cas_energy("h2o_svp_cassecond"),    -76.00368392));
+    BOOST_CHECK(compare(cas_energy("h2o_svp_cas"),          -76.00368392));
     BOOST_CHECK(compare(cas_energy("lif_svp_cas22"),        -106.70563743));
     BOOST_CHECK(compare(cas_energy("li2_tzvpp_cas43"),      -14.87300366));
     BOOST_CHECK(compare(cas_energy("lih_tzvpp_cas22"),      -7.98191070));
-    BOOST_CHECK(compare(cas_energy("lih_tzvpp_cas22_alg"),  -7.98191070));
-//    BOOST_CHECK(compare(cas_energy("crco6_sto3g_cas66"),    -1699.66508838));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

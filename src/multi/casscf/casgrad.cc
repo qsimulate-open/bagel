@@ -24,9 +24,7 @@
 
 
 #include <src/scf/hf/fock.h>
-#include <src/multi/casscf/superci.h>
 #include <src/multi/casscf/cassecond.h>
-#include <src/multi/casscf/casbfgs.h>
 #include <src/multi/casscf/casnoopt.h>
 #include <src/grad/gradeval.h>
 #include <src/grad/finite.h>
@@ -47,16 +45,10 @@ void GradEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
-    task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
+    throw runtime_error("gradient code should not be called with noopt");
   else
     throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
 
@@ -158,7 +150,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute() {
     auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
     shared_ptr<const Matrix> zmat, xmat, dummy;
     shared_ptr<const Dvec> zvec;
-    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
     // form Zd + dZ^+
     shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
@@ -234,16 +226,10 @@ void NacmEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
-    task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
+    throw runtime_error("NACME code should not be called with noopt");
   else
     throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
 
@@ -307,7 +293,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
 
   // determinant term (1)
-  if (nacmtype_ == 0)
+  if (nacmtype_ == 0 || nacmtype_ == 2)
     g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
 
   // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
@@ -343,7 +329,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
@@ -424,14 +410,8 @@ void FiniteNacm<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -458,14 +438,8 @@ void DgradEval<CASSCF>::init() {
   const string algorithm = idata_out->get<string>("algorithm", "");
   const string bfgstype = idata_out->get<string>("bfgstype", "");
 
-  if (algorithm == "superci")
-    task_ = make_shared<SuperCI>(idata_out, geom_, ref_);
-  else if (algorithm == "second" || algorithm == "")
+  if (algorithm == "second" || algorithm == "")
     task_ = make_shared<CASSecond>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype != "alglib")
-    task_ = make_shared<CASBFGS1>(idata_out, geom_, ref_);
-  else if (algorithm == "bfgs" && bfgstype == "alglib")
-    task_ = make_shared<CASBFGS2>(idata_out, geom_, ref_);
   else if (algorithm == "noopt")
     task_ = make_shared<CASNoopt>(idata_out, geom_, ref_);
   else
@@ -559,7 +533,7 @@ shared_ptr<GradFile> DgradEval<CASSCF>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);

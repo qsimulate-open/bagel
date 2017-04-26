@@ -62,6 +62,7 @@ class DistCivector : public RMAWindow<DataType> {
 
   public:
     DistCivector(std::shared_ptr<const Determinants> det);
+    DistCivector(std::shared_ptr<const Civector<DataType>> civ);
 
     DistCivector(const DistCivector<DataType>& o) : DistCivector(o.det()) { RMAWindow<DataType>::operator=(o); }
     DistCivector(std::shared_ptr<const DistCivector<DataType>> o) : DistCivector(*o) {}

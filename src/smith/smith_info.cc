@@ -27,6 +27,8 @@
 
 #include <src/smith/smith_info.h>
 #include <src/wfn/relcoeff.h>
+#include <src/ci/fci/fci.h>
+#include <src/ci/zfci/zharrison.h>
 
 using namespace std;
 using namespace bagel;
@@ -73,6 +75,13 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     }
   }
 
+  // These are not input parameters (set automatically)
+  target_  = idata->get<int>("_target", -1);
+  grad_    = idata->get<bool>("_grad", false);
+  target2_ = idata->get<int>("_target2", -1);
+  nacm_    = idata->get<bool>("_nacm", false);
+  nacmtype_= idata->get<int>("_nacmtype", 0);
+
   thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
@@ -91,13 +100,12 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
+  external_rdm_ = idata->get<string>("external_rdm", "");
+  if (external_rdm_.empty() && !ciwfn()->civectors())
+    throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");  
+  if (!external_rdm_.empty() && is_same<DataType,double>::value) 
+    throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
 
-  // These are not input parameters (set automatically)
-  target_  = idata->get<int>("_target", -1);
-  grad_    = idata->get<bool>("_grad", false);
-  target2_ = idata->get<int>("_target2", -1);
-  nacm_    = idata->get<bool>("_nacm", false);
-  nacmtype_= idata->get<int>("_nacmtype", 0);
   assert(!(grad_ && target_ < 0));
   assert(!(nacm_ && target2_ < 0));
 }
@@ -114,24 +122,52 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
 
 
 template<>
-tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const {
-  return ref_->rdm12(ist, jst, recompute);
+tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
+  FCI_bare fci(ciwfn());
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  } else {
+    r1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    r2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
+  return make_tuple(r1, r2);
 }
 
 
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
-  return ref_->rdm34(ist, jst);
+  FCI_bare fci(ciwfn());
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<const RDM<4>> r4;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4) = fci.rdm34(ist, jst);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
+  return make_tuple(r3, r4);
 }
 
 
 template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
-  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst, const bool) const {
+  SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm1 = ref->rdm1(ist, jst);
-  auto rdm2 = ref->rdm2(ist, jst);
+  ZFCI_bare fci(ciwfn());
+  shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
+  shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
+  if (external_rdm_.empty()) {
+    rdm1 = fci.rdm1(ist, jst);
+    rdm2 = fci.rdm2(ist, jst);
+  } else {
+    rdm1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm1, rdm2);
 }
 
@@ -140,9 +176,16 @@ template<>
 tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
-  auto ref = dynamic_pointer_cast<const RelReference>(ref_);
-  auto rdm3 = ref->rdm3(ist, jst);
-  auto rdm4 = ref->rdm4(ist, jst);
+  ZFCI_bare fci(ciwfn());
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
+  if (external_rdm_.empty()) {
+    rdm3 = fci.rdm3(ist, jst);
+    rdm4 = fci.rdm4(ist, jst);
+  } else {
+    rdm3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    rdm4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm3, rdm4);
 }
 

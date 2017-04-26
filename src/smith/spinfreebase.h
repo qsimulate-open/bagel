@@ -98,6 +98,9 @@ class SpinFreeMethod {
 
     std::shared_ptr<Tensor_<DataType>> sigma_;
 
+    // fock-weighted 2RDM derivative, which is internally used
+    std::shared_ptr<MatType> rdm2fderiv_;
+
     // the diagonal denominator
     std::vector<double> eig_;
 
@@ -149,17 +152,17 @@ class SpinFreeMethod {
     DataType dot_product_transpose(std::shared_ptr<const Tensor_<DataType>> r, std::shared_ptr<const Tensor_<DataType>> t2) const;
     DataType dot_product_transpose(std::shared_ptr<const MultiTensor_<DataType>> r, std::shared_ptr<const MultiTensor_<DataType>> t2) const;
 
-    // static function for initializing RDM derivatives
+    // static function for initializing RDM derivatives (currently not in use, but well-tested -- will be useful for debugging)
     static std::tuple<IndexRange, std::shared_ptr<const IndexRange>,  std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>>
       feed_rdm_deriv(std::shared_ptr<const SMITH_Info<DataType>> info, const IndexRange& active,
                      std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size);
-    // it can do only to up to RDM3 derivatives
+    // This static function does up to 2RDM derivatives & fock-weighted 3RDM derivative (CASPT2)
     static std::tuple<IndexRange, std::shared_ptr<const IndexRange>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>,
-                                  std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>>
+                                  std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<MatType>>
       feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<DataType>> info, const IndexRange& active,
-                     std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size);
+                     std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size, const bool reset, std::shared_ptr<const MatType> rdm2fd_in);
 
 };
 
@@ -178,9 +181,9 @@ std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor
                                          std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size);
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>,
-                        std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>>
+                        std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Matrix>>
   SpinFreeMethod<double>::feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
-                                           std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size);
+                                           std::shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, std::shared_ptr<const Matrix> rdm2fd_in);
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>,
           std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>>
@@ -188,9 +191,9 @@ std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor
                                                        std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size);
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<std::complex<double>>>,
-          std::shared_ptr<Tensor_<std::complex<double>>>,std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>>
+          std::shared_ptr<Tensor_<std::complex<double>>>,std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<Tensor_<std::complex<double>>>, std::shared_ptr<ZMatrix>>
   SpinFreeMethod<std::complex<double>>::feed_rdm_deriv_3(std::shared_ptr<const SMITH_Info<std::complex<double>>> info, const IndexRange& active,
-                                                       std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size);
+                                                       std::shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, std::shared_ptr<const ZMatrix> rdm2fd_in);
 
 extern template class SpinFreeMethod<double>;
 extern template class SpinFreeMethod<std::complex<double>>;

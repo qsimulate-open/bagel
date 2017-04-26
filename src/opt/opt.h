@@ -59,13 +59,19 @@ class Opt {
 
     std::string algorithm_;
     std::string method_;
+    std::string hess_update_;
 
     int maxiter_;
+    int maxziter_;
     double thresh_grad_;
     double thresh_displ_;
     double thresh_echange_;
     double maxstep_;
     bool scratch_;
+    bool mass_weight_;
+
+    bool numerical_;
+    double numerical_dx_;
 
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
@@ -84,26 +90,35 @@ class Opt {
     bool adaptive_;
     // whether we save reference or not
     bool refsave_;
+    // whether we use ab initio hessian or approximate hessian
+    bool hess_approx_;
     std::string refname_;
     size_t size_;
     // nonadiabatic coupling type used in conical
     int nacmtype_;
     double thielc3_, thielc4_;
+    // MEP direction
+    int mep_direction_;
 
     Timer timer_;
 
     // some global values needed for quasi-newton optimizations
     double en_;
-    double en_prev_;
     double egap_;
     double predictedchange_;
     double predictedchange_prev_;
     double realchange_;
 
     std::shared_ptr<GradFile> grad_;
-    std::shared_ptr<GradFile> prev_grad_;
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<XYZFile> displ_;
+
+    // history
+    std::vector<double> prev_en_;
+    std::vector<std::shared_ptr<const GradFile>> prev_grad_;
+    std::vector<std::shared_ptr<const XYZFile>> prev_xyz_;
+    std::vector<std::shared_ptr<const XYZFile>> prev_displ_;
+    std::shared_ptr<const GradFile> prev_grad_internal_;
 
     // some internal functions
     std::shared_ptr<GradFile> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
@@ -126,6 +141,8 @@ class Opt {
     void hessian_update_psb(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
 
     void do_adaptive();
+    void do_optimize();
+    void do_mep(std::shared_ptr<XYZFile> mep_start);
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
@@ -137,35 +154,20 @@ class Opt {
 
     void compute();
 
-    void print_footer() const { std::cout << std::endl << std::endl; };
-    void print_header() const {
-      if (opttype_ == "energy" || opttype_ == "transition") {
-        std::cout << std::endl << "  *** Geometry optimization started ***" << std::endl <<
-                                  "     iter         energy               grad rms       time"
-        << std::endl << std::endl;
-      } else if (opttype_ == "conical") {
-        std::cout << std::endl << "  *** Conical intersection optimization started ***" << std::endl <<
-                                  "     iter         energy             gap energy            grad rms       time"
-        << std::endl << std::endl;
-      }
-    }
+    void print_header() const;
+    void print_footer() const { std::cout << std::endl << std::endl; }
 
-    void print_iteration_energy(const double residual, const double time) const {
-      std::cout << std::setw(7) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << en_
-                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual
-                                         << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
-    }
+    void print_iteration_energy(const double residual, const double time) const;
+    void print_iteration_conical(const double residual, const double time) const;
 
-    void print_iteration_conical(const double residual, const double time) const {
-      std::cout << std::setw(7) << iter_ << std::setw(20) << std::setprecision(8) << std::fixed << en_
-                                         << std::setw(20) << std::setprecision(8) << std::fixed << egap_
-                                         << std::setw(20) << std::setprecision(8) << std::fixed << residual
-                                         << std::setw(12) << std::setprecision(2) << std::fixed << time << std::endl;
-    }
+    void print_history_molden() const;
 
     void print_iteration(const double residual, const double time) {
-      if (opttype_ == "energy" || opttype_ == "transition") print_iteration_energy (residual, time);
-      else if (opttype_ == "conical") print_iteration_conical (residual, time);
+      if (opttype_ == "energy" || opttype_ == "transition")
+        print_iteration_energy(residual, time);
+      else if (opttype_ == "conical")
+        print_iteration_conical(residual, time);
+      print_history_molden();
     }
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }

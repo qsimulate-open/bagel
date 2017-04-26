@@ -105,11 +105,11 @@ shared_ptr<RelDFHalf> RelDFHalf::apply_JJ() const {
 }
 
 
-shared_ptr<RelDFHalf> RelDFHalf::merge(shared_ptr<RelDFHalf> o) const {
+shared_ptr<RelDFHalf> RelDFHalf::merge_b1(shared_ptr<RelDFHalf> o) const {
   assert(cartesian() == o->cartesian() && basis().size() == o->basis().size());
   for (int i = 0; i != basis().size(); ++i)
     assert(*basis_[i] == *o->basis_[i]);
-  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{get_real()->merge(o->get_real()), get_imag()->merge(o->get_imag())}}, cartesian_, basis_);
+  return make_shared<RelDFHalf>(array<shared_ptr<DFHalfDist>,2>{{get_real()->merge_b1(o->get_real()), get_imag()->merge_b1(o->get_imag())}}, cartesian_, basis_);
 }
 
 

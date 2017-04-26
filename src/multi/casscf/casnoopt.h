@@ -41,11 +41,15 @@ class CASNoopt : public CASSCF {
      : CASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override {
-      fci_->compute();
-      fci_->compute_rdm12();
+      if (external_rdm_.empty()) {
+        fci_->compute();
+        fci_->compute_rdm12();
+      } else {
+        fci_->read_external_rdm12_av(external_rdm_);
+      }
       energy_ = fci_->energy();
 
-      if (do_hyperfine_ && !geom_->external() && nstate_ == 1) {
+      if (do_hyperfine_ && !geom_->external() && nstate_ == 1 && external_rdm_.empty()) {
         HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
         hfcc.compute();
       }

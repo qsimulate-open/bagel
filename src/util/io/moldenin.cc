@@ -146,14 +146,13 @@ void MoldenIn::read() {
     } else {
       regex _5d_re("\\[5[Dd]\\]");
       regex _5d7f_re("\\[5[Dd]7[Ff]\\]");
+      regex _5d7f9g_re("\\[5[Dd]7[Ff]9[Gg]\\]");
       while (!sph_input.eof()) {
         getline(sph_input, line);
-        if (regex_search(line,_5d_re)){
+        if (regex_search(line,_5d_re)
+         || regex_search(line,_5d7f_re)
+         || regex_search(line,_5d7f9g_re))
           cartesian_ = false;
-        }
-        else if(regex_search(line,_5d7f_re)) {
-          cartesian_ = false;
-        }
       }
     }
   }
@@ -203,7 +202,7 @@ void MoldenIn::read() {
       getline(ifs, line);
 
       regex atom_line("(\\d+)\\s*\\S*");
-      regex shell_line("([spdf])\\s+(\\d+)\\s*\\S*");
+      regex shell_line("([spdfg])\\s+(\\d+)\\s*\\S*");
       regex exp_line("(\\S+)\\s+(\\S+)");
       regex Dd("[Dd]");
 

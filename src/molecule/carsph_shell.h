@@ -161,44 +161,42 @@ static std::shared_ptr<Matrix> carsph_matrix (const int i) {
                                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, i23, 0.0, i24,  0.0, i23, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, -i22, 0.0,  -i22, 0.0, 0.0, 0.0, 0.0, i21, 0.0,
                                              -i28, 0.0, -i29, 0.0, -i29, 0.0,  -i28, 0.0, 0.0, 0.0, 0.0,  0.0, 0.0, i26, 0.0, i27,  0.0, i26, 0.0, 0.0, 0.0,  0.0, -i25, 0.0, -i25, 0.0, 0.0, 1.0 };
   switch (i) {
-    case 0 :
-      assert( m*n == 1);
+    case 0:
+      assert(m*n == 1);
       out->copy_block(0, 0, m, n, css.data());
       break;
-    case 1 :
-      assert( m*n == 9);
+    case 1:
+      assert(m*n == 9);
       out->copy_block(0, 0, m, n, csp.data());
       break;
-    case 2 :
-      assert( m*n == 30);
+    case 2:
+      assert(m*n == 30);
       out->copy_block(0, 0, m, n, csd.data());
       break;
-    case 3 :
-      assert( m*n == 70);
+    case 3:
+      assert(m*n == 70);
       out->copy_block(0, 0, m, n, csf.data());
       break;
-    case 4 :
-      assert( m*n == 135);
+    case 4:
+      assert(m*n == 135);
       out->copy_block(0, 0, m, n, csg.data());
       break;
-    case 5 :
-      assert( m*n == 231);
+    case 5:
+      assert(m*n == 231);
       out->copy_block(0, 0, m, n, csh.data());
       break;
-    case 6 :
-      assert( m*n == 364);
+    case 6:
+      assert(m*n == 364);
 #ifndef COMPILE_J_ORB
       throw std::runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
 #endif
-      // TODO:  Verify that the matrix csi is correct.  One strategy is to ensure 0.5*Small1e<OverlapBatch> can reproduce the results of KineticBatch
-      throw std::runtime_error("Please carefully verify csi before using it in production runs.");
       out->copy_block(0, 0, m, n, csi.data());
       break;
-    case 7 :
-      assert( m*n == 540);
+    case 7:
+      assert(m*n == 540);
       throw std::runtime_error("Relativistic calculations cannot use j-type orbital basis functions.  (k-type would be needed for the small component.)");
       break;
-    default :
+    default:
       throw std::runtime_error("Angular momentum index not recognized");
   }
 

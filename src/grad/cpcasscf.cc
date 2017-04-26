@@ -22,7 +22,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
 #include <src/grad/cpcasscf.h>
 #include <src/util/math/linearRM.h>
 #include <src/scf/hf/fock.h>
@@ -32,8 +31,11 @@ using namespace bagel;
 using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+
+  // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
+  fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
@@ -159,17 +161,37 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     if (additional_den)
       *zcore += *additional_den;
     shared_ptr<Matrix> rot;
+
+    // find good lambda that makes zcore positive definite
+    double lambda = 1.0;
+
+    for (int i = 0; i != zmaxiter; ++i) {
+      shared_ptr<Matrix> rotq;
+      VectorB eig(nocca);
+      if (nact) {
+        rotq = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());
+      } else {
+        rotq = make_shared<Matrix>(*zcore);
+        for (int i = 0; i != nclosed; ++i)
+          rotq->element(i,i) += 2.0 * lambda;
+      }
+      rotq->diagonalize(eig);
+      if (eig[0] < -numerical_zero__) lambda *= 0.5;
+      else break;
+    }
+
     if (nact) {
-      rot = make_shared<Matrix>(*zcore + *ref_->rdm1_mat()); // trick to make it positive definite
+      rot = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());     // trick to make it positive definite
     } else {
       rot = make_shared<Matrix>(*zcore);
       for (int i = 0; i != nclosed; ++i)
-        rot->element(i,i) += 2.0;
+        rot->element(i,i) += 2.0 * lambda;
     }
     rot->sqrt();
     rot->scale(1.0/sqrt(2.0));
     auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ocoeff * *rot, false, true);
-    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate
+    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate for the "trick"
+    gzcore->scale(1.0 / lambda);
   }
 
   // gradient Y and y
@@ -420,7 +442,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 
   // Half transformed DF vector
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->apply_JJ()->compute_second_transform(acoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*rdm2);
   amat->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *half->form_2index(fulld, 1.0));
 

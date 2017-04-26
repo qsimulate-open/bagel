@@ -342,6 +342,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
+  dkh_ = o.dkh_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -349,7 +350,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  dofmm_ = geominfo->get<bool>("cfmm", false);
+  dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   // check if a magnetic field has been supplied
@@ -553,8 +554,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   get_electric_field(geominfo);
 }
 
-
-shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
+// TODO skip_self_interact is currently set to false in the header, which is consistent with Molecule::compute_nuclear_repulsion()
+//      both Molecule::compute_nuclear_repulsion() and Geometry::compute_grad_vnuc() should be changed to receive it as an argument in the input
+shared_ptr<const Matrix> Geometry::compute_grad_vnuc(const bool skip_self_interact) const {
   // the derivative of Vnuc
   auto grad = make_shared<Matrix>(3, natom());
   int i = 0;
@@ -563,6 +565,7 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
     if (i % mpi__->size() == mpi__->rank()) {
       for (auto& b : atoms_) {
         if (a == b) continue;
+        if (skip_self_interact && (a->dummy() && b->dummy())) continue;
         const array<double,3> displ = a->displ(b);
         const double c = b->atom_charge() * ac;
         const double dist = a->distance(b);

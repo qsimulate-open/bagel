@@ -222,6 +222,11 @@ class ZHarrison : public Method {
 
     // interface functions
     void dump_ints() const;
+    void read_external_rdm12_av(const std::string& file); 
+    std::shared_ptr<Kramers<2,ZRDM<1>>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
 };
 
 
