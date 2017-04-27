@@ -283,7 +283,7 @@ void Hess::compute() {
   proj_hess_->print("Mass Weighted Hessian Eigenvectors", 3*natom);
 
   //convert mw eigenvectors to normalized cartesian modes
-  auto eigvec_cart_ = make_shared<Matrix>(3*natom,3*natom);
+  eigvec_cart_ = make_shared<Matrix>(3*natom,3*natom);
 
   counter = 0.0;
   step = 0.0;
@@ -378,15 +378,14 @@ void Hess::compute() {
     }
     cout << endl;
   }
-//cout << "one value of eig" << eigvec_cart_->element(5,0) << endl;
 }
 
 shared_ptr<const Reference> Hess::conv_to_ref() const {
   auto out = std::make_shared<Reference>(*ref_, nullptr);
+
   out->set_prop_freq(freq_);
   out->set_prop_ir(ir_);
-cout << "DEBUG in hess.cc: before setting eig prop" << endl;
   out->set_prop_eig(eigvec_cart_);
-//cout << "one value of eig" << eigvec_cart_->element(5,0) <<endl;
+
   return out;
 }
