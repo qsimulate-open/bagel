@@ -253,7 +253,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       conv = error < info_->thresh();
 
 #ifndef DISABLE_SERIALIZATION
-      if (info_->restart() && (conv || info_->restart_each_iter())) {
+      if (info_->restart() && (conv || (info_->restart_each_iter() && iter > 0))) {
         string arch = "RelCASA_";
         if (mpi__->rank() == 0)
           arch += "t2_" + to_string(i) + (conv ? "_converged" : "_iter_" + to_string(iter));

@@ -153,6 +153,8 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
 
     shared_ptr<const SMITH_Info<complex<double>>> info;
     string arch_prefix = idata_->get<string>("archive_location", "");
+    if (arch_prefix.size() > 2 && arch_prefix.back() != '/')
+      arch_prefix += "/";
     {
       IArchive archive(arch_prefix + "RelSMITH_info");
       shared_ptr<SMITH_Info<complex<double>>> ptr;
