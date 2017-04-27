@@ -150,7 +150,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute() {
     auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
     shared_ptr<const Matrix> zmat, xmat, dummy;
     shared_ptr<const Dvec> zvec;
-    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
     // form Zd + dZ^+
     shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
@@ -329,7 +329,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
@@ -533,7 +533,7 @@ shared_ptr<GradFile> DgradEval<CASSCF>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
   shared_ptr<const Matrix> zmat, xmat, dummy;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh());
+  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter_);
 
   // form Zd + dZ^+
   shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);

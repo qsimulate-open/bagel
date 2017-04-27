@@ -44,6 +44,7 @@ shared_ptr<GradFile> Force::compute() {
   const int nacmtype = idata_->get<int>("nacmtype", 0);
   const bool export_grad = idata_->get<bool>("export", false);
   const bool export_single = idata_->get<bool>("export_single", false);
+  const int maxziter = idata_->get<int>("maxziter", 100);
 #ifndef DISABLE_SERIALIZATION
   const bool refsave = idata_->get<bool>("save_ref", false);
   string refname;
@@ -118,39 +119,39 @@ shared_ptr<GradFile> Force::compute() {
 
     } else if (method == "mp2") {
 
-      auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target);
+      auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target, maxziter);
       out = force->compute();
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "casscf" && jobtitle == "nacme") {
 
-      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype);
+      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
       out = force->compute();
       ref = force->ref();
 
     } else if (method == "casscf" && jobtitle == "dgrad") {
 
-      auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2);
+      auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2, maxziter);
       out = force->compute();
       ref = force->ref();
 
     } else if (method == "casscf") {
 
-      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target);
+      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target, maxziter);
       out = force->compute();
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "caspt2" && jobtitle == "nacme") {
 
-      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype);
+      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
       out = force->compute();
       ref = force->ref();
 
     } else if (method == "caspt2") {
 
-      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target);
+      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target, maxziter);
       out = force->compute();
       ref = force->ref();
       force_dipole_ = force->dipole();

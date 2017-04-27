@@ -22,7 +22,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
 #include <src/grad/cpcasscf.h>
 #include <src/util/math/linearRM.h>
 #include <src/scf/hf/fock.h>
@@ -32,8 +31,11 @@ using namespace bagel;
 using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<FCI> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+
+  // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
+  fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
@@ -440,7 +442,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
 
   // Half transformed DF vector
   shared_ptr<const DFHalfDist> half = fci_->jop()->mo2e_1ext();
-  shared_ptr<const DFFullDist> full = half->compute_second_transform(acoeff)->apply_JJ();
+  shared_ptr<const DFFullDist> full = half->apply_JJ()->compute_second_transform(acoeff);
   shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*rdm2);
   amat->add_block(2.0, 0, nclosed, nmobasis, nact, *coeff_ % *half->form_2index(fulld, 1.0));
 

@@ -52,23 +52,28 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", false);
-  sssr_    = idata->get<bool>("sssr", false);
-  shift_diag_  = idata->get<bool>("shift_diag", true);
-  if (ciwfn()->nstates() > 1)
-    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
-
-  if (idata->get<bool>("extract_average_rdms", false) && ref_->nstate() != 1) {
-    vector<int> rdm_states = idata->get_vector<int>("rdm_state");
-    if (idata->get<bool>("extract_single_state", false))
-      ref_ = extract_ref(idata->get<int>("istate",0), rdm_states);
-    else
-      ref_ = extract_ref(rdm_states);
+  if (do_xms_ && (method_ == "casa" || method_ == "mrci")) {
+    cout << "    * XMS rotation is only appropriate for CASPT2, and will not be used with " << method_ << endl;
+    do_xms_ = false;
   }
 
-  thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
-  shift_  = idata->get<double>("shift", 0.0);
-  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
-  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
+  sssr_    = idata->get<bool>("sssr", false);
+  shift_diag_  = idata->get<bool>("shift_diag", true);
+  block_diag_fock_ = idata->get<bool>("block_diag_fock", false);
+
+  // check nact() because ciwfn() is nullptr with zero active orbitals
+  if (nact() && ciwfn()->nstates() > 1)
+    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
+
+  if (ref_->nstate() != 1) {
+    if (idata->get<bool>("extract_civectors", false)) {
+      vector<int> states = idata->get_vector<int>("extract_state");
+      ref_ = extract_ref(states, idata->get<bool>("extract_average_rdms", true));
+    } else if (idata->get<bool>("extract_average_rdms", false)) {
+      vector<int> states = idata->get_vector<int>("extract_state");
+      ref_ = ref_->extract_average_rdm(states);
+    }
+  }
 
   // These are not input parameters (set automatically)
   target_  = idata->get<int>("_target", -1);
@@ -76,6 +81,19 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   target2_ = idata->get<int>("_target2", -1);
   nacm_    = idata->get<bool>("_nacm", false);
   nacmtype_= idata->get<int>("_nacmtype", 0);
+
+  thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
+  shift_  = idata->get<double>("shift", 0.0);
+  davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
+  thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
+
+  aniso_data_ = idata->get_child_optional("aniso");
+  external_rdm_ = idata->get<string>("external_rdm", "");
+  if (external_rdm_.empty() && !ciwfn()->civectors())
+    throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");  
+  if (!external_rdm_.empty() && is_same<DataType,double>::value) 
+    throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
+
   assert(!(grad_ && target_ < 0));
   assert(!(nacm_ && target2_ < 0));
 }
@@ -83,19 +101,27 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
-  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_), maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_), nacmtype_(info->nacmtype_),
+  : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_),
+    maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_), nacmtype_(info->nacmtype_),
     maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), nacm_(info->nacm_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
-    shift_diag_(info->shift_diag_), thresh_overlap_(info->thresh_overlap_) {
+    shift_diag_(info->shift_diag_), thresh_overlap_(info->thresh_overlap_), aniso_data_(info->aniso_data_) {
 }
 
 
 template<>
 tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst);
-  auto r1 = fci.rdm1(ist, jst);
-  auto r2 = fci.rdm2(ist, jst);
+  shared_ptr<const RDM<1>> r1;
+  shared_ptr<const RDM<2>> r2;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    r1 = fci.rdm1(ist, jst);
+    r2 = fci.rdm2(ist, jst);
+  } else {
+    r1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    r2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(r1, r2);
 }
 
@@ -103,8 +129,16 @@ tuple<shared_ptr<const RDM<1>>, shared_ptr<const RDM<2>>> SMITH_Info<double>::rd
 template<>
 tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const {
   FCI_bare fci(ciwfn());
-  fci.compute_rdm12(ist, jst); // TODO stupid code
-  return fci.rdm34(ist, jst);
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<const RDM<4>> r4;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4) = fci.rdm34(ist, jst);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
+  return make_tuple(r3, r4);
 }
 
 
@@ -113,8 +147,15 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm1 = fci.rdm1(ist, jst);
-  auto rdm2 = fci.rdm2(ist, jst);
+  shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
+  shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
+  if (external_rdm_.empty()) {
+    rdm1 = fci.rdm1(ist, jst);
+    rdm2 = fci.rdm2(ist, jst);
+  } else {
+    rdm1 = fci.read_external_rdm1(ist, jst, external_rdm_);
+    rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm1, rdm2);
 }
 
@@ -124,8 +165,15 @@ tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<8,ZRDM<4>>>
   SMITH_Info<complex<double>>::rdm34(const int ist, const int jst) const {
 
   ZFCI_bare fci(ciwfn());
-  auto rdm3 = fci.rdm3(ist, jst);
-  auto rdm4 = fci.rdm4(ist, jst);
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
+  if (external_rdm_.empty()) {
+    rdm3 = fci.rdm3(ist, jst);
+    rdm4 = fci.rdm4(ist, jst);
+  } else {
+    rdm3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    rdm4 = fci.read_external_rdm4(ist, jst, external_rdm_);
+  }
   return make_tuple(rdm3, rdm4);
 }
 
@@ -181,35 +229,13 @@ shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::hcore() const {
 }
 
 
-template<>
-shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const vector<int> dummy2) const {
-  return ref_;
-}
-
-
-template<>
-shared_ptr<const Reference>  SMITH_Info<double>::extract_ref(const int dummy, const vector<int> dummy2) const {
-  return ref_;
-}
-
-
-template<>
-shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const vector<int> rdm_states) const {
+template<typename DataType>
+shared_ptr<const Reference>  SMITH_Info<DataType>::extract_ref(const vector<int> states, const bool extract_rdm) const {
   shared_ptr<const Reference> out = ref_;
-  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "" : "MS ") << method_ << " for all retained states from a multi-state reference." << endl;
-  out = ref_->extract_state(rdm_states);
+  cout << "    * Running " << (do_xms_ ? "X" : "" ) << (do_ms_ ? "MS " : "") << method_ << " for all retained states from a multi-state reference." << endl;
+  out = ref_->extract_state(states, extract_rdm);
   return out;
 }
-
-template<>
-shared_ptr<const Reference>  SMITH_Info<complex<double>>::extract_ref(const int istate, const vector<int> rdm_states) const {
-  shared_ptr<const Reference> out = ref_;
-  const string stateid = (istate == 0) ? "the ground state" : "excited state " + to_string(istate);
-  cout << "    * Running single-state " << method_ << " for " << stateid << " from a multi-state reference." << endl;
-  out = ref_->extract_state(istate, rdm_states);
-  return out;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file

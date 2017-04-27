@@ -96,7 +96,6 @@ class Dvector : public btas::Tensor3<DataType> {
     std::shared_ptr<const Determinants> det() const { return det_; }
 
     std::shared_ptr<Dvector> extract_state(const std::vector<int> input) const;
-    std::shared_ptr<Dvector> extract_state(const int istate) const;
 
     std::shared_ptr<Civector<DataType>>& data(const size_t i) { return dvec_[i]; }
     std::shared_ptr<const Civector<DataType>> data(const size_t i) const { return dvec_[i]; }

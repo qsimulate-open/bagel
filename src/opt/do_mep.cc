@@ -103,7 +103,8 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
   // macroiteration
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
 
-    en_prev_ = en_;
+    prev_en_.push_back(en_);
+    prev_xyz_.push_back(current_->xyz());
     cout << endl << " ============================ MEP point # " << setw(4) << iter_ << " ============================" << endl;
     current_->print_atoms();
     cout << "    MEP energy at # " << setw(4) << iter_ << " : " << setprecision(10) << en_ << endl;
@@ -141,7 +142,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
     pd = displ_;
     bool flag = false;
     for (int miciter = 1; miciter != maxiter_; ++miciter) {
-      prev_grad_ = make_shared<GradFile>(*grad_);
+      prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
       // move geometry
       auto dx = make_shared<XYZFile>(current_->natom());
@@ -202,7 +203,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
       {
         // Hessian updater
         double sfactor = (miciter==1) ? 2.0 : 1.0;
-        auto y  = make_shared<GradFile>(*grad_ - *prev_grad_);
+        auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
         auto s  = make_shared<GradFile>(*displ_ * sfactor);
         auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
         hessian_update_bfgs(y,s,hs);
@@ -264,7 +265,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
     }
     muffle_->unmute();
 
-    if (fabs(en_prev_ - en_) < 1.0e-6) {
+    if (fabs(prev_en_.back() - en_) < 1.0e-6) {
       cout << "  * MEP job converged to reactant / product, or too small stepsize." << endl;
       break;
     } else if (flag) {

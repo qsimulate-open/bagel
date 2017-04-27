@@ -35,6 +35,13 @@ using namespace bagel;
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
   : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom)) {
 
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("ref");
+    ar >> ref_;
+  }
+
   // drop the reference if restart is requested
   if (idata_->get<bool>("restart", false))
     ref_ = nullptr;
@@ -100,10 +107,14 @@ void CASSCF::common_init() {
   conv_ignore_ = idata_->get<bool>("conv_ignore", false);
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
+  // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
+  sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
   nact_ = idata_->get<int>("nact_cas", nact_);
+  // FCI algorithm
+  fci_algorithm_ = idata_->get<string>("fci_algorithm", ((nact_ > 9) && (mpi__->size() >= 8)) ? "parallel" : "knowles");
 
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
@@ -134,7 +145,19 @@ void CASSCF::common_init() {
   if (nact_) {
     auto idata = make_shared<PTree>(*idata_);
     idata->erase("active");
-    fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+    if (fci_algorithm_ == "knowles" || fci_algorithm_ == "kh" || fci_algorithm_ == "handy") {
+      cout << "    * Using serial Knowles-Handy algorithm in FCI." << endl;
+      fci_ = make_shared<KnowlesHandy>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+    } else if (fci_algorithm_ == "harrison" || fci_algorithm_ == "zarrabian" || fci_algorithm_ == "hz") {
+      cout << "    * Using serial Harrison-Zarrabian algorithm in FCI." << endl;
+      fci_ = make_shared<HarrisonZarrabian>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#ifdef HAVE_MPI_H
+    } else if (fci_algorithm_ == "parallel" || fci_algorithm_ == "dist") {
+      cout << "    * Using parallel algorithm in FCI." << endl;
+      fci_ = make_shared<DistFCI>(idata, geom_, ref_, nclosed_, nact_, /*nstates to be read from idata*/-1, /*store*/true);
+#endif
+    } else
+      throw runtime_error("Unknown FCI algorithm specified. " + fci_algorithm_);
   }
   muffle_->unmute();
 
@@ -208,15 +231,22 @@ shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold
 
 shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
-  copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
-  rdm1mat->sqrt();
-  rdm1mat->scale(1.0/sqrt(2.0));
+  if (nact_) {
+    copy_n(fci_->rdm1_av()->data(), rdm1mat->size(), rdm1mat->data());
+    rdm1mat->sqrt();
+    rdm1mat->scale(1.0/sqrt(2.0));
+  }
   auto ocoeff = coeff_->slice(0, nclosed_);
   auto acoeff = coeff_->slice(nclosed_, nocc_);
   auto vcoeff = coeff_->slice(nocc_, nmo_);
 
   VectorB eig(coeff_->mdim());
-  Fock<1> fock(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  Fock<1> fock;
+  if (nact_)
+    fock = Fock<1>(geom_, fci_->jop()->core_fock(), nullptr, acoeff * *rdm1mat, false, /*rhf*/true);
+  else
+    fock = Fock<1>(geom_, ref_->hcore(), nullptr, coeff_->slice_copy(0, nclosed_), false, /*rhf*/true);
+
   Matrix trans(nmo_, nmo_);
   trans.unit();
   if (nclosed_) {
@@ -250,9 +280,9 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
- return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
-              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+  return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                        fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
+               : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
 }
 
 

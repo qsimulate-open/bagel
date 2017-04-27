@@ -40,12 +40,13 @@ using namespace bagel;
 
 void Opt::do_optimize() {
   auto displ = make_shared<XYZFile>(current_->natom());
-  print_header();
 
   muffle_ = make_shared<Muffle>("opt.log");
+  muffle_->unmute();
+
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
-    shared_ptr<const XYZFile> xyz = current_->xyz();
-    muffle_->mute();
+    shared_ptr<const XYZFile> xyz = current_->xyz(); 
+    prev_xyz_.push_back(xyz);
 
     displ = displ_;
 
@@ -56,6 +57,7 @@ void Opt::do_optimize() {
         displ = iterate_displ();
     }
 
+    prev_displ_.push_back(displ);
     current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
     current_->print_atoms();
     if (internal_) {
@@ -93,6 +95,7 @@ void Opt::do_optimize() {
     {
       grad_->zero();
       shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+      prev_grad_.push_back(cgrad);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
       rms = cgrad->rms();       // This is more appropriate
       maxgrad = cgrad->maximum(current_->natom());
@@ -108,7 +111,7 @@ void Opt::do_optimize() {
       if (iter_ != 1)
         hessian_update();
 
-      prev_grad_ = make_shared<GradFile>(*grad_);
+      prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
       MoldenOut mfs("opt.molden");
       mfs << current_;
@@ -128,7 +131,7 @@ void Opt::do_optimize() {
 
     if (adaptive_) do_adaptive();
     double maxdispl = displ->maximum(current_->natom());
-    double echange = en_ - en_prev_;
+    double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
 
     bool convergegrad = maxgrad > thresh_grad_ ? false : true;
     bool convergedispl = maxdispl > thresh_displ_ ? false : true;
@@ -140,8 +143,12 @@ void Opt::do_optimize() {
     cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << (convergeenergy? "Yes" : "No") << endl << endl;
 
     muffle_->unmute();
+    if (iter_ == 1)
+      print_header();
+    prev_en_.push_back(en_);
     print_iteration(rms, timer_.tick());
-    en_prev_ = en_;
+
+    muffle_->mute();
 
     if (convergegrad && (convergedispl || convergeenergy)) break;
   }

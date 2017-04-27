@@ -46,6 +46,59 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
 }
 
 
+void FCI::compute_rdm12() {
+  // Needs initialization here because we use daxpy.
+  // For nstate_ == 1, rdm1_av_ = rdm1_->at(0).
+  if (rdm1_av_ == nullptr && nstate_ > 1) {
+    rdm1_av_ = make_shared<RDM<1>>(norb_);
+    rdm2_av_ = make_shared<RDM<2>>(norb_);
+  } else if (nstate_ > 1) {
+    rdm1_av_->zero();
+    rdm2_av_->zero();
+  }
+  // we need expanded lists
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
+  cc_->set_det(detex);
+
+  for (int i = 0; i != nstate_; ++i)
+    compute_rdm12(i, i);
+
+  // calculate state averaged RDMs
+  if (nstate_ != 1) {
+    for (int ist = 0; ist != nstate_; ++ist) {
+      rdm1_av_->ax_plus_y(weight_[ist], rdm1_->at(ist));
+      rdm2_av_->ax_plus_y(weight_[ist], rdm2_->at(ist));
+    }
+  } else {
+    rdm1_av_ = rdm1_->at(0,0);
+    rdm2_av_ = rdm2_->at(0,0);
+  }
+
+  cc_->set_det(det_);
+}
+
+
+void FCI::compute_rdm12(const int ist, const int jst) {
+  if (det_->compress()) {
+    auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+    cc_->set_det(detex);
+  }
+
+  shared_ptr<Civec> ccbra = cc_->data(ist);
+  shared_ptr<Civec> ccket = cc_->data(jst);
+
+  shared_ptr<RDM<1>> rdm1;
+  shared_ptr<RDM<2>> rdm2;
+  tie(rdm1, rdm2) = compute_rdm12_from_civec(ccbra, ccket);
+
+  // setting to private members.
+  rdm1_->emplace(ist, jst, rdm1);
+  rdm2_->emplace(ist, jst, rdm2);
+
+  cc_->set_det(det_);
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
@@ -67,6 +120,85 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
+
+  const int nri = cibra->asize()*cibra->lenb();
+  const int ij  = norb_*norb_;
+
+  // 1RDM c^dagger <I|\hat{E}|0>
+  // 2RDM \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
+  auto rdm1 = make_shared<RDM<1>>(norb_);
+  auto rdm2 = make_shared<RDM<2>>(norb_);
+  {
+    auto cibra_data = make_shared<VectorB>(nri);
+    copy_n(cibra->data(), nri, cibra_data->data());
+
+    auto dket_data = make_shared<Matrix>(nri, ij);
+    for (int i = 0; i != ij; ++i)
+      copy_n(dket->data(i)->data(), nri, dket_data->element_ptr(0, i));
+    auto rdm1t = btas::group(*rdm1,0,2);
+    btas::contract(1.0, *dket_data, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
+
+    auto dbra_data = dket_data;
+    if (dbra != dket) {
+      dbra_data = make_shared<Matrix>(nri, ij);
+      for (int i = 0; i != ij; ++i)
+        copy_n(dbra->data(i)->data(), nri, dbra_data->element_ptr(0, i));
+    }
+    auto rdm2t = group(group(*rdm2, 2,4), 0,2);
+    btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2});
+  }
+
+  // sorting... a bit stupid but cheap anyway
+  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
+  unique_ptr<double[]> buf(new double[norb_*norb_]);
+  for (int i = 0; i != norb_; ++i) {
+    for (int k = 0; k != norb_; ++k) {
+      copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
+      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
+    }
+  }
+
+  // put in diagonal into 2RDM
+  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+  for (int i = 0; i != norb_; ++i)
+    for (int k = 0; k != norb_; ++k)
+      for (int j = 0; j != norb_; ++j)
+        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+
+  return tie(rdm1, rdm2);
+}
+
+
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
+
+  if (o != nullptr) {
+    dbra->set_det(o);
+    dket->set_det(o);
+  }
+
+  auto rdm1 = make_shared<RDM<1>>(norb_);
+  auto rdm2 = make_shared<RDM<2>>(norb_);
+
+  assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
+
+  for (int i = 0; i != dbra->ij(); ++i) {
+    shared_ptr<RDM<1>> r1;
+    shared_ptr<RDM<2>> r2;
+    tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
+    rdm1->ax_plus_y(weight_[i], r1);
+    rdm2->ax_plus_y(weight_[i], r2);
+  }
+
+  if (o != nullptr) {
+    dbra->set_det(det_);
+    dket->set_det(det_);
+  }
+
+  return tie(rdm1, rdm2);
+}
 
 // computes 3 and 4RDM
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const int jst) const {
@@ -142,14 +274,14 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
   };
 
   // RDM3, RDM4 construction is multipassed and parallelized:
-  //  (1) When ndet > 1000, (ndet < 1000 -> too small, almost no gain)
+  //  (1) When ndet > 10000, (ndet < 10000 -> too small, almost no gain)
   //  and (2) When we have processes more than one
   //  OR  (3) When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t norb2 = norb_ * norb_;
   const size_t ijmax = 635040001 * 2;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 1000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
   Timer timer;
   if (npass > 1) {

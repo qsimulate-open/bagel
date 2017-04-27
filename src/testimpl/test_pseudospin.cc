@@ -67,14 +67,14 @@ std::vector<double> zfs_param(std::string inp) {
         std::shared_ptr<const PTree> aniso_data = itree->get_child_optional("aniso");
         if (aniso_data) {
           const int nspin = aniso_data->get<int>("nspin", 3);
-          auto ps = std::make_shared<Pseudospin>(nspin, aniso_data);
-          ps->compute(*zcas->fci());
+          auto ps = std::make_shared<Pseudospin>(nspin, geom->relativistic(/*gaunt*/false), zcas->fci()->conv_to_ciwfn(), aniso_data);
+          ps->compute(zcas->energy(), zcas->coeff()->active_part());
           out.clear();
           out.push_back(ps->gval(0) * gscale);
           out.push_back(ps->gval(1) * gscale);
           out.push_back(ps->gval(2) * gscale);
-          out.push_back(ps->Dval());
-          out.push_back(ps->Eval());
+          out.push_back(ps->dval());
+          out.push_back(ps->eval());
         }
       }
     }

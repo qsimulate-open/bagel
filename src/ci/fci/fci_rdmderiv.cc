@@ -263,13 +263,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>> FCI::rdm3deriv(c
   auto dbra = rdm1deriv(target);
 
   // Fock-weighted 2RDM derivative construction is multipassed and parallelized:
-  //  (1) When ndet > 1000, (ndet < 1000 -> so fast, almost no gain)
+  //  (1) When ndet > 10000, (ndet < 10000 -> so fast, almost no gain)
   //  and (2) When we have processes more than one
   //  OR  (3) When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (635,040,000)
   const size_t ndet = cbra->det()->size();
   const size_t ijmax = 635040001;
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 1000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
 
   shared_ptr<Matrix> fock_ebra_mat;

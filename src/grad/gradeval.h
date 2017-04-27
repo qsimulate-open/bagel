@@ -53,12 +53,15 @@ class GradEval : public GradEval_base {
     int target_state_;
     std::vector<double> dipole_;
 
+    int maxziter_;
+
     void init() {
       if (geom_->external())
         throw std::logic_error("Gradients with external fields have not been implemented.");
       // target has to be passed to T (for CASPT2, for instance)
       auto idata_out = std::make_shared<PTree>(*idata_);
       idata_out->put("_target", target_state_);
+      idata_out->put("_maxziter", maxziter_);
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
       task_->compute();
       ref_  = task_->conv_to_ref();
@@ -68,8 +71,8 @@ class GradEval : public GradEval_base {
 
   public:
     // Constructor performs energy calculation
-    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target) {
+    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int maxziter = 100)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), maxziter_(maxziter) {
       init();
     }
 
@@ -111,6 +114,8 @@ class NacmEval : public GradEval_base {
     // nacmtype is 0 (full derivative coupling), 1 (interstate coupling) or 2 (full derivative coupling with built-in ETF factor: see Subotnik)
     int nacmtype_;
 
+    int maxziter_;
+
     void init() {
       if (geom_->external())
         throw std::logic_error("Gradients with external fields have not been implemented.");
@@ -118,6 +123,7 @@ class NacmEval : public GradEval_base {
       idata_out->put("_target", target_state1_);
       idata_out->put("_target2", target_state2_);
       idata_out->put("_nacmtype", nacmtype_);
+      idata_out->put("_maxziter", maxziter_);
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
       task_->compute();
       ref_  = task_->conv_to_ref();
@@ -127,8 +133,8 @@ class NacmEval : public GradEval_base {
     }
 
   public:
-    NacmEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2, const int nacmtype)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2), nacmtype_(nacmtype) {
+    NacmEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2, const int nacmtype, const int maxziter = 100)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2), nacmtype_(nacmtype), maxziter_(maxziter) {
       init();
     }
 
@@ -159,12 +165,15 @@ class DgradEval : public GradEval_base {
     int target_state1_;
     int target_state2_;
 
+    int maxziter_;
+
     void init() {
       if (geom_->external())
         throw std::logic_error("Gradients with external fields have not been implemented.");
       auto idata_out = std::make_shared<PTree>(*idata_);
       idata_out->put("_target", target_state1_);
       idata_out->put("_target2", target_state2_);
+      idata_out->put("_maxziter", maxziter_);
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
       task_->compute();
       ref_  = task_->conv_to_ref();
@@ -174,8 +183,8 @@ class DgradEval : public GradEval_base {
     }
 
   public:
-    DgradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2) {
+    DgradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target1, const int target2, const int maxziter)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target1), target_state2_(target2), maxziter_(maxziter) {
       init();
     }
 

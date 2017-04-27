@@ -83,11 +83,13 @@ class SubTask_Merged_ {
 
 namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace CASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
+namespace CASA { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MSCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MSCASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
 namespace SPCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MRCI   { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace RelCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
+namespace RelCASA { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 namespace RelMRCI   { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 
 extern template class SubTask_Merged_<2,1,5,double>;

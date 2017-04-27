@@ -40,7 +40,7 @@ using namespace std;
 using namespace bagel;
 
 void Opt::hessian_update() {
-  auto y  = make_shared<GradFile>(*grad_ - *prev_grad_);
+  auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
   auto s  = make_shared<GradFile>(*displ_);
   auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
   auto z  = make_shared<GradFile>(*y - *hs);
@@ -415,7 +415,7 @@ void Opt::do_adaptive() {
   bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
 
   if (algo) {
-    realchange_ = en_ - en_prev_;
+    realchange_ = en_ - prev_en_.back();
     double predreal_ratio = realchange_ / predictedchange_prev_;
     if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
 
