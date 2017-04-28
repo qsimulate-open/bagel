@@ -26,6 +26,7 @@
 #ifdef COMPILE_SMITH
 
 
+#include <cstdio>
 #include <src/smith/relcaspt2/RelCASPT2.h>
 #include <src/util/math/linearRM.h>
 #include <src/prop/pseudospin/pseudospin.h>

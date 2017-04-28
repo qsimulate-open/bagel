@@ -69,10 +69,7 @@ class RMAWindow {
     // serialization
     friend class boost::serialization::access;
     template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      // Do nothing.
-      // initialized_ should be saved by derived class, which calls initialize() upon loading if needed.
-    }
+    void serialize(Archive& ar, const unsigned int) { }
 
   public:
     RMAWindow();
