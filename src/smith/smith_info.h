@@ -78,8 +78,9 @@ class SMITH_Info {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
-      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_ & do_ms_ & do_xms_ & sssr_;
-      ar & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_ & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_;
+      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_;
+      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_;
+      ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
     }
 
   public:
