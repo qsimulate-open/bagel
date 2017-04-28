@@ -344,6 +344,3 @@ template class RMATask<double>;
 template class RMATask<complex<double>>;
 template class RMAWindow<double>;
 template class RMAWindow<complex<double>>;
-
-BOOST_CLASS_EXPORT_IMPLEMENT(RMAWindow<double>)
-BOOST_CLASS_EXPORT_IMPLEMENT(RMAWindow<complex<double>>)

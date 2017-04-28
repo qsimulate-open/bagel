@@ -117,7 +117,6 @@ class StorageIncore : public RMAWindow<DataType> {
       std::map<size_t, std::pair<size_t, size_t>> hashtable_ordered;
       for (auto& i: hashtable_)
         hashtable_ordered.emplace(i);
-      ar << boost::serialization::base_object<RMAWindow<DataType>>(*this);
       ar << RMAWindow<DataType>::initialized_ << totalsize_ << hashtable_ordered;
 
       // Process 0 collects and saves tensor's contents, tile by tile
@@ -138,7 +137,6 @@ class StorageIncore : public RMAWindow<DataType> {
     void load(Archive& ar, const unsigned int) {
       std::map<size_t, std::pair<size_t, size_t>> hashtable_ordered;
       bool init;
-      ar >> boost::serialization::base_object<RMAWindow<DataType>>(*this);
       ar >> init >> totalsize_ >> hashtable_ordered;
 
       // Determine distribution information (assuming mpi__->size() might have changed)

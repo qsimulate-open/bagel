@@ -31,7 +31,6 @@
 #ifdef HAVE_MPI_H
  #include <mpi.h>
 #endif
-#include <src/util/serialization.h>
 
 namespace bagel {
 
@@ -64,12 +63,6 @@ class RMAWindow {
     DataType* win_base_;
 
     bool initialized_;
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) { }
 
   public:
     RMAWindow();
@@ -146,9 +139,5 @@ extern template class RMAWindow<double>;
 extern template class RMAWindow<std::complex<double>>;
 
 }
-
-#include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::RMAWindow<double>)
-BOOST_CLASS_EXPORT_KEY(bagel::RMAWindow<std::complex<double>>)
 
 #endif
