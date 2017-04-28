@@ -51,6 +51,8 @@ void RelCoeff::print_info() const {
 
 RelCoeff_Striped::RelCoeff_Striped(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
+  assert(ndim() == _coeff.ndim());
+  assert(mdim() == _coeff.mdim());
   if (!move_neg) {
     // copy input matrix directly
     copy_block(0, 0, ndim(), mdim(), _coeff);

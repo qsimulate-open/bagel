@@ -143,7 +143,29 @@ void ZCASSCF::init() {
     hctmp->diagonalize(eig);
     scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
   } else if (nr_coeff_ == nullptr) {
-    scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
+
+    // first set coefficient
+    scoeff = relref->relcoeff_full();
+    // If we have fewer MOs than AOs (such as after coefficient projection)
+    if (4 * geom_->nbasis() != scoeff->mdim()) {
+      shared_ptr<const ZMatrix> tildex = overlap_->tildex(1.0e-10);
+
+      ZMatrix c(scoeff->ndim(), tildex->mdim());
+      c.copy_block(0, 0, scoeff->ndim(), scoeff->npos(), scoeff->slice(0, scoeff->npos()));
+      c.copy_block(0, tildex->mdim() - scoeff->nneg(), scoeff->ndim(), scoeff->nneg(), scoeff->slice(scoeff->npos(), scoeff->mdim()));
+
+      shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
+      c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
+
+      scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
+      scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
+#ifndef NDEBUG
+      ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
+      assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
+#endif
+    }
+
+    scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
     scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }

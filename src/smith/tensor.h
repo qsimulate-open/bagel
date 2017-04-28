@@ -57,7 +57,9 @@ class Tensor_ {
     bool allocated_;
 
   public:
+    Tensor_() { }
     Tensor_(std::vector<IndexRange> in, const bool kramers = false, const std::unordered_set<size_t> sparse = std::unordered_set<size_t>(), const bool alloc = false);
+    virtual ~Tensor_() { }
 
     Tensor_<DataType>& operator=(const Tensor_<DataType>& o);
 
@@ -66,6 +68,30 @@ class Tensor_ {
 
     virtual void init() const { initialized_ = true; }
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << range_ << data_ << rank_ << sparse_ << initialized_ << allocated_;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      bool do_init;
+      ar >> range_ >> data_ >> rank_ >> sparse_ >> do_init >> allocated_;
+      initialized_ = false;
+      if (do_init) init();
+      if (allocated_ != data_->initialized())
+        throw std::runtime_error("Allocation error when trying to load a serialized Smith tensor.");
+    }
+
+  public:
     void ax_plus_y(const DataType& a, const Tensor_<DataType>& o) { data_->ax_plus_y(a, o.data_); }
     void ax_plus_y(const DataType& a, std::shared_ptr<const Tensor_<DataType>> o) { ax_plus_y(a, *o); }
 
@@ -141,5 +167,9 @@ namespace RelMRCI   { using Tensor = Tensor_<std::complex<double>>; }
 
 }
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::Tensor_<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::Tensor_<std::complex<double>>)
 
 #endif

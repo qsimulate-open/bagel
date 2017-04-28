@@ -44,7 +44,9 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 
 #ifdef COMPILE_SMITH
   // make a smith_info class
-  auto info = make_shared<SMITH_Info<double>>(r, idata);
+  auto info = make_shared<const SMITH_Info<double>>(r, idata);
+  if (info->restart())
+    cout << " ** Restarting calculations is currently unavailable for non-relativistic SMITH methods.  Serialized archives will not be generated." << endl << endl;
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
@@ -127,22 +129,76 @@ void Smith::compute() {
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
-  if (!dynamic_pointer_cast<const RelReference>(r))
-    throw runtime_error("Relativistic correlation methods require a fully relativistic reference wavefunction.");
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
+  if (!dynamic_pointer_cast<const RelReference>(r) && method != "continue")
+    throw runtime_error("Relativistic correlation methods require a fully relativistic reference wavefunction.");
 
-  // make a smith_info class
-  auto info = make_shared<SMITH_Info<complex<double>>>(r, idata);
+  if (method != "continue") {
+    // make a smith_info class
+    auto info = make_shared<const SMITH_Info<complex<double>>>(r, idata);
+    if (method == "caspt2") {
+      algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+    } else if (method == "casa") {
+      algo_ = make_shared<RelCASA::RelCASA>(info);
+    } else if (method == "mrci") {
+      algo_ = make_shared<RelMRCI::RelMRCI>(info);
+    } else {
+      stringstream ss; ss << method << " method is not implemented in RelSMITH";
+      throw logic_error(ss.str());
+    }
 
-  if (method == "caspt2") {
-    algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
-  } else if (method == "casa") {
-    algo_ = make_shared<RelCASA::RelCASA>(info);
-  } else if (method == "mrci") {
-    algo_ = make_shared<RelMRCI::RelMRCI>(info);
   } else {
-    stringstream ss; ss << method << " method is not implemented in SMITH";
-    throw logic_error(ss.str());
+    // method == "continue" - so load SMITH_Info and T2 amplitudes from Archives
+    Timer mtimer;
+
+    shared_ptr<const SMITH_Info<complex<double>>> info;
+    string arch_prefix = idata_->get<string>("archive_location", "");
+    if (arch_prefix.size() > 2 && arch_prefix.back() != '/')
+      arch_prefix += "/";
+    {
+      IArchive archive(arch_prefix + "RelSMITH_info");
+      shared_ptr<SMITH_Info<complex<double>>> ptr;
+      archive >> ptr;
+      const int state_begin = idata_->get<int>("state_begin", 0);
+      const int restart_iter = idata_->get<int>("restart_iter", 0);
+      ptr->set_restart_params(state_begin, restart_iter);
+      info = shared_ptr<SMITH_Info<complex<double>>>(ptr);
+    }
+    mtimer.tick_print("Load RelSMITH info Archive");
+
+    ref_ = info->ref();
+    geom_ = ref_->geom();
+    const string method = to_lower(info->method());
+    assert(method == "caspt2" || method == "casa");
+    if (method == "caspt2") {
+      arch_prefix += "RelCASPT2";
+    } else if (method == "casa") {
+      arch_prefix += "RelCASA";
+    }
+
+    if (method == "caspt2")
+      algo_ = make_shared<RelCASPT2::RelCASPT2>(info);
+    else if (method == "casa")
+      algo_ = make_shared<RelCASA::RelCASA>(info);
+    mtimer.tick_print("Construct " + method + " architecture");
+
+    for (int ist = 0; ist <= info->state_begin(); ++ist) {
+      if (ist < info->state_begin() || info->restart_iter() > 0) {
+        string arch = arch_prefix + "_t2_" + to_string(ist);
+        if (ist < info->state_begin())
+           arch += "_converged";
+        else
+           arch += "_iter_" + to_string(info->restart_iter());
+        IArchive archive(arch);
+        shared_ptr<MultiTensor_<complex<double>>> t2in;
+        archive >> t2in;
+        if (method == "caspt2")
+          (dynamic_pointer_cast<RelCASPT2::RelCASPT2>(algo_))->load_t2all(t2in, ist);
+        else
+          (dynamic_pointer_cast<RelCASA::RelCASA>(algo_))->load_t2all(t2in, ist);
+      }
+    }
+    mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");
   }
 #else
   throw logic_error("You must enable SMITH during compilation for this method to be available.");

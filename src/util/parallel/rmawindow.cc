@@ -211,11 +211,11 @@ void RMAWindow<DataType>::rma_get(DataType* data, const size_t rank, const size_
 
 
 template<typename DataType>
-void RMAWindow<DataType>::rma_put(const unique_ptr<DataType[]>& dat, const size_t key) {
+void RMAWindow<DataType>::rma_put(const DataType* dat, const size_t key) {
   assert(initialized_);
   size_t rank, off, size;
   tie(rank, off, size) = locate(key);
-  return rma_put(dat, rank, off, size);
+  rma_put(dat, rank, off, size);
 }
 
 

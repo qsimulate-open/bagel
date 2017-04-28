@@ -26,6 +26,7 @@
 #ifdef COMPILE_SMITH
 
 
+#include <cstdio>
 #include <src/smith/relcasa/RelCASA.h>
 #include <src/util/math/linearRM.h>
 #include <src/prop/pseudospin/pseudospin.h>
@@ -72,7 +73,8 @@ void RelCASA::RelCASA::solve() {
 
   // <proj_jst|H|0_K> set to sall in ms-caspt2
   for (int istate = 0; istate != nstates_; ++istate) { //K states
-    t2all_[istate]->fac(istate) = 0.0;
+    if (istate > info_->state_begin() || (istate == info_->state_begin() && info_->restart_iter() == 0))
+      t2all_[istate]->fac(istate) = 0.0;
     sall_[istate]->fac(istate)  = 0.0;
 
     for (int jst=0; jst != nstates_; ++jst) { // <jst|
@@ -181,6 +183,14 @@ void RelCASA::RelCASA::solve() {
 vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s, 
                                                                                      vector<shared_ptr<MultiTensor_<complex<double>>>> t) {
   Timer mtimer;
+#ifndef DISABLE_SERIALIZATION
+  if (info_->restart()) {
+    OArchive archive("RelSMITH_info");
+    archive << info_;
+    mtimer.tick_print("Save RelSMITH info Archive");
+  }
+#endif
+
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
@@ -190,13 +200,16 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
     e0_ = e0all_[i] - info_->shift();
     energy_[i] = 0.0;
     // set guess vector
-    t[i]->zero();
+    if (i > info_->state_begin() || (i == info_->state_begin() && info_->restart_iter() == 0))
+      t[i]->zero();
+
     if (s[i]->rms() < 1.0e-15) {
       print_iteration(0, 0.0, 0.0, mtimer.tick());
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
-      update_amplitude_casa(t[i], s[i], i);
+      if (i > info_->state_begin() || (i == info_->state_begin() && info_->restart_iter() == 0))
+        update_amplitude_casa(t[i], s[i], i);
     }
 
     auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
@@ -229,6 +242,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       // solve using subspace updates
       rall_[i] = solver->compute_residual(t[i], rall_[i]);
       t[i] = solver->civec();
+      t2all_[i] = t[i];
 
       // energy is now the Hylleraas energy
       energy_[i] = detail::real(dot_product_transpose(s[i], t[i]));
@@ -238,6 +252,24 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       error = rall_[i]->rms();
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
+
+#ifndef DISABLE_SERIALIZATION
+      if (info_->restart() && (conv || (info_->restart_each_iter() && iter > 0))) {
+        string arch = "RelCASA_";
+        if (mpi__->rank() == 0)
+          arch += "t2_" + to_string(i) + (conv ? "_converged" : "_iter_" + to_string(iter));
+        else
+          arch += "temp_trash";
+        {
+          OArchive archive(arch);
+          archive << t2all_[i];
+        }
+        mpi__->barrier();
+        if (conv)
+          mtimer.tick_print("Save T-amplitude Archive (RelSMITH)");
+        remove("RelCASA_temp_trash.archive");
+      }
+#endif
 
       // compute delta t2 and update amplitude
       if (!conv) {
@@ -269,9 +301,14 @@ void RelCASA::RelCASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std
 }
 
 
+void RelCASA::RelCASA::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
+  assert(ist <= info_->state_begin());
+  t2all_[ist] = t2in;
+}
+
+
 void RelCASA::RelCASA::solve_deriv() {
   throw std::logic_error("Nuclear gradients not implemented for RelCASA");
 }
-
 
 #endif

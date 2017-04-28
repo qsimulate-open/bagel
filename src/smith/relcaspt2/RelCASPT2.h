@@ -103,6 +103,8 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     void solve();
     void solve_deriv();
 
+    void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
+
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;
       while (!queue->done())

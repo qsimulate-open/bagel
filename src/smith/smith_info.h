@@ -60,13 +60,31 @@ class SMITH_Info {
     bool sssr_;
     bool shift_diag_;
     bool block_diag_fock_;
+    bool restart_;
+    bool restart_each_iter_;
 
     double thresh_overlap_;
+
+    // For restarted jobs
+    int state_begin_;
+    int restart_iter_;
 
     std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
     std::string external_rdm_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
+      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_;
+      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_;
+      ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
+    }
+
   public:
+    SMITH_Info() { }
     SMITH_Info(std::shared_ptr<const Reference> o, const std::shared_ptr<const PTree> idata);
     SMITH_Info(std::shared_ptr<const Reference> o, std::shared_ptr<const SMITH_Info> info);
 
@@ -100,6 +118,8 @@ class SMITH_Info {
     bool sssr() const { return sssr_; }
     bool shift_diag() const { return shift_diag_; }
     bool block_diag_fock() const { return block_diag_fock_; }
+    bool restart() const { return restart_; }
+    bool restart_each_iter() const { return restart_each_iter_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
 
@@ -126,6 +146,16 @@ class SMITH_Info {
     // TODO Do we want to keep this?  Implemented for debugging, but could be useful in the future
     std::shared_ptr<const Reference> extract_ref(const std::vector<int> states, const bool extract_rdm) const;
 
+    int state_begin() const { return state_begin_; }
+    int restart_iter() const { return restart_iter_; }
+
+    void set_restart_params(const int state, const int iter) {
+      state_begin_ = state;
+      restart_iter_ = iter;
+      if (state_begin_ < 0 || state_begin_ > (nact() ? ciwfn()->nstates() : 1) || restart_iter_ < 0)
+        throw std::runtime_error("Invalid starting point for RelSMITH continue");
+    }
+
     std::shared_ptr<const PTree> aniso_data() const { return aniso_data_; }
 };
 
@@ -149,5 +179,9 @@ extern template class SMITH_Info<double>;
 extern template class SMITH_Info<std::complex<double>>;
 
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH_Info<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH_Info<std::complex<double>>)
 
 #endif
