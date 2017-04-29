@@ -49,7 +49,7 @@ class Hess {
     std::shared_ptr<Matrix> mw_hess_;
     std::shared_ptr<Matrix> proj_hess_;
     std::shared_ptr<Matrix> eigvec_cart_;
-
+    std::shared_ptr<Matrix> cartesian_;
     std::vector<double> ir_;
     std::vector<double> freq_;
 
