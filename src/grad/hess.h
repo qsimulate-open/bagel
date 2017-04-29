@@ -57,6 +57,10 @@ class Hess {
     // mask some of the output
     mutable std::shared_ptr<Muffle> muffle_;
 
+    void compute_finite_diff_();
+    void project_zero_freq_();
+    void print_ir_() const;
+
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
