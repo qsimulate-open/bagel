@@ -65,9 +65,10 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
     throw logic_error("Analytical Hessian has not been implemented");
   }
 
-  dx_ = idata_->get<double>("dx", 0.001);
+  dx_ = idata_->get<double>("dx", 0.0001);
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
+  nproc_ = idata_->get<int>("nproc", 1);
 }
 
 
@@ -83,11 +84,11 @@ void Hess::compute() {
   muffle_ = make_shared<Muffle>("freq.log");
 
   // get from input
-  const int nproc = 2; // TODO
-  const int ncomm = mpi__->world_size() / nproc;
-  const int icomm = mpi__->world_rank() / nproc;
+//  const int nproc_ = 2; // TODO
+  const int ncomm = mpi__->world_size() / nproc_;
+  const int icomm = mpi__->world_rank() / nproc_;
 
-  mpi__->split(nproc);
+  mpi__->split(nproc_);
 
   for (int i = 0, counter = 0; i != natom; ++i) {  // atom i
     for (int j = 0; j != 3; ++j, ++counter) { //xyz
