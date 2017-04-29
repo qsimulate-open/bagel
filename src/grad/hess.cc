@@ -200,10 +200,10 @@ void Hess::project_zero_freq_() {
   VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
   double total_mass = 0.0;
   // compute center of mass
-  for (int i = 0; i!= natom; ++i) {
-    for (int j = 0; j != 3; ++j)
-      cmass(j) += geom_->atoms(i)->averaged_mass() * geom_->atoms(i)->position(j);
-    total_mass += geom_->atoms(i)->averaged_mass();
+  for (auto& atom : geom_->atoms()) {
+    for (int i = 0; i != 3; ++i)
+      cmass(i) += atom->averaged_mass() * atom->position(i);
+    total_mass += atom->averaged_mass();
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
