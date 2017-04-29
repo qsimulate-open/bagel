@@ -40,6 +40,8 @@ namespace bagel {
 
 class MPI_Interface {
   protected:
+    int world_rank_;
+    int world_size_;
     int rank_;
     int size_;
 
@@ -68,6 +70,8 @@ class MPI_Interface {
     MPI_Interface();
     ~MPI_Interface();
 
+    int world_rank() const { return world_rank_; }
+    int world_size() const { return world_size_; }
     int rank() const { return rank_; }
     int size() const { return size_; }
     bool last() const { return rank() == size()-1; }

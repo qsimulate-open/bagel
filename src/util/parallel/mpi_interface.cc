@@ -45,8 +45,10 @@ MPI_Interface::MPI_Interface()
   if (provided != MPI_THREAD_MULTIPLE)
     throw runtime_error("MPI_THREAD_MULTIPLE not provided");
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
-  MPI_Comm_size(MPI_COMM_WORLD, &size_);
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank_);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size_);
+  rank_ = world_rank_;
+  size_ = world_size_;
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(size());
   if (rank() == 0)
