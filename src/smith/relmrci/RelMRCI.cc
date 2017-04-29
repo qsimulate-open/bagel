@@ -183,15 +183,15 @@ void RelMRCI::RelMRCI::solve() {
     }
 
     energy_ = davidson.compute(a0, r0);
+    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
 
     // find new trial vectors
-    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
-      t2all_[i]->zero();
       conv[i] = err < info_->thresh();
+      t2all_[i]->zero();
       if (!conv[i]) {
         e0_ = e0all_[i];
         update_amplitude(t2all_[i], res[i]->tensor());

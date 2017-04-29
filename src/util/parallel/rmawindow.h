@@ -91,8 +91,9 @@ class RMAWindow {
     std::unique_ptr<DataType[]> rma_get(const size_t rank, const size_t off, const size_t size) const;
     void rma_get(DataType*, const size_t key) const;
     void rma_get(DataType*, const size_t rank, const size_t off, const size_t size) const;
-    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key);
+    void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t key) { rma_put(dat.get(), key); }
     void rma_put(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_put(dat.get(), rank, off, size); }
+    void rma_put(const DataType* dat, const size_t key);
     void rma_put(const DataType* dat, const size_t rank, const size_t off, const size_t size);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t key);
     void rma_add(const std::unique_ptr<DataType[]>& dat, const size_t rank, const size_t off, const size_t size) { rma_add(dat.get(), rank, off, size); }

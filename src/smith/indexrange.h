@@ -34,6 +34,7 @@
 #include <iomanip>
 #include <memory>
 #include <src/util/parallel/staticdist.h>
+#include <src/util/serialization.h>
 
 namespace bagel {
 namespace SMITH {
@@ -45,6 +46,15 @@ class Index {
     size_t offset2_;
     size_t size_;
     size_t key_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & offset_ & offset2_ & size_ & key_;
+    }
+
   public:
     Index(const size_t& o, const size_t& o2, const size_t& s, const size_t& i) : offset_(o), offset2_(o2), size_(s), key_(i) {}
     Index() {}
@@ -75,6 +85,14 @@ class IndexRange {
 
     // set to be an offset for the spin/Kramers counterpart if necessary
     int orboffset2_;
+
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & range_ & size_ & keyoffset_ & orboffset_ & orboffset2_;
+    }
 
   public:
     IndexRange(const int size, const int maxblock = 10, const int boffset = 0, const int orboff = 0, const int orboff2 = -1);
@@ -112,5 +130,9 @@ class IndexRange {
 
 }
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::Index)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::IndexRange)
 
 #endif

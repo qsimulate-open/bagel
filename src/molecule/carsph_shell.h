@@ -190,8 +190,6 @@ static std::shared_ptr<Matrix> carsph_matrix (const int i) {
 #ifndef COMPILE_J_ORB
       throw std::runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
 #endif
-      // TODO:  Verify that the matrix csi is correct.  One strategy is to ensure 0.5*Small1e<OverlapBatch> can reproduce the results of KineticBatch
-      throw std::runtime_error("Please carefully verify csi before using it in production runs.");
       out->copy_block(0, 0, m, n, csi.data());
       break;
     case 7:

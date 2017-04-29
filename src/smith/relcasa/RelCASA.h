@@ -108,10 +108,11 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
 
   public:
     RelCASA(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
-    ~RelCASA() {}
 
     void solve();
     void solve_deriv();
+
+    void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;
@@ -126,5 +127,6 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
 }
 }
 }
+
 #endif
 

@@ -87,6 +87,18 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
 
+  // enable restart capability
+  restart_ = idata->get<bool>("restart", false);
+  restart_each_iter_ = idata->get<bool>("restart_each_iter", restart_);
+  state_begin_ = 0;
+  restart_iter_ = 0;
+
+  // Restart with MRCI would require us to load amplitudes from previous iterations into DavidsonDiag
+  // TODO maybe implement this in the future
+  if (restart_ && to_lower(method_) == "mrci")
+    throw runtime_error("Restarting is currently only available in SMITH for relativistic perturbation theory methods, not MRCI.");
+
+  // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
   external_rdm_ = idata->get<string>("external_rdm", "");
   if (external_rdm_.empty() && !ciwfn()->civectors())
@@ -242,5 +254,8 @@ shared_ptr<const Reference>  SMITH_Info<DataType>::extract_ref(const vector<int>
 template class SMITH_Info<double>;
 template class SMITH_Info<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<complex<double>>)
 
 #endif

@@ -189,4 +189,7 @@ void StorageKramers<DataType>::add_block(const unique_ptr<DataType[]>& dat, cons
 template class StorageKramers<double>;
 template class StorageKramers<complex<double>>;
 
+BOOST_CLASS_EXPORT_IMPLEMENT(StorageKramers<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(StorageKramers<complex<double>>)
+
 #endif

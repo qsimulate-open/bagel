@@ -100,3 +100,6 @@ string IndexRange::str() const {
     ss << setw(10) << i.offset() << setw(10) << i.size() << endl;
   return ss.str();
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Index)
+BOOST_CLASS_EXPORT_IMPLEMENT(IndexRange)
