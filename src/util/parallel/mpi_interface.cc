@@ -383,11 +383,28 @@ bool MPI_Interface::test(const int rq) {
 // MPI Communicators
 void MPI_Interface::split(const int n) {
 #ifdef HAVE_MPI_H
+#ifdef HAVE_SCALAPACK
+  // first make a map between MPI ranks and process numbers
+  vector<int> pmap(world_size_, 0);
+  pmap[world_rank_] = pnum(myprow_, mypcol_);
+  allreduce(pmap.data(), world_size_);
+#endif
   MPI_Comm new_comm;
-  MPI_Comm_split(MPI_COMM_WORLD, rank_/n, rank_, &new_comm);
+  const int icomm = world_rank_ / n;
+  MPI_Comm_split(MPI_COMM_WORLD, icomm, world_rank_, &new_comm);
   mpi_comm_ = new_comm;
   MPI_Comm_rank(mpi_comm_, &rank_);
   MPI_Comm_size(mpi_comm_, &size_);
+#ifdef HAVE_SCALAPACK
+  // make blacs_gridmap
+  tie(nprow_, npcol_) = numgrid(size_);
+  vector<int> imap(size_);
+  for (int i = 0; i != size_; ++i)
+    imap[i] = pmap[icomm*n + i];
+  blacs_get_(0, 0, context_);
+  blacs_gridmap_(context_, imap.data(), nprow_, nprow_, npcol_);
+  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+#endif
 #endif
 }
 
@@ -396,8 +413,14 @@ void MPI_Interface::merge() {
 #ifdef HAVE_MPI_H
   MPI_Comm_free(&mpi_comm_);
   mpi_comm_ = MPI_COMM_WORLD;
-  MPI_Comm_rank(mpi_comm_, &rank_);
-  MPI_Comm_size(mpi_comm_, &size_);
+  rank_ = world_rank_;
+  size_ = world_size_;
+#ifdef HAVE_SCALAPACK
+  blacs_gridexit_(context_);
+  tie(nprow_, npcol_) = numgrid(size_);
+  sl_init_(context_, nprow_, npcol_);
+  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+#endif
 #endif
 }
 
