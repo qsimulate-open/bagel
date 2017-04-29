@@ -45,7 +45,9 @@ MoldenOut& MoldenOut::operator<< (shared_ptr<const Molecule> mol) {
 MoldenOut& MoldenOut::operator<< (shared_ptr<const Reference> ref) {
   ref_ = ref;
 
-  write_mos();
+  if (ref->coeff())
+    write_mos();
+
   if (!ref->prop_freq().empty())
     write_freq();
 
