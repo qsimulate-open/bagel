@@ -226,17 +226,6 @@ void Reference::set_eig(const VectorB& eig) {
   mpi__->broadcast(eig_.data(), eig_.size(), 0);
 }
 
-void Reference::set_prop_freq(const std::vector<double> freq) {
-  prop_freq_ = freq;
-}
-
-void Reference::set_prop_ir(const std::vector<double> ir) {
-  prop_ir_ = ir;
-}
-
-void Reference::set_prop_eig(const std::shared_ptr<Matrix> eig) {
-  prop_eig_ = eig;
-}
 
 void Reference::set_coeff_AB(const shared_ptr<const Coeff> a, const shared_ptr<const Coeff> b) {
   mpi__->broadcast(const_pointer_cast<Coeff>(a)->data(), a->size(), 0);
