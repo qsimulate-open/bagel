@@ -396,7 +396,7 @@ void MPI_Interface::split(const int n) {
   MPI_Comm_rank(mpi_comm_, &rank_);
   MPI_Comm_size(mpi_comm_, &size_);
 #ifdef HAVE_SCALAPACK
-  // make blacs_gridmap
+  blacs_gridexit_(context_);
   tie(nprow_, npcol_) = numgrid(size_);
   vector<int> imap(size_);
   for (int i = 0; i != size_; ++i)
