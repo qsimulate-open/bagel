@@ -49,15 +49,16 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   }
 
   auto input = idata_->get_child("method");
-  for (auto& m : *input) {
-    const string title = to_lower(m->get<string>("title", ""));
+  auto m = input->begin();
+  for ( ; m != --input->end(); ++m) {
+    const string title = to_lower((*m)->get<string>("title", ""));
     if (title != "molecule") {
-      shared_ptr<Method> c = construct_method(title, m, geom_, r);
+      shared_ptr<Method> c = construct_method(title, *m, geom_, r);
       if (!c) throw runtime_error("unknown method in Hess");
       c->compute();
       r = c->conv_to_ref();
     } else {
-      geom_ = make_shared<Geometry>(*geom_, m);
+      geom_ = make_shared<Geometry>(*geom_, *m);
       if (r) r = r->project_coeff(geom_);
     }
   }
