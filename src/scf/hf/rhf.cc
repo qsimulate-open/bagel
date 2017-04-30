@@ -195,7 +195,7 @@ void RHF::compute() {
   if (!geom_->external() && multipole_print_) {
     if (dodf_) aodensity_ = aodensity->matrix();
     Multipole mu(geom_, aodensity_, multipole_print_);
-    mu.compute();
+    scf_dipole_ = mu.compute();
     if (dma_print_ > 0) {
       SphMultipole smu(geom_, aodensity_, dma_print_);
       smu.compute();

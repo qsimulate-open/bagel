@@ -154,8 +154,9 @@ int main(int argc, char** argv) {
 
       } else if (title == "hessian") {
 
-        auto opt = make_shared<Hess>(itree, geom, ref);
-        opt->compute();
+        auto hess = make_shared<Hess>(itree, geom, ref);
+        hess->compute();
+        ref = hess->conv_to_ref();
 
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");
@@ -222,12 +223,13 @@ int main(int argc, char** argv) {
       } else if (title == "print") {
 
         const bool orbitals = itree->get<bool>("orbitals", false);
+        const bool vibration = itree->get<bool>("vibration", false);
         const string out_file = itree->get<string>("file", "out.molden");
 
         if (mpi__->rank() == 0) {
           MoldenOut mfs(out_file);
           mfs << geom;
-          if (orbitals) mfs << ref;
+          if (orbitals || vibration) mfs << ref;
         }
 
       } else {

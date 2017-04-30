@@ -36,18 +36,30 @@ class Hess {
     const std::shared_ptr<const PTree> idata_;
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
+    std::shared_ptr<const Coeff> coeff_;
 
     bool numhess_;
     bool numforce_;
+
+    int nproc_;
+
     std::shared_ptr<Matrix> hess_;
     std::shared_ptr<Matrix> mw_hess_;
     std::shared_ptr<Matrix> proj_hess_;
+    std::shared_ptr<Matrix> eigvec_cart_;
+    std::shared_ptr<Matrix> cartesian_;
+    std::vector<double> ir_;
+    std::vector<double> freq_;
 
     double dx_;
     double energy_;
 
     // mask some of the output
     mutable std::shared_ptr<Muffle> muffle_;
+
+    void compute_finite_diff_();
+    void project_zero_freq_();
+    void print_ir_() const;
 
   public:
     Hess(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -57,6 +69,7 @@ class Hess {
     std::shared_ptr<const Matrix> proj_hess() const { return proj_hess_; }
 
     void compute();
+    virtual std::shared_ptr<const Reference> conv_to_ref() const;
 
 };
 

@@ -58,6 +58,8 @@ shared_ptr<GradFile> GradEval<RHF>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
   return grad;
@@ -82,6 +84,8 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
   return grad;
@@ -105,6 +109,8 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+
+  dipole_ = task_->scf_dipole();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
@@ -136,6 +142,8 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
   *grad += *ggrad;
 
   grad->print();
+
+  dipole_ = task_->scf_dipole();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 

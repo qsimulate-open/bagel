@@ -33,6 +33,7 @@ namespace bagel {
 
 class MP2Grad : public MP2 {
   protected:
+  std::vector<double> dipole_;
 
   public:
     MP2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -40,6 +41,10 @@ class MP2Grad : public MP2 {
     void compute() override;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
+
+    const std::vector<double>& dipole() const { return dipole_; }
+    double dipole(const int i) const { return dipole_[i]; }
+
 };
 
 }

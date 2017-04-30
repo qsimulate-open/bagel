@@ -174,7 +174,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute() {
     // compute relaxed dipole moment
     {
       Dipole dipole(geom_, dtotao, "Relaxed");
-      dipole.compute();
+      dipole_ = dipole.compute();
     }
 
     // xmat in the AO basis

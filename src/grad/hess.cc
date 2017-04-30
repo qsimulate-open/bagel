@@ -31,308 +31,283 @@
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
 #include <src/util/timer.h>
+#include <src/prop/multipole.h>
 
 using namespace std;
 using namespace bagel;
 
 Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
-
-}
-void Hess::compute() {
-  auto input = idata_->get_child("method");
-  const string jobtitle = to_lower(idata_->get<string>("title", ""));   // this is quite a cumbersome way to do this: cleaning needed
-  Timer timer;
-
-  shared_ptr<const Reference> ref = ref_;
-  auto m = input->begin();
-  for ( ; m != --input->end(); ++m) {
-    const std::string title = to_lower((*m)->get<std::string>("title", ""));
-    if (title != "molecule") {
-      shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
-      if (!c) throw runtime_error("unknown method in force");
-      c->compute();
-      ref = c->conv_to_ref();
-    } else {
-      geom_ = make_shared<const Geometry>(*geom_, *m);
-      if (ref) ref = ref->project_coeff(geom_);
-    }
-  }
-  auto cinput = make_shared<PTree>(**m);
-  cinput->put("hessian", true);
-
-  int natom = geom_->natom();
-  numhess_ = idata_->get<bool>("numhess", false);
+  numhess_ = idata_->get<bool>("numhess", true);
   numforce_ = idata_->get<bool>("numforce", false);
-  if (numhess_)
+  if (numhess_) {
     if (!numforce_)
       cout << "  The Hessian will be computed with central gradient differences (analytical gradients)" << endl;
     else
-      cout << "  The Hessian will be computed with central finite difference" << endl;
-  else
-    cout << "  Analytical Hessian is not implemented" << endl;
+      throw logic_error("The code to compute the Hessian with central finite differences is not implemented"); // TODO
+  } else {
+    throw logic_error("Analytical Hessian has not been implemented");
+  }
 
-  hess_ = make_shared<Matrix>(3*natom,3*natom);
-  mw_hess_ = make_shared<Matrix>(3*natom,3*natom);
+  auto input = idata_->get_child("method");
+  for (auto& m : *input) {
+    const string title = to_lower(m->get<string>("title", ""));
+    if (title != "molecule") {
+      shared_ptr<Method> c = construct_method(title, m, geom_, r);
+      if (!c) throw runtime_error("unknown method in Hess");
+      c->compute();
+      r = c->conv_to_ref();
+    } else {
+      geom_ = make_shared<Geometry>(*geom_, m);
+      if (r) r = r->project_coeff(geom_);
+    }
+  }
+  ref_ = r;
 
-  if (numhess_) {
-    dx_ = idata_->get<double>("dx", 0.001);
-    cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
+  dx_ = idata_->get<double>("dx", 0.0001);
+  cout << "  Finite difference displacement (dx) is " << setprecision(8) << dx_ << " bohr" << endl;
 
-    auto displ = std::make_shared<XYZFile>(natom);
-    displ->scale(0.0);
+  nproc_ = idata_->get<int>("nproc", 1);
 
-    muffle_ = make_shared<Muffle>("freq.log");
-    int counter = 0;
-    int step = 0;
-    if (numforce_) {
-      const string method = to_lower(cinput->get<string>("title", ""));
-      const int target = idata_->get<int>("target", 0);
-      double energy_ref;
+  const int natom = geom_->natom();
+  const int ndispl = natom * 3;
+  hess_      = make_shared<Matrix>(ndispl, ndispl);
+  mw_hess_   = make_shared<Matrix>(ndispl, ndispl);
+  cartesian_ = make_shared<Matrix>(3, ndispl); //matrix of dmu/dR
+}
 
-      shared_ptr<Method> energy_method;
 
-      energy_method = construct_method(method, idata_, geom_, ref_);
-      energy_method->compute();
-      ref_ = energy_method->conv_to_ref();
-      energy_ref = ref_->energy(target);
+void Hess::compute() {
 
-      cout << "  Reference energy is " << setprecision(25)<< energy_ref << endl;
+  const int natom = geom_->natom();
+  const int ndispl = natom * 3;
 
-      shared_ptr<const Reference> refgrad_plus;
-      shared_ptr<const Reference> refgrad_minus;
+  muffle_ = make_shared<Muffle>("freq.log");
 
-      for (int i = 0; i != natom; ++i) {  // atom i
-        for (int j = 0; j != 3; ++j) { //xyz
+  // compute Hessian and dipole derivatives using finite difference
+  compute_finite_diff_();
 
+  // symmetrize mass weighted hessian
+  hess_->print("Hessian");
+  mw_hess_->print("Mass Weighted Hessian", ndispl);
+  mw_hess_->symmetrize();
+  cout << "    (masses averaged over the natural occurance of isotopes)" << endl << endl;
+  mw_hess_->print("Symmetrized Mass Weighted Hessian", ndispl);
+
+  // compute projected Hessian
+  project_zero_freq_();
+
+  // diagonalize hessian; eig(i) in Hartree/bohr^2*amu
+  VectorB eig(ndispl);
+  proj_hess_->diagonalize(eig);
+
+  cout << endl << " Mass Weighted Hessian Eigenvalues" << endl; // units Hartree/bohr^2*amu
+  for (int i = 0; i != ndispl; ++i )
+    cout << setw(10) << setprecision(5) << eig(i);
+  cout << endl;
+
+  proj_hess_->print("Mass Weighted Hessian Eigenvectors", ndispl);
+
+  // convert mw eigenvectors to normalized cartesian modes
+  eigvec_cart_ = make_shared<Matrix>(ndispl,ndispl);
+
+  for (int i = 0, counter = 0; i != natom; ++i)
+    for (int j = 0; j != 3; ++j, ++counter)
+      for (int k = 0, step = 0; k != natom; ++k)
+        for (int l = 0; l != 3; ++l, ++step)
+          eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->averaged_mass());
+
+  // calculate IR intensities:
+  auto normal = make_shared<Matrix>(*cartesian_ * *eigvec_cart_); // dipole derivatives for the normal modes dmu/dQ; units (e bohr / bohr) * 1/sqrt(amu)
+
+  VectorB dmudq2(ndispl); //square of the dipole derivative in hartree*bohr/amu
+  for (int i = 0; i != ndispl; ++i)
+    dmudq2(i) = blas::dot_product(normal->element_ptr(0, i), 3, normal->element_ptr(0, i));
+
+  ir_ = vector<double>(ndispl, 0.0);
+  freq_ = vector<double>(ndispl, 0.0);
+
+  //frequences and IR intensity ( N*pi/3*c^2 * (dmu/dQ)^2 )
+  for (int i = 0; i != ndispl; ++i) {
+    freq_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? sqrt((eig(i) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) :
+      -sqrt((-eig(i)     * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
+    ir_[i] = (fabs(eig(i)) > 1.0e-6 ? (eig(i) > 0.0 ? ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i) :
+      ((avogadro__ * pi__ *au2meter__ * au2joule__)/ (3.0 * 1000.0 * csi__ * csi__ * amu2kilogram__)) * dmudq2(i)) : 0.0);
+  }
+
+  print_ir_();
+}
+
+
+void Hess::compute_finite_diff_() {
+  Timer timer;
+  const int natom = geom_->natom();
+
+  const int ncomm = mpi__->world_size() / nproc_;
+  const int icomm = mpi__->world_rank() / nproc_;
+
+  mpi__->split(nproc_);
+
+  for (int i = 0, counter = 0; i != natom; ++i) {  // atom i
+    for (int j = 0; j != 3; ++j, ++counter) { //xyz
+      if (counter % ncomm == icomm && ncomm != icomm) {
+        muffle_->mute();
+
+        vector<double> dipole_plus;
+        shared_ptr<const GradFile> outplus;
+        //displace +dx
+        {
+          auto displ = make_shared<XYZFile>(natom);
           displ->element(j,i) = dx_;
-          auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_plus->print_atoms();
-
-          refgrad_plus = make_shared<Reference> (*ref_, nullptr);
-          refgrad_plus = nullptr;
-
-          auto plus = make_shared<FiniteGrad>(method, cinput, geom_plus, refgrad_plus, target, dx_);
-          shared_ptr<GradFile> outplus = plus->compute();
-
-          //displace -dx
-          displ->element(j,i) = -dx_;
-          auto geom_minus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-          geom_minus->print_atoms();
-
-          refgrad_minus = make_shared<Reference> (*ref_, nullptr);
-          refgrad_minus = nullptr;
-
-          auto minus = make_shared<FiniteGrad>(method, cinput, geom_minus, refgrad_minus, target, dx_);
-          shared_ptr<GradFile> outminus = minus->compute();
-          displ->element(j,i) = 0.0;
-
-          for (int k = 0; k != natom; ++k) {  // atom j
-            for (int l = 0; l != 3; ++l) { //xyz
-              (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
-              step = step + 1;
-            }
-          }
-          step = 0;
-          counter = counter + 1;
-        }
-      }
-
-    } else {  //finite difference with analytical gradients
-      for (int i = 0; i != natom; ++i) {  // atom i
-        for (int j = 0; j != 3; ++j) { //xyz
-          // displace +dx
-          muffle_->mute();
-
-          //displace +dx
-          displ->element(j,i) = dx_;
-          auto geom_plus = std::make_shared<const Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+          auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
           geom_plus->print_atoms();
           if (ref_)
             ref_ = ref_->project_coeff(geom_plus);
 
           auto plus = make_shared<Force>(idata_, geom_plus, ref_);
-          shared_ptr<GradFile> outplus = plus->compute();
+          outplus = plus->compute();
+          dipole_plus = plus->force_dipole();
+        }
 
-          // displace -dx
+        // displace -dx
+        vector<double> dipole_minus;
+        shared_ptr<const GradFile> outminus;
+        {
+          auto displ = make_shared<XYZFile>(natom);
           displ->element(j,i) = -dx_;
-          auto geom_minus = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
+          auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
           geom_minus->print_atoms();
           if (ref_)
             ref_ = ref_->project_coeff(geom_minus);
 
           auto minus = make_shared<Force>(idata_, geom_minus, ref_);
-          shared_ptr<GradFile> outminus = minus->compute();
+          outminus = minus->compute();
+          dipole_minus = minus->force_dipole();
+        }
 
-          displ->element(j,i) = 0.0;
-
-          for (int k = 0; k != natom; ++k) {  // atom j
-            for (int l = 0; l != 3; ++l) { //xyz
+        if (mpi__->rank() == 0) {
+          for (int k = 0, step = 0; k != natom; ++k) { // atom j
+            for (int l = 0; l != 3; ++l, ++step) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
               (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
-              step = step + 1;
+              (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
             }
           }
-          step = 0;
-          counter = counter + 1;
-          muffle_->unmute();
-          stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
-          timer.tick_print(ss.str());
         }
+        muffle_->unmute();
+        stringstream ss; ss << "Hessian evaluation (" << setw(2) << i*3+j+1 << " / " << natom * 3 << ")";
+        timer.tick_print(ss.str());
       }
     }
-
-    //symmetrize mass weighted hessian
-    hess_->print("Hessian");
-    mw_hess_->symmetrize();
-    cout << "    (masses averaged over the natural occurance of isotopes)";
-    cout << endl << endl;
-    mw_hess_->print("Symmetrized Mass Weighted Hessian", 3*natom);
-
-    // calculate center of mass
-    VectorB num(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
-    VectorB center(3);
-    double total_mass = 0;
-    // compute center of mass
-    for (int i = 0; i!= natom; ++i) {
-      for (int j = 0; j != 3; ++j) {
-        num(j) += geom_->atoms(i)->averaged_mass() * geom_->atoms(i)->position(j);
-      }
-      total_mass += geom_->atoms(i)->averaged_mass();
-    }
-
-    for (int j = 0; j!= 3; ++j) {
-      center(j) = num(j)/total_mass;
-    }
-
-    // shift center coordinate system to center of mass
-    for (int i = 0; i != natom; ++i) {
-      for (int j = 0; j != 3; ++j) {
-        displ->element(j,i) = -1.0 * center(j);
-      }
-    }
-    auto geom_center = std::make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), false, false);
-
-    cout << "    * Projecting out Translational Degrees of Freedom " << endl;
-    auto identity =  make_shared<Matrix>(3*natom,3*natom);
-    for (int ist = 0; ist!= 3*natom; ++ist) {
-      for (int jst = 0; jst != 3*natom; ++jst) {
-        if (jst == ist)
-          (*identity)(jst,ist) = 1;
-      }
-    }
-    // 3N by 3 matrix P_trans
-    auto proj_trans =  make_shared<Matrix>(3,3*natom);
-    for (int i = 0; i!= natom; ++i) {
-      for (int j = 0; j != 3; ++ j) {
-        (*proj_trans)(j, 3*i+j) = sqrt(geom_->atoms(i)->averaged_mass());
-      }
-    }
-
-    cout << "    * Projecting out Rotational Degrees of Freedom " << endl;
-
-    // 3N by 3 matrix P of orthogonal vectors about the XYZ axes
-    auto proj_rot = make_shared<Matrix>(3,3*natom);
-    for (int i = 0; i != natom; ++i) {
-      (*proj_rot)(0,3*i) = 0;
-      (*proj_rot)(0,3*i+1) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(2));
-      (*proj_rot)(0,3*i+2) = sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(1);
-
-      (*proj_rot)(1,3*i) =  sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(2);
-      (*proj_rot)(1,3*i+1) = 0;
-      (*proj_rot)(1,3*i+2) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(0));
-
-      (*proj_rot)(2,3*i) = -1.0 * sqrt(geom_->atoms(i)->averaged_mass()) * (geom_center->atoms(i)->position(1));
-      (*proj_rot)(2,3*i+1) = sqrt(geom_->atoms(i)->averaged_mass()) * geom_center->atoms(i)->position(0);
-      (*proj_rot)(2,3*i+2) = 0;
-    }
-
-    auto proj_total = make_shared<Matrix>(6, 3*natom);
-    for (int i = 0; i != 3*natom; ++i) {
-      (*proj_total)(0, i) = (*proj_trans)(0,i);
-      (*proj_total)(1, i) = (*proj_trans)(1,i);
-      (*proj_total)(2, i) = (*proj_trans)(2,i);
-      (*proj_total)(3, i) = (*proj_rot)(0,i);
-      (*proj_total)(4, i) = (*proj_rot)(1,i);
-      (*proj_total)(5, i) = (*proj_rot)(2,i);
-    }
-
-    //normalize the set of six orthogonal vectors
-    double trans1 = 0;
-    double trans2 = 0;
-    double trans3 = 0;
-    double rot1 = 0;
-    double rot2 = 0;
-    double rot3 = 0;
-
-    // sum of the square of each vector
-    for (int i = 0; i != 3*natom; ++i) {
-      trans1 += (*proj_total)(0,i) * (*proj_total)(0,i);
-      trans2 += (*proj_total)(1,i) * (*proj_total)(1,i);
-      trans3 += (*proj_total)(2,i) * (*proj_total)(2,i);
-      rot1 += (*proj_total)(3,i) * (*proj_total)(3,i);
-      rot2 += (*proj_total)(4,i) * (*proj_total)(4,i);
-      rot3 += (*proj_total)(5,i) * (*proj_total)(5,i);
-    }
-
-    auto proj_norm = make_shared<Matrix>(6, 3*natom);
-    for (int i = 0; i != 3*natom; ++i) {
-      (*proj_norm)(0,i) = (*proj_total)(0,i) / sqrt(trans1);
-      (*proj_norm)(1,i) = (*proj_total)(1,i) / sqrt(trans2);
-      (*proj_norm)(2,i) = (*proj_total)(2,i) / sqrt(trans3);
-      (*proj_norm)(3,i) = (*proj_total)(3,i) / sqrt(rot1);
-      (*proj_norm)(4,i) = (*proj_total)(4,i) / sqrt(rot2);
-      if (rot3 != 0)
-        (*proj_norm)(5,i) = (*proj_total)(5,i) / sqrt(rot3);
-    }
-
-    proj_hess_ = make_shared<Matrix>((*identity - *proj_norm % *proj_norm) % *mw_hess_ * (*identity - *proj_norm % *proj_norm));
-
-    //diagonalize hessian
-    // eig(i) in Hartree/bohr^2*amu
-    VectorB eig(3*natom);
-    proj_hess_->diagonalize(eig);
-
-    cout << "    * Vibrational frequencies (cm**-1) and corresponding eigenvectors" << endl << endl;
-
-    int len_n = proj_hess_->ndim();
-    int len_m = proj_hess_->mdim();
-
-    for (int i = 0; i != len_m/6; ++i) {
-      cout << setw(6) << " ";
-      for (int k = 0; k != 6; ++k)
-        cout << setw(20) << i * 6 + k;
-      cout << endl << setw(6) << "Freq";
-      for (int k = 0; k != 6; ++k)
-        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
-      cout << endl << endl;
-      for (int j = 0; j != len_n; ++j) {
-        cout << setw(6) << j;
-        for (int k = 0; k != 6; ++k)
-          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
-        cout << endl;
-      }
-      cout << endl;
-    }
-
-    if (len_m%6) {
-      int i = len_m/6;
-      cout << setw(6) << " ";
-      for (int k = 0; k != len_m%6; ++k)
-        cout << setw(20) << i * 6 + k;
-      cout << endl << setw(6) << "Freq";
-      for (int k = 0; k != len_m%6; ++k)
-        cout << setw(20) << setprecision(10) << (fabs(eig(i*6+k)) > 1.0e-6 ? (eig(i*6+k) > 0.0 ? sqrt((eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__) : -sqrt((-eig(i*6+k) * au2joule__) / amu2kilogram__) / (100.0 * au2meter__ * 2.0 * pi__ * csi__)) : 0) ;
-      cout << endl << endl;
-
-      for (int j = 0; j != len_n; ++j) {
-        cout << setw(6) << j;
-        for (int k = 0; k != len_m%6; ++k)
-          cout << setw(20) << setprecision(10) << proj_hess_->element(j, i * 6 + k);
-        cout << endl;
-      }
-      cout << endl;
-    }
-
   }
+  mpi__->merge();
+
+  hess_->allreduce();
+  mw_hess_->allreduce();
+  cartesian_->allreduce();
+}
+
+
+void Hess::project_zero_freq_() {
+  const int natom = geom_->natom();
+  const int ndispl = natom * 3;
+
+  // calculate center of mass
+  VectorB cmass(3); // values needed to calc center of mass. mi*xi, mi*yi, mi*zi, and total mass
+  double total_mass = 0.0;
+  // compute center of mass
+  for (auto& atom : geom_->atoms()) {
+    for (int i = 0; i != 3; ++i)
+      cmass(i) += atom->averaged_mass() * atom->position(i);
+    total_mass += atom->averaged_mass();
+  }
+  blas::scale_n(1.0/total_mass, cmass.data(), 3);
+  cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
+
+  Matrix proj(6, ndispl);
+  for (int i = 0; i != natom; ++i) {
+    const double imass = sqrt(geom_->atoms(i)->averaged_mass());
+    const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
+                                geom_->atoms(i)->position(1) - cmass(1),
+                                geom_->atoms(i)->position(2) - cmass(2)}};
+    for (int j = 0; j != 3; ++ j)
+      proj(j, 3*i+j) = imass;
+
+    proj(3,3*i)   =  0.0;
+    proj(3,3*i+1) = -imass * pos[2];
+    proj(3,3*i+2) =  imass * pos[1];
+
+    proj(4,3*i)   =  imass * pos[2];
+    proj(4,3*i+1) =  0.0;
+    proj(4,3*i+2) = -imass * pos[0];
+
+    proj(5,3*i)   = -imass * pos[1];
+    proj(5,3*i+1) =  imass * pos[0];
+    proj(5,3*i+2) =  0.0;
+  }
+
+  //normalize the set of six orthogonal vectors
+  vector<double> norm(6, 0.0);
+  for (int i = 0; i != ndispl; ++i)
+    for (int j = 0; j != 6; ++j)
+      norm[j] += proj(j, i) * proj(j, i);
+
+  for (int i = 0; i != ndispl; ++i)
+    for (int j = 0; j != 6; ++j)
+      if (fabs(norm[j]) > 1.0e-15)
+        proj(j, i) /= sqrt(norm[j]);
+
+  Matrix p(ndispl, ndispl);
+  p.unit();
+  p -= proj % proj;
+
+  proj_hess_ = make_shared<Matrix>(p % *mw_hess_ * p);
+}
+
+
+void Hess::print_ir_() const {
+  cout << "    * Vibrational frequencies, IR intensities, and corresponding cartesian eigenvectors" << endl << endl;
+  const int len_n = eigvec_cart_->ndim();
+  const int len_m = eigvec_cart_->mdim();
+
+  for (int i = 0; i < len_m; i += 6) {
+    const int kmax = min(6, len_m-i);
+    cout << setw(17) << " ";
+    for (int k = 0; k != kmax; ++k)
+      cout << setw(20) << i + k;
+    cout << endl << setw(17) << "Freq (cm-1)";
+    for (int k = 0; k != kmax; ++k)
+      cout << setw(20) << setprecision(2) << freq_[i+k] ;
+
+    cout << endl << endl << setw(17) << "IR Int. (km/mol)";
+    for (int k = 0; k != kmax; ++k)
+      cout << setw(20) << setprecision(2) << ir_[i+k] ;
+
+    cout << endl << setw(17) << "Rel. IR Int.";
+    for (int k = 0; k != kmax; ++k)
+      cout << setw(20) << setprecision(2) << (ir_[i+k]/(*max_element(ir_.begin(), ir_.end())))*100.0;
+    cout << endl << endl;
+
+    for (int j = 0; j != len_n; ++j) {
+      cout << setw(17) << j;
+      for (int k = 0; k != kmax; ++k)
+        cout << setw(20) << setprecision(5) << eigvec_cart_->element(j, i+k);
+      cout << endl;
+    }
+    cout << endl;
+  }
+}
+
+
+shared_ptr<const Reference> Hess::conv_to_ref() const {
+  shared_ptr<Reference> out;
+  if (ref_) {
+    out = make_shared<Reference>(*ref_);
+  } else {
+    out = make_shared<Reference>(geom_, nullptr, 0, 0, 0);
+    cout << "  ** CAUTION ** Reference object being created by Hessian is only valid for printing!" << endl; 
+  }
+  out->set_prop_freq(freq_);
+  out->set_prop_ir(ir_);
+  out->set_prop_eig(eigvec_cart_);
+  return out;
 }

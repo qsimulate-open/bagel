@@ -30,24 +30,22 @@ using namespace std;
 using namespace bagel;
 
 Process::Process() : print_level_(3), muted_(false) {
-#ifdef HAVE_MPI_H
-  int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (rank != 0) {
+  if (mpi__->world_rank() != 0) {
     cout_orig = cout.rdbuf();
     cout.rdbuf(ss_.rdbuf());
     muted_ = true;
   }
-#endif
 }
+
 
 Process::~Process() {
   if (muted_)
     cout.rdbuf(cout_orig);
 }
 
+
 void Process::cout_on() {
-  if (mpi__->rank() != 0) {
+  if (mpi__->world_rank() != 0) {
     assert(muted_);
     cout.rdbuf(cout_orig);
     muted_ = false;
@@ -56,7 +54,7 @@ void Process::cout_on() {
 
 
 void Process::cout_off() {
-  if (mpi__->rank() != 0) {
+  if (mpi__->world_rank() != 0) {
     assert(!muted_);
     cout.rdbuf(ss_.rdbuf());
     muted_ = true;

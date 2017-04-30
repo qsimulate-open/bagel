@@ -62,6 +62,7 @@ class SCF_base_ : public Method {
 
     VectorB eig_;
     double energy_;
+    std::vector<double> scf_dipole_;
 
     int nocc_;
     int noccB_;
@@ -109,6 +110,7 @@ class SCF_base_ : public Method {
     int nocc() const { return nocc_; }
     int noccB() const { return noccB_; }
     double energy() const { return energy_; }
+    const std::vector<double>& scf_dipole() const { return scf_dipole_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
     double thresh_scf() const { return thresh_scf_; }
