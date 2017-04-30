@@ -1,4 +1,4 @@
-///
+//
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: hess.cc
 // Copyright (C) 2016 Toru Shiozaki
