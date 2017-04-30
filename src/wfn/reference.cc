@@ -189,7 +189,9 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     Overlap snewinv = snew;
     snewinv.inverse_symmetric();
     MixedBasis<OverlapBatch> mixed(geom_, geomin);
-    auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+    auto coeff = coeff_->copy();
+    coeff->delocalize();
+    auto c = make_shared<Coeff>(snewinv * mixed * *coeff);
 
     // make coefficient orthogonal (under the overlap metric)
     Matrix unit = *c % snew * *c;
@@ -199,21 +201,31 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
     if (coeffA_) {
       assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_ * unit);
-      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_ * unit);
+      auto coeffA = coeffA_->copy();
+      auto coeffB = coeffB_->copy();
+      coeffA->delocalize();
+      coeffB->delocalize();
+      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA * unit);
+      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB * unit);
     }
   } else {
     Overlap snew(geomin);
     Overlap sold(geom_);
     snew.inverse_half();
     sold.sqrt();
-    auto c = make_shared<Coeff>(snew * sold * *coeff_);
+    auto coeff = coeff_->copy();
+    coeff->delocalize();
+    auto c = make_shared<Coeff>(snew * sold * *coeff);
 
     out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
     if (coeffA_) {
       assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA_);
-      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB_);
+      auto coeffA = coeffA_->copy();
+      auto coeffB = coeffB_->copy();
+      coeffA->delocalize();
+      coeffB->delocalize();
+      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA);
+      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB);
     }
   }
 

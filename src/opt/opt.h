@@ -171,6 +171,7 @@ class Opt {
     }
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }
+    std::shared_ptr<const Reference> conv_to_ref() const { return prev_ref_; }
 
 };
 

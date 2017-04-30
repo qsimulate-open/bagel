@@ -90,13 +90,13 @@ shared_ptr<GradFile> Opt::get_cigrad_bearpark(shared_ptr<PTree> cinput, shared_p
 
   auto proj = make_shared<Matrix>(n3, n3);
   proj->unit();
-  dger_(n3,n3,-1.0,x1->data(),1,x1->data(),1,proj->data(),n3);
+  dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   x2 = x2->transform(proj, false);
   x2norm = x2->norm();
   x2->scale(1.0 / x2norm);
   proj->unit();
-  dger_(n3,n3,-1.0,x1->data(),1,x1->data(),1,proj->data(),n3);
-  dger_(n3,n3,-1.0,x2->data(),1,x2->data(),1,proj->data(),n3);
+  dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
+  dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
   xg = xg->transform(proj, /*transpose=*/false);
   *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
   en_ = en2;

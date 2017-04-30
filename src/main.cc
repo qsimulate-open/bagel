@@ -146,6 +146,8 @@ int main(int argc, char** argv) {
 
         auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
+        ref = opt->conv_to_ref();
+        geom = opt->geometry();
 
       } else if (title == "force" || title == "nacme" || title == "dgrad") {
 
