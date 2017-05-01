@@ -1,7 +1,6 @@
 /* Test case using the BAGEL style format */
 
 molecule = {
-  symmetry = C1;
   basis = svp;
   df_basis = svp-jkfit;
   angstrom = false;
