@@ -63,7 +63,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   }
   ref_ = r;
 
-  dx_ = idata_->get<double>("dx", 0.0001);
+  dx_ = idata_->get<double>("dx", 1.0e-3);
   cout << "  Finite difference displacement (dx) is " << setprecision(8) << dx_ << " bohr" << endl;
 
   nproc_ = idata_->get<int>("nproc", 1);
