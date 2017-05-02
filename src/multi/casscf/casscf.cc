@@ -108,9 +108,8 @@ void CASSCF::common_init() {
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
 
-  // nocc from the input. If not present, full valence active space is generated.
+  // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nact_);
   // FCI algorithm
   fci_algorithm_ = idata_->get<string>("fci_algorithm", ((nact_ > 9) && (mpi__->size() >= 8)) ? "parallel" : "knowles");
 

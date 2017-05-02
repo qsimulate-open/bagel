@@ -104,9 +104,8 @@ void ZCASSCF::init() {
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
 
-  // nocc from the input. If not present, full valence active space is generated.
+  // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
