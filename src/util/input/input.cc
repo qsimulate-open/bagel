@@ -39,7 +39,27 @@ PTree::PTree(const string& input) {
   const size_t n = input.find_last_of(".");
   const string extension = (n != string::npos) ? input.substr(n) : "";
   if (extension == ".json") {
-    boost::property_tree::json_parser::read_json(input, data_);
+    try {
+      boost::property_tree::json_parser::read_json(input, data_);
+    } catch (const boost::property_tree::ptree_error& e) {
+      string errstring(e.what());
+      size_t p1 = errstring.find("(");
+      size_t p2 = errstring.find(")");
+      string error_message = "Syntax error near line " + errstring.substr(p1+1, p2-p1-1) + " of " + errstring.substr(0, p1) + ".  ";
+      if (errstring.find("expected ']' or ','") != string::npos || errstring.find("expected '}' or ','") != string::npos) {
+        error_message += "Probably you forgot a comma or bracket.";
+      } else if (errstring.find("expected key string")) {
+        error_message += "Expected a keyword but did not find one...  probably you have an extra comma.";
+      } else if (errstring.find("expected value")) {
+        error_message += "Expected a value but did not find one...  probably you have an extra comma.";
+      } else {
+        error_message = string(e.what());
+      }
+      throw runtime_error(error_message);
+    } catch(...) {
+      cout << " Unknown error when reading a .json file." << endl;
+      throw;
+    }
   }
   else if (extension == ".xml") {
     boost::property_tree::xml_parser::read_xml(input, data_);
