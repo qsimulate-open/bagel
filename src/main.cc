@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
         ref = hess->conv_to_ref();
 
 #ifndef DISABLE_SERIALIZATION
-      } else if (title = "load_ref") {
+      } else if (title == "load_ref") {
         const string name = itree->get<string>("file", "reference");
         if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
         IArchive archive(name);
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
           ref = ref->extract_average_rdm(rdm_states);
         }
 
-      } else if (title = "save_ref") {
+      } else if (title == "save_ref") {
         const string name = itree->get<string>("file", "reference");
         OArchive archive(name);
         archive << ref;
