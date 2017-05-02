@@ -108,7 +108,7 @@ void CASSCF::common_init() {
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
   // sorting algorithm used for natural orbitals (The alternative is to sort by occupation number)
-  sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", true);
+  sort_by_coeff_ = idata_->get<bool>("sort_by_coeff", false);
 
   // nocc from the input. If not present, full valence active space is generated.
   nact_ = idata_->get<int>("nact", 0);
