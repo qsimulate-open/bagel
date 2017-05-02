@@ -93,9 +93,6 @@ void ZCASSCF::init() {
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
 
-  // coefficient parameters
-  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
-
   nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
@@ -194,7 +191,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff && external_rdm_.empty())
+  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
