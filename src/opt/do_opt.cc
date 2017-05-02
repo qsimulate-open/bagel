@@ -88,7 +88,7 @@ void Opt::do_optimize() {
       ref = prev_ref_->project_coeff(current_);
       cinput = make_shared<PTree>(**input_->rbegin());
     }
-    cinput->put("gradient", true);
+    cinput->put("_gradient", true);
 
     double rms;
     double maxgrad;
