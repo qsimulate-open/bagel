@@ -74,28 +74,6 @@ int main(int argc, char** argv) {
       const string title = to_lower(itree->get<string>("title", ""));
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
-#ifndef DISABLE_SERIALIZATION
-      if (itree->get<bool>("load_ref", false)) {
-        const string name = itree->get<string>("ref_in", "");
-        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
-        IArchive archive(name);
-        shared_ptr<Reference> ptr;
-        archive >> ptr;
-        ref = shared_ptr<Reference>(ptr);
-        if (itree->get<bool>("continue_geom", true)) {
-          cout << endl << "  Using the geometry in the archive file " << endl << endl;
-          geom = ref->geom();
-        } else {
-          cout << endl << "  Using the coefficient projected to the input geometry " << endl << endl;
-          ref = ref->project_coeff(geom);
-        }
-        if (itree->get<bool>("extract_average_rdms", false)) {
-          vector<int> rdm_states = itree->get_vector<int>("rdm_state");
-          ref = ref->extract_average_rdm(rdm_states);
-        }
-      }
-#endif
-
       if (title == "molecule") {
         geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
         if (itree->get<bool>("restart", false))
@@ -105,7 +83,7 @@ int main(int argc, char** argv) {
           ref = make_shared<Reference>(geom, itree);
       } else {
         if (!geom) {
-          if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue"))
+          if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue") && title != "load_ref")
             throw runtime_error("molecule block is missing");
         } else {
           if (!itree->get<bool>("df",true)) dodf = false;
@@ -134,13 +112,6 @@ int main(int argc, char** argv) {
 
         method->compute();
         ref = method->conv_to_ref();
-#ifndef DISABLE_SERIALIZATION
-        if (itree->get<bool>("save_ref", false)) {
-          const string name = itree->get<string>("ref_out", "reference");
-          OArchive archive(name);
-          archive << ref;
-        }
-#endif
 
       } else if (title == "optimize") {
 
@@ -160,6 +131,31 @@ int main(int argc, char** argv) {
         hess->compute();
         ref = hess->conv_to_ref();
 
+#ifndef DISABLE_SERIALIZATION
+      } else if (title = "load_ref") {
+        const string name = itree->get<string>("file", "reference");
+        if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
+        IArchive archive(name);
+        shared_ptr<Reference> ptr;
+        archive >> ptr;
+        ref = shared_ptr<Reference>(ptr);
+        if (itree->get<bool>("continue_geom", true)) {
+          cout << endl << "  Using the geometry in the archive file " << endl << endl;
+          geom = ref->geom();
+        } else {
+          cout << endl << "  Using the coefficient projected to the input geometry " << endl << endl;
+          ref = ref->project_coeff(geom);
+        }
+        if (itree->get<bool>("extract_average_rdms", false)) {
+          vector<int> rdm_states = itree->get_vector<int>("rdm_state");
+          ref = ref->extract_average_rdm(rdm_states);
+        }
+
+      } else if (title = "save_ref") {
+        const string name = itree->get<string>("file", "reference");
+        OArchive archive(name);
+        archive << ref;
+#endif
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
