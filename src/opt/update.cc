@@ -127,9 +127,7 @@ void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sha
 shared_ptr<XYZFile> Opt::get_step() {
   auto displ = make_shared<XYZFile>(dispsize_);
 
-  if (algorithm_ == "steep")
-    displ = get_step_steep();
-  else if (algorithm_ == "nr")
+  if (algorithm_ == "nr")
     displ = get_step_nr();
   else if (algorithm_ == "rfo")
     displ = get_step_rfo();
@@ -141,19 +139,6 @@ shared_ptr<XYZFile> Opt::get_step() {
     else
       displ = get_step_ef();
   }
-
-  return displ;
-}
-
-shared_ptr<XYZFile> Opt::get_step_steep() {
-  // Steepest descent step
-  auto displ = make_shared<XYZFile>(dispsize_);
-  copy_n(grad_->data(), size_, displ->data());
-  displ->scale(-1.0);
-
-  double stepnorm = displ->norm();
-  if (stepnorm > (maxstep_))
-    displ->scale(maxstep_/stepnorm);
 
   return displ;
 }
