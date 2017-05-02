@@ -41,6 +41,8 @@ PTree::PTree(const string& input) {
   if (extension == ".json") {
     try {
       boost::property_tree::json_parser::read_json(input, data_);
+
+    // making error messages more user-friendly
     } catch (const boost::property_tree::ptree_error& e) {
       string errstring(e.what());
       size_t p1 = errstring.find("(");
@@ -57,7 +59,6 @@ PTree::PTree(const string& input) {
       }
       throw runtime_error(error_message);
     } catch(...) {
-      cout << " Unknown error when reading a .json file." << endl;
       throw;
     }
   }

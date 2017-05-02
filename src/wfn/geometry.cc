@@ -361,7 +361,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
       for (int i = 0; i != 3; ++i)
         magnetic_field_[i] /= au2tesla__;
 
-    const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
+    const string basis = to_lower(geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian"));
     if (basis == "giao" || basis == "london") london_ = true;
     else if (basis == "gaussian") london_ = false;
     else throw runtime_error("Basis set type not recognized; should be Gaussian or London");
