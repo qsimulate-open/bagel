@@ -51,13 +51,13 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   cimaxtile_ = idata->get<int>("cimaxtile", (ciwfn()->civectors()->size() > 10000) ? 100 : 10);
 
   do_ms_   = idata->get<bool>("ms",  true);
-  do_xms_  = idata->get<bool>("xms", false);
+  do_xms_  = idata->get<bool>("xms", true);
   if (do_xms_ && (method_ == "casa" || method_ == "mrci")) {
     cout << "    * XMS rotation is only appropriate for CASPT2, and will not be used with " << method_ << endl;
     do_xms_ = false;
   }
 
-  sssr_    = idata->get<bool>("sssr", false);
+  sssr_    = idata->get<bool>("sssr", true);
   shift_diag_  = idata->get<bool>("shift_diag", true);
   block_diag_fock_ = idata->get<bool>("block_diag_fock", false);
 
