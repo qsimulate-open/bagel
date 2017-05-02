@@ -101,14 +101,8 @@ class PTree {
 
     PTree(const std::string& input);
 
-    std::shared_ptr<PTree> get_child(const std::string& key) const {
-      return std::make_shared<PTree>(data_.get_child(key), key);
-    }
-
-    std::shared_ptr<PTree> get_child_optional(const std::string& key) const {
-      auto out = data_.get_child_optional(key);
-      return out ? std::make_shared<PTree>(*out, key) : nullptr;
-    }
+    std::shared_ptr<PTree> get_child(const std::string& key) const;
+    std::shared_ptr<PTree> get_child_optional(const std::string& key) const;
 
     template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
     template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); }

@@ -145,3 +145,18 @@ shared_ptr<const PTree> PTree::read_basis(string name) {
   }
   return out;
 }
+
+
+shared_ptr<PTree> PTree::get_child(const string& key) const {
+  auto out = data_.get_child_optional(key);
+  if (!out)
+    throw runtime_error("A required keyword is missing from the input:  " + key);
+    //throw runtime_error("A required keyword is missing from the input for " + key_ + ":  " + key);
+  return make_shared<PTree>(*out, key);
+}
+
+
+shared_ptr<PTree> PTree::get_child_optional(const string& key) const {
+  auto out = data_.get_child_optional(key);
+  return out ? make_shared<PTree>(*out, key) : nullptr;
+}
