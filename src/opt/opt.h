@@ -126,7 +126,6 @@ class Opt {
     std::shared_ptr<GradFile> get_cigrad_bearpark(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
 
     std::shared_ptr<XYZFile> get_step();
-    std::shared_ptr<XYZFile> get_step_steep();
     std::shared_ptr<XYZFile> get_step_nr();
     std::shared_ptr<XYZFile> get_step_ef();
     std::shared_ptr<XYZFile> get_step_ef_pn();
