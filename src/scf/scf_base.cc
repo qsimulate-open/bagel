@@ -71,11 +71,11 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   dma_print_ = idata_->get<int>("dma", 0);
 
   const int ncharge = idata_->get<int>("charge", 0);
-  const int nact    = idata_->get<int>("nact", (geom_->nele()-ncharge)%2);
-  nocc_ = idata_->get<int>("nocc", (geom_->nele()-ncharge+nact)/2);
-  noccB_ = nocc_ - nact;
+  const int nopen   = idata_->get<int>("nopen", (geom_->nele()-ncharge)%2);
+  nocc_ = (geom_->nele()-ncharge+nopen)/2;
+  noccB_ = nocc_ - nopen;
 
-  if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nact are not consistently specified");
+  if (nocc_+noccB_ != geom_->nele()-ncharge) throw runtime_error("nocc and nopen are not consistently specified");
 
   tildex_ = overlap_->tildex(thresh_overlap_);
 
