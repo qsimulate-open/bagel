@@ -83,7 +83,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
       ref = prev_ref_->project_coeff(current_);
       cinput = make_shared<PTree>(**input_->rbegin());
     }
-    cinput->put("gradient", true);
+    cinput->put("gradient_", true);
 
     {
       grad_->zero();
@@ -185,7 +185,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         ref = prev_ref_->project_coeff(current_);
         cinput = make_shared<PTree>(**input_->rbegin());
       }
-      cinput->put("gradient", true);
+      cinput->put("gradient_", true);
 
       {
         grad_->zero();

@@ -41,7 +41,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
  : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
-  do_grad_ = idata_->get<bool>("gradient", false);
+  do_grad_ = idata_->get<bool>("gradient_", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
   dofmm_   = geom_->dofmm();

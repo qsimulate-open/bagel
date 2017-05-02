@@ -66,7 +66,7 @@ shared_ptr<GradFile> Force::compute() {
     }
   }
   auto cinput = make_shared<PTree>(**m);
-  cinput->put("gradient", true);
+  cinput->put("gradient_", true);
 
   numerical_ = idata_->get<bool>("numerical", false);
   if (geom_->dkh()) {
