@@ -48,7 +48,7 @@ void RASCI::common_init() {
 
   batchsize_ = idata_->get<int>("batchsize", 512);
 
-  nstate_ = idata_->get<int>("nstates", 1);
+  nstate_ = idata_->get<int>("nstate", 1);
   nguess_ = idata_->get<int>("nguess", nstate_);
 
   // No defaults for RAS, must set "active"
