@@ -19,7 +19,7 @@
 
 {
   "title" : "ras",
-  "nstate" : 2,
+  "nstates" : 2,
   "active" : [ [1],
                [2, 3, 4, 5],
                [6, 7] ],
