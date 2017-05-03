@@ -104,8 +104,23 @@ class PTree {
     std::shared_ptr<PTree> get_child(const std::string& key) const;
     std::shared_ptr<PTree> get_child_optional(const std::string& key) const;
 
-    template<typename T> T get(const std::string s) const { return data_.get<T>(s); }
     template<typename T> T get(const std::string s, const T& t) const { return data_.get<T>(s, t); }
+    template<typename T> T get(const std::string s) const {
+      T out;
+      try {
+        out = data_.get<T>(s);
+
+      // just to make error messages more user-friendly
+      } catch (const std::exception& e) {
+        if (std::string(e.what()).find("No such node") != std::string::npos) {
+          std::string thiskey = get<std::string>("title", key_);
+          throw std::runtime_error("A required keyword is missing from the input" + (thiskey.size() ? " for " + thiskey : "") + ":  " + s);
+        } else {
+          throw;
+        }
+      }
+      return out;
+    }
 
     void add_child(const std::string s, std::shared_ptr<PTree> ch) { data_.add_child(s, ch->data_); }
     template<typename T> void put(const std::string s, const T& o) { data_.put<T>(s, o); }
