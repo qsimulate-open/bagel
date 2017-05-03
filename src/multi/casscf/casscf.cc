@@ -40,7 +40,9 @@ CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> ge
     ref_ = nullptr;
 
   if (!ref_) {
-    auto scf = make_shared<RHF>(idat, geom);
+    auto idata_tmp = make_shared<PTree>(*idat);
+    idata_tmp->erase("nact");
+    auto scf = make_shared<RHF>(idata_tmp, geom);
     scf->compute();
     ref_ = scf->conv_to_ref();
   }
