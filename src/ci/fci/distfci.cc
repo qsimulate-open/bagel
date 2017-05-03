@@ -68,7 +68,7 @@ void DistFCI::common_init() {
     norb_ = ref_->nact();
   }
   else {
-    if (ncore_ < 0) ncore_ = frozen ? idata_->get<int>("ncore", geom_->num_count_ncore_only()/2) : 0;
+    if (ncore_ < 0) ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
     if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->mdim()-ncore_);
   }
 

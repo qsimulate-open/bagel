@@ -39,7 +39,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   method_ = idata->get<string>("method");
 
   const bool frozen = idata->get<bool>("frozen", true);
-  ncore_ = frozen ? idata->get<int>("ncore", ref_->geom()->num_count_ncore_only()/2) : 0;
+  ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
   if (ncore_)
     cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
   nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
