@@ -42,23 +42,19 @@ PTree::PTree(const string& input) {
       boost::property_tree::json_parser::read_json(input, data_);
 
     // making error messages more user-friendly
-    } catch (const boost::property_tree::ptree_error& e) {
+    } catch (const exception& e) {
       string errstring(e.what());
       size_t p1 = errstring.find("(");
       size_t p2 = errstring.find(")");
       string error_message = "Syntax error near line " + errstring.substr(p1+1, p2-p1-1) + " of " + errstring.substr(0, p1) + ".  ";
-      if (errstring.find("expected ']' or ','") != string::npos || errstring.find("expected '}' or ','") != string::npos) {
-        error_message += "Probably you forgot a comma or bracket.";
-      } else if (errstring.find("expected key string")) {
-        error_message += "Expected a keyword but did not find one...  probably you have an extra comma.";
-      } else if (errstring.find("expected value")) {
-        error_message += "Expected a value but did not find one...  probably you have an extra comma.";
-      } else {
-        error_message = string(e.what());
-      }
-      throw runtime_error(error_message);
-    } catch(...) {
-      throw;
+      if (errstring.find("expected ']' or ','") != string::npos || errstring.find("expected '}' or ','") != string::npos)
+        throw runtime_error(error_message + "Probably you forgot a comma or bracket.");
+      else if (errstring.find("expected value") != string::npos)
+        throw runtime_error(error_message + "Expected a value but did not find one...  probably you have an extra comma.");
+      else if (errstring.find("expected key string") != string::npos)
+        throw runtime_error(error_message + "Expected a keyword but did not find one...  probably you have an extra comma.");
+      else
+        throw;
     }
   } else if (extension == ".xml") {
     boost::property_tree::xml_parser::read_xml(input, data_);
@@ -134,9 +130,10 @@ shared_ptr<const PTree> PTree::read_basis(string name) {
 
 shared_ptr<PTree> PTree::get_child(const string& key) const {
   auto out = data_.get_child_optional(key);
-  if (!out)
-    throw runtime_error("A required keyword is missing from the input:  " + key);
-    //throw runtime_error("A required keyword is missing from the input for " + key_ + ":  " + key);
+  if (!out) {
+    string thiskey = get<string>("title", key_);
+    throw runtime_error("A required keyword is missing from the input" + (thiskey.size() ? " for " + thiskey : "") + ":  " + key);
+  }
   return make_shared<PTree>(*out, key);
 }
 
