@@ -26,12 +26,6 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   BAGEL is distributed under the GPLv3+.
 
 
-*** Special Thanks ***
-
-  BAGEL includes a modified version of the ALGLIB package (under the GPLv2+),
-  for CG and L-BFGS optimizers. See http://www.alglib.net.
-
-
 *** Support ***
 
   DOE Basic Energy Sciences (DE-FG02-13ER16398)

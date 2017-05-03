@@ -207,9 +207,6 @@ class DistMatrix : public DistMatrix_base<double> {
     void ax_plus_y(const double a, const DistMatrix& o) { this->ax_plus_y_impl(a,o); }
     double dot_product(const DistMatrix& o) const { return this->dot_product_impl(o); }
 
-    void rotate(std::vector<std::tuple<int, int, double>> rotations);
-    void rotate(const int i, const int j, const double gamma);
-
     std::shared_ptr<Matrix> matrix() const;
 
     std::shared_ptr<const DistMatrix> form_density_rhf(const int n, const int off = 0) const;

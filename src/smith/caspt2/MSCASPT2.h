@@ -104,6 +104,7 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
     std::shared_ptr<Tensor> rdm3deriv_;
+    std::shared_ptr<Matrix> rdm2fderiv_;
     std::shared_ptr<Tensor> rdm3fderiv_;
     std::shared_ptr<Tensor> rdm4deriv_;
 
@@ -175,7 +176,7 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> contract_rdm_deriv(const int number, const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> contract_rdm_deriv(const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
     void zero_total();
     void add_total(double factor);
     void do_rdm_deriv(double factor);

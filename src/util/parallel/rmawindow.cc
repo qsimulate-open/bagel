@@ -63,7 +63,7 @@ void RMAWindow<DataType>::initialize() {
 #ifdef HAVE_MPI_H
   assert(!initialized_);
   // allocate a window
-  MPI_Win_allocate(localsize()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, MPI_COMM_WORLD, &win_base_, &win_);
+  MPI_Win_allocate(localsize()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, mpi__->mpi_comm(), &win_base_, &win_);
   MPI_Win_lock_all(MPI_MODE_NOCHECK, win_);
 
   initialized_ = true;

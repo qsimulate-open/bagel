@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "tzvpp",
   "df_basis" : "tzvpp-jkfit",
   "angstrom" : true,
@@ -14,17 +13,14 @@
 
 {
   "title"  : "casscf",
-  "algorithm" : "bfgs",
   "state" : [1],
   "thresh" : 1.0e-8,
   "thresh_scf" : 1.0e-9,
   "thresh_fci" : 1.0e-11,
-  "nact_cas"   : 3,
+  "nact"       : 3,
   "nclosed"    : 1,
   "maxiter"    : 20,
-  "maxiter_scf"    : 50,
-  "gaunt"      : false,
-  "breit"      : false
+  "maxiter_scf"    : 50
 }
 
 

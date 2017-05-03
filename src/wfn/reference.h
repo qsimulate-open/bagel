@@ -52,6 +52,10 @@ class Reference : public std::enable_shared_from_this<Reference> {
     int noccA_, noccB_;
 
     std::vector<double> energy_;
+    std::vector<double> prop_freq_;
+    std::vector<double> prop_ir_;
+
+    std::shared_ptr<const Matrix> prop_eig_;
 
     std::shared_ptr<const Hcore> hcore_;
     VectorB eig_;
@@ -74,8 +78,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & hcore_ & eig_
-         & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
+      ar & geom_ & coeff_ & coeffA_ & coeffB_ & noccA_ & noccB_ & energy_ & prop_freq_ & prop_ir_ & prop_eig_
+         & hcore_ & eig_ & nclosed_ & nact_ & nvirt_ & nstate_ & ciwfn_ & rdm1_ & rdm2_ & rdm1_av_ & rdm2_av_;
     }
 
   public:
@@ -129,6 +133,18 @@ class Reference : public std::enable_shared_from_this<Reference> {
     // To get a multi-state reference with RDMs averaged only over a subset of the relevant states (e.g., ground spin manifold)
     virtual std::shared_ptr<Reference> extract_average_rdm(const std::vector<int> rdm_state) const;
 
+    // used in Hessian
+    void set_prop_freq(const std::vector<double>& freq) { prop_freq_ = freq; }
+    std::vector<double> prop_freq() const { return prop_freq_; }
+    double prop_freq(const int i) const { return prop_freq_[i]; }
+
+    void set_prop_ir(const std::vector<double>& ir) { prop_ir_ = ir; }
+    std::vector<double> prop_ir() const { return prop_ir_; }
+    double prop_ir(const int i) const { return prop_ir_[i]; }
+
+    void set_prop_eig(std::shared_ptr<const Matrix> prop_eig) { prop_eig_ = prop_eig; }
+    std::shared_ptr<const Matrix> prop_eig() const { return prop_eig_; }
+
     // used in UHF
     void set_coeff_AB(const std::shared_ptr<const Coeff> a, const std::shared_ptr<const Coeff> b);
     std::shared_ptr<const Coeff> coeffA() const { return coeffA_; }
@@ -162,7 +178,8 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const;
     std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t offset, const size_t size) const;
-    std::shared_ptr<Matrix> rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const;
     // 4RDM derivative is precontracted by the Fock matrix
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;

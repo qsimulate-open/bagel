@@ -65,6 +65,8 @@ CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   target_state2_ = inp->get<int>("_target2");
   nacmtype_ = inp->get<int>("_nacmtype");
 
+  maxziter_ = inp->get<int>("_maxziter");
+
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Nacm calculation ===" << endl << endl;
@@ -176,7 +178,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
-  shared_ptr<FCI> fci = task_->fci();
+  auto fci = task_->fci();
 
   const double egap = energy2_ - energy1_;
 
@@ -228,7 +230,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
 
-  if (nacmtype_==0)
+  if (nacmtype_== 0 || nacmtype_ == 2)
     task_->augment_Y(d0ms, g0, g1, halfj);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -241,7 +243,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), /*maxiter*/100, task_->dcheck(), /*xms*/!!task_->dcheck());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), task_->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 

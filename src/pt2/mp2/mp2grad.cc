@@ -263,7 +263,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // solving CPHF (or Z-vector equation)
   auto cphf = make_shared<CPHF>(grad, ref_->eig(), halfjj, ref_);
-  shared_ptr<Matrix> dia = cphf->solve(task_->scf()->thresh_scf());
+  shared_ptr<Matrix> dia = cphf->solve(task_->scf()->thresh_scf(), maxziter_);
   *dmp2 += *dia;
 
   // total density matrix
@@ -274,7 +274,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
   auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
   {
     Dipole dipole(geom_, dtotao, "MP2 relaxed");
-    dipole.compute();
+    dipole_ = dipole.compute();
   }
 
   ////////////////////////////////////////////////////////////////////////////

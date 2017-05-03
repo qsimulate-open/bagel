@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "svp",
   "df_basis" : "svp-jkfit",
   "angstrom" : true,
@@ -15,7 +14,7 @@
 
 {
   "title" : "nevpt2",
-  "nact_cas" : 2,
+  "nact" : 2,
   "nclosed" : 4,
   "frozen" : true,
   "thresh" : 1.0e-8,

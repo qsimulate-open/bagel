@@ -58,6 +58,48 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 }
 
 
+void CASPT2::CASPT2::do_rdm_deriv(double factor) {
+  Timer timer(1);
+  const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t nact  = info_->nact();
+  const size_t norb2 = nact*nact;
+  const size_t ijmax = 635040001;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
+  if (npass > 1)
+    cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
+
+  for (int ipass = 0; ipass != npass; ++ipass) {
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
+      = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, 0, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
+    den0cit = den0ci;
+    den1cit = den1ci;
+    den2cit = den2ci;
+    den3cit = den3ci;
+    den4cit = den4ci;
+    mpi__->barrier();
+
+    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+    deci->allocate();
+    auto bdata = make_shared<VectorB>(ndet);
+    shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+
+    while (!queue->done())
+      queue->next_compute();
+
+    blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(0)->data()+ioffset);
+    blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
+
+    if (npass > 1) {
+      stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+      timer.tick_print(ss.str());
+    }
+  }
+}
+
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
@@ -84,31 +126,27 @@ void CASPT2::CASPT2::solve() {
   cout << endl;
 
   for (int istate = 0; istate != nstates_; ++istate) {
-    if (info_->shift() == 0.0) {
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate);
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] <<endl;
-    } else {
-      // will be used in normq
-      n = init_residual();
-      double norm = 0.0;
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
-        }
+    n = init_residual();
+    double norm = 0.0;
+    for (int jst = 0; jst != nstates_; ++jst) { // bra
+      for (int ist = 0; ist != nstates_; ++ist) { // ket
+        if (info_->sssr() && (jst != istate || ist != istate))
+          continue;
+        set_rdm(jst, ist);
+        t2 = t2all_[istate]->at(ist);
+        shared_ptr<Queue> normq = make_normq(true, jst == ist);
+        while (!normq->done())
+          normq->next_compute();
+        norm += dot_product_transpose(n, t2all_[istate]->at(jst));
       }
-
-      pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
-      cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
-      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) <<endl;
-      cout <<endl;
     }
+
+    pt2energy_[istate] = energy_[istate]+(*eref_)(istate,istate) - info_->shift()*norm;
+    cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
+    if (info_->shift() != 0.0)
+      cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
+    cout << "        reference weight      " << fixed << setw(20) << setprecision(10) << 1.0/(1.0+norm) << endl;
+    cout << endl;
   }
 
   // TODO Implement off-diagonal shift correction for nonrelativistic energy + nuclear gradients
@@ -170,6 +208,17 @@ void CASPT2::CASPT2::solve() {
         cout << setw(20) << setprecision(10) << (*heff_)(ist, jst);
     }
     cout << endl << endl;
+
+    if (xmsmat_) {
+      cout << endl;
+      cout << "    * XMS-CASPT2 rotation matrix";
+      for (int ist = 0; ist != nstates_; ++ist) {
+        cout << endl << "      ";
+        for (int jst = 0; jst != nstates_; ++jst)
+          cout << setw(20) << setprecision(10) << msrot()->element(ist, jst);
+      }
+      cout << endl << endl;
+    }
 
     // energy printout
     for (int istate = 0; istate != nstates_; ++istate)
@@ -350,27 +399,26 @@ void CASPT2::CASPT2::solve_deriv() {
 
     // first make ci_deriv_
     ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
-    const size_t cisize = ci_deriv_->data(0)->size();
 
-    const size_t cimax = 1000; // TODO interface to the input
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
+    // then form deci0 - 4
+    den0ci = rdm0_->clone();
+    den1ci = rdm1_->clone();
+    den2ci = rdm2_->clone();
+    den3ci = rdm3_->clone();
+    den4ci = rdm3_->clone();
+    shared_ptr<Queue> dec = make_deciq(/*reset = */true);
+    while (!dec->done())
+      dec->next_compute();
+    timer.tick_print("CI derivative evaluation");
 
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
+    // when active is divided into the blocks, den4ci is evaluated (activeblock)**2 times
+    double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+    den4ci->scale(den4factor);
 
-      feed_rdm_deriv(offset, size); // this set ci_
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-      shared_ptr<Queue> dec = make_deciq();
-      while (!dec->done())
-        dec->next_compute();
-      copy_n(deci->vectorb()->data(), size, ci_deriv_->data(0)->data()+offset);
+    // and contract them with rdm derivs
+    do_rdm_deriv(1.0);
 
-      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass;
-      timer.tick_print(ss.str());
-    }
+    timer.tick_print("CI derivative contraction");
     cout << endl;
   } else {
     // in case when CASPT2 is not variational...
@@ -436,7 +484,7 @@ void CASPT2::CASPT2::solve_deriv() {
   auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
     shared_ptr<const Matrix> jop = ref->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
     auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
-    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->apply_J()->compute_second_transform(coeff)->swap();
     shared_ptr<DFFullDist> full2 = full->copy();
     full2->rotate_occ1(moden);
     *out += *full->form_2index(full2, -0.5);
@@ -626,7 +674,7 @@ void CASPT2::CASPT2::solve_nacme() {
   auto focksub = [&](shared_ptr<const Matrix> moden, const MatView coeff, const bool add) {
     shared_ptr<const Matrix> jop = ref->geom()->df()->compute_Jop(make_shared<Matrix>(coeff * *moden ^ coeff));
     auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
-    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->compute_second_transform(coeff)->apply_J()->swap();
+    shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->apply_J()->compute_second_transform(coeff)->swap();
     shared_ptr<DFFullDist> full2 = full->copy();
     full2->rotate_occ1(moden);
     *out += *full->form_2index(full2, -0.5);

@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "sto-3g",
   "df_basis" : "svp",
   "angstrom" : true,
@@ -31,7 +30,6 @@
 {
   "title" : "molecule",
   "restart" : true,
-  "symmetry" : "C1",
   "basis" : "sto-3g",
   "df_basis" : "svp",
   "angstrom" : true,

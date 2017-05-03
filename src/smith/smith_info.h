@@ -70,6 +70,7 @@ class SMITH_Info {
     int restart_iter_;
 
     std::shared_ptr<const PTree> aniso_data_;  // Inputs to pseudospin Hamiltonian module
+    std::string external_rdm_;
 
   private:
     // serialization
@@ -77,8 +78,9 @@ class SMITH_Info {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
-      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_ & do_ms_ & do_xms_ & sssr_;
-      ar & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_ & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_;
+      ar & nacmtype_ & maxtile_ & cimaxtile_ & davidson_subspace_ & grad_ & nacm_;
+      ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_;
+      ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
     }
 
   public:
@@ -98,7 +100,7 @@ class SMITH_Info {
 
     std::shared_ptr<const RDM<1,DataType>> rdm1_av() const;
 
-    std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst, const bool recompute = false) const;
+    std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
 
     double thresh() const { return thresh_; }
@@ -157,10 +159,10 @@ class SMITH_Info {
     std::shared_ptr<const PTree> aniso_data() const { return aniso_data_; }
 };
 
-template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst, const bool recompute) const;
+template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr<const Kramers<4,ZRDM<2>>>>
-           SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst, const bool recompute) const;
+           SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
 

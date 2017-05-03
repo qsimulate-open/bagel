@@ -47,7 +47,7 @@ vector<double> RDM<1>::diag() const {
 
 
 template<>
-pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals(const bool sort_by_coeff) const {
+pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
   auto buf = make_shared<Matrix>(norb(),norb(),true);
   buf->add_diag(2.0);
   daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
@@ -59,32 +59,11 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals(const bool s
   auto buf2 = buf->clone();
   VectorB vec2(norb());
 
-  if (sort_by_coeff) {
-    map<int,int> emap;
-    // sort eigenvectors so that buf is close to a unit matrix
-    // target column
-    for (int i = 0; i != norb(); ++i) {
-      // first find the source column
-      tuple<int, double> max = make_tuple(-1, 0.0);
-      for (int j = 0; j != norb(); ++j)
-        if (fabs(buf->element(i,j)) > get<1>(max))
-          max = make_tuple(j, fabs(buf->element(i,j)));
-
-      // register to emap
-      if (emap.find(get<0>(max)) != emap.end()) throw logic_error("this should not happen. RDM<1>::generate_natural_orbitals()");
-      emap.emplace(get<0>(max), i);
-
-      // copy to the target
-      copy_n(buf->element_ptr(0,get<0>(max)), norb(), buf2->element_ptr(0,i));
-      vec2(i) = vec(get<0>(max));
-    }
-  } else {
-    // sort by natural orbital occupation numbers instead
-    int b2n = buf2->ndim();
-    for (int i = 0; i != buf2->mdim(); ++i) {
-      copy_n(buf->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i));
-      vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;;
-    }
+  // sort by natural orbital occupation numbers instead
+  const int b2n = buf2->ndim();
+  for (int i = 0; i != buf2->mdim(); ++i) {
+    copy_n(buf->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i));
+    vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;
   }
 
   // fix the phase

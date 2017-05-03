@@ -43,7 +43,7 @@ class Optimize {
 
     void compute();
     std::shared_ptr<const Geometry> geometry() const { return geom_; }
-
+    std::shared_ptr<const Reference> conv_to_ref() const { return ref_; }
 };
 
 

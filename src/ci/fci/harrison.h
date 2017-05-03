@@ -71,12 +71,9 @@ class HarrisonZarrabian : public FCI {
 
   public:
     HarrisonZarrabian() { }
-    // this constructor is ugly... to be fixed some day...
+
     HarrisonZarrabian(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-        const int ncore = -1, const int nocc = -1, const int nstate = -1, const bool store = false) : FCI(a, g, b, ncore, nocc, nstate, store) {
-      space_ = std::make_shared<HZSpace>(det_);
-      update(ref_->coeff());
-    }
+        const int ncore = -1, const int nocc = -1, const int nstate = -1, const bool store = false);
 
     virtual void update(std::shared_ptr<const Matrix>) override;
 };

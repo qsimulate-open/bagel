@@ -26,7 +26,9 @@
 #ifndef __BAGEL_SRC_CASSCF_QVEC
 #define __BAGEL_SRC_CASSCF_QVEC
 
-#include <src/ci/fci/fci.h> // 2RDM and half-transformed integrals
+// 2RDM and half-transformed integrals
+#include <src/ci/fci/distfci.h>
+#include <src/ci/fci/fci.h>
 #include <src/multi/casscf/rotfile.h>
 
 namespace bagel {
@@ -36,7 +38,7 @@ class Qvec : public Matrix {
 
   public:
     Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed,
-         std::shared_ptr<const FCI> fci, std::shared_ptr<const RDM<2>> rdm)
+         std::shared_ptr<const FCI_base> fci, std::shared_ptr<const RDM<2>> rdm)
      : Qvec(n, m, c, nclosed, fci->jop()->mo2e_1ext(), rdm) { }
 
     Qvec(const int n, const int m, std::shared_ptr<const Matrix> c, const size_t nclosed,

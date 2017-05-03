@@ -36,8 +36,17 @@
 using namespace std;
 using namespace bagel;
 
-ZCASSCF::ZCASSCF(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
+ZCASSCF::ZCASSCF(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("relref");
+    shared_ptr<RelReference> r;
+    ar >> r;
+    ref_ = ref = r;
+  }
+
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
@@ -75,8 +84,8 @@ void ZCASSCF::init() {
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  gaunt_ = idata_->get<bool>("gaunt",relref->gaunt());
-  breit_ = idata_->get<bool>("breit",relref->breit());
+  gaunt_ = idata_->get<bool>("gaunt", relref->gaunt());
+  breit_ = idata_->get<bool>("breit", relref->breit());
 
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
@@ -95,9 +104,8 @@ void ZCASSCF::init() {
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
 
-  // nocc from the input. If not present, full valence active space is generated.
+  // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
@@ -182,7 +190,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!relref->kramers() && tsymm_)
+  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
@@ -249,13 +257,13 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
 }
 
 
-void ZCASSCF::print_natocc() const {
-  assert(occup_.size() > 0);
+void ZCASSCF::print_natocc(const VectorB& occup) const {
+  assert(occup.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = tsymm_ ? occup_.size() / 2 : occup_.size();
+  const int num = tsymm_ ? occup.size() / 2 : occup.size();
   for (int i = 0; i != num; ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
   cout << "  ============================================ " << endl;
 }
 

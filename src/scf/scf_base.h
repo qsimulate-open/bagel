@@ -62,6 +62,7 @@ class SCF_base_ : public Method {
 
     VectorB eig_;
     double energy_;
+    std::vector<double> scf_dipole_;
 
     int nocc_;
     int noccB_;
@@ -86,9 +87,11 @@ class SCF_base_ : public Method {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Method>(*this);
-      ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
-         & thresh_overlap_ & thresh_scf_ & multipole_print_ & schwarz_ & eig_ & energy_
+      ar & tildex_ & overlap_ & hcore_ & coeff_ & dofmm_ & max_iter_ & diis_start_ & diis_size_
+         & thresh_overlap_ & thresh_scf_ & multipole_print_ & dma_print_ & schwarz_ & eig_ & energy_
          & nocc_ & noccB_ & do_grad_ & restart_;
+      if (dofmm_) 
+        throw std::logic_error("Restart capability for FMM has not been implemented.");
     }
 
   public:
@@ -107,6 +110,7 @@ class SCF_base_ : public Method {
     int nocc() const { return nocc_; }
     int noccB() const { return noccB_; }
     double energy() const { return energy_; }
+    const std::vector<double>& scf_dipole() const { return scf_dipole_; }
 
     double thresh_overlap() const { return thresh_overlap_; }
     double thresh_scf() const { return thresh_scf_; }

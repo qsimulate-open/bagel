@@ -189,7 +189,10 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 
 
 void Shell::init_relativistic() {
-  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+#ifndef COMPILE_J_ORB
+  if (angular_number_ == 6) throw runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
+#endif
+  if (angular_number_ == 7) throw runtime_error("Relativistic codes cannot use j-type main basis functions, since k-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
@@ -201,7 +204,10 @@ void Shell::init_relativistic() {
 
 void Shell::init_relativistic(const array<double,3> magnetic_field, bool london) {
   assert(magnetism_);
-  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+#ifndef COMPILE_J_ORB
+  if (angular_number_ == 6) throw runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
+#endif
+  if (angular_number_ == 7) throw runtime_error("Relativistic codes cannot use j-type main basis functions, since k-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();

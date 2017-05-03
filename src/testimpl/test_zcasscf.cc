@@ -69,13 +69,10 @@ double relcas_energy(std::string inp) {
       ref = scf->conv_to_ref();
 
     } else if (method == "casscf") {
-      std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
-        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      }
+      auto cas = std::make_shared<CASSecond>(itree, geom, ref);
+      cas->compute();
+      ref = cas->conv_to_ref();
+      energy = ref->energy(0);
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
@@ -111,7 +108,7 @@ BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("nh_svp_triplet_gaunt"),    -54.93378556));
   BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),   -149.56647946));
 #ifndef DISABLE_SERIALIZATION
-//BOOST_CHECK(compare(relcas_energy("hf_tzvpp_zcasscf_saveref"), -100.03016820));
+  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_zcasscf_saveref"), -100.03016820));
 #endif
 }
 

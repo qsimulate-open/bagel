@@ -41,8 +41,8 @@ DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const 
 
 // Constructing DFock from half-transformed integrals. It is assumed that int1 is multiplied by JJ, int2 is not multplied by J.
 // CAUTION! This only does Dirac-Coulomb
-DFock::DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,
-             std::list<std::shared_ptr<const RelDFHalf>> int1c, std::list<std::shared_ptr<const RelDFHalf>> int2c,
+DFock::DFock(shared_ptr<const Geometry> a, shared_ptr<const ZMatrix> hc, shared_ptr<const ZMatrix> coeff, shared_ptr<const ZMatrix> tcoeff,
+             list<shared_ptr<const RelDFHalf>> int1c, list<shared_ptr<const RelDFHalf>> int2c,
              const double scale_exch, const double scale_coulomb)
   : ZMatrix(*hc), geom_(a), gaunt_(false), breit_(false), store_half_(false), store_half_gaunt_(false), robust_(false) {
 
@@ -296,7 +296,7 @@ void DFock::driver(shared_ptr<const ZMatrix> coeff, bool gaunt, bool breit, cons
       assert(save.size() == input.size());
       auto iex = input.begin();
       for (auto& ist : save) {
-        ist = ist->merge(*iex);
+        ist = ist->merge_b1(*iex);
         iex++;
       }
     }

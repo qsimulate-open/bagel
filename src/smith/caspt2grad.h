@@ -27,7 +27,7 @@
 #define __SRC_SMITH_CASPT2GRAD_H
 
 #include <src/wfn/reference.h>
-#include <src/ci/fci/fci.h>
+#include <src/ci/fci/distfci.h>
 #include <src/smith/tensor.h>
 
 namespace bagel {
@@ -56,13 +56,15 @@ class CASPT2Deriv : public Method {
     // y from SMITH code
     std::shared_ptr<Dvec> cideriv_;
     // FCI utility
-    std::shared_ptr<FCI> fci_;
+    std::shared_ptr<FCI_base> fci_;
 
     // for gradient
     int nstates_;
     int ncore_;
     int target_;
     double thresh_;
+
+    int maxziter_;
 
     // properties
     bool do_hyperfine_;
@@ -79,12 +81,14 @@ class CASPT2Deriv : public Method {
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
-    std::shared_ptr<FCI> fci() const { return fci_; }
+    std::shared_ptr<FCI_base> fci() const { return fci_; }
 
     int nstates() const { return nstates_; }
     int ncore() const { return ncore_; }
     int target() const { return target_; }
     double thresh() const { return thresh_; }
+
+    int maxziter() const { return maxziter_; }
 
     bool do_hyperfine() const { return do_hyperfine_; }
 
@@ -102,6 +106,7 @@ class CASPT2Grad : public CASPT2Deriv {
     // XMS density if available
     std::shared_ptr<const Matrix> dcheck_;
     double energy_;
+    std::vector<double> dipole_;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -111,6 +116,8 @@ class CASPT2Grad : public CASPT2Deriv {
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     double energy() const { return energy_; }
+    const std::vector<double>& dipole() const { return dipole_; }
+    double dipole(const int i) const { return dipole_[i]; }
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
@@ -157,6 +164,7 @@ class CASPT2Nacm : public CASPT2Deriv {
     double energy(const int i) const { return energy_[i]; }
     const std::vector<double>& energy() const { return energy_; }
 
+
     double foeig(const int i) const { return foeig_.at(i); }
     double cieig(const int i) const { return cieig_.at(i); }
 
@@ -179,7 +187,7 @@ class CASPT2Energy : public Method {
     std::shared_ptr<const Matrix> xmsrot_;
     std::shared_ptr<const Matrix> heffrot_;
     std::vector<double> energy_;
-    std::shared_ptr<FCI> fci_;
+    std::shared_ptr<FCI_base> fci_;
     std::shared_ptr<Matrix> vd1_;
     double thresh_;
     int target_state1_;

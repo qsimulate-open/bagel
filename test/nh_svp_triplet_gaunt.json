@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "svp",
   "df_basis" : "svp-jkfit",
   "angstrom" : true,
@@ -23,7 +22,7 @@
   "thresh" : 1.0e-6,
   "gaunt" : true,
   "breit" : false,
-  "nact_cas"   : 2,
+  "nact"   : 2,
   "nclosed"  : 3,
   "only_electrons" : true,
   "active" : [4,5]

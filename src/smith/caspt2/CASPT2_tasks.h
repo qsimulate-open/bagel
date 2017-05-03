@@ -44,6 +44,7 @@
 #include <src/smith/caspt2/CASPT2_tasks14.h>
 #include <src/smith/caspt2/CASPT2_tasks15.h>
 #include <src/smith/caspt2/CASPT2_tasks16.h>
+#include <src/smith/caspt2/CASPT2_tasks17.h>
 
 #endif
 #endif

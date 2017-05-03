@@ -71,22 +71,22 @@ void Task0::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x1 == x4 && x3 == x5 && x0 == x2) {
+  if (x1 == x4 && x0 == x2 && x3 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i5 = 0; i5 != x5.size(); ++i5) {
-        for (int i2 = 0; i2 != x2.size(); ++i2) {
+      for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
           odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]  += 4.0 * i0data[0] * fdata[i5+x3.size()*(i2)];
         }
       }
     }
   }
-  if (x1 == x4 && x0 == x2) {
+  if (x0 == x2 && x1 == x4) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x5);
     for (int i5 = 0; i5 != x5.size(); ++i5) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
-        for (int i4 = 0; i4 != x4.size(); ++i4) {
-          for (int i2 = 0; i2 != x2.size(); ++i2) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i4 = 0; i4 != x4.size(); ++i4) {
             odata[i2+x0.size()*(i5+x5.size()*(i4+x1.size()*(i4)))]
               += (-2.0) * i0data[i3+x3.size()*(i5)] * fdata[i3+x3.size()*(i2)];
           }
@@ -95,10 +95,10 @@ void Task0::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x3 == x4 && x1 == x5 && x0 == x2) {
+  if (x1 == x5 && x3 == x4 && x0 == x2) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
-    for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i5 = 0; i5 != x5.size(); ++i5) {
+    for (int i5 = 0; i5 != x5.size(); ++i5) {
+      for (int i4 = 0; i4 != x4.size(); ++i4) {
         for (int i2 = 0; i2 != x2.size(); ++i2) {
           odata[i2+x0.size()*(i5+x5.size()*(i5+x1.size()*(i4)))]  += -2.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
@@ -212,22 +212,22 @@ void Task0::Task_local::compute() {
     }
   }
   // rdm0 merged case
-  if (x3 == x4 && x1 == x2 && x0 == x5) {
+  if (x3 == x4 && x0 == x5 && x1 == x2) {
     std::unique_ptr<double[]> i0data = in(0)->get_block();
     for (int i4 = 0; i4 != x4.size(); ++i4) {
-      for (int i2 = 0; i2 != x2.size(); ++i2) {
-        for (int i5 = 0; i5 != x5.size(); ++i5) {
+      for (int i5 = 0; i5 != x5.size(); ++i5) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
           odata[i5+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]  += 4.0 * i0data[0] * fdata[i4+x3.size()*(i2)];
         }
       }
     }
   }
-  if (x1 == x2 && x0 == x5) {
+  if (x0 == x5 && x1 == x2) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
     for (int i4 = 0; i4 != x4.size(); ++i4) {
       for (int i3 = 0; i3 != x3.size(); ++i3) {
-        for (int i2 = 0; i2 != x2.size(); ++i2) {
-          for (int i5 = 0; i5 != x5.size(); ++i5) {
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
+          for (int i2 = 0; i2 != x2.size(); ++i2) {
             odata[i5+x0.size()*(i5+x5.size()*(i2+x1.size()*(i4)))]
               += (-2.0) * i0data[i3+x3.size()*(i4)] * fdata[i3+x3.size()*(i2)];
           }
@@ -1054,13 +1054,13 @@ void Task5::Task_local::compute() {
       }
     }
   }
-  if (x2 == x5 && x4 == x6 && x1 == x3) {
+  if (x2 == x5 && x1 == x3 && x4 == x6) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(x7, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i7 = 0; i7 != x7.size(); ++i7) {
         for (int i5 = 0; i5 != x5.size(); ++i5) {
-          for (int i6 = 0; i6 != x6.size(); ++i6) {
-            for (int i3 = 0; i3 != x3.size(); ++i3) {
+          for (int i3 = 0; i3 != x3.size(); ++i3) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
               odata[i7+x7.size()*(i6+x6.size()*(i5+x2.size()*(i5+x5.size()*(i3+x1.size()*(i0)))))]
                 += (2.0) * i0data[i7+x7.size()*(i0)] * fdata[i6+x4.size()*(i3)];
             }
@@ -2212,6 +2212,34 @@ void Task16::Task_local::compute() {
 }
 
 void Task17::Task_local::compute() {
+  const Index x3 = b(0);
+  const Index x2 = b(1);
+  const Index x1 = b(2);
+  const Index x0 = b(3);
+  // tensor label: Gamma35
+  std::unique_ptr<double[]> odata(new double[out()->get_size(x3, x2, x1, x0)]);
+  std::fill_n(odata.get(), out()->get_size(x3, x2, x1, x0), 0.0);
+  {
+    if (x1 == x2) {
+      std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0);
+      for (int i0 = 0; i0 != x0.size(); ++i0) {
+        for (int i2 = 0; i2 != x2.size(); ++i2) {
+          for (int i3 = 0; i3 != x3.size(); ++i3) {
+            odata[i3+x3.size()*(i2+x2.size()*(i2+x1.size()*(i0)))]
+              += (1.0) * i0data[i3+x3.size()*(i0)];
+          }
+        }
+      }
+    }
+  }
+  {
+    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2, x1, x0);
+    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x2.size(), x1.size(), x0.size());
+  }
+  out()->add_block(odata, x3, x2, x1, x0);
+}
+
+void Task18::Task_local::compute() {
   const Index x5 = b(0);
   const Index x4 = b(1);
   const Index x1 = b(2);
@@ -2299,34 +2327,6 @@ void Task17::Task_local::compute() {
     }
   }
   out()->add_block(odata, x5, x4, x1, x0);
-}
-
-void Task18::Task_local::compute() {
-  const Index x3 = b(0);
-  const Index x2 = b(1);
-  const Index x1 = b(2);
-  const Index x0 = b(3);
-  // tensor label: Gamma35
-  std::unique_ptr<double[]> odata(new double[out()->get_size(x3, x2, x1, x0)]);
-  std::fill_n(odata.get(), out()->get_size(x3, x2, x1, x0), 0.0);
-  {
-    if (x1 == x2) {
-      std::unique_ptr<double[]> i0data = in(0)->get_block(x3, x0);
-      for (int i0 = 0; i0 != x0.size(); ++i0) {
-        for (int i2 = 0; i2 != x2.size(); ++i2) {
-          for (int i3 = 0; i3 != x3.size(); ++i3) {
-            odata[i3+x3.size()*(i2+x2.size()*(i2+x1.size()*(i0)))]
-              += (1.0) * i0data[i3+x3.size()*(i0)];
-          }
-        }
-      }
-    }
-  }
-  {
-    std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2, x1, x0);
-    sort_indices<0,1,2,3,1,1,1,1>(i0data, odata, x3.size(), x2.size(), x1.size(), x0.size());
-  }
-  out()->add_block(odata, x3, x2, x1, x0);
 }
 
 void Task19::Task_local::compute() {
@@ -2938,7 +2938,7 @@ void Task30::Task_local::compute() {
   std::unique_ptr<double[]> odata(new double[out()->get_size(x0, x5, x1, x4, x3, x2)]);
   std::fill_n(odata.get(), out()->get_size(x0, x5, x1, x4, x3, x2), 0.0);
   {
-    if (x0 == x4 && x1 == x5) {
+    if (x1 == x5 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -2953,7 +2953,7 @@ void Task30::Task_local::compute() {
     }
   }
   {
-    if (x0 == x5 && x1 == x4) {
+    if (x1 == x4 && x0 == x5) {
       std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x2);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -2969,7 +2969,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x0 == x2 && x3 == x5 && x1 == x4) {
+    if (x0 == x2 && x1 == x4 && x3 == x5) {
       std::unique_ptr<double[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -2997,7 +2997,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x4 && x0 == x2 && x1 == x5) {
+    if (x0 == x2 && x1 == x5 && x3 == x4) {
       std::unique_ptr<double[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -3009,7 +3009,7 @@ void Task30::Task_local::compute() {
     }
   }
   {
-    if (x0 == x2 && x1 == x5) {
+    if (x1 == x5 && x0 == x2) {
       std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -3072,7 +3072,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x5 && x0 == x4 && x1 == x2) {
+    if (x3 == x5 && x1 == x2 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -3084,7 +3084,7 @@ void Task30::Task_local::compute() {
     }
   }
   {
-    if (x0 == x4 && x1 == x2) {
+    if (x1 == x2 && x0 == x4) {
       std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x5);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -3132,7 +3132,7 @@ void Task30::Task_local::compute() {
   }
   {
     // rdm0 non-merged case
-    if (x3 == x4 && x1 == x2 && x0 == x5) {
+    if (x3 == x4 && x0 == x5 && x1 == x2) {
       std::unique_ptr<double[]> i0data = in(0)->get_block();
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i4 = 0; i4 != x4.size(); ++i4) {
@@ -3144,7 +3144,7 @@ void Task30::Task_local::compute() {
     }
   }
   {
-    if (x1 == x2 && x0 == x5) {
+    if (x0 == x5 && x1 == x2) {
       std::unique_ptr<double[]> i0data = in(1)->get_block(x3, x4);
       for (int i2 = 0; i2 != x2.size(); ++i2) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -3576,7 +3576,7 @@ void Task34::Task_local::compute() {
     }
   }
   {
-    if (x2 == x5 && x4 == x6 && x1 == x3) {
+    if (x1 == x3 && x2 == x5 && x4 == x6) {
       std::unique_ptr<double[]> i0data = in(0)->get_block(x7, x0);
       for (int i0 = 0; i0 != x0.size(); ++i0) {
         for (int i3 = 0; i3 != x3.size(); ++i3) {
@@ -4240,12 +4240,12 @@ void Task37::Task_local::compute() {
       }
     }
   }
-  if (x0 == x5 && x1 == x4) {
+  if (x1 == x4 && x0 == x5) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x2);
     for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-          for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+          for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix5+x0.size()*(ix5+x5.size()*(ix4+x1.size()*(ix4))))]
                 += (4.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix2))] * fdata[ix3+x3.size()*(ix2)];
@@ -4268,12 +4268,12 @@ void Task37::Task_local::compute() {
       }
     }
   }
-  if (x0 == x2 && x1 == x4) {
+  if (x1 == x4 && x0 == x2) {
     std::unique_ptr<double[]> i0data = in(1)->get_block(ci0, x3, x5);
     for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
       for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
-          for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+          for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
             for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
               odata[ici0+ci0.size()*(ix2+x0.size()*(ix5+x5.size()*(ix4+x1.size()*(ix4))))]
                 += (-2.0) * i0data[ici0+ci0.size()*(ix3+x3.size()*(ix5))] * fdata[ix3+x3.size()*(ix2)];
@@ -4284,11 +4284,11 @@ void Task37::Task_local::compute() {
     }
   }
   // rdm0 merged ci derivative case
-  if (x3 == x4 && x1 == x5 && x0 == x2) {
+  if (x0 == x2 && x3 == x4 && x1 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
-    for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-      for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+    for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
           for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
             odata[ici0+ci0.size()*(ix2+x0.size()*(ix5+x5.size()*(ix5+x1.size()*(ix4))))]  += -2.0 * fdata[ix4+x3.size()*(ix2)] * i0data[ici0];
           }
@@ -4359,11 +4359,11 @@ void Task37::Task_local::compute() {
     }
   }
   // rdm0 merged ci derivative case
-  if (x3 == x5 && x0 == x4 && x1 == x2) {
+  if (x0 == x4 && x1 == x2 && x3 == x5) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0);
-    for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-      for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
-        for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+    for (int ix4 = 0; ix4 != x4.size(); ++ix4) {
+      for (int ix2 = 0; ix2 != x2.size(); ++ix2) {
+        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
           for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
             odata[ici0+ci0.size()*(ix4+x0.size()*(ix5+x5.size()*(ix2+x1.size()*(ix4))))]  += -2.0 * fdata[ix5+x3.size()*(ix2)] * i0data[ici0];
           }
@@ -5370,13 +5370,13 @@ void Task42::Task_local::compute() {
       }
     }
   }
-  if (x2 == x5 && x4 == x6 && x1 == x3) {
+  if (x1 == x3 && x2 == x5 && x4 == x6) {
     std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x7, x0);
     for (int ix0 = 0; ix0 != x0.size(); ++ix0) {
       for (int ix7 = 0; ix7 != x7.size(); ++ix7) {
-        for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
-          for (int ix6 = 0; ix6 != x6.size(); ++ix6) {
-            for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+        for (int ix3 = 0; ix3 != x3.size(); ++ix3) {
+          for (int ix5 = 0; ix5 != x5.size(); ++ix5) {
+            for (int ix6 = 0; ix6 != x6.size(); ++ix6) {
               for (int ici0 = 0; ici0 != ci0.size(); ++ici0) {
                 odata[ici0+ci0.size()*(ix7+x7.size()*(ix6+x6.size()*(ix5+x2.size()*(ix5+x5.size()*(ix3+x1.size()*(ix0))))))]
                   += (2.0) * i0data[ici0+ci0.size()*(ix7+x7.size()*(ix0))] * fdata[ix6+x4.size()*(ix3)];

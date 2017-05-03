@@ -35,7 +35,7 @@ using namespace bagel;
 shared_ptr<Reference> ZReference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
   assert(check_geom_change);
   if (!geomin->magnetism() || !geom_->magnetism())
-    throw std::runtime_error("ZReference::project_coeff(...) is only for GIAO wavefunctions.  Not implemented for SOSCF or GIAO -> standard, etc.");
+    throw runtime_error("ZReference::project_coeff(...) is only for GIAO wavefunctions.  Not implemented for SOSCF or GIAO -> standard, etc.");
 
   shared_ptr<Reference> out;
 

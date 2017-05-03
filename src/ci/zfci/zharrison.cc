@@ -54,6 +54,9 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
 
+  if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1) 
+    throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  For relativistic calculations, use the \"state\" input to give a vector of how many of each spin multiplet to compute.  (e.g., [3, 0, 1] for three singlets and one triplet.)");
+
   states_ = idata_->get_vector<int>("state", 0);
   nstate_ = 0;
   for (int i = 0; i != states_.size(); ++i)
@@ -134,15 +137,19 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
 
   update(coeff);
 
-#ifndef DISABLE_SERIALIZATION
   // if integral dump is requested, do it here, and throw Termination
-  if (idata_->get<bool>("only_ints", false)) {
-    OArchive ar("relcoeff");
-    ar << coeff;
+  const bool only_ints = idata_->get<bool>("only_ints", false);
+  if (only_ints) {
+#ifndef DISABLE_SERIALIZATION
+    OArchive ar("relref");
+    auto rout = make_shared<RelReference>(geom_, coeff->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit());
+    ar << rout;
     dump_ints();
     throw Termination("Relativistic MO integrals are dumped on a file.");
-  }
+#else
+    throw runtime_error("You must compile with serialization in order to dump MO integrals into a file.");
 #endif
+  }
 }
 
 

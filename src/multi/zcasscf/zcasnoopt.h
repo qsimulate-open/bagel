@@ -41,12 +41,13 @@ class ZCASNoopt : public ZCASSCF {
      : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override {
-      Timer fci_time(0);
-      fci_->compute();
-      fci_time.tick_print("ZFCI");
-      std::cout << " Computing RDMs from FCI calculation " << std::endl;
-      fci_->compute_rdm12();
-      fci_time.tick_print("RDMs");
+      if (external_rdm_.empty()) {
+        std::cout << " Computing RDMs from FCI calculation " << std::endl;
+        fci_->compute();
+        fci_->compute_rdm12();
+      } else {
+        fci_->read_external_rdm12_av(external_rdm_);
+      }
       energy_ = fci_->energy();
 
       // TODO When the Property class is implemented, this should be one

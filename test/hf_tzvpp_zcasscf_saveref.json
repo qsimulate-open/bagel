@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "tzvpp",
   "df_basis" : "tzvpp-jkfit",
   "angstrom" : false,
@@ -15,13 +14,11 @@
 {
   "title"  : "zcasscf",
   "algorithm" : "second",
-  "save_ref" : "true",
-  "ref_out" : "zcas_test",
   "state" : [1],
   "thresh" : 5.0e-7,
   "thresh_micro" : 1.0e-8,
   "thresh_fci" : 1.0e-9,
-  "nact_cas"   : 2,
+  "nact"   : 2,
   "nclosed"  : 4,
   "maxiter"  : 100,
   "maxiter_scf"  : 100,
@@ -31,22 +28,30 @@
 },
 
 {
+  "title" : "save_ref",
+  "ref_out" : "zcas_test"
+},
+
+{
   "title" : "molecule",
   "restart" : "true"
 },
 
 {
+  "title" : "load_ref",
+  "ref_in" : "zcas_test"
+},
+
+{
   "title"  : "zcasscf",
   "algorithm" : "second",
-  "load_ref" : "true",
-  "ref_in" : "zcas_test",
   "occ_sort" : "true",
   "only_electrons" : "true",
   "state" : [1],
   "thresh" : 5.0e-7,
   "thresh_micro" : 1.0e-8,
   "thresh_fci" : 1.0e-9,
-  "nact_cas"   : 2,
+  "nact"   : 2,
   "nclosed"  : 4,
   "maxiter"  : 3,
   "maxiter_scf"  : 100,
