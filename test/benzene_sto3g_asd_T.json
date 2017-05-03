@@ -83,6 +83,7 @@
   "fci" : {
     "thresh" : 1.0e-6,
     "algorithm" : "hz",
+    "frozen" : true,
     "nguess" : 400
   },
   "nstates" : 2
