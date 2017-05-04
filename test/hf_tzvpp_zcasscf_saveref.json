@@ -29,7 +29,7 @@
 
 {
   "title" : "save_ref",
-  "ref_out" : "zcas_test"
+  "file" : "zcas_test"
 },
 
 {
@@ -39,7 +39,7 @@
 
 {
   "title" : "load_ref",
-  "ref_in" : "zcas_test"
+  "file" : "zcas_test"
 },
 
 {
