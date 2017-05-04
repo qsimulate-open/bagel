@@ -112,6 +112,7 @@ void MoldenOut::write_mos() {
   }
   ofs_ << endl;
   if (is_spherical) ofs_ << "[5D]" << endl;
+  if (is_spherical) ofs_ << "[7F]" <<endl;
   if (is_spherical) ofs_ << "[9G]" <<endl;
   ofs_ << "[MO]" << endl;
   const int num_mos = ref_->coeff()->mdim();
