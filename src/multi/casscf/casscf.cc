@@ -103,8 +103,13 @@ void CASSCF::common_init() {
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
   thresh_micro_ = idata_->get<double>("thresh_micro", 5.0e-6);
+
   // whether or not to throw if the calculation does not converge
   conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
+  // to save binary archives with each iteration
+  restart_cas_ = idata_->get<bool>("restart_cas", false);
+
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
 

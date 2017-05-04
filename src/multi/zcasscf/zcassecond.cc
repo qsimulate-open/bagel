@@ -194,6 +194,16 @@ void ZCASSecond::compute() {
         cout << endl << "    * Max iteration reached during the second-order optimization.  Convergence not reached! *   " << endl << endl;
       }
     }
+
+#ifndef DISABLE_SERIALIZATION
+    if (restart_cas_) {
+      stringstream ss; ss << "zcasscf_" << iter;
+      OArchive archive(ss.str());
+      shared_ptr<const Reference> ref = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, 
+        nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
+      archive << ref;
+    }
+#endif
   }
 
   // this is not needed for energy, but for consistency we want to have this...

@@ -135,6 +135,14 @@ void CASSecond::compute() {
         cout << endl << "    * Max iteration reached during the second-order optimization.  Convergence not reached! *   " << endl << endl;
       }
     }
+#ifndef DISABLE_SERIALIZATION
+    if (restart_cas_) {
+      stringstream ss; ss << "casscf_" << iter;
+      OArchive archive(ss.str());
+      auto ref = make_shared<const Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+      archive << ref;
+    }
+#endif
   }
   muffle_->unmute();
 
