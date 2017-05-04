@@ -41,17 +41,6 @@ double relcas_energy(std::string inp) {
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
-#ifndef DISABLE_SERIALIZATION
-    if (itree->get<bool>("load_ref", false)) {
-      const std::string name = itree->get<std::string>("ref_in", "");
-      assert (name != "");
-      IArchive archive(name);
-      std::shared_ptr<Reference> ptr;
-      archive >> ptr;
-      ref = std::shared_ptr<Reference>(ptr);
-    }
-#endif
-
     if (method == "molecule") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
       if (itree->get<bool>("restart", false))
@@ -84,15 +73,23 @@ double relcas_energy(std::string inp) {
       } else {
         throw std::logic_error("unknown algorithm");
       }
-    }
+
 #ifndef DISABLE_SERIALIZATION
-    if (itree->get<bool>("save_ref", false)) {
-      const std::string name = itree->get<std::string>("ref_out", "");
+    } else if (method == "save_ref") {
+      const std::string name = itree->get<std::string>("file", "");
       assert (name != "");
       OArchive archive(name);
       archive << ref;
-    }
+
+    } else if (method == "load_ref") {
+      const std::string name = itree->get<std::string>("file", "");
+      assert (name != "");
+      IArchive archive(name);
+      std::shared_ptr<Reference> ptr;
+      archive >> ptr;
+      ref = std::shared_ptr<Reference>(ptr);
 #endif
+    }
   }
   std::cout.rdbuf(backup_stream);
   return energy;
