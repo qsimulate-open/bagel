@@ -25,7 +25,6 @@
 #include <fstream>
 #include <string>
 #include <src/util/input/input.h>
-#include <src/util/input/parse.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 
@@ -39,31 +38,34 @@ PTree::PTree(const string& input) {
   const size_t n = input.find_last_of(".");
   const string extension = (n != string::npos) ? input.substr(n) : "";
   if (extension == ".json") {
-    boost::property_tree::json_parser::read_json(input, data_);
-  }
-  else if (extension == ".xml") {
-    boost::property_tree::xml_parser::read_xml(input, data_);
-  }
-  else if (extension == ".bgl" || extension == ".bagel"){
-    BagelParser bp(input);
-    data_ = bp.parse();
-  }
-  else { // Unhelpful file extension -> just try them all!
     try {
       boost::property_tree::json_parser::read_json(input, data_);
+
+    // making error messages more user-friendly
+    } catch (const exception& e) {
+      string errstring(e.what());
+      size_t p1 = errstring.find("(");
+      size_t p2 = errstring.find(")");
+      string error_message = "Syntax error near line " + errstring.substr(p1+1, p2-p1-1) + " of " + errstring.substr(0, p1) + ".  ";
+      if (errstring.find("expected ']' or ','") != string::npos || errstring.find("expected '}' or ','") != string::npos)
+        throw runtime_error(error_message + "Probably you forgot a comma or bracket.");
+      else if (errstring.find("expected value") != string::npos)
+        throw runtime_error(error_message + "Expected a value but did not find one...  probably you have an extra comma.");
+      else if (errstring.find("expected key string") != string::npos)
+        throw runtime_error(error_message + "Expected a keyword but did not find one...  probably you have an extra comma.");
+      else
+        throw;
     }
-    catch (boost::property_tree::json_parser_error& e) {
+  } else if (extension == ".xml") {
+    boost::property_tree::xml_parser::read_xml(input, data_);
+  } else { // Unhelpful file extension -> just try them all!
+    try {
+      boost::property_tree::json_parser::read_json(input, data_);
+    } catch (boost::property_tree::json_parser_error& e) {
       try {
         boost::property_tree::xml_parser::read_xml(input, data_);
-      }
-      catch (boost::property_tree::xml_parser_error& f) {
-        try {
-          BagelParser bp(input);
-          data_ = bp.parse();
-        }
-        catch (bagel_parser_error& g) {
-          throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\', \'.xml\', or (\'.bgl\'|\'.bagel\' )).");
-        }
+      } catch (boost::property_tree::xml_parser_error& g) {
+        throw runtime_error("Failed to determine input file format. Try specifying it with the file extension ( \'.json\' or \'.xml\').");
       }
     }
   }
@@ -123,4 +125,20 @@ shared_ptr<const PTree> PTree::read_basis(string name) {
     }
   }
   return out;
+}
+
+
+shared_ptr<PTree> PTree::get_child(const string& key) const {
+  auto out = data_.get_child_optional(key);
+  if (!out) {
+    string thiskey = get<string>("title", key_);
+    throw runtime_error("A required keyword is missing from the input" + (thiskey.size() ? " for " + thiskey : "") + ":  " + key);
+  }
+  return make_shared<PTree>(*out, key);
+}
+
+
+shared_ptr<PTree> PTree::get_child_optional(const string& key) const {
+  auto out = data_.get_child_optional(key);
+  return out ? make_shared<PTree>(*out, key) : nullptr;
 }

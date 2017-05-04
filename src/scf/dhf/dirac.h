@@ -51,6 +51,7 @@ class Dirac : public Method {
     bool robust_;
 
     int multipole_print_;
+    bool conv_ignore_;
 
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;

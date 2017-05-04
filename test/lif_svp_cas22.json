@@ -13,8 +13,8 @@
 
 {
   "title" : "casscf",
-  "nact" : 0,
-  "nact_cas" : 2,
+  "nopen" : 0,
+  "nact" : 2,
   "nclosed" : 5,
   "thresh" : 1.0e-8
 }

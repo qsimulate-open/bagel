@@ -15,8 +15,8 @@
   "title" : "optimize",
   "method" : [ {
     "title" : "casscf",
-    "nact" : 0,
-    "nact_cas" : 2,
+    "nopen" : 0,
+    "nact" : 2,
     "nclosed" : 4,
     "nstate" : 2
   } ]

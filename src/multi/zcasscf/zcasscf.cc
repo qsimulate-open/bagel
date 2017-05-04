@@ -93,9 +93,6 @@ void ZCASSCF::init() {
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
 
-  // coefficient parameters
-  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
-
   nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
@@ -107,9 +104,8 @@ void ZCASSCF::init() {
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
 
-  // nocc from the input. If not present, full valence active space is generated.
+  // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
@@ -175,6 +171,12 @@ void ZCASSCF::init() {
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
 
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
+  // to save binary archives with each iteration
+  restart_cas_ = idata_->get<bool>("restart_cas", false);
+
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
@@ -194,7 +196,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff && external_rdm_.empty())
+  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space

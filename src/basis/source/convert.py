@@ -14,7 +14,7 @@ filename = argvs[1];
 fp = open(filename, "r");
 lines = fp.read().split("\n")
 
-# converts NWChem format to my format
+# converts Gaussian format to BAGEL format
 
 tag = "****"
 atom = ""

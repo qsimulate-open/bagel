@@ -55,6 +55,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     double thresh_;
     double thresh_micro_;
+    bool conv_ignore_;
+    bool restart_cas_;
 
     int nstate_;
 

@@ -17,7 +17,7 @@
   "thresh" : 1.0e-8,
   "thresh_scf" : 1.0e-9,
   "thresh_fci" : 1.0e-11,
-  "nact_cas"   : 3,
+  "nact"       : 3,
   "nclosed"    : 1,
   "maxiter"    : 20,
   "maxiter_scf"    : 50

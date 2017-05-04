@@ -14,7 +14,7 @@
   "title" : "zcasscf",
   "thresh" : 5.0e-7,
   "state"  : [1],
-  "nact_cas"      : 2,
+  "nact"      : 2,
   "nclosed"   : 0
 }
 

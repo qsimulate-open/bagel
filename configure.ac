@@ -110,7 +110,7 @@ if test "x${libxc}" = xyes; then
 fi
 
 #toggle for smith
-AC_ARG_ENABLE(smith, [AS_HELP_STRING([--enable-smith],[enable SMITH code.])], [compile_smith=yes], [compile_smith=no])
+AC_ARG_ENABLE(smith, [AS_HELP_STRING([--disable-smith],[disable SMITH code.])], [compile_smith=no], [compile_smith=yes])
 if test "x${compile_smith}" != xno; then
   if test "x${with_mpi}" = xno; then
     AC_MSG_ERROR("SMITH requires MPI")

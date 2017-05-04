@@ -167,7 +167,7 @@ shared_ptr<GradFile> Force::compute() {
 
   if (numerical_) {
 
-    const double dx = idata_->get<double>("diffsize", 1.0e-3);
+    const double dx = idata_->get<double>("dx", 1.0e-3);
 
     if (jobtitle == "force") {
 

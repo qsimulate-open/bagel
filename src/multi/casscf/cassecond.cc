@@ -127,8 +127,22 @@ void CASSecond::compute() {
 
     coeff_ = make_shared<Coeff>(*coeff_ * R);
 
-    if (iter == max_iter_-1 && external_rdm_.empty())
-      throw runtime_error("Max iteration reached during the second optimization.");
+    if (iter == max_iter_-1) {
+      if (external_rdm_.empty() && !conv_ignore_) {
+        throw runtime_error("Max iteration reached during the second-order optimization.");
+      } else {
+        muffle_->unmute();
+        cout << endl << "    * Max iteration reached during the second-order optimization.  Convergence not reached! *   " << endl << endl;
+      }
+    }
+#ifndef DISABLE_SERIALIZATION
+    if (restart_cas_) {
+      stringstream ss; ss << "casscf_" << iter;
+      OArchive archive(ss.str());
+      auto ref = make_shared<const Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+      archive << ref;
+    }
+#endif
   }
   muffle_->unmute();
 
