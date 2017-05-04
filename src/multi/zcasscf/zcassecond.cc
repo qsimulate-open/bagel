@@ -186,8 +186,14 @@ void ZCASSecond::compute() {
     kramers_adapt(R, nvirt_);
     coeff_ = make_shared<RelCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
 
-    if (iter == max_iter_-1 && external_rdm_.empty())
-      throw runtime_error("Max iteration reached during the second optimization.");
+    if (iter == max_iter_-1) {
+      if (external_rdm_.empty() && !conv_ignore_) {
+        throw runtime_error("Max iteration reached during the second-order optimization.");
+      } else {
+        muffle_->unmute();
+        cout << endl << "    * Max iteration reached during the second-order optimization.  Convergence not reached! *   " << endl << endl;
+      }
+    }
   }
 
   // this is not needed for energy, but for consistency we want to have this...

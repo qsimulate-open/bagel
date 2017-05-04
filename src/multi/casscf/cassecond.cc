@@ -127,8 +127,14 @@ void CASSecond::compute() {
 
     coeff_ = make_shared<Coeff>(*coeff_ * R);
 
-    if (iter == max_iter_-1 && external_rdm_.empty())
-      throw runtime_error("Max iteration reached during the second optimization.");
+    if (iter == max_iter_-1) {
+      if (external_rdm_.empty() && !conv_ignore_) {
+        throw runtime_error("Max iteration reached during the second-order optimization.");
+      } else {
+        muffle_->unmute();
+        cout << endl << "    * Max iteration reached during the second-order optimization.  Convergence not reached! *   " << endl << endl;
+      }
+    }
   }
   muffle_->unmute();
 

@@ -171,6 +171,9 @@ void ZCASSCF::init() {
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
 
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input

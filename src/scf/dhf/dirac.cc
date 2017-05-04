@@ -71,6 +71,9 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
 
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
   if (nele_ % 2 != 0) {
     if (geom_->nonzero_magnetic_field())
       cout << "   ***  Dirac--Hartree--Fock is not recommended for odd electron counts.  State-averaged CASSCF can better handle near-degeneracies.  ***" << endl;
@@ -158,8 +161,10 @@ void Dirac::compute() {
       }
       break;
     } else if (iter == max_iter_-1) {
-      cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
-      throw runtime_error("Max iteration reached in Dirac--Fock SCF");
+      if (!conv_ignore_)
+        throw runtime_error("Max iteration reached in Dirac--Hartree--Fock SCF");
+      else
+        cout << endl << indent << "  * Max iteration reached in Dirac--Hartree--Fock SCF.  Convergence not reached! *   " << endl << endl;
     }
 
     if (iter >= diis_start_) {
