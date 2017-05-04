@@ -199,7 +199,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
-  skip_self_interaction_ = true;
+  skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -312,7 +312,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
-  skip_self_interaction_ = true;
+  skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -358,7 +358,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
 
-  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", true);
+  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", skip_self_interaction_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
@@ -442,7 +442,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
   dofmm_ = nmer.front()->dofmm_;
-  skip_self_interaction_ = true;
+  skip_self_interaction_ = nmer.front()->skip_self_interaction_;
 
   /************************************************************
   * Going down the list of protected variables, merge the     *
