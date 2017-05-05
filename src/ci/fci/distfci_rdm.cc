@@ -206,7 +206,20 @@ DistFCI::compute_rdm12_last_step(shared_ptr<const DistDvec> dbra, shared_ptr<con
 
 
 shared_ptr<Dvec> DistFCI::rdm1deriv(const int istate) const {
-  return nullptr;
+
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+  cc_->set_det(detex);
+  shared_ptr<DistCivec> cbra = cc_->data(istate);
+
+  // 1RDM ci derivative
+  // <I|E_ij|0>
+
+  auto dbra = make_shared<DistDvec>(cbra->det(), norb_*norb_);
+  dbra->zero();
+  sigma_2a1(cbra, dbra);
+  sigma_2a2(cbra, dbra);
+
+  return distdvec_to_dvec(dbra);
 }
 
 

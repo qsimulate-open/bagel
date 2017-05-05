@@ -127,6 +127,7 @@ class DistFCI : public FCI_base {
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Dvec> conv_to_dvec() const;
+    std::shared_ptr<Dvec> distdvec_to_dvec(std::shared_ptr<const DistDvec> d) const;
     std::shared_ptr<const DistDvec> dvec_to_distdvec(std::shared_ptr<const Dvec> c) const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 

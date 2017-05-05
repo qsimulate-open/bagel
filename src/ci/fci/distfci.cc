@@ -498,6 +498,14 @@ shared_ptr<const Dvec> DistFCI::conv_to_dvec() const {
   return cc;
 }
 
+shared_ptr<Dvec> DistFCI::distdvec_to_dvec(shared_ptr<const DistDvec> d) const {
+  vector<shared_ptr<Civec>> vec;
+  for (auto& i : d->dvec())
+    vec.push_back(i->civec());
+  auto cc = make_shared<Dvec>(Dvector_base<Civec>(vec));
+  return cc;
+}
+
 shared_ptr<const DistDvec> DistFCI::dvec_to_distdvec(shared_ptr<const Dvec> c) const {
   vector<shared_ptr<DistCivec>> vec;
   for (auto& i : c->dvec())
