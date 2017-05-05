@@ -49,6 +49,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   maxiter_ = idata->get<int>("maxiter", 50);
   maxtile_ = idata->get<int>("maxtile", 10);
   cimaxtile_ = idata->get<int>("cimaxtile", (ciwfn()->civectors()->size() > 10000) ? 100 : 10);
+  cimaxchunk_ = idata->get<int>("cimaxchunk", 317520001);
 
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", true);
