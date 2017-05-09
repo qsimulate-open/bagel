@@ -63,7 +63,7 @@ void RHF::compute() {
   shared_ptr<const DistMatrix> coeff;
   shared_ptr<const DistMatrix> aodensity;
 
-//  auto fmmK = make_shared<const FMM>(geom_, 5/*ns*/, 10/*lmaxJ*/, 1.0e-12/*fmmthresh*/, 0.5/*ws*/, false/*exchange*/, 3/*lmaxK*/);
+//  auto fmmK = make_shared<const FMM>(geom_, 5/*ns*/, 10/*lmaxJ*/, 1.0e-12/*fmmthresh*/, -0.05/*ws*/, true/*exchange*/, 2/*lmaxK*/);
   if (!restarted_) {
     if (coeff_ == nullptr) {
       shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
@@ -87,8 +87,6 @@ void RHF::compute() {
           shared_ptr<const Matrix> tmpKnf = fmmK->compute_Fock_FMM_K(aden);
           shared_ptr<const Matrix> tmpK = fmmK->compute_K_ff_from_den(aden, overlap_);
           focka = make_shared<const Matrix>(*hcore_ + *tmpJ + *tmpKnf - *tmpK);
-          //shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aden);
-          //focka = make_shared<const Matrix>(*hcore_ + *tmp);
 #endif
         }
         fock = focka->distmatrix();
@@ -116,8 +114,6 @@ void RHF::compute() {
         shared_ptr<const Matrix> tmpKnf = fmmK->compute_Fock_FMM_K(aodensity_);
         shared_ptr<const Matrix> tmpK = fmmK->compute_K_ff(make_shared<const Matrix>(coeff_->slice(0, nocc_)), overlap_);
         focka = make_shared<const Matrix>(*hcore_ + *tmpJ + *tmpKnf - *tmpK);
-        //shared_ptr<const Matrix> tmp = fmm_->compute_Fock_FMM(aodensity_);
-        //focka = make_shared<const Matrix>(*hcore_ + *tmp);
 #endif
       }
       DistMatrix intermediate = *tildex % *focka->distmatrix() * *tildex;
@@ -191,10 +187,10 @@ void RHF::compute() {
       previous_fock = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK);
       //previous_fock = make_shared<const Matrix>(*previous_fock + *tmpJ - *tmpK);
 #else
-      shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM_J(densitychange);
-      shared_ptr<const Matrix> tmpKnf = fmmK->compute_Fock_FMM_K(densitychange);
+      shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM_J(aodensity_);
+      shared_ptr<const Matrix> tmpKnf = fmmK->compute_Fock_FMM_K(aodensity_);
       shared_ptr<const Matrix> tmpK = fmmK->compute_K_ff(make_shared<const Matrix>(coeff_->slice(0, nocc_)), overlap_);
-      previous_fock = make_shared<const Matrix>(*previous_fock + *tmpJ + *tmpKnf - *tmpK);
+      previous_fock = make_shared<const Matrix>(*hcore_ + *tmpJ + *tmpKnf - *tmpK);
 #endif
     }
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();

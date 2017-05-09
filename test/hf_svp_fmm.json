@@ -18,8 +18,10 @@
   "df" : "false",
   "ns" : "2",
   "lmax" : "10",
-  "ws" : "1",
+  "ws" : "0",
   "title" : "hf",
+  "exchange" : "true",
+  "lmax_exchange" : "2",
   "thresh" : 1.0e-10
 }
 
