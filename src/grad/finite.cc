@@ -39,8 +39,6 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
   double energy_plus, energy_minus;
 
-  displ->scale(0.0);
-
   shared_ptr<Method> energy_method;
 
   energy_method = construct_method(method_, idata_, geom_, ref_);
@@ -108,8 +106,6 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   auto displ = make_shared<XYZFile>(geom_->natom());
   auto grad_ci = std::make_shared<GradFile>(geom_->natom());
   auto grad = make_shared<GradFile>(geom_->natom());
-
-  displ->scale(0.0);
 
   shared_ptr<Method> energy_method;
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
