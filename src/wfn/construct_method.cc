@@ -101,8 +101,6 @@ shared_ptr<Method> construct_method(string title, shared_ptr<const PTree> itree,
       else
         throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
     }
-    else if (title == "caspt2") out = make_shared<CASPT2Energy>(itree, geom, ref);
-    else if (title == "caspt2grad") out = make_shared<CASPT2Grad>(itree, geom, ref);
     else if (title == "nevpt2")  out = make_shared<NEVPT2<double>>(itree, geom, ref);
     else if (title == "dnevpt2") out = make_shared<NEVPT2<complex<double>>>(itree, geom, ref);
     else if (title == "zcasscf") {
