@@ -34,60 +34,56 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
-  auto displ = std::make_shared<XYZFile>(geom_->natom());
-  auto grad = std::make_shared<GradFile>(geom_->natom());
-
-  double energy_plus, energy_minus;
-
-  shared_ptr<Method> energy_method;
-
-  energy_method = construct_method(method_, idata_, geom_, ref_);
-  energy_method->compute();
-  ref_ = energy_method->conv_to_ref();
-  energy_ = ref_->energy(target_state_);
-
-  shared_ptr<const Reference> refgrad_plus;
-  shared_ptr<const Reference> refgrad_minus;
-
-  cout << "  Reference energy is " << energy_ << endl << endl;
-
   Timer timer;
   muffle_ = make_shared<Muffle>("finite.log");
 
-  for (int i = 0; i != geom_->natom(); ++i) {
-    for (int j = 0; j != 3; ++j) {
+  const int natom = geom_->natom();
+  auto grad = make_shared<GradFile>(natom);
 
+  for (int i = 0; i != natom; ++i) {    // atom i
+    for (int j = 0; j != 3; ++j) {      // xyz
       muffle_->mute();
-      displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/false);
-      geom_->print_atoms();
 
-      refgrad_plus = make_shared<Reference>(*ref_, nullptr);
-      refgrad_plus = refgrad_plus->project_coeff(geom_);
+      double energy_plus;
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = dx_;
+        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_plus->print_atoms();
 
-      energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
-      energy_method->compute();
-      refgrad_plus = energy_method->conv_to_ref();
-      energy_plus = refgrad_plus->energy(target_state_);
+        if (ref_)
+          ref_ = ref_->project_coeff(geom_plus);
 
-      displ->element(j,i) = -2.0 * dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/false);
-      geom_->print_atoms();
+        for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+          const string title = to_lower((*m)->get<string>("title", ""));
+          auto c = construct_method(title, *m, geom_plus, ref_);
+          if (!c) throw runtime_error("unknown method in FiniteGrad");
+          c->compute();
+          ref_ = c->conv_to_ref();
+        }
+        energy_plus = ref_->energy(target_state_);
+      }
 
-      refgrad_minus = make_shared<Reference>(*ref_, nullptr);
-      refgrad_minus = refgrad_minus->project_coeff(geom_);
+      double energy_minus;
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = -dx_;
+        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_minus->print_atoms();
 
-      energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
-      energy_method->compute();
-      refgrad_minus = energy_method->conv_to_ref();
-      energy_minus = refgrad_minus->energy(target_state_);
+        if (ref_)
+          ref_ = ref_->project_coeff(geom_minus);
 
-      grad->element(j,i) = (energy_plus - energy_minus) / (dx_ * 2.0);      // Hartree / bohr
-
-      displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, make_shared<const PTree>(), /*rotate=*/false, /*nodf=*/true);
-
-      displ->element(j,i) = 0.0;
+        for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+          const string title = to_lower((*m)->get<string>("title", ""));
+          auto c = construct_method(title, *m, geom_minus, ref_);
+          if (!c) throw runtime_error("unknown method in FiniteGrad");
+          c->compute();
+          ref_ = c->conv_to_ref();
+        }
+        energy_minus = ref_->energy(target_state_);
+      }
+      grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
       muffle_->unmute();
       stringstream ss; ss << "Finite difference evaluation (" << setw(2) << i*3+j+1 << " / " << geom_->natom() * 3 << ")";
       timer.tick_print(ss.str());
@@ -103,98 +99,89 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr(s)" << endl;
 
-  auto displ = make_shared<XYZFile>(geom_->natom());
-  auto grad_ci = std::make_shared<GradFile>(geom_->natom());
-  auto grad = make_shared<GradFile>(geom_->natom());
+  const int natom = geom_->natom();
 
-  shared_ptr<Method> energy_method;
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
-  int nclosed = ref_->nclosed();
-  int nocc = ref_->nocc();
-  shared_ptr<const Matrix> acoeff_ref;
-  acoeff_ref = make_shared<Matrix>(ref_->coeff()->slice(nclosed, nocc));
   civ_ref->print (/*sort=*/false);
 
-  shared_ptr<const Reference> refgrad_plus;
-  shared_ptr<const Reference> refgrad_minus;
-  shared_ptr<Dvec> civ_plus;
-  shared_ptr<Dvec> civ_minus;
-  shared_ptr<Dvec> civ_diff;
-  shared_ptr<Matrix> acoeff_plus;
-  shared_ptr<Matrix> acoeff_minus;
-  shared_ptr<Matrix> acoeff_diff;
+  const int nclosed = ref_->nclosed();
+  const int nocc = ref_->nocc();
 
-  auto Smn = make_shared<Overlap>(geom_);
-  const int norb = civ_ref->det()->norb();
-  const int lena = civ_ref->det()->lena();
-  const int lenb = civ_ref->det()->lenb();
-  auto gmo = make_shared<Matrix>(norb, norb);
-  gmo->zero();
-
-  assert(norb==(nocc-nclosed));
   Timer timer;
   muffle_ = make_shared<Muffle>("finite.log");
 
-  for (int i = 0; i != geom_->natom(); ++i) {
-    for (int j = 0; j != 3; ++j) {
+  auto acoeff_ref = make_shared<Matrix>(ref_->coeff()->slice(nclosed, nocc));
+  auto grad = make_shared<GradFile>(natom);
+  const int norb = civ_ref->det()->norb();
+  auto gmo = make_shared<Matrix>(norb, norb);
+  gmo->zero();
+
+  for (int i = 0; i != natom; ++i) {      // atom i
+    for (int j = 0; j != 3; ++j) {        // xyz
       muffle_->mute();
-      displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, false);
-      geom_->print_atoms();
 
-      refgrad_plus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_plus = nullptr;
+      shared_ptr<Matrix> acoeff_plus;
+      shared_ptr<Dvec> civ_plus;
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = dx_;
+        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_plus->print_atoms();
 
-      energy_method = construct_method(method_, idata_, geom_, refgrad_plus);
-      energy_method->compute();
-      refgrad_plus = energy_method->conv_to_ref();
-      acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
-      for (int im = 0; im != acoeff_ref->mdim(); ++im) {
-        double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
-        if (dmatch < 0.0)
-          blas::scale_n(-1.0, acoeff_plus->element_ptr(0, im), acoeff_ref->ndim());
+        if (ref_)
+          ref_ = ref_->project_coeff(geom_plus);
+
+        auto energy_method = construct_method(method_, idata_, geom_plus, ref_);
+        energy_method->compute();
+        auto refgrad_plus = energy_method->conv_to_ref();
+        acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
+        for (int im = 0; im != acoeff_ref->mdim(); ++im) {
+          double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
+          if (dmatch < 0.0)
+            blas::scale_n(-1.0, acoeff_plus->element_ptr(0, im), acoeff_ref->ndim());
+        }
+        civ_plus = refgrad_plus->civectors()->copy();
+        civ_plus->match(civ_ref);
       }
 
-      civ_plus = refgrad_plus->civectors()->copy();
-      civ_plus->match(civ_ref);
+      shared_ptr<Matrix> acoeff_minus;
+      shared_ptr<Dvec> civ_minus;
+      {
+        auto displ = make_shared<XYZFile>(natom);
+        displ->element(j,i) = -dx_;
+        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+        geom_minus->print_atoms();
 
-      displ->element(j,i) = -2.0 * dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, false);
-      geom_->print_atoms();
+        if (ref_)
+          ref_ = ref_->project_coeff(geom_minus);
 
-      refgrad_minus = make_shared<Reference> (*ref_, nullptr);
-      refgrad_minus = nullptr;
-
-      energy_method = construct_method(method_, idata_, geom_, refgrad_minus);
-      energy_method->compute();
-      refgrad_minus = energy_method->conv_to_ref();
-      acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
-      for (int im = 0; im != acoeff_ref->mdim(); ++im) {
-        double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
-        if (dmatch < 0.0)
-          blas::scale_n(-1.0, acoeff_minus->element_ptr(0, im), acoeff_ref->ndim());
+        auto energy_method = construct_method(method_, idata_, geom_minus, ref_);
+        energy_method->compute();
+        auto refgrad_minus = energy_method->conv_to_ref();
+        acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
+        for (int im = 0; im != acoeff_ref->mdim(); ++im) {
+          double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
+          if (dmatch < 0.0)
+            blas::scale_n(-1.0, acoeff_minus->element_ptr(0, im), acoeff_ref->ndim());
+        }
+        civ_minus = refgrad_minus->civectors()->copy();
+        civ_minus->match(civ_ref);
       }
 
-      civ_minus = refgrad_minus->civectors()->copy();
-      civ_minus->match(civ_ref);
-
-      civ_diff = civ_plus->copy();
+      auto civ_diff = civ_plus->copy();
       *civ_diff -= *civ_minus;
       civ_diff->scale(1.0 / (2.0 * dx_));
-      acoeff_diff = make_shared<Matrix>(*acoeff_plus - *acoeff_minus);
+      grad->element(j,i) = civ_ref->data(target_state1_)->dot_product(civ_diff->data(target_state2_));
+
+      auto acoeff_diff = make_shared<Matrix>(*acoeff_plus - *acoeff_minus);
       acoeff_diff->scale(1.0 / (2.0 * dx_));
 
-      displ->element(j,i) = dx_;
-      geom_ = make_shared<Geometry>(*geom_, displ, idata_, false, true);
-
-      displ->element(j,i) = 0.0;
-
-      grad->element(j,i) = civ_ref->data(target_state1_)->dot_product(civ_diff->data(target_state2_));
-      grad_ci->element(j,i) = grad->element(j,i);
-
+      auto Smn = make_shared<Overlap>(geom_);
       auto Uij = make_shared<Matrix>(*acoeff_ref % *Smn * *acoeff_diff);
       for (int ii = 0; ii != norb; ++ii) {
         for (int ij = 0; ij != norb; ++ij) {
+          const int lena = civ_ref->det()->lena();
+          const int lenb = civ_ref->det()->lenb();
           if (ii != ij) {
             for (auto& iter : civ_ref->det()->phia(ii, ij)) {
               size_t iaA = iter.source;
@@ -208,7 +195,6 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
                   gmo->element(ij, ii) += factor * .5;
                   gmo->element(ii, ij) -= factor * .5;
                 }
-
               }
             }
             for (size_t ia = 0; ia != lena; ++ia) {
@@ -232,15 +218,11 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
       timer.tick_print(ss.str());
     }
   }
-  grad_ci->print(": CI term without orbital relaxation, <cJ|d/dXa cI>", 0);
   auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
-  auto grad_basis = make_shared<GradFile>(geom_->natom());
+  auto grad_basis = make_shared<GradFile>(natom);
   grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
-
-  grad->print(": CI term, <cJ|d/dXa cI>", 0);
-  grad_basis->print(": CSF term, basis set derivative (analytically calculated)", 0);
-
   *grad += *grad_basis;
+
   grad->print(": NACME calculated with finite difference", 0);
 
   return grad;
