@@ -63,7 +63,7 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t nact  = info_->nact();
   const size_t norb2 = nact*nact;
-  const size_t ijmax = 635040001;
+  const size_t ijmax = info_->cimaxchunk();
   const size_t ijnum = ndet * norb2 * norb2;
   const size_t npass = (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
@@ -254,8 +254,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
     }
 
     auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
-    int iter = 0;
-    for ( ; iter != info_->maxiter(); ++iter) {
+    for (int iter = 0; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
 
       const double norm = t[i]->norm();

@@ -120,7 +120,7 @@ class Geometry : public Molecule {
     Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 
     // Returns a constant
-    std::shared_ptr<const Matrix> compute_grad_vnuc(const bool skip_self_interaction = true) const;
+    std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
     bool dkh() const { return dkh_; }

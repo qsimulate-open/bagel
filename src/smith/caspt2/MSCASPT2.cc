@@ -136,7 +136,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     const size_t ndet = ci_deriv_->data(nst)->size();
     const size_t nact  = info_->nact();
     const size_t norb2 = nact*nact;
-    const size_t ijmax = 317520001;
+    const size_t ijmax = info_->cimaxchunk();
     const size_t ijnum = ndet * norb2 * norb2;
     const size_t npass = (ijnum-1) / ijmax + 1;
     const size_t nsize = (ndet-1) / npass + 1;

@@ -126,8 +126,6 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
   auto grad = make_shared<GradFile>(geom_->natom());
   auto vd1a = make_shared<Matrix>(*task_->vd1());
 
-  displ->scale(0.0);
-
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   int nclosed = ref_->nclosed();
   int nocc = ref_->nocc();

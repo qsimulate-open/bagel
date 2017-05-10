@@ -80,7 +80,8 @@ class Molecule {
     std::array<double,3> magnetic_field_;
 
     // Computes the nuclear repulsion energy.
-    double compute_nuclear_repulsion(const bool skip_self_interaction = true);
+    bool skip_self_interaction_;
+    double compute_nuclear_repulsion();
 
     // Constructor helpers
     void common_init1();
@@ -92,7 +93,7 @@ class Molecule {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & spherical_ & aux_merged_ & nbasis_ & nele_ & nfrc_ & naux_ & lmax_ & aux_lmax_ & offsets_ & aux_offsets_ & basisfile_ & auxfile_
-         & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & gamma_ & external_ & magnetic_field_ & dofmm_;
+         & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & gamma_ & external_ & magnetic_field_ & dofmm_ & skip_self_interaction_;
     }
 
   public:
@@ -122,6 +123,7 @@ class Molecule {
     double gamma() const {return gamma_; }
     int nirrep() const { return nirrep_; }
     bool dofmm() const { return dofmm_; }
+    bool skip_self_interaction() { return skip_self_interaction_; }
 
     // The position of the specific function in the basis set.
     const std::vector<std::vector<int>>& offsets() const { return offsets_; }
