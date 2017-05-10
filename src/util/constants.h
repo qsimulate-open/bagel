@@ -79,14 +79,6 @@ static constexpr unsigned int nbit__ = 64;
 ************************************************************/
 static constexpr double schwarz_thresh__ = 1.0e-12;  // TODO input
 
-/************************************************************
-*  MPI parameters                                           *
-************************************************************/
-static constexpr size_t probe_key__  = (1 << 20);
-static constexpr size_t probe_key2__ = (1 << 26);
-static constexpr size_t pool_size__ = 100;
-static constexpr std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
-
 }
 
 #endif
