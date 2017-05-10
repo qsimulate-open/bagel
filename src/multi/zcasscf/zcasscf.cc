@@ -172,6 +172,8 @@ void ZCASSCF::init() {
 
     scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
+    if (nr_coeff_->ndim() != nr_coeff_->mdim())
+      remove_lindep(4*nr_coeff_->mdim());
     scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }
 

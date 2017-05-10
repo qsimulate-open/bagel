@@ -81,7 +81,6 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int
 }
 
 
-// TODO rewrite this so it can tolerate linear dependency
 shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
   // constructs a relativistic coefficient for electronic components from a non-rel coefficient
   const int n = nr_coeff->ndim();
@@ -90,22 +89,16 @@ shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix
 
   // compute T^(-1/2)
   shared_ptr<ZMatrix> t12 = overlap_->get_submatrix(n*2, n*2, n, n);
-  assert(t12->inverse_half(1.0e-10));
+  t12 = t12->tildex(1.0e-10);
 
   // compute S^(1/2)
   shared_ptr<ZMatrix> shalf = overlap_->get_submatrix(0, 0, n, n);
-  VectorB eig2(shalf->mdim());
-  shalf->diagonalize(eig2);
-  for (int k = 0; k != shalf->mdim(); ++k) {
-    if (real(eig2[k]) >= 0.0)
-      blas::scale_n(sqrt(sqrt(eig2(k))), shalf->element_ptr(0, k), shalf->ndim());
-  }
-  *shalf = *shalf ^ *shalf;
+  shalf = shalf->tildex(1.0e-10);
 
   // compute positronic orbital coefficients
   auto tcoeff = make_shared<ZMatrix>(n, m);
-  tcoeff->add_real_block(1.0, 0, 0, n, n, *nr_coeff);
-  *tcoeff = *t12 * *shalf * *tcoeff;
+  tcoeff->add_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  *tcoeff = *t12 * (*shalf % *tcoeff);
 
   // build output coefficient matrix
   auto out = make_shared<RelCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
