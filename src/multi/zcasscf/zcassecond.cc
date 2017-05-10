@@ -281,7 +281,8 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   // lambda for computing g(D) - only Coulomb
   auto compute_gd = [&,this](list<shared_ptr<const RelDFHalf>> halftc, list<shared_ptr<const RelDFHalf>> halfjjc,
                              shared_ptr<const ZMatrix> pcoeff, shared_ptr<const ZMatrix> tpcoeff) {
-    auto dfock =  make_shared<DFock>(geom_, cfock->clone(), pcoeff, tpcoeff, halfjjc, halftc);
+    auto aozero = make_shared<ZMatrix>(4*geom_->nbasis(), 4*geom_->nbasis());
+    auto dfock =  make_shared<DFock>(geom_, aozero, pcoeff, tpcoeff, halfjjc, halftc);
     dfock->hermite();
     return dfock;
   };

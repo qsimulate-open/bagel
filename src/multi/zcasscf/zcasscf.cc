@@ -299,6 +299,6 @@ void ZCASSCF::remove_lindep(const int nspinor) {
   const int ndel = (4*geom_->nbasis() - nspinor) / 4;
   nbasis_ -= 2*ndel;
   nneg_ -= 2*ndel;
-  nvirt_ -= ndel;
+  nvirt_ -= 2*ndel;
   nvirtnr_ -= ndel;
 }
