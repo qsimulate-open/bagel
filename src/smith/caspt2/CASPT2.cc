@@ -254,8 +254,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
     }
 
     auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
-    int iter = 0;
-    for ( ; iter != info_->maxiter(); ++iter) {
+    for (int iter = 0; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
 
       const double norm = t[i]->norm();

@@ -109,9 +109,8 @@ void RelMRCI::RelMRCI::solve() {
   rtmp->zero();
 
   Timer mtimer;
-  int iter = 0;
   vector<bool> conv(nstates_, false);
-  for ( ; iter != info_->maxiter(); ++iter) {
+  for (int iter = 0; iter != info_->maxiter(); ++iter) {
 
     // loop over state of interest
     vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
@@ -201,7 +200,7 @@ void RelMRCI::RelMRCI::solve() {
 
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
-  print_iteration(iter == info_->maxiter());
+  print_iteration(!all_of(conv.begin(), conv.end(), [](bool i){ return i;}));
   timer.tick_print("MRCI energy evaluation");
 
   // Davidson corrections...

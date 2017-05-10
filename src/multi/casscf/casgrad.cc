@@ -358,7 +358,7 @@ shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
   if (nacmtype_ == 0)
     qxmat->scale(egap);
   else
-    qxmat->scale(0.0);
+    qxmat->zero();
 
   auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
   auto qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());

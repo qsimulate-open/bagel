@@ -280,7 +280,7 @@ shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
   if (nacmtype_==0)
     qxmat->scale(egap);
   else
-    qxmat->scale(0.0);
+    qxmat->zero();
 
   auto qxmatao = make_shared<Matrix>(*coeff * (*qxmat) ^ *coeff);
 
