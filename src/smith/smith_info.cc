@@ -117,7 +117,9 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const
     maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_), nacmtype_(info->nacmtype_),
     maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), nacm_(info->nacm_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
-    shift_diag_(info->shift_diag_), thresh_overlap_(info->thresh_overlap_), aniso_data_(info->aniso_data_) {
+    shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),
+    restart_each_iter_(info->restart_each_iter_), thresh_overlap_(info->thresh_overlap_),
+    state_begin_(info->state_begin_), restart_iter_(info->restart_iter_), aniso_data_(info->aniso_data_), external_rdm_(info->external_rdm_) {
 }
 
 
