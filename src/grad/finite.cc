@@ -59,10 +59,10 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
-        auto ref_plus = make_shared<const Reference>(*ref_);
 
-        if (ref_plus)
-          ref_plus = ref_plus->project_coeff(geom_plus);
+        shared_ptr<const Reference> ref_plus;
+        if (ref_)
+          ref_plus = ref_->project_coeff(geom_plus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
           const string title = to_lower((*m)->get<string>("title", ""));
@@ -80,10 +80,10 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
-        auto ref_minus = make_shared<const Reference>(*ref_);
 
-        if (ref_minus)
-          ref_minus = ref_minus->project_coeff(geom_minus);
+        shared_ptr<const Reference> ref_minus;
+        if (ref_)
+          ref_minus = ref_->project_coeff(geom_minus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
           const string title = to_lower((*m)->get<string>("title", ""));
@@ -138,10 +138,10 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
-        auto ref_plus = make_shared<const Reference>(*ref_);
+        shared_ptr<const Reference> ref_plus;
 
-        if (ref_plus)
-          ref_plus = ref_plus->project_coeff(geom_plus);
+        if (ref_)
+          ref_plus = ref_->project_coeff(geom_plus);
 
         auto energy_method = construct_method(method_, idata_, geom_plus, ref_plus);
         energy_method->compute();
@@ -163,10 +163,10 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
-        auto ref_minus = make_shared<const Reference>(*ref_);
+        shared_ptr<const Reference> ref_minus;
 
-        if (ref_minus)
-          ref_minus = ref_minus->project_coeff(geom_minus);
+        if (ref_)
+          ref_minus = ref_->project_coeff(geom_minus);
 
         auto energy_method = construct_method(method_, idata_, geom_minus, ref_minus);
         energy_method->compute();
