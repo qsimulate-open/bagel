@@ -26,18 +26,18 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Active space decomposition method" href="../asd/asd.html" />
-    <link rel="prev" title="Molecular Hessian and frequency analysis" href="../grad/hess.html" /> 
+    <link rel="next" title="Interface to dynamics codes" href="../grad/dynamics.html" />
+    <link rel="prev" title="Nuclear gradient and derivative coupling" href="../grad/force.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../asd/asd.html" title="Active space decomposition method"
+          <a href="../grad/dynamics.html" title="Interface to dynamics codes"
              accesskey="N">next</a></li>
         <li class="right" >
-          <a href="../grad/hess.html" title="Molecular Hessian and frequency analysis"
+          <a href="../grad/force.html" title="Nuclear gradient and derivative coupling"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
@@ -399,7 +399,11 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed. In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals, (4*e*,3*o*). Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair). The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target). In this example, we optimize the ground state.</p>
+<p>Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed.
+In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals.
+Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
+The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target).
+In this example, we optimize the ground state.</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
   <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
@@ -498,11 +502,11 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../grad/hess.html"
-                        title="previous chapter">Molecular Hessian and frequency analysis</a></p>
+  <p class="topless"><a href="../grad/force.html"
+                        title="previous chapter">Nuclear gradient and derivative coupling</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../asd/asd.html"
-                        title="next chapter">Active space decomposition method</a></p>
+  <p class="topless"><a href="../grad/dynamics.html"
+                        title="next chapter">Interface to dynamics codes</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
@@ -521,10 +525,10 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../asd/asd.html" title="Active space decomposition method"
+          <a href="../grad/dynamics.html" title="Interface to dynamics codes"
              >next</a></li>
         <li class="right" >
-          <a href="../grad/hess.html" title="Molecular Hessian and frequency analysis"
+          <a href="../grad/force.html" title="Nuclear gradient and derivative coupling"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
