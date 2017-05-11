@@ -138,8 +138,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
-        shared_ptr<const Reference> ref_plus;
 
+        shared_ptr<const Reference> ref_plus;
         if (ref_)
           ref_plus = ref_->project_coeff(geom_plus);
 
@@ -163,8 +163,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
-        shared_ptr<const Reference> ref_minus;
 
+        shared_ptr<const Reference> ref_minus;
         if (ref_)
           ref_minus = ref_->project_coeff(geom_minus);
 
