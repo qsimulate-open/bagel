@@ -59,18 +59,19 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
+        auto ref_plus = make_shared<const Reference>(*ref_);
 
-        if (ref_)
-          ref_ = ref_->project_coeff(geom_plus);
+        if (ref_plus)
+          ref_plus = ref_plus->project_coeff(geom_plus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
           const string title = to_lower((*m)->get<string>("title", ""));
-          auto c = construct_method(title, *m, geom_plus, ref_);
+          auto c = construct_method(title, *m, geom_plus, ref_plus);
           if (!c) throw runtime_error("unknown method in FiniteGrad");
           c->compute();
-          ref_ = c->conv_to_ref();
+          ref_plus = c->conv_to_ref();
         }
-        energy_plus = ref_->energy(target_state_);
+        energy_plus = ref_plus->energy(target_state_);
       }
 
       double energy_minus;
@@ -79,18 +80,19 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
+        auto ref_minus = make_shared<const Reference>(*ref_);
 
-        if (ref_)
-          ref_ = ref_->project_coeff(geom_minus);
+        if (ref_minus)
+          ref_minus = ref_minus->project_coeff(geom_minus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
           const string title = to_lower((*m)->get<string>("title", ""));
-          auto c = construct_method(title, *m, geom_minus, ref_);
+          auto c = construct_method(title, *m, geom_minus, ref_minus);
           if (!c) throw runtime_error("unknown method in FiniteGrad");
           c->compute();
-          ref_ = c->conv_to_ref();
+          ref_minus = c->conv_to_ref();
         }
-        energy_minus = ref_->energy(target_state_);
+        energy_minus = ref_minus->energy(target_state_);
       }
       grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
       muffle_->unmute();
@@ -136,11 +138,12 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = dx_;
         auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_plus->print_atoms();
+        auto ref_plus = make_shared<const Reference>(*ref_);
 
-        if (ref_)
-          ref_ = ref_->project_coeff(geom_plus);
+        if (ref_plus)
+          ref_plus = ref_plus->project_coeff(geom_plus);
 
-        auto energy_method = construct_method(method_, idata_, geom_plus, ref_);
+        auto energy_method = construct_method(method_, idata_, geom_plus, ref_plus);
         energy_method->compute();
         auto refgrad_plus = energy_method->conv_to_ref();
         acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
@@ -160,11 +163,12 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
         displ->element(j,i) = -dx_;
         auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
         geom_minus->print_atoms();
+        auto ref_minus = make_shared<const Reference>(*ref_);
 
-        if (ref_)
-          ref_ = ref_->project_coeff(geom_minus);
+        if (ref_minus)
+          ref_minus = ref_minus->project_coeff(geom_minus);
 
-        auto energy_method = construct_method(method_, idata_, geom_minus, ref_);
+        auto energy_method = construct_method(method_, idata_, geom_minus, ref_minus);
         energy_method->compute();
         auto refgrad_minus = energy_method->conv_to_ref();
         acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
