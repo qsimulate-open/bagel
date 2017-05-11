@@ -171,7 +171,7 @@ shared_ptr<GradFile> Force::compute() {
 
     if (jobtitle == "force") {
 
-      auto force = make_shared<FiniteGrad>(method, input, geom_, ref_, target, dx);
+      auto force = make_shared<FiniteGrad>(input, geom_, ref_, target, dx);
       out = force->compute();
       ref = force->ref();
 

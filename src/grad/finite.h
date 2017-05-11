@@ -43,12 +43,11 @@ class FiniteGrad : public GradEval_base {
 
     int target_state_;
     double dx_;
-    std::string method_;
 
   public:
     // Constructor does nothing here
-    FiniteGrad(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), method_(method) {
+    FiniteGrad(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx) {
     }
 
     // compute() computes effective density matrices and perform gradient contractions

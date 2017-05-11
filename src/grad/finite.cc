@@ -31,6 +31,15 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<GradFile> FiniteGrad::compute() {
+  for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+    const string title = to_lower((*m)->get<string>("title", ""));
+    auto c = construct_method(title, *m, geom_, ref_);
+    if (!c) throw runtime_error("unknown method in FiniteGrad");
+    c->compute();
+    ref_ = c->conv_to_ref();
+  }
+  energy_ = ref_->energy(target_state_);
+
   cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
