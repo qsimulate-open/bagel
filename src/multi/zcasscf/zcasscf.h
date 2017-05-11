@@ -55,6 +55,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     double thresh_;
     double thresh_micro_;
+    double thresh_overlap_;
     bool conv_ignore_;
     bool restart_cas_;
 
@@ -103,6 +104,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
     void print_natocc(const VectorB& ocup) const;
+    // just updates nvirt_, etc. if we have a linearly dependent basis set
+    void remove_lindep(const int nspinor);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -117,6 +120,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
+    double thresh_overlap() const { return thresh_overlap_; }
     bool tsymm() const { return tsymm_; }
     std::vector<double> energy() const { return energy_; }
 

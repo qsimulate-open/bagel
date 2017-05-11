@@ -128,12 +128,16 @@ void ZCASSCF::init() {
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)
     throw runtime_error("too many closed orbitals in the input");
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
   shared_ptr<const RelCoeff_Striped> scoeff;
   if (hcore_guess) {
-    auto s12 = overlap_->tildex(1.0e-10);
+    auto s12 = overlap_->tildex(thresh_overlap_);
+    if (s12->mdim() != s12->ndim())
+      remove_lindep(s12->mdim());
+
     auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
     VectorB eig(hctmp->ndim());
     hctmp->diagonalize(eig);
@@ -142,27 +146,35 @@ void ZCASSCF::init() {
 
     // first set coefficient
     scoeff = relref->relcoeff_full();
-    // If we have fewer MOs than AOs (such as after coefficient projection)
+
+    // If we have fewer MOs than AOs (linearly dependent basis set and/or coefficient projection)
     if (4 * geom_->nbasis() != scoeff->mdim()) {
-      shared_ptr<const ZMatrix> tildex = overlap_->tildex(1.0e-10);
+      shared_ptr<const ZMatrix> tildex = overlap_->tildex(thresh_overlap_);
+      if (tildex->mdim() != tildex->ndim())
+        remove_lindep(tildex->mdim());
 
-      ZMatrix c(scoeff->ndim(), tildex->mdim());
-      c.copy_block(0, 0, scoeff->ndim(), scoeff->npos(), scoeff->slice(0, scoeff->npos()));
-      c.copy_block(0, tildex->mdim() - scoeff->nneg(), scoeff->ndim(), scoeff->nneg(), scoeff->slice(scoeff->npos(), scoeff->mdim()));
+      // Still not enough MOs (such as after coefficient projection)
+      if (scoeff->mdim() != 2 * nbasis_) {
+        ZMatrix c(scoeff->ndim(), tildex->mdim());
+        c.copy_block(0, 0, scoeff->ndim(), scoeff->npos(), scoeff->slice(0, scoeff->npos()));
+        c.copy_block(0, tildex->mdim() - scoeff->nneg(), scoeff->ndim(), scoeff->nneg(), scoeff->slice(scoeff->npos(), scoeff->mdim()));
 
-      shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
-      c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
+        shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
+        c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
 
-      scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
-      scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
+        scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
+        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
 #ifndef NDEBUG
-      ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
-      assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
+        ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
+        assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
 #endif
+      }
     }
 
     scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
+    if (nr_coeff_->ndim() != nr_coeff_->mdim())
+      remove_lindep(4*nr_coeff_->mdim());
     scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }
 
@@ -257,7 +269,7 @@ shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
   if (nact_)
     out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
                                     fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
-  else 
+  else
     out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
   return out;
 }
@@ -281,4 +293,15 @@ shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_pt
   const bool do_gaunt = !coulomb_only && gaunt_;
   const bool do_breit = !coulomb_only && breit_;
   return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), do_gaunt, do_breit, /*store half*/false, /*robust*/do_breit);
+}
+
+
+void ZCASSCF::remove_lindep(const int nspinor) {
+  assert(nspinor < (4 * geom_->nbasis()));
+  assert(nspinor % 4 == 0);
+  const int ndel = (4*geom_->nbasis() - nspinor) / 4;
+  nbasis_ -= 2*ndel;
+  nneg_ -= 2*ndel;
+  nvirt_ -= 2*ndel;
+  nvirtnr_ -= ndel;
 }
