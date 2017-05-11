@@ -61,7 +61,7 @@ Write results from a vibrational frequency calculation:
 
    { "bagel" : [
 
-   .... energy calculation....
+   .... energy and Hessian calculation ....
 
    {
      "title" : "print",

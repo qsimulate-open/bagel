@@ -177,7 +177,10 @@ Sample input: force
  ]}
 
 
-Using the same molecule block, a XMS-CASPT2 analytical gradient calculation can be performed. In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals (4*e*,3*o*). Three sets of  :math:`\pi` and :math:`\pi^*` orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair). The CASSCF orbitals are state-averaged over three states.
+Using the same molecule block, a XMS-CASPT2 analytical gradient calculation can be performed.
+In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals.
+Three sets of  :math:`\pi` and :math:`\pi^*` orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
+The CASSCF orbitals are state-averaged over three states.
 
 .. code-block:: javascript
 
