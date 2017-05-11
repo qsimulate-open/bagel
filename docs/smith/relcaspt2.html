@@ -1,0 +1,363 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Relativistic multireference second-order perturbation theory (RelCASPT2) &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Relativistic Multireference configuration interaction (RelMRCI)" href="relmrci.html" />
+    <link rel="prev" title="Multireference configuration interaction (MRCI)" href="mrci.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="relmrci.html" title="Relativistic Multireference configuration interaction (RelMRCI)"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="mrci.html" title="Multireference configuration interaction (MRCI)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="smith.html" accesskey="U">SMITH3-generated code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="relativistic-multireference-second-order-perturbation-theory-relcaspt2">
+<span id="relcaspt2"></span><h1>Relativistic multireference second-order perturbation theory (RelCASPT2)<a class="headerlink" href="#relativistic-multireference-second-order-perturbation-theory-relcaspt2" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The relativistic version of the fully internally contracted CASPT2. As in its non-relativistic analogue, single-state calculations,
+multi-state calculations, and its extended variant are available. Of course, this is implemented with the automatic code generator SMITH3.</p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="casscf-keywords">
+<h3>CASSCF keywords<a class="headerlink" href="#casscf-keywords" title="Permalink to this headline">¶</a></h3>
+<p>See <a class="reference internal" href="../multi/casscf.html#casscf"><span class="std std-ref">Complete active space self-consistent field (CASSCF)</span></a>.</p>
+</div>
+<div class="section" id="smith-keywords">
+<h3>SMITH keywords<a class="headerlink" href="#smith-keywords" title="Permalink to this headline">¶</a></h3>
+<p>The default values are recommended unless mentioned otherwise.</p>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">title</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Method to use in SMITH-generated code.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">caspt2</span></code>: Request (Rel)CASPT2 calculation.</div>
+<div class="line"><code class="docutils literal"><span class="pre">mrci</span></code>: Request (Rel)MRCI calculation.</div>
+<div class="line"><code class="docutils literal"><span class="pre">casa</span></code>: Request (Rel)CAS/A calculation.</div>
+</div>
+<div class="line"><strong>Default:</strong> N/A.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ms</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Do multistate CASPT2.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Do MS-CASPT2.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do SS-CASPT2.</div>
+</div>
+<div class="line"><strong>Default:</strong> true.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">xms</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Do extended multistate CASPT2.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Do XMS-CASPT2.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do MS-CASPT2.</div>
+</div>
+<div class="line"><strong>Default:</strong> true.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">sssr</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Use SS-SR contraction scheme.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use SS-SR contraction scheme.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use MS-MR contraction scheme.</div>
+</div>
+<div class="line"><strong>Default:</strong> true.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">shift</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Vertical shift.</div>
+<div class="line"><strong>Datatype:</strong> double precision</div>
+<div class="line"><strong>Default:</strong> 0.0</div>
+<div class="line"><strong>Recommendation:</strong> Use default. Increase the value if the convergence problem presents.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Convergence threshold.</div>
+<div class="line"><strong>Datatype:</strong> double precision</div>
+<div class="line"><strong>Default:</strong> For single point energy calculation, 1.0e-6. Tight convergence for gradient calculation, 1.0e-8.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Overlap cutoff threshold for internally contracted basis.</div>
+<div class="line"><strong>Datatype:</strong> Double precision</div>
+<div class="line"><strong>Default:</strong> 1.0-9</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Freeze core orbitals.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: true</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of frozen core orbitals.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> If <code class="docutils literal"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nfrozenvirt</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of frozen virtual orbitals.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 0</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of iterations in CASPT2 calculations.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 50</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxtile</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of orbitals in a single data tile used in CASPT2.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 10</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">cimaxtile</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of Slater determinants in a single data tile used in CASPT2 gradient.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 100 (When number of determinants is over 10000), 10 (otherwise)</div>
+<div class="line"><strong>Recommendation:</strong> Use default. Increase further when the number of determinants is larger.</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>XMS-CASPT2 calculation based on the two-state CASSCF reference function, with vertical shift of 0.2 <span class="math">\(E_h\)</span>. &#8220;SS-SR&#8221; contraction scheme is used.
+The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</span> and three <span class="math">\(\pi^*\)</span> orbitals, is used.</p>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.079002</span><span class="p">,</span>      <span class="mf">2.543870</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.557470</span><span class="p">,</span>      <span class="mf">2.543870</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.875630</span><span class="p">,</span>      <span class="mf">4.826190</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.557250</span><span class="p">,</span>      <span class="mf">7.109950</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.002266</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.078588</span><span class="p">,</span>      <span class="mf">7.109800</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.003171</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.396870</span><span class="p">,</span>      <span class="mf">4.826620</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001289</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.117900</span><span class="p">,</span>      <span class="mf">0.744245</span><span class="p">,</span>      <span class="mf">0.000850</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.595900</span><span class="p">,</span>      <span class="mf">0.743875</span><span class="p">,</span>      <span class="mf">0.002485</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.953730</span><span class="p">,</span>      <span class="mf">4.826340</span><span class="p">,</span>      <span class="mf">0.001198</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.596980</span><span class="p">,</span>      <span class="mf">8.909240</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.002377</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.118170</span><span class="p">,</span>      <span class="mf">8.909350</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.004972</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.474820</span><span class="p">,</span>      <span class="mf">4.826960</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001629</span> <span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;ms&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;xms&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;sssr&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span>
+  <span class="p">}</span>
+  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">6</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">18</span><span class="p">,</span>
+  <span class="s2">&quot;active&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">17</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bagel-references">
+<h3>BAGEL References<a class="headerlink" href="#bagel-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="35%" />
+<col width="65%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SMITH3</td>
+<td>M. K. MacLeod and T. Shiozaki, J. Chem. Phys. <strong>142</strong>, 010507 (2015).</td>
+</tr>
+<tr class="row-odd"><td>Relativistic CASPT2</td>
+<td>T. Shiozaki and W. Mizukami, J. Chem. Theory Comput. <strong>11</strong>, 4733 (2015).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="general-references">
+<h3>General References<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="67%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>CASPT2</td>
+<td>K. Andersson, P.-Å. Malmqvist, and B. O. Roos, J. Chem. Phys. <strong>96</strong>, 1218 (1992).</td>
+</tr>
+<tr class="row-odd"><td>MS-CASPT2</td>
+<td>J. Finley, P.-Å. Malmqvist, B. O. Roos, and L. Serrano-Andres, Chem. Phys. Lett. <strong>288</strong>, 299 (1998).</td>
+</tr>
+<tr class="row-even"><td>Extended multiconfigurational perturbation theory</td>
+<td>A. A. Granovsky, J. Chem. Phys. <strong>134</strong>, 214113 (2011).</td>
+</tr>
+<tr class="row-odd"><td>XMS-CASPT2</td>
+<td>T. Shiozaki, W. Győrffy, P. Celani, and H.-J. Werner, J. Chem. Phys. <strong>135</strong>, 081106 (2011).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mrci.html"
+                        title="previous chapter">Multireference configuration interaction (MRCI)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="relmrci.html"
+                        title="next chapter">Relativistic Multireference configuration interaction (RelMRCI)</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="relmrci.html" title="Relativistic Multireference configuration interaction (RelMRCI)"
+             >next</a></li>
+        <li class="right" >
+          <a href="mrci.html" title="Multireference configuration interaction (MRCI)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="smith.html" >SMITH3-generated code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

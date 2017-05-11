@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Nuclear gradients and related functionalities &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Description of input structure" href="methods.html" />
+    <link rel="prev" title="Relativistic Multireference configuration interaction (RelMRCI)" href="../smith/relmrci.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="methods.html" title="Description of input structure"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="../smith/relmrci.html" title="Relativistic Multireference configuration interaction (RelMRCI)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" accesskey="U"><strong>BAGEL user manual</strong></a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="nuclear-gradients-and-related-functionalities">
+<span id="grad"></span><h1>Nuclear gradients and related functionalities<a class="headerlink" href="#nuclear-gradients-and-related-functionalities" title="Permalink to this headline">¶</a></h1>
+<p>BAGEL supports efficient evaluations of analytical energy gradient and derivative couplings for various quantum chemistry methods. This enables BAGEL to take you on a journey on the potential energy surface of the molecule of interest, such as frequency analysis, geometry optimizations, and direct molecular dynamics (MD) simulations.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="methods.html">Description of input structure</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="methods.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="force.html">Nuclear gradient and derivative coupling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="force.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="force.html#keywords">Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="force.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="force.html#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dynamics.html">Interface to dynamics codes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dynamics.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamics.html#keywords">Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dynamics.html#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="hess.html">Molecular Hessian and frequency analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="hess.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hess.html#keywords">Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hess.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hess.html#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../opt/optimize.html">Molecular geometry optimization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../opt/optimize.html#description">Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt/optimize.html#keywords">Keywords</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt/optimize.html#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../opt/optimize.html#references">References</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../smith/relmrci.html"
+                        title="previous chapter">Relativistic Multireference configuration interaction (RelMRCI)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="methods.html"
+                        title="next chapter">Description of input structure</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="methods.html" title="Description of input structure"
+             >next</a></li>
+        <li class="right" >
+          <a href="../smith/relmrci.html" title="Relativistic Multireference configuration interaction (RelMRCI)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

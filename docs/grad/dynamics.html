@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Interface to dynamics codes &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Molecular Hessian and frequency analysis" href="hess.html" />
+    <link rel="prev" title="Nuclear gradient and derivative coupling" href="force.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="hess.html" title="Molecular Hessian and frequency analysis"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="force.html" title="Nuclear gradient and derivative coupling"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" accesskey="U">Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="interface-to-dynamics-codes">
+<span id="dynamics"></span><h1>Interface to dynamics codes<a class="headerlink" href="#interface-to-dynamics-codes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>BAGEL can be used for performing QM/MM calculations and direct dynamics simulations, by interfacing it to external software.
+The &#8220;electrostatic embedding&#8221; scheme is used in inserting the QM region in MM region. BAGEL exports the gradients of the energy with respect
+to the displacements of the QM particles and MM particles in a form that can be directly read by the dynamics codes.</p>
+<div class="section" id="how-it-works">
+<h3>How It Works<a class="headerlink" href="#how-it-works" title="Permalink to this headline">¶</a></h3>
+<p>The communications between the quantum chemistry codes and the molecular dynamics codes are based on the text files.
+For example, in molecular dynamics (MD) jobs, after the trajectory initiates, the positions of the QM atoms and MM particles,
+and the charges of MM particles are passed into BAGEL, in a form of text input.
+The quantum chemical calculation is performed to calculate any needed quantities
+(such as energies, its gradients, and NACMEs for nonadiabatic dynamics). This is passed (exported) to the form that can be
+read by the dynamics program, and the dynamics program propagates the trajectory according to these gradients. After a
+one time integration step, the positions of QM atoms and MM particles are again passed into BAGEL.
+This continues until the trajectory integration ends.</p>
+<p>In summary, to perform the dynamics simulations with external programs one needs:</p>
+<ol class="arabic simple">
+<li>quantum chemistry input writer in the dynamics program</li>
+<li>quantum chemistry information output writer in the quantum chemistry program</li>
+<li>quantum chemistry output parser in the dynamics program</li>
+</ol>
+<ol class="arabic simple" start="2">
+<li>is included in BAGEL (with a keyword of <code class="docutils literal"><span class="pre">export</span></code> and <code class="docutils literal"><span class="pre">export_single</span></code>); the users should insert (1) and (3) in the dynamics code.</li>
+</ol>
+</div>
+<div class="section" id="input-format">
+<h3>Input Format<a class="headerlink" href="#input-format" title="Permalink to this headline">¶</a></h3>
+<p>The BAGEL input for QM/MM jobs is same to that used in the quantum chemistry, except for the external charges.
+The external MM charge can be added in BAGEL calculation, as</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;Q&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">%</span><span class="nx">lf</span><span class="p">,</span>   <span class="o">%</span><span class="nx">lf</span><span class="p">,</span>   <span class="o">%</span><span class="nx">lf</span> <span class="p">],</span> <span class="s2">&quot;charge&quot;</span> <span class="o">:</span>    <span class="o">%</span><span class="nx">lf</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal"><span class="pre">xyz</span></code> has the positions, and <code class="docutils literal"><span class="pre">charge</span></code> has the charge on the MM particle (in the units of e).</p>
+</div>
+<div class="section" id="export-format">
+<h3>Export Format<a class="headerlink" href="#export-format" title="Permalink to this headline">¶</a></h3>
+<p>Some of dynamics software reads the informations in a fixed form. The gradient export format is as follows.
+The name of the file exported is <code class="docutils literal"><span class="pre">ENERGY.txt</span></code> (energy), <code class="docutils literal"><span class="pre">FORCE_%d.txt</span></code> (gradient, %d is the number of the state)
+and <code class="docutils literal"><span class="pre">NACME_%d_%d.txt</span></code> (derivative coupling). The gradient is written in <code class="docutils literal"><span class="pre">FORCE.txt</span></code> when <code class="docutils literal"><span class="pre">export_single</span></code> is <code class="docutils literal"><span class="pre">true</span></code>.</p>
+<div class="highlight-cpp"><div class="highlight"><pre><span></span>                         <span class="mi">0</span>                   <span class="mi">1</span>                   <span class="mi">2</span>
+      <span class="o">%</span><span class="mi">6</span><span class="n">d</span>         <span class="o">%</span><span class="mf">20.10</span><span class="n">lf</span>            <span class="o">%</span><span class="mf">20.10</span><span class="n">lf</span>            <span class="o">%</span><span class="mf">20.10</span><span class="n">lf</span>
+<span class="c1">//(atomno)   (X component)       (Y component)       (Z component)</span>
+</pre></div>
+</div>
+<p>Note that the QM and MM atoms is not distinguished to each other in the exported output.
+The exported gradients and nonadiabatic couplings are in the units of Hartrees/bohr and 1/bohr.
+The energy is also exported, as</p>
+<div class="highlight-cpp"><div class="highlight"><pre><span></span>      <span class="o">%</span><span class="mf">20.10</span><span class="n">lf</span>
+<span class="c1">//   (statewise energy)</span>
+</pre></div>
+</div>
+<p>The energies for the multiple states in ascending order are exported in the same file when one does multi-state
+calculations, such as SA-CASSCF and XMS-CASPT2.</p>
+</div>
+<div class="section" id="files-to-be-modified-in-dynamics-software">
+<h3>Files to be Modified in Dynamics Software<a class="headerlink" href="#files-to-be-modified-in-dynamics-software" title="Permalink to this headline">¶</a></h3>
+<p>Some source codes in the dynamics software should be modified. Many of the dynamics software in fact have QM/MM
+interfaces to the other quantum chemistry software, and by modifying the existent interface, one can perform the
+QM/MM dynamics or gas phase dynamics simulations. For instance, to perform QM/MM calculations in <code class="docutils literal"><span class="pre">GROMACS</span></code>, one should modify</p>
+<p><code class="docutils literal"><span class="pre">src/gromacs/mdlib/qmmm.c</span></code>,</p>
+<p>add a BAGEL interface code to</p>
+<p><code class="docutils literal"><span class="pre">src/gromacs/mdlib/qm_bagel.c</span></code>.</p>
+<p>This should contain the code for writing appropriately formatted input for BAGEL.
+Additionally, include BAGEL for QM package for QM/MM in the CMake installation option in</p>
+<p><code class="docutils literal"><span class="pre">CMakeLists.txt</span></code></p>
+<p>(as of version 5.1.4).</p>
+</div>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">export</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> Use <code class="docutils literal"><span class="pre">true</span></code>.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">export_single</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file for a single state.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> Use <code class="docutils literal"><span class="pre">true</span></code> with single state dynamics / optimizations.</div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="general-references">
+<h3>General References<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Nonadiabatic dynamics (Surface hopping)</td>
+<td>M. Barbatti, WIREs Comput. Mol. Sci. <strong>1</strong>, 620 (2011).</td>
+</tr>
+<tr class="row-odd"><td>Excited state QM/MM in biomolecules</td>
+<td>E. Brunk and U. Rothlisburger, Chem. Rev. <strong>115</strong>, 6217 (2015).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="force.html"
+                        title="previous chapter">Nuclear gradient and derivative coupling</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="hess.html"
+                        title="next chapter">Molecular Hessian and frequency analysis</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="hess.html" title="Molecular Hessian and frequency analysis"
+             >next</a></li>
+        <li class="right" >
+          <a href="force.html" title="Nuclear gradient and derivative coupling"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" >Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

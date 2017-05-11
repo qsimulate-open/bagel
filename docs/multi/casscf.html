@@ -1,0 +1,392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Complete active space self-consistent field (CASSCF) &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Relativistic complete active space self-consistent field (RelCASSCF)" href="zcasscf.html" />
+    <link rel="prev" title="Multiconfiguration self-consistent field" href="multi.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="zcasscf.html" title="Relativistic complete active space self-consistent field (RelCASSCF)"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="multi.html" title="Multiconfiguration self-consistent field"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="multi.html" accesskey="U">Multiconfiguration self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="complete-active-space-self-consistent-field-casscf">
+<span id="casscf"></span><h1>Complete active space self-consistent field (CASSCF)<a class="headerlink" href="#complete-active-space-self-consistent-field-casscf" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>CASSCF simultaneously optimizes the orbital coefficients and the CI coefficients of all the possible determinants generated from the active space.
+The state-averaging scheme can be used for calculating excited states. When reference wavefunctions are given as a input to a CASSCF calculation,
+a Hartree&#8211;Fock calculation is performed by default prior to CASSCF. For the Hartree&#8211;Fock options, see the SCF section.</p>
+<p>A two-step second-order algorithm is implemented in BAGEL. At each macroiteration,
+the CI coefficient is optimized by FCI calculations and the orbitals are updated. Microiterations are used for iteratively solving augmented Hessian problems for orbital updates.</p>
+<p>The CASSCF algorithm in BAGEL is very robust. If it fails to converge, it is highly likely that your active space is wrong, or your guess orbitals are wrong.</p>
+<p>Title: <code class="docutils literal"><span class="pre">casscf</span></code></p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nstate</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of states included in the state averaging.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 1.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nact</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of active orbitals.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 0.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nclosed</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of closed orbitals.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> Number of electrons / 2.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify active orbitals. Note that the orbital index starts from 1.</div>
+<div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
+<div class="line"><strong>Default:</strong> Nact / 2 orbitals lower and higher from the valence orbital.</div>
+<div class="line"><strong>Example:</strong></div>
+<div class="line-block">
+<div class="line">[36, 37, 39] : include 36th, 37th, and 39th orbitals.</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Orbital optimization algorithm.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">second</span></code>: second-order algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">noopt</span></code>: no orbital optimization.</div>
+</div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">second</span></code></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">fci_algorithm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> FCI algorithm employed in each macroiteration.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">knowles</span></code>, <code class="docutils literal"><span class="pre">handy</span></code>, <code class="docutils literal"><span class="pre">kh</span></code>: Knowles&#8211;Handy Algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">harrison</span></code>, <code class="docutils literal"><span class="pre">zarrabian</span></code>, <code class="docutils literal"><span class="pre">hz</span></code>: Harrison&#8211;Zarrabian Algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">parallel</span></code>, <code class="docutils literal"><span class="pre">dist</span></code>: Parallel FCI algorithm.</div>
+</div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">parallel</span></code> (when the number of active orbital is larger than 9 and number of process is larger than 8), <code class="docutils literal"><span class="pre">knowles</span></code> (otherwise)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Convergence threshold in macroiteration.</div>
+<div class="line"><strong>Datatype:</strong> double precision</div>
+<div class="line"><strong>Default:</strong> 1.0e-8.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_micro</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Convergence threshold in microiteration.</div>
+<div class="line"><strong>Datatype:</strong> double precision</div>
+<div class="line"><strong>Default:</strong> 5.0e-6.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  If set to &#8220;true,&#8221; BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  If set to &#8220;true&#8221;, after each macroiteration the orbitals will be written to a binary archive with filename &#8220;casscf_&lt;iter&gt;.archive&#8221;.
+They can be read back in using the &#8220;load_ref&#8221; module.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: If set to &#8220;true,&#8221; occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  Molecular charge.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 0</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of macroiteration.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 50.</div>
+<div class="line"><strong>Recommendation:</strong> Increase if convergence is not obtained.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_micro</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of microiteration.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 100.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_fci</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Maximum number of iterations in CI coefficient optimization</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: copied from <code class="docutils literal"><span class="pre">maxiter</span></code></div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Two-state CASSCF calculation of benzene. The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</span> and three <span class="math">\(\pi^*\)</span> orbitals, is used.</p>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.079002</span><span class="p">,</span>      <span class="mf">2.543870</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.557470</span><span class="p">,</span>      <span class="mf">2.543870</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.875630</span><span class="p">,</span>      <span class="mf">4.826190</span><span class="p">,</span>      <span class="mf">0.000000</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.557250</span><span class="p">,</span>      <span class="mf">7.109950</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.002266</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.078588</span><span class="p">,</span>      <span class="mf">7.109800</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.003171</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.396870</span><span class="p">,</span>      <span class="mf">4.826620</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001289</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.117900</span><span class="p">,</span>      <span class="mf">0.744245</span><span class="p">,</span>      <span class="mf">0.000850</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.595900</span><span class="p">,</span>      <span class="mf">0.743875</span><span class="p">,</span>      <span class="mf">0.002485</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.953730</span><span class="p">,</span>      <span class="mf">4.826340</span><span class="p">,</span>      <span class="mf">0.001198</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.596980</span><span class="p">,</span>      <span class="mf">8.909240</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.002377</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.118170</span><span class="p">,</span>      <span class="mf">8.909350</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.004972</span> <span class="p">]</span> <span class="p">},</span>
+  <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.474820</span><span class="p">,</span>      <span class="mf">4.826960</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001629</span> <span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">},</span>
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">6</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">18</span><span class="p">,</span>
+  <span class="s2">&quot;active&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">17</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>the out of which is shown below. Note that the specified active orbitals are printed in the output.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
+    <span class="nx">CASSCF</span> <span class="nx">calculation</span>
+<span class="o">---------------------------</span>
+
+
+  <span class="o">====</span> <span class="nx">Active</span> <span class="nx">orbitals</span> <span class="o">:</span> <span class="o">=====</span>
+       <span class="nx">Orbital</span> <span class="mi">17</span>
+       <span class="nx">Orbital</span> <span class="mi">20</span>
+       <span class="nx">Orbital</span> <span class="mi">21</span>
+       <span class="nx">Orbital</span> <span class="mi">22</span>
+       <span class="nx">Orbital</span> <span class="mi">23</span>
+       <span class="nx">Orbital</span> <span class="mi">30</span>
+  <span class="o">============================</span>
+
+  <span class="o">*</span> <span class="nx">nstate</span>   <span class="o">:</span>      <span class="mi">2</span>
+  <span class="o">*</span> <span class="nx">nclosed</span>  <span class="o">:</span>     <span class="mi">18</span>
+  <span class="o">*</span> <span class="nx">nact</span>     <span class="o">:</span>      <span class="mi">6</span>
+  <span class="o">*</span> <span class="nx">nvirt</span>    <span class="o">:</span>     <span class="mi">90</span>
+<span class="o">===</span> <span class="nx">CASSCF</span> <span class="nx">iteration</span> <span class="p">(</span><span class="nx">svp</span><span class="p">)</span> <span class="o">===</span>
+
+  <span class="o">*</span> <span class="nx">Using</span> <span class="nx">the</span> <span class="nx">second</span><span class="o">-</span><span class="nx">order</span> <span class="nx">algorithm</span>
+
+    <span class="mi">0</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.58939332</span>     <span class="mf">3.18e-03</span>      <span class="mf">0.06</span>
+    <span class="mi">0</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.39960500</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.06</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">9.89e-02</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.06e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.40e-01</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.13e-02</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.21e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.56e-01</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.72e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.23e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.48e-01</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.64e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.23e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.49e-01</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.09e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.23e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.49e-01</span>    <span class="mf">0.04</span>
+
+    <span class="mi">1</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.60443140</span>     <span class="mf">3.79e-04</span>      <span class="mf">0.37</span>
+    <span class="mi">1</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.42264578</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.37</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.06e-02</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.62e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.57e-02</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.13e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.81e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.76e-02</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.31e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.82e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.69e-02</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.53e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.82e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.69e-02</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.21e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.82e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.69e-02</span>    <span class="mf">0.04</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">5.33e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.82e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.69e-02</span>    <span class="mf">0.02</span>
+
+    <span class="mi">2</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.60501843</span>     <span class="mf">1.17e-05</span>      <span class="mf">0.36</span>
+    <span class="mi">2</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.42244692</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.36</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.38e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.11e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.86e-04</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.75e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.21e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.32e-04</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">8.19e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.21e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.41e-04</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.11e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.21e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.41e-04</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">8.72e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.21e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.41e-04</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.97e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.21e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.41e-04</span>    <span class="mf">0.03</span>
+
+    <span class="mi">3</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.60502169</span>     <span class="mf">3.97e-07</span>      <span class="mf">0.36</span>
+    <span class="mi">3</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.42244379</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.36</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">6.62e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.91e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.92e-05</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.37e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.98e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.91e-05</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.63e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.99e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.82e-05</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.76e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.99e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.82e-05</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">5.65e-09</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.99e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.82e-05</span>    <span class="mf">0.02</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.68e-09</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.99e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.82e-05</span>    <span class="mf">0.03</span>
+
+    <span class="mi">4</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.60502176</span>     <span class="mf">2.01e-08</span>      <span class="mf">0.36</span>
+    <span class="mi">4</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.42244372</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.36</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.09e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.58e-13</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.33e-06</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.14e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.74e-13</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.33e-06</span>    <span class="mf">0.03</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.28e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.76e-13</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.28e-06</span>    <span class="mf">0.04</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.75e-09</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.76e-13</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.28e-06</span>    <span class="mf">0.02</span>
+
+    <span class="mi">5</span>  <span class="mi">0</span>      <span class="o">-</span><span class="mf">230.60502177</span>     <span class="mf">1.21e-09</span>      <span class="mf">0.33</span>
+    <span class="mi">5</span>  <span class="mi">1</span>      <span class="o">-</span><span class="mf">230.42244372</span>     <span class="mf">0.00e+00</span>      <span class="mf">0.33</span>
+
+  <span class="o">*</span> <span class="nx">Second</span><span class="o">-</span><span class="nx">order</span> <span class="nx">optimization</span> <span class="nx">converged</span><span class="p">.</span> <span class="o">*</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p>The second-order orbital optimization is implemented with an assistance of Takeshi Yanai (Institute for Molecular Science, Japan).</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="multi.html"
+                        title="previous chapter">Multiconfiguration self-consistent field</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="zcasscf.html"
+                        title="next chapter">Relativistic complete active space self-consistent field (RelCASSCF)</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="zcasscf.html" title="Relativistic complete active space self-consistent field (RelCASSCF)"
+             >next</a></li>
+        <li class="right" >
+          <a href="multi.html" title="Multiconfiguration self-consistent field"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="multi.html" >Multiconfiguration self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

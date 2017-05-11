@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Saving and loading MOs and CI coefficients &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Supplementary information" href="../supp_info/supp_info.html" />
+    <link rel="prev" title="Printing orbital densities to cube files" href="moprint.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../supp_info/supp_info.html" title="Supplementary information"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="moprint.html" title="Printing orbital densities to cube files"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" accesskey="U">Miscellaneous features</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="saving-and-loading-mos-and-ci-coefficients">
+<span id="save-ref"></span><h1>Saving and loading MOs and CI coefficients<a class="headerlink" href="#saving-and-loading-mos-and-ci-coefficients" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>A binary file can be produced to store the geometry, converged molecular orbitals, and for multi-configurational methods, CI coefficients.
+This file can be read back to provide a reference for a future calculation.</p>
+<p>For some non-relativistic methods, this feature is redundant with the restart capability provided by writing and reading Molden files, but
+the binary archives used in this module are compatible with every method in BAGEL.</p>
+<p>Binary archives generated using a different version of BAGEL might not be readable.</p>
+<p>Commands: <code class="docutils literal"><span class="pre">save_ref</span></code> and <code class="docutils literal"><span class="pre">load_ref</span></code></p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">file</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Name of the file to be generated.  The extension .archive will be appended.</div>
+<div class="line-block">
+<div class="line">A complete path can be supplied, or the name of a file in the current working directory.</div>
+</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Default:</strong>  &#8220;reference&#8221;</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">continue_geom</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  This option is only used with load_ref.</div>
+<div class="line-block">
+<div class="line">By default, the geometry is read from the binary archive file and used without modification.</div>
+<div class="line">If this option is set to false, the molecular orbitals from the archive will be projected to a new geometry or</div>
+<div class="line">basis set provided earlier in the input file.</div>
+</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong>  true</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The following input files show how to use this restart feature.
+The example given is for relativistic CASSCF calculations of the ground triplet for the oxygen dimer.
+The initial calculation obtains a wavefunction for a 4-orbital active space comprised of the <span class="math">\(\pi\)</span> and <span class="math">\(\pi^\ast\)</span>
+orbitals and saves the molecular orbital coefficients to a binary archive.</p>
+<p>The second file loads this archive and uses it to give the initial guess for a calculation with a larger 6-orbital active space
+which also includes the <span class="math">\(\sigma\)</span> and <span class="math">\(\sigma^\ast\)</span> orbitals.</p>
+<p>The third file loads the same archive, projects to a slightly different geometry, and runs CASSCF at the new geometry.</p>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<p>Write binary archive:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp-jkfit&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+      <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.210000</span><span class="p">]},</span>
+      <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]}</span>
+    <span class="p">]</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;+2&quot;</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;dhf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;+2&quot;</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;zcasscf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;algorithm&quot;</span> <span class="o">:</span> <span class="s2">&quot;second&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;state&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span>  <span class="o">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span>   <span class="o">:</span> <span class="mi">4</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;save_ref&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;file&quot;</span> <span class="o">:</span> <span class="s2">&quot;/your/directory/filename&quot;</span>
+  <span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Load a binary archive without changing the reference:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;load_ref&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;file&quot;</span> <span class="o">:</span> <span class="s2">&quot;/your/directory/filename&quot;</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;zcasscf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;algorithm&quot;</span> <span class="o">:</span> <span class="s2">&quot;second&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;state&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span>  <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span>   <span class="o">:</span> <span class="mi">8</span>
+  <span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Load a binary archive and use its orbitals to generate an initial guess at a new geometry.
+We could also have changed the basis set in the input, rather than changing the atomic coordinates.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp-jkfit&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+      <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.220000</span><span class="p">]},</span>
+      <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]}</span>
+    <span class="p">]</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;load_ref&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;file&quot;</span> <span class="o">:</span> <span class="s2">&quot;/your/directory/filename&quot;</span>
+    <span class="s2">&quot;continue_geom&quot;</span> <span class="o">:</span> <span class="kc">false</span>
+  <span class="p">},</span>
+
+  <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;zcasscf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;algorithm&quot;</span> <span class="o">:</span> <span class="s2">&quot;second&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;state&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span>  <span class="o">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span>   <span class="o">:</span> <span class="mi">4</span>
+  <span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="moprint.html"
+                        title="previous chapter">Printing orbital densities to cube files</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../supp_info/supp_info.html"
+                        title="next chapter">Supplementary information</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../supp_info/supp_info.html" title="Supplementary information"
+             >next</a></li>
+        <li class="right" >
+          <a href="moprint.html" title="Printing orbital densities to cube files"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" >Miscellaneous features</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

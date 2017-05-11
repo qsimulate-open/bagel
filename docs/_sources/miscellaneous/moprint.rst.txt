@@ -1,0 +1,87 @@
+.. _moprint:
+
+****************************************
+Printing orbital densities to cube files
+****************************************
+
+===========
+Description
+===========
+
+This module prints molecular orbital densities in the Gaussian Cube format.  
+It can be used to view the shape and extent of relativistic or gauge-including molecular orbitals, which cannot 
+be viewed in Molden due to the use of complex basis functions or the four-component framework.  
+
+A separate .cub file is generated for each printed orbital, plus one for the total electron density.  
+The axis vectors are simply the Cartesian *x*, *y*, and *z* axes.  
+
+Command: ``moprint``
+
+========
+Keywords
+========
+
+.. topic:: ``paired``
+
+   | **Description:** Determined whether we plot spatial MOs (true) or spin MOs.  
+   | **Datatype:** bool
+   | **Default:** True, unless we are printing 4-component orbitals generated with an external magnetic field.   
+   | **Recommendation:** Use the default.
+
+.. topic:: ``orbitals``
+
+   | **Description:**  Indices of the molecular orbitals to be printed.
+   | **Datatype:** Vector of integers
+   | **Default:** Prints the active orbitals from CASSCF, and the frontier orbitals from Hartree--Fock
+
+.. topic:: ``ngrid``
+
+   | **Description:** Number of gridpoints in each dimension
+   | **Datatype:** Array of 3 integers
+   | **Default:** 61 gridpoints in each direction
+   | **Recommendation:** It is often reasonable to reduce this parameter, perhaps to [41, 41, 41], in order to lower the time needed to write and read cube files.
+
+.. topic:: ``start_pos``
+
+   | **Description:** Coordinates for one corner of the box within which densities are printed.
+   | **Datatype:** Array of 3 doubles
+   | **Default:** A position is chosen so that all atoms are at least :math:`4 a_0` from the edges of the box.
+   | **Recommendation:** Use the default.
+
+.. topic:: ``inc_size``
+
+   | **Description:** Distances between adjacent gridpoints in each of the three dimensions.
+   | **Datatype:** Array of 3 doubles
+   | **Default:** If "start_pos" is not specified, an increment is chosen so that all atoms are at least :math:`4 a_0` from the edges of the box.
+   |     Otherwise, the default is :math:`0.25 a_0` in each direction.
+   | **Recommendation:** Use the default.
+
+.. topic:: ``angstrom``
+
+   | **Description:** Unit of the "inc_size" parameter
+   | **Datatype:** bool
+   | **Default:** False (meaning Bohr; set to true for angstrom)
+
+=======
+Example
+=======
+
+Sample input
+------------
+
+Write molecular orbitals:
+
+.. code-block:: javascript
+
+   { "bagel" : [
+
+   .... energy calculation....
+
+   {
+     "title" : "moprint",
+     "ngrid" : [ 41, 41, 41 ],
+     "orbitals" : [ 14, 15, 16, 17, 18, 19, 20, 21, 22 ]
+   }
+
+   ]}
+

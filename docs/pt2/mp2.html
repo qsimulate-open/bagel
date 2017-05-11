@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Møller–Plesset perturbation theory (MP2) &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="N-electron valence state perturbation theory (NEVPT2)" href="nevpt2.html" />
+    <link rel="prev" title="Perturbation theory" href="pt2.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="nevpt2.html" title="N-electron valence state perturbation theory (NEVPT2)"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="pt2.html" title="Perturbation theory"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pt2.html" accesskey="U">Perturbation theory</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="moller-plesset-perturbation-theory-mp2">
+<span id="mp2"></span><h1>Møller&#8211;Plesset perturbation theory (MP2)<a class="headerlink" href="#moller-plesset-perturbation-theory-mp2" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>Second-order Møller&#8211;Plesset perturbation theory (MP2) calculations are performed with density fitting using
+the keyword <code class="docutils literal"><span class="pre">&quot;title&quot;</span> <span class="pre">:</span> <span class="pre">&quot;mp2&quot;</span></code>.</p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: to have frozen orbitals or not</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: true</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: manually specify number of frozen orbitals, used when &#8216;frozen&#8217; is turned on</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">aux_basis</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: specify an auxiliary basis set for MP2</div>
+<div class="line"><strong>Datatype</strong>: string</div>
+<div class="line"><strong>Default</strong>: use the same density fitting basis as in <a class="reference internal" href="../molecule/molecule.html#molecule"><span class="std std-ref">Required keywords</span></a></div>
+<div class="line"><strong>Recommendation</strong>: use MP2-fit auxiliary basis (auxiliary basis ends with &#8216;ri&#8217;)</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.20433891360</span><span class="p">,</span>  <span class="mf">0.54285096106</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04748199659</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.20543291352</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.83826393986</span><span class="p">,</span>  <span class="mf">0.12432899108</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.00000600000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.52953889027</span><span class="p">,</span>  <span class="mf">0.20833398505</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">1.20544091352</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.83825393987</span><span class="p">,</span>  <span class="mf">0.12432799108</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">1.20433091360</span><span class="p">,</span>  <span class="mf">0.54284396106</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04748099659</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.00000400000</span><span class="p">,</span>  <span class="mf">1.23314191154</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.13372399041</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">2.13410484690</span><span class="p">,</span>  <span class="mf">1.07591192282</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.12500499103</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">2.13651384673</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.37179190159</span><span class="p">,</span>  <span class="mf">0.18742198655</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.00000000000</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.59646181374</span><span class="p">,</span>  <span class="mf">0.33932597566</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">2.13651384673</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.37179290159</span><span class="p">,</span>  <span class="mf">0.18742198655</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">2.13410684690</span><span class="p">,</span>  <span class="mf">1.07591292282</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.12500599103</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.00000000000</span><span class="p">,</span>  <span class="mf">2.29608983528</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.28688797942</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;mp2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;aux_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-ri&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>The SCF calculation should converge after 11 iterations with energy -230.72159477. The DF-MP2 output is as follows:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">===</span> <span class="nx">DF</span><span class="o">-</span><span class="nx">MP2</span> <span class="nx">calculation</span> <span class="o">===</span>
+
+  <span class="o">*</span> <span class="nx">freezing</span> <span class="mi">6</span> <span class="nx">orbitals</span>
+<span class="nb">Number</span> <span class="k">of</span> <span class="nx">auxiliary</span> <span class="nx">basis</span> <span class="nx">functions</span><span class="o">:</span>      <span class="mi">420</span>
+
+<span class="nx">Since</span> <span class="nx">a</span> <span class="nx">DF</span> <span class="nx">basis</span> <span class="nx">is</span> <span class="nx">specified</span><span class="p">,</span> <span class="nx">we</span> <span class="nx">compute</span> <span class="mi">2</span><span class="o">-</span> <span class="nx">and</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">integrals</span><span class="o">:</span>
+  <span class="nx">o</span> <span class="nx">Being</span> <span class="nx">stored</span> <span class="nx">without</span> <span class="nx">compression</span><span class="p">.</span> <span class="nx">Storage</span> <span class="nx">requirement</span> <span class="nx">is</span> <span class="mf">0.044</span> <span class="nx">GB</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span> <span class="nx">prep</span>                         <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span>                              <span class="mf">0.06</span>
+     <span class="o">-</span> <span class="mi">2</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span>                              <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="nx">computing</span> <span class="nx">inverse</span>                         <span class="mf">0.02</span>
+      <span class="nx">elapsed</span> <span class="nx">time</span><span class="o">:</span>        <span class="mf">0.09</span> <span class="nx">sec</span><span class="p">.</span>
+
+
+<span class="nb">Number</span> <span class="k">of</span> <span class="nx">basis</span> <span class="nx">functions</span><span class="o">:</span>      <span class="mi">114</span>
+<span class="nb">Number</span> <span class="k">of</span> <span class="nx">electrons</span>      <span class="o">:</span>       <span class="mi">42</span>
+
+  <span class="o">*</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">integral</span> <span class="nx">transformation</span> <span class="nx">done</span>
+  <span class="o">*</span> <span class="nx">ncache</span> <span class="o">=</span> <span class="mi">20</span>
+  <span class="o">*</span> <span class="nx">assembly</span> <span class="nx">done</span>
+
+    <span class="nx">MP2</span> <span class="nx">correlation</span> <span class="nx">energy</span><span class="o">:</span>   <span class="o">-</span><span class="mf">0.7813195576</span>      <span class="mf">0.19</span>
+
+    <span class="nx">MP2</span> <span class="nx">total</span> <span class="nx">energy</span><span class="o">:</span>       <span class="o">-</span><span class="mf">231.5029143295</span>
+
+
+  <span class="o">*</span> <span class="nx">METHOD</span><span class="o">:</span> <span class="nx">MP2</span>                                  <span class="mf">0.34</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="40%" />
+<col width="60%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Original reference for MP2</td>
+<td>C. Møller and M. S. Plesset, Phys. Rev. <strong>46</strong>, 618 (1934).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pt2.html"
+                        title="previous chapter">Perturbation theory</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="nevpt2.html"
+                        title="next chapter">N-electron valence state perturbation theory (NEVPT2)</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="nevpt2.html" title="N-electron valence state perturbation theory (NEVPT2)"
+             >next</a></li>
+        <li class="right" >
+          <a href="pt2.html" title="Perturbation theory"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pt2.html" >Perturbation theory</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

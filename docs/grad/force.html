@@ -1,0 +1,428 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Nuclear gradient and derivative coupling &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Interface to dynamics codes" href="dynamics.html" />
+    <link rel="prev" title="Description of input structure" href="methods.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="dynamics.html" title="Interface to dynamics codes"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="methods.html" title="Description of input structure"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" accesskey="U">Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="nuclear-gradient-and-derivative-coupling">
+<span id="force"></span><h1>Nuclear gradient and derivative coupling<a class="headerlink" href="#nuclear-gradient-and-derivative-coupling" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2).</p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="required-keywords">
+<h3>Required Keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">title</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The title of the type of gradient calculation being performed.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong> (force, nacme, dgrad)</div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">force</span></code>: Calculates the gradient (force)</div>
+<div class="line"><code class="docutils literal"><span class="pre">nacme</span></code>: Calculates the non-adiabatic coupling matrix elements</div>
+<div class="line"><code class="docutils literal"><span class="pre">dgrad</span></code>: Difference gradient (only available for CASSCF)</div>
+</div>
+<div class="line"><strong>Default:</strong> N/A</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The method array allows the user to specify one or more methods to be used in the Hessian calculation. See section on input structure for more information.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nacmtype</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Type of non-adiabatic coupling matrix element to be used</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: Use full non-adiabatic coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: Use interstate coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">2</span></code>: Use non-adiabtic coupling with built-in electronic translational factor (ETF)</div>
+</div>
+<div class="line"><strong>Default:</strong> 0</div>
+</div>
+</div>
+</div>
+<div class="section" id="optional-keywords">
+<h3>Optional Keywords<a class="headerlink" href="#optional-keywords" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">numerical</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The gradients will be computed by finite difference.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Uses finite difference</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code> : Uses analytical gradient</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> If available, use analytical gradient. If analytical gradient is not available, BAGEL automatically switches to numerical gradient.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">dx</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The step size used in the displacements in the finite difference calculations. The units are bohr.</div>
+<div class="line"><strong>Datatype:</strong> double precision</div>
+<div class="line"><strong>Default:</strong> 1.0e-3</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">target</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The target state for the energy and gradient evaluation (e.g. which state in a state-averaged CASSCF calculation)</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">int</span></code>: ground state = 0</div>
+</div>
+<div class="line"><strong>Default:</strong> 0</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">target2</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> In an NACME or DGRAD calculation, target2 designates the target state for the second state.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">int</span></code>: first exited state = 1</div>
+</div>
+<div class="line"><strong>Default:</strong> 1</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">export</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> This is used to interface with the QM/MM program. See section on non-adiabatic dynamics.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">export_single</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file for a single state.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> This is used to interface with the QM/MM program. See section on non-adiabatic dynamics.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxziter</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of Z-vector iterations for gradient evaluation. Applies to SA-CASSCF, CASPT2, and MP2 calculations.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 100</div>
+<div class="line"><strong>Recommendation:</strong> Increase the value when Z-vector equation does not converge.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">save_ref</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The reference wavefunction is saved to an archive file.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Archive file is saved</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code> : Archive file is not saved</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+<div class="line"><strong>Recommendation:</strong> Save file if it is likely that the calculation will need to be restarted.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ref_out</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The name of the archive file for the stored reference. The path to the location the file should be written can also be specified here.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>The benzophenone molecule</p>
+<div class="align-center figure" id="id1">
+<a class="reference internal image-reference" href="../_images/benzophenone.png"><img alt="alternate text" src="../_images/benzophenone.png" style="width: 200px;" /></a>
+<p class="caption"><span class="caption-text">The benzophenone molecule with carbon atoms in grey, oxygen in red, and hydrogen in white.</span></p>
+</div>
+<div class="section" id="sample-input-force">
+<h3>Sample input: force<a class="headerlink" href="#sample-input-force" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span> <span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+ <span class="p">{</span>
+   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-jkfit&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+   <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.002493</span><span class="p">,</span>     <span class="o">-</span><span class="mf">2.027773</span><span class="p">,</span>      <span class="mf">0.004882</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.506057</span><span class="p">,</span>     <span class="o">-</span><span class="mf">4.613700</span><span class="p">,</span>      <span class="mf">0.009896</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.536515</span><span class="p">,</span>     <span class="o">-</span><span class="mf">1.276360</span><span class="p">,</span>      <span class="mf">0.003515</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.558724</span><span class="p">,</span>     <span class="o">-</span><span class="mf">6.375134</span><span class="p">,</span>      <span class="mf">0.013503</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.396140</span><span class="p">,</span>     <span class="o">-</span><span class="mf">5.341490</span><span class="p">,</span>      <span class="mf">0.011057</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.478233</span><span class="p">,</span>     <span class="o">-</span><span class="mf">3.024614</span><span class="p">,</span>      <span class="mf">0.007049</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.959539</span><span class="p">,</span>      <span class="mf">0.714937</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000292</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.936441</span><span class="p">,</span>     <span class="o">-</span><span class="mf">5.592475</span><span class="p">,</span>      <span class="mf">0.012127</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.012481</span><span class="p">,</span>     <span class="o">-</span><span class="mf">8.367883</span><span class="p">,</span>      <span class="mf">0.017419</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.418042</span><span class="p">,</span>     <span class="o">-</span><span class="mf">2.380738</span><span class="p">,</span>      <span class="mf">0.005919</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.448750</span><span class="p">,</span>     <span class="o">-</span><span class="mf">6.968581</span><span class="p">,</span>      <span class="mf">0.014980</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">6.758666</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.057378</span><span class="p">,</span>      <span class="mf">0.001157</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.231109</span><span class="p">,</span>     <span class="o">-</span><span class="mf">2.241648</span><span class="p">,</span>      <span class="mf">0.000224</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.022986</span><span class="p">,</span>      <span class="mf">2.269249</span><span class="p">,</span>      <span class="mf">0.001194</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">10.853532</span><span class="p">,</span>     <span class="o">-</span><span class="mf">2.110536</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000769</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.410047</span><span class="p">,</span>     <span class="o">-</span><span class="mf">4.093049</span><span class="p">,</span>      <span class="mf">0.000224</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">10.632155</span><span class="p">,</span>      <span class="mf">2.405932</span><span class="p">,</span>      <span class="mf">0.000369</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">6.913797</span><span class="p">,</span>      <span class="mf">3.976253</span><span class="p">,</span>      <span class="mf">0.001805</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">12.064741</span><span class="p">,</span>      <span class="mf">0.207004</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000695</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">11.941318</span><span class="p">,</span>     <span class="o">-</span><span class="mf">3.840822</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001614</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">11.548963</span><span class="p">,</span>      <span class="mf">4.232744</span><span class="p">,</span>      <span class="mf">0.000447</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="o">-</span><span class="mf">14.107194</span><span class="p">,</span>      <span class="mf">0.302907</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001460</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.892311</span><span class="p">,</span>      <span class="mf">0.136360</span><span class="p">,</span>      <span class="mf">0.001267</span> <span class="p">]</span> <span class="p">},</span>
+   <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.026383</span><span class="p">,</span>      <span class="mf">2.227189</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.001563</span> <span class="p">]</span> <span class="p">}</span>
+   <span class="p">]</span>
+ <span class="p">},</span>
+
+ <span class="p">{</span>
+   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-12</span>
+   <span class="p">}</span> <span class="p">]</span>
+ <span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Using the same molecule block, a XMS-CASPT2 analytical gradient calculation can be performed. In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals (4*e*,3*o*). Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair). The CASSCF orbitals are state-averaged over three states.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">46</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+  <span class="s2">&quot;active&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">37</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">49</span><span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+   <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+       <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+         <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;ms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;xms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;sssr&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+         <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+     <span class="p">},</span>
+     <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+     <span class="s2">&quot;nact_cas&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+     <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">46</span>
+   <span class="p">}</span> <span class="p">]</span>
+ <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sample-input-nacme-and-dgrad">
+<h3>Sample input: NACME and DGRAD<a class="headerlink" href="#sample-input-nacme-and-dgrad" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+   <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+   <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+       <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+         <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;ms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;xms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;sssr&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+         <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+     <span class="p">},</span>
+     <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+     <span class="s2">&quot;nact_cas&quot;</span> <span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
+     <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">44</span>
+   <span class="p">}</span> <span class="p">]</span>
+ <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bagel-references">
+<h3>BAGEL References<a class="headerlink" href="#bagel-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>SS-CASPT2 gradient</td>
+<td>M. K. MacLeod and T. Shiozaki, J. Chem. Phys. <strong>142</strong>, 051103 (2015).</td>
+</tr>
+<tr class="row-odd"><td>(X)MS-CASPT2 gradient</td>
+<td>B. Vlaisavljevich and T. Shiozaki, J. Chem. Theory Comput. <strong>12</strong>, 3781 (2016).</td>
+</tr>
+<tr class="row-even"><td>(X)MS-CASPT2 derivative coupling</td>
+<td>J. W. Park and T. Shiozaki, <em>submitted</em>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="general-references">
+<h3>General References<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="37%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>General review of gradient methods</td>
+<td>P. Pulay, WIREs Comput. Mol. Sci. <strong>4</strong>, 169-181 (2014).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="methods.html"
+                        title="previous chapter">Description of input structure</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dynamics.html"
+                        title="next chapter">Interface to dynamics codes</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="dynamics.html" title="Interface to dynamics codes"
+             >next</a></li>
+        <li class="right" >
+          <a href="methods.html" title="Description of input structure"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" >Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

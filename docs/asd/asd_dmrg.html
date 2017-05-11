@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ASD-DMRG &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Description" href="multisite.html" />
+    <link rel="prev" title="ASD orbital optimization" href="asd_orbopt.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="multisite.html" title="Description"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="asd_orbopt.html" title="ASD orbital optimization"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asd.html" accesskey="U">Active space decomposition method</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="asd-dmrg">
+<span id="id1"></span><h1>ASD-DMRG<a class="headerlink" href="#asd-dmrg" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>ASD-DMRG algorithm is able to deal with molecular aggregates with more than two sites.</p>
+</div>
+<div class="section" id="multisite-construction">
+<h2>Multisite construction<a class="headerlink" href="#multisite-construction" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="multisite.html">Description</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multisite.html#keywords">Keywords</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multisite.html#prerequisite">Prerequisite</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Method to compute active subspaces.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Value:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">ras</span></code>: use restricted active space configuration interaction method</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ras</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify restricted active space method settings.</div>
+<div class="line"><strong>Recommendation:</strong> See <a class="reference internal" href="../ci/rasci.html#rasci"><span class="std std-ref">Restricted active space configuration interaction (RASCI)</span></a> for details.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">restricted</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify occupation restriction in active space.</div>
+<div class="line"><strong>Recommendation:</strong> See sample input for details.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">spaces</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify important single site states with the following keys:</div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">charge</span></code>, <code class="docutils literal"><span class="pre">spin</span></code>, <code class="docutils literal"><span class="pre">nstate</span></code></div>
+</div>
+<div class="line"><strong>Recommendation:</strong> See sample input for details.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nstates</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of target states.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default</strong> 1</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ntrunc</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of dmrg states to keep.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Threshold for convergence in Davidson diagonalization.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Maximum number of iterations for Davidson diagonalization.</div>
+<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Default:</strong> 50</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Initial perturbation value.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+<div class="line"><strong>Default:</strong> 0.001</div>
+<div class="line"><strong>Recommendation:</strong> Use default.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb_thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Threshold for energy convergence when perturbation is applied.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+<div class="line"><strong>Default:</strong> 0.0001</div>
+<div class="line"><strong>Recommendation:</strong> Use default.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">perturb_min</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Minimum perturbation to be applied.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+<div class="line"><strong>Default:</strong> 0.00001</div>
+<div class="line"><strong>Recommendation:</strong> Use default.</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Here is a sample calculation of Helium trimer aggregate with ASD-DMRG.</p>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;cartesian&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;He&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">0.00000000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;saveref&quot;</span> <span class="o">:</span> <span class="s2">&quot;A&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;cartesian&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;He&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">3.00000000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;saveref&quot;</span> <span class="o">:</span> <span class="s2">&quot;B&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;cartesian&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span><span class="s2">&quot;He&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">0.00000000000</span><span class="p">,</span>     <span class="mf">6.00000000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;saveref&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;multisite&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;refs&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">],</span>
+  <span class="s2">&quot;active&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="p">],</span>
+  <span class="s2">&quot;hf&quot;</span> <span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-12</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;localization&quot;</span> <span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;max_iter&quot;</span> <span class="o">:</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-12</span>
+  <span class="p">}</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;asd_dmrg&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;ntrunc&quot;</span> <span class="o">:</span> <span class="mi">100</span><span class="p">,</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;ras&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>
+  <span class="s2">&quot;perturb&quot;</span> <span class="o">:</span> <span class="mf">0.001</span><span class="p">,</span>
+  <span class="s2">&quot;perturb_min&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+  <span class="s2">&quot;perturb_thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+  <span class="s2">&quot;ras&quot;</span> <span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;nguess&quot;</span> <span class="o">:</span> <span class="mi">5</span><span class="p">,</span>
+    <span class="s2">&quot;maxiter&quot;</span> <span class="o">:</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-8</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;maxiter&quot;</span> <span class="o">:</span> <span class="mi">50</span><span class="p">,</span>
+  <span class="s2">&quot;spaces&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">[</span> <span class="p">{</span><span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;nspin&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">},</span>
+                 <span class="p">{</span><span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;nspin&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">},</span>
+                 <span class="p">{</span><span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nspin&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">},</span>
+                 <span class="p">{</span><span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nspin&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">}</span> <span class="p">]</span> <span class="p">],</span>
+  <span class="s2">&quot;restricted&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span> <span class="s2">&quot;orbitals&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="s2">&quot;max_holes&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;max_particles&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="63%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Active space decomposition with multiple sites:
+density matrix renormalization group algorithm</td>
+<td>S. M. Parker and T. Shiozaki, J. Chem. Phys. <strong>141</strong>, 211102 (2014).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="asd_orbopt.html"
+                        title="previous chapter">ASD orbital optimization</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="multisite.html"
+                        title="next chapter">Description</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="multisite.html" title="Description"
+             >next</a></li>
+        <li class="right" >
+          <a href="asd_orbopt.html" title="ASD orbital optimization"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asd.html" >Active space decomposition method</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Printing orbital densities to cube files &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Saving and loading MOs and CI coefficients" href="save_ref.html" />
+    <link rel="prev" title="MOLDEN" href="molden.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="save_ref.html" title="Saving and loading MOs and CI coefficients"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="molden.html" title="MOLDEN"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" accesskey="U">Miscellaneous features</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="printing-orbital-densities-to-cube-files">
+<span id="moprint"></span><h1>Printing orbital densities to cube files<a class="headerlink" href="#printing-orbital-densities-to-cube-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>This module prints molecular orbital densities in the Gaussian Cube format.
+It can be used to view the shape and extent of relativistic or gauge-including molecular orbitals, which cannot
+be viewed in Molden due to the use of complex basis functions or the four-component framework.</p>
+<p>A separate .cub file is generated for each printed orbital, plus one for the total electron density.
+The axis vectors are simply the Cartesian <em>x</em>, <em>y</em>, and <em>z</em> axes.</p>
+<p>Command: <code class="docutils literal"><span class="pre">moprint</span></code></p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">paired</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Determined whether we plot spatial MOs (true) or spin MOs.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> True, unless we are printing 4-component orbitals generated with an external magnetic field.</div>
+<div class="line"><strong>Recommendation:</strong> Use the default.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">orbitals</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  Indices of the molecular orbitals to be printed.</div>
+<div class="line"><strong>Datatype:</strong> Vector of integers</div>
+<div class="line"><strong>Default:</strong> Prints the active orbitals from CASSCF, and the frontier orbitals from Hartree&#8211;Fock</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ngrid</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Number of gridpoints in each dimension</div>
+<div class="line"><strong>Datatype:</strong> Array of 3 integers</div>
+<div class="line"><strong>Default:</strong> 61 gridpoints in each direction</div>
+<div class="line"><strong>Recommendation:</strong> It is often reasonable to reduce this parameter, perhaps to [41, 41, 41], in order to lower the time needed to write and read cube files.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">start_pos</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Coordinates for one corner of the box within which densities are printed.</div>
+<div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
+<div class="line"><strong>Default:</strong> A position is chosen so that all atoms are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
+<div class="line"><strong>Recommendation:</strong> Use the default.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">inc_size</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Distances between adjacent gridpoints in each of the three dimensions.</div>
+<div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
+<div class="line"><strong>Default:</strong> If &#8220;start_pos&#8221; is not specified, an increment is chosen so that all atoms are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
+<div class="line-block">
+<div class="line">Otherwise, the default is <span class="math">\(0.25 a_0\)</span> in each direction.</div>
+</div>
+<div class="line"><strong>Recommendation:</strong> Use the default.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">angstrom</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Unit of the &#8220;inc_size&#8221; parameter</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> False (meaning Bohr; set to true for angstrom)</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<p>Write molecular orbitals:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">....</span> <span class="nx">energy</span> <span class="nx">calculation</span><span class="p">....</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;moprint&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;ngrid&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span> <span class="p">],</span>
+  <span class="s2">&quot;orbitals&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">22</span> <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="molden.html"
+                        title="previous chapter">MOLDEN</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="save_ref.html"
+                        title="next chapter">Saving and loading MOs and CI coefficients</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="save_ref.html" title="Saving and loading MOs and CI coefficients"
+             >next</a></li>
+        <li class="right" >
+          <a href="molden.html" title="MOLDEN"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="misc.html" >Miscellaneous features</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

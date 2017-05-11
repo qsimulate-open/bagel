@@ -1,0 +1,571 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Hartree–Fock &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dirac–Hartree–Fock" href="dhf.html" />
+    <link rel="prev" title="Self-consistent field" href="scf.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="dhf.html" title="Dirac–Hartree–Fock"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="scf.html" title="Self-consistent field"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="scf.html" accesskey="U">Self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="hartree-fock">
+<span id="hf"></span><h1>Hartree&#8211;Fock<a class="headerlink" href="#hartree-fock" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>SCF can be run by specifying the following values to the keyword <code class="docutils literal"><span class="pre">title</span></code>:</p>
+<ul class="simple">
+<li>Restricted HF for closed-shell systems: <code class="docutils literal"><span class="pre">rhf</span></code> or <code class="docutils literal"><span class="pre">hf</span></code></li>
+<li>Restricted open-shell HF: <code class="docutils literal"><span class="pre">rohf</span></code></li>
+<li>Unrestricted HF: <code class="docutils literal"><span class="pre">uhf</span></code></li>
+<li>Two-component HF using ECP basis sets spin-orbit SCF: <code class="docutils literal"><span class="pre">soscf</span></code></li>
+</ul>
+<p>RHF can be run with the fast multipole method (FMM). For RHF-FMM, <code class="docutils literal"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>
+has to be specified in <a class="reference internal" href="../molecule/molecule-toc.html#molecule-toc"><span class="std std-ref">Molecule specification</span></a>.</p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<p>The default values are recommended unless mentioned otherwise.</p>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: SCF convergence threshold for the root-mean-square of the error vector.</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-8}\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code>/<code class="docutils literal"><span class="pre">maxiter_scf</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: number of iterations and number of SCF interations, after which the program will terminate if convergence is not reached.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(100\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">diis_start</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: after the specified iteration, we will begin using the DIIS algorithm to accelerate the convergence.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(1\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Overlap threshold used to identify linear dependancies in the atomic basis set.</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-8}\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">multipole</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: rank of Cartesian multipole moments to be printed out.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Values</strong> : <span class="math">\(1, 2\)</span></div>
+<div class="line"><strong>Default</strong> : <span class="math">\(1\)</span> (dipoles)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">dma</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: options to print out multipole moments from distributed multipole analysis.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Values</strong> : <span class="math">\(0, 1, 2, 3\)</span></div>
+<div class="line"><strong>Default</strong> : <span class="math">\(0\)</span> (not print out)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: molecular charge</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong> : <span class="math">\(0\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nopen</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: number of unpaired electrons in high-spin unrestricted Hartree&#8211;Fock</div>
+<div class="line"><strong>Datatype</strong> : int</div>
+<div class="line"><strong>Default</strong> : (number of electrons - charge) % 2</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">restart</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: save an archive in each iteration to allow for restarting the calculation</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="section" id="keywords-for-rhf-fmm">
+<h3>Keywords for RHF-FMM<a class="headerlink" href="#keywords-for-rhf-fmm" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ns</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: level of descritization which controls the number of lowest-level boxes in one dimension for FMM</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(4\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">ws</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: well-separatedness index, which is the number of boxes that must separate
+two collections of charges before they are considered distant
+and can interact through multipole expansions</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(2\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">lmax</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: order of the multipole expansions in FMM-J</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(10\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">exchange</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: whether to include far-field exchange using occ-RI-FMM</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">lmax_exchange</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: order of the multipole expansions in FMM-K</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(2\)</span></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">fmm_thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: integral screening threshold used in FMM</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: <code class="docutils literal"><span class="pre">thresh_overlap</span></code></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Below are some examples for SCF calculations using RHF, ROHF, UHF, SOSCF, and RHF-FMM.</p>
+<div class="section" id="rhf">
+<h3>RHF<a class="headerlink" href="#rhf" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">2.720616</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.305956</span><span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-8</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>The converged SCF energy is <span class="math">\(-99.84772354\)</span> after <span class="math">\(11\)</span> iterations.</p>
+</div>
+<div class="section" id="rohf">
+<h3>ROHF<a class="headerlink" href="#rohf" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">3.000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>    <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;rohf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nopen&quot;</span> <span class="o">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>The converged SCF energy is <span class="math">\(-38.16810629\)</span> after <span class="math">\(10\)</span> iterations.</p>
+</div>
+<div class="section" id="uhf">
+<h3>UHF<a class="headerlink" href="#uhf" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.500000</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;uhf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nopen&quot;</span> <span class="o">:</span> <span class="mi">1</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>The converged SCF energy is <span class="math">\(-75.28410147\)</span> after <span class="math">\(12\)</span> iterations. The expectation value of <span class="math">\(S^2\)</span> is <span class="math">\(0.7536\)</span>.</p>
+</div>
+<div class="section" id="soscf">
+<h3>SOSCF<a class="headerlink" href="#soscf" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;ecp28mdf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;Br&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.420000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">],</span>
+                     <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;sto-3g&quot;</span><span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;soscf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rhf-fmm">
+<h3>RHF-FMM<a class="headerlink" href="#rhf-fmm" title="Permalink to this headline">¶</a></h3>
+<div class="align-center figure">
+<a class="reference internal image-reference" href="../_images/hf-graphene.png"><img alt="alternate text" src="../_images/hf-graphene.png" style="width: 30%;" /></a>
+</div>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;/home/le/develop/bagel/src/basis/3-21g.json&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;cfmm&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;schwarz_thresh&quot;</span> <span class="o">:</span> <span class="s2">&quot;1.0e-8&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.810000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.810000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.810000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.810000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.100000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.100000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.680000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.680000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">8.608292514</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">8.608292514</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.710000000</span><span class="p">,</span>    <span class="mf">8.608292514</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.420000000</span><span class="p">,</span>    <span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">0.710000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">8.608292514</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.420000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.680000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">4.970000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.680000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">4.970000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.680000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.550000000</span><span class="p">,</span>    <span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.550000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">6.148780367</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>    <span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">2.840000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.378536440</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.810000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.810000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.810000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.810000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.100000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">2.459512147</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.100000000</span><span class="p">,</span>    <span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.100000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">4.919024293</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.250000000</span><span class="p">,</span>    <span class="mf">9.543599950</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.250000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">9.543599950</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.510000000</span><span class="p">,</span>    <span class="mf">7.084087803</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.510000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.084087803</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.380000000</span><span class="p">,</span>    <span class="mf">8.313843876</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">3.380000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">8.313843876</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.640000000</span><span class="p">,</span>    <span class="mf">5.854331730</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">7.640000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">5.854331730</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.640000000</span><span class="p">,</span>    <span class="mf">5.854331730</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">7.640000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">5.854331730</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">5.510000000</span><span class="p">,</span>    <span class="mf">7.084087803</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">5.510000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">7.084087803</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.380000000</span><span class="p">,</span>    <span class="mf">8.313843876</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">3.380000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">8.313843876</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">1.250000000</span><span class="p">,</span>    <span class="mf">9.543599950</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">1.250000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">9.543599950</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">8.890000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.890000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">8.890000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.890000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.890000000</span><span class="p">,</span>    <span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">8.890000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">1.229756073</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">8.890000000</span><span class="p">,</span>    <span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>      <span class="mf">8.890000000</span><span class="p">,</span>   <span class="o">-</span><span class="mf">3.689268220</span><span class="p">,</span>    <span class="mf">0.000000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;df&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;ns&quot;</span> <span class="o">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;lmax&quot;</span> <span class="o">:</span> <span class="s2">&quot;10&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;ws&quot;</span> <span class="o">:</span> <span class="s2">&quot;0.5&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;thresh_fmm&quot;</span> <span class="o">:</span> <span class="s2">&quot;1.0e-12&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;exchange&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;lmax_exchange&quot;</span> <span class="o">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-6</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bagel-references">
+<h3>BAGEL References<a class="headerlink" href="#bagel-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="38%" />
+<col width="62%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Exact exchange evaluation using occ-RI-FMM</td>
+<td>H.-A. Le and T. Shiozaki, <em>in preparation</em>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="general-references">
+<h3>General References<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="36%" />
+<col width="64%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>General text on electronic structure theory</td>
+<td>A. Szabo and N. S. Ostlund,
+<em>Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory</em>
+(McGraw-Hill, New York, 1989).</td>
+</tr>
+<tr class="row-odd"><td>References for fast multipole method in
+quantum chemistry</td>
+<td>C. A. White, B. G. Johnson, P. M. W. Gill, and M. Head-Gordon,
+Chem. Phys. Lett. <strong>230</strong>, 8 (1994).</td>
+</tr>
+<tr class="row-even"><td>&#160;</td>
+<td>M. C. Strain, G. E. Scuseria, and M. J. Frisch, Science <strong>271</strong>, 51 (1996).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="scf.html"
+                        title="previous chapter">Self-consistent field</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="dhf.html"
+                        title="next chapter">Dirac&#8211;Hartree&#8211;Fock</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="dhf.html" title="Dirac–Hartree–Fock"
+             >next</a></li>
+        <li class="right" >
+          <a href="scf.html" title="Self-consistent field"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="scf.html" >Self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

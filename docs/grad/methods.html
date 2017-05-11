@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Description of input structure &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Nuclear gradient and derivative coupling" href="force.html" />
+    <link rel="prev" title="Nuclear gradients and related functionalities" href="grad.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="force.html" title="Nuclear gradient and derivative coupling"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="grad.html" title="Nuclear gradients and related functionalities"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" accesskey="U">Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="description-of-input-structure">
+<span id="methods"></span><h1>Description of input structure<a class="headerlink" href="#description-of-input-structure" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>One key feature that is heavily used in the nuclear gradients and relevant functionalities in Bagel is to use method array within the force (or optimize, or hessian) section. Since this array allow for quite a bit of flexibility in the input, several examples are given below to demonstrate its use.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>In a force calculation, the methods can be nested in the followoing way. This is particularly useful for performing a CASPT2 gradient calculation where a CASSCF calculation must also be performed. The options for CASPT2 are specified in the smith block, while the CASSCF parameters (in this case nstate, nact, and nclosed) are specified outside of the smith block.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+      <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+      <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">44</span>
+  <span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The same calculation could also be performed by setting up the input specifying both CASSCF and CASPT2 within in the method array but by first requesting a CASSCF calculation and subsequently asking for a CASPT2 calculation.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+      <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
+      <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">44</span>
+    <span class="p">},</span>
+
+    <span class="p">{</span>
+      <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;smith&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+      <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="grad.html"
+                        title="previous chapter">Nuclear gradients and related functionalities</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="force.html"
+                        title="next chapter">Nuclear gradient and derivative coupling</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="force.html" title="Nuclear gradient and derivative coupling"
+             >next</a></li>
+        <li class="right" >
+          <a href="grad.html" title="Nuclear gradients and related functionalities"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="grad.html" >Nuclear gradients and related functionalities</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>
