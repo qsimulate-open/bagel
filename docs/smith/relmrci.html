@@ -57,30 +57,17 @@
 <p>Relativistic version of the fully internally contracted multireference configuration interaction.
 This is implemented with the automatical code generator SMITH3.
 By default, the Davidson corrected (+Q) energy is also printed.</p>
+<p>Title: <code class="docutils literal"><span class="pre">relsmith</span></code>, method: <code class="docutils literal"><span class="pre">mrci</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="casscf-keywords">
 <h3>CASSCF keywords<a class="headerlink" href="#casscf-keywords" title="Permalink to this headline">¶</a></h3>
-<p>See <a class="reference internal" href="../multi/casscf.html#casscf"><span class="std std-ref">Complete active space self-consistent field (CASSCF)</span></a>.</p>
+<p>See <a class="reference internal" href="../multi/zcasscf.html#zcasscf"><span class="std std-ref">Relativistic complete active space self-consistent field (RelCASSCF)</span></a>.</p>
 </div>
 <div class="section" id="smith-keywords">
 <h3>SMITH keywords<a class="headerlink" href="#smith-keywords" title="Permalink to this headline">¶</a></h3>
 <p>The default values are recommended unless mentioned otherwise.</p>
-<div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">title</span></code></p>
-<div class="line-block">
-<div class="line"><strong>Description:</strong> Method to use in SMITH-generated code.</div>
-<div class="line"><strong>Datatype:</strong> string</div>
-<div class="line"><strong>Values:</strong></div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">caspt2</span></code>: Request (Rel)CASPT2 calculation.</div>
-<div class="line"><code class="docutils literal"><span class="pre">mrci</span></code>: Request (Rel)MRCI calculation.</div>
-<div class="line"><code class="docutils literal"><span class="pre">casa</span></code>: Request (Rel)CAS/A calculation.</div>
-</div>
-<div class="line"><strong>Default:</strong> N/A.</div>
-</div>
-</div>
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
 <div class="line-block">
@@ -141,6 +128,93 @@ By default, the Davidson corrected (+Q) energy is also printed.</p>
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000</span><span class="p">,</span> <span class="mf">0.000</span><span class="p">,</span> <span class="mf">1.210</span> <span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000</span><span class="p">,</span> <span class="mf">0.000</span><span class="p">,</span> <span class="mf">0.000</span> <span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;+2&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;dhf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;+2&quot;</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;zcasscf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;algorithm&quot;</span> <span class="o">:</span> <span class="s2">&quot;second&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;state&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+  <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">1.0e-7</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span>  <span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span>   <span class="o">:</span> <span class="mi">2</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;relsmith&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;mrci&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;ncore&quot;</span> <span class="o">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>from which one obtains</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">0</span>       <span class="o">-</span><span class="mf">0.4311850170</span>
+<span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">1</span>       <span class="o">-</span><span class="mf">0.4310720094</span>
+<span class="o">*</span> <span class="nx">Zeroth</span> <span class="nx">order</span> <span class="nx">energy</span> <span class="o">:</span> <span class="nx">state</span>  <span class="mi">2</span>       <span class="o">-</span><span class="mf">0.4310720094</span>
+
+  <span class="o">----</span> <span class="nx">iteration</span> <span class="o">----</span>
+
+    <span class="mi">0</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.90092252</span>     <span class="mf">0.00065697</span>     <span class="mf">67.36</span>
+    <span class="mi">0</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.90091061</span>     <span class="mf">0.00065698</span>      <span class="mf">0.41</span>
+    <span class="mi">0</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.90091061</span>     <span class="mf">0.00065698</span>      <span class="mf">0.41</span>
+
+    <span class="mi">1</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.92100585</span>     <span class="mf">0.00012080</span>     <span class="mf">69.68</span>
+    <span class="mi">1</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.92099523</span>     <span class="mf">0.00012080</span>      <span class="mf">0.37</span>
+    <span class="mi">1</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.92099523</span>     <span class="mf">0.00012080</span>      <span class="mf">0.39</span>
+
+    <span class="mi">2</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.92179156</span>     <span class="mf">0.00003649</span>     <span class="mf">68.67</span>
+    <span class="mi">2</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.92178091</span>     <span class="mf">0.00003649</span>      <span class="mf">0.36</span>
+    <span class="mi">2</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.92178091</span>     <span class="mf">0.00003649</span>      <span class="mf">0.37</span>
+
+    <span class="mi">3</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.92186506</span>     <span class="mf">0.00000959</span>     <span class="mf">70.71</span>
+    <span class="mi">3</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.92185440</span>     <span class="mf">0.00000959</span>      <span class="mf">0.36</span>
+    <span class="mi">3</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.92185440</span>     <span class="mf">0.00000959</span>      <span class="mf">0.37</span>
+
+    <span class="mi">4</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.92187033</span>     <span class="mf">0.00000231</span>     <span class="mf">70.11</span>
+    <span class="mi">4</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.92185967</span>     <span class="mf">0.00000230</span>      <span class="mf">0.39</span>
+    <span class="mi">4</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.92185967</span>     <span class="mf">0.00000230</span>      <span class="mf">0.39</span>
+
+    <span class="mi">5</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.92187064</span>     <span class="mf">0.00000056</span>     <span class="mf">68.53</span>
+    <span class="mi">5</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.92185998</span>     <span class="mf">0.00000055</span>      <span class="mf">0.00</span>
+    <span class="mi">5</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.92185998</span>     <span class="mf">0.00000055</span>      <span class="mf">0.00</span>
+
+
+  <span class="o">-------------------</span>
+
+   <span class="o">-</span> <span class="nx">MRCI</span> <span class="nx">energy</span> <span class="nx">evaluation</span>                  <span class="mf">420.87</span>
+
+    <span class="mi">0</span>   <span class="mi">0</span>  <span class="o">-</span><span class="mf">149.95278455</span>     <span class="mf">0.00000000</span>      <span class="mf">0.00</span>
+    <span class="mi">0</span>   <span class="mi">1</span>  <span class="o">-</span><span class="mf">149.95277356</span>     <span class="mf">0.00000000</span>      <span class="mf">0.00</span>
+    <span class="mi">0</span>   <span class="mi">2</span>  <span class="o">-</span><span class="mf">149.95277356</span>     <span class="mf">0.00000000</span>      <span class="mf">0.00</span>
+
+   <span class="o">-</span> <span class="nx">MRCI</span><span class="o">+</span><span class="nx">Q</span> <span class="nx">energy</span> <span class="nx">evaluation</span>                  <span class="mf">0.44</span>
+
+<span class="o">*</span> <span class="nx">METHOD</span><span class="o">:</span> <span class="nx">RELSMITH</span>                           <span class="mf">422.34</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>

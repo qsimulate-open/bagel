@@ -12,8 +12,7 @@ Fully internally contracted single-state version (SS-CASPT2), multi-state versio
 CASPT2 in BAGEL is implemented with the automatic code generator SMITH3,
 and the SMITH information for XMS-CASPT2 should be passed in a separate array in the input.
 
-Title: ``smith``, method: ``caspt2``
-
+Title: ``smith``
 
 ==================
 Prerequisites
@@ -33,32 +32,24 @@ SMITH keywords
 
 The default values are recommended unless mentioned otherwise.
 
-.. topic:: ``title``
+.. topic:: ``method``
 
-   | **Description:** Method to use in SMITH-generated code.
+   | **Description:** Do multistate CASPT2.
    | **Datatype:** string
    | **Values:**
-   |    ``caspt2``: Request (Rel)CASPT2 calculation.
-   |    ``mrci``: Request (Rel)MRCI calculation.
-   |    ``casa``: Request (Rel)CAS/A calculation.
-   | **Default:** N/A.
+   |    ``caspt2``: Standard CASPT2.
+   |    ``casa``  : Use Dyall's Hamiltonian
 
 .. topic:: ``ms``
 
    | **Description:** Do multistate CASPT2.
    | **Datatype:** bool
-   | **Values:**
-   |    ``true``: Do MS-CASPT2.
-   |    ``false``: Do SS-state CASPT2.
    | **Default:** true.
 
 .. topic:: ``xms``
 
    | **Description:** Do extended multistate CASPT2.
    | **Datatype:** bool
-   | **Values:**
-   |    ``true``: Do XMS-CASPT2.
-   |    ``false``: Do MS-CASPT2.
    | **Default:** true.
 
 .. topic:: ``sssr``
@@ -75,7 +66,6 @@ The default values are recommended unless mentioned otherwise.
    | **Description:** Vertical shift.
    | **Datatype:** double precision
    | **Default:** 0.0
-   | **Recommendation:** Use default. Increase the value if the convergence problem presents.
 
 .. topic:: ``thresh``
 
@@ -106,6 +96,12 @@ The default values are recommended unless mentioned otherwise.
    | **Description:** Number of frozen virtual orbitals.
    | **Datatype:** int
    | **Default:** 0
+
+.. topic:: ``block_diag_fock``
+
+   | **Description:** Using a block-diagonal zeroth-order Hamiltonian
+   | **Datatype:** bool
+   | **Default:** false.
 
 .. topic:: ``maxiter``
 
