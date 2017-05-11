@@ -128,12 +128,13 @@ void ZCASSCF::init() {
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)
     throw runtime_error("too many closed orbitals in the input");
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
   shared_ptr<const RelCoeff_Striped> scoeff;
   if (hcore_guess) {
-    auto s12 = overlap_->tildex(1.0e-10);
+    auto s12 = overlap_->tildex(thresh_overlap_);
     if (s12->mdim() != s12->ndim())
       remove_lindep(s12->mdim());
 
@@ -148,7 +149,7 @@ void ZCASSCF::init() {
 
     // If we have fewer MOs than AOs (linearly dependent basis set and/or coefficient projection)
     if (4 * geom_->nbasis() != scoeff->mdim()) {
-      shared_ptr<const ZMatrix> tildex = overlap_->tildex(1.0e-10);
+      shared_ptr<const ZMatrix> tildex = overlap_->tildex(thresh_overlap_);
       if (tildex->mdim() != tildex->ndim())
         remove_lindep(tildex->mdim());
 

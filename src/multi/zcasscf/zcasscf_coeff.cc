@@ -89,11 +89,14 @@ shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix
 
   // compute T^(-1/2)
   shared_ptr<ZMatrix> t12 = overlap_->get_submatrix(n*2, n*2, n, n);
-  t12 = t12->tildex(1.0e-10);
+  t12 = t12->tildex(thresh_overlap_);
 
   // compute S^(1/2)
   shared_ptr<ZMatrix> shalf = overlap_->get_submatrix(0, 0, n, n);
-  shalf = shalf->tildex(1.0e-10);
+  shalf = shalf->tildex(thresh_overlap_);
+
+  if (t12->mdim() != shalf->mdim())
+    throw runtime_error("Different linear dependency for the overlap and kinetic matrices in conversion to relativistic coefficients.");
 
   // compute positronic orbital coefficients
   auto tcoeff = make_shared<ZMatrix>(n, m);

@@ -74,11 +74,13 @@ void CASSCF::common_init() {
     cout << "    ============================ " << endl << endl;
   }
 
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
+
   // first set coefficient
   coeff_ = ref_->coeff();
   if (geom_->nbasis() != coeff_->mdim()) {
     Overlap ovl(geom_);
-    shared_ptr<const Matrix> tildex = ovl.tildex();
+    shared_ptr<const Matrix> tildex = ovl.tildex(thresh_overlap_);
 
     Matrix c(coeff_->ndim(), tildex->mdim());
     c.copy_block(0, 0, coeff_->ndim(), coeff_->mdim(), coeff_);
