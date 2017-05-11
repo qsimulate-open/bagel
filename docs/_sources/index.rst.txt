@@ -10,6 +10,8 @@ Brilliantly Advanced General Electronic-structure Library
 
    Parallel electronic-structure program licensed under the GNU General Public License.
 
+   The source code can be found at https://github.com/nubakery/bagel
+
    .. image:: _static/bagel-final.*
       :width: 300px
       :align: right
