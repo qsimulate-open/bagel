@@ -1,0 +1,496 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Relativistic complete active space self-consistent field (RelCASSCF) &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Perturbation theory" href="../pt2/pt2.html" />
+    <link rel="prev" title="Complete active space self-consistent field (CASSCF)" href="casscf.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../pt2/pt2.html" title="Perturbation theory"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="casscf.html" title="Complete active space self-consistent field (CASSCF)"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="multi.html" accesskey="U">Multiconfiguration self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="relativistic-complete-active-space-self-consistent-field-relcasscf">
+<span id="zcasscf"></span><h1>Relativistic complete active space self-consistent field (RelCASSCF)<a class="headerlink" href="#relativistic-complete-active-space-self-consistent-field-relcasscf" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="description">
+<h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
+<p>The relativistic analogue of CASSCF is implemented in BAGEL. The second-order algorithm which is basically the same as its non-relativistic analogue is used by default.</p>
+<p>Title: <code class="docutils literal"><span class="pre">zcasscf</span></code></p>
+</div>
+<div class="section" id="keywords">
+<h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">state</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Number of states computed for each spin value.  All are included in the state-averaging procedure when orbitals are optimized.</div>
+<div class="line"><strong>Datatype</strong>: vector&lt;int&gt;</div>
+<div class="line"><strong>Default</strong>:  There is no default; this parameter must be supplied in the input.</div>
+<div class="line"><strong>Note</strong>:  An array of integers is supplied, where each one indicates the number of states for a given spin value.  For example,
+the input [ 1 ] gives a singlet ground state, while [ 3, 0, 1 ] gives three singlets and one triplet (6 states total).
+Be careful!  While the spin values you specified are used in generating guess CI coefficients, the spin sectors will mix, and the
+algorithm returns the <em>n</em> lowest eigenstates regardless of their spin expectation values.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nact</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Number of active orbitals</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 0</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">nclosed</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  Number of closed orbitals</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: Number of electrons / 2.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify active orbitals. Note that the orbital index starts from 1.</div>
+<div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
+<div class="line"><strong>Default:</strong> Nact / 2 orbitals lower and higher from the valence orbital.</div>
+<div class="line"><strong>Example:</strong></div>
+<div class="line-block">
+<div class="line">[36, 37, 39] : include 36th, 37th, and 39th orbitals.</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Orbital optimization algorithm.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">second</span></code>: second-order algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">noopt</span></code>: no orbital optimization.</div>
+</div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">second</span></code></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">gaunt</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Turns on the Gaunt interaction in the Hamiltonian.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">breit</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Turns on the full Breit interaction in the Hamiltonian.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: value copied from &#8220;gaunt&#8221; (if gaunt is true, breit is true)</div>
+<div class="line"><strong>Recommendation</strong>: Usually the Breit contribution is not important for molecular properties.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">only_electrons</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  This option allows the user to freeze all positronic orbitals and optimize only for rotations between electronic orbitals.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>:   false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: If set to &#8220;true,&#8221; occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  Molecular charge.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 0</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">hcore_guess</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  If set to true, the one-electron Hamiltonian is diagonalized to generate initial guess orbitals.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Maximum number of macroiterations.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 100</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_micro</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Maximum number of microiterations.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 20</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter_fci</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Maximum number of iterations in CI coefficient optimization</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: copied from <code class="docutils literal"><span class="pre">maxiter</span></code></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_fci</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Convergence threshold for the CI coefficients</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: Value copied from <code class="docutils literal"><span class="pre">thresh</span></code></div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  If set to &#8220;true,&#8221; BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong>  If set to &#8220;true&#8221;, after each macroiteration the orbitals will be written to a binary archive with filename &#8220;zcasscf_&lt;iter&gt;.archive&#8221;.
+They can be read back in using the &#8220;load_ref&#8221; module.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">pop</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: If set to true, population analysis of the molecular orbitals will be printed to a file names dhf.log.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  Number of vectors retained in the limited-memory Davidson algorithm.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 20</div>
+<div class="line"><strong>Recommendation</strong>: Reduce if an insufficient amount of memory is available (do not reduce to a value lower than 3).</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">print_thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Threshold below which CI coefficients are not printed.</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: 0.05</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">spin_adapt</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Spin-adapt the starting guess.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: true</div>
+<div class="line"><strong>Recommendation</strong>: Use false if the error &#8220;generate_guess produced an invalid determinant&#8221; is generated.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">aniso</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Performs magnetic anisotropy analysis (g-factors and zero-field splitting parameters).</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+</div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">3.720616</span> <span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.305956</span> <span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span>  <span class="o">:</span> <span class="s2">&quot;zcasscf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;state&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+  <span class="s2">&quot;thresh&quot;</span> <span class="o">:</span> <span class="mf">5.0e-7</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span>   <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span>  <span class="o">:</span> <span class="mi">4</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>from which one obtains</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
+    <span class="nx">CASSCF</span> <span class="nx">calculation</span>
+<span class="o">---------------------------</span>
+
+<span class="o">***</span> <span class="nx">Geometry</span> <span class="p">(</span><span class="nx">Relativistic</span><span class="p">)</span> <span class="o">***</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span> <span class="nx">post</span>                         <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span> <span class="nx">prep</span>                         <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span>                              <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="mi">3</span><span class="o">-</span><span class="nx">index</span> <span class="nx">ints</span> <span class="nx">post</span>                         <span class="mf">0.00</span>
+
+     <span class="o">-</span> <span class="nx">Geometry</span> <span class="nx">relativistic</span> <span class="p">(</span><span class="nx">total</span><span class="p">)</span>             <span class="mf">0.01</span>
+
+  <span class="o">*</span> <span class="nx">nclosed</span>  <span class="o">:</span>      <span class="mi">4</span>
+  <span class="o">*</span> <span class="nx">nact</span>     <span class="o">:</span>      <span class="mi">2</span>
+  <span class="o">*</span> <span class="nx">nvirt</span>    <span class="o">:</span>     <span class="mi">32</span>
+  <span class="o">*</span> <span class="nx">gaunt</span>    <span class="o">:</span> <span class="kc">false</span>
+  <span class="o">*</span> <span class="nx">breit</span>    <span class="o">:</span> <span class="kc">false</span>
+  <span class="o">*</span> <span class="nx">active</span> <span class="nx">space</span><span class="o">:</span> <span class="mi">2</span> <span class="nx">electrons</span> <span class="k">in</span> <span class="mi">2</span> <span class="nx">orbitals</span>
+  <span class="o">*</span> <span class="nx">time</span><span class="o">-</span><span class="nx">reversal</span> <span class="nx">symmetry</span> <span class="nx">will</span> <span class="nx">be</span> <span class="nx">assumed</span><span class="p">.</span>
+     <span class="o">-</span> <span class="nx">Coulomb</span><span class="o">:</span> <span class="nx">half</span> <span class="nx">trans</span>                       <span class="mf">0.01</span>
+     <span class="o">-</span> <span class="nx">Coulomb</span><span class="o">:</span> <span class="nx">metric</span> <span class="nx">multiply</span>                  <span class="mf">0.03</span>
+     <span class="o">-</span> <span class="nx">Coulomb</span><span class="o">:</span> <span class="nx">J</span> <span class="nx">operator</span>                       <span class="mf">0.00</span>
+     <span class="o">-</span> <span class="nx">Coulomb</span><span class="o">:</span> <span class="nx">K</span> <span class="nx">operator</span>                       <span class="mf">0.00</span>
+  <span class="o">*</span> <span class="nx">nstate</span>   <span class="o">:</span>      <span class="mi">1</span>
+
+<span class="o">===</span> <span class="nx">Dirac</span> <span class="nx">CASSCF</span> <span class="nx">iteration</span> <span class="p">(</span><span class="nx">svp</span><span class="p">)</span> <span class="o">===</span>
+
+ <span class="o">*</span> <span class="nx">Using</span> <span class="nx">the</span> <span class="nx">second</span><span class="o">-</span><span class="nx">order</span> <span class="nx">algorithm</span>
+
+       <span class="mi">0</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.87309219</span>     <span class="mf">1.03e-02</span>      <span class="mf">0.07</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.24e-01</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.46e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.31e-01</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.29e-02</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.93e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.90e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.93e-01</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">8.08e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.96e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.17e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.13e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.91e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.94e-02</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.94e-01</span>    <span class="mf">0.06</span>
+       <span class="mi">1</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90008454</span>     <span class="mf">9.20e-04</span>      <span class="mf">0.57</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.91e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.52e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.27e-02</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.77e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.72e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.61e-02</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">5.19e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.75e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.68e-02</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.75e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.75e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.75e-02</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">5.66e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.76e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.84e-02</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.02e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.76e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.89e-02</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">6.00e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.76e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.90e-02</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">6.44e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.76e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.90e-02</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.06e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">2.76e-04</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.90e-02</span>    <span class="mf">0.06</span>
+       <span class="mi">2</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90024315</span>     <span class="mf">1.95e-04</span>      <span class="mf">0.62</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.42e-03</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.03e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.44e-03</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.04e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.11e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.12e-03</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">9.86e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.11e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.18e-03</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.00e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.11e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.19e-03</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.83e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.11e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.20e-03</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.89e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.12e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.24e-03</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.11e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.12e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.25e-03</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.28e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.12e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.25e-03</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">4.11e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.12e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.25e-03</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">9.17e-08</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">1.12e-05</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">3.25e-03</span>    <span class="mf">0.05</span>
+       <span class="mi">3</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90025026</span>     <span class="mf">5.44e-05</span>      <span class="mf">0.67</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">3.82e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">7.76e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.56e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">8.18e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.31e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.43e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.63e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.36e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.59e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">9.66e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.36e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.61e-04</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.02e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.36e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.61e-04</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.06e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.37e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.71e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.98e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.37e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.73e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">6.25e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.37e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.73e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.21e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">8.37e-07</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">8.73e-04</span>    <span class="mf">0.05</span>
+       <span class="mi">4</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90025079</span>     <span class="mf">1.49e-05</span>      <span class="mf">0.60</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.04e-04</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">5.79e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.78e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.24e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.20e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.29e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.19e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.23e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.34e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.64e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.23e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.34e-04</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.77e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.24e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.35e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.90e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.24e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.37e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">8.21e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.24e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.38e-04</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.72e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">6.24e-08</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">2.38e-04</span>    <span class="mf">0.05</span>
+       <span class="mi">5</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90025083</span>     <span class="mf">4.07e-06</span>      <span class="mf">0.55</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.83e-05</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.30e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">4.86e-05</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">6.10e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.61e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.25e-05</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.96e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.63e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.37e-05</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.19e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.64e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.39e-05</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.56e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.64e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.39e-05</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.92e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.64e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.46e-05</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.25e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">4.64e-09</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">6.48e-05</span>    <span class="mf">0.06</span>
+       <span class="mi">6</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90025083</span>     <span class="mf">1.11e-06</span>      <span class="mf">0.51</span>
+
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">7.70e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.20e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.32e-05</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">1.66e-06</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.43e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.70e-05</span>    <span class="mf">0.05</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">5.35e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.44e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.74e-05</span>    <span class="mf">0.06</span>
+       <span class="nx">res</span> <span class="o">:</span> <span class="mf">2.00e-07</span>   <span class="nx">lamb</span><span class="o">:</span> <span class="mf">1.00e+00</span>   <span class="nx">eps</span> <span class="o">:</span> <span class="o">-</span><span class="mf">3.45e-10</span>   <span class="nx">step</span><span class="o">:</span> <span class="mf">1.74e-05</span>    <span class="mf">0.05</span>
+       <span class="mi">7</span>   <span class="mi">0</span>        <span class="o">-</span><span class="mf">99.90025083</span>     <span class="mf">3.03e-07</span>      <span class="mf">0.36</span>
+
+  <span class="o">*</span> <span class="nx">Second</span><span class="o">-</span><span class="nx">order</span> <span class="nx">optimization</span> <span class="nx">converged</span><span class="p">.</span> <span class="o">*</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="bagel-references">
+<h3>BAGEL references<a class="headerlink" href="#bagel-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="40%" />
+<col width="60%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Relativistic CASSCF</td>
+<td>J. E. Bates and T. Shiozaki, J. Chem. Phys. <strong>142</strong>, 044112 (2015).</td>
+</tr>
+</tbody>
+</table>
+<p>Note that the code has since been replaced by a more robust second-order algorithm (unpublished).</p>
+</div>
+<div class="section" id="general-references">
+<h3>General references<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="40%" />
+<col width="60%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>General text on relativistic electronic
+structure</td>
+<td>M. Reiher and A. Wolf, <em>Relativistic Quantum Chemistry</em> (Wiley-VCH,
+Weinheim, 2009).</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="casscf.html"
+                        title="previous chapter">Complete active space self-consistent field (CASSCF)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../pt2/pt2.html"
+                        title="next chapter">Perturbation theory</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../pt2/pt2.html" title="Perturbation theory"
+             >next</a></li>
+        <li class="right" >
+          <a href="casscf.html" title="Complete active space self-consistent field (CASSCF)"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="multi.html" >Multiconfiguration self-consistent field</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Required keywords &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Self-consistent field" href="../scf/scf.html" />
+    <link rel="prev" title="Molecule specification" href="molecule-toc.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../scf/scf.html" title="Self-consistent field"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="molecule-toc.html" title="Molecule specification"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="molecule-toc.html" accesskey="U">Molecule specification</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="required-keywords">
+<span id="molecule"></span><h1>Required keywords<a class="headerlink" href="#required-keywords" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">geometry</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Specify atoms and their Cartesian coordinates</div>
+<div class="line"><strong>Datatype</strong>: vector</div>
+<div class="line"><strong>Values</strong>:</div>
+<div class="line-block">
+<div class="line">Vector of atoms provided in the following format <code class="docutils literal"><span class="pre">{</span> <span class="pre">&quot;atom&quot;</span> <span class="pre">:</span> <span class="pre">&quot;atom</span> <span class="pre">symbol&quot;,</span>&#160; <span class="pre">&quot;xyz&quot;</span> <span class="pre">:</span> <span class="pre">[x,</span> <span class="pre">y,</span> <span class="pre">z]</span> <span class="pre">}</span></code>
+Please see the end of the file for some examples.</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">basis</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Define default basis set used for the system</div>
+<div class="line"><strong>Datatype</strong>: string</div>
+<div class="line"><strong>Values</strong>:</div>
+<div class="line-block">
+<div class="line">Please refer to <a class="reference internal" href="#basis-sets">Basis sets</a> and <a class="reference internal" href="#effective-core-potential-ecp-basis-sets">Effective core potential (ECP) basis sets</a> for possible arguments.
+<a class="reference internal" href="#user-defined-basis-sets">User defined basis sets</a> are also possible.</div>
+</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">df_basis</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Basis sets used for density fitting</div>
+<div class="line"><strong>Datatype</strong>: string</div>
+<div class="line"><strong>Values</strong>:</div>
+<div class="line-block">
+<div class="line">Please refer to <a class="reference internal" href="#density-fitting-basis-sets">Density fitting basis sets</a> for possible arguments</div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The use of mixed basis sets and/or density fitting basis sets is possible by specifying a different
+basis set other than the default for each atom (see example for <a class="reference internal" href="#basis-sets">Basis sets</a> below).</p>
+</div>
+</div>
+<div class="section" id="optional-keywords">
+<h1>Optional keywords<a class="headerlink" href="#optional-keywords" title="Permalink to this headline">¶</a></h1>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">angstrom</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Specify units for atomic coordinates (Angstrom or Bohr)</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use Angstrom</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use Bohr</div>
+</div>
+<div class="line"><strong>Default</strong>: false (Angstrom)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">finite_nucleus</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Represent the nucleus as a Gaussian charge distribution with default exponents</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">molden_file</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Filename of the molden file, which is required if <code class="docutils literal"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code> is specified.</div>
+<div class="line"><strong>Datatype</strong>: string</div>
+<div class="line"><strong>Recommendation</strong>: restarting from a molden file is not recommended, which is nevertheless sometimes useful.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">cfmm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Turn on RHF-FMM; for more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> section.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+<div class="line"><strong>Recommendation</strong>: Use for calculations on very large systems.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">schwarz_thresh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Schwarz screening integral threshold, only used in RHF-FMM <code class="docutils literal"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.
+For more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> section.</div>
+<div class="line"><strong>Datatype</strong>: double</div>
+<div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-12}\)</span></div>
+<div class="line"><strong>Recommendation</strong>: Default, looser thresholds reduce accuracy but potentially increase speed.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">dkh</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Option to use the second-order Douglas&#8211;Kroll&#8211;Hess Hamiltonian (DKH2).</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">magnetic_field</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: External magnetic field.  External magnetic fields are available only for the <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> and <a class="reference internal" href="../scf/dhf.html#dhf"><span class="std std-ref">Dirac&#8211;Hartree&#8211;Fock</span></a> modules.</div>
+<div class="line"><strong>Datatype</strong>: Array of three doubles (x, y, z)</div>
+<div class="line"><strong>Default</strong>: (0.0, 0.0, 0.0)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">tesla</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: External magnetic field in units of Tesla.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false (i.e., atomic units are used)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">basis_type</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Specify the type of atomic orbital basis functions,
+either standard Gaussian functions or gauge-including atomic orbitals (GIAOs).</div>
+<div class="line"><strong>Datatype</strong>: string</div>
+<div class="line"><strong>Values</strong>: <code class="docutils literal"><span class="pre">gaussian</span></code> / <code class="docutils literal"><span class="pre">giao</span></code>, <code class="docutils literal"><span class="pre">london</span></code></div>
+<div class="line"><strong>Default</strong>: <code class="docutils literal"><span class="pre">gaussian</span></code> at zero magnetic field; <code class="docutils literal"><span class="pre">giao</span></code> when a field is applied</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">skip_self_interaction</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>: Skip the electrostatic interactions between the dummy atoms.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: skip the electrostatic interactions between the dummies.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: explicitly calculate the electrostatic interactions between the dummies.</div>
+</div>
+<div class="line"><strong>Default</strong>: true</div>
+</div>
+</div>
+</div>
+<div class="section" id="basis-sets">
+<h1>Basis sets<a class="headerlink" href="#basis-sets" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="orbital-basis-sets">
+<h2>Orbital basis sets<a class="headerlink" href="#orbital-basis-sets" title="Permalink to this headline">¶</a></h2>
+<p>The following basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">basis</span></code> keyword.</p>
+<table class="hlist"><tr><td><ul class="simple">
+<li>sto-3g</li>
+<li>3-21g</li>
+<li>6-31g</li>
+<li>svp</li>
+<li>tzvpp</li>
+<li>qzvpp</li>
+<li>cc-pvdz</li>
+<li>cc-pvtz</li>
+<li>cc-pvqz</li>
+<li>cc-pv5z</li>
+<li>cc-pv6z</li>
+<li>cc-pcvdz</li>
+<li>cc-pcvtz</li>
+</ul>
+</td><td><ul class="simple">
+<li>cc-pcvqz</li>
+<li>cc-pcv5z</li>
+<li>cc-pcvdz-dk</li>
+<li>cc-pcvtz-dk</li>
+<li>aug-cc-pvdz</li>
+<li>aug-cc-pvtz</li>
+<li>aug-cc-pvqz</li>
+<li>aug-cc-pv5z</li>
+<li>aug-cc-pv6z</li>
+<li>aug-cc-pcvdz</li>
+<li>aug-cc-pcvtz</li>
+<li>aug-cc-pcvqz</li>
+<li>aug-cc-pcv5z</li>
+</ul>
+</td><td><ul class="simple">
+<li>aug-cc-pcvdz-dk</li>
+<li>aug-cc-pcvtz-dk</li>
+<li>aug-cc-pcvqz-dk</li>
+<li>aug-cc-pwcvdz</li>
+<li>aug-cc-pwcvtz</li>
+<li>aug-cc-pwcvqz</li>
+<li>aug-cc-pwcv5z</li>
+<li>d-aug-cc-pvdz</li>
+<li>d-aug-cc-pvtz</li>
+<li>d-aug-cc-pvqz</li>
+<li>d-aug-cc-pv5z</li>
+<li>ano-rcc</li>
+</ul>
+</td></tr></table>
+</div>
+<div class="section" id="density-fitting-basis-sets">
+<h2>Density fitting basis sets<a class="headerlink" href="#density-fitting-basis-sets" title="Permalink to this headline">¶</a></h2>
+<p>The following density fitting basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">df_basis</span></code> keyword.</p>
+<table class="hlist"><tr><td><ul class="simple">
+<li>svp-jkfit</li>
+<li>tzvpp-jkfit</li>
+<li>qzvpp-jkfit</li>
+</ul>
+</td><td><ul class="simple">
+<li>cc-pvdz-jkfit</li>
+<li>cc-pvtz-jkfit</li>
+</ul>
+</td><td><ul class="simple">
+<li>cc-pvqz-jkfit</li>
+<li>cc-pv5z-jkfit</li>
+</ul>
+</td></tr></table>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.22767998367</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.82511994081</span><span class="p">,</span>  <span class="o">-</span><span class="mf">2.66609980874</span><span class="p">];</span> <span class="p">},</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.18572998668</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.14718998944</span><span class="p">,</span>  <span class="o">-</span><span class="mf">3.25788976629</span><span class="p">];</span> <span class="p">},</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.03000999785</span><span class="p">,</span>  <span class="mf">0.71438994875</span><span class="p">,</span>  <span class="o">-</span><span class="mf">2.79590979943</span><span class="p">];</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Example with mixed basis sets and density fitting basis sets:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">2.720616</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.305956</span><span class="p">],</span>
+                     <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvqz&quot;</span><span class="p">,</span> <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvqz-jkfit&quot;</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Example with running a calculation from a molden file using the keyword <code class="docutils literal"><span class="pre">&quot;basis&quot;</span> <span class="pre">:</span> <span class="pre">&quot;molden&quot;</span></code>
+and providing a value for <code class="docutils literal"><span class="pre">&quot;molden_file&quot;</span></code>:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;molden&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;cartesian&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;molden_file&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf_write_mol_cart.molden&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>(refer to Molden in <a class="reference internal" href="../miscellaneous/misc.html#misc"><span class="std std-ref">Miscellaneous features</span></a> for more details)</p>
+<p>Example with external magnetic field using Gauge-invariant atomic orbitals (GIAO):</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis_type&quot;</span> <span class="o">:</span> <span class="s2">&quot;giao&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;tesla&quot;</span> <span class="o">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;magnetic_field&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.2000</span><span class="p">,</span>   <span class="mf">0.3000</span><span class="p">,</span>  <span class="o">-</span><span class="mf">0.1500</span>   <span class="p">],</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.200000</span><span class="p">,</span>      <span class="mf">2.500000</span><span class="p">,</span>      <span class="mf">2.720616</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.200000</span><span class="p">,</span>      <span class="mf">2.500000</span><span class="p">,</span>      <span class="mf">0.305956</span><span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="auxiliary-basis-sets">
+<h2>Auxiliary basis sets<a class="headerlink" href="#auxiliary-basis-sets" title="Permalink to this headline">¶</a></h2>
+<p>The following MP2-fit basis sets are available in BAGEL. The basis set name can be used with the <code class="docutils literal"><span class="pre">aux_basis</span></code> keyword
+in the method block (refer to <a class="reference internal" href="../pt2/mp2.html#mp2"><span class="std std-ref">Møller&#8211;Plesset perturbation theory (MP2)</span></a> for more details).</p>
+<ul class="simple">
+<li>cc-pvdz-ri</li>
+<li>cc-pvtz-ri</li>
+<li>cc-pvqz-ri</li>
+<li>cc-pv5z-ri</li>
+</ul>
+<div class="section" id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<p>An example using cc-pvdz-ri in MP2 calculation.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.20433891360</span><span class="p">,</span>  <span class="mf">0.54285096106</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04748199659</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">1.20543291352</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.83826393986</span><span class="p">,</span>  <span class="mf">0.12432899108</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.00000600000</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.52953889027</span><span class="p">,</span>  <span class="mf">0.20833398505</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">1.20544091352</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.83825393987</span><span class="p">,</span>  <span class="mf">0.12432799108</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">1.20433091360</span><span class="p">,</span>  <span class="mf">0.54284396106</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.04748099659</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.00000400000</span><span class="p">,</span>  <span class="mf">1.23314191154</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.13372399041</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">2.13410484690</span><span class="p">,</span>  <span class="mf">1.07591192282</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.12500499103</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">2.13651384673</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.37179190159</span><span class="p">,</span>  <span class="mf">0.18742198655</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.00000000000</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.59646181374</span><span class="p">,</span>  <span class="mf">0.33932597566</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">2.13651384673</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.37179290159</span><span class="p">,</span>  <span class="mf">0.18742198655</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">2.13410684690</span><span class="p">,</span>  <span class="mf">1.07591292282</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.12500599103</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.00000000000</span><span class="p">,</span>  <span class="mf">2.29608983528</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.28688797942</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;mp2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;aux_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-ri&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="effective-core-potential-ecp-basis-sets">
+<h2>Effective core potential (ECP) basis sets<a class="headerlink" href="#effective-core-potential-ecp-basis-sets" title="Permalink to this headline">¶</a></h2>
+<p>The following auxiliary basis sets are available in BAGEL library. The basis set name can be used with the <code class="docutils literal"><span class="pre">basis</span></code> keyword.</p>
+<table class="hlist"><tr><td><ul class="simple">
+<li>ecp10mdf</li>
+<li>ecp28mdf</li>
+<li>ecp46mdf</li>
+</ul>
+</td><td><ul class="simple">
+<li>ecp60mdf</li>
+<li>ecp78mdf</li>
+<li>def2-SVP-ecp</li>
+</ul>
+</td><td><ul class="simple">
+<li>def2-SVP-2c-ecp</li>
+<li>lanl2dz-ecp</li>
+</ul>
+</td></tr></table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">User-defined ECP basis sets need to contain the keyword &#8220;ecp&#8221; in the names.
+Refer to <a class="reference internal" href="#user-defined-basis-sets">User defined basis sets</a> for more details.</p>
+</div>
+<div class="section" id="id1">
+<h3>Example<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>Example for CuH2 using cc-pvtz basis set for H and lanl2dz-ecp for the heavy atom Cu</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;lanl2dz-ecp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;Cu&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">1.560000</span><span class="p">],</span>
+                      <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvtz&quot;</span><span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.560000</span><span class="p">],</span>
+                      <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvtz&quot;</span><span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;-1&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="user-defined-basis-sets">
+<h2>User defined basis sets<a class="headerlink" href="#user-defined-basis-sets" title="Permalink to this headline">¶</a></h2>
+<p>The basis set file is in the following format</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;H&quot;</span> <span class="o">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="s2">&quot;angular&quot;</span> <span class="o">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;prim&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mf">5.4471780</span><span class="p">,</span> <span class="mf">0.8245470</span><span class="p">],</span>
+     <span class="s2">&quot;cont&quot;</span> <span class="o">:</span> <span class="p">[[</span><span class="mf">0.1562850</span><span class="p">,</span> <span class="mf">0.9046910</span><span class="p">]]</span>
+   <span class="p">},</span> <span class="p">{</span>
+     <span class="s2">&quot;angular&quot;</span> <span class="o">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;prim&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mf">0.1831920</span><span class="p">],</span>
+     <span class="s2">&quot;cont&quot;</span> <span class="o">:</span> <span class="p">[[</span><span class="mf">1.0000000</span><span class="p">]]</span>
+   <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="s2">&quot;He&quot;</span> <span class="o">:</span> <span class="p">[</span>
+   <span class="p">{</span>
+     <span class="s2">&quot;angular&quot;</span> <span class="o">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;prim&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mf">13.6267000</span><span class="p">,</span> <span class="mf">1.9993500</span><span class="p">],</span>
+     <span class="s2">&quot;cont&quot;</span> <span class="o">:</span> <span class="p">[[</span><span class="mf">0.1752300</span><span class="p">,</span> <span class="mf">0.8934830</span><span class="p">]]</span>
+   <span class="p">},</span> <span class="p">{</span>
+     <span class="s2">&quot;angular&quot;</span> <span class="o">:</span> <span class="s2">&quot;s&quot;</span><span class="p">,</span>
+     <span class="s2">&quot;prim&quot;</span> <span class="o">:</span> <span class="p">[</span><span class="mf">0.3829930</span><span class="p">],</span>
+     <span class="s2">&quot;cont&quot;</span> <span class="o">:</span> <span class="p">[[</span><span class="mf">1.0000000</span><span class="p">]]</span>
+   <span class="p">}</span>
+ <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The file is essentially one large array, the elements of which are further arrays, each corresponding to the basis set for a given element.
+The basis set for associated with each element is then made up of further arrays, each of which  contains information specifying the properties
+of a single basis function.</p>
+<blockquote>
+<div><ul class="simple">
+<li><code class="docutils literal"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f...) .</li>
+<li><code class="docutils literal"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</li>
+<li><code class="docutils literal"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</li>
+</ul>
+</div></blockquote>
+<p>The user can specify their own basis set using the above format, or use one of the predefined basis sets listed in <a class="reference internal" href="#basis-sets">Basis sets</a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Not all of the the basis sets are defined for all atoms;  an error message of form &#8220;No such node(X)&#8221;, where X is the element, typically means that the relevant element was not found in the basis set file. Refer to the EMSL Basis set exchange library for more basis sets (<a class="reference external" href="https://bse.pnl.gov/bse/portal">https://bse.pnl.gov/bse/portal</a>).</p>
+</div>
+<p>To use a user specified basis the explicit path to the basis set file must be specified in the basis set block.</p>
+<div class="section" id="id2">
+<h3>Example<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;/path/to/my/basis&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;/path/to/my/basis&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="o">-</span><span class="mf">0.22767998367</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.82511994081</span><span class="p">,</span>  <span class="o">-</span><span class="mf">2.66609980874</span><span class="p">];</span> <span class="p">},</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.18572998668</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.14718998944</span><span class="p">,</span>  <span class="o">-</span><span class="mf">3.25788976629</span><span class="p">];</span> <span class="p">},</span>
+      <span class="p">{</span><span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.03000999785</span><span class="p">,</span>  <span class="mf">0.71438994875</span><span class="p">,</span>  <span class="o">-</span><span class="mf">2.79590979943</span><span class="p">];</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="other-features">
+<h1>Other features<a class="headerlink" href="#other-features" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="dummy-atoms">
+<h2>Dummy atoms<a class="headerlink" href="#dummy-atoms" title="Permalink to this headline">¶</a></h2>
+<p>Artificial point charges can be included in the calculation.
+They introduce a user specified charge into the system, but  have no associated basis functions.
+Introduction of such a charge is accomplished by inclusion of an additional line in the geometry block for an atom of  element &#8220;Q&#8221;.</p>
+<div class="section" id="id3">
+<h3>Example<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<p>A dihydrogen molecule with a nearby dummy charge of +0.2. Note that the charge specified in the &#8220;hf&#8221; block does not include the charge associated with the dummy atom.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;tzvpp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;Q&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">2.0000</span><span class="p">],</span> <span class="s2">&quot;charge&quot;</span> <span class="o">:</span> <span class="s2">&quot;0.2&quot;</span><span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">0.7414</span><span class="p">]},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span>  <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>  <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">0.000000</span><span class="p">,</span>   <span class="mf">0.0000</span><span class="p">]}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf&quot;</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>from which one obtains</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">===</span> <span class="nx">RHF</span> <span class="nx">iteration</span> <span class="p">(</span><span class="nx">tzvpp</span><span class="p">)</span> <span class="o">===</span>
+
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">0</span>         <span class="o">-</span><span class="mf">1.12552716</span>          <span class="mf">0.00743295</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">1</span>         <span class="o">-</span><span class="mf">1.12987462</span>          <span class="mf">0.00139213</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">2</span>         <span class="o">-</span><span class="mf">1.13008781</span>          <span class="mf">0.00009095</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">3</span>         <span class="o">-</span><span class="mf">1.13008889</span>          <span class="mf">0.00000614</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">4</span>         <span class="o">-</span><span class="mf">1.13008889</span>          <span class="mf">0.00000054</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">5</span>         <span class="o">-</span><span class="mf">1.13008889</span>          <span class="mf">0.00000007</span>           <span class="mf">0.01</span>
+             <span class="nx">o</span> <span class="nx">DIIS</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Diag</span>                                        <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Post</span> <span class="nx">process</span>                                <span class="mf">0.00</span>
+             <span class="nx">o</span> <span class="nx">Fock</span> <span class="nx">build</span>                                  <span class="mf">0.01</span>
+    <span class="mi">6</span>         <span class="o">-</span><span class="mf">1.13008889</span>          <span class="mf">0.00000000</span>           <span class="mf">0.01</span>
+
+  <span class="o">*</span> <span class="nx">SCF</span> <span class="nx">iteration</span> <span class="nx">converged</span><span class="p">.</span>
+
+  <span class="o">*</span> <span class="nx">Permanent</span> <span class="nx">dipole</span> <span class="nx">moment</span><span class="o">:</span>
+         <span class="p">(</span>    <span class="mf">0.000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>    <span class="o">-</span><span class="mf">0.427736</span><span class="p">)</span> <span class="nx">a</span><span class="p">.</span><span class="nx">u</span><span class="p">.</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
+<table border="1" class="docutils">
+<colgroup>
+<col width="36%" />
+<col width="64%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Description of Reference</th>
+<th class="head">Reference</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>General text on electronic structure theory</td>
+<td>A. Szabo and N. S. Ostlund,
+<em>Modern Quantum Chemistry: Introduction to Advanced Electronic Structure Theory</em>
+(McGraw-Hill, New York, 1989).</td>
+</tr>
+<tr class="row-odd"><td>Gauge invariant atomic orbitals</td>
+<td>R. Ditchfield, Mol. Phys. <strong>27</strong>, 789 (1974).</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="molecule-toc.html"
+                        title="previous chapter">Molecule specification</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../scf/scf.html"
+                        title="next chapter">Self-consistent field</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../scf/scf.html" title="Self-consistent field"
+             >next</a></li>
+        <li class="right" >
+          <a href="molecule-toc.html" title="Molecule specification"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="molecule-toc.html" >Molecule specification</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

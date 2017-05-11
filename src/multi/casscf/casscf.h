@@ -53,6 +53,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int max_micro_iter_;
     double thresh_;
     double thresh_micro_;
+    double thresh_overlap_;
     bool conv_ignore_;
     bool restart_cas_;
     bool natocc_;
@@ -108,6 +109,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
+    double thresh_overlap() const { return thresh_overlap_; }
 
     double energy(const int i) const { return energy_[i]; }
     double energy_av() const { return blas::average(energy_); }

@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="../_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to run BAGEL" href="how_to_run_bagel.html" />
+    <link rel="prev" title="First steps with BAGEL" href="quickstart.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="how_to_run_bagel.html" title="How to run BAGEL"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="quickstart.html" title="First steps with BAGEL"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="quickstart.html" accesskey="U">First steps with BAGEL</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<span id="start-guide"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><table border="1" class="docutils">
+<colgroup>
+<col width="22%" />
+<col width="43%" />
+<col width="35%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>MPI C++ compiler</td>
+<td>&#160;</td>
+<td>C++11 and MPI-3 support</td>
+</tr>
+<tr class="row-even"><td>GNU Libtool</td>
+<td><a class="reference external" href="https://www.gnu.org/software/libtool">https://www.gnu.org/software/libtool</a></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>GNU Autoconf</td>
+<td><a class="reference external" href="https://www.gnu.org/software/autoconf">https://www.gnu.org/software/autoconf</a></td>
+<td>Version 2.69 or newer</td>
+</tr>
+<tr class="row-even"><td>GNU Automake</td>
+<td><a class="reference external" href="https://www.gnu.org/software/automake">https://www.gnu.org/software/automake</a></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-odd"><td>Boost C++ Libraries</td>
+<td><a class="reference external" href="http://www.boost.org">http://www.boost.org</a></td>
+<td>Version 1.53.0 or newer</td>
+</tr>
+<tr class="row-even"><td>BLAS</td>
+<td><a class="reference external" href="http://www.netlib.org/blas">http://www.netlib.org/blas</a></td>
+<td>Use optimized BLAS</td>
+</tr>
+<tr class="row-odd"><td>LAPACK</td>
+<td><a class="reference external" href="http://www.netlib.org/lapack">http://www.netlib.org/lapack</a></td>
+<td>Use optimized LAPACK</td>
+</tr>
+<tr class="row-even"><td>ScaLAPACK</td>
+<td><a class="reference external" href="http://www.netlib.org/scalapack">http://www.netlib.org/scalapack</a></td>
+<td>Use optimized ScaLPACK</td>
+</tr>
+</tbody>
+</table>
+</div></blockquote>
+<p>Intel MKL is strongly recommended for BLAS, LAPACK, and ScaLAPACK (distributed for free for academic users)</p>
+</div>
+<div class="section" id="downloading-the-source">
+<h2>Downloading the Source<a class="headerlink" href="#downloading-the-source" title="Permalink to this headline">¶</a></h2>
+<p>The simplest approach is to just download and extract the tarball containing the most recent BAGEL release:</p>
+<pre class="literal-block">
+$ cd /your/parent/directory
+$ wget <a class="reference external" href="https://github.com/nubakery/bagel/archive/v">https://github.com/nubakery/bagel/archive/v</a>1.0.0.tar.gz
+$ tar xvf bagel-1.0.0.tar.gz
+$ cd bagel
+</pre>
+<p>Alternatively, you can clone the git repository:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd /your/parent/directory
+$ git clone https://github.com/nubakery/bagel.git
+$ cd bagel
+</pre></div>
+</div>
+<p>The SMITH3 code generator can be downloaded in a similar manner from <a class="reference external" href="https://github.com/nubakery/">the NUBakery GitHub page</a>.</p>
+</div>
+<div class="section" id="build-bagel">
+<h2>Build BAGEL<a class="headerlink" href="#build-bagel" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Automake</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ glibtoolize (or, libtoolize)
+$ aclocal
+$ autoconf
+$ autoheader
+$ automake -a
+</pre></div>
+</div>
+</li>
+<li><p class="first">Create an object directory</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ mkdir obj
+$ cd obj
+</pre></div>
+</div>
+</li>
+<li><p class="first">Configure</p>
+<p>A minimal set of configure options is</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$(BOOST_ROOT)/lib&#39; &#39;--with-include=-I$(BOOST_ROOT)/include&#39;
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Configure options:</dt>
+<dd><div class="first last line-block">
+<div class="line"><code class="docutils literal"><span class="pre">--with-mpi=value</span></code>  turns on MPI, where &#8220;value&#8221; can be &#8220;mvapich&#8221;, &#8220;intel&#8221;, or &#8220;openmpi&#8221;.
+However, Open MPI is not recommended.</div>
+<div class="line"><code class="docutils literal"><span class="pre">--enable-mkl</span></code>  turns on MKL extensions, such as efficient matrix transposition. MKL libraries are automatically detected.</div>
+<div class="line"><code class="docutils literal"><span class="pre">--disable-scalapack</span></code>  will disable the use of ScaLapack (parallel Lapack) which is not recommended.</div>
+<div class="line"><code class="docutils literal"><span class="pre">--disable-smith</span></code>  will disable the code generated by SMITH which is not recommended.</div>
+<div class="line"><code class="docutils literal"><span class="pre">--with-include</span></code>  can be used to specifically include paths.</div>
+<div class="line"><code class="docutils literal"><span class="pre">--with-libxc</span></code> turns on the interface to libxc.</div>
+<div class="line"><code class="docutils literal"><span class="pre">CXXFLAGS=-DNDEBUG</span></code> deactivates the debugging mode. <strong>It is absolutely essential to specify this for release builds</strong>.</div>
+<div class="line"><code class="docutils literal"><span class="pre">CXXFLAGS=-DCOMPILE_J_ORB</span></code> allows the inclusion of <em>j</em>-type atomic basis functions.</div>
+</div>
+</dd>
+</dl>
+<p>Example (Release build on the Shiozaki group&#8217;s cluster)</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ export LD_LIBRARY_PATH=/usr/local/boost/boost_1_62_0_gcc-6.2.0/lib:$LD_LIBRARY_PATH
+
+$ ../configure &#39;LDFLAGS=-L/usr/local/boost/boost_1_62_0_gcc-6.2.0/lib&#39; &#39;CXXFLAGS=-DNDEBUG -O3 -mavx&#39;
+  &#39;--enable-mkl&#39; &#39;--with-include= -I/usr/local/boost/boost_1_62_0_gcc-6.2.0/include&#39;
+  &#39;--with-mpi=intel&#39; &#39;CC=/usr/local/gcc/gcc-6.2.0/bin/gcc&#39; &#39;CXX=/usr/local/gcc/gcc-6.2.0/bin/g++&#39;
+</pre></div>
+</div>
+</li>
+<li><p class="first">Compile</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ make -j4
+$ make install
+</pre></div>
+</div>
+</li>
+<li><p class="first">Test run</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ BAGEL path_to_bagel/test/benzene_svp_mp2.json
+</pre></div>
+</div>
+</li>
+<li><p class="first">Additional Notes</p>
+<ul>
+<li><p class="first">Configuring without MKL</p>
+<div class="line-block">
+<div class="line">If MKL is not available, the path to cblas headers may need to be included as a configure option
+     (e.g., &#8216;&#8211;with-include=-I/usr/path/to/cblas&#8217;).
+Furthermore, if relativistic calculations fail without MKL, users may consider reconfiguring and recompiling with -DZDOT_RETURN in CXXFLAGS.</div>
+</div>
+</li>
+<li><p class="first">Compiling on small machines</p>
+<div class="line-block">
+<div class="line">Some files in BAGEL require several GB of RAM to compile.  This is generally not a problem for clusters, but on personal computers the
+compilation will occasionally fail.  Compiling with one thread (make -j1) and not using -DCOMPILE_J_ORB may help.</div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="../index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../author.html">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="quickstart.html"
+                        title="previous chapter">First steps with BAGEL</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="how_to_run_bagel.html"
+                        title="next chapter">How to run BAGEL</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="how_to_run_bagel.html" title="How to run BAGEL"
+             >next</a></li>
+        <li class="right" >
+          <a href="quickstart.html" title="First steps with BAGEL"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="quickstart.html" >First steps with BAGEL</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>

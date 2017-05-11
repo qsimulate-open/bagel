@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Author contributions &#8212; BAGEL Manual</title>
+    
+    <link rel="stylesheet" href="_static/override.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Funding and citation" href="funding.html" />
+    <link rel="prev" title="Constants" href="supp_info/constants.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="funding.html" title="Funding and citation"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="supp_info/constants.html" title="Constants"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="user-manual.html" accesskey="U"><strong>BAGEL user manual</strong></a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="author-contributions">
+<span id="author"></span><h1>Author contributions<a class="headerlink" href="#author-contributions" title="Permalink to this headline">¶</a></h1>
+<p><strong>Toru Shiozaki</strong> (TS) has designed the density fitting utilities and implemented as a parallel program. He also implemented most of the molecular integrals and the non-relativistic HF, MP2, CASSCF, CASPT2, NEVPT2, and MRCI programs. He is also responsible for the code for HF, MP2, CASSCF, and SA-CASSCF nuclear gradients and the <em>Z</em>-vector equations for HF and CASSCF reference functions. The determinantal FCI code has been developed by <strong>TS</strong> and <strong>Shane M. Parker</strong> (SMP). The parallel FCI is due to <strong>TS</strong>. All of the code for restricted active spaces is due to <strong>SMP</strong>. All of the FMM capabilities and ECP integrals were implemented by <strong>Hai-Anh Le</strong> (HAL). Douglas-Kroll-Hess integrals were implemented by <strong>Yiqun Wang</strong> (YW).</p>
+<p>The code for state-specific CASPT2 nuclear energy gradients was developed by <strong>Matthew K. MacLeod</strong> (MKM) and <strong>TS</strong>. The contributions by <strong>MKM</strong> included the extension of SMITH3 to enable computation of the source terms in the <em>Z</em>-CASSCF equations. This code was later extended by <strong>Bess Vlaisavljevich</strong> (BV) to XMS-CASPT2 nuclear energy gradients and by <strong>Jae Woo Park</strong> (JWP) to include the computation of derivative couplings. Note that <strong>JWP</strong> has significantly improved the CASPT2 gradient algorithm, which is currently used in the released version. <strong>BV</strong> implemented the numerical differentiation programs for nuclear Hessian elements and vibrational analyses.</p>
+<p>The Dirac–Hartree–Fock program was developed by <strong>TS</strong> with contributions from <strong>Matthew S. Kelley</strong>. The relativistic FCI was written by <strong>TS</strong>. The initial relativistic CASSCF program was implemented by <strong>Jefferson E. Bates</strong>. The program has since been replaced by a more stable second-order algorithm by <strong>TS</strong>, who also implemented the relativistic CASPT2 and MRCI programs. <strong>Ryan D. Reynolds</strong> (RDR) extended the relativistic CASPT2 and MRCI code to enable multi-state variants. <strong>RDR</strong> also developed a module that extracts EPR Hamiltonian parameters from the relativistic computations. The pilot implementation of nuclear gradients within the relativistic framework was written by <strong>TS</strong>.</p>
+<p><strong>JWP</strong> implemented all of the geometry optimizers (for equilibrium geometries, transition states,  and conical intersections) that are currently used, replacing inefficient code due to <strong>TS</strong>. <strong>JWP</strong> is also responsible for the interfaces to dynamics programs. All of the code for the ASD algorithms was developed by <strong>SMP</strong> (except orbital optimization part written by <strong>Inkoo Kim</strong>). The GIAO code was written by <strong>RDR</strong>.</p>
+<p><strong>Peter J. Cherry</strong>, <strong>JWP</strong>, <strong>BV</strong>, <strong>HAL</strong>, <strong>RDR</strong>, <strong>Yeonjun Jeong</strong>, <strong>Jheng-Wei Li</strong>, and <strong>YW</strong> wrote the manual at a group retreat in Wisconsin (May 1-3, 2017) while <strong>TS</strong> &#8220;supervised&#8221;.</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="_images/group.png"><img alt="_images/group.png" src="_images/group.png" style="width: 100%;" /></a>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table Of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="user-manual.html"><strong>BAGEL user manual</strong></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="quickstart/quickstart.html">First steps with BAGEL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="molecule/molecule-toc.html">Molecule specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="scf/scf.html">Self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ci/ci_methods.html">Configuration interaction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="multi/multi.html">Multiconfiguration self-consistent field</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pt2/pt2.html">Perturbation theory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="smith/smith.html">SMITH3-generated code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="grad/grad.html">Nuclear gradients and related functionalities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asd/asd.html">Active space decomposition method</a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous/misc.html">Miscellaneous features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supp_info/supp_info.html">Supplementary information</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Author contributions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="funding.html">Funding and citation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="supp_info/constants.html"
+                        title="previous chapter">Constants</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="funding.html"
+                        title="next chapter">Funding and citation</a></p>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="funding.html" title="Funding and citation"
+             >next</a></li>
+        <li class="right" >
+          <a href="supp_info/constants.html" title="Constants"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAGEL Manual</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shiozaki Group.
+    </div>
+  </body>
+</html>
