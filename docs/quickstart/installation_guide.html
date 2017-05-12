@@ -171,6 +171,14 @@ $ make install
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ BAGEL path_to_bagel/test/benzene_svp_mp2.json
 </pre></div>
 </div>
+<p>Also there is a suite of test programs. To run this, in obj</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd bagel/obj
+$ make check
+$ cd src
+$ ./TestSuite --log_level=all
+</pre></div>
+</div>
+<p>One of the tests (ASD-DMRG) is meant to fail.</p>
 </li>
 <li><p class="first">Additional Notes</p>
 <ul>

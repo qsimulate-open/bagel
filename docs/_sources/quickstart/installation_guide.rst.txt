@@ -90,6 +90,15 @@ Build BAGEL
 
     $ BAGEL path_to_bagel/test/benzene_svp_mp2.json
 
+  Also there is a suite of test programs. To run this, in obj ::
+
+    $ cd bagel/obj
+    $ make check 
+    $ cd src
+    $ ./TestSuite --log_level=all
+
+  One of the tests (ASD-DMRG) is meant to fail.
+
 * Additional Notes
 
   * Configuring without MKL
