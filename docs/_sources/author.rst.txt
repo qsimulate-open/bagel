@@ -14,7 +14,7 @@ The Dirac–Hartree–Fock program was developed by **TS** with contributions fr
 
 **Peter J. Cherry**, **JWP**, **BV**, **HAL**, **RDR**, **Yeonjun Jeong**, **Jheng-Wei Li**, and **YW** wrote the manual at a group retreat in Wisconsin (May 1-3, 2017) while **TS** "supervised".
 
-.. figure:: _static/group.png
+.. figure:: _static/group.jpg
    :width: 100 %
    :align: center
 
