@@ -135,13 +135,13 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   for (auto& m : *idata_)
     tie(energy_, ref_) = get_energy_(m, geom_, ref_);
 
-  cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
+  const int natom = geom_->natom();
+  cout << "  Gradient evaluation with respect to " << natom * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
   Timer timer;
   muffle_ = make_shared<Muffle>("finite.log");
 
-  const int natom = geom_->natom();
   auto grad = make_shared<GradFile>(natom);
 
   const int ncomm = mpi__->world_size() / nproc_;
@@ -201,10 +201,9 @@ shared_ptr<GradFile> FiniteGrad::compute() {
 
 template<>
 shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
-  cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
-  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr(s)" << endl;
-
   const int natom = geom_->natom();
+  cout << "  Derivative coupling evaluation with respect to " << natom * 3 << " DOFs" << endl;
+  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   civ_ref->print (/*sort=*/false);

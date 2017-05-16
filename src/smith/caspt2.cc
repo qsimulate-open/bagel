@@ -117,10 +117,9 @@ void CASPT2Energy::compute() {
 template<>
 shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
 #ifdef COMPILE_SMITH
-  cout << "  NACME evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
-  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr(s)" << endl;
-
   const int natom = geom_->natom();
+  cout << "  Derivative coupling evaluation with respect to " << natom * 3 << " DOFs" << endl;
+  cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
 
   shared_ptr<Dvec> civ_ref = ref_->civectors()->copy();
   civ_ref->rotate (task_->msrot());
