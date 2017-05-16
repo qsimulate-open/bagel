@@ -77,6 +77,7 @@ class FiniteNacm : public GradEval_base {
     int target_state2_;
     double dx_;
     std::string method_;
+    int nproc_;
 
     void init() {
       if (geom_->external())
@@ -94,8 +95,8 @@ class FiniteNacm : public GradEval_base {
     }
 
   public:
-    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
+    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx, const int nproc)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method), nproc_(nproc) {
       init();
     }
 
