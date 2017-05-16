@@ -206,7 +206,7 @@ The CASSCF orbitals are state-averaged over two states.
            "frozen" : true
        },
        "nstate" : 2,
-       "nact_cas" : 3,
+       "nact" : 3,
        "nclosed" : 46
      } ]
    }
@@ -231,7 +231,7 @@ Sample input: NACME and DGRAD
            "frozen" : true
        },
        "nstate" : 3,
-       "nact_cas" : 7,
+       "nact" : 7,
        "nclosed" : 44
      } ]
    }
