@@ -197,6 +197,7 @@ class ZHarrison : public Method {
     std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
+    double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }

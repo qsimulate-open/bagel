@@ -56,6 +56,7 @@ std::vector<double> run_opt(std::string filename) {
   std::cout.rdbuf(backup_stream);
   return out;
 }
+
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
   out[2] = 1.749334;

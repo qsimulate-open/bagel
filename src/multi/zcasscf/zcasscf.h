@@ -122,6 +122,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh_micro() const { return thresh_micro_; }
     double thresh_overlap() const { return thresh_overlap_; }
     bool tsymm() const { return tsymm_; }
+    double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
