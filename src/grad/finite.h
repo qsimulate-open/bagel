@@ -39,7 +39,8 @@ class FiniteGrad : public GradEval_base {
 
     mutable std::shared_ptr<Muffle> muffle_;
 
-    std::tuple<double, std::shared_ptr<const Reference>> get_energy(std::string title, std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) const;
+    std::tuple<double, std::shared_ptr<const Reference>>
+      get_energy(std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) const;
     double energy_;
 
     int target_state_;

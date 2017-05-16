@@ -50,7 +50,8 @@ using namespace std;
 using namespace bagel;
 
 tuple<double, shared_ptr<const Reference>>
-FiniteGrad::get_energy(string title, shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) const {
+FiniteGrad::get_energy(shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) const {
+  const string title = to_lower(itree->get<string>("title", ""));
   double out = 0.0;
 
   if (!geom || !geom->magnetism()) {
@@ -132,8 +133,7 @@ FiniteGrad::get_energy(string title, shared_ptr<const PTree> itree, shared_ptr<c
 
 shared_ptr<GradFile> FiniteGrad::compute() {
   for (auto m = idata_->begin(); m != idata_->end(); ++m) {
-    const string title = to_lower((*m)->get<string>("title", ""));
-    tie(energy_, ref_) = get_energy(title, *m, geom_, ref_);
+    tie(energy_, ref_) = get_energy(*m, geom_, ref_);
   }
 
   cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
@@ -161,8 +161,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
           ref_plus = ref_->project_coeff(geom_plus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
-          const string title = to_lower((*m)->get<string>("title", ""));
-          tie(energy_plus, ref_plus) = get_energy(title, *m, geom_plus, ref_plus);
+          tie(energy_plus, ref_plus) = get_energy(*m, geom_plus, ref_plus);
         }
       }
 
@@ -178,8 +177,7 @@ shared_ptr<GradFile> FiniteGrad::compute() {
           ref_minus = ref_->project_coeff(geom_minus);
 
         for (auto m = idata_->begin(); m != idata_->end(); ++m) {
-          const string title = to_lower((*m)->get<string>("title", ""));
-          tie(energy_minus, ref_minus) = get_energy(title, *m, geom_minus, ref_minus);
+          tie(energy_minus, ref_minus) = get_energy(*m, geom_minus, ref_minus);
         }
       }
       grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
