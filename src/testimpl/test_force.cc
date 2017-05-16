@@ -48,6 +48,12 @@ std::vector<double> run_force(std::string filename) {
       auto force = std::make_shared<Force>(itree, geom, ref);
       std::shared_ptr<const GradFile> grad = force->compute();
       out = std::vector<double>(grad->data(), grad->data()+grad->size());
+    } else if (method == "nacme") {
+      // sign of nacme depends on the phase of wfn, so compare absolute values
+      auto force = std::make_shared<Force>(itree, geom, ref);
+      std::shared_ptr<const GradFile> grad = force->compute();
+      out = std::vector<double>(grad->data(), grad->data()+grad->size());
+      for (auto& i : out) i = fabs(i);
     } else {
       throw std::logic_error("Not yet implemented (run_force)");
     }
@@ -74,12 +80,31 @@ std::vector<double> reference_xms_finite() {
   out[5] = -0.0336409542;
   return out;
 }
+std::vector<double> reference_xms_nacme() {
+  std::vector<double> out(6);
+  out[2] =  0.1722559726;
+  out[5] =  0.0786702782;
+  return out;
+}
+std::vector<double> reference_cas_nacme() {
+  std::vector<double> out(6);
+  out[2] =  0.2075313638;
+  out[5] =  0.1243972419;
+  return out;
+}
 
 BOOST_AUTO_TEST_SUITE(TEST_FORCE)
 
+BOOST_AUTO_TEST_CASE(Deriv_Coup) {
+    BOOST_CHECK(compare(run_force("lif_svp_cas_nacme"),      reference_cas_nacme(), 1.0e-5));
+#ifdef COMPILE_SMITH
+    BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_nacme"), reference_xms_nacme(), 1.0e-5));
+#endif
+}
+
 BOOST_AUTO_TEST_CASE(Finite_Grad) {
-    BOOST_CHECK(compare<std::vector<double>>(run_force("hf_mix_dfhf_finite"),     reference_scf_finite_mix(), 1.0e-5));
-    BOOST_CHECK(compare<std::vector<double>>(run_force("hf_svp_mp2_aux_finite"),  reference_svp_mp2_aux_finite(), 1.0e-5));
+    BOOST_CHECK(compare(run_force("hf_mix_dfhf_finite"),     reference_scf_finite_mix(), 1.0e-5));
+    BOOST_CHECK(compare(run_force("hf_svp_mp2_aux_finite"),  reference_svp_mp2_aux_finite(), 1.0e-5));
 #ifdef COMPILE_SMITH
     BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_finite"), reference_xms_finite(), 1.0e-5));
 #endif
