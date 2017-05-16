@@ -176,7 +176,9 @@ shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<c
   if (numerical_) {
 
     auto m = idata_->get_child("method");
-    FiniteGrad eval(m, current_, ref, target_state_, numerical_dx_);
+    const int nproc = idata_->get<int>("nproc", 1);
+    const double dx = idata_->get<double>("numerical_dx", 0.001);
+    FiniteGrad eval(m, current_, ref, target_state_, dx, nproc);
     out = eval.compute();
     prev_ref_ = eval.ref();
     en_ = eval.energy();

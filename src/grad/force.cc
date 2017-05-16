@@ -168,10 +168,11 @@ shared_ptr<GradFile> Force::compute() {
   if (numerical_) {
 
     const double dx = idata_->get<double>("dx", 1.0e-3);
+    const int nproc = idata_->get<int>("nproc", 1);
 
     if (jobtitle == "force") {
 
-      auto force = make_shared<FiniteGrad>(input, geom_, ref_, target, dx);
+      auto force = make_shared<FiniteGrad>(input, geom_, ref_, target, dx, nproc);
       out = force->compute();
       ref = force->ref();
 

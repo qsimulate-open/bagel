@@ -45,11 +45,12 @@ class FiniteGrad : public GradEval_base {
 
     int target_state_;
     double dx_;
+    int nproc_;
 
   public:
     // Constructor does nothing here
-    FiniteGrad(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx) {
+    FiniteGrad(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx, const int nproc)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), nproc_(nproc) {
     }
 
     std::shared_ptr<GradFile> compute();

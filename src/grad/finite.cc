@@ -144,45 +144,56 @@ shared_ptr<GradFile> FiniteGrad::compute() {
   const int natom = geom_->natom();
   auto grad = make_shared<GradFile>(natom);
 
-  for (int i = 0; i != natom; ++i) {    // atom i
-    for (int j = 0; j != 3; ++j) {      // xyz
-      muffle_->mute();
+  const int ncomm = mpi__->world_size() / nproc_;
+  const int icomm = mpi__->world_rank() / nproc_;
 
-      double energy_plus = 0.0;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = dx_;
-        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-        geom_plus->print_atoms();
+  mpi__->split(nproc_);
 
-        shared_ptr<const Reference> ref_plus;
-        if (ref_)
-          ref_plus = ref_->project_coeff(geom_plus);
+  for (int i = 0, counter = 0; i != natom; ++i) {    // atom i
+    for (int j = 0; j != 3; ++j, ++counter) {      // xyz
+      if (counter % ncomm == icomm && ncomm != icomm) {
+        muffle_->mute();
 
-        for (auto& m : *idata_)
-          tie(energy_plus, ref_plus) = get_energy_(m, geom_plus, ref_plus);
+        double energy_plus = 0.0;
+        {
+          auto displ = make_shared<XYZFile>(natom);
+          displ->element(j,i) = dx_;
+          auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+          geom_plus->print_atoms();
+
+          shared_ptr<const Reference> ref_plus;
+          if (ref_)
+            ref_plus = ref_->project_coeff(geom_plus);
+
+          for (auto& m : *idata_)
+            tie(energy_plus, ref_plus) = get_energy_(m, geom_plus, ref_plus);
+        }
+
+        double energy_minus = 0.0;
+        {
+          auto displ = make_shared<XYZFile>(natom);
+          displ->element(j,i) = -dx_;
+          auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
+          geom_minus->print_atoms();
+
+          shared_ptr<const Reference> ref_minus;
+          if (ref_)
+            ref_minus = ref_->project_coeff(geom_minus);
+
+          for (auto& m : *idata_)
+            tie(energy_minus, ref_minus) = get_energy_(m, geom_minus, ref_minus);
+        }
+
+        if (mpi__->rank() == 0)
+          grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
+        muffle_->unmute();
+        stringstream ss; ss << "Finite difference evaluation (" << setw(2) << i*3+j+1 << " / " << geom_->natom() * 3 << ")";
+        timer.tick_print(ss.str());
       }
-
-      double energy_minus = 0.0;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = -dx_;
-        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), false, false);
-        geom_minus->print_atoms();
-
-        shared_ptr<const Reference> ref_minus;
-        if (ref_)
-          ref_minus = ref_->project_coeff(geom_minus);
-
-        for (auto& m : *idata_)
-          tie(energy_minus, ref_minus) = get_energy_(m, geom_minus, ref_minus);
-      }
-      grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
-      muffle_->unmute();
-      stringstream ss; ss << "Finite difference evaluation (" << setw(2) << i*3+j+1 << " / " << geom_->natom() * 3 << ")";
-      timer.tick_print(ss.str());
     }
   }
+  mpi__->merge();
+  grad->allreduce();
 
   grad->print(": Calculated with finite difference", 0);
   return grad;
