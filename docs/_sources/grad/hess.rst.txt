@@ -93,7 +93,7 @@ A sample input for the benzene molecule.
            "frozen" : true
        },
        "nstate" : 2,
-       "nact_cas" : 6,
+       "nact" : 6,
        "nclosed" : 18
     } ]
   }
@@ -127,7 +127,7 @@ If you are running a Hessian calculation using the embarassingly parallel implem
            "frozen" : true
        },
        "nstate" : 2,
-       "nact_cas" : 6,
+       "nact" : 6,
        "nclosed" : 18
     } ]
   }

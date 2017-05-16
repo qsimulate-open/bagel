@@ -21,13 +21,12 @@ Prerequisites
 Intel MKL is strongly recommended for BLAS, LAPACK, and ScaLAPACK (distributed for free for academic users)
 
 ----------------------
-Downloading the Source
+Downloading the source
 ----------------------
 
 The simplest approach is to just download and extract the tarball containing the most recent BAGEL release:
 
 .. parsed-literal::
-     $ cd /your/parent/directory
      $ wget https://github.com/nubakery/bagel/archive/v\ |version|\ .tar.gz
      $ tar xvf bagel-\ |version|\ .tar.gz
      $ cd bagel
@@ -35,7 +34,6 @@ The simplest approach is to just download and extract the tarball containing the
 Alternatively, you can clone the git repository:
 
 .. parsed-literal::
-     $ cd /your/parent/directory
      $ git clone https://github.com/nubakery/bagel.git
      $ cd bagel
 
@@ -91,6 +89,15 @@ Build BAGEL
 * Test run ::
 
     $ BAGEL path_to_bagel/test/benzene_svp_mp2.json
+
+  Also there is a suite of test programs. To run this, in obj ::
+
+    $ cd bagel/obj
+    $ make check 
+    $ cd src
+    $ ./TestSuite --log_level=all
+
+  One of the tests (ASD-DMRG) is meant to fail.
 
 * Additional Notes
 
