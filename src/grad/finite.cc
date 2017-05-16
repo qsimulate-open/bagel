@@ -245,14 +245,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
           auto energy_method = construct_method(method_, idata_, geom_plus, ref_plus);
           energy_method->compute();
-          auto refgrad_plus = energy_method->conv_to_ref();
-          acoeff_plus = make_shared<Matrix>(refgrad_plus->coeff()->slice(nclosed, nocc));
+          ref_plus = energy_method->conv_to_ref();
+          acoeff_plus = make_shared<Matrix>(ref_plus->coeff()->slice(nclosed, nocc));
           for (int im = 0; im != acoeff_ref->mdim(); ++im) {
             double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
             if (dmatch < 0.0)
               blas::scale_n(-1.0, acoeff_plus->element_ptr(0, im), acoeff_ref->ndim());
           }
-          civ_plus = refgrad_plus->civectors()->copy();
+          civ_plus = ref_plus->civectors()->copy();
           civ_plus->match(civ_ref);
         }
 
@@ -270,14 +270,14 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
 
           auto energy_method = construct_method(method_, idata_, geom_minus, ref_minus);
           energy_method->compute();
-          auto refgrad_minus = energy_method->conv_to_ref();
-          acoeff_minus = make_shared<Matrix>(refgrad_minus->coeff()->slice(nclosed, nocc));
+          ref_minus = energy_method->conv_to_ref();
+          acoeff_minus = make_shared<Matrix>(ref_minus->coeff()->slice(nclosed, nocc));
           for (int im = 0; im != acoeff_ref->mdim(); ++im) {
             double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));
             if (dmatch < 0.0)
               blas::scale_n(-1.0, acoeff_minus->element_ptr(0, im), acoeff_ref->ndim());
           }
-          civ_minus = refgrad_minus->civectors()->copy();
+          civ_minus = ref_minus->civectors()->copy();
           civ_minus->match(civ_ref);
         }
 
