@@ -50,7 +50,7 @@ using namespace std;
 using namespace bagel;
 
 tuple<double, shared_ptr<const Reference>>
-FiniteGrad::get_energy(shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) const {
+FiniteGrad::get_energy_(shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) const {
   const string title = to_lower(itree->get<string>("title", ""));
   double out = 0.0;
 
@@ -132,9 +132,8 @@ FiniteGrad::get_energy(shared_ptr<const PTree> itree, shared_ptr<const Geometry>
 }
 
 shared_ptr<GradFile> FiniteGrad::compute() {
-  for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+  for (auto m = idata_->begin(); m != idata_->end(); ++m)
     tie(energy_, ref_) = get_energy(*m, geom_, ref_);
-  }
 
   cout << "  Gradient evaluation with respect to " << geom_->natom() * 3 << " DOFs" << endl;
   cout << "  Finite difference size (dx) is " << setprecision(8) << dx_ << " Bohr" << endl;
@@ -160,9 +159,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         if (ref_)
           ref_plus = ref_->project_coeff(geom_plus);
 
-        for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+        for (auto m = idata_->begin(); m != idata_->end(); ++m)
           tie(energy_plus, ref_plus) = get_energy(*m, geom_plus, ref_plus);
-        }
       }
 
       double energy_minus = 0.0;
@@ -176,9 +174,8 @@ shared_ptr<GradFile> FiniteGrad::compute() {
         if (ref_)
           ref_minus = ref_->project_coeff(geom_minus);
 
-        for (auto m = idata_->begin(); m != idata_->end(); ++m) {
+        for (auto m = idata_->begin(); m != idata_->end(); ++m)
           tie(energy_minus, ref_minus) = get_energy(*m, geom_minus, ref_minus);
-        }
       }
       grad->element(j,i) = (energy_plus - energy_minus) / (2.0 * dx_);
       muffle_->unmute();

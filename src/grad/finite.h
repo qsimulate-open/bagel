@@ -40,7 +40,7 @@ class FiniteGrad : public GradEval_base {
     mutable std::shared_ptr<Muffle> muffle_;
 
     std::tuple<double, std::shared_ptr<const Reference>>
-      get_energy(std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) const;
+      get_energy_(std::shared_ptr<const PTree> itree, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) const;
     double energy_;
 
     int target_state_;
@@ -52,7 +52,6 @@ class FiniteGrad : public GradEval_base {
       : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx) {
     }
 
-    // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute();
 
     double energy() const { return energy_; }
@@ -99,7 +98,6 @@ class FiniteNacm : public GradEval_base {
       init();
     }
 
-    // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute() { throw std::logic_error("NACME for this method has not been implemented"); }
 
     double energy1 () const { return energy1_; }
