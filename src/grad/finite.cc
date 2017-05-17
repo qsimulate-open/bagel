@@ -22,118 +22,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <src/scf/hf/rohf.h>
-#include <src/scf/ks/ks.h>
-#include <src/scf/sohf/soscf.h>
-#include <src/scf/dhf/dirac.h>
-#include <src/scf/giaohf/rhf_london.h>
-#include <src/ci/fci/distfci.h>
-#include <src/ci/fci/harrison.h>
-#include <src/ci/fci/knowles.h>
-#include <src/ci/ras/rasci.h>
-#include <src/ci/zfci/zharrison.h>
-#include <src/pt2/nevpt2/nevpt2.h>
-#include <src/pt2/mp2/mp2.h>
-#include <src/pt2/dmp2/dmp2.h>
-#include <src/multi/casscf/cassecond.h>
-#include <src/multi/casscf/casnoopt.h>
-#include <src/multi/zcasscf/zcassecond.h>
-#include <src/multi/zcasscf/zcasnoopt.h>
-#include <src/smith/smith.h>
-#include <src/periodic/pscf.h>
 #include <src/grad/gradeval.h>
 #include <src/grad/finite.h>
 #include <src/util/timer.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 
 using namespace std;
 using namespace bagel;
 
-tuple<double, shared_ptr<const Reference>>
-FiniteGrad::get_energy_(shared_ptr<const PTree> itree, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref) const {
-  const string title = to_lower(itree->get<string>("title", ""));
-  double out = 0.0;
-
-  if (!geom || !geom->magnetism()) {
-    if (title == "hf")           { auto m = make_shared<RHF>(itree, geom, ref);       m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "ks")      { auto m = make_shared<KS>(itree, geom, ref);        m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "uhf")     { auto m = make_shared<UHF>(itree, geom, ref);       m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "rohf")    { auto m = make_shared<ROHF>(itree, geom, ref);      m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "soscf")   { auto m = make_shared<SOSCF>(itree, geom, ref);     m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "mp2")     { auto m = make_shared<MP2>(itree, geom, ref);       m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "dhf")     { auto m = make_shared<Dirac>(itree, geom, ref);     m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "dmp2")    { auto m = make_shared<DMP2>(itree, geom, ref);      m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "smith")   { auto m = make_shared<Smith>(itree, geom, ref);     m->compute();   out = m->algo()->energy(target_state_);   ref = m->conv_to_ref(); }
-    else if (title == "relsmith"){ auto m = make_shared<RelSmith>(itree, geom, ref);  m->compute();   out = m->algo()->energy(target_state_);   ref = m->conv_to_ref(); }
-    else if (title == "zfci")    { auto m = make_shared<ZHarrison>(itree, geom, ref); m->compute();   out = m->energy(target_state_);           ref = m->conv_to_ref(); }
-    else if (title == "ras") {
-      const string algorithm = itree->get<string>("algorithm", "");
-      if ( algorithm == "local" || algorithm == "" ) { auto m = make_shared<RASCI>(itree, geom, ref); m->compute(); out = m->energy(target_state_); ref = m->conv_to_ref(); }
-#ifdef HAVE_MPI_H
-      else if ( algorithm == "dist" || algorithm == "parallel" )
-        throw logic_error("Parallel RASCI not implemented");
-#endif
-      else
-        throw runtime_error("unknown RASCI algorithm specified. " + algorithm);
-    }
-    else if (title == "fci") {
-      const string algorithm = itree->get<string>("algorithm", "");
-      const bool dokh = (algorithm == "" || algorithm == "auto") && geom->nele() > geom->nbasis();
-      if (dokh || algorithm == "kh" || algorithm == "knowles" || algorithm == "handy") {
-        auto m = make_shared<KnowlesHandy>(itree, geom, ref);        m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else if (algorithm == "hz" || algorithm == "harrison" || algorithm == "zarrabian" || algorithm == "") {
-        auto m = make_shared<HarrisonZarrabian>(itree, geom, ref);   m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-#ifdef HAVE_MPI_H
-      } else if (algorithm == "parallel" || algorithm == "dist") {
-        auto m = make_shared<DistFCI>(itree, geom, ref);             m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-#endif
-      } else
-        throw runtime_error("unknown FCI algorithm specified. " + algorithm);
-    }
-    else if (title == "casscf") {
-      string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "second" || algorithm == "") {
-        auto m = make_shared<CASSecond>(itree, geom, ref);           m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else if (algorithm == "noopt") {
-        auto m = make_shared<CASNoopt>(itree, geom, ref);            m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else
-        throw runtime_error("unknown CASSCF algorithm specified: " + algorithm);
-    }
-    else if (title == "nevpt2")  { auto m = make_shared<NEVPT2<double>>(itree, geom, ref);          m->compute();   out = m->energy();    ref = m->conv_to_ref(); }
-    else if (title == "dnevpt2") { auto m = make_shared<NEVPT2<complex<double>>>(itree, geom, ref); m->compute();   out = m->energy();    ref = m->conv_to_ref(); }
-    else if (title == "zcasscf") {
-      string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "second" || algorithm == "") {
-        auto m = make_shared<ZCASSecond>(itree, geom, ref);          m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else if (algorithm == "noopt") {
-        auto m = make_shared<ZCASNoopt>(itree, geom, ref);           m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else
-        cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-    } else if (title == "pscf")    { auto m = make_shared<PSCF>(itree, geom, ref);             m->compute();   out = m->energy();    ref = m->conv_to_ref(); }
-
-  // now the versions to use with magnetic fields
-  } else {
-    if (title == "hf")           { auto m = make_shared<RHF_London>(itree, geom, ref);       m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "dhf")     { auto m = make_shared<Dirac>(itree, geom, ref);            m->compute();   out = m->energy();                        ref = m->conv_to_ref(); }
-    else if (title == "zfci")    { auto m = make_shared<ZHarrison>(itree, geom, ref);        m->compute();   out = m->energy(target_state_);           ref = m->conv_to_ref(); }
-    else if (title == "zcasscf") {
-      string algorithm = itree->get<string>("algorithm", "");
-      if (algorithm == "second" || algorithm == "") {
-        auto m = make_shared<ZCASSecond>(itree, geom, ref);          m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else if (algorithm == "noopt") {
-        auto m = make_shared<ZCASNoopt>(itree, geom, ref);           m->compute();   out = m->energy(target_state_);   ref = m->conv_to_ref();
-      } else
-        cout << " Optimization algorithm " << algorithm << " is not compatible with ZCASSCF " << endl;
-    } else
-      throw runtime_error(to_upper(title) + " method has not been implemented with an applied magnetic field.");
-  }
-
-  return tie(out, ref);
-}
-
 shared_ptr<GradFile> FiniteGrad::compute() {
-  for (auto& m : *idata_)
-    tie(energy_, ref_) = get_energy_(m, geom_, ref_);
+  for (auto& m : *idata_) {
+    const string title = to_lower(m->get<string>("title", ""));
+    tie(energy_, ref_) = get_energy(title, m, geom_, ref_, target_state_);
+  }
 
   const int natom = geom_->natom();
   cout << "  Gradient evaluation with respect to " << natom * 3 << " DOFs" << endl;
@@ -165,8 +66,10 @@ shared_ptr<GradFile> FiniteGrad::compute() {
           if (ref_)
             ref_plus = ref_->project_coeff(geom_plus);
 
-          for (auto& m : *idata_)
-            tie(energy_plus, ref_plus) = get_energy_(m, geom_plus, ref_plus);
+          for (auto& m : *idata_) {
+            const string title = to_lower(m->get<string>("title", ""));
+            tie(energy_plus, ref_plus) = get_energy(title, m, geom_plus, ref_plus, target_state_);
+          }
         }
 
         double energy_minus = 0.0;
@@ -180,8 +83,10 @@ shared_ptr<GradFile> FiniteGrad::compute() {
           if (ref_)
             ref_minus = ref_->project_coeff(geom_minus);
 
-          for (auto& m : *idata_)
-            tie(energy_minus, ref_minus) = get_energy_(m, geom_minus, ref_minus);
+          for (auto& m : *idata_) {
+            const string title = to_lower(m->get<string>("title", ""));
+            tie(energy_minus, ref_minus) = get_energy(title, m, geom_minus, ref_minus, target_state_);
+          }
         }
 
         if (mpi__->rank() == 0)
@@ -242,9 +147,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           if (ref_)
             ref_plus = ref_->project_coeff(geom_plus);
 
-          auto energy_method = construct_method("casscf", idata_, geom_plus, ref_plus);
-          energy_method->compute();
-          ref_plus = energy_method->conv_to_ref();
+          double energy_plus;
+          tie(energy_plus, ref_plus) = get_energy("casscf", idata_, geom_plus, ref_plus);
           acoeff_plus = make_shared<Matrix>(ref_plus->coeff()->slice(nclosed, nocc));
           for (int im = 0; im != acoeff_ref->mdim(); ++im) {
             double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_plus->element_ptr(0,im));
@@ -267,9 +171,8 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           if (ref_)
             ref_minus = ref_->project_coeff(geom_minus);
 
-          auto energy_method = construct_method("casscf", idata_, geom_minus, ref_minus);
-          energy_method->compute();
-          ref_minus = energy_method->conv_to_ref();
+          double energy_minus;
+          tie(energy_minus, ref_minus) = get_energy("casscf", idata_, geom_minus, ref_minus);
           acoeff_minus = make_shared<Matrix>(ref_minus->coeff()->slice(nclosed, nocc));
           for (int im = 0; im != acoeff_ref->mdim(); ++im) {
             double dmatch = blas::dot_product(acoeff_ref->element_ptr(0, im), acoeff_ref->ndim(), acoeff_minus->element_ptr(0,im));

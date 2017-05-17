@@ -54,7 +54,6 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Method> method;
     shared_ptr<const Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
@@ -96,24 +95,7 @@ int main(int argc, char** argv) {
         if (itree->get<string>("method", "") != "continue")
           throw runtime_error(title + " needs a reference");
 
-      // most methods are constructed here
-      method = construct_method(title, itree, geom, ref);
-
-#ifndef DISABLE_SERIALIZATION
-      if (title == "continue") {
-        IArchive archive(itree->get<string>("archive"));
-        Method* ptr;
-        archive >> ptr;
-        method = shared_ptr<Method>(ptr);
-      }
-#endif
-
-      if (method) {
-
-        method->compute();
-        ref = method->conv_to_ref();
-
-      } else if (title == "optimize") {
+      if (title == "optimize") {
 
         auto opt = make_shared<Optimize>(itree, geom, ref);
         opt->compute();
@@ -229,10 +211,11 @@ int main(int argc, char** argv) {
           mfs << geom;
           if (orbitals || vibration) mfs << ref;
         }
-
       } else {
-        if (title != "molecule")
-          throw runtime_error("unknown method");
+        // otherwise, they are considered single point energy calculation: construct_method is now hidden in get_energy
+        double energy;
+
+        tie(energy, ref) = get_energy(title, itree, geom, ref);
       }
 
       // Save functionality

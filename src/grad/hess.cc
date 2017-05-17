@@ -26,7 +26,7 @@
 #include <src/grad/hess.h>
 #include <src/grad/force.h>
 #include <src/grad/finite.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 #include <src/grad/gradeval.h>
 #include <src/util/atommap.h>
 #include <src/util/constants.h>
@@ -53,10 +53,7 @@ Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_p
   for ( ; m != --input->end(); ++m) {
     const string title = to_lower((*m)->get<string>("title", ""));
     if (title != "molecule") {
-      shared_ptr<Method> c = construct_method(title, *m, geom_, r);
-      if (!c) throw runtime_error("unknown method in Hess");
-      c->compute();
-      r = c->conv_to_ref();
+      tie(energy_, r) = get_energy(title, *m, geom_, r);
     } else {
       geom_ = make_shared<Geometry>(*geom_, *m);
       if (r) r = r->project_coeff(geom_);

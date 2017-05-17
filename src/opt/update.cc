@@ -31,7 +31,6 @@
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
-#include <src/wfn/construct_method.h>
 #include <src/opt/optimize.h>
 #include <src/opt/opt.h>
 #include <src/util/archive.h>

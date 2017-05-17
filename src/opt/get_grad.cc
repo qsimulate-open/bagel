@@ -28,7 +28,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 #include <src/opt/opt.h>
 #include <src/grad/finite.h>
 
