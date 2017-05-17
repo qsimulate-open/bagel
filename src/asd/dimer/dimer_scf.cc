@@ -323,8 +323,7 @@ void Dimer::scf(const shared_ptr<const PTree> idata) {
 
   // SCF
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
-  double energy;
-  tie(energy, sref_) = get_energy("hf", hfdata, sgeom_, sref_);
+  tie(ignore, sref_) = get_energy("hf", hfdata, sgeom_, sref_);
   dimertime.tick_print("Dimer SCF");
 
   const int nclosed = sref_->nclosed();

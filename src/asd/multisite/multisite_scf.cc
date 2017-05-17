@@ -292,8 +292,7 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
 
   // SCF
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
-  double energy;
-  tie(energy, sref_) = get_energy("hf", hfdata, sref_->geom(), sref_);
+  tie(ignore, sref_) = get_energy("hf", hfdata, sref_->geom(), sref_);
   stopwatch.tick_print("Multisite SCF");
 
   const int nclosed = sref_->nclosed();

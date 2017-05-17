@@ -68,8 +68,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
       for ( ; m != --input_->end(); ++m) {
         const string title = to_lower((*m)->get<string>("title", ""));
         if (title != "molecule") {
-          double energy;
-          tie(energy, ref) = get_energy(title, *m, current_, ref);
+          tie(ignore, ref) = get_energy(title, *m, current_, ref);
         } else {
           current_ = make_shared<const Geometry>(*current_, *m);
           if (ref) ref = ref->project_coeff(current_);
@@ -168,8 +167,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         for ( ; m != --input_->end(); ++m) {
           const string title = to_lower((*m)->get<string>("title", ""));
           if (title != "molecule") {
-            double energy;
-            tie(energy, ref) = get_energy(title, *m, current_, ref);
+            tie(ignore, ref) = get_energy(title, *m, current_, ref);
           } else {
             current_ = make_shared<const Geometry>(*current_, *m);
             if (ref) ref = ref->project_coeff(current_);

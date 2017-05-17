@@ -213,9 +213,7 @@ int main(int argc, char** argv) {
         }
       } else {
         // otherwise, they are considered single point energy calculation: construct_method is now hidden in get_energy
-        double energy;
-
-        tie(energy, ref) = get_energy(title, itree, geom, ref);
+        tie(ignore, ref) = get_energy(title, itree, geom, ref);
       }
 
       // Save functionality

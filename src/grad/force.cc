@@ -56,8 +56,7 @@ shared_ptr<GradFile> Force::compute() {
   for ( ; m != --input->end(); ++m) {
     const std::string title = to_lower((*m)->get<std::string>("title", ""));
     if (title != "molecule") {
-      double energy;
-      tie(energy, ref) = get_energy(title, *m, geom_, ref);
+      tie(ignore, ref) = get_energy(title, *m, geom_, ref);
     } else {
       geom_ = make_shared<const Geometry>(*geom_, *m);
       if (ref) ref = ref->project_coeff(geom_);
