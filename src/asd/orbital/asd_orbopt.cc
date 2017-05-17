@@ -27,7 +27,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/asd/orbital/asd_orbopt.h>
 
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 
 using namespace std;
 using namespace bagel;

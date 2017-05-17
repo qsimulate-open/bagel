@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: construct_method.h
+// Filename: get_energy.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -23,16 +23,16 @@
 //
 
 
-#ifndef __SRC_WFN_CONSTRUCT_METHOD_H
-#define __SRC_WFN_CONSTRUCT_METHOD_H
+#ifndef __SRC_WFN_GET_ENERGY_H
+#define __SRC_WFN_GET_ENERGY_H
 
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
 #include <src/util/input/input.h>
 
 namespace bagel {
-  extern std::shared_ptr<Method> construct_method(std::string title, std::shared_ptr<const PTree> itree,
-                                                  std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+  extern std::tuple<double, std::shared_ptr<const Reference>> get_energy(std::string title, std::shared_ptr<const PTree> itree,
+            std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target = 0);
 }
 
 #endif

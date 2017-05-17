@@ -31,7 +31,6 @@
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
-#include <src/wfn/construct_method.h>
 #include <src/opt/optimize.h>
 #include <src/opt/opt.h>
 
@@ -74,10 +73,8 @@ void Opt::do_optimize() {
       for ( ; m != --input_->end(); ++m) {
         const string title = to_lower((*m)->get<string>("title", ""));
         if (title != "molecule") {
-          shared_ptr<Method> c = construct_method(title, *m, current_, ref);
-          if (!c) throw runtime_error("unknown method in optimization");
-          c->compute();
-          ref = c->conv_to_ref();
+          double energy;
+          tie(energy, ref) = get_energy(title, *m, current_, ref);
         } else {
           current_ = make_shared<const Geometry>(*current_, *m);
           if (ref) ref = ref->project_coeff(current_);

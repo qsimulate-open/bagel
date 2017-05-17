@@ -26,7 +26,7 @@
 #include <src/grad/force.h>
 #include <src/grad/gradeval.h>
 #include <src/grad/finite.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 
 using namespace std;
 using namespace bagel;
@@ -56,10 +56,8 @@ shared_ptr<GradFile> Force::compute() {
   for ( ; m != --input->end(); ++m) {
     const std::string title = to_lower((*m)->get<std::string>("title", ""));
     if (title != "molecule") {
-      shared_ptr<Method> c = construct_method(title, *m, geom_, ref);
-      if (!c) throw runtime_error("unknown method in force");
-      c->compute();
-      ref = c->conv_to_ref();
+      double energy;
+      tie(energy, ref) = get_energy(title, *m, geom_, ref);
     } else {
       geom_ = make_shared<const Geometry>(*geom_, *m);
       if (ref) ref = ref->project_coeff(geom_);

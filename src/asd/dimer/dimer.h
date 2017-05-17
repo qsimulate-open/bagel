@@ -29,7 +29,7 @@
 #include <src/ci/fci/harrison.h>
 #include <src/ci/ras/rasci.h>
 #include <src/asd/dimer/dimer_cispace.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 #include <src/util/muffle.h>
 
 namespace bagel {

@@ -34,7 +34,7 @@
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
 #include <src/util/io/moldenout.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 #include <src/opt/constraint.h>
 #include <src/util/muffle.h>
 
