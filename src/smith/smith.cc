@@ -127,10 +127,6 @@ void Smith::compute() {
 #endif
 }
 
-shared_ptr<const Reference> Smith::conv_to_ref() const {
- return std::make_shared<Reference>(ref_->geom(), ref_->coeff(), ref_->nclosed(), ref_->nact(), ref_->nvirt(), algo_->energyvec());
-}
-
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
