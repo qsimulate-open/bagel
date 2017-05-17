@@ -242,7 +242,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           if (ref_)
             ref_plus = ref_->project_coeff(geom_plus);
 
-          auto energy_method = construct_method(method_, idata_, geom_plus, ref_plus);
+          auto energy_method = construct_method("casscf", idata_, geom_plus, ref_plus);
           energy_method->compute();
           ref_plus = energy_method->conv_to_ref();
           acoeff_plus = make_shared<Matrix>(ref_plus->coeff()->slice(nclosed, nocc));
@@ -267,7 +267,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
           if (ref_)
             ref_minus = ref_->project_coeff(geom_minus);
 
-          auto energy_method = construct_method(method_, idata_, geom_minus, ref_minus);
+          auto energy_method = construct_method("casscf", idata_, geom_minus, ref_minus);
           energy_method->compute();
           ref_minus = energy_method->conv_to_ref();
           acoeff_minus = make_shared<Matrix>(ref_minus->coeff()->slice(nclosed, nocc));

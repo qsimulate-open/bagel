@@ -180,13 +180,13 @@ shared_ptr<GradFile> Force::compute() {
 
       if (method == "casscf") {
 
-        auto force = make_shared<FiniteNacm<CASSCF>>(method, cinput, geom_, ref_, target, target2, dx, nproc);
+        auto force = make_shared<FiniteNacm<CASSCF>>(cinput, geom_, ref_, target, target2, dx, nproc);
         out = force->compute();
         ref = force->ref();
 
       } else if (method == "caspt2") {
 
-        auto force = make_shared<FiniteNacm<CASPT2Energy>>(method, cinput, geom_, ref_, target, target2, dx, nproc);
+        auto force = make_shared<FiniteNacm<CASPT2Energy>>(cinput, geom_, ref_, target, target2, dx, nproc);
         out = force->compute();
         ref = force->ref();
 
