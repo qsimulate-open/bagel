@@ -28,18 +28,20 @@
 #define __SRC_PERIODIC_BOX_H
 
 #include <src/util/constants.h>
-#include <src/molecule/shellpair.h>
 #include <src/util/parallel/resources.h>
+#include <src/periodic/branch.h>
 
 namespace bagel {
 
 class Box {
   friend class FMM;
   protected:
-    int rank_, boxid_, lmax_, lmax_k_;
-    std::array<int, 3> tvec_;
-    std::array<double, 3> centre_;
+    int rank_;
     double boxsize_;
+    std::array<double, 3> centre_;
+    int boxid_;
+    std::array<int, 3> tvec_;
+    int lmax_, lmax_k_, ws_;
     std::shared_ptr<const Box> parent_;
     std::vector<std::weak_ptr<const Box>> child_;
     std::vector<std::shared_ptr<const Box>> inter_;
@@ -57,6 +59,11 @@ class Box {
     std::shared_ptr<ZMatrix> mlm_ji_;
     std::vector<std::array<int, 2>> offsets_;
     std::vector<std::pair<int, int>> coffsets_s_, coffsets_u_;
+
+    // multiresolution
+    bool do_multiresolution_;
+    std::vector<std::shared_ptr<const Branch>> branch_;
+    void get_branches(); 
 
     void init();
     void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
@@ -84,27 +91,38 @@ class Box {
     void compute_L2L_X();
     double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
-    std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
-    std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ff_K(std::shared_ptr<const Matrix> ocoeff_ti) const;
+    // temporary: allow constructing FMM_J and FMM_K separately with different parameters
+    std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
+    std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     double coulomb_ff() const;
     double exchange_ff() const;
 
   public:
-    Box(int n, int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10,
-        const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0, const double schwarz = 0.0)
-     : rank_(n), boxid_(id), lmax_(lmax), lmax_k_(lmax_k), tvec_(v), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
+    Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
+        const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+        const double thresh = 0.0, const double schwarz = 0.0, const bool do_multi = false)
+     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz),
+       do_multiresolution_(do_multi) { }
+
+    Box(std::shared_ptr<const Box> b, const std::vector<std::shared_ptr<const ShellPair>>& sp)
+     : rank_(b->rank()), boxsize_(b->boxsize()), centre_(b->centre()), boxid_(b->boxid()), tvec_(b->tvec()), lmax_(b->lmax()), lmax_k_(b->lmax_k()),
+       sp_(sp), thresh_(b->thresh()), schwarz_thresh_(b->schwarz_thresh()) { }
 
     ~Box() { }
 
     const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
+    double boxsize() const { return boxsize_; }
 
     int rank() const { return rank_; }
     int boxid() const { return boxid_; }
     const std::array<int, 3>& tvec() const { return tvec_; }
+    int lmax() const { return lmax_; }
+    int lmax_k() const { return lmax_k_; }
+    double thresh() const { return thresh_; }
+    double schwarz_thresh() const { return schwarz_thresh_; }
 
     int nsp() const { return sp_.size(); }
     int nchild() const { return child_.size(); }
@@ -121,6 +139,8 @@ class Box {
     const std::vector<std::shared_ptr<const ShellPair>>& sp() const { return sp_; }
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     const std::array<std::shared_ptr<const Shell>, 2>& shells(const int i) const { return sp_[i]->shells(); }
+
+    const std::vector<std::shared_ptr<const Branch>>& branch() const { return branch_; }
 
     std::shared_ptr<ZVectorB> multipole() const { return multipole_; }
     std::shared_ptr<ZVectorB> localJ() const { return localJ_; }

@@ -44,18 +44,36 @@ const static Factorial f;
 
 void Box::init() {
 
-  centre_ = {{0, 0, 0}};
   nbasis0_ = 0;   nbasis1_ = 0;
+  for (auto& i : sp_) {
+    nbasis0_ += i->nbasis0();
+    nbasis1_ += i->nbasis1();
+  }
+
+#if 0
+  centre_ = {{0, 0, 0}};
   for (auto& i : sp_) {
     centre_[0] += i->centre(0);
     centre_[1] += i->centre(1);
     centre_[2] += i->centre(2);
-    nbasis0_ += i->nbasis0();
-    nbasis1_ += i->nbasis1();
   }
   centre_[0] /= nsp();
   centre_[1] /= nsp();
   centre_[2] /= nsp();
+#else
+  if (nchild() != 0) {
+    centre_ = {{0, 0, 0}};
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> i = child(n);
+      centre_[0] += i->centre(0);
+      centre_[1] += i->centre(1);
+      centre_[2] += i->centre(2);
+    }
+    centre_[0] /= nchild();
+    centre_[1] /= nchild();
+    centre_[2] /= nchild();
+  }
+#endif
 
   extent_ = 0;
   for (auto& i : sp_) {
@@ -65,12 +83,38 @@ void Box::init() {
       tmp += pow(i->centre(j)-centre_[j], 2.0);
     const double ei = sqrt(tmp) + i->extent();
     assert(ei > 0);
-    if (extent_ < ei) extent_ = ei;
+    extent_ = max(extent_, ei);
   }
 
+  ws_ = (int) ceil(extent_/boxsize_);
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   multipole_ = make_shared<ZVectorB>(nmult_);
   localJ_ = make_shared<ZVectorB>(nmult_);
+  if (do_multiresolution_) get_branches();
+}
+
+
+void Box::get_branches() {
+
+  const int nbranch = 3;
+  branch_.resize(nbranch);
+  vector<vector<shared_ptr<const ShellPair>>> br(nbranch);
+  for (int i = 0; i != 5; ++i)
+     br[i].reserve(nsp());
+
+  for (auto& sp : sp_) {
+    if (sp->schwarz() < thresh_) continue;
+    array<double, 3> r;
+    r[0] = sp->centre(0) - centre_[0];
+    r[1] = sp->centre(1) - centre_[1];
+    r[2] = sp->centre(2) - centre_[2];
+    const double radius = sp->extent() + sqrt(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]);
+    int iws = (int) floor(radius/boxsize_);
+    if (iws > nbranch-1) iws = nbranch-1;
+    br[iws].push_back(sp);
+  }
+  for (int i =0; i != nbranch; ++i)
+    branch_[i] = make_shared<const Branch>(i, centre_, br[i]);
 }
 
 
@@ -103,12 +147,28 @@ void Box::insert_parent(shared_ptr<const Box> parent) {
 
 void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
 
+  if ((box.empty()) || (box[0]->rank() != rank_)) return;
+
   neigh_.resize(box.size());
   int nn = 0;
-  for (auto& b : box) {
-    if (b->rank() == rank_ && is_neigh(b, ws)) {
-      neigh_[nn] = b;
-      ++nn;
+  if (!do_multiresolution_) {
+    for (auto& b : box) {
+      if (is_neigh(b, ws)) {
+        neigh_[nn] = b;
+        ++nn;
+      }
+    }
+  } else {
+    for (auto& br0 : branch_) {
+      for (auto& b : box) {
+        for (auto& br1 : b->branch()) {
+          if (br0->is_neigh(br1)) {
+            br0->add_neigh(br1);
+            neigh_[nn] = b;
+            ++nn;
+          }
+        }
+      }
     }
   }
   neigh_.resize(nn);
@@ -123,6 +183,7 @@ bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
     rr += pow(centre_[i] - box->centre(i), 2);
 
   const bool out = (sqrt(rr) <= (1.0+ws)*(extent_ + box->extent()));
+  return out;
 #endif
 
 #if 0
@@ -135,18 +196,39 @@ bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
       }
 #endif
 
+#if 0
+  const double ws1 = max(2.0*extent_/boxsize_, ws);
+  const double ws2 = max(2.0*box->extent()/box->boxsize(), ws);
+  const double sep = max(max(abs(tvec_[0]-box->tvec()[0]), abs(tvec_[1]-box->tvec()[1])), abs(tvec_[2]-box->tvec()[2]));
+  const bool out = (2.0*sep <= ws1+ws2);
+
+  //debug
+  double rr = 0;
+  for (int i = 0; i != 3; ++i)
+    rr += pow(centre_[i] - box->centre(i), 2);
+
+  if ((extent_+box->extent() > sqrt(rr)) && !out)
+    cout << "  WARNING!!!!  " << setprecision(2) << sqrt(rr) << "  <= " << box->extent()+extent_ << endl;
+  //end debug
+
   return out;
+#endif
 }
 
 void Box::get_inter(const vector<shared_ptr<Box>>& box, const double ws) {
 
+  if ((box.empty()) || (box[0]->rank() != rank_)) return;
+
   inter_.resize(box.size());
   int ni = 0;
-  for (auto& b : box) {
-    if ((b->rank() == rank_) && (!is_neigh(b, ws)) && (!parent_ || parent_->is_neigh(b->parent(), ws))) {
-      inter_[ni] = b;
-      ++ni;
+  if (!do_multiresolution_) {
+    for (auto& b : box) {
+      if ((!is_neigh(b, ws)) && (!parent_ || parent_->is_neigh(b->parent(), ws))) {
+        inter_[ni] = b;
+        ++ni;
+      }
     }
+  } else {
   }
   inter_.resize(ni);
 }

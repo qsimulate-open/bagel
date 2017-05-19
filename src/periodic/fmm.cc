@@ -151,7 +151,11 @@ void FMM::get_boxes() {
     for (auto& isp : leaves[il])
       sp.insert(sp.end(), geom_->shellpair(isp));
     array<int, 3> id = boxid[il];
-    auto newbox = make_shared<Box>(0, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
+    array<double, 3> centre;
+    for (int i = 0; i != 3; ++i)
+      centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
+    cout << " LEAF *** " <<  id[0]-ns2/2 << " * " << id[1]-ns2/2 << " * " << id[2]-ns2/2 << "  ***  " << id[0] << " * " << id[1] << " * " << id[2] << endl;
+    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -163,6 +167,7 @@ void FMM::get_boxes() {
   for (int nss = ns_; nss > -1; --nss) {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
+    const int offset = pow(2, nss-2);
 
     for (int i = 1; i != nss2+1; ++i) {
       for (int j = 1; j != nss2+1; ++j) {
@@ -184,7 +189,18 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                auto newbox = make_shared<Box>(ns_-nss+1, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
+                const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
+#if 0
+                array<double, 3> centre;
+                centre[0] = ((int) floor(0.5*(i+1)) - offset-1) * boxsize + 0.5*boxsize;
+                centre[1] = ((int) floor(0.5*(j+1)) - offset-1) * boxsize + 0.5*boxsize;
+                centre[2] = ((int) floor(0.5*(k+1)) - offset-1) * boxsize + 0.5*boxsize;
+#endif
+                cout << i << " * " << j << " * " << k << "  ***  " << (int) floor(0.5*(i+1))-offset << " * "
+                                                                   << (int) floor(0.5*(j+1))-offset << " * "
+                                                                   << (int) floor(0.5*(k+1))-offset
+                     << "  ***  " << idxp[0] << " * " << idxp[1] << " * " << idxp[2] << endl;
+                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}}, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -240,7 +256,7 @@ void FMM::get_boxes() {
     int nsp_inter = 0;
     for (auto& i : b->interaction_list())
       nsp_inter += i->nsp();
-    cout << i << " rank = " << b->rank() << " extent = " << b->extent() << " nsp = " << b->nsp()
+    cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp()
          << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
          << " ninter = " << b->ninter() << " nsp " << nsp_inter
          << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
@@ -440,6 +456,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
+      cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
@@ -459,9 +476,22 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
 
   Timer projtime;
   auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+// check kij is symmetric
+  auto kji = kij->transpose();
+  const double err = (*kij - *kji).rms();
+  if (err > 1e-15) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
+
+#if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
-  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - (*sc * *kij ^ *sc));
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
+  auto ksr = krs->transpose();
+  const double errk = (*krs - *ksr).rms();
+  if (errk > 1e-15) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
+#else
+  auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
+  krs->copy_block(0, 0, nocc, nocc, kij->data());
+#endif
   projtime.tick_print("Krs from Krj");
 
   const double enk = 0.5*density->dot_product(*krs);
@@ -520,7 +550,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
   auto ksr = krs->transpose();
   const double errk = (*krs - *ksr).rms();
-  if (errk > 1e-10) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(15) << errk << endl;
+  if (errk > 1e-15) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
 #else
   auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
   krs->copy_block(0, 0, nocc, nocc, kij->data());
@@ -541,7 +571,7 @@ void FMM::print_boxes(const int i) const {
   int ib = 0;
   for (auto& b : box_) {
     if (b->rank() == i) {
-      cout << "Box " << ib << " rank = " << i << " *** nchild = " << b->nchild() << " *** nsp = " << b->nsp() << " *** Shell pairs at:" << endl;
+      cout << "Box " << ib << " rank = " << i << " *** size " << b->boxsize() << " *** nchild = " << b->nchild() << " *** nsp = " << b->nsp() << " *** Shell pairs at:" << endl;
       for (int i = 0; i != b->nsp(); ++i)
         cout << setprecision(5) << b->sp(i)->centre(0) << "  " << b->sp(i)->centre(1) << "  " << b->sp(i)->centre(2) << endl;
       ++ib;

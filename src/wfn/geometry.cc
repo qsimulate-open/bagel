@@ -595,7 +595,7 @@ void Geometry::get_shellpairs() {
     for (int i1 = 0; i1 != nsh; ++i1) {
       const int i01 = i0 * nsh + i1;
       shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), overlap_thresh_);
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0));
     }
   }
 }
