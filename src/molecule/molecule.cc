@@ -241,14 +241,6 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   vector<double> hessprim;
   hessprim.reserve(natom()*3 * 10);
 
-  // (1) make c-matrix from constraint data
-  // (2) Schmidt orthogonalization ---> (ninternal - nconstraint) + nconstraint vector generated
-  // (3) in eigenvector following ---> generate Hessian and follow eigenvector (p,n) n eigenvector
-  //
-  // List of primitive internals should be generated first
-//        Quatern<double> ip = (atoms_[(*c)->pair(0)])->position();
-//        Quatern<double> jp = (atoms_[(*c)->pair(1)])->position();
-
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     const double radiusi = (*i)->atom()->cov_radius();
@@ -348,23 +340,24 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
-  // then dihedral angle (i-c-j-k)
+  // proper dihedral angle (i-c-j-k) or improper dihedral angle (c-i,j,k)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-//          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
-//        Only proper dihedrals
-          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
-          if (*c > *j) continue;
-          if (*c == *k || *k == *i) continue;
-          if (*j == *k) continue;
-#if 0
-          cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
-                  "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
-#endif
+          bool improper;
+          if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
+            if (*c > *j) continue;
+            if (*c == *k || *k == *i) continue;
+            if (*j == *k) continue;
+            improper = false;
+          } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
+            if (*j == *k || *k == *i) continue;
+            if (!(*i < *j && *j < *k)) continue;
+            improper = true;
+          } else continue;
           // following J. Molec. Spec. 44, 599 (1972)
           // a=i, b=c, c=j, d=k
           Quatern<double> ap = (*i)->atom()->position();
@@ -395,12 +388,16 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
           // see IJQC 106, 2536 (2006)
-          const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
+          double modelhess;
+          if (improper) modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k);
+          else          modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
           hessprim.push_back(modelhess);
           const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
           const double theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
           const double fval = 0.12;
-          const double fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
+          double fac;
+          if (improper) fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
+          else          fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
           for (int ic = 0; ic != 3; ++ic) {
             current[3*(*i)->num() + ic] = sa[ic+1]*fac;
             current[3*(*c)->num() + ic] = sb[ic+1]*fac;
@@ -419,21 +416,6 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
       }
     }
   }
-#if 0
-  cout << " # primitive, bond = " << prims[0].size() << "  angle = " << prims[1].size() << "  torsion = " << prims[2].size() << endl;
-  cout << "   List of Primitive Stretches : " << endl;
-  for (auto i : prims[0]) {
-    cout << "   " << i[0] << "   " << i[1] << endl;
-  }
-  cout << "   List of Primitive Bends : " << endl;
-  for (auto i : prims[1]) {
-    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] << endl;
-  }
-  cout << "   List of Primitive Torsions : " << endl;
-  for (auto i : prims[2]) {
-    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] <<  "   " << i[3] << endl;
-  }
-#endif
 
   // debug output
   const int primsize = out.size();
@@ -550,6 +532,8 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
       scale(j,i) *= hessprim[j];
     }
   }
+
+  // H = U^+ H U
   Matrix hess = bbslice % scale;
 
   shared_ptr<Matrix> hessc;
@@ -682,10 +666,14 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
-          if (*c > *j) continue;
-          if (*c == *k || *k == *i) continue;
-          if (*j == *k) continue;
+          if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
+            if (*c > *j) continue;
+            if (*c == *k || *k == *i) continue;
+            if (*j == *k) continue;
+          } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
+            if (*j == *k || *k == *i) continue;
+            if (!(*i < *j && *j < *k)) continue;
+          } else continue;
 #if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
