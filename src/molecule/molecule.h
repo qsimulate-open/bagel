@@ -166,6 +166,7 @@ class Molecule {
     // transformation matrices for the internal coordinate for geometry optimization
     // ninternal runs fast (and cartsize slower) (weighted Wilson B)
     std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(
+        bool negative_hessian = false,
         std::shared_ptr<const Matrix> prev = nullptr,
         std::vector<std::shared_ptr<const OptExpBonds>> explicit_bond = std::vector<std::shared_ptr<const OptExpBonds>>(),
         std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>(),

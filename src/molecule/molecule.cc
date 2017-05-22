@@ -222,12 +222,12 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(bool negative_hessian, shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
   if (verbose)
     cout << "    o Connectivitiy analysis" << endl;
 
   // list of primitive internals
-  array<vector<vector<int>>,3> prims;
+  array<vector<vector<int>>,4> prims;
   vector<vector<double>> out;
   const size_t size = natom()*3;
 
@@ -413,7 +413,8 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
           prim[1] = (*c)->num();
           prim[2] = (*j)->num();
           prim[3] = (*k)->num();
-          prims[2].push_back(prim);
+          if (improper)  prims[3].push_back(prim);
+          else           prims[2].push_back(prim);
         }
       }
     }
@@ -467,6 +468,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
+  // bdag = B^T
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
@@ -475,7 +477,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   // TODO this is needed but I don't know why..
   bdag.broadcast();
 
-  Matrix bb = bdag % bdag * (-1.0);
+  Matrix bb = bdag % bdag;
   VectorB eig(primsize);
   bb.diagonalize(eig);
 
@@ -485,76 +487,43 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
+  
   int ninternal = max(cartsize-6,1);
-  for (int i = 0; i != ninternal; ++i) {
-    eig(i) *= -1.0;
+  for (int i = primsize-ninternal; i != primsize; ++i) {
     if (eig(i) < 1.0e-10)
       cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
   if (verbose)
     cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
-  // bbslice = U
-  // form B = U^+ Bprim
-  Matrix bbslice = bb.slice(0,ninternal);
-
-  if (constrained) {
-    cout << "      Imposing Constraints with Schmidt Orthogonalization " << endl;
-    auto cdag = make_shared<Matrix>(primsize, cmat.size());
-    double *citer = cdag->data();
-    for (auto i = cvec.begin(); i != cvec.end(); ++i, citer += primsize)
-      copy (i->begin(), i->end(), citer);
-    cdag->broadcast();
-    auto umat = make_shared<Matrix>(bbslice);
-    auto vmat = make_shared<Matrix>(*(umat->merge(cdag)));
-
-    for (int i = vmat->mdim()-1; i != -1; --i) {
-      for (int j = vmat->mdim()-1; j != i; --j) {
-        const double a = blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,j));
-        blas::ax_plus_y_n(-a, vmat->element_ptr(0,j), vmat->ndim(), vmat->element_ptr(0,i));
-      }
-      const double b = 1.0 / sqrt(blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,i)));
-      for_each(vmat->element_ptr(0,i), vmat->element_ptr(0,i+1), [&b](double &a) { a *= b; });
-    }
-    bbslice = vmat->slice(cmat.size(), ninternal+cmat.size());
-  }
-
-  auto bnew = make_shared<Matrix>(bdag * bbslice);
+  auto umat = make_shared<Matrix>(bb.slice(primsize-ninternal,primsize));
+  // B = U^T * B^prim, B^T = (B^prim)^T * U
+  auto bnew = make_shared<Matrix>(bdag * *umat);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
   auto bdmnew = make_shared<Matrix>(cartsize, ninternal);
   for (int i = 0; i != ninternal; ++i)
     for (int j = 0; j != cartsize; ++j)
-      bdmnew->element(j,i) = bnew->element(j,i) / eig[i];
+      bdmnew->element(j,i) = bnew->element(j,i) / eig[i+primsize-ninternal];
 
   // compute hessian
-  Matrix scale = bbslice;
-  for (int i = 0; i != ninternal; ++i) {
-    for (int j = 0; j != primsize; ++j) {
-      scale(j,i) *= hessprim[j];
-    }
+  auto hessp = make_shared<Matrix>(primsize, primsize);
+  for (int i = 0; i != primsize; ++i)
+    hessp->element(i,i) = hessprim[i];
+
+  if (negative_hessian) {
+    for (int i = 0; i != primsize; ++i)
+      for (int j = i+1; j != primsize; ++j) {
+        hessp->element(i,j) = -sqrt(2.0 * hessprim[i] * hessprim[j]);
+        hessp->element(j,i) = -sqrt(2.0 * hessprim[i] * hessprim[j]);
+      }
   }
 
-  // H = U^+ H U
-  Matrix hess = bbslice % scale;
+  auto hess = make_shared<Matrix>(*umat % *hessp * *umat);
+  auto hessout = make_shared<Matrix>(*hess);
 
-  shared_ptr<Matrix> hessc;
-  if (constrained)
-    hessc = make_shared<Matrix>(*(hess.resize(hess.ndim()+cmat.size(), hess.mdim()+cmat.size())));
-  for (int i = 0; i != cmat.size(); ++i) {
-    // let me assume that they are arranged well (will make a map)
-    hessc->element(i + ninternal, ninternal - cmat.size() + i) = 1.0;
-    hessc->element(ninternal - cmat.size() + i, i + ninternal) = 1.0;
-  }
-  hess.sqrt();
-  *bnew = *bnew * hess;
-  hess.inverse();
-  *bdmnew = *bdmnew * hess;
-  auto hessout = make_shared<Matrix>(hess);
-
-  // if this is not the first time, make sure that the change is minimum
   if (prev) {
-    // internal--internal matrix
+    // internal--internal matrix -- I think this is not that good idea...
     Matrix approx1 = *prev % *bdmnew;
     assert(approx1.ndim() == ninternal && approx1.mdim() == ninternal);
     *bnew = *prev;
