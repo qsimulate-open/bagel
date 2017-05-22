@@ -392,8 +392,10 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
           if (improper) modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k);
           else          modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
           hessprim.push_back(modelhess);
-          const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
-          const double theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
+          const double  theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
+          double theta1;
+          if (improper) theta1 = (*c)->atom()->angle((*i)->atom(), (*k)->atom()) / rad2deg__;
+          else          theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
           const double fval = 0.12;
           double fac;
           if (improper) fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
