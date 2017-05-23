@@ -93,6 +93,8 @@ class Box {
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ff_K(std::shared_ptr<const Matrix> ocoeff_ti) const;
+    std::shared_ptr<const Matrix> compute_Fock_nf_partial(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
+    std::shared_ptr<const Matrix> compute_Fock_ff_corr(std::shared_ptr<const Matrix> density) const;
     // temporary: allow constructing FMM_J and FMM_K separately with different parameters
     std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
@@ -102,9 +104,9 @@ class Box {
   public:
     Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
         const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0, const double schwarz = 0.0, const bool do_multi = false)
+        const double thresh = 0.0, const double schwarz = 0.0, const bool do_ws = false)
      : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz),
-       do_multiresolution_(do_multi) { }
+       do_multiresolution_(do_ws) { }
 
     Box(std::shared_ptr<const Box> b, const std::vector<std::shared_ptr<const ShellPair>>& sp)
      : rank_(b->rank()), boxsize_(b->boxsize()), centre_(b->centre()), boxid_(b->boxid()), tvec_(b->tvec()), lmax_(b->lmax()), lmax_k_(b->lmax_k()),

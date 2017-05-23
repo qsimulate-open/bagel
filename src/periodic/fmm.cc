@@ -40,8 +40,8 @@ const static int batchsize = 50;
 
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws, const bool ex, const int lmax_k)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k) {
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws, const bool ex, const int lmax_k, const bool do_ws)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), do_multiresolution_(do_ws) {
 
   init();
 }
@@ -154,8 +154,8 @@ void FMM::get_boxes() {
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-    cout << " LEAF *** " <<  id[0]-ns2/2 << " * " << id[1]-ns2/2 << " * " << id[2]-ns2/2 << "  ***  " << id[0] << " * " << id[1] << " * " << id[2] << endl;
-    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
+    //cout << " LEAF *** " <<  id[0]-ns2/2 << " * " << id[1]-ns2/2 << " * " << id[2]-ns2/2 << "  ***  " << id[0] << " * " << id[1] << " * " << id[2] << endl;
+    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh(), do_multiresolution_);
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -167,7 +167,7 @@ void FMM::get_boxes() {
   for (int nss = ns_; nss > -1; --nss) {
     int nbranch = 0;
     const int nss2 = pow(2, nss);
-    const int offset = pow(2, nss-2);
+    //const int offset = pow(2, nss-2);
 
     for (int i = 1; i != nss2+1; ++i) {
       for (int j = 1; j != nss2+1; ++j) {
@@ -195,12 +195,12 @@ void FMM::get_boxes() {
                 centre[0] = ((int) floor(0.5*(i+1)) - offset-1) * boxsize + 0.5*boxsize;
                 centre[1] = ((int) floor(0.5*(j+1)) - offset-1) * boxsize + 0.5*boxsize;
                 centre[2] = ((int) floor(0.5*(k+1)) - offset-1) * boxsize + 0.5*boxsize;
-#endif
                 cout << i << " * " << j << " * " << k << "  ***  " << (int) floor(0.5*(i+1))-offset << " * "
                                                                    << (int) floor(0.5*(j+1))-offset << " * "
                                                                    << (int) floor(0.5*(k+1))-offset
                      << "  ***  " << idxp[0] << " * " << idxp[1] << " * " << idxp[2] << endl;
-                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}}, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
+#endif
+                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}}, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh(), do_multiresolution_);
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -242,6 +242,12 @@ void FMM::get_boxes() {
     }
     icnt += nbranch_[ir];
   }
+
+  if (do_multiresolution_) {
+    for (int i = 0; i != nbranch_[0]; ++i)
+      box_[i]->get_branches();
+  }
+  
 
 #if 1
   cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
@@ -390,22 +396,32 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     }
 
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
+    auto ff_corr = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
+        if (do_multiresolution_) {
+          auto ffci = box_[i]->compute_Fock_ff_corr(density);
+          blas::ax_plus_y_n(1.0, ffci->data(), nbasis_*nbasis_, ff_corr->data());
+        }
       }
     out->allreduce();
     ff->allreduce();
+    ff_corr->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
 
+    const double enjc = 0.5*density->dot_product(*ff_corr);
+    cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enjc << endl;
+
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
+    *out += *ff_corr;
   }
 #endif
 

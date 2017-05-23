@@ -33,7 +33,7 @@ Branch::Branch(const int ws, const array<double, 3>& c, const vector<shared_ptr<
 
   extent_ = 0;
   for (auto& i : sp_) {
-    const double rr += sqrt(pow(i->centre(0)-c[0], 2.0) + pow(i->centre(1)-c[1], 2.0) + pow(i->centre(2)-c[2], 2.0)) + i->extent();
+    const double rr = sqrt(pow(i->centre(0)-c[0], 2.0) + pow(i->centre(1)-c[1], 2.0) + pow(i->centre(2)-c[2], 2.0)) + i->extent();
     extent_ = max(extent_, rr);
   }
 }
@@ -43,7 +43,7 @@ bool Branch::is_neigh(shared_ptr<const Branch> b) const {
 
   double rr = 0;
   for (int i = 0; i != 3; ++i)
-    rr += pow(centre_[i] - b->centre(i), 2);
+    rr += pow(centre_[i] - b->centre()[i], 2);
 
   const bool out = (sqrt(rr) <= extent_ + b->extent());
   return out;
@@ -51,17 +51,19 @@ bool Branch::is_neigh(shared_ptr<const Branch> b) const {
 }
 
 
-void Branch::add_neigh(shared_ptr<const Branch> b) {
+void Branch::get_neigh(const std::vector<std::shared_ptr<const Branch>>& branch) {
 
-  const size_t old = neigh_.size();
-  neigh_.insert(neigh_.end(), b->sp().begin(), b->sp().end());
-  assert(old+b->sp().size() == neigh_.size());
-}
+  int nsp = 0;
+  for (auto& b : branch)
+    nsp += b->sp().size();
 
-
-void Branch::add_inter(shared_ptr<const Branch> b) {
-
-  const size_t old = inter_.size();
-  inter_.insert(inter_.end(), b->sp().begin(), b->sp().end());
-  assert(old+b->sp().size() == inter_.size());
+  neigh_.reserve(nsp);
+  non_neigh_.reserve(nsp);
+  for (auto& br : branch) {
+    if (is_neigh(br)) {
+      neigh_.insert(neigh_.end(), br->sp().begin(), br->sp().end());    
+    } else {
+      non_neigh_.insert(neigh_.end(), br->sp().begin(), br->sp().end());    
+    }
+  }
 }
