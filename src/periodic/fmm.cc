@@ -243,12 +243,6 @@ void FMM::get_boxes() {
     icnt += nbranch_[ir];
   }
 
-  if (do_multiresolution_) {
-    for (int i = 0; i != nbranch_[0]; ++i)
-      box_[i]->get_branches();
-  }
-  
-
 #if 1
   cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
   cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " *** BATCHSIZE " << batchsize << " lmax " << lmax_ << " lmax_k " << lmax_k_
@@ -399,14 +393,14 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     auto ff_corr = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_Fock_nf(density, maxden);
+        auto ei = (do_multiresolution_) ? box_[i]->compute_Fock_nf_partial(density, maxden) : box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
-        if (do_multiresolution_) {
-          auto ffci = box_[i]->compute_Fock_ff_corr(density);
-          blas::ax_plus_y_n(1.0, ffci->data(), nbasis_*nbasis_, ff_corr->data());
-        }
+        //if (do_multiresolution_) {
+        //  auto ffci = box_[i]->compute_Fock_ff_corr(density);
+        //  blas::ax_plus_y_n(1.0, ffci->data(), nbasis_*nbasis_, ff_corr->data());
+        //}
       }
     out->allreduce();
     ff->allreduce();

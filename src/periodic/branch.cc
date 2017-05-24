@@ -31,7 +31,7 @@ using namespace std;
 
 Branch::Branch(const int ws, const array<double, 3>& c, const vector<shared_ptr<const ShellPair>>& sp) : iws_(ws), centre_(c), sp_(sp) {
 
-  extent_ = 0;
+  extent_ = 0.0;
   for (auto& i : sp_) {
     const double rr = sqrt(pow(i->centre(0)-c[0], 2.0) + pow(i->centre(1)-c[1], 2.0) + pow(i->centre(2)-c[2], 2.0)) + i->extent();
     extent_ = max(extent_, rr);
@@ -51,7 +51,7 @@ bool Branch::is_neigh(shared_ptr<const Branch> b) const {
 }
 
 
-void Branch::get_neigh(const std::vector<std::shared_ptr<const Branch>>& branch) {
+void Branch::get_neigh(const vector<shared_ptr<Branch>>& branch) {
 
   int nsp = 0;
   for (auto& b : branch)

@@ -32,6 +32,7 @@
 namespace bagel {
 
 class Branch {
+  friend class Box;
   protected:
     int iws_;
     std::array<double, 3> centre_;
@@ -42,16 +43,18 @@ class Branch {
     std::vector<std::shared_ptr<const ShellPair>> non_neigh_;
 
     bool is_neigh(std::shared_ptr<const Branch> b) const;
-    void get_neigh(const std::vector<std::shared_ptr<const Branch>>& branch);
+    void get_neigh(const std::vector<std::shared_ptr<Branch>>& branch);
 
   public:
     Branch(const int ws, const std::array<double, 3>& c, const std::vector<std::shared_ptr<const ShellPair>>& sp);
     ~Branch() { }
 
     double extent() const { return extent_; }
+    int ws() const { return iws_; }
     const std::array<double, 3>& centre() const { return centre_; }
     const std::vector<std::shared_ptr<const ShellPair>>& neigh() const { return neigh_; }
     const std::vector<std::shared_ptr<const ShellPair>>& non_neigh() const { return non_neigh_; }
+    int nsp() const { return sp_.size(); }
     const std::vector<std::shared_ptr<const ShellPair>>& sp() const { return sp_; }
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
 };
