@@ -306,7 +306,7 @@ shared_ptr<const Reference> Hess::conv_to_ref() const {
     out = make_shared<Reference>(*ref_);
   } else {
     out = make_shared<Reference>(geom_, nullptr, 0, 0, 0);
-    cout << "  ** CAUTION ** Reference object being created by Hessian is only valid for printing!" << endl; 
+    cout << "  ** CAUTION ** Reference object being created by Hessian is only valid for printing!" << endl;
   }
   out->set_prop_freq(freq_);
   out->set_prop_ir(ir_);

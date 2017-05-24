@@ -380,7 +380,7 @@ shared_ptr<XYZFile> Opt::iterate_displ() {
   for (int i = 0; i != maxiter_; ++i) {
     displ = displ->transform(bmat_[1], false);
     currentv = make_shared<Geometry>(*currentv, displ, make_shared<const PTree>(), /*rotate=*/true, /*nodf=*/true);
-    bmat_ = currentv->compute_internal_coordinate(bmat_[0], bonds_, constraints_, /*verbose=*/false);
+    bmat_ = currentv->compute_internal_coordinate(bmat_[0], bonds_, constraints_, (opttype_=="transition"), /*verbose=*/false);
     shared_ptr<const XYZFile> qcurrent = currentv->xyz();
     qcurrent = qcurrent->transform(bmat_[0], true);
     auto qdiff = make_shared<XYZFile>(currentv->natom());

@@ -129,7 +129,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
     }
 
     // microiteration with quasi-Newton search
@@ -156,7 +156,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         if (redundant_)
           bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
         else
-          bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+          bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
       }
 
       // compute gradient

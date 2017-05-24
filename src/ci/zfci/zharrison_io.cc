@@ -115,7 +115,7 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
   elem.emplace(array<int,4>{{3,1,2,0}}, -1.0); elem.emplace(array<int,4>{{3,2,0,1}}, -1.0); elem.emplace(array<int,4>{{3,2,1,0}},  1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm4";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -130,7 +130,7 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
     const complex<double> dat(re, im);
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
-        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second || mij[eij.first[2]].second > mij[eij.first[3]].second || 
+        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second || mij[eij.first[2]].second > mij[eij.first[3]].second ||
             mkl[ekl.first[0]].second > mkl[ekl.first[1]].second || mkl[ekl.first[1]].second > mkl[ekl.first[2]].second || mkl[ekl.first[2]].second > mkl[ekl.first[3]].second) continue;
 
         const KTag<8> t{mij[eij.first[0]].second, mkl[ekl.first[0]].second, mij[eij.first[1]].second, mkl[ekl.first[1]].second,
@@ -139,7 +139,7 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
           out->add(t, make_shared<ZRDM<4>>(norb_));
         out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first,
                             mij[eij.first[2]].first, mkl[ekl.first[2]].first, mij[eij.first[3]].first, mkl[ekl.first[3]].first)
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
 
         if (ist == jst) {
           const KTag<8> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
@@ -175,7 +175,7 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
   elem.emplace(array<int,3>{{1,2,0}},  1.0); elem.emplace(array<int,3>{{2,0,1}},  1.0); elem.emplace(array<int,3>{{2,1,0}}, -1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -190,7 +190,7 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
     const complex<double> dat(re, im);
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
-        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second || 
+        if (mij[eij.first[0]].second > mij[eij.first[1]].second || mij[eij.first[1]].second > mij[eij.first[2]].second ||
             mkl[ekl.first[0]].second > mkl[ekl.first[1]].second || mkl[ekl.first[1]].second > mkl[ekl.first[2]].second) continue;
 
         const KTag<6> t{mij[eij.first[0]].second, mkl[ekl.first[0]].second, mij[eij.first[1]].second, mkl[ekl.first[1]].second,
@@ -199,7 +199,7 @@ std::shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::read_external_rdm3(const int ist,
           out->add(t, make_shared<ZRDM<3>>(norb_));
         out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first,
                             mij[eij.first[2]].first, mkl[ekl.first[2]].first)
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
 
         if (ist == jst) {
           const KTag<6> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second,
@@ -234,7 +234,7 @@ std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const int ist,
   elem.emplace(array<int,2>{{0,1}},  1.0); elem.emplace(array<int,2>{{1,0}}, -1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm2";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -255,7 +255,7 @@ std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const int ist,
         if (!out->exist(t))
           out->add(t, make_shared<ZRDM<2>>(norb_));
         out->at(t)->element(mij[eij.first[0]].first, mkl[ekl.first[0]].first, mij[eij.first[1]].first, mkl[ekl.first[1]].first)
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
 
         if (ist == jst) {
           const KTag<4> t2{mkl[ekl.first[0]].second, mij[eij.first[0]].second, mkl[ekl.first[1]].second, mij[eij.first[1]].second};
@@ -282,14 +282,14 @@ std::shared_ptr<Kramers<4,ZRDM<2>>> ZHarrison::read_external_rdm2(const int ist,
 
 std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const int ist, const int jst, const string& file) const {
   auto out = make_shared<Kramers<2,ZRDM<1>>>();
-  auto tmp = make_shared<ZRDM<1>>(norb_); 
+  auto tmp = make_shared<ZRDM<1>>(norb_);
   out->add(KTag<2>("00"), tmp->clone());
   out->add(KTag<2>("01"), tmp->clone());
   out->add(KTag<2>("10"), tmp->clone());
   out->add(KTag<2>("11"), tmp);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm1";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -305,7 +305,7 @@ std::shared_ptr<Kramers<2,ZRDM<1>>> ZHarrison::read_external_rdm1(const int ist,
     const int ti = (i-1)%2;
     const int tj = (j-1)%2;
     const KTag<2> tag1{ti, tj};
-    out->at(tag1)->element(ii, jj) = dat; 
+    out->at(tag1)->element(ii, jj) = dat;
     if (ist == jst) {
       const KTag<2> tag2{tj, ti};
       out->at(tag2)->element(jj, ii) = conj(dat);

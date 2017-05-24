@@ -44,7 +44,7 @@ void Opt::do_optimize() {
   muffle_->unmute();
 
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
-    shared_ptr<const XYZFile> xyz = current_->xyz(); 
+    shared_ptr<const XYZFile> xyz = current_->xyz();
     prev_xyz_.push_back(xyz);
 
     displ = displ_;
@@ -63,7 +63,7 @@ void Opt::do_optimize() {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, (opttype_=="transition"), false);
     }
 
     shared_ptr<PTree> cinput;

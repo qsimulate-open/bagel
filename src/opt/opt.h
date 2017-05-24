@@ -122,7 +122,9 @@ class Opt {
     // some internal functions
     std::shared_ptr<GradFile> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-    std::shared_ptr<GradFile> get_cigrad_bearpark(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<GradFile> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<GradFile> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+    std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom);
 
     std::shared_ptr<XYZFile> get_step();
     std::shared_ptr<XYZFile> get_step_nr();
@@ -163,7 +165,7 @@ class Opt {
     void print_iteration(const double residual, const double time) {
       if (opttype_ == "energy" || opttype_ == "transition")
         print_iteration_energy(residual, time);
-      else if (opttype_ == "conical")
+      else if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci")
         print_iteration_conical(residual, time);
       print_history_molden();
     }

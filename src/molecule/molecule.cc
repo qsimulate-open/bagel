@@ -222,7 +222,8 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(bool negative_hessian, shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev,
+    vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool negative_hessian,  bool verbose) const {
   if (verbose)
     cout << "    o Connectivitiy analysis" << endl;
 
@@ -487,7 +488,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(bool neg
   mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
-  
+
   int ninternal = max(cartsize-6,1);
   for (int i = primsize-ninternal; i != primsize; ++i) {
     if (eig(i) < 1.0e-10)
@@ -520,10 +521,16 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(bool neg
   }
 
   auto hess = make_shared<Matrix>(*umat % *hessp * *umat);
+  if (!negative_hessian) {
+    hess->sqrt();
+    *bnew = *bnew * *hess;
+    hess->inverse();
+    *bdmnew = *bdmnew * *hess;
+  }
   auto hessout = make_shared<Matrix>(*hess);
 
   if (prev) {
-    // internal--internal matrix -- I think this is not that good idea...
+    // internal--internal matrix
     Matrix approx1 = *prev % *bdmnew;
     assert(approx1.ndim() == ninternal && approx1.mdim() == ninternal);
     *bnew = *prev;

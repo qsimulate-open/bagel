@@ -53,7 +53,7 @@ void ZCASSecond::compute() {
         fci_->compute_rdm12();
       } else {
         if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
-        fci_->read_external_rdm12_av(external_rdm_); 
+        fci_->read_external_rdm12_av(external_rdm_);
       }
       auto natorb = fci_->natorb_convert();
       coeff_ = update_coeff(coeff_, natorb.first);
@@ -199,7 +199,7 @@ void ZCASSecond::compute() {
     if (restart_cas_) {
       stringstream ss; ss << "zcasscf_" << iter;
       OArchive archive(ss.str());
-      shared_ptr<const Reference> ref = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, 
+      shared_ptr<const Reference> ref = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_,
         nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
       archive << ref;
     }

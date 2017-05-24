@@ -95,7 +95,7 @@ std::shared_ptr<RDM<4>> DistFCI::read_external_rdm4(const int ist, const int jst
   elem.emplace(array<int,4>{{3,1,2,0}}, -1.0); elem.emplace(array<int,4>{{3,2,0,1}}, -1.0); elem.emplace(array<int,4>{{3,2,1,0}},  1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm4";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -110,7 +110,7 @@ std::shared_ptr<RDM<4>> DistFCI::read_external_rdm4(const int ist, const int jst
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
         out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]], mij[eij.first[3]], mkl[ekl.first[3]])
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
         if (ist == jst)
           out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]], mkl[ekl.first[3]], mij[eij.first[3]])
             = eij.second * ekl.second * dat;
@@ -129,7 +129,7 @@ std::shared_ptr<RDM<3>> DistFCI::read_external_rdm3(const int ist, const int jst
   elem.emplace(array<int,3>{{1,2,0}},  1.0); elem.emplace(array<int,3>{{2,0,1}},  1.0); elem.emplace(array<int,3>{{2,1,0}}, -1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -144,7 +144,7 @@ std::shared_ptr<RDM<3>> DistFCI::read_external_rdm3(const int ist, const int jst
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
         out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]])
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
         if (ist == jst)
           out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]])
             = eij.second * ekl.second * dat;
@@ -162,7 +162,7 @@ std::shared_ptr<RDM<2>> DistFCI::read_external_rdm2(const int ist, const int jst
   elem.emplace(array<int,2>{{0,1}},  1.0); elem.emplace(array<int,2>{{1,0}}, -1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm2";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
@@ -177,7 +177,7 @@ std::shared_ptr<RDM<2>> DistFCI::read_external_rdm2(const int ist, const int jst
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
         out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]])
-          = eij.second * ekl.second * dat; 
+          = eij.second * ekl.second * dat;
         if (ist == jst)
           out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]])
             = eij.second * ekl.second * dat;
@@ -192,16 +192,16 @@ std::shared_ptr<RDM<1>> DistFCI::read_external_rdm1(const int ist, const int jst
   auto out = make_shared<RDM<1>>(norb_);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm1";
-  ifstream fs(ss.str()); 
+  ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;
   while (getline(fs, line)) {
     stringstream ss(line);
     int i, j;
     double dat;
-    ss >> i >> j >> dat; 
+    ss >> i >> j >> dat;
     assert(i <= norb_ && j <= norb_);
-    out->element(i-1, j-1) = dat; 
+    out->element(i-1, j-1) = dat;
     if (ist == jst)
       out->element(j-1, i-1) = dat;
   }
