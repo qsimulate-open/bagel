@@ -57,12 +57,12 @@ shared_ptr<StackMem> Resources::get() {
       return i.first;
   }
   // This error most often occurs if we forget to destruct one integral object before constructing another
-  throw std::runtime_error("Stack Memory exhausted");
+  throw runtime_error("Stack Memory exhausted");
   return nullptr;
 }
 
 
-void Resources::release(std::shared_ptr<StackMem> o) {
+void Resources::release(shared_ptr<StackMem> o) {
   o->clear();
   auto iter = stackmem_.find(o);
   assert(iter != stackmem_.end());
