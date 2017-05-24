@@ -129,15 +129,6 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
     for (int j = 0; j != 3; ++j)
       q_eckt->element(j,iatom) -= ref_center[j];
 
-  ref_center.assign(3, 0.0);
-  for (int iatom = 0; iatom != natom; ++iatom) {
-    for (int j = 0; j != 3; ++j) {
-      ref_center[j] += q_eckt->element(j,iatom) / natom;
-    }
-  }
-  cout << setprecision(20) << "ref center = " << ref_center[0] << "  " << ref_center[1] << "  " << ref_center[2] << endl;
-  cout << setprecision(20) << "a   center = " << a_center[0] << "  " << a_center[1] << "  " << a_center[2] << endl;
-
   // make q_eckt rotated to match with current geometry
 
   for (int iiter = 0; iiter != 500; ++iiter) {
@@ -259,7 +250,7 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
   if (q2 < 1.0e-12) dist = 0.0;
   else dist = sqrt(q2);
 
-  // Martinez: scale dqdx by (1.0 / (dist + 0.1) - 0.5 * dist / (dist + 0.1)^2)
+  // Martinez: scale dq/dx by (1.0 / (dist + 0.1) - 0.5 * dist / (dist + 0.1)^2)
   if (dist > 1.0e-6)
     dqdx->scale(1.0 / (dist + 0.1/au2angstrom__) - 0.5 * dist / ((dist + 0.1/au2angstrom__) * (dist + 0.1/au2angstrom__)));
   return tie(dist, dqdx);
@@ -315,11 +306,9 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   xf->scale(2.0 * en / x1norm);
 
   shared_ptr<GradFile> xg;
-  double dist;
-  tie(dist,xg) = get_euclidean_dist(current_->xyz(), prev_xyz_[0]);
+  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), prev_xyz_[0]);
   double x2norm = x2->norm();
   x2->scale(1.0 / x2norm);
-  cout << "MDCI optimization : distance is " << setprecision(20) << dist*dist << endl;
 
   auto proj = make_shared<Matrix>(n3, n3);
   proj->unit();

@@ -103,6 +103,7 @@ class Opt {
 
     // some global values needed for quasi-newton optimizations
     double en_;
+    double dist_;
     double egap_;
     double predictedchange_;
     double predictedchange_prev_;
@@ -159,14 +160,17 @@ class Opt {
 
     void print_iteration_energy(const double residual, const double time) const;
     void print_iteration_conical(const double residual, const double time) const;
+    void print_iteration_mdci(const double residual, const double time) const;
 
     void print_history_molden() const;
 
     void print_iteration(const double residual, const double time) {
       if (opttype_ == "energy" || opttype_ == "transition")
         print_iteration_energy(residual, time);
-      else if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci")
+      else if (opttype_ == "conical" || opttype_ == "meci")
         print_iteration_conical(residual, time);
+      else if (opttype_ == "mdci")
+        print_iteration_mdci(residual, time);
       print_history_molden();
     }
 
