@@ -36,7 +36,7 @@ using namespace std;
 using namespace bagel;
 
 shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
-  // MECI: minimize E2 while E2-E1 = 0 -> project out g and h from D(E2). (Bearpark, Robb, Schlegel)
+  // MECI: minimize E2 while E2-E1 = 0 -> project out g and h from D(E2). [Bearpark, Robb, Schlegel (CPL 1994, 223, 269)]
 
   auto out = make_shared<GradFile>(current_->natom());
   int n3 = current_->natom() * 3;
@@ -105,7 +105,7 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
 }
 
 tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZFile> a, shared_ptr<const XYZFile> ref) {
-  // This aligns two structures and evaluates q^2 and dq^2 / dX, according to Rhee, J. Chem. Phys. 2000, 113, 6021.
+  // This aligns two structures and evaluates q^2 and dq^2 / dX [Rhee (JCP 2000, 113, 6021)].
   int natom = current_->natom();
   auto q_eckt = make_shared<XYZFile>(*ref);
 
@@ -130,7 +130,6 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
       q_eckt->element(j,iatom) -= ref_center[j];
 
   // make q_eckt rotated to match with current geometry
-
   for (int iiter = 0; iiter != 500; ++iiter) {
     auto fmat = make_shared<Matrix>(3,3);
     fmat->fill(0.0);
@@ -250,14 +249,16 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
   if (q2 < 1.0e-12) dist = 0.0;
   else dist = sqrt(q2);
 
-  // Martinez: scale dq/dx by (1.0 / (dist + 0.1) - 0.5 * dist / (dist + 0.1)^2)
+  // Scale dq/dx by (1.0 / (dist + 0.1) - 0.5 * dist / (dist + 0.1)^2) [differentiation of the first term in eq. 15 in JPCB 2008, 112, 405]
   if (dist > 1.0e-6)
     dqdx->scale(1.0 / (dist + 0.1/au2angstrom__) - 0.5 * dist / ((dist + 0.1/au2angstrom__) * (dist + 0.1/au2angstrom__)));
   return tie(dist, dqdx);
 }
 
 shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
-  // MECI: minimize Distance while E2-E1 = 0 -> project out g and h from D(Distance). (Martinez, Modified to use gradient projection)
+  // Concept of MDCI is suggested by Levine, Coe and Martinez (JPCB 2008, 112, 405) -- CI geometry with minimized distance to reference geometry.
+  // Original article used "target function" to minimize.
+  // Here, we make use of gradient projection :: minimize distance while E2-E1 = 0 -> project out g and h from the vector d(distance).
 
   auto out = make_shared<GradFile>(current_->natom());
   int n3 = current_->natom() * 3;
@@ -306,7 +307,7 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   xf->scale(2.0 * en / x1norm);
 
   shared_ptr<GradFile> xg;
-  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), prev_xyz_[0]);
+  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), mdci_ref_geom_->xyz());
   double x2norm = x2->norm();
   x2->scale(1.0 / x2norm);
 

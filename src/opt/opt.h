@@ -108,6 +108,7 @@ class Opt {
     double predictedchange_;
     double predictedchange_prev_;
     double realchange_;
+    bool mdci_reference_geometry_;
 
     std::shared_ptr<GradFile> grad_;
     std::shared_ptr<Matrix> hess_;
@@ -135,6 +136,7 @@ class Opt {
     std::shared_ptr<XYZFile> get_step_rfos();
 
     std::shared_ptr<XYZFile> iterate_displ();
+    std::shared_ptr<const Geometry> mdci_ref_geom_;
 
     void hessian_update();
     void hessian_update_bfgs(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> hs);
