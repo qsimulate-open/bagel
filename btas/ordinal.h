@@ -12,6 +12,7 @@
 #include <btas/array_adaptor.h>
 #include <btas/index_traits.h>
 #include <btas/varray/varray.h>
+#include <boost/assert.hpp>
 
 namespace btas {
 

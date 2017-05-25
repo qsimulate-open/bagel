@@ -212,7 +212,7 @@ int main(int argc, char** argv) {
           if (orbitals || vibration) mfs << ref;
         }
       } else {
-        // otherwise, they are considered single point energy calculation: construct_method is now hidden in get_energy
+        // otherwise, they are considered single point energy calculation
         tie(ignore, ref) = get_energy(title, itree, geom, ref);
       }
 

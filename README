@@ -42,5 +42,5 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   We are NOT going to optimize BAGEL for a stand-alone workstation.
 
   BAGEL is being tested primarily on Linux (CentOS and SUSE) and MacOS
-  that we have access to.  Since the program is starndard compliant,
+  that we have access to.  Since the program is standard compliant,
   it is expected that BAGEL also works on other platforms.
