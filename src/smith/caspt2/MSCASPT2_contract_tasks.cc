@@ -290,6 +290,21 @@ void Task916::Task_local::compute() {
   out()->add_block(odata, ci0);
 }
 
+void Task917::Task_local::compute() {
+  const Index ci0 = b(0);
+
+  for (auto& x0 : *range_[1]) {
+    for (auto& x1 : *range_[1]) {
+      std::unique_ptr<double[]> odata(new double[out()->get_size(ci0, x0, x1)]);
+      std::fill_n(odata.get(), out()->get_size(ci0, x0, x1), 0.0);
+      std::unique_ptr<double[]> i0data = in(0)->get_block(ci0, x0, x1);
+      std::unique_ptr<double[]> i1data = in(1)->get_block(ci0, x0, x1);
+      sort_indices<0,1,2,0,1,1,1>(i0data, odata, ci0.size(), x0.size(), x1.size());
+      sort_indices<0,1,2,1,1,1,1>(i1data, odata, ci0.size(), x0.size(), x1.size());
+      out()->add_block(odata, ci0, x0, x1);
+    }
+  }
+}
 
 void Task918::Task_local::compute() {
   const Index ci0 = b(0);
