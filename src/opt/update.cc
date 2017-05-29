@@ -38,11 +38,12 @@
 using namespace std;
 using namespace bagel;
 
-void Opt::hessian_update() {
+shared_ptr<Matrix> Opt::hessian_update() const {
   auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
   auto s  = make_shared<GradFile>(*displ_);
   auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
   auto z  = make_shared<GradFile>(*y - *hs);
+  shared_ptr<Matrix> hess;
 
   if (hess_update_=="flowchart") {
 
@@ -51,41 +52,46 @@ void Opt::hessian_update() {
     const double zs = z->dot_product(s);
     const double ys = y->dot_product(s);
 
-    if ((zs / nzs) < -0.1) hessian_update_sr1(y,s,z);
-    else if ((ys / nys) > 0.1) hessian_update_bfgs(y,s,hs);
-    else hessian_update_psb(y,s,z);
+    if ((zs / nzs) < -0.1) hess = hessian_update_sr1(y,s,z);
+    else if ((ys / nys) > 0.1) hess = hessian_update_bfgs(y,s,hs);
+    else hess = hessian_update_psb(y,s,z);
 
   } else if (hess_update_=="bfgs") {
 
-    hessian_update_bfgs(y,s,hs);
+    hess = hessian_update_bfgs(y,s,hs);
 
   } else if (hess_update_=="psb") {
 
-    hessian_update_psb(y,s,z);
+    hess = hessian_update_psb(y,s,z);
 
   } else if (hess_update_=="sr1") {
 
-    hessian_update_sr1(y,s,z);
+    hess = hessian_update_sr1(y,s,z);
 
   } else {
 
     throw runtime_error ("available Hessian update schemes are: \"flowchart\", \"bfgs\", \"psb\" and \"sr1\"");
   }
+
+  return hess;
 }
 
-void Opt::hessian_update_sr1(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
+shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
   cout << "  * Updating Hessian using SR1 " << endl;
   // Hessian update with SR1
+
   double  zs = z->dot_product(s);
   if (fabs(zs)>1.0e-12) zs = 1.0 / zs;
 
   auto zzt = make_shared<Matrix>(size_,size_);
   dger_(size_,size_,zs,z->data(),1,z->data(),1,zzt->data(),size_);
 
-  *hess_ = *hess_ + *zzt;
+  auto hess = make_shared<Matrix>(*hess_ + *zzt);
+
+  return hess;
 }
 
-void Opt::hessian_update_bfgs(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> hs) {
+shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> hs) const {
   cout << "  * Updating Hessian using BFGS " << endl;
   // Hessian update with BFGS
   double shs = hs->dot_product(s);
@@ -100,10 +106,12 @@ void Opt::hessian_update_bfgs(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sh
 
   auto bsst = make_shared<Matrix>(*hess_ * *sst * *hess_);
 
-  *hess_ = *hess_ + *bsst + *yyt;
+  auto hess = make_shared<Matrix>(*hess_ + *bsst + *yyt);
+
+  return hess;
 }
 
-void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, shared_ptr<GradFile> z) {
+shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
   cout << "  * Updating Hessian using PSB " << endl;
   // Hessian update with PSB
   double ss = s->dot_product(s);
@@ -120,7 +128,9 @@ void Opt::hessian_update_psb(shared_ptr<GradFile> y, shared_ptr<GradFile> s, sha
   dger_(size_,size_,ss,z->data(),1,s->data(),1,zst->data(),size_);
   dger_(size_,size_,ss2,s->data(),1,s->data(),1,sst->data(),size_);
 
-  *hess_ = *hess_ + *szt + *zst + *sst;
+  auto hess = make_shared<Matrix>(*hess_ + *szt + *zst + *sst);
+
+  return hess;
 }
 
 shared_ptr<XYZFile> Opt::get_step() {

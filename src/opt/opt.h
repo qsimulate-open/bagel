@@ -136,10 +136,10 @@ class Opt {
 
     std::shared_ptr<XYZFile> iterate_displ();
 
-    void hessian_update();
-    void hessian_update_bfgs(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> hs);
-    void hessian_update_sr1(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
-    void hessian_update_psb(std::shared_ptr<GradFile> y, std::shared_ptr<GradFile> s, std::shared_ptr<GradFile> z);
+    std::shared_ptr<Matrix> hessian_update() const;
+    std::shared_ptr<Matrix> hessian_update_bfgs(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> hs) const;
+    std::shared_ptr<Matrix> hessian_update_sr1(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
+    std::shared_ptr<Matrix> hessian_update_psb(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
 
     void do_adaptive();
     void do_optimize();

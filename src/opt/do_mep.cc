@@ -199,7 +199,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
         auto s  = make_shared<GradFile>(*displ_ * sfactor);
         auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
-        hessian_update_bfgs(y,s,hs);
+        hess_ = hessian_update_bfgs(y,s,hs);
       }
 
       {

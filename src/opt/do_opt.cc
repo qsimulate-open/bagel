@@ -105,7 +105,7 @@ void Opt::do_optimize() {
 
       // Update Hessian with Flowchart method
       if (iter_ != 1)
-        hessian_update();
+        hess_ = hessian_update();
 
       prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
