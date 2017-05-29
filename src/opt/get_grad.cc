@@ -78,21 +78,25 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   }
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
-  double x1norm = x1->norm();
+  const double x1norm = x1->norm();
   x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
   xf->scale(2.0 * en / x1norm);
   auto xg = make_shared<GradFile>(*cgrad1);
-  double x2norm = x2->norm();
-  x2->scale(1.0 / x2norm);
+  {
+    const double x2norm = x2->norm();
+    x2->scale(1.0 / x2norm);
+  }
 
   auto proj = make_shared<Matrix>(n3, n3);
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   x2 = x2->transform(proj, false);
-  x2norm = x2->norm();
-  x2->scale(1.0 / x2norm);
+  {
+    const double x2norm = x2->norm();
+    x2->scale(1.0 / x2norm);
+  }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
@@ -106,7 +110,7 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
 
 tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZFile> a, shared_ptr<const XYZFile> ref) {
   // This aligns two structures and evaluates q^2 and dq^2 / dX [Rhee (JCP 2000, 113, 6021)].
-  int natom = current_->natom();
+  const int natom = current_->natom();
   auto q_eckt = make_shared<XYZFile>(*ref);
 
   // translate cog of q_eckt into a
@@ -144,23 +148,22 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
       fmat->element(1,2) += q_eckt->element(2,iatom) * a->element(1,iatom);
       fmat->element(2,2) += q_eckt->element(2,iatom) * a->element(2,iatom);
     }
-    vector<double> grad(3);
-    grad[0] = fmat->element(2,1) - fmat->element(1,2);
-    grad[1] = fmat->element(0,2) - fmat->element(2,0);
-    grad[2] = fmat->element(1,0) - fmat->element(0,1);
-    double hdiag0 = -(fmat->element(1,1) + fmat->element(2,2));
-    double hdiag1 = -(fmat->element(2,2) + fmat->element(0,0));
-    double hdiag2 = -(fmat->element(0,0) + fmat->element(1,1));
+    const vector<double> grad { fmat->element(2,1) - fmat->element(1,2),
+                                fmat->element(0,2) - fmat->element(2,0),
+                                fmat->element(1,0) - fmat->element(0,1) };
+    const double hdiag0 = -(fmat->element(1,1) + fmat->element(2,2));
+    const double hdiag1 = -(fmat->element(2,2) + fmat->element(0,0));
+    const double hdiag2 = -(fmat->element(0,0) + fmat->element(1,1));
 
-    double deth = hdiag0 * hdiag1 * hdiag2 + 2.0 * fmat->element(1,0)*fmat->element(2,1)*fmat->element(2,0)
-                 -hdiag0 * fmat->element(2,1) * fmat->element(2,1) - hdiag1 * fmat->element(2,0) * fmat->element(2,0)
-                 -hdiag2 * fmat->element(1,0) * fmat->element(1,0);
+    const double deth = hdiag0 * hdiag1 * hdiag2 + 2.0 * fmat->element(1,0)*fmat->element(2,1)*fmat->element(2,0)
+                       -hdiag0 * fmat->element(2,1) * fmat->element(2,1) - hdiag1 * fmat->element(2,0) * fmat->element(2,0)
+                       -hdiag2 * fmat->element(1,0) * fmat->element(1,0);
 
-    double norm = grad[0] * grad[0] + grad[1] * grad[1] + grad[2] * grad[2];
+    const double norm = grad[0] * grad[0] + grad[1] * grad[1] + grad[2] * grad[2];
     auto tfm = make_shared<Matrix>(3,3);
     if (norm < 1.0e-8) {
-      double trac = hdiag0 + hdiag1 + hdiag2;
-      double det3 = (hdiag0+hdiag2)*hdiag1 + hdiag0*hdiag2 - fmat->element(1,0)*fmat->element(1,0) - fmat->element(2,1)*fmat->element(2,1) - fmat->element(2,0)*fmat->element(2,0);
+      const double trac = hdiag0 + hdiag1 + hdiag2;
+      const double det3 = (hdiag0+hdiag2)*hdiag1 + hdiag0*hdiag2 - fmat->element(1,0)*fmat->element(1,0) - fmat->element(2,1)*fmat->element(2,1) - fmat->element(2,0)*fmat->element(2,0);
       if (deth < 1.0e-8 && trac < 0.0 && det3 > 0.0) break;         // reached convergence
       // reached local minima
       fmat->element(0,0) = hdiag0;
@@ -208,12 +211,12 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
         gamma = -(hinv->element(2,0) * grad[0] + hinv->element(2,1) * grad[1] + hinv->element(2,2) * grad[2]);
       }
 
-      double cosa = cos(alpha);
-      double sina = sin(alpha);
-      double cosb = cos(beta);
-      double sinb = sin(beta);
-      double cosc = cos(gamma);
-      double sinc = sin(gamma);
+      const double cosa = cos(alpha);
+      const double sina = sin(alpha);
+      const double cosb = cos(beta);
+      const double sinb = sin(beta);
+      const double cosc = cos(gamma);
+      const double sinc = sin(gamma);
       tfm->element(0,0) =  cosb * cosc;
       tfm->element(1,0) =  sina * sinb * cosc + cosa * sinc;
       tfm->element(2,0) =  sina * sinc - cosa * sinb * cosc;
@@ -300,7 +303,7 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   }
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
-  double x1norm = x1->norm();
+  const double x1norm = x1->norm();
   x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
@@ -308,15 +311,19 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
 
   shared_ptr<GradFile> xg;
   tie(dist_,xg) = get_euclidean_dist(current_->xyz(), mdci_ref_geom_->xyz());
-  double x2norm = x2->norm();
-  x2->scale(1.0 / x2norm);
+  {
+    const double x2norm = x2->norm();
+    x2->scale(1.0 / x2norm);
+  }
 
   auto proj = make_shared<Matrix>(n3, n3);
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   x2 = x2->transform(proj, false);
-  x2norm = x2->norm();
-  x2->scale(1.0 / x2norm);
+  {
+    const double x2norm = x2->norm();
+    x2->scale(1.0 / x2norm);
+  }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);

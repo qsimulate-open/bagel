@@ -195,7 +195,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
 
       {
         // Hessian updater
-        double sfactor = (miciter==1) ? 2.0 : 1.0;
+        const double sfactor = (miciter==1) ? 2.0 : 1.0;
         auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
         auto s  = make_shared<GradFile>(*displ_ * sfactor);
         auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
@@ -221,12 +221,12 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         cout << endl << endl << "  === lambda iteration ===" << endl;
         double lambda = bj[0] - 0.1;
         for (int iiter = 0; iiter != 100; ++iiter) {
-          double lambda_prev = lambda;
+          const double lambda_prev = lambda;
           double fv = 0.0;
           double df = 0.0;
           for (int i = 0; i != size_; ++i) {
-            double bpgb = (bj[i] * pj[i] - gj[i]) / (bj[i] - lambda);
-            double bl   = bj[i] - lambda;
+            const double bpgb = (bj[i] * pj[i] - gj[i]) / (bj[i] - lambda);
+            const double bl   = bj[i] - lambda;
             fv += bpgb * bpgb;
             df += 2.0 * bpgb * bpgb / bl;
           }

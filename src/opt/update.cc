@@ -46,10 +46,10 @@ void Opt::hessian_update() {
 
   if (hess_update_=="flowchart") {
 
-    double nzs = z->norm() * s->norm();
-    double nys = y->norm() * s->norm();
-    double zs = z->dot_product(s);
-    double ys = y->dot_product(s);
+    const double nzs = z->norm() * s->norm();
+    const double nys = y->norm() * s->norm();
+    const double zs = z->dot_product(s);
+    const double ys = y->dot_product(s);
 
     if ((zs / nzs) < -0.1) hessian_update_sr1(y,s,z);
     else if ((ys / nys) > 0.1) hessian_update_bfgs(y,s,hs);
@@ -155,7 +155,7 @@ shared_ptr<XYZFile> Opt::get_step_nr() {
 
   displ->scale(-1.0);
 
-  double stepnorm = displ->norm();
+  const double stepnorm = displ->norm();
   if (stepnorm > (maxstep_))
     displ->scale(maxstep_/stepnorm);
 
@@ -181,20 +181,20 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
   }
 
   for (int iiter = 0; iiter != 100; ++iiter) {
-    double lambda_prev = lambda;
+    const double lambda_prev = lambda;
     double lambda_n = 0.0;
     for (int i = 0; i != size_; ++i)
       lambda_n += -(f[i] * f[i]) / (eigv[i] - lambda);
     lambda = lambda_n;
 
-    double error = fabs(lambda_prev - lambda);
+    const double error = fabs(lambda_prev - lambda);
     if (error < 1.0e-8) break;
   }
 
   displ->zero();
   for (int i = 0; i != size_; ++i) {
     auto dispb = make_shared<XYZFile>(dispsize_);
-    double fb = f[i] / (eigv[i] - lambda);
+    const double fb = f[i] / (eigv[i] - lambda);
     copy_n(hess->element_ptr(0,i), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
@@ -205,9 +205,9 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
   if (adaptive_) {
     // When we use adaptive steplength, we should predict quadratic energy change
 
-    double qg  = displ->dot_product(grad_);
+    const double qg  = displ->dot_product(grad_);
     auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
-    double qhq = displ->dot_product(hq);
+    const double qhq = displ->dot_product(hq);
     predictedchange_prev_ = predictedchange_;
     predictedchange_ = qg + 0.5 * qhq;
   }
@@ -228,8 +228,8 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
   // partition lambda
   double lambda_p = 100.0;
   double lambda_n = 100.0;
-  int size_p = constrained_? constraints_.size() : 1;
-  int size_n = size_ - size_p;
+  const int size_p = constrained_? constraints_.size() : 1;
+  const int size_n = size_ - size_p;
 
   VectorB f1(size_p);
   VectorB f2(size_n);
@@ -246,24 +246,24 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
   for (int i = 0; i != size_p; ++i) eigv[i] *= -1.0;
 
   for (int iiter = 0; iiter != 100; ++iiter) {
-    double lambda_p_prev = lambda_p;
+    const double lambda_p_prev = lambda_p;
     double lambda_p_n = 0.0;
     for (int i = 0; i != size_p; ++i)
       lambda_p_n += -(f1[i] * f1[i]) / (eigv[i] - lambda_p);
     lambda_p = lambda_p_n;
 
-    double error = fabs(lambda_p_prev - lambda_p);
+    const double error = fabs(lambda_p_prev - lambda_p);
     if (error < 1.0e-8) break;
   }
 
   for (int iiter = 0; iiter != 100; ++iiter) {
-    double lambda_n_prev = lambda_n;
+    const double lambda_n_prev = lambda_n;
     double lambda_n_n = 0.0;
     for (int j = 0; j != size_n; ++j)
       lambda_n_n += -(f2[j] * f2[j]) / (eigv[j+size_p] - lambda_n);
     lambda_n = lambda_n_n;
 
-    double error = fabs(lambda_n_prev - lambda_n);
+    const double error = fabs(lambda_n_prev - lambda_n);
     if (error < 1.0e-8) break;
   }
 
@@ -271,7 +271,7 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
 
   for (int i = 0; i != size_p; ++i) {
     auto dispb = make_shared<XYZFile>(size_);
-    double fb = f1[i] / (eigv[i] - lambda_p);
+    const double fb = f1[i] / (eigv[i] - lambda_p);
     copy_n(hess->element_ptr(0,i), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
@@ -279,7 +279,7 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
 
   for (int j = 0; j != size_n; ++j) {
     auto dispb = make_shared<XYZFile>(size_);
-    double fb = f2[j] / (eigv[j+size_p] - lambda_n);
+    const double fb = f2[j] / (eigv[j+size_p] - lambda_n);
     copy_n(hess->element_ptr(0,j+size_p), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
@@ -321,9 +321,9 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
   if (adaptive_) {
     // When we use adaptive steplength, we should predict quadratic energy change
 
-    double qg  = displ->dot_product(grad_);
+    const double qg  = displ->dot_product(grad_);
     auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
-    double qhq = displ->dot_product(hq);
+    const double qhq = displ->dot_product(hq);
     predictedchange_prev_ = predictedchange_;
     predictedchange_ = qg + 0.5 * qhq;
   }
@@ -358,9 +358,9 @@ shared_ptr<XYZFile> Opt::get_step_rfos() {
   if (adaptive_) {
     // When we use adaptive steplength, we should predict quadratic energy change
 
-    double qg  = displ->dot_product(grad_);
+    const double qg  = displ->dot_product(grad_);
     auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
-    double qhq = displ->dot_product(hq);
+    const double qhq = displ->dot_product(hq);
     predictedchange_prev_ = predictedchange_;
     predictedchange_ = qg + 0.5 * qhq;
   }
@@ -404,7 +404,7 @@ shared_ptr<XYZFile> Opt::iterate_displ() {
 void Opt::do_adaptive() {
   // Fletcher's adaptive stepsize algorithm, works with rfo
 
-  bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
+  const bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
 
   if (algo) {
     realchange_ = en_ - prev_en_.back();

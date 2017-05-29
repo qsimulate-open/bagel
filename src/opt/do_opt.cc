@@ -126,12 +126,12 @@ void Opt::do_optimize() {
     }
 
     if (adaptive_) do_adaptive();
-    double maxdispl = displ->maximum(current_->natom());
-    double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
+    const double maxdispl = displ->maximum(current_->natom());
+    const double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
 
-    bool convergegrad = maxgrad > thresh_grad_ ? false : true;
-    bool convergedispl = maxdispl > thresh_displ_ ? false : true;
-    bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
+    const bool convergegrad = maxgrad > thresh_grad_ ? false : true;
+    const bool convergedispl = maxdispl > thresh_displ_ ? false : true;
+    const bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
     cout << endl << "  === Convergence status ===" << endl << endl;
     cout << "                         Maximum     Tolerance   Converged?" << endl;
     cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << (convergegrad? "Yes" : "No") << endl;
