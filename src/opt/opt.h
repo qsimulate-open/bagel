@@ -88,7 +88,6 @@ class Opt {
     bool adaptive_;
     // whether we use ab initio hessian or approximate hessian
     bool hess_approx_;
-    std::string refname_;
     size_t size_;
     // nonadiabatic coupling type used in conical
     int nacmtype_;
@@ -114,8 +113,7 @@ class Opt {
     std::vector<std::shared_ptr<const XYZFile>> prev_displ_;
     std::shared_ptr<const GradFile> prev_grad_internal_;
 
-    // protected compute module
-
+    // protected compute module (changes object)
     void compute_optimize();
     void compute_mep(std::shared_ptr<XYZFile> mep_start);
 
