@@ -174,9 +174,18 @@ void Opt::print_header() const {
     << endl << endl;
   } else if (opttype_ == "mdci") {
     cout << endl << "  *** Conical intersection optimization started ***" << endl <<
-                              "     iter         energy             gap energy            distance            grad rms       time"
+                              "     iter       distance             gap energy            grad rms       time"
     << endl << endl;
   }
+}
+
+
+void Opt::print_iteration(const double residual, const double param, const double time) const {
+  if (opttype_ == "energy" || opttype_ == "transition")
+    print_iteration_energy(residual, time);
+  else if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci")
+    print_iteration_conical(residual, param, time);
+  print_history_molden();
 }
 
 
@@ -187,17 +196,9 @@ void Opt::print_iteration_energy(const double residual, const double time) const
 }
 
 
-void Opt::print_iteration_conical(const double residual, const double time) const {
+void Opt::print_iteration_conical(const double residual, const double param, const double time) const {
   cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
-                           << setw(20) << setprecision(8) << fixed << egap_
-                           << setw(20) << setprecision(8) << fixed << residual
-                           << setw(12) << setprecision(2) << fixed << time << endl;
-}
-
-void Opt::print_iteration_mdci(const double residual, const double time) const {
-  cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
-                           << setw(20) << setprecision(8) << fixed << egap_
-                           << setw(20) << setprecision(8) << fixed << dist_
+                           << setw(20) << setprecision(8) << fixed << param
                            << setw(20) << setprecision(8) << fixed << residual
                            << setw(12) << setprecision(2) << fixed << time << endl;
 }

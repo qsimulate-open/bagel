@@ -88,9 +88,11 @@ void Opt::compute_optimize() {
 
     double rms;
     double maxgrad;
+    double param;
     {
       grad_->zero();
-      shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+      shared_ptr<GradFile> cgrad;
+      tie(en_,param,prev_ref_,cgrad) = get_grad(cinput, ref);
       prev_grad_.push_back(cgrad);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
       rms = cgrad->rms();       // This is more appropriate
@@ -142,7 +144,7 @@ void Opt::compute_optimize() {
     if (iter_ == 1)
       print_header();
     prev_en_.push_back(en_);
-    print_iteration(rms, timer_.tick());
+    print_iteration(rms, param, timer_.tick());
 
     muffle_->mute();
 

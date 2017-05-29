@@ -100,8 +100,6 @@ class Opt {
 
     // some global values needed for quasi-newton optimizations
     double en_;
-    double dist_;
-    double egap_;
     double predictedchange_;
     double predictedchange_prev_;
 
@@ -116,11 +114,16 @@ class Opt {
     std::vector<std::shared_ptr<const XYZFile>> prev_displ_;
     std::shared_ptr<const GradFile> prev_grad_internal_;
 
-    // some internal functions
-    std::shared_ptr<GradFile> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-    std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-    std::shared_ptr<GradFile> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-    std::shared_ptr<GradFile> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+    // protected compute module
+
+    void compute_optimize();
+    void compute_mep(std::shared_ptr<XYZFile> mep_start);
+
+    // const internal functions
+    std::tuple<double,double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_grad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
+    std::tuple<double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
+    std::tuple<double,double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
+    std::tuple<double,double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
     std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom) const;
 
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
@@ -138,9 +141,6 @@ class Opt {
 
     double do_adaptive() const;
 
-    void compute_optimize();
-    void compute_mep(std::shared_ptr<XYZFile> mep_start);
-
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
 
@@ -155,20 +155,11 @@ class Opt {
     void print_footer() const { std::cout << std::endl << std::endl; }
 
     void print_iteration_energy(const double residual, const double time) const;
-    void print_iteration_conical(const double residual, const double time) const;
-    void print_iteration_mdci(const double residual, const double time) const;
+    void print_iteration_conical(const double residual, const double param, const double time) const;
 
     void print_history_molden() const;
 
-    void print_iteration(const double residual, const double time) const {
-      if (opttype_ == "energy" || opttype_ == "transition")
-        print_iteration_energy(residual, time);
-      else if (opttype_ == "conical" || opttype_ == "meci")
-        print_iteration_conical(residual, time);
-      else if (opttype_ == "mdci")
-        print_iteration_mdci(residual, time);
-      print_history_molden();
-    }
+    void print_iteration(const double residual, const double param, const double time) const;
 
     std::shared_ptr<const Geometry> geometry() const { return current_; }
     std::shared_ptr<const Reference> conv_to_ref() const { return prev_ref_; }

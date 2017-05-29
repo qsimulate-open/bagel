@@ -83,7 +83,8 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
     {
       grad_->zero();
-      shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+      shared_ptr<GradFile> cgrad;
+      tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
       if (internal_) {
@@ -182,7 +183,8 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
       {
         grad_->zero();
-        shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+        shared_ptr<GradFile> cgrad;
+        tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
         grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
         if (internal_) {

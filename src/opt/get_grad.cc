@@ -35,7 +35,7 @@
 using namespace std;
 using namespace bagel;
 
-shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) const {
   // MECI: minimize E2 while E2-E1 = 0 -> project out g and h from D(E2). [Bearpark, Robb, Schlegel (CPL 1994, 223, 269)]
 
   auto out = make_shared<GradFile>(current_->natom());
@@ -45,10 +45,11 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   shared_ptr<GradFile> cgrad2;
   shared_ptr<GradFile> x2;
 
+  shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
-    prev_ref_ = eval1.ref();
+    prev_ref = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
@@ -62,7 +63,7 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
-    prev_ref_ = eval1.ref();
+    prev_ref = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
@@ -102,10 +103,8 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
   xg = xg->transform(proj, /*transpose=*/false);
   *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
-  en_ = en2;
-  egap_ = en;
 
-  return out;
+  return tie(en2,en,prev_ref,out);
 }
 
 
@@ -260,7 +259,7 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
 }
 
 
-shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) const {
   // Concept of MDCI is suggested by Levine, Coe and Martinez (JPCB 2008, 112, 405) -- CI geometry with minimized distance to reference geometry.
   // Original article used "target function" to minimize.
   // Here, we make use of gradient projection :: minimize distance while E2-E1 = 0 -> project out g and h from the vector d(distance).
@@ -272,10 +271,11 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   shared_ptr<GradFile> cgrad2;
   shared_ptr<GradFile> x2;
 
+  shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
-    prev_ref_ = eval1.ref();
+    prev_ref = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
@@ -289,7 +289,7 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_, maxziter_);
     cgrad1 = eval1.compute();
-    prev_ref_ = eval1.ref();
+    prev_ref = eval1.ref();
     shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
@@ -322,7 +322,8 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
     ref_xyz = make_shared<XYZFile>(*prev_xyz_[0]);
   }
 
-  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
+  double dist;
+  tie(dist,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
   {
     const double x2norm = x2->norm();
     x2->scale(1.0 / x2norm);
@@ -341,104 +342,107 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
   xg = xg->transform(proj, /*transpose=*/false);
   *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
-  en_ = en2;
-  egap_ = en;
 
-  return out;
+  return tie(dist,en,prev_ref,out);
 }
 
 
-shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) const {
   auto out = make_shared<GradFile>(current_->natom());
+  shared_ptr<const Reference> prev_ref;
+  double en;
+  bool numerical = numerical_;
 
-  if (!numerical_) {
+  if (!numerical) {
     if (method_ == "uhf") {
 
       GradEval<UHF> eval(cinput, current_, ref, target_state_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "rohf") {
 
       GradEval<ROHF> eval(cinput, current_, ref, target_state_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "hf") {
 
       GradEval<RHF> eval(cinput, current_, ref, target_state_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "ks") {
 
       GradEval<KS> eval(cinput, current_, ref, target_state_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "dhf") {
 
       GradEval<Dirac> eval(cinput, current_, ref, target_state_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "mp2") {
 
       GradEval<MP2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "casscf") {
 
       GradEval<CASSCF> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else if (method_ == "caspt2") {
 
       GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
       out = eval.compute();
-      prev_ref_ = eval.ref();
-      en_ = eval.energy();
+      prev_ref = eval.ref();
+      en = eval.energy();
 
     } else {
 
       cout << "   * Seems like no analytical gradient is available. Move to numerical gradient." << endl;
-      numerical_ = true;
+      numerical = true;
 
     }
   }
 
-  if (numerical_) {
+  if (numerical) {
 
     auto m = idata_->get_child("method");
     const int nproc = idata_->get<int>("nproc", 1);
     const double dx = idata_->get<double>("numerical_dx", 0.001);
     FiniteGrad eval(m, current_, ref, target_state_, dx, nproc);
     out = eval.compute();
-    prev_ref_ = eval.ref();
-    en_ = eval.energy();
+    prev_ref = eval.ref();
+    en = eval.energy();
 
   }
 
-  return out;
+  return tie(en,prev_ref,out);
 }
 
 
-shared_ptr<GradFile> Opt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
+tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) const {
   auto out = make_shared<GradFile>(current_->natom());
 
-  if (opttype_ == "conical" || opttype_ == "meci") out = get_mecigrad(cinput, ref);
-  else if (opttype_ == "mdci") out = get_mdcigrad(cinput, ref);
-  else out = get_grad_energy(cinput, ref);
+  shared_ptr<const Reference> prev_ref;
+  double param1,param2;
+  if (opttype_ == "conical" || opttype_ == "meci") tie(param1,param2,prev_ref,out) = get_mecigrad(cinput, ref);
+  else if (opttype_ == "mdci") tie(param1,param2,prev_ref,out) = get_mdcigrad(cinput, ref);
+  else tie(param1,prev_ref,out) = get_grad_energy(cinput, ref);
 
-  return out;
+  return tie(param1,param2,prev_ref,out);
 }
 
