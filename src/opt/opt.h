@@ -86,8 +86,6 @@ class Opt {
     int dispsize_;
     // whether we use adaptive stepsize or not
     bool adaptive_;
-    // whether we save reference or not
-    bool refsave_;
     // whether we use ab initio hessian or approximate hessian
     bool hess_approx_;
     std::string refname_;
@@ -123,7 +121,6 @@ class Opt {
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-
     std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom) const;
 
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
