@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: do_opt.cc
+// Filename: compute_opt.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -37,7 +37,7 @@
 using namespace std;
 using namespace bagel;
 
-void Opt::do_optimize() {
+void Opt::compute_optimize() {
   auto displ = make_shared<XYZFile>(current_->natom());
 
   muffle_ = make_shared<Muffle>("opt.log");
@@ -112,7 +112,7 @@ void Opt::do_optimize() {
       MoldenOut mfs("opt.molden");
       mfs << current_;
 
-      tie(predictedchange,predictedchange_prev,displ_) = get_step();
+      tie(predictedchange_,predictedchange_prev_,displ_) = get_step();
     }
 
     displ = displ_;

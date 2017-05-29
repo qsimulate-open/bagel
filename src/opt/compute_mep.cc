@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: do_mep.cc
+// Filename: compute_mep.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -38,7 +38,7 @@
 using namespace std;
 using namespace bagel;
 
-void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
+void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   // performs second order MEP calculation in Cartesian or in internal coordinates (J. Chem. Phys. 1989, 90, 2154)
   cout << "    * Doing second order MEP calculation" << endl;
   auto displ = make_shared<XYZFile>(current_->natom());

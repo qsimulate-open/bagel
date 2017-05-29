@@ -68,7 +68,6 @@ class Opt {
     double thresh_echange_;
     double maxstep_;
     bool scratch_;
-    bool mass_weight_;
 
     bool numerical_;
 
@@ -124,6 +123,7 @@ class Opt {
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
+
     std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom) const;
 
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
@@ -141,8 +141,8 @@ class Opt {
 
     double do_adaptive() const;
 
-    void do_optimize();
-    void do_mep(std::shared_ptr<XYZFile> mep_start);
+    void compute_optimize();
+    void compute_mep(std::shared_ptr<XYZFile> mep_start);
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);

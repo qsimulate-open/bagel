@@ -113,7 +113,6 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
   } else if (opttype_ == "mep") {
     // parameters for MEP calculations (Gonzalez, Schlegel)
-    mass_weight_ = idat->get<bool>("mass_weight", false);
     mep_direction_ = idat->get<int>("mep_direction", 1);
     if (hess_approx_) throw runtime_error("MEP calculation should be started with Hessian eigenvectors");
   } else if (opttype_ != "energy" && opttype_ != "transition") {
@@ -157,9 +156,9 @@ void Opt::compute() {
   }
 
   if (opttype_ == "mep") {
-    do_mep(mep_start);
+    compute_mep(mep_start);
   } else {
-    do_optimize();
+    compute_optimize();
   }
 }
 
