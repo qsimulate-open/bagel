@@ -98,23 +98,18 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
   algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
-#ifndef DISABLE_SERIALIZATION
-  refsave_ = idat->get<bool>("save_ref", false);
-  if (refsave_) refname_ = idat->get<string>("ref_out", "reference");
-#endif
 
   if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci") {
     // parameters for CI optimizations (Bearpark, Robb, Schlegel)
     target_state2_ = idat->get<int>("target2", 1);
     if (target_state2_ > target_state_) {
-      int tmpstate = target_state_;
+      const int tmpstate = target_state_;
       target_state_ = target_state2_;
       target_state2_ = tmpstate;
     }
     nacmtype_ = idat->get<int>("nacmtype", 1);
     thielc3_  = idat->get<double>("thielc3", opttype_=="mdci" ? 0.01 : 2.0);
     thielc4_  = idat->get<double>("thielc4", 0.5);
-    mdci_reference_geometry_ = idat->get<bool>("mdci_reference_geometry", false);
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
   } else if (opttype_ == "mep") {
     // parameters for MEP calculations (Gonzalez, Schlegel)
@@ -123,13 +118,6 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     if (hess_approx_) throw runtime_error("MEP calculation should be started with Hessian eigenvectors");
   } else if (opttype_ != "energy" && opttype_ != "transition") {
     throw runtime_error("Optimization type should be: \"energy\", \"transition\", \"conical\" (\"meci\", \"mdci\"), or \"mep\"");
-  }
-
-  if (opttype_ == "mdci" && mdci_reference_geometry_) {
-    auto input = idata_->get_child("refgeom");
-    mdci_ref_geom_ = make_shared<Geometry>(input);
-  } else {
-    mdci_ref_geom_ = make_shared<Geometry>(*current_);
   }
 }
 
@@ -173,13 +161,6 @@ void Opt::compute() {
   } else {
     do_optimize();
   }
-
-#ifndef DISABLE_SERIALIZATION
-  if (refsave_) {
-    OArchive archive(refname_);
-    archive << prev_ref_;
-  }
-#endif
 }
 
 

@@ -310,7 +310,17 @@ shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   xf->scale(2.0 * en / x1norm);
 
   shared_ptr<GradFile> xg;
-  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), mdci_ref_geom_->xyz());
+  const bool refg = idata_->get<bool>("mdci_reference_geometry", false);
+  shared_ptr<XYZFile> ref_xyz;
+  if (refg) {
+    auto input = idata_->get_child("refgeom");
+    auto geom_ref = make_shared<Geometry>(input);
+    ref_xyz = make_shared<XYZFile>(*(geom_ref->xyz()));
+  } else {
+    ref_xyz = make_shared<XYZFile>(*prev_xyz_[0]);
+  }
+
+  tie(dist_,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
   {
     const double x2norm = x2->norm();
     x2->scale(1.0 / x2norm);
