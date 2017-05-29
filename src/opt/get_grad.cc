@@ -108,7 +108,8 @@ shared_ptr<GradFile> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<cons
   return out;
 }
 
-tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZFile> a, shared_ptr<const XYZFile> ref) {
+
+tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZFile> a, shared_ptr<const XYZFile> ref) const {
   // This aligns two structures and evaluates q^2 and dq^2 / dX [Rhee (JCP 2000, 113, 6021)].
   const int natom = current_->natom();
   auto q_eckt = make_shared<XYZFile>(*ref);
@@ -257,6 +258,7 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
     dqdx->scale(1.0 / (dist + 0.1/au2angstrom__) - 0.5 * dist / ((dist + 0.1/au2angstrom__) * (dist + 0.1/au2angstrom__)));
   return tie(dist, dqdx);
 }
+
 
 shared_ptr<GradFile> Opt::get_mdcigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
   // Concept of MDCI is suggested by Levine, Coe and Martinez (JPCB 2008, 112, 405) -- CI geometry with minimized distance to reference geometry.
@@ -428,6 +430,7 @@ shared_ptr<GradFile> Opt::get_grad_energy(shared_ptr<PTree> cinput, shared_ptr<c
 
   return out;
 }
+
 
 shared_ptr<GradFile> Opt::get_grad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) {
   auto out = make_shared<GradFile>(current_->natom());

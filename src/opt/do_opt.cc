@@ -112,7 +112,7 @@ void Opt::do_optimize() {
       MoldenOut mfs("opt.molden");
       mfs << current_;
 
-      displ_ = get_step();
+      tie(predictedchange,predictedchange_prev,displ_) = get_step();
     }
 
     displ = displ_;
@@ -125,7 +125,7 @@ void Opt::do_optimize() {
         displ = displ->transform(bmat_[1], false);
     }
 
-    if (adaptive_) do_adaptive();
+    if (adaptive_) maxstep_ = do_adaptive();
     const double maxdispl = displ->maximum(current_->natom());
     const double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
 

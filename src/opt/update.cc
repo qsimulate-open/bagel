@@ -76,6 +76,7 @@ shared_ptr<Matrix> Opt::hessian_update() const {
   return hess;
 }
 
+
 shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
   cout << "  * Updating Hessian using SR1 " << endl;
   // Hessian update with SR1
@@ -90,6 +91,7 @@ shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_
 
   return hess;
 }
+
 
 shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> hs) const {
   cout << "  * Updating Hessian using BFGS " << endl;
@@ -110,6 +112,7 @@ shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared
 
   return hess;
 }
+
 
 shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_ptr<const GradFile> s, shared_ptr<const GradFile> z) const {
   cout << "  * Updating Hessian using PSB " << endl;
@@ -133,15 +136,15 @@ shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_
   return hess;
 }
 
-shared_ptr<XYZFile> Opt::get_step() {
+
+tuple<double,double,shared_ptr<XYZFile>> Opt::get_step() const {
   auto displ = make_shared<XYZFile>(dispsize_);
 
+  double predictedchange = 0.0, predictedchange_prev = 0.0;
   if (algorithm_ == "nr")
     displ = get_step_nr();
   else if (algorithm_ == "rfo")
-    displ = get_step_rfo();
-  else if (algorithm_ == "rfos")
-    displ = get_step_rfos();
+    tie(predictedchange,predictedchange_prev,displ) = get_step_rfo();
   else if (algorithm_ == "ef") {
     if (opttype_ == "transition" || constrained_)
       displ = get_step_ef_pn();
@@ -149,10 +152,11 @@ shared_ptr<XYZFile> Opt::get_step() {
       displ = get_step_ef();
   }
 
-  return displ;
+  return tie(predictedchange,predictedchange_prev,displ);
 }
 
-shared_ptr<XYZFile> Opt::get_step_nr() {
+
+shared_ptr<XYZFile> Opt::get_step_nr() const {
 
   // Quasi-Newton-Raphson step
   auto displ = make_shared<XYZFile>(dispsize_);
@@ -172,7 +176,8 @@ shared_ptr<XYZFile> Opt::get_step_nr() {
   return displ;
 }
 
-shared_ptr<XYZFile> Opt::get_step_ef() {
+
+shared_ptr<XYZFile> Opt::get_step_ef() const {
   // Eigenvector following by Baker
   auto displ = make_shared<XYZFile>(dispsize_);
   auto hess = make_shared<Matrix>(*hess_);
@@ -212,20 +217,11 @@ shared_ptr<XYZFile> Opt::get_step_ef() {
 
   if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
 
-  if (adaptive_) {
-    // When we use adaptive steplength, we should predict quadratic energy change
-
-    const double qg  = displ->dot_product(grad_);
-    auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
-    const double qhq = displ->dot_product(hq);
-    predictedchange_prev_ = predictedchange_;
-    predictedchange_ = qg + 0.5 * qhq;
-  }
-
   return displ;
 }
 
-shared_ptr<XYZFile> Opt::get_step_ef_pn() {
+
+shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   // Eigenvector following by Baker
   auto displ = make_shared<XYZFile>(dispsize_);
   auto hess = make_shared<Matrix>(*hess_);
@@ -300,7 +296,8 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() {
   return displ;
 }
 
-shared_ptr<XYZFile> Opt::get_step_rfo() {
+
+tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
   // Rational function optimization (aka augmented Hessian)
   // Here we do scale lambda to get step < steplength
 
@@ -328,57 +325,22 @@ shared_ptr<XYZFile> Opt::get_step_rfo() {
     }
   }
 
+  double predictedchange = 0.0, predictedchange_prev = 0.0;
   if (adaptive_) {
     // When we use adaptive steplength, we should predict quadratic energy change
 
     const double qg  = displ->dot_product(grad_);
     auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
     const double qhq = displ->dot_product(hq);
-    predictedchange_prev_ = predictedchange_;
-    predictedchange_ = qg + 0.5 * qhq;
+    predictedchange_prev = predictedchange_;
+    predictedchange = qg + 0.5 * qhq;
   }
 
-  return displ;
+  return tie(predictedchange,predictedchange_prev,displ);
 }
 
-shared_ptr<XYZFile> Opt::get_step_rfos() {
-  // Rational function optimization (aka augmented Hessian)
-  // Here we do not scale lambda, but just scale the computed step
 
-  auto displ = make_shared<XYZFile>(dispsize_);
-  {
-    auto aughes = make_shared<Matrix>(size_+1,size_+1);
-    VectorB eigv(size_+1);
-    aughes->zero();
-    aughes->add_block(1.0, 1, 1, size_, size_, hess_);
-    aughes->add_block(1.0, 1, 0, size_, 1, grad_->data());
-    aughes->add_block(1.0, 0, 1, 1, size_, grad_->data());
-
-    aughes->diagonalize(eigv);
-    aughes->scale(1.0 / aughes->element(0,0));
-
-    if (opttype_!="transition")
-      copy_n(aughes->element_ptr(1,0), size_, displ->data());
-    else
-      copy_n(aughes->element_ptr(1,1), size_, displ->data());
-
-    if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
-  }
-
-  if (adaptive_) {
-    // When we use adaptive steplength, we should predict quadratic energy change
-
-    const double qg  = displ->dot_product(grad_);
-    auto hq = make_shared<GradFile>(*(displ->transform(hess_, /*transpose=*/false)));
-    const double qhq = displ->dot_product(hq);
-    predictedchange_prev_ = predictedchange_;
-    predictedchange_ = qg + 0.5 * qhq;
-  }
-
-  return displ;
-}
-
-shared_ptr<XYZFile> Opt::iterate_displ() {
+shared_ptr<XYZFile> Opt::iterate_displ() const {
   shared_ptr<Geometry> currentv = make_shared<Geometry>(*current_);
   auto displ = make_shared<XYZFile>(*displ_);
   auto dqc = make_shared<XYZFile>(*displ_);
@@ -387,12 +349,14 @@ shared_ptr<XYZFile> Opt::iterate_displ() {
   qc = qc->transform(bmat_[0], true);
   cout << endl << "  === Displacement transformation iteration === " << endl << endl;
   Timer timer;
+
+  array<shared_ptr<const Matrix>,3> bmat = bmat_;
   for (int i = 0; i != maxiter_; ++i) {
-    displ = displ->transform(bmat_[1], false);
+    displ = displ->transform(bmat[1], false);
     currentv = make_shared<Geometry>(*currentv, displ, make_shared<const PTree>(), /*rotate=*/true, /*nodf=*/true);
-    bmat_ = currentv->compute_internal_coordinate(bmat_[0], bonds_, constraints_, (opttype_=="transition"), /*verbose=*/false);
+    bmat = currentv->compute_internal_coordinate(bmat[0], bonds_, constraints_, (opttype_=="transition"), /*verbose=*/false);
     shared_ptr<const XYZFile> qcurrent = currentv->xyz();
-    qcurrent = qcurrent->transform(bmat_[0], true);
+    qcurrent = qcurrent->transform(bmat[0], true);
     auto qdiff = make_shared<XYZFile>(currentv->natom());
     *qdiff = *qcurrent - *qc;
     *displ = *dqc - *qdiff;
@@ -405,23 +369,27 @@ shared_ptr<XYZFile> Opt::iterate_displ() {
     if (displ->norm() < 1.0e-8) break;
   }
 
-  if (flag) displ = displ_->transform(bmat_[1], false);
+  if (flag) displ = displ_->transform(bmat[1], false);
   else     *displ = *(currentv->xyz()) - *(current_->xyz());
   cout << endl << endl;
   return displ;
 }
 
-void Opt::do_adaptive() {
+
+double Opt::do_adaptive() const {
   // Fletcher's adaptive stepsize algorithm, works with rfo
 
   const bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
 
+  double maxstep = maxstep_;
   if (algo) {
-    realchange_ = en_ - prev_en_.back();
-    double predreal_ratio = realchange_ / predictedchange_prev_;
+    const double realchange = en_ - prev_en_.back();
+    double predreal_ratio = realchange / predictedchange_prev_;
     if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
 
-    if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep_) maxstep_ *= 2.0;
-    else if (predreal_ratio < 0.25) maxstep_ *= 0.25;
+    if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep) maxstep *= 2.0;
+    else if (predreal_ratio < 0.25) maxstep *= 0.25;
   }
+
+  return maxstep;
 }

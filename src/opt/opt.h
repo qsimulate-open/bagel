@@ -107,7 +107,6 @@ class Opt {
     double egap_;
     double predictedchange_;
     double predictedchange_prev_;
-    double realchange_;
 
     std::shared_ptr<GradFile> grad_;
     std::shared_ptr<Matrix> hess_;
@@ -125,23 +124,23 @@ class Opt {
     std::shared_ptr<GradFile> get_grad_energy(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
     std::shared_ptr<GradFile> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref);
-    std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom);
+    std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom) const;
 
-    std::shared_ptr<XYZFile> get_step();
-    std::shared_ptr<XYZFile> get_step_nr();
-    std::shared_ptr<XYZFile> get_step_ef();
-    std::shared_ptr<XYZFile> get_step_ef_pn();
-    std::shared_ptr<XYZFile> get_step_rfo();
-    std::shared_ptr<XYZFile> get_step_rfos();
+    std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
+    std::shared_ptr<XYZFile> get_step_nr() const;
+    std::shared_ptr<XYZFile> get_step_ef() const;
+    std::shared_ptr<XYZFile> get_step_ef_pn() const;
+    std::tuple<double,double,std::shared_ptr<XYZFile>> get_step_rfo() const;
 
-    std::shared_ptr<XYZFile> iterate_displ();
+    std::shared_ptr<XYZFile> iterate_displ() const;
 
     std::shared_ptr<Matrix> hessian_update() const;
     std::shared_ptr<Matrix> hessian_update_bfgs(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> hs) const;
     std::shared_ptr<Matrix> hessian_update_sr1(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
     std::shared_ptr<Matrix> hessian_update_psb(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
 
-    void do_adaptive();
+    double do_adaptive() const;
+
     void do_optimize();
     void do_mep(std::shared_ptr<XYZFile> mep_start);
 
@@ -164,7 +163,7 @@ class Opt {
 
     void print_history_molden() const;
 
-    void print_iteration(const double residual, const double time) {
+    void print_iteration(const double residual, const double time) const {
       if (opttype_ == "energy" || opttype_ == "transition")
         print_iteration_energy(residual, time);
       else if (opttype_ == "conical" || opttype_ == "meci")
