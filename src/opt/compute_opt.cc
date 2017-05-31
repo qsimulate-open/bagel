@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: do_opt.cc
+// Filename: compute_opt.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -37,14 +37,14 @@
 using namespace std;
 using namespace bagel;
 
-void Opt::do_optimize() {
+void Opt::compute_optimize() {
   auto displ = make_shared<XYZFile>(current_->natom());
 
   muffle_ = make_shared<Muffle>("opt.log");
   muffle_->unmute();
 
   for (iter_ = 1; iter_ != maxiter_; ++iter_) {
-    shared_ptr<const XYZFile> xyz = current_->xyz(); 
+    shared_ptr<const XYZFile> xyz = current_->xyz();
     prev_xyz_.push_back(xyz);
 
     displ = displ_;
@@ -63,7 +63,7 @@ void Opt::do_optimize() {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, (opttype_=="transition"), false);
     }
 
     shared_ptr<PTree> cinput;
@@ -88,9 +88,11 @@ void Opt::do_optimize() {
 
     double rms;
     double maxgrad;
+    double param;
     {
       grad_->zero();
-      shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+      shared_ptr<GradFile> cgrad;
+      tie(en_,param,prev_ref_,cgrad) = get_grad(cinput, ref);
       prev_grad_.push_back(cgrad);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
       rms = cgrad->rms();       // This is more appropriate
@@ -105,14 +107,14 @@ void Opt::do_optimize() {
 
       // Update Hessian with Flowchart method
       if (iter_ != 1)
-        hessian_update();
+        hess_ = hessian_update();
 
       prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
       MoldenOut mfs("opt.molden");
       mfs << current_;
 
-      displ_ = get_step();
+      tie(predictedchange_,predictedchange_prev_,displ_) = get_step();
     }
 
     displ = displ_;
@@ -125,13 +127,13 @@ void Opt::do_optimize() {
         displ = displ->transform(bmat_[1], false);
     }
 
-    if (adaptive_) do_adaptive();
-    double maxdispl = displ->maximum(current_->natom());
-    double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
+    if (adaptive_) maxstep_ = do_adaptive();
+    const double maxdispl = displ->maximum(current_->natom());
+    const double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
 
-    bool convergegrad = maxgrad > thresh_grad_ ? false : true;
-    bool convergedispl = maxdispl > thresh_displ_ ? false : true;
-    bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
+    const bool convergegrad = maxgrad > thresh_grad_ ? false : true;
+    const bool convergedispl = maxdispl > thresh_displ_ ? false : true;
+    const bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
     cout << endl << "  === Convergence status ===" << endl << endl;
     cout << "                         Maximum     Tolerance   Converged?" << endl;
     cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << (convergegrad? "Yes" : "No") << endl;
@@ -142,7 +144,7 @@ void Opt::do_optimize() {
     if (iter_ == 1)
       print_header();
     prev_en_.push_back(en_);
-    print_iteration(rms, timer_.tick());
+    print_iteration(rms, param, timer_.tick());
 
     muffle_->mute();
 

@@ -54,7 +54,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
 
-  if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1) 
+  if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1)
     throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  For relativistic calculations, use the \"state\" input to give a vector of how many of each spin multiplet to compute.  (e.g., [3, 0, 1] for three singlets and one triplet.)");
 
   states_ = idata_->get_vector<int>("state", 0);

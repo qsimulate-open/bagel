@@ -85,7 +85,7 @@ void RelCASA::RelCASA::solve() {
       shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
       while(!sourceq->done())
         sourceq->next_compute();
-    }   
+    }
   }
 
   // solve linear equation for t amplitudes
@@ -180,7 +180,7 @@ void RelCASA::RelCASA::solve() {
 
 
 // function to solve linear equation
-vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s, 
+vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear(vector<shared_ptr<MultiTensor_<complex<double>>>> s,
                                                                                      vector<shared_ptr<MultiTensor_<complex<double>>>> t) {
   Timer mtimer;
 #ifndef DISABLE_SERIALIZATION

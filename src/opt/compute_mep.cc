@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: do_mep.cc
+// Filename: compute_mep.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -38,7 +38,7 @@
 using namespace std;
 using namespace bagel;
 
-void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
+void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   // performs second order MEP calculation in Cartesian or in internal coordinates (J. Chem. Phys. 1989, 90, 2154)
   cout << "    * Doing second order MEP calculation" << endl;
   auto displ = make_shared<XYZFile>(current_->natom());
@@ -83,7 +83,8 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
 
     {
       grad_->zero();
-      shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+      shared_ptr<GradFile> cgrad;
+      tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
       if (internal_) {
@@ -129,7 +130,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
       if (redundant_)
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
     }
 
     // microiteration with quasi-Newton search
@@ -156,7 +157,7 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         if (redundant_)
           bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
         else
-          bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_);
+          bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
       }
 
       // compute gradient
@@ -182,7 +183,8 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
 
       {
         grad_->zero();
-        shared_ptr<GradFile> cgrad = get_grad(cinput, ref);
+        shared_ptr<GradFile> cgrad;
+        tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
         grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
         if (internal_) {
@@ -195,11 +197,11 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
 
       {
         // Hessian updater
-        double sfactor = (miciter==1) ? 2.0 : 1.0;
+        const double sfactor = (miciter==1) ? 2.0 : 1.0;
         auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
         auto s  = make_shared<GradFile>(*displ_ * sfactor);
         auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
-        hessian_update_bfgs(y,s,hs);
+        hess_ = hessian_update_bfgs(y,s,hs);
       }
 
       {
@@ -221,12 +223,12 @@ void Opt::do_mep(shared_ptr<XYZFile> mep_start) {
         cout << endl << endl << "  === lambda iteration ===" << endl;
         double lambda = bj[0] - 0.1;
         for (int iiter = 0; iiter != 100; ++iiter) {
-          double lambda_prev = lambda;
+          const double lambda_prev = lambda;
           double fv = 0.0;
           double df = 0.0;
           for (int i = 0; i != size_; ++i) {
-            double bpgb = (bj[i] * pj[i] - gj[i]) / (bj[i] - lambda);
-            double bl   = bj[i] - lambda;
+            const double bpgb = (bj[i] * pj[i] - gj[i]) / (bj[i] - lambda);
+            const double bl   = bj[i] - lambda;
             fv += bpgb * bpgb;
             df += 2.0 * bpgb * bpgb / bl;
           }

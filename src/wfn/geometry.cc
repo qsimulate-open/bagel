@@ -53,7 +53,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 
   // symmetry
   symmetry_ = to_lower(geominfo->get<string>("symmetry", "c1"));
-  
+
   // skip self interaction between the charges.
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", true);
 

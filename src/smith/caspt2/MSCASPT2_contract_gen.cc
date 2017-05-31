@@ -103,6 +103,18 @@ Task916::Task916(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
 }
 
 
+Task917::Task917(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+  array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
+  out_ = t[0];
+  in_ = in;
+
+  subtasks_.reserve(range[3]->nblock());
+  for (auto& ci0 : *range[3])
+    if (t[3]->is_local(ci0))
+      subtasks_.push_back(make_shared<Task_local>(array<const Index,1>{{ci0}}, in, t[0], range));
+}
+
+
 Task918::Task918(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
   array<shared_ptr<const Tensor>,3> in = {{t[1], t[2], t[3]}};
   out_ = t[0];

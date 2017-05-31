@@ -222,12 +222,13 @@ bool Molecule::operator==(const Molecule& o) const {
   return out;
 }
 
-array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev, vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool verbose) const {
+array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev,
+    vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool negative_hessian,  bool verbose) const {
   if (verbose)
     cout << "    o Connectivitiy analysis" << endl;
 
   // list of primitive internals
-  array<vector<vector<int>>,3> prims;
+  array<vector<vector<int>>,4> prims;
   vector<vector<double>> out;
   const size_t size = natom()*3;
 
@@ -240,14 +241,6 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
 
   vector<double> hessprim;
   hessprim.reserve(natom()*3 * 10);
-
-  // (1) make c-matrix from constraint data
-  // (2) Schmidt orthogonalization ---> (ninternal - nconstraint) + nconstraint vector generated
-  // (3) in eigenvector following ---> generate Hessian and follow eigenvector (p,n) n eigenvector
-  //
-  // List of primitive internals should be generated first
-//        Quatern<double> ip = (atoms_[(*c)->pair(0)])->position();
-//        Quatern<double> jp = (atoms_[(*c)->pair(1)])->position();
 
   // first pick up bonds
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
@@ -348,23 +341,24 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
-  // then dihedral angle (i-c-j-k)
+  // proper dihedral angle (i-c-j-k) or improper dihedral angle (c-i,j,k)
   for (auto i = nodes.begin(); i != nodes.end(); ++i) {
     for (auto j = nodes.begin(); j != nodes.end(); ++j) {
       if (*i == *j) continue;
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-//          if (!((*k)->connected_with(*j) || (*k)->connected_with(*c))) continue;
-//        Only proper dihedrals
-          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
-          if (*c > *j) continue;
-          if (*c == *k || *k == *i) continue;
-          if (*j == *k) continue;
-#if 0
-          cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
-                  "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;
-#endif
+          bool improper;
+          if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
+            if (*c > *j) continue;
+            if (*c == *k || *k == *i) continue;
+            if (*j == *k) continue;
+            improper = false;
+          } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
+            if (*j == *k || *k == *i) continue;
+            if (!(*i < *j && *j < *k)) continue;
+            improper = true;
+          } else continue;
           // following J. Molec. Spec. 44, 599 (1972)
           // a=i, b=c, c=j, d=k
           Quatern<double> ap = (*i)->atom()->position();
@@ -395,12 +389,18 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
                              + (edc * ecb) * ((rbc-rcd*::cos(tbcd)) / (rcd*rbc*::pow(::sin(tbcd), 2.0)));
           vector<double> current(size);
           // see IJQC 106, 2536 (2006)
-          const double modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
+          double modelhess;
+          if (improper) modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k);
+          else          modelhess = 0.005 * adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k);
           hessprim.push_back(modelhess);
-          const double theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
-          const double theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
+          const double  theta0 = (*c)->atom()->angle((*i)->atom(), (*j)->atom()) / rad2deg__;
+          double theta1;
+          if (improper) theta1 = (*c)->atom()->angle((*i)->atom(), (*k)->atom()) / rad2deg__;
+          else          theta1 = (*j)->atom()->angle((*c)->atom(), (*k)->atom()) / rad2deg__;
           const double fval = 0.12;
-          const double fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
+          double fac;
+          if (improper) fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*c, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
+          else          fac = pow(adf_rho(*i, *c) * adf_rho(*c, *j) * adf_rho(*j, *k), 1.0/3.0) * (fval + (1-fval)*sin(theta0)) * (fval + (1-fval)*sin(theta1));
           for (int ic = 0; ic != 3; ++ic) {
             current[3*(*i)->num() + ic] = sa[ic+1]*fac;
             current[3*(*c)->num() + ic] = sb[ic+1]*fac;
@@ -414,26 +414,12 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
           prim[1] = (*c)->num();
           prim[2] = (*j)->num();
           prim[3] = (*k)->num();
-          prims[2].push_back(prim);
+          if (improper)  prims[3].push_back(prim);
+          else           prims[2].push_back(prim);
         }
       }
     }
   }
-#if 0
-  cout << " # primitive, bond = " << prims[0].size() << "  angle = " << prims[1].size() << "  torsion = " << prims[2].size() << endl;
-  cout << "   List of Primitive Stretches : " << endl;
-  for (auto i : prims[0]) {
-    cout << "   " << i[0] << "   " << i[1] << endl;
-  }
-  cout << "   List of Primitive Bends : " << endl;
-  for (auto i : prims[1]) {
-    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] << endl;
-  }
-  cout << "   List of Primitive Torsions : " << endl;
-  for (auto i : prims[2]) {
-    cout << "   " << i[0] << "   " << i[1] << "   " << i[2] <<  "   " << i[3] << endl;
-  }
-#endif
 
   // debug output
   const int primsize = out.size();
@@ -483,6 +469,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
     }
   }
 
+  // bdag = B^T
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
   for (auto i = out.begin(); i != out.end(); ++i, biter += cartsize)
@@ -491,7 +478,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   // TODO this is needed but I don't know why..
   bdag.broadcast();
 
-  Matrix bb = bdag % bdag * (-1.0);
+  Matrix bb = bdag % bdag;
   VectorB eig(primsize);
   bb.diagonalize(eig);
 
@@ -501,72 +488,47 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   mpi__->broadcast(eig.data(), primsize, 0);
 #endif
 
+
   int ninternal = max(cartsize-6,1);
-  for (int i = 0; i != ninternal; ++i) {
-    eig(i) *= -1.0;
+  for (int i = primsize-ninternal; i != primsize; ++i) {
     if (eig(i) < 1.0e-10)
       cout << "       ** caution **  small eigenvalue " << eig(i) << endl;
   }
   if (verbose)
     cout << "      Nonredundant internal coordinate generated (dim = " << ninternal << ")" << endl;
 
-  // bbslice = U
-  // form B = U^+ Bprim
-  Matrix bbslice = bb.slice(0,ninternal);
-
-  if (constrained) {
-    cout << "      Imposing Constraints with Schmidt Orthogonalization " << endl;
-    auto cdag = make_shared<Matrix>(primsize, cmat.size());
-    double *citer = cdag->data();
-    for (auto i = cvec.begin(); i != cvec.end(); ++i, citer += primsize)
-      copy (i->begin(), i->end(), citer);
-    cdag->broadcast();
-    auto umat = make_shared<Matrix>(bbslice);
-    auto vmat = make_shared<Matrix>(*(umat->merge(cdag)));
-
-    for (int i = vmat->mdim()-1; i != -1; --i) {
-      for (int j = vmat->mdim()-1; j != i; --j) {
-        const double a = blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,j));
-        blas::ax_plus_y_n(-a, vmat->element_ptr(0,j), vmat->ndim(), vmat->element_ptr(0,i));
-      }
-      const double b = 1.0 / sqrt(blas::dot_product(vmat->element_ptr(0,i), vmat->ndim(), vmat->element_ptr(0,i)));
-      for_each(vmat->element_ptr(0,i), vmat->element_ptr(0,i+1), [&b](double &a) { a *= b; });
-    }
-    bbslice = vmat->slice(cmat.size(), ninternal+cmat.size());
-  }
-
-  auto bnew = make_shared<Matrix>(bdag * bbslice);
+  auto umat = make_shared<Matrix>(bb.slice(primsize-ninternal,primsize));
+  // B = U^T * B^prim, B^T = (B^prim)^T * U
+  auto bnew = make_shared<Matrix>(bdag * *umat);
 
   // form (B^+)^-1 = (BB^+)^-1 B = Lambda^-1 B
   auto bdmnew = make_shared<Matrix>(cartsize, ninternal);
   for (int i = 0; i != ninternal; ++i)
     for (int j = 0; j != cartsize; ++j)
-      bdmnew->element(j,i) = bnew->element(j,i) / eig[i];
+      bdmnew->element(j,i) = bnew->element(j,i) / eig[i+primsize-ninternal];
 
   // compute hessian
-  Matrix scale = bbslice;
-  for (int i = 0; i != ninternal; ++i) {
-    for (int j = 0; j != primsize; ++j) {
-      scale(j,i) *= hessprim[j];
-    }
-  }
-  Matrix hess = bbslice % scale;
+  auto hessp = make_shared<Matrix>(primsize, primsize);
+  for (int i = 0; i != primsize; ++i)
+    hessp->element(i,i) = hessprim[i];
 
-  shared_ptr<Matrix> hessc;
-  if (constrained)
-    hessc = make_shared<Matrix>(*(hess.resize(hess.ndim()+cmat.size(), hess.mdim()+cmat.size())));
-  for (int i = 0; i != cmat.size(); ++i) {
-    // let me assume that they are arranged well (will make a map)
-    hessc->element(i + ninternal, ninternal - cmat.size() + i) = 1.0;
-    hessc->element(ninternal - cmat.size() + i, i + ninternal) = 1.0;
+  if (negative_hessian) {
+    for (int i = 0; i != primsize; ++i)
+      for (int j = i+1; j != primsize; ++j) {
+        hessp->element(i,j) = -sqrt(2.0 * hessprim[i] * hessprim[j]);
+        hessp->element(j,i) = -sqrt(2.0 * hessprim[i] * hessprim[j]);
+      }
   }
-  hess.sqrt();
-  *bnew = *bnew * hess;
-  hess.inverse();
-  *bdmnew = *bdmnew * hess;
-  auto hessout = make_shared<Matrix>(hess);
 
-  // if this is not the first time, make sure that the change is minimum
+  auto hess = make_shared<Matrix>(*umat % *hessp * *umat);
+  if (!negative_hessian) {
+    hess->sqrt();
+    *bnew = *bnew * *hess;
+    hess->inverse();
+    *bdmnew = *bdmnew * *hess;
+  }
+  auto hessout = make_shared<Matrix>(*hess);
+
   if (prev) {
     // internal--internal matrix
     Matrix approx1 = *prev % *bdmnew;
@@ -682,10 +644,14 @@ array<shared_ptr<const Matrix>,4> Molecule::compute_redundant_coordinate(shared_
       std::set<shared_ptr<Node>> center = (*i)->common_center(*j);
       for (auto k = nodes.begin(); k != nodes.end(); ++k) {
         for (auto c = center.begin(); c != center.end(); ++c) {
-          if (!((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) continue;
-          if (*c > *j) continue;
-          if (*c == *k || *k == *i) continue;
-          if (*j == *k) continue;
+          if (((*k)->connected_with(*j) && (*j)->connected_with(*c) && (*c)->connected_with(*i))) {
+            if (*c > *j) continue;
+            if (*c == *k || *k == *i) continue;
+            if (*j == *k) continue;
+          } else if (((*k)->connected_with(*c) && (*j)->connected_with(*c) && (*i)->connected_with(*c))) {
+            if (*j == *k || *k == *i) continue;
+            if (!(*i < *j && *j < *k)) continue;
+          } else continue;
 #if 0
           cout << "    dihedral: " << setw(6) << (*i)->num() << setw(6) << (*c)->num() << setw(6) << (*j)->num() << setw(6) << (*k)->num() <<
                   "     angle" << setw(10) << setprecision(4) << (*c)->atom()->dihedral_angle((*i)->atom(), (*j)->atom(), (*k)->atom()) << " deg" << endl;

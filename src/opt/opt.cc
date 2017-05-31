@@ -76,11 +76,12 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     cout << endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms in overall" << endl;
   }
 
+  opttype_ = idat->get<string>("opttype", "energy");
   if (internal_) {
     if (redundant_)
       bmat_red_ = current_->compute_redundant_coordinate();
     else
-      bmat_ = current_->compute_internal_coordinate(nullptr, bonds_, constraints_);
+      bmat_ = current_->compute_internal_coordinate(nullptr, bonds_, constraints_, (opttype_=="transition"));
   }
 
   // small molecule (atomno < 4) threshold : (1.0e-5, 4.0e-5, 1.0e-6)  (tight in GAUSSIAN and Q-Chem = normal / 30)
@@ -94,34 +95,28 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     thresh_displ_ = idat->get<double>("maxdisp", 0.0012);
     thresh_echange_ = idat->get<double>("maxchange", 0.000001);
   }
-  opttype_ = idat->get<string>("opttype", "energy");
   maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
   algorithm_ = idat->get<string>("algorithm", "ef");
   adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
-#ifndef DISABLE_SERIALIZATION
-  refsave_ = idat->get<bool>("save_ref", false);
-  if (refsave_) refname_ = idat->get<string>("ref_out", "reference");
-#endif
 
-  if (opttype_ == "conical") {
+  if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci") {
     // parameters for CI optimizations (Bearpark, Robb, Schlegel)
     target_state2_ = idat->get<int>("target2", 1);
     if (target_state2_ > target_state_) {
-      int tmpstate = target_state_;
+      const int tmpstate = target_state_;
       target_state_ = target_state2_;
       target_state2_ = tmpstate;
     }
     nacmtype_ = idat->get<int>("nacmtype", 1);
-    thielc3_  = idat->get<double>("thielc3", 2.0);
+    thielc3_  = idat->get<double>("thielc3", opttype_=="mdci" ? 0.01 : 2.0);
     thielc4_  = idat->get<double>("thielc4", 0.5);
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
   } else if (opttype_ == "mep") {
     // parameters for MEP calculations (Gonzalez, Schlegel)
-    mass_weight_ = idat->get<bool>("mass_weight", false);
     mep_direction_ = idat->get<int>("mep_direction", 1);
     if (hess_approx_) throw runtime_error("MEP calculation should be started with Hessian eigenvectors");
   } else if (opttype_ != "energy" && opttype_ != "transition") {
-    throw runtime_error("Optimization type should be: \"energy\", \"transition\", \"conical\", or \"mep\"");
+    throw runtime_error("Optimization type should be: \"energy\", \"transition\", \"conical\" (\"meci\", \"mdci\"), or \"mep\"");
   }
 }
 
@@ -161,17 +156,10 @@ void Opt::compute() {
   }
 
   if (opttype_ == "mep") {
-    do_mep(mep_start);
+    compute_mep(mep_start);
   } else {
-    do_optimize();
+    compute_optimize();
   }
-
-#ifndef DISABLE_SERIALIZATION
-  if (refsave_) {
-    OArchive archive(refname_);
-    archive << prev_ref_;
-  }
-#endif
 }
 
 
@@ -180,11 +168,24 @@ void Opt::print_header() const {
     cout << endl << "  *** Geometry optimization started ***" << endl <<
                               "     iter         energy               grad rms       time"
     << endl << endl;
-  } else if (opttype_ == "conical") {
+  } else if (opttype_ == "conical" || opttype_ == "meci") {
     cout << endl << "  *** Conical intersection optimization started ***" << endl <<
                               "     iter         energy             gap energy            grad rms       time"
     << endl << endl;
+  } else if (opttype_ == "mdci") {
+    cout << endl << "  *** Conical intersection optimization started ***" << endl <<
+                              "     iter       distance             gap energy            grad rms       time"
+    << endl << endl;
   }
+}
+
+
+void Opt::print_iteration(const double residual, const double param, const double time) const {
+  if (opttype_ == "energy" || opttype_ == "transition")
+    print_iteration_energy(residual, time);
+  else if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci")
+    print_iteration_conical(residual, param, time);
+  print_history_molden();
 }
 
 
@@ -195,9 +196,9 @@ void Opt::print_iteration_energy(const double residual, const double time) const
 }
 
 
-void Opt::print_iteration_conical(const double residual, const double time) const {
+void Opt::print_iteration_conical(const double residual, const double param, const double time) const {
   cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
-                           << setw(20) << setprecision(8) << fixed << egap_
+                           << setw(20) << setprecision(8) << fixed << param
                            << setw(20) << setprecision(8) << fixed << residual
                            << setw(12) << setprecision(2) << fixed << time << endl;
 }
@@ -206,7 +207,7 @@ void Opt::print_iteration_conical(const double residual, const double time) cons
 void Opt::print_history_molden() const {
   const int nopt = prev_en_.size();
   if (nopt != prev_xyz_.size() || nopt != prev_grad_.size())
-    throw logic_error("error print_history_molden()"); 
+    throw logic_error("error print_history_molden()");
   stringstream ss;
   ss << " [MOLDEN FORMAT]" << endl;
   ss << " [N_GEO]"         << endl;
@@ -217,16 +218,16 @@ void Opt::print_history_molden() const {
     ss << scientific << setprecision(20) << i << endl;
   ss << " max-force"       << endl;
   for (auto& i : prev_grad_)
-    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) / au2angstrom__ << endl; 
+    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) / au2angstrom__ << endl;
   ss << " rms-force"       << endl;
   for (auto& i : prev_grad_)
-    ss << fixed << setw(15) << setprecision(10) << i->rms() / au2angstrom__ << endl; 
+    ss << fixed << setw(15) << setprecision(10) << i->rms() / au2angstrom__ << endl;
   ss << " max-step"        << endl;
   for (auto& i : prev_displ_)
-    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) * au2angstrom__ << endl; 
+    ss << fixed << setw(15) << setprecision(10) << abs(*max_element(i->begin(), i->end(), [](double x, double y){ return abs(x)<abs(y); })) * au2angstrom__ << endl;
   ss << " rms-step"        << endl;
   for (auto& i : prev_displ_)
-    ss << fixed << setw(15) << setprecision(10) << i->rms() * au2angstrom__ << endl; 
+    ss << fixed << setw(15) << setprecision(10) << i->rms() * au2angstrom__ << endl;
 
   ss << " [GEOMETRIES] (XYZ)" << endl;
   const int natom = current_->natom();
@@ -252,7 +253,7 @@ void Opt::print_history_molden() const {
          << setw(20) << setprecision(10) << prev_grad_.at(i)->element(2, j) / au2angstrom__ << endl;
     }
   }
-  
+
   ofstream fs("opt_history.molden");
   fs << ss.str();
 }

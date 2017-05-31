@@ -301,7 +301,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     const size_t halfsize = norb2 * (norb2 + 1) / 2;
     auto eket_half = make_shared<Matrix>(isize, halfsize, /*local=*/true);
     make_evec_half(dket, eket_half, isize, ioffset);
- 
+
     auto dbram = make_shared<Matrix>(isize, norb2, /*local=*/true);
     for (size_t ij = 0; ij != norb2; ++ij)
       copy_n(&(dbra->data(ij)->data(ioffset)), isize, dbram->element_ptr(0, ij));
@@ -323,7 +323,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
       }
     }
     sort_indices<1,0,2,1,1,1,1>(tmp3_full->data(), rdm3->data(), norb_, norb_, norb2*norb2);
- 
+
     // put in fourth-order RDM: <0|E_ij > kl|I><I|E_mn < op|0>
     shared_ptr<Matrix> ebra_half = eket_half;
     if (cbra != cket) {

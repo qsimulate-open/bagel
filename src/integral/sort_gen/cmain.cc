@@ -78,7 +78,7 @@ int main() {
     if (x2 == 7 && x3 == 0) {
       out << "\
 #ifdef COMPILE_J_ORB\n";
-    } 
+    }
 
 #if SPHERICAL
     out << "\
@@ -143,7 +143,7 @@ void CSortList::sort_indices_" << label << "(complex<double>* target, const comp
   if (ANG_HRR_END > 7) {
     out << "\
 #endif\n";
-  } 
+  }
 
   ofs << out.str() << endl;
   ofs.close();
