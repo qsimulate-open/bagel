@@ -151,9 +151,9 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
             i = (*i)->test() ? acc.erase(i) : ++i;
         }
       }
-      for (auto i = acc.begin(); i != acc.end(); ) {
-        (*i)->wait();
-        i = acc.erase(i);
+      for (auto k = acc.begin(); k != acc.end(); ) {
+        (*k)->wait();
+        k = acc.erase(k);
       }
 
       const DataType* sbuf = intermediate->local_data();

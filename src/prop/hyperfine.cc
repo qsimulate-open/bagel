@@ -52,8 +52,8 @@ void HyperFine::compute() const {
       cout << indent << "Atom: " << setw(4) << cnt << endl;
       cout << indent << "  Spin dipole" << setprecision(10) << endl;
       SpinDipole mat(geom_, i, s_);
-      for (int i = 0; i != 6; ++i)
-        cout << setw(22) << mat.data(i)->dot_product(den_) << endl;
+      for (int j = 0; j != 6; ++j)
+        cout << setw(22) << mat.data(j)->dot_product(den_) << endl;
 
       cout << indent << "  Fermi contact" << endl;
       FermiContact mat2(geom_, i, s_);
