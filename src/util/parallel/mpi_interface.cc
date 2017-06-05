@@ -86,8 +86,10 @@ MPI_Interface::MPI_Interface()
   // set MPI_COMM_WORLD to mpi_comm_
   mpi_comm_ = MPI_COMM_WORLD;
 #else
-  rank_ = 0;
-  size_ = 1;
+  world_rank_ = 0;
+  world_size_ = 1;
+  rank_ = world_rank_;
+  size_ = world_size_;
 #endif
 }
 
