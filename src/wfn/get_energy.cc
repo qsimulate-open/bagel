@@ -78,8 +78,12 @@ get_energy(const string title, shared_ptr<const PTree> itree, shared_ptr<const G
     else if (title == "mp2")     { auto m = make_shared<MP2>(itree, geom, ref);       m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
     else if (title == "dhf")     { auto m = make_shared<Dirac>(itree, geom, ref);     m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
     else if (title == "dmp2")    { auto m = make_shared<DMP2>(itree, geom, ref);      m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
+#ifdef COMPILE_SMITH
     else if (title == "smith")   { auto m = make_shared<Smith>(itree, geom, ref);     m->compute();   out = m->algo()->energy(target);   ref = m->conv_to_ref(); }
     else if (title == "relsmith"){ auto m = make_shared<RelSmith>(itree, geom, ref);  m->compute();   out = m->algo()->energy(target);   ref = m->conv_to_ref(); }
+#else
+    else if (title == "smith" || title == "relsmith")   { throw runtime_error("SMITH module was not activated during compilation."); }
+#endif
     else if (title == "zfci")    { auto m = make_shared<ZHarrison>(itree, geom, ref); m->compute();   out = m->energy(target);           ref = m->conv_to_ref(); }
     else if (title == "ras") {
       const string algorithm = itree->get<string>("algorithm", "");
