@@ -12,9 +12,11 @@ the transition state geometry (or the saddle point on the potential energy surfa
 In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
-In the conical intersection optimization, the
+In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
 degeneracy lifting vectors out (gradient projection).
+The minimum distance conical intersection (MDCI) can be also optimized by replacing the upper state gradient in MECI optimization
+with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.
 
@@ -41,7 +43,8 @@ Required Keywords
    | **Datatype:** string
    | **Values:**
    |    ``energy``: find the most stable geometry.
-   |    ``conical``: find the conical intersections, according to gradient projection method.
+   |    ``conical`` or ``meci``: find the minimum energy conical intersections, according to gradient projection method.
+   |    ``mdci``: find the minimum distance conical intersections, according to modified gradient projection method.
    |    ``transition``: find the transition state geometry (saddle point on the PES).
    |    ``mep``: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.
    | **Default:** energy.
@@ -127,7 +130,7 @@ Optional Keywords (Universal)
    |    ``true``: use redundant internal coordinate.
    |    ``false``: use delocalized internal coordinate.
    | **Default:** false.
-   | **Recommendation:** use default, except for the cases that has a problem in constructing delocalized internals (such as formaldehyde).
+   | **Recommendation:** use default.
 
 .. topic:: ``maxiter``
 
@@ -203,13 +206,26 @@ Optional Keywords (Conical Intersection Optimization)
 
    | **Description:** Thiel's C_3 parameter, which is multiplied to the full gradient.
    | **Datatype:** double precision
-   | **Default:** 2.0.
+   | **Default:** 2.0 (MECI) or 0.01 (MDCI).
 
 .. topic:: ``thielc4``
 
    | **Description:** Thiel's C_4 parameter, which is multiplied to the gradient difference.
    | **Datatype:** double precision
    | **Default:** 0.5
+
+.. topic:: ``mdci_reference_geometry``
+
+   | **Description:** Specify reference geometry used in MDCI optimization.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: specify reference geometry in the ``refgeom`` block.
+   |    ``false``: the first geometry for optimization is considered as the reference geometry.
+   | **Default:** false
+
+.. topic:: ``refgeom``
+
+   | **Description:** Reference geometry for MDCI optimization. The format is the same as the ``molecule`` block.
 
 Optional Keywords (Minimum Energy Path)
 ---------------------------------------

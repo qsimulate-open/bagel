@@ -60,7 +60,9 @@ Build BAGEL
 
   A minimal set of configure options is ::
 
-    $ ../configure '--enable-mkl' 'LDFLAGS=-L$(BOOST_ROOT)/lib' '--with-include=-I$(BOOST_ROOT)/include'
+    $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
+
+    $ ../configure '--enable-mkl' 'LDFLAGS=-L$BOOST_ROOT/lib' '--with-include=-I$BOOST_ROOT/include'
 
   Configure options:
      | ``--with-mpi=value``  turns on MPI, where "value" can be "mvapich", "intel", or "openmpi".
