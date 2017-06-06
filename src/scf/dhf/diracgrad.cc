@@ -36,7 +36,7 @@ using namespace bagel;
 #define LOCAL_TIMING
 
 template<>
-shared_ptr<GradFile> GradEval<Dirac>::compute() {
+shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int istate, const int jstate) {
   assert(ref_->nact() == 0);
   geom_ = task_->geom();
 

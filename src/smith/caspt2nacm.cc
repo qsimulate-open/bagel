@@ -70,6 +70,17 @@ CASPT2Nacm::CASPT2Nacm(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Nacm calculation ===" << endl << endl;
+
+  // construct SMITH here
+  shared_ptr<PTree> smithinput = idata_->get_child("smith");
+
+  smithinput->put("_nacm", true);
+  smithinput->put("_target", target_state1_);
+  smithinput->put("_target2", target_state2_);
+  smithinput->put("_nacmtype", nacmtype_);
+
+  smith_ = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+  smith_->compute();
 #else
   throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
 #endif
@@ -83,41 +94,31 @@ void CASPT2Nacm::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  // construct SMITH here
-  shared_ptr<PTree> smithinput = idata_->get_child("smith");
-
-  smithinput->put("_nacm", true);
-  smithinput->put("_target", target_state1_);
-  smithinput->put("_target2", target_state2_);
-  smithinput->put("_nacmtype", nacmtype_);
-
-  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
-  smith->compute();
+  smith_->compute_grad();
 
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
-  energy_  = smith->algo()->energyvec();
+  energy_  = smith_->algo()->energyvec();
 
-  coeff_ = smith->coeff();
+  coeff_ = smith_->coeff();
 
-  cideriv_ = smith->cideriv()->copy();
-  ncore_   = smith->algo()->info()->ncore();
-  wf1norm_ = smith->wf1norm();
-  msrot_   = smith->msrot();
+  cideriv_ = smith_->cideriv()->copy();
+  ncore_   = smith_->algo()->info()->ncore();
+  wf1norm_ = smith_->wf1norm();
+  msrot_   = smith_->msrot();
   nstates_ = wf1norm_.size();
   assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-  assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
+  assert(nstates_ == smith_->algo()->info()->ciwfn()->nstates());
 
-  xmsrot_  = smith->xmsrot();
-  heffrot_ = smith->heffrot();
-  foeig_   = smith->foeig();
-  energy1_ = smith->algo()->energy(target1());
-  energy2_ = smith->algo()->energy(target2());
+  xmsrot_  = smith_->xmsrot();
+  heffrot_ = smith_->heffrot();
+  energy1_ = smith_->algo()->energy(target1());
+  energy2_ = smith_->algo()->energy(target2());
 
   Timer timer;
 
   // save correlated density matrices d(1), d(2), and ci derivatives
-  auto d1tmp = make_shared<Matrix>(*smith->dm1());
-  auto d11tmp = make_shared<Matrix>(*smith->dm11());
+  auto d1tmp = make_shared<Matrix>(*smith_->dm1());
+  auto d11tmp = make_shared<Matrix>(*smith_->dm11());
   d1tmp->symmetrize();
   d11tmp->symmetrize();
   // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
@@ -136,15 +137,15 @@ void CASPT2Nacm::compute() {
   d11_ = d1set(d11tmp);
 
   // XMS density matrix
-  if (smith->dcheck()) {
-    shared_ptr<const Matrix> dc = smith->dcheck();
+  if (smith_->dcheck()) {
+    shared_ptr<const Matrix> dc = smith_->dcheck();
     assert(dc->ndim() == nact && dc->mdim() == nact);
     auto tmp = make_shared<Matrix>(nocc, nocc);
     tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
     dcheck_ = tmp;
   }
 
-  auto vd1tmp = make_shared<Matrix>(*smith->vd1());
+  auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
   vd1_ = d1set(vd1tmp);
 
   d10ms_ = make_shared<RDM<1>>(nact);
@@ -164,7 +165,7 @@ void CASPT2Nacm::compute() {
   auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
   *vd1_ += *d10IJ;
 
-  d2_ = smith->dm2();
+  d2_ = smith_->dm2();
 
   cout << "    * NACME Target states: " << target1() << " - " << target2() << endl;
   cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1_ - energy2_) * au2eV__ << " eV" << endl << endl;
@@ -173,7 +174,7 @@ void CASPT2Nacm::compute() {
 
 
 template<>
-shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute() {
+shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute(const string jobtitle, const int istate, const int jstate) {
 #ifdef COMPILE_SMITH
   Timer timer;
 

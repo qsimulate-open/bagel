@@ -45,11 +45,6 @@ shared_ptr<GradFile> Force::compute() {
   const bool export_grad = idata_->get<bool>("export", false);
   const bool export_single = idata_->get<bool>("export_single", false);
   const int maxziter = idata_->get<int>("maxziter", 100);
-#ifndef DISABLE_SERIALIZATION
-  const bool refsave = idata_->get<bool>("save_ref", false);
-  string refname;
-  if (refsave) refname = idata_->get<string>("ref_out", "reference");
-#endif
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
@@ -83,73 +78,73 @@ shared_ptr<GradFile> Force::compute() {
     if (method == "uhf") {
 
       auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "rohf") {
 
       auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "hf") {
 
       auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "ks") {
 
       auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "dhf") {
 
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
 
     } else if (method == "mp2") {
 
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "casscf" && jobtitle == "nacme") {
 
       auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target, target2);
       ref = force->ref();
 
     } else if (method == "casscf" && jobtitle == "dgrad") {
 
       auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target, target2);
       ref = force->ref();
 
     } else if (method == "casscf") {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "caspt2" && jobtitle == "nacme") {
 
       auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target, target2);
       ref = force->ref();
 
     } else if (method == "caspt2") {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
@@ -190,12 +185,6 @@ shared_ptr<GradFile> Force::compute() {
       }
     }
   }
-#ifndef DISABLE_SERIALIZATION
-  if (refsave) {
-    OArchive archive(refname);
-    archive << ref;
-  }
-#endif
 
   if (export_grad) {
     if (export_single) {

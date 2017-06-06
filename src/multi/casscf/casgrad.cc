@@ -60,7 +60,7 @@ void GradEval<CASSCF>::init() {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute() {
+shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int jstate) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();
@@ -245,7 +245,7 @@ void NacmEval<CASSCF>::init() {
 
 
 template<>
-shared_ptr<GradFile> NacmEval<CASSCF>::compute() {
+shared_ptr<GradFile> NacmEval<CASSCF>::compute(const string jobtitle, const int istate, const int jstate) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();
@@ -457,7 +457,7 @@ void DgradEval<CASSCF>::init() {
 
 
 template<>
-shared_ptr<GradFile> DgradEval<CASSCF>::compute() {
+shared_ptr<GradFile> DgradEval<CASSCF>::compute(const string jobtitle, const int istate, const int jstate) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();

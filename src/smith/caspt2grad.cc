@@ -68,6 +68,16 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
+
+  // construct SMITH here
+  shared_ptr<PTree> smithinput = idata_->get_child("smith");
+
+  smithinput->put("_grad", true);
+  smithinput->put("_target", target_);
+  smithinput->put("_hyperfine", do_hyperfine_);
+
+  smith_ = make_shared<Smith>(smithinput, ref_->geom(), ref_);
+  smith_->compute();
 #else
   throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
 #endif
@@ -81,31 +91,25 @@ void CASPT2Grad::compute() {
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  // construct SMITH here
-  shared_ptr<PTree> smithinput = idata_->get_child("smith");
-  smithinput->put("_grad", true);
-  smithinput->put("_target", target_);
-  smithinput->put("_hyperfine", do_hyperfine_);
-  auto smith = make_shared<Smith>(smithinput, ref_->geom(), ref_);
-  smith->compute();
+  smith_->compute_grad();
 
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
-  coeff_ = smith->coeff();
+  coeff_ = smith_->coeff();
 
   if (nact)
-    cideriv_ = smith->cideriv()->copy();
-  ncore_   = smith->algo()->info()->ncore();
-  wf1norm_ = smith->wf1norm();
-  msrot_   = smith->msrot();
+    cideriv_ = smith_->cideriv()->copy();
+  ncore_   = smith_->algo()->info()->ncore();
+  wf1norm_ = smith_->wf1norm();
+  msrot_   = smith_->msrot();
   nstates_ = wf1norm_.size();
   assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-  assert(nstates_ == smith->algo()->info()->ciwfn()->nstates());
+  assert(nstates_ == smith_->algo()->info()->ciwfn()->nstates());
 
   Timer timer;
 
   // save correlated density matrices d(1), d(2), and ci derivatives
-  auto d1tmp = make_shared<Matrix>(*smith->dm1());
-  auto d11tmp = make_shared<Matrix>(*smith->dm11());
+  auto d1tmp = make_shared<Matrix>(*smith_->dm1());
+  auto d11tmp = make_shared<Matrix>(*smith_->dm11());
   d1tmp->symmetrize();
   d11tmp->symmetrize();
   // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
@@ -124,8 +128,8 @@ void CASPT2Grad::compute() {
   d11_ = d1set(d11tmp);
 
   // XMS density matrix
-  if (smith->dcheck()) {
-    shared_ptr<const Matrix> dc = smith->dcheck();
+  if (smith_->dcheck()) {
+    shared_ptr<const Matrix> dc = smith_->dcheck();
     assert(dc->ndim() == nact && dc->mdim() == nact);
     auto tmp = make_shared<Matrix>(nocc, nocc);
     tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
@@ -134,10 +138,10 @@ void CASPT2Grad::compute() {
 
   // spin density matrices
   if (do_hyperfine_) {
-    auto sd11tmp = make_shared<Matrix>(*smith->sdm11());
+    auto sd11tmp = make_shared<Matrix>(*smith_->sdm11());
     sd11tmp->symmetrize();
     sd11tmp->scale(2.0);
-    sd1_ = d1set(smith->sdm1());
+    sd1_ = d1set(smith_->sdm1());
     sd11_ = d1set(sd11tmp);
   }
 
@@ -157,15 +161,15 @@ void CASPT2Grad::compute() {
       }
     }
   }
-  d2_ = smith->dm2();
-  energy_ = smith->algo()->energy();
+  d2_ = smith_->dm2();
+  energy_ = smith_->algo()->energy();
   cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
 #endif
 }
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute() {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate) {
 #ifdef COMPILE_SMITH
   assert(task_->target() == target_state_);
   Timer timer;

@@ -66,7 +66,13 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 void Smith::compute() {
 #ifdef COMPILE_SMITH
   algo_->solve();
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
+#endif
+}
 
+void Smith::compute_grad() {
+#ifdef COMPILE_SMITH
   if (algo_->info()->grad()) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);

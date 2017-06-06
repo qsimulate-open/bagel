@@ -29,6 +29,7 @@
 #include <src/wfn/reference.h>
 #include <src/ci/fci/distfci.h>
 #include <src/smith/tensor.h>
+#include <src/smith/smith.h>
 
 namespace bagel {
 
@@ -57,6 +58,9 @@ class CASPT2Deriv : public Method {
     std::shared_ptr<Dvec> cideriv_;
     // FCI utility
     std::shared_ptr<FCI_base> fci_;
+
+    // SMITH
+    std::shared_ptr<Smith> smith_;
 
     // for gradient
     int nstates_;
@@ -135,7 +139,6 @@ class CASPT2Nacm : public CASPT2Deriv {
     // Heff rotation natrix (i.e. Heff eigenvectors)
     std::shared_ptr<const Matrix> heffrot_;
     // Fock Eigenvalues
-    std::vector<double> foeig_;
     std::vector<double> cieig_;
     // Energies, vector
     std::vector<double> energy_;
@@ -164,8 +167,6 @@ class CASPT2Nacm : public CASPT2Deriv {
     double energy(const int i) const { return energy_[i]; }
     const std::vector<double>& energy() const { return energy_; }
 
-
-    double foeig(const int i) const { return foeig_.at(i); }
     double cieig(const int i) const { return cieig_.at(i); }
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override;

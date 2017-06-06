@@ -62,7 +62,9 @@ class GradEval : public GradEval_base {
       auto idata_out = std::make_shared<PTree>(*idata_);
       idata_out->put("_target", target_state_);
       idata_out->put("_maxziter", maxziter_);
+      // CASPT2: this does SMITH calculation
       task_ = std::make_shared<T>(idata_out, geom_, ref_);
+      // Then target-specified thingies here
       task_->compute();
       ref_  = task_->conv_to_ref();
       energy_ = ref_->energy(target_state_);
@@ -77,7 +79,7 @@ class GradEval : public GradEval_base {
     }
 
     // compute() computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute() { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
+    std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int jstate = -1) { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
 
     double energy() const { return energy_; }
     const std::vector<double>& dipole() const { return dipole_; }
@@ -87,17 +89,17 @@ class GradEval : public GradEval_base {
 };
 
 // specialization
-template<> std::shared_ptr<GradFile> GradEval<RHF>::compute();
-template<> std::shared_ptr<GradFile> GradEval<UHF>::compute();
-template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute();
-template<> std::shared_ptr<GradFile> GradEval<KS>::compute();
-template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute();
-template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute();
-template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute();
+template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute(const std::string jobtitle, const int istate, const int jstate);
+template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 // CASSCF is slightly more complicated. These functions are implemented in casgrad.cc
 template<> void GradEval<CASSCF>::init();
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute();
+template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 template<typename T>
 class NacmEval : public GradEval_base {
@@ -139,18 +141,18 @@ class NacmEval : public GradEval_base {
     }
 
     // compute() computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute() { throw std::logic_error("NACME for this method has not been implemented"); }
+    std::shared_ptr<GradFile> compute(const std::string jobtitle, const int istate = 0, const int jstate = 1) { throw std::logic_error("NACME for this method has not been implemented"); }
 
     double energy1 () const { return energy1_; }
     double energy2 () const { return energy2_; }
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
-template<> std::shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute();
+template<> std::shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 // CASSCF code for NACME is basically same to the gradient one, but little different due to some additional terms...
 template<> void NacmEval<CASSCF>::init();
-template<> std::shared_ptr<GradFile> NacmEval<CASSCF>::compute();
+template<> std::shared_ptr<GradFile> NacmEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 template<typename T>
 class DgradEval : public GradEval_base {
@@ -189,7 +191,7 @@ class DgradEval : public GradEval_base {
     }
 
     // compute() computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute() { throw std::logic_error("State difference gradient for this method has not been implemented"); }
+    std::shared_ptr<GradFile> compute(const std::string jobtitle, const int istate = 0, const int jstate = 1) { throw std::logic_error("State difference gradient for this method has not been implemented"); }
 
     double energy1 () const { return energy1_; }
     double energy2 () const { return energy2_; }
@@ -197,7 +199,7 @@ class DgradEval : public GradEval_base {
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
 template<> void DgradEval<CASSCF>::init();
-template<> std::shared_ptr<GradFile> DgradEval<CASSCF>::compute();
+template<> std::shared_ptr<GradFile> DgradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 
 }

@@ -47,7 +47,7 @@ void MP2Grad::compute() { }
 
 
 template<>
-shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
+shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int jstate) {
   Timer time;
 
   const size_t ncore = task_->ncore();

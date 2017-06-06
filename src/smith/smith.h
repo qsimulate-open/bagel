@@ -77,6 +77,8 @@ class Smith : public Method {
     Smith(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
+    // Gradient module to be separated
+    void compute_grad();
 
     // just return the reference used in SMITH code
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
