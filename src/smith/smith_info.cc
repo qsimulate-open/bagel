@@ -80,10 +80,8 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   target_  = idata->get<int>("_target", -1);
   grad_    = idata->get<bool>("_grad", false);
   target2_ = idata->get<int>("_target2", -1);
-  nacm_    = idata->get<bool>("_nacm", false);
-  nacmtype_= idata->get<int>("_nacmtype", 0);
 
-  thresh_ = idata->get<double>("thresh", (grad_||nacm_) ? 1.0e-8 : 1.0e-6);
+  thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
   davidson_subspace_ = idata->get<int>("davidson_subspace", 10);
   thresh_overlap_ = idata->get<double>("thresh_overlap", 1.0e-9);
@@ -108,7 +106,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
 
   assert(!(grad_ && target_ < 0));
-  assert(!(nacm_ && target2_ < 0));
 }
 
 
@@ -116,7 +113,7 @@ template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_),
     maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_), nacmtype_(info->nacmtype_),
-    maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_), nacm_(info->nacm_),
+    maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),
     restart_each_iter_(info->restart_each_iter_), thresh_overlap_(info->thresh_overlap_),

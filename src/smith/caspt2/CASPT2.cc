@@ -313,7 +313,7 @@ void CASPT2::CASPT2::solve_dm() {
   }
 }
 
-void CASPT2::CASPT2::solve_deriv() {
+void CASPT2::CASPT2::solve_deriv(const int target) {
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
@@ -325,7 +325,6 @@ void CASPT2::CASPT2::solve_deriv() {
     print_iteration();
 
     // source stores the result of summation over M'
-    const int target = info_->target();
     auto source = make_shared<MultiTensor>(nstates_);
     for (auto& i : *source)
       i = init_residual();
@@ -422,7 +421,7 @@ void CASPT2::CASPT2::solve_deriv() {
   } else {
     // in case when CASPT2 is not variational...
     MSCASPT2::MSCASPT2 ms(*this);
-    ms.solve_deriv();
+    ms.solve_deriv(target);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
@@ -504,7 +503,7 @@ void CASPT2::CASPT2::solve_deriv() {
     }
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
-    const int tst = info_->target();
+    const int tst = target;
     const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
     for (int ist = 0; ist != nstates_; ++ist)
       for (int jst = 0; jst != nstates_; ++jst)
@@ -549,7 +548,7 @@ void CASPT2::CASPT2::solve_deriv() {
   timer.tick_print("Postprocessing SMITH");
 }
 
-void CASPT2::CASPT2::solve_nacme() {
+void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI) {
   Timer timer;
   if (nstates_ == 1)
     throw logic_error("Single state CASPT2 NACME calculation not possible");
@@ -563,8 +562,6 @@ void CASPT2::CASPT2::solve_nacme() {
   print_iteration();
 
   // source stores the result of summation over M'
-  const int targetJ = info_->target();
-  const int targetI = info_->target2();
   auto sourceJ = make_shared<MultiTensor>(nstates_);
   auto sourceI = make_shared<MultiTensor>(nstates_);
   for (auto& i : *sourceJ)
@@ -619,7 +616,7 @@ void CASPT2::CASPT2::solve_nacme() {
   timer.tick_print("CASPT2 lambda equation");
 
   MSCASPT2::MSCASPT2 ms(*this);
-  ms.solve_nacme();
+  ms.solve_nacme(targetJ, targetI);
   den1_ = ms.rdm11();
   den2_ = ms.rdm12();
   Den1_ = ms.rdm21();

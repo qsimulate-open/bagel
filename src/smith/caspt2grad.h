@@ -86,6 +86,7 @@ class CASPT2Deriv : public Method {
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI_base> fci() const { return fci_; }
+    std::shared_ptr<Smith> smith() const { return smith_; }
 
     int nstates() const { return nstates_; }
     int ncore() const { return ncore_; }
@@ -107,6 +108,7 @@ class CASPT2Grad : public CASPT2Deriv {
   protected:
     // second-order density matrix
     std::shared_ptr<const Matrix> d1_;
+    std::shared_ptr<Matrix> vd1_;
     // XMS density if available
     std::shared_ptr<const Matrix> dcheck_;
     double energy_;
@@ -116,15 +118,25 @@ class CASPT2Grad : public CASPT2Deriv {
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
+    void compute_grad(const int istate);
+    void compute_nacme(const int istate, const int jstate);
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     double energy() const { return energy_; }
     const std::vector<double>& dipole() const { return dipole_; }
     double dipole(const int i) const { return dipole_[i]; }
 
+    // functions for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+      compute_Y_grad(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+
+    // functions for nacme
+    void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj, const int istate, const int jstate, const double egap);
+
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
+      compute_Y_nacme(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 
 class CASPT2Nacm : public CASPT2Deriv {
@@ -152,6 +164,7 @@ class CASPT2Nacm : public CASPT2Deriv {
     CASPT2Nacm(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute() override;
+    void compute_nacme(const int istate, const int jstate);
 
     const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
     const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }

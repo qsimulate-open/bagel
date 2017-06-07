@@ -63,6 +63,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   }
 }
 
+
 void Smith::compute() {
 #ifdef COMPILE_SMITH
   algo_->solve();
@@ -71,37 +72,54 @@ void Smith::compute() {
 #endif
 }
 
-void Smith::compute_grad() {
+
+void Smith::compute_grad(const int istate) {
 #ifdef COMPILE_SMITH
-  if (algo_->info()->grad()) {
+  auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+  assert(algop);
+
+  algop->solve_deriv(istate);
+  dm1_ = algop->rdm12();
+  dm11_ = algop->rdm11();
+  dm2_ = algop->rdm21();
+  dcheck_ = algop->dcheck();
+
+  // compute <1|1>
+  wf1norm_ = algop->correlated_norm();
+  // convert ci derivative tensor to civec
+  cider_ = algop->ci_deriv();
+  msrot_ = algop->msrot();
+  coeff_ = algop->coeff();
+
+  // if spin-density is requested...
+  if (idata_->get<bool>("_hyperfine")) {
+    auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
+    sp->solve();
+    sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
+    sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
+  }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
+#endif
+}
+
+
+void Smith::compute_nacme(const int istate, const int jstate) {
+  if (!(algo_->info()->grad())) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-    assert(algop);
-
-    algop->solve_deriv();
-    dm1_ = algop->rdm12();
-    dm11_ = algop->rdm11();
-    dm2_ = algop->rdm21();
-    dcheck_ = algop->dcheck();
-
-    // compute <1|1>
-    wf1norm_ = algop->correlated_norm();
-    // convert ci derivative tensor to civec
-    cider_ = algop->ci_deriv();
-    msrot_ = algop->msrot();
-    coeff_ = algop->coeff();
-
-    // if spin-density is requested...
-    if (idata_->get<bool>("_hyperfine")) {
-      auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
-      sp->solve();
-      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
-      sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
+    if (algo_->info()->target2() != -1) {
+      algop->solve_dm();
+      msrot_ = algop->msrot();
+      xmsrot_ = algop->xmsrot();
+      heffrot_ = algop->heffrot();
+      coeff_ = algop->coeff();
+      vd1_ = algop->vden1();
     }
-  } else if (algo_->info()->nacm()) {
+  } else {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     assert(algop);
 
-    algop->solve_nacme();
+    algop->solve_nacme(istate, jstate);
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     vd1_ = algop->vden1();
@@ -117,21 +135,9 @@ void Smith::compute_grad() {
     heffrot_ = algop->heffrot();
     msrot_ = algop->msrot();
     coeff_ = algop->coeff();
-  } else if (algo_->info()->method() == "caspt2") {
-    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-    if (algo_->info()->target2() != -1) {
-      algop->solve_dm();
-      msrot_ = algop->msrot();
-      xmsrot_ = algop->xmsrot();
-      heffrot_ = algop->heffrot();
-      coeff_ = algop->coeff();
-      vd1_ = algop->vden1();
-    }
   }
-#else
-  throw logic_error("You must enable SMITH during compilation for this method to be available.");
-#endif
 }
+
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
