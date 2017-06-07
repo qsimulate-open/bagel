@@ -133,8 +133,7 @@ shared_ptr<GradFile> Force::compute() {
       ref = force->ref();
       force_dipole_ = force->dipole();
 
-    }
-    else {
+    } else {
 
         numerical_ = true;
         cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;

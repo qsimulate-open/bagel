@@ -33,10 +33,19 @@
 
 namespace bagel {
 
-class CASPT2Deriv : public Method {
+class CASPT2Grad : public Method {
   public:
     using Tensor = SMITH::Tensor_<double>;
+
   protected:
+    // second-order density matrix
+    std::shared_ptr<const Matrix> d1_;
+    std::shared_ptr<Matrix> vd1_;
+    // XMS density if available
+    std::shared_ptr<const Matrix> dcheck_;
+    double energy_;
+    std::vector<double> dipole_;
+
     std::shared_ptr<const Matrix> coeff_;
     // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
@@ -75,7 +84,7 @@ class CASPT2Deriv : public Method {
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
-    CASPT2Deriv(std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) : Method(inp, geom, ref) { };
+    CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     const double& msrot(int i, int j) const { return msrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
@@ -99,24 +108,6 @@ class CASPT2Deriv : public Method {
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
-    std::shared_ptr<Matrix> diagonal_D1() const;
-    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
-    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
-};
-
-class CASPT2Grad : public CASPT2Deriv {
-  protected:
-    // second-order density matrix
-    std::shared_ptr<const Matrix> d1_;
-    std::shared_ptr<Matrix> vd1_;
-    // XMS density if available
-    std::shared_ptr<const Matrix> dcheck_;
-    double energy_;
-    std::vector<double> dipole_;
-
-  public:
-    CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
-
     void compute() override;
     void compute_grad(const int istate);
     void compute_nacme(const int istate, const int jstate, const int nacmtype);
@@ -128,7 +119,13 @@ class CASPT2Grad : public CASPT2Deriv {
     const std::vector<double>& dipole() const { return dipole_; }
     double dipole(const int i) const { return dipole_[i]; }
 
-    // functions for gradient
+    // internal functions
+
+    std::shared_ptr<Matrix> diagonal_D1() const;
+    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
+    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
+
+    // function for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y_grad(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 
@@ -139,7 +136,7 @@ class CASPT2Grad : public CASPT2Deriv {
       compute_Y_nacme(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 
-// Single point calc.
+// Single point calc. (only for finite difference nacme)
 
 class CASPT2Energy : public Method {
   public:
