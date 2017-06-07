@@ -257,9 +257,9 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter) {
 #ifdef COMPILE_SMITH
-  Timer timer;
 
   task_->compute_grad(istate);
+  Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
   auto fci = task_->fci();
@@ -456,9 +456,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
-  Timer timer;
 
   task_->compute_nacme(istate, jstate, nacmtype);
+  Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
   auto fci = task_->fci();
