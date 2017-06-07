@@ -47,6 +47,14 @@ void MP2Grad::compute() { }
 
 
 template<>
+vector<double> GradEval<MP2Grad>::energyvec() const {
+  vector<double> out;
+  out.push_back(energy());
+  return out;
+}
+
+
+template<>
 shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   Timer time;
 

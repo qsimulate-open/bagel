@@ -54,7 +54,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   maxziter_ = idat->get<int>("maxziter", 100);
   scratch_ = idat->get<bool>("scratch", false);
   numerical_ = idat->get<bool>("numerical", false);
-  hess_update_ = idat->get<string>("hess_update", "flowchart");
+  hess_update_ = to_lower(idat->get<string>("hess_update", "flowchart"));
   hess_approx_ = idat->get<bool>("hess_approx", true);
 
   constrained_ = idat->get<bool>("constrained", false);
@@ -76,7 +76,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     cout << endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms in overall" << endl;
   }
 
-  opttype_ = idat->get<string>("opttype", "energy");
+  opttype_ = to_lower(idat->get<string>("opttype", "energy"));
   if (internal_) {
     if (redundant_)
       bmat_red_ = current_->compute_redundant_coordinate();
@@ -96,7 +96,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     thresh_echange_ = idat->get<double>("maxchange", 0.000001);
   }
   maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
-  algorithm_ = idat->get<string>("algorithm", "ef");
+  algorithm_ = to_lower(idat->get<string>("algorithm", "ef"));
   adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
 
   if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci") {

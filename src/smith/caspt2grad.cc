@@ -247,6 +247,13 @@ void CASPT2Grad::compute_nacme(const int istate, const int jstate, const int nac
 #endif
 }
 
+
+template<>
+vector<double> GradEval<CASPT2Grad>::energyvec() const {
+  return task_->smith()->algo()->energyvec();
+}
+
+
 template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter) {
 #ifdef COMPILE_SMITH

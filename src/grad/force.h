@@ -44,6 +44,7 @@ class Force {
     Force(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     std::shared_ptr<GradFile> compute();
+    void force_export(const bool export_single, const int target, const int target2, const std::vector<double> energy, const std::string jobtitle, const std::shared_ptr<GradFile> out);
     const std::vector<double>& force_dipole() const { return force_dipole_; }
 
 };

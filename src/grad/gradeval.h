@@ -81,6 +81,7 @@ class GradEval : public GradEval_base {
       { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF and CASPT2)"); }
 
     double energy() const { return energy_; }
+    std::vector<double> energyvec() const { return ref_->energy(); }
     const std::vector<double>& dipole() const { return dipole_; }
     double dipole(int i) const { return dipole_[i]; }
 
@@ -88,6 +89,9 @@ class GradEval : public GradEval_base {
 };
 
 // specialization
+template<> std::vector<double> GradEval<MP2Grad>::energyvec() const;
+template<> std::vector<double> GradEval<CASPT2Grad>::energyvec() const;
+
 template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
 template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
 template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);

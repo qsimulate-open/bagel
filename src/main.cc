@@ -102,7 +102,8 @@ int main(int argc, char** argv) {
         ref = opt->conv_to_ref();
         geom = opt->geometry();
 
-      } else if (title == "force" || title == "nacme" || title == "dgrad") {
+      } else if (title == "forces" || title == "force" || title == "nacme" || title == "dgrad") {
+        // "forces" does many force calculations at once (SA-CASSCF and MS-CASPT2)
 
         auto opt = make_shared<Force>(itree, geom, ref);
         opt->compute();
