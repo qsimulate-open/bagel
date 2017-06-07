@@ -522,6 +522,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     gradient = compute_nacme(istate, maxziter, jstate, nacmtype);
   else if (jobtitle=="dgrad")
     gradient = compute_dgrad(istate, maxziter, jstate);
+
   return gradient;
 }
 

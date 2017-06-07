@@ -112,7 +112,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_),
-    maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_), nacmtype_(info->nacmtype_),
+    maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_),
     maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),

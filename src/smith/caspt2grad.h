@@ -119,7 +119,7 @@ class CASPT2Grad : public CASPT2Deriv {
 
     void compute() override;
     void compute_grad(const int istate);
-    void compute_nacme(const int istate, const int jstate);
+    void compute_nacme(const int istate, const int jstate, const int nacmtype);
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
@@ -137,57 +137,6 @@ class CASPT2Grad : public CASPT2Deriv {
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y_nacme(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
-};
-
-class CASPT2Nacm : public CASPT2Deriv {
-  protected:
-    // second-order density matrix
-    std::shared_ptr<Matrix> d1_;
-    std::shared_ptr<Matrix> vd1_;
-    // XMS density if available
-    std::shared_ptr<Matrix> dcheck_;
-    // XMS rotation matrix (i.e. Fock eigenvectors)
-    std::shared_ptr<const Matrix> xmsrot_;
-    // Heff rotation natrix (i.e. Heff eigenvectors)
-    std::shared_ptr<const Matrix> heffrot_;
-    // Fock Eigenvalues
-    std::vector<double> cieig_;
-    // Energies, vector
-    std::vector<double> energy_;
-    int target_state1_;
-    int target_state2_;
-    int nacmtype_;
-    double energy1_;
-    double energy2_;
-
-  public:
-    CASPT2Nacm(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
-
-    void compute() override;
-    void compute_nacme(const int istate, const int jstate);
-
-    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
-    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
-    std::shared_ptr<const Matrix> d1() const { return d1_; }
-    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
-    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
-
-    int target1() const { return target_state1_; }
-    int target2() const { return target_state2_; }
-    double energy1() const { return energy1_; }
-    double energy2() const { return energy2_; }
-
-    double energy(const int i) const { return energy_[i]; }
-    const std::vector<double>& energy() const { return energy_; }
-
-    double cieig(const int i) const { return cieig_.at(i); }
-
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override;
-
-    void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj);
-
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 
 // Single point calc.

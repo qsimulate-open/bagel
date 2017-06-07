@@ -48,32 +48,24 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = eval1.compute("force", target_state_, maxziter_);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASSCF> eval2(cinput, current_, refs);
-    cgrad2 = eval2.compute("force", target_state2_, maxziter_);
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute("nacme", target_state2_, target_state_);
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = eval1.compute("force", target_state_, maxziter_);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASPT2Grad> eval2(cinput, current_, refs);
-    cgrad2 = eval2.compute("force", target_state2_, maxziter_);
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute("nacme", target_state2_, target_state_);
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
@@ -274,32 +266,24 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = eval1.compute("force", target_state_, maxziter_);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASSCF> eval2(cinput, current_, refs);
-    cgrad2 = eval2.compute("force", target_state2_, maxziter_);
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute("nacme", target_state2_, target_state_);
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = eval1.compute("force", target_state_, maxziter_);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASPT2Grad> eval2(cinput, current_, refs);
-    cgrad2 = eval2.compute("force", target_state2_, maxziter_);
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute("nacme", target_state2_, target_state_);
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }

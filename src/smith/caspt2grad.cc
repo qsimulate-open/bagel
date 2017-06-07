@@ -168,13 +168,13 @@ void CASPT2Grad::compute_grad(const int target) {
 }
 
 
-void CASPT2Grad::compute_nacme(const int targetJ, const int targetI) {
+void CASPT2Grad::compute_nacme(const int istate, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  smith_->compute_nacme(targetJ, targetI);
+  smith_->compute_nacme(istate, jstate, nacmtype);
 
   coeff_ = smith_->coeff();
 
@@ -186,8 +186,8 @@ void CASPT2Grad::compute_nacme(const int targetJ, const int targetI) {
   assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
   assert(nstates_ == smith_->algo()->info()->ciwfn()->nstates());
 
-  const double energy1 = smith_->algo()->energy(targetJ);
-  const double energy2 = smith_->algo()->energy(targetI);
+  const double energy1 = smith_->algo()->energy(istate);
+  const double energy2 = smith_->algo()->energy(jstate);
 
   Timer timer;
 
@@ -226,9 +226,9 @@ void CASPT2Grad::compute_nacme(const int targetJ, const int targetI) {
   d10ms_ = make_shared<RDM<1>>(nact);
   d20ms_ = make_shared<RDM<2>>(nact);
   for (int ist = 0; ist != nstates_; ++ist) {
-    const double ims = msrot(ist, targetI);
+    const double ims = msrot(ist, jstate);
     for (int jst = 0; jst != nstates_; ++jst) {
-      const double jms = msrot(jst, targetJ);
+      const double jms = msrot(jst, istate);
       shared_ptr<const RDM<1>> rdm1t;
       shared_ptr<const RDM<2>> rdm2t;
       tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
@@ -242,7 +242,7 @@ void CASPT2Grad::compute_nacme(const int targetJ, const int targetI) {
 
   d2_ = smith_->dm2();
 
-  cout << "    * NACME Target states: " << targetJ << " - " << targetI << endl;
+  cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
   cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1 - energy2) * au2eV__ << " eV" << endl << endl;
 #endif
 }
@@ -451,7 +451,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
 #ifdef COMPILE_SMITH
   Timer timer;
 
-  task_->compute_nacme(istate, jstate);
+  task_->compute_nacme(istate, jstate, nacmtype);
 
   shared_ptr<const Reference> ref = task_->ref();
   auto fci = task_->fci();
@@ -506,7 +506,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
 
-  if (nacmtype== 0 || nacmtype == 2)
+  if (nacmtype != 1)
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -553,7 +553,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   auto xmatao = make_shared<Matrix>(*coeff * *xmat ^ *coeff);
   shared_ptr<Matrix> qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
-  if (nacmtype==0)
+  if (nacmtype == 0)
     qxmat->scale(egap);
   else
     qxmat->zero();

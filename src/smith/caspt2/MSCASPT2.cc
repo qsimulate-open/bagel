@@ -82,11 +82,9 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   den4ciall = make_shared<Vec<Tensor>>();
 }
 
-void MSCASPT2::MSCASPT2::solve_dm() {
+void MSCASPT2::MSCASPT2::solve_dm(const int targetJ, const int targetI) {
   {
     const int nstates = info_->ciwfn()->nstates();
-    const int targetJ = info_->target();
-    const int targetI = info_->target2();
 
     shared_ptr<Tensor> resultv = den1->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra

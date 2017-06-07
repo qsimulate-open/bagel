@@ -58,6 +58,40 @@ CASPT2::CASPT2::CASPT2(shared_ptr<const SMITH_Info<double>> ref) : SpinFreeMetho
 }
 
 
+CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
+  info_    = cas.info_;
+  virt_    = cas.virt_;
+  active_  = cas.active_;
+  closed_  = cas.closed_;
+  rvirt_   = cas.rvirt_;
+  ractive_ = cas.ractive_;
+  rclosed_ = cas.rclosed_;
+  nstates_ = cas.nstates_;
+  heff_    = cas.heff_;
+  fockact_ = cas.fockact_;
+  e0all_   = cas.e0all_;
+  xmsmat_  = cas.xmsmat_;
+  energy_  = cas.energy_;
+  pt2energy_ = cas.pt2energy_;
+
+  // sall is changed in gradient and nacme codes while the others are not
+  t2all_ = cas.t2all_;
+  rall_  = cas.rall_;
+  for (int i = 0; i != nstates_; ++i) {
+    sall_.push_back(cas.sall_[i]->copy());
+  }
+  h1_ = cas.h1_;
+  f1_ = cas.f1_;
+  v2_ = cas.v2_;
+
+  rdm0all_ = cas.rdm0all_;
+  rdm1all_ = cas.rdm1all_;
+  rdm2all_ = cas.rdm2all_;
+  rdm3all_ = cas.rdm3all_;
+  rdm4all_ = cas.rdm4all_;
+}
+
+
 void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   Timer timer(1);
   const size_t ndet = ci_deriv_->data(0)->size();
@@ -305,13 +339,15 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   return t;
 }
 
-void CASPT2::CASPT2::solve_dm() {
+
+void CASPT2::CASPT2::solve_dm(const int istate, const int jstate) {
   {
     MSCASPT2::MSCASPT2 ms(*this);
-    ms.solve_dm();
+    ms.solve_dm(istate, jstate);
     vden1_ = ms.vden1();
   }
 }
+
 
 void CASPT2::CASPT2::solve_deriv(const int target) {
   Timer timer;
@@ -503,11 +539,10 @@ void CASPT2::CASPT2::solve_deriv(const int target) {
     }
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
-    const int tst = target;
     const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
     for (int ist = 0; ist != nstates_; ++ist)
       for (int jst = 0; jst != nstates_; ++jst)
-        ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,tst)*(*heff_)(jst,tst)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
+        ci_deriv_->data(jst)->ax_plus_y(2.0*ur(ist,target)*(*heff_)(jst,target)*ref->energy(ist), info_orig_->ciwfn()->civectors()->data(ist));
   }
 
   // finally if this is XMS-CASPT2 gradient computation, we compute dcheck and contribution to y
@@ -548,7 +583,8 @@ void CASPT2::CASPT2::solve_deriv(const int target) {
   timer.tick_print("Postprocessing SMITH");
 }
 
-void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI) {
+
+void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI, const int nacmtype) {
   Timer timer;
   if (nstates_ == 1)
     throw logic_error("Single state CASPT2 NACME calculation not possible");
@@ -708,7 +744,7 @@ void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI) {
       for (int j = 0; j != i; ++j) {
         double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
                   - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
-        if (info_->nacmtype()==0)
+        if (nacmtype==0)
           cy += (pt2energy_[targetI] - pt2energy_[targetJ])
               * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
         wmn(j,i) = fabs(e0all_[j]-e0all_[i]) > 1.0e-12 ? -0.5 * cy / (e0all_[j]-e0all_[i]) : 0.0;

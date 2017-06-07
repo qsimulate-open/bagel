@@ -78,8 +78,8 @@ class Smith : public Method {
 
     void compute() override;
     // Gradient module to be separated
-    void compute_grad(const int istate = 0);
-    void compute_nacme(const int istate = 0, const int jstate = 1);
+    void compute_grad(const int istate);
+    void compute_nacme(const int istate, const int jstate, const int nacmtype);
 
     // just return the reference used in SMITH code
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }

@@ -75,7 +75,7 @@ void Smith::compute() {
 
 void Smith::compute_grad(const int istate) {
 #ifdef COMPILE_SMITH
-  auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+  auto algop = make_shared<CASPT2::CASPT2>(*(dynamic_pointer_cast<CASPT2::CASPT2>(algo_)));
   assert(algop);
 
   algop->solve_deriv(istate);
@@ -104,22 +104,20 @@ void Smith::compute_grad(const int istate) {
 }
 
 
-void Smith::compute_nacme(const int istate, const int jstate) {
+void Smith::compute_nacme(const int istate, const int jstate, const int nacmtype) {
   if (!(algo_->info()->grad())) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
-    if (algo_->info()->target2() != -1) {
-      algop->solve_dm();
-      msrot_ = algop->msrot();
-      xmsrot_ = algop->xmsrot();
-      heffrot_ = algop->heffrot();
-      coeff_ = algop->coeff();
-      vd1_ = algop->vden1();
-    }
+    algop->solve_dm(istate, jstate);
+    msrot_ = algop->msrot();
+    xmsrot_ = algop->xmsrot();
+    heffrot_ = algop->heffrot();
+    coeff_ = algop->coeff();
+    vd1_ = algop->vden1();
   } else {
-    auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
+    auto algop = make_shared<CASPT2::CASPT2>(*(dynamic_pointer_cast<CASPT2::CASPT2>(algo_)));
     assert(algop);
 
-    algop->solve_nacme(istate, jstate);
+    algop->solve_nacme(istate, jstate, nacmtype);
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     vd1_ = algop->vden1();
@@ -130,7 +128,6 @@ void Smith::compute_nacme(const int istate, const int jstate) {
     wf1norm_ = algop->correlated_norm();
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
-    foeig_ = algop->e0all();
     xmsrot_ = algop->xmsrot();
     heffrot_ = algop->heffrot();
     msrot_ = algop->msrot();

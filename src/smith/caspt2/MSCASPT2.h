@@ -197,7 +197,7 @@ class MSCASPT2 {
 
     void solve_deriv(const int target);
     void solve_nacme(const int targetJ, const int targetI);
-    void solve_dm();
+    void solve_dm(const int targetJ, const int targetI);
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }

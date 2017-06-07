@@ -152,7 +152,6 @@ class NacmEval : public GradEval_base {
 
     std::shared_ptr<const Reference> ref() const { return ref_; }
 };
-template<> std::shared_ptr<GradFile> NacmEval<CASPT2Nacm>::compute(const std::string jobtitle, const int istate, const int jstate);
 
 // CASSCF code for NACME is basically same to the gradient one, but little different due to some additional terms...
 template<> void NacmEval<CASSCF>::init();
