@@ -50,8 +50,8 @@ AC_ARG_WITH([slater], [AS_HELP_STRING([--with-slater],[build F12 methods])], [sl
 AC_ARG_WITH([libxc], [AS_HELP_STRING([--with-libxc],[build DFT with libxc])], [libxc=yes], [libxc=no])
 
 #lapack and blas
-AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=yes], [use_mkl=no])
-AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--disable-scalapack],[disable scalapack.])], [use_scalapack=no], [use_scalapack=yes])
+AC_ARG_ENABLE(mkl, [AS_HELP_STRING([--enable-mkl],[enable MKL extensions.])], [use_mkl=$enable_mkl], [use_mkl=no])
+AC_ARG_ENABLE(scalapack, [AS_HELP_STRING([--disable-scalapack],[disable scalapack.])], [use_scalapack=$enable_scalapack], [use_scalapack=yes])
 
 if test "x${use_scalapack}" = xyes; then
     if test "x${with_mpi}" != xno; then
@@ -110,7 +110,7 @@ if test "x${libxc}" = xyes; then
 fi
 
 #toggle for smith
-AC_ARG_ENABLE(smith, [AS_HELP_STRING([--disable-smith],[disable SMITH code.])], [compile_smith=no], [compile_smith=yes])
+AC_ARG_ENABLE(smith, [AS_HELP_STRING([--disable-smith],[disable SMITH code.])], [compile_smith=$enable_smith], [compile_smith=yes])
 if test "x${compile_smith}" != xno; then
   if test "x${with_mpi}" = xno; then
     AC_MSG_ERROR("SMITH requires MPI")

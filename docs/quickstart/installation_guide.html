@@ -134,7 +134,9 @@ $ cd obj
 </li>
 <li><p class="first">Configure</p>
 <p>A minimal set of configure options is</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$(BOOST_ROOT)/lib&#39; &#39;--with-include=-I$(BOOST_ROOT)/include&#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
+
+$ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$BOOST_ROOT/lib&#39; &#39;--with-include=-I$BOOST_ROOT/include&#39;
 </pre></div>
 </div>
 <dl class="docutils">

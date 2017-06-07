@@ -59,9 +59,11 @@ the transition state geometry (or the saddle point on the potential energy surfa
 <p>In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
-In the conical intersection optimization, the
+In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
 degeneracy lifting vectors out (gradient projection).
+The minimum distance conical intersection (MDCI) can be also optimized by replacing the upper state gradient in MECI optimization
+with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.</p>
 <p>The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
@@ -93,7 +95,8 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
 <div class="line"><code class="docutils literal"><span class="pre">energy</span></code>: find the most stable geometry.</div>
-<div class="line"><code class="docutils literal"><span class="pre">conical</span></code>: find the conical intersections, according to gradient projection method.</div>
+<div class="line"><code class="docutils literal"><span class="pre">conical</span></code> or <code class="docutils literal"><span class="pre">meci</span></code>: find the minimum energy conical intersections, according to gradient projection method.</div>
+<div class="line"><code class="docutils literal"><span class="pre">mdci</span></code>: find the minimum distance conical intersections, according to modified gradient projection method.</div>
 <div class="line"><code class="docutils literal"><span class="pre">transition</span></code>: find the transition state geometry (saddle point on the PES).</div>
 <div class="line"><code class="docutils literal"><span class="pre">mep</span></code>: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.</div>
 </div>
@@ -210,7 +213,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use delocalized internal coordinate.</div>
 </div>
 <div class="line"><strong>Default:</strong> false.</div>
-<div class="line"><strong>Recommendation:</strong> use default, except for the cases that has a problem in constructing delocalized internals (such as formaldehyde).</div>
+<div class="line"><strong>Recommendation:</strong> use default.</div>
 </div>
 </div>
 <div class="topic">
@@ -314,7 +317,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Thiel&#8217;s C_3 parameter, which is multiplied to the full gradient.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
-<div class="line"><strong>Default:</strong> 2.0.</div>
+<div class="line"><strong>Default:</strong> 2.0 (MECI) or 0.01 (MDCI).</div>
 </div>
 </div>
 <div class="topic">
@@ -323,6 +326,25 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><strong>Description:</strong> Thiel&#8217;s C_4 parameter, which is multiplied to the gradient difference.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
 <div class="line"><strong>Default:</strong> 0.5</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">mdci_reference_geometry</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify reference geometry used in MDCI optimization.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: specify reference geometry in the <code class="docutils literal"><span class="pre">refgeom</span></code> block.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: the first geometry for optimization is considered as the reference geometry.</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">refgeom</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Reference geometry for MDCI optimization. The format is the same as the <code class="docutils literal"><span class="pre">molecule</span></code> block.</div>
 </div>
 </div>
 </div>
