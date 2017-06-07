@@ -74,7 +74,8 @@ shared_ptr<GradFile> Force::compute() {
 
   if (jobtitle == "forces") {
 
-    auto joblist = idata_->get_child("grads");        // gradients (and nacmes) to be evaluated
+    // list of gradients (and NACMEs) to be evaluated. maxziter, nacmtype, target, target2 can be specified
+    auto joblist = idata_->get_child("grads");
 
     if (method == "casscf") {
 
