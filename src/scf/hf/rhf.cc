@@ -79,9 +79,9 @@ void RHF::compute() {
         } else {
 #if 1
           shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM(aden);
-          shared_ptr<const Matrix> tmpK = fmm_->compute_K_ff_from_den(aden, overlap_);
-          //focka = make_shared<const Matrix>(*hcore_ + *tmpJ);
-          focka = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK);
+          //shared_ptr<const Matrix> tmpK = fmm_->compute_K_ff_from_den(aden, overlap_);
+          focka = make_shared<const Matrix>(*hcore_ + *tmpJ);
+          //focka = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK);
 #else
           shared_ptr<const Matrix> tmpJ = fmm_->compute_Fock_FMM_J(aden);
           shared_ptr<const Matrix> tmpKnf = fmmK->compute_Fock_FMM_K(aden);

@@ -390,32 +390,36 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     }
 
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
-    auto ff_corr = make_shared<Matrix>(nbasis_, nbasis_);
+    auto nf_corr = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = (do_multiresolution_) ? box_[i]->compute_Fock_nf_partial(density, maxden) : box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
-        //if (do_multiresolution_) {
-        //  auto ffci = box_[i]->compute_Fock_ff_corr(density);
-        //  blas::ax_plus_y_n(1.0, ffci->data(), nbasis_*nbasis_, ff_corr->data());
-        //}
+        if (do_multiresolution_) {
+          auto nfci = box_[i]->compute_Fock_nf_corr(density, maxden);
+          blas::ax_plus_y_n(1.0, nfci->data(), nbasis_*nbasis_, nf_corr->data());
+        }
       }
     out->allreduce();
     ff->allreduce();
-    ff_corr->allreduce();
+    nf_corr->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
 
-    const double enjc = 0.5*density->dot_product(*ff_corr);
-    cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enjc << endl;
-
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
-    *out += *ff_corr;
+    
+    if (do_multiresolution_) {
+      //for (int i = 0; i != nbasis_; ++i) nf_corr->element(i, i) *= 2.0;
+      //nf_corr->fill_upper();
+      const double enjc = 0.5*density->dot_product(*nf_corr);
+      cout << "    o  Additional far-field Coulomb energy: " << setprecision(6) << enjc << endl;
+      *out += *nf_corr;
+    }
   }
 #endif
 

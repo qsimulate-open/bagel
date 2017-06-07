@@ -45,7 +45,7 @@ bool Branch::is_neigh(shared_ptr<const Branch> b) const {
   for (int i = 0; i != 3; ++i)
     rr += pow(centre_[i] - b->centre()[i], 2);
 
-  const bool out = (sqrt(rr) <= extent_ + b->extent());
+  const bool out = (sqrt(rr) <= 1.2*(extent_ + b->extent()));
   return out;
 
 }

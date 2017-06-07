@@ -123,12 +123,12 @@ void Box::get_branches() {
       ++cnt;
     }
   }
-  assert(nsp == nsp());
+  assert(nsp == sp_.size());
   branch_.resize(cnt);
 
-  cout << "*** Branches " << endl;
-  for (auto& b : branch_)
-    cout << "IWS = " << b->ws() << " NSP = " << b->sp().size() << endl;
+  //cout << "*** Branches " << endl;
+  //for (auto& b : branch_)
+    //cout << "IWS = " << b->ws() << " NSP = " << b->sp().size() << endl;
 }
 
 
@@ -479,7 +479,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
     }
   }
 
-  cout << "**** NTASK = " << ntask << endl;
+  //cout << "**** NTASK = " << ntask << endl;
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 
@@ -720,68 +720,6 @@ shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr
   }
 
   return mrb;
-}
-
-
-shared_ptr<const Matrix> Box::compute_Fock_ff_corr(shared_ptr<const Matrix> density) const {
-
-  assert(nchild() == 0);
-  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
-
-  cout << "**** COMPUTING CORRECTION TO NF **** " << endl;
-  TaskQueue<function<void(void)>> tasks(nsp());
-  mutex jmutex;
-  for (auto& br0 : branch_) {
-    for (auto& neigh : neigh_) {
-      for (auto& br1 : neigh->branch()) {
-        if (br0->is_neigh(br1)) {
-          for (auto& sp0 : br0->sp()) {
-            if (sp0->schwarz() < thresh_) continue;
-            for (auto& sp1 : br1->sp()) {
-              if (sp1->schwarz() < thresh_) continue;
-
-              tasks.emplace_back(
-                [this, &out, &sp0, &sp1, &density, &jmutex]() {
-                  MultipoleBatch mpole0(sp0->shells(), sp0->centre(), lmax_);    mpole0.compute();
-                  vector<const complex<double>*> dat(nmult_);
-                  const int dimb0 = sp0->shell(0)->nbasis();
-                  const int dimb1 = sp0->shell(1)->nbasis();
-                  auto olm = make_shared<ZVectorB>(nmult_);
-                  for (int k = 0; k != mpole0.num_blocks(); ++k) {
-                    size_t cnt = 0;
-                    for (int i = sp0->offset(1); i != dimb1 + sp0->offset(1); ++i) {
-                      (*olm)(k) += conj(blas::dot_product_noconj(mpole0.data() + mpole0.size_block()*k + cnt, dimb0, density->element_ptr(sp0->offset(0), i)));
-                      cnt += dimb0;
-                    }
-                  }
-
-                  array<double, 3> r12;
-                  r12[0] = sp0->centre(0) - sp1->centre(0);
-                  r12[1] = sp0->centre(1) - sp1->centre(1);
-                  r12[2] = sp0->centre(2) - sp1->centre(2);
-                  shared_ptr<const ZVectorB> slocal = shift_localM(olm, r12);
-
-                  MultipoleBatch mpole1(sp1->shells(), sp1->centre(), lmax_);    mpole1.compute();
-                  for (int i = 0; i != nmult_; ++i)
-                    dat[i] = mpole1.data() + mpole1.size_block()*i;
-
-                  lock_guard<mutex> lock(jmutex);
-                  for (int i = sp1->offset(1); i != dimb1 + sp1->offset(1); ++i)
-                    for (int j = sp1->offset(0); j != dimb0 + sp1->offset(0); ++j)
-                      for (int k = 0; k != mpole1.num_blocks(); ++k)
-                        out->element(i, j) += conj(*dat[k]++) * (*slocal)(k);
-                }
-              );
-            } 
-          } 
-        }
-      }
-    }
-  }
-  tasks.compute();
-  assert(out->get_imag_part()->rms() < 1e-10);
-
-  return out->get_real_part();
 }
 
 
@@ -1415,12 +1353,14 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_partial(shared_ptr<const Matrix> d
               ++ntask;
             }
           }
+        } else {
+          ++ntask;
         }
       }
     }
   }
 
-  cout << "**** NTASK = " << ntask << endl;
+  //cout << "**** NTASK (WS) = " << ntask << endl;
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 
@@ -1531,4 +1471,211 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_partial(shared_ptr<const Matrix> d
   tasks.compute();
 
   return out;
+}
+
+
+shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
+
+  assert(nchild() == 0);
+  auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
+  out->zero();
+
+//  const int shift = sizeof(int) * 4;
+  const int nsh = sqrt(max_den->size());
+  assert (nsh*nsh == max_den->size());
+
+  int ntask = 0;
+  for (auto& br0 : branch_) {
+    for (auto& neigh : neigh_) {
+      for (auto& br1 : neigh->branch()) {
+        if (!br0->is_neigh(br1)) {
+          for (auto& v01 : br0->sp()) {
+            if (v01->schwarz() < thresh_) continue;
+            const int i0 = v01->shell_ind(1);
+            const int i1 = v01->shell_ind(0);
+            //if (i1 < i0) continue;
+            const int i01 = i0 * nsh + i1;
+            const double density_01 = (*max_den)(i01) * 4.0;
+
+            for (auto& v23 : br1->sp()) {
+              if (v23->schwarz() < thresh_) continue;
+              const int i2 = v23->shell_ind(1);
+              //if (i2 < i0) continue;
+              const int i3 = v23->shell_ind(0);
+              //if (i3 < i2) continue;
+              const int i23 = i2 * nsh + i3;
+              //if (i23 < i01) continue;
+
+              const double density_23 = (*max_den)(i23) * 4.0;
+              const double density_02 = (*max_den)(i0 * nsh + i2);
+              const double density_03 = (*max_den)(i0 * nsh + i3);
+              const double density_12 = (*max_den)(i1 * nsh + i2);
+              const double density_13 = (*max_den)(i1 * nsh + i3);
+
+              const double mulfactor = max(max(max(density_01, density_02),
+                                               max(density_03, density_12)),
+                                               max(density_13, density_23));
+              const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+              const bool skip_schwarz = integral_bound < schwarz_thresh_;
+              if (skip_schwarz) continue;
+              ++ntask;
+            }
+          }
+        } else {
+          ++ntask;
+        }
+      }
+    }
+  }
+
+  //cout << "**** NTASK (corr) = " << ntask << endl;
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
+
+  for (auto& br0 : branch_) {
+    for (auto& neigh : neigh_) {
+      for (auto& br1 : neigh->branch()) {
+        if (!br0->is_neigh(br1)) {
+          for (auto& v01 : br0->sp()) {
+            if (v01->schwarz() < thresh_) continue;
+            const int i0 = v01->shell_ind(0);
+            const int i1 = v01->shell_ind(1);
+            //if (i1 < i0) continue;
+            shared_ptr<const Shell> b0 = v01->shell(0);
+            const int b0offset = v01->offset(0);
+            const int b0size = b0->nbasis();
+            shared_ptr<const Shell> b1 = v01->shell(1);
+            const int b1offset = v01->offset(1);
+            const int b1size = b1->nbasis();
+
+            const int i01 = i0 * nsh + i1;
+            const double density_01 = (*max_den)(i01) * 4.0;
+
+            for (auto& v23 : br1->sp()) {
+              if (v23->schwarz() < thresh_) continue;
+              const int i2 = v23->shell_ind(0);
+              //if (i2 < i0) continue;
+              const int i3 = v23->shell_ind(1);
+              //if (i3 < i2) continue;
+              shared_ptr<const Shell> b2 = v23->shell(0);
+              const int b2offset = v23->offset(0);
+              const int b2size = b2->nbasis();
+              shared_ptr<const Shell> b3 = v23->shell(1);
+              const int b3offset = v23->offset(1);
+              const int b3size = b3->nbasis();
+
+              const int i23 = i2 * nsh + i3;
+              //if (i23 < i01) continue;
+
+              const double density_23 = (*max_den)(i23) * 4.0;
+              const double density_02 = (*max_den)(i0 * nsh + i2);
+              const double density_03 = (*max_den)(i0 * nsh + i3);
+              const double density_12 = (*max_den)(i1 * nsh + i2);
+              const double density_13 = (*max_den)(i1 * nsh + i3);
+
+              const double mulfactor = max(max(max(density_01, density_02),
+                                               max(density_03, density_12)),
+                                               max(density_13, density_23));
+              const double integral_bound = mulfactor * v01->schwarz() * v23->schwarz();
+              const bool skip_schwarz = integral_bound < schwarz_thresh_;
+              if (skip_schwarz) continue;
+
+#if 1
+              tasks.emplace_back(
+                [this, &out, &density, &v01, &v23, b0offset, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, &jmutex]() {
+                  auto olm = make_shared<ZVectorB>(nmult_);
+                  {
+                    MultipoleBatch mpole0(v01->shells(), v01->centre(), lmax_);
+                    mpole0.compute();
+                    for (int k = 0; k != nmult_; ++k) {
+                      size_t cnt = 0;
+                      for (int i = b1offset; i != b1size + b1offset; ++i) {
+                        (*olm)(k) += conj(blas::dot_product_noconj(mpole0.data() + mpole0.size_block()*k + cnt, b0size, density->element_ptr(b0offset, i)));
+                        cnt += b0size;
+                      }
+                    }
+                  }
+
+                  array<double, 3> r12;
+                  r12[0] = v01->centre(0) - v23->centre(0);
+                  r12[1] = v01->centre(1) - v23->centre(1);
+                  r12[2] = v01->centre(2) - v23->centre(2);
+                  shared_ptr<const ZVectorB> slocal = shift_localM(olm, r12);
+
+                  auto jrs = make_shared<ZMatrix>(b3size, b2size);
+                  {
+                    vector<const complex<double>*> dat(nmult_);
+                    MultipoleBatch mpole1(v23->shells(), v23->centre(), lmax_);
+                    mpole1.compute();
+                    for (int i = 0; i != nmult_; ++i)
+                      dat[i] = mpole1.data() + mpole1.size_block()*i;
+
+                    lock_guard<mutex> lock(jmutex);
+                    for (int i = b3offset; i != b3size + b3offset; ++i)
+                      for (int j = b2offset; j != b2size + b2offset; ++j)
+                        for (int k = 0; k != nmult_; ++k)
+                          out->element(i, j) += conj(*dat[k]++) * (*slocal)(k);
+                  }
+                  //out->add_block(1.0, b3offset, b2offset, b3size, b2size, jrs->data());
+                }
+              );
+#else
+              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+              tasks.emplace_back(
+                [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
+
+                  ERIBatch eribatch(input, mulfactor);
+                  eribatch.compute();
+                  const double* eridata = eribatch.data();
+
+                  const double* density_data = density->data();
+                  lock_guard<mutex> lock(jmutex);
+                  for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+                    const int j0n = j0 * density->ndim();
+                    for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                      if (j1 < j0) {
+                        eridata += b2size * b3size;
+                        continue;
+                      }
+                      const int j1n = j1 * density->ndim();
+                      const unsigned int nj01 = (j0 << shift) + j1;
+                      const double scale01 = (j0 == j1) ? 0.5 : 1.0;
+                      for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                        const int j2n = j2 * density->ndim();
+                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                          if (j3 < j2) continue;
+                          const unsigned int nj23 = (j2 << shift) + j3;
+                          if (nj23 < nj01 && i01 == i23) continue;
+                          const double scale23 = (j2 == j3) ? 0.5 : 1.0;
+                          const double scale = (nj01 == nj23) ? 0.25 : 0.5;
+
+                          const double eri = *eridata;
+                          const double intval = eri * scale * scale01 * scale23;
+                          const double intval4 = 4.0 * intval;
+                          out->element(j1, j0) += density_data[j2n + j3] * intval4;
+                          out->element(j3, j2) += density_data[j0n + j1] * intval4;
+                          out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
+                          out->element(j3, j0) -= density_data[j1n + j2] * intval;
+                          out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
+                          out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+                        }
+                      }
+                    }
+                  }
+
+                }
+              );
+#endif
+
+            }
+          }
+        }
+      }
+    }
+  }
+
+  tasks.compute();
+
+  return out->get_real_part();
 }
