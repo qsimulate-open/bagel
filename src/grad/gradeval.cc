@@ -62,6 +62,8 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const in
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
+  energy_ = ref_->energy(0);
+
   return grad;
 }
 
@@ -88,6 +90,8 @@ shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const in
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
+  energy_ = ref_->energy(0);
+
   return grad;
 }
 
@@ -113,6 +117,8 @@ shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const i
   dipole_ = task_->scf_dipole();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }
@@ -146,6 +152,8 @@ shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int
   dipole_ = task_->scf_dipole();
 
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }

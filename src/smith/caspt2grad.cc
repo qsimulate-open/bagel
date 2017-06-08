@@ -513,7 +513,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = cider->copy();
 
-  if (nacmtype != 1)
+  if (nacmtype == 0 || nacmtype == 2)
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -632,7 +632,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   // compute gradients
   shared_ptr<GradFile> gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
 
-  gradient->scale(1.0/egap);
+  if (nacmtype != 3)
+    gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
   timer.tick_print("NACME integral contraction");
 

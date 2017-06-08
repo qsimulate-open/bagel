@@ -341,6 +341,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int i
   grad_->print();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
+  energy_ = ref_->energy(0);
+
   return grad_;
 }
 

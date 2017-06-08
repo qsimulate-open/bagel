@@ -72,14 +72,16 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
-  x1->scale(1.0 / x1norm);
+  if (x1norm > 1.0e-8)
+    x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
   xf->scale(2.0 * en / x1norm);
   auto xg = make_shared<GradFile>(*cgrad1);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
 
   auto proj = make_shared<Matrix>(n3, n3);
@@ -88,7 +90,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   x2 = x2->transform(proj, false);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
@@ -290,7 +293,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
-  x1->scale(1.0 / x1norm);
+  if (x1norm > 1.0e-8)
+    x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
   xf->scale(2.0 * en / x1norm);
@@ -310,7 +314,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   tie(dist,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
 
   auto proj = make_shared<Matrix>(n3, n3);
@@ -319,7 +324,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   x2 = x2->transform(proj, false);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);

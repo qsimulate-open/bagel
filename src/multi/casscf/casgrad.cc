@@ -364,7 +364,8 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_nacme(const int istate, const int
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
   gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
-  gradient->scale(1.0/egap);
+  if (nacmtype != 3)
+    gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
 
   cout << setw(50) << left << "  * NACME computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
