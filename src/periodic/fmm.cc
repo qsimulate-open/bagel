@@ -36,7 +36,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 50;
+const static int batchsize = 25;
 
 const static Legendre plm;
 
@@ -414,8 +414,8 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     *out += *ff;
     
     if (do_multiresolution_) {
-      //for (int i = 0; i != nbasis_; ++i) nf_corr->element(i, i) *= 2.0;
-      //nf_corr->fill_upper();
+      for (int i = 0; i != nbasis_; ++i) nf_corr->element(i, i) *= 2.0;
+      nf_corr->fill_upper();
       const double enjc = 0.5*density->dot_product(*nf_corr);
       cout << "    o  Additional far-field Coulomb energy: " << setprecision(6) << enjc << endl;
       *out += *nf_corr;

@@ -1014,13 +1014,6 @@ double Box::coulomb_ff() const {
 }
 
 
-double Box::exchange_ff() const {
-  const complex<double> en = 0.5*olm_ji_->dot_product(*mlm_ji_);
-  assert(abs(en.imag()) < 1e-10);
-  return en.real();
-}
-
-
 shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
@@ -1480,7 +1473,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
   out->zero();
 
-//  const int shift = sizeof(int) * 4;
+  const int shift = sizeof(int) * 4;
   const int nsh = sqrt(max_den->size());
   assert (nsh*nsh == max_den->size());
 
@@ -1493,18 +1486,18 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
             if (v01->schwarz() < thresh_) continue;
             const int i0 = v01->shell_ind(1);
             const int i1 = v01->shell_ind(0);
-            //if (i1 < i0) continue;
+            if (i1 < i0) continue;
             const int i01 = i0 * nsh + i1;
             const double density_01 = (*max_den)(i01) * 4.0;
 
             for (auto& v23 : br1->sp()) {
               if (v23->schwarz() < thresh_) continue;
               const int i2 = v23->shell_ind(1);
-              //if (i2 < i0) continue;
+              if (i2 < i0) continue;
               const int i3 = v23->shell_ind(0);
-              //if (i3 < i2) continue;
+              if (i3 < i2) continue;
               const int i23 = i2 * nsh + i3;
-              //if (i23 < i01) continue;
+              if (i23 < i01) continue;
 
               const double density_23 = (*max_den)(i23) * 4.0;
               const double density_02 = (*max_den)(i0 * nsh + i2);
@@ -1540,7 +1533,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
             if (v01->schwarz() < thresh_) continue;
             const int i0 = v01->shell_ind(0);
             const int i1 = v01->shell_ind(1);
-            //if (i1 < i0) continue;
+            if (i1 < i0) continue;
             shared_ptr<const Shell> b0 = v01->shell(0);
             const int b0offset = v01->offset(0);
             const int b0size = b0->nbasis();
@@ -1554,9 +1547,9 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
             for (auto& v23 : br1->sp()) {
               if (v23->schwarz() < thresh_) continue;
               const int i2 = v23->shell_ind(0);
-              //if (i2 < i0) continue;
+              if (i2 < i0) continue;
               const int i3 = v23->shell_ind(1);
-              //if (i3 < i2) continue;
+              if (i3 < i2) continue;
               shared_ptr<const Shell> b2 = v23->shell(0);
               const int b2offset = v23->offset(0);
               const int b2size = b2->nbasis();
@@ -1565,7 +1558,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
               const int b3size = b3->nbasis();
 
               const int i23 = i2 * nsh + i3;
-              //if (i23 < i01) continue;
+              if (i23 < i01) continue;
 
               const double density_23 = (*max_den)(i23) * 4.0;
               const double density_02 = (*max_den)(i0 * nsh + i2);
@@ -1580,93 +1573,90 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
               const bool skip_schwarz = integral_bound < schwarz_thresh_;
               if (skip_schwarz) continue;
 
-#if 1
               tasks.emplace_back(
-                [this, &out, &density, &v01, &v23, b0offset, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, &jmutex]() {
-                  auto olm = make_shared<ZVectorB>(nmult_);
+                [this, &out, &density, &v23, &v01, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
+                  auto olm_01 = make_shared<ZMatrix>(b1size*b0size, nmult_);
                   {
-                    MultipoleBatch mpole0(v01->shells(), v01->centre(), lmax_);
-                    mpole0.compute();
-                    for (int k = 0; k != nmult_; ++k) {
-                      size_t cnt = 0;
-                      for (int i = b1offset; i != b1size + b1offset; ++i) {
-                        (*olm)(k) += conj(blas::dot_product_noconj(mpole0.data() + mpole0.size_block()*k + cnt, b0size, density->element_ptr(b0offset, i)));
-                        cnt += b0size;
-                      }
-                    }
+                    MultipoleBatch mpole01(v01->shells(), v01->centre(), lmax_);
+                    mpole01.compute();
+                    assert(mpole01.size_block() == b1size*b0size);
+                    for (int k = 0; k != nmult_; ++k)
+                      copy_n(mpole01.data() + mpole01.size_block()*k, b1size*b0size, olm_01->element_ptr(0, k));
                   }
 
                   array<double, 3> r12;
                   r12[0] = v01->centre(0) - v23->centre(0);
                   r12[1] = v01->centre(1) - v23->centre(1);
                   r12[2] = v01->centre(2) - v23->centre(2);
-                  shared_ptr<const ZVectorB> slocal = shift_localM(olm, r12);
+                  shared_ptr<const ZMatrix> slocalX = shift_localMX(lmax_, olm_01, r12);
+                  assert(slocalX.mdim() == b0size*b1size);
+////
+//                  auto slocal = make_shared<ZVectorB>(nmult_);
+//                  for (int k = 0; k != nmult_; ++k) {
+//                    const complex<double>* dat = slocalX->element_ptr(0, k);
+//                    for (int i = b0offset; i != b0size + b0offset; ++i)
+//                      for (int j = b1offset; j != b1size + b1offset; ++j)
+//                        (*slocal)(k) += density->element(i, j) * (*dat++);
+//                  }
+////
 
-                  auto jrs = make_shared<ZMatrix>(b3size, b2size);
                   {
-                    vector<const complex<double>*> dat(nmult_);
-                    MultipoleBatch mpole1(v23->shells(), v23->centre(), lmax_);
-                    mpole1.compute();
-                    for (int i = 0; i != nmult_; ++i)
-                      dat[i] = mpole1.data() + mpole1.size_block()*i;
+                    MultipoleBatch mpole23(v23->shells(), v23->centre(), lmax_);
+                    mpole23.compute();
+                    assert(mpole23.size_block() == b2size*b3size);
 
-                    lock_guard<mutex> lock(jmutex);
-                    for (int i = b3offset; i != b3size + b3offset; ++i)
-                      for (int j = b2offset; j != b2size + b2offset; ++j)
-                        for (int k = 0; k != nmult_; ++k)
-                          out->element(i, j) += conj(*dat[k]++) * (*slocal)(k);
-                  }
-                  //out->add_block(1.0, b3offset, b2offset, b3size, b2size, jrs->data());
-                }
-              );
-#else
-              array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
-
-              tasks.emplace_back(
-                [this, &out, &density, input, b0offset, i01, i23, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, mulfactor, &jmutex]() {
-
-                  ERIBatch eribatch(input, mulfactor);
-                  eribatch.compute();
-                  const double* eridata = eribatch.data();
+///////
+//
+//                    lock_guard<mutex> lock(jmutex);
+//                    for (int i = b3offset; i != b3size + b3offset; ++i)
+//                      for (int j = b2offset; j != b2size + b2offset; ++j)
+//                        for (int k = 0; k != nmult_; ++k)
+//                          out->element(i, j) += conj(*dat[k]++) * (*slocal)(k);
+// 
+///////
 
                   const double* density_data = density->data();
                   lock_guard<mutex> lock(jmutex);
                   for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
                     const int j0n = j0 * density->ndim();
+                    const int jj0 = j0-b0offset;
                     for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
-                      if (j1 < j0) {
-                        eridata += b2size * b3size;
-                        continue;
-                      }
+                      if (j1 < j0) continue;
                       const int j1n = j1 * density->ndim();
+                      const int jj1 = j1-b1offset;
                       const unsigned int nj01 = (j0 << shift) + j1;
                       const double scale01 = (j0 == j1) ? 0.5 : 1.0;
                       for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
                         const int j2n = j2 * density->ndim();
-                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                        const int jj2 = j2-b2offset;
+                        for (int j3 = b3offset; j3 != b3offset + b3size; ++j3) {
                           if (j3 < j2) continue;
+                          const int jj3 = j3-b3offset;
                           const unsigned int nj23 = (j2 << shift) + j3;
                           if (nj23 < nj01 && i01 == i23) continue;
                           const double scale23 = (j2 == j3) ? 0.5 : 1.0;
                           const double scale = (nj01 == nj23) ? 0.25 : 0.5;
 
-                          const double eri = *eridata;
-                          const double intval = eri * scale * scale01 * scale23;
-                          const double intval4 = 4.0 * intval;
-                          out->element(j1, j0) += density_data[j2n + j3] * intval4;
-                          out->element(j3, j2) += density_data[j0n + j1] * intval4;
-                          out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
-                          out->element(j3, j0) -= density_data[j1n + j2] * intval;
-                          out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
-                          out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+                          for (int k = 0; k != nmult_; ++k) {
+                            const complex<double> mlm_01 = slocalX->element(jj1*b0size+jj0, k);
+                            const complex<double> olm_23 = *(mpole23.data()+mpole23.size_block()*k+jj3*b2size+jj2);
+                            const double intval = scale * scale01 * scale23 * (mlm_01 * olm_23).real();
+                            const double intval4 = 4.0 * intval;
+                            out->element(j1, j0) += density_data[j2n + j3] * intval4;
+                            out->element(j3, j2) += density_data[j0n + j1] * intval4;
+                            out->element(max(j2, j0), min(j2,j0)) -= density_data[j1n + j3] * intval;
+                            out->element(j3, j0) -= density_data[j1n + j2] * intval;
+                            out->element(max(j1,j2), min(j1,j2)) -= density_data[j0n + j3] * intval;
+                            out->element(max(j1,j3), min(j1,j3)) -= density_data[j0n + j2] * intval;
+                          }
                         }
                       }
                     }
                   }
+                }
 
                 }
               );
-#endif
 
             }
           }
