@@ -47,47 +47,41 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
 
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
-    GradEval<CASSCF> eval1(cinput, current_, ref, target_state_, maxziter_);
-    cgrad1 = eval1.compute();
+    GradEval<CASSCF> eval1(cinput, current_, ref);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASSCF> eval2(cinput, current_, refs, target_state2_, maxziter_);
-    cgrad2 = eval2.compute();
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute();
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else if (method_ == "caspt2") {
-    GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_, maxziter_);
-    cgrad1 = eval1.compute();
+    GradEval<CASPT2Grad> eval1(cinput, current_, ref);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASPT2Grad> eval2(cinput, current_, refs, target_state2_, maxziter_);
-    cgrad2 = eval2.compute();
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute();
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
-  x1->scale(1.0 / x1norm);
+  if (x1norm > 1.0e-8)
+    x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
   xf->scale(2.0 * en / x1norm);
   auto xg = make_shared<GradFile>(*cgrad1);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
 
   auto proj = make_shared<Matrix>(n3, n3);
@@ -96,7 +90,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   x2 = x2->transform(proj, false);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
@@ -273,40 +268,33 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
 
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
-    GradEval<CASSCF> eval1(cinput, current_, ref, target_state_, maxziter_);
-    cgrad1 = eval1.compute();
+    GradEval<CASSCF> eval1(cinput, current_, ref);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASSCF> eval2(cinput, current_, refs, target_state2_, maxziter_);
-    cgrad2 = eval2.compute();
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASSCF> evaln(cinput, current_ ,refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute();
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else if (method_ == "caspt2") {
-    GradEval<CASPT2Grad> eval1(cinput, current_, ref, target_state_, maxziter_);
-    cgrad1 = eval1.compute();
+    GradEval<CASPT2Grad> eval1(cinput, current_, ref);
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
     prev_ref = eval1.ref();
-    shared_ptr<const Reference> refs = eval1.ref();
     en2 = eval1.energy();
 
-    GradEval<CASPT2Grad> eval2(cinput, current_, refs, target_state2_, maxziter_);
-    cgrad2 = eval2.compute();
-    refs = eval1.ref();
-    en1 = eval2.energy();
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    en1 = eval1.energy();
 
-    NacmEval<CASPT2Nacm> evaln(cinput, current_, refs, target_state2_, target_state_, nacmtype_, maxziter_);
-    x2 = evaln.compute();
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
-  x1->scale(1.0 / x1norm);
+  if (x1norm > 1.0e-8)
+    x1->scale(1.0 / x1norm);
   auto xf = make_shared<GradFile>(*x1);
   const double en  = en2 - en1;
   xf->scale(2.0 * en / x1norm);
@@ -326,7 +314,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   tie(dist,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
 
   auto proj = make_shared<Matrix>(n3, n3);
@@ -335,7 +324,8 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   x2 = x2->transform(proj, false);
   {
     const double x2norm = x2->norm();
-    x2->scale(1.0 / x2norm);
+    if (x2norm > 1.0e-8)
+      x2->scale(1.0 / x2norm);
   }
   proj->unit();
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
@@ -356,57 +346,57 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
   if (!numerical) {
     if (method_ == "uhf") {
 
-      GradEval<UHF> eval(cinput, current_, ref, target_state_);
-      out = eval.compute();
+      GradEval<UHF> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "rohf") {
 
-      GradEval<ROHF> eval(cinput, current_, ref, target_state_);
-      out = eval.compute();
+      GradEval<ROHF> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "hf") {
 
-      GradEval<RHF> eval(cinput, current_, ref, target_state_);
-      out = eval.compute();
+      GradEval<RHF> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "ks") {
 
-      GradEval<KS> eval(cinput, current_, ref, target_state_);
-      out = eval.compute();
+      GradEval<KS> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "dhf") {
 
-      GradEval<Dirac> eval(cinput, current_, ref, target_state_);
-      out = eval.compute();
+      GradEval<Dirac> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "mp2") {
 
-      GradEval<MP2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
-      out = eval.compute();
+      GradEval<MP2Grad> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_, maxziter_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "casscf") {
 
-      GradEval<CASSCF> eval(cinput, current_, ref, target_state_, maxziter_);
-      out = eval.compute();
+      GradEval<CASSCF> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_, maxziter_);
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "caspt2") {
 
-      GradEval<CASPT2Grad> eval(cinput, current_, ref, target_state_, maxziter_);
-      out = eval.compute();
+      GradEval<CASPT2Grad> eval(cinput, current_, ref);
+      out = eval.compute("force", target_state_, maxziter_);
       prev_ref = eval.ref();
       en = eval.energy();
 

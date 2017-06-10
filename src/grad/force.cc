@@ -37,24 +37,16 @@ Force::Force(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared
 
 
 shared_ptr<GradFile> Force::compute() {
+  string firsttitle = to_lower(idata_->get<string>("title", ""));
+  const string jobtitle = (firsttitle == "hessian") ? "force" : firsttitle;
   auto input = idata_->get_child("method");
-  const int target = idata_->get<int>("target", 0);
-  const string jobtitle = to_lower(idata_->get<string>("title", ""));
-  const int target2= idata_->get<int>("target2", 1);
-  const int nacmtype = idata_->get<int>("nacmtype", 0);
   const bool export_grad = idata_->get<bool>("export", false);
   const bool export_single = idata_->get<bool>("export_single", false);
-  const int maxziter = idata_->get<int>("maxziter", 100);
-#ifndef DISABLE_SERIALIZATION
-  const bool refsave = idata_->get<bool>("save_ref", false);
-  string refname;
-  if (refsave) refname = idata_->get<string>("ref_out", "reference");
-#endif
 
   shared_ptr<const Reference> ref = ref_;
   auto m = input->begin();
   for ( ; m != --input->end(); ++m) {
-    const std::string title = to_lower((*m)->get<std::string>("title", ""));
+    const string title = to_lower((*m)->get<string>("title", ""));
     if (title != "molecule") {
       tie(ignore, ref) = get_energy(title, *m, geom_, ref);
     } else {
@@ -78,91 +70,142 @@ shared_ptr<GradFile> Force::compute() {
   shared_ptr<GradFile> out;
 
   const string method = to_lower(cinput->get<string>("title", ""));
+  vector<double> energyvec;
 
-  if (!numerical_) {
+  if (jobtitle == "forces") {
+
+    // list of gradients (and NACMEs) to be evaluated. maxziter, nacmtype, target, target2 can be specified
+    auto joblist = idata_->get_child("grads");
+
+    if (method == "casscf") {
+
+      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+
+      for (auto& m : *joblist) {
+        const string mtitle= to_lower(m->get<string>("title", "force"));
+        const int target  = m->get<int>("target", 0);
+        const int target2 = m->get<int>("target2", 1);
+        const int maxziter = m->get<int>("maxziter", 100);
+        const int nacmtype = m->get<int>("nacmtype", 0);
+        out = force->compute(mtitle, target, maxziter, target2, nacmtype);
+
+        if (export_grad)
+          force_export(export_single, target, target2, energyvec, mtitle, out);
+      }
+
+    } else if (method == "caspt2") {
+
+      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+
+      for (auto& m : *joblist) {
+        const string mtitle= to_lower(m->get<string>("title", "force"));
+        const int target  = m->get<int>("target", 0);
+        const int target2 = m->get<int>("target2", 1);
+        const int maxziter = m->get<int>("maxziter", 100);
+        const int nacmtype = m->get<int>("nacmtype", 0);
+        out = force->compute(mtitle, target, maxziter, target2, nacmtype);
+
+        if (export_grad)
+          force_export(export_single, target, target2, energyvec, mtitle, out);
+      }
+
+    } else {
+
+      throw runtime_error("multiple force calculations can be only done with CASSCF and CASPT2");
+
+    }
+
+  } else if (!numerical_) {
+
+    const int target = idata_->get<int>("target", 0);
+    const int target2= idata_->get<int>("target2", 1);
+
     if (method == "uhf") {
 
-      auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      auto force = make_shared<GradEval<UHF>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "rohf") {
 
-      auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      auto force = make_shared<GradEval<ROHF>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "hf") {
 
-      auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "ks") {
 
-      auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      auto force = make_shared<GradEval<KS>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "dhf") {
 
-      auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_, target);
-      out = force->compute();
+      auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target);
       ref = force->ref();
 
     } else if (method == "mp2") {
 
-      auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      const int maxziter = idata_->get<int>("maxziter", 100);
+      auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target, maxziter);
       ref = force->ref();
       force_dipole_ = force->dipole();
-
-    } else if (method == "casscf" && jobtitle == "nacme") {
-
-      auto force = make_shared<NacmEval<CASSCF>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
-      out = force->compute();
-      ref = force->ref();
-
-    } else if (method == "casscf" && jobtitle == "dgrad") {
-
-      auto force = make_shared<DgradEval<CASSCF>>(cinput, geom_, ref_, target, target2, maxziter);
-      out = force->compute();
-      ref = force->ref();
 
     } else if (method == "casscf") {
 
-      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      const int maxziter = idata_->get<int>("maxziter", 100);
+      const int nacmtype = idata_->get<int>("nacmtype", 0);
+      auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target, maxziter, target2, nacmtype);
       ref = force->ref();
       force_dipole_ = force->dipole();
-
-    } else if (method == "caspt2" && jobtitle == "nacme") {
-
-      auto force = make_shared<NacmEval<CASPT2Nacm>>(cinput, geom_, ref_, target, target2, nacmtype, maxziter);
-      out = force->compute();
-      ref = force->ref();
 
     } else if (method == "caspt2") {
 
-      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_, target, maxziter);
-      out = force->compute();
+      const int maxziter = idata_->get<int>("maxziter", 100);
+      const int nacmtype = idata_->get<int>("nacmtype", 0);
+      auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
+      energyvec = force->energyvec();
+      out = force->compute(jobtitle, target, maxziter, target2, nacmtype);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
-    }
-    else {
+    } else {
 
         numerical_ = true;
         cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
 
     }
+
+    if (export_grad)
+      force_export(export_single, target, target2, energyvec, jobtitle, out);
+
   }
 
   if (numerical_) {
+
+    const int target = idata_->get<int>("target", 0);
+    const int target2= idata_->get<int>("target2", 1);
 
     const double dx = idata_->get<double>("dx", 1.0e-3);
     const int nproc = idata_->get<int>("nproc", 1);
@@ -190,36 +233,33 @@ shared_ptr<GradFile> Force::compute() {
       }
     }
   }
-#ifndef DISABLE_SERIALIZATION
-  if (refsave) {
-    OArchive archive(refname);
-    archive << ref;
-  }
-#endif
 
-  if (export_grad) {
-    if (export_single) {
-      shared_ptr<Muffle> wholemuffle;
-      wholemuffle = make_shared<Muffle>("FORCE.out");
-      wholemuffle->mute();
-      cout << setw(20) << setprecision(10) << ref->energy(target) << endl;
-      out->print_export();
-      wholemuffle->unmute();
-    }
-    shared_ptr<Muffle> gradmuffle;
-    string mufflename = to_upper(jobtitle) + "_" + to_string(target);
-    if (jobtitle == "nacme") mufflename += ("_" + to_string(target2));
-    mufflename += ".out";
-    gradmuffle = make_shared<Muffle>(mufflename);
-    gradmuffle->mute();
-    out->print_export();
-    gradmuffle->unmute();
-    shared_ptr<Muffle> enermuffle;
-    enermuffle = make_shared<Muffle>("ENERGY.out");
-    enermuffle->mute();
-    for (int istate = 0; istate != ref->nstate(); ++istate)
-      cout << setw(20) << setprecision(10) << ref->energy(istate) << endl;
-    enermuffle->unmute();
-  }
   return out;
+}
+
+
+void Force::force_export(const bool export_single, const int target, const int target2, const vector<double> energy, const string jobtitle, const shared_ptr<GradFile> out) {
+  if (export_single) {
+    shared_ptr<Muffle> wholemuffle;
+    wholemuffle = make_shared<Muffle>("FORCE.out");
+    wholemuffle->mute();
+    cout << setw(20) << setprecision(10) << energy[target] << endl;
+    out->print_export();
+    wholemuffle->unmute();
+  }
+  shared_ptr<Muffle> gradmuffle;
+  string mufflename = to_upper(jobtitle) + "_" + to_string(target);
+  if (jobtitle == "nacme") mufflename += ("_" + to_string(target2));
+  mufflename += ".out";
+  gradmuffle = make_shared<Muffle>(mufflename);
+  gradmuffle->mute();
+  out->print_export();
+  gradmuffle->unmute();
+  shared_ptr<Muffle> enermuffle;
+  enermuffle = make_shared<Muffle>("ENERGY.out");
+  enermuffle->mute();
+  for (auto i : energy)
+    cout << setw(20) << setprecision(10) << i << endl;
+  enermuffle->unmute();
+
 }

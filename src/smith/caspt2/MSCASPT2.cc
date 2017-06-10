@@ -82,11 +82,9 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   den4ciall = make_shared<Vec<Tensor>>();
 }
 
-void MSCASPT2::MSCASPT2::solve_dm() {
+void MSCASPT2::MSCASPT2::solve_dm(const int targetJ, const int targetI) {
   {
     const int nstates = info_->ciwfn()->nstates();
-    const int targetJ = info_->target();
-    const int targetI = info_->target2();
 
     shared_ptr<Tensor> resultv = den1->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
@@ -177,10 +175,9 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
 }
 
 
-void MSCASPT2::MSCASPT2::solve_deriv() {
+void MSCASPT2::MSCASPT2::solve_deriv(const int target) {
   Timer timer;
   const int nstates = info_->ciwfn()->nstates();
-  const int target = info_->target();
 
   // first-order energy from the energy expression
   // TODO these can be computed more efficiently using mixed states
@@ -354,11 +351,9 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
   timer.tick_print("CI derivative contraction");
 }
 
-void MSCASPT2::MSCASPT2::solve_nacme() {
+void MSCASPT2::MSCASPT2::solve_nacme(const int targetJ, const int targetI) {
   Timer timer;
   const int nstates = info_->ciwfn()->nstates();
-  const int targetJ = info_->target();
-  const int targetI = info_->target2();
 
   // first-order energy from the energy expression
   {

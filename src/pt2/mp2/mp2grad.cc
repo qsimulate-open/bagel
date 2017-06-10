@@ -47,7 +47,15 @@ void MP2Grad::compute() { }
 
 
 template<>
-shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
+vector<double> GradEval<MP2Grad>::energyvec() const {
+  vector<double> out;
+  out.push_back(energy());
+  return out;
+}
+
+
+template<>
+shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   Timer time;
 
   const size_t ncore = task_->ncore();
@@ -263,7 +271,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute() {
 
   // solving CPHF (or Z-vector equation)
   auto cphf = make_shared<CPHF>(grad, ref_->eig(), halfjj, ref_);
-  shared_ptr<Matrix> dia = cphf->solve(task_->scf()->thresh_scf(), maxziter_);
+  shared_ptr<Matrix> dia = cphf->solve(task_->scf()->thresh_scf(), maxziter);
   *dmp2 += *dia;
 
   // total density matrix

@@ -29,13 +29,23 @@
 #include <src/wfn/reference.h>
 #include <src/ci/fci/distfci.h>
 #include <src/smith/tensor.h>
+#include <src/smith/smith.h>
 
 namespace bagel {
 
-class CASPT2Deriv : public Method {
+class CASPT2Grad : public Method {
   public:
     using Tensor = SMITH::Tensor_<double>;
+
   protected:
+    // second-order density matrix
+    std::shared_ptr<const Matrix> d1_;
+    std::shared_ptr<Matrix> vd1_;
+    // XMS density if available
+    std::shared_ptr<const Matrix> dcheck_;
+    double energy_;
+    std::vector<double> dipole_;
+
     std::shared_ptr<const Matrix> coeff_;
     // first-order density matrix
     std::shared_ptr<const Matrix> d11_;
@@ -58,6 +68,9 @@ class CASPT2Deriv : public Method {
     // FCI utility
     std::shared_ptr<FCI_base> fci_;
 
+    // SMITH
+    std::shared_ptr<Smith> smith_;
+
     // for gradient
     int nstates_;
     int ncore_;
@@ -71,7 +84,7 @@ class CASPT2Deriv : public Method {
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
-    CASPT2Deriv(std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref) : Method(inp, geom, ref) { };
+    CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     const double& msrot(int i, int j) const { return msrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
@@ -82,6 +95,7 @@ class CASPT2Deriv : public Method {
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI_base> fci() const { return fci_; }
+    std::shared_ptr<Smith> smith() const { return smith_; }
 
     int nstates() const { return nstates_; }
     int ncore() const { return ncore_; }
@@ -94,89 +108,35 @@ class CASPT2Deriv : public Method {
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
-    std::shared_ptr<Matrix> diagonal_D1() const;
-    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
-    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
-};
-
-class CASPT2Grad : public CASPT2Deriv {
-  protected:
-    // second-order density matrix
-    std::shared_ptr<const Matrix> d1_;
-    // XMS density if available
-    std::shared_ptr<const Matrix> dcheck_;
-    double energy_;
-    std::vector<double> dipole_;
-
-  public:
-    CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
-
     void compute() override;
+    void compute_grad(const int istate);
+    void compute_nacme(const int istate, const int jstate, const int nacmtype);
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
+    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
     double energy() const { return energy_; }
     const std::vector<double>& dipole() const { return dipole_; }
     double dipole(const int i) const { return dipole_[i]; }
 
+    // internal functions
+
+    std::shared_ptr<Matrix> diagonal_D1() const;
+    std::shared_ptr<Matrix> spin_density_unrelaxed() const;
+    std::shared_ptr<Matrix> spin_density_relax(std::shared_ptr<const RDM<1>> zrdm1, std::shared_ptr<const RDM<2>> zrdm2, std::shared_ptr<const Matrix> zmat) const;
+
+    // function for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
-};
+      compute_Y_grad(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 
-class CASPT2Nacm : public CASPT2Deriv {
-  protected:
-    // second-order density matrix
-    std::shared_ptr<Matrix> d1_;
-    std::shared_ptr<Matrix> vd1_;
-    // XMS density if available
-    std::shared_ptr<Matrix> dcheck_;
-    // XMS rotation matrix (i.e. Fock eigenvectors)
-    std::shared_ptr<const Matrix> xmsrot_;
-    // Heff rotation natrix (i.e. Heff eigenvectors)
-    std::shared_ptr<const Matrix> heffrot_;
-    // Fock Eigenvalues
-    std::vector<double> foeig_;
-    std::vector<double> cieig_;
-    // Energies, vector
-    std::vector<double> energy_;
-    int target_state1_;
-    int target_state2_;
-    int nacmtype_;
-    double energy1_;
-    double energy2_;
-
-  public:
-    CASPT2Nacm(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
-
-    void compute() override;
-
-    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
-    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
-    std::shared_ptr<const Matrix> d1() const { return d1_; }
-    std::shared_ptr<const Matrix> vd1() const { return vd1_; }
-    std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
-
-    int target1() const { return target_state1_; }
-    int target2() const { return target_state2_; }
-    double energy1() const { return energy1_; }
-    double energy2() const { return energy2_; }
-
-    double energy(const int i) const { return energy_[i]; }
-    const std::vector<double>& energy() const { return energy_; }
-
-
-    double foeig(const int i) const { return foeig_.at(i); }
-    double cieig(const int i) const { return cieig_.at(i); }
-
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override;
-
-    void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj);
+    // functions for nacme
+    void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj, const int istate, const int jstate, const double egap);
 
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+      compute_Y_nacme(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 
-// Single point calc.
+// Single point calc. (only for finite difference nacme)
 
 class CASPT2Energy : public Method {
   public:

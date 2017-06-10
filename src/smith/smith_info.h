@@ -47,14 +47,12 @@ class SMITH_Info {
     int maxiter_;
     int target_;
     int target2_;
-    int nacmtype_;
     int maxtile_;
     int cimaxtile_;
     int cimaxchunk_;
     int davidson_subspace_;
 
     bool grad_;
-    bool nacm_;
 
     bool do_ms_;
     bool do_xms_;
@@ -79,7 +77,7 @@ class SMITH_Info {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_ & target_ & target2_;
-      ar & nacmtype_ & maxtile_ & cimaxtile_ & cimaxchunk_ & davidson_subspace_ & grad_ & nacm_;
+      ar & maxtile_ & cimaxtile_ & cimaxchunk_ & davidson_subspace_ & grad_;
       ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_;
       ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
     }
@@ -109,12 +107,10 @@ class SMITH_Info {
     int maxiter() const { return maxiter_; }
     int target() const { return target_; }
     int target2() const { return target2_; }
-    int nacmtype() const { return nacmtype_; }
     int maxtile() const { return maxtile_; }
     int cimaxtile() const { return cimaxtile_; }
     int cimaxchunk() const { return cimaxchunk_; }
     bool grad() const { return grad_; }
-    bool nacm() const { return nacm_; }
     bool do_ms() const { return do_ms_; }
     bool do_xms() const { return do_xms_; }
     bool sssr() const { return sssr_; }

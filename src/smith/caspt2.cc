@@ -79,7 +79,6 @@ void CASPT2Energy::compute() {
 #ifdef COMPILE_SMITH
   shared_ptr<PTree> smithinput = idata_->get_child("smith");
   smithinput->put("_grad", false);
-  smithinput->put("_nacm", false);
   smithinput->put("_hyperfine", do_hyperfine_);
 
   if (target_state1_!=-1) {
@@ -93,6 +92,7 @@ void CASPT2Energy::compute() {
   ref_->energy() = energy_;
 
   if (target_state1_!=-1) {
+    smith->compute_nacme(target_state1_, target_state2_, 0);
     ncore_   = smith->algo()->info()->ncore();
     coeff_   = smith->coeff();
     msrot_   = smith->msrot();

@@ -179,12 +179,13 @@ class CASPT2 : public SpinFreeMethod<double> {
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
+    CASPT2(const CASPT2& cas);
     ~CASPT2() {}
 
     void solve();
-    void solve_deriv();
-    void solve_nacme();
-    void solve_dm();
+    void solve_deriv(const int target);
+    void solve_nacme(const int targetJ, const int targetI, const int nacmtype);
+    void solve_dm(const int istate, const int jstate);
 
     std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
     std::shared_ptr<const Matrix> heffrot() const { return heff_; }
