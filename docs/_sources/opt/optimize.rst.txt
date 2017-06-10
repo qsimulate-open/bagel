@@ -200,7 +200,8 @@ Optional Keywords (Conical Intersection Optimization)
    |    ``0``: use full nonadiabatic coupling.
    |    ``1``: use interstate coupling.
    |    ``2``: use nonadiabatic coupling with built-in electronic translational factor (ETF).
-   | **Default:** 1.
+   |    ``3``: use interstate coupling without weighting it by energy gap.
+   | **Default:** 3.
 
 .. topic:: ``thielc3``
 

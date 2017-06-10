@@ -6,7 +6,7 @@ Nuclear gradient and derivative coupling
 
 Description
 ===========
-The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2).
+The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2). For CASSCF and CASPT2, it is also possible to perform multiple evaluations of the gradients without repeating the energy calculations.
 
 Keywords
 ========
@@ -18,24 +18,30 @@ Required Keywords
 
    | **Description:** The title of the type of gradient calculation being performed.
    | **Datatype:** string
-   | **Values:** (force, nacme, dgrad)
+   | **Values:** (force, nacme, dgrad, forces)
    |    ``force``: Calculates the gradient (force)
    |    ``nacme``: Calculates the non-adiabatic coupling matrix elements
    |    ``dgrad``: Difference gradient (only available for CASSCF)
+   |    ``forces``: Calculates many gradients [available for multi-state methods, such as SA-CASSCF and (X)MS-CASPT2]
    | **Default:** N/A
 
 .. topic:: ``method``
 
-   | **Description:** The method array allows the user to specify one or more methods to be used in the Hessian calculation. See section on input structure for more information.
+   | **Description:** The method input block allows the user to specify one or more methods to be used in the gradient calculation. See section on input structure for more information.
+
+.. topic:: ``grads``
+
+   | **Description:** The grads input block allows the user to specify one or more gradients to be calculated. The keywords ``title``, ``target``, ``target2``, ``nacmtype``, ``maxziter`` can be specified for each gradient evaluation. See below for example.
 
 .. topic:: ``nacmtype``
 
-   | **Description:** Type of non-adiabatic coupling matrix element to be used
+   | **Description:** Type of non-adiabatic coupling matrix element to be computed
    | **Datatype:** int
    | **Values:**
-   |    ``0``: Use full non-adiabatic coupling
-   |    ``1``: Use interstate coupling
-   |    ``2``: Use non-adiabtic coupling with built-in electronic translational factor (ETF)
+   |    ``0``: Full non-adiabatic coupling
+   |    ``1``: Interstate coupling
+   |    ``2``: Non-adiabtic coupling with built-in electronic translational factor (ETF)
+   |    ``3``: Interstate coupling without weighting it by energy gap
    | **Default:** 0
 
 Optional Keywords
@@ -226,6 +232,33 @@ Sample input: NACME and DGRAD
    "title" : "nacme",
      "target" : 0,
      "target2" : 1,
+     "method" : [ {
+       "title" : "caspt2",
+         "smith" : {
+           "method" : "caspt2",
+           "ms" : "true",
+           "xms" : "true",
+           "sssr" : "true",
+           "shift" : 0.2,
+           "frozen" : true
+       },
+       "nstate" : 3,
+       "nact" : 7,
+       "nclosed" : 44
+     } ]
+   }
+
+Using the keyword ``forces``, you can run multiple gradient or derivative coupling calculations without repeating the energy calculations. The example below evaluates the nuclear gradient of the energy of the ground state, the first excited state, and the interstate coupling vector (``nacmtype`` is 1) between these two states.
+
+.. code-block:: javascript
+
+  {
+   "title" : "forces",
+     "grads" : [
+       { "title" : "force", "target" : 0 },
+       { "title" : "force", "target" : 1 },
+       { "title" : "nacme", "target" : 0, "target2" : 1, "nacmtype" : 1 }
+     ],
      "method" : [ {
        "title" : "caspt2",
          "smith" : {

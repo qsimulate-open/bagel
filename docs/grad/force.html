@@ -54,7 +54,7 @@
 <span id="force"></span><h1>Nuclear gradient and derivative coupling<a class="headerlink" href="#nuclear-gradient-and-derivative-coupling" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2).</p>
+<p>The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2). For CASSCF and CASPT2, it is also possible to perform multiple evaluations of the gradients without repeating the energy calculations.</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
@@ -65,11 +65,12 @@
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The title of the type of gradient calculation being performed.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
-<div class="line"><strong>Values:</strong> (force, nacme, dgrad)</div>
+<div class="line"><strong>Values:</strong> (force, nacme, dgrad, forces)</div>
 <div class="line-block">
 <div class="line"><code class="docutils literal"><span class="pre">force</span></code>: Calculates the gradient (force)</div>
 <div class="line"><code class="docutils literal"><span class="pre">nacme</span></code>: Calculates the non-adiabatic coupling matrix elements</div>
 <div class="line"><code class="docutils literal"><span class="pre">dgrad</span></code>: Difference gradient (only available for CASSCF)</div>
+<div class="line"><code class="docutils literal"><span class="pre">forces</span></code>: Calculates many gradients [available for multi-state methods, such as SA-CASSCF and (X)MS-CASPT2]</div>
 </div>
 <div class="line"><strong>Default:</strong> N/A</div>
 </div>
@@ -77,19 +78,26 @@
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> The method array allows the user to specify one or more methods to be used in the Hessian calculation. See section on input structure for more information.</div>
+<div class="line"><strong>Description:</strong> The method input block allows the user to specify one or more methods to be used in the gradient calculation. See section on input structure for more information.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">grads</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> The grads input block allows the user to specify one or more gradients to be calculated. The keywords <code class="docutils literal"><span class="pre">title</span></code>, <code class="docutils literal"><span class="pre">target</span></code>, <code class="docutils literal"><span class="pre">target2</span></code>, <code class="docutils literal"><span class="pre">nacmtype</span></code>, <code class="docutils literal"><span class="pre">maxziter</span></code> can be specified for each gradient evaluation. See below for example.</div>
 </div>
 </div>
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">nacmtype</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Type of non-adiabatic coupling matrix element to be used</div>
+<div class="line"><strong>Description:</strong> Type of non-adiabatic coupling matrix element to be computed</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: Use full non-adiabatic coupling</div>
-<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: Use interstate coupling</div>
-<div class="line"><code class="docutils literal"><span class="pre">2</span></code>: Use non-adiabtic coupling with built-in electronic translational factor (ETF)</div>
+<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: Full non-adiabatic coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: Interstate coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">2</span></code>: Non-adiabtic coupling with built-in electronic translational factor (ETF)</div>
+<div class="line"><code class="docutils literal"><span class="pre">3</span></code>: Interstate coupling without weighting it by energy gap</div>
 </div>
 <div class="line"><strong>Default:</strong> 0</div>
 </div>
@@ -304,6 +312,31 @@ The CASSCF orbitals are state-averaged over two states.</p>
  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span>
    <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
    <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+   <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+       <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+         <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;ms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;xms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;sssr&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+         <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+         <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+     <span class="p">},</span>
+     <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span>
+     <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
+     <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">44</span>
+   <span class="p">}</span> <span class="p">]</span>
+ <span class="p">}</span>
+</pre></div>
+</div>
+<p>Using the keyword <code class="docutils literal"><span class="pre">forces</span></code>, you can run multiple gradient or derivative coupling calculations without repeating the energy calculations. The example below evaluates the nuclear gradient of the energy of the ground state, the first excited state, and the interstate coupling vector (<code class="docutils literal"><span class="pre">nacmtype</span></code> is 1) between these two states.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;forces&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;grads&quot;</span> <span class="o">:</span> <span class="p">[</span>
+     <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span> <span class="p">},</span>
+     <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">},</span>
+     <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nacmtype&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">}</span>
+   <span class="p">],</span>
    <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
      <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
        <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
