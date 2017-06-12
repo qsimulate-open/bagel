@@ -150,4 +150,6 @@ void Opt::compute_optimize() {
 
     if (convergegrad && (convergedispl || convergeenergy)) break;
   }
+
+  muffle_->unmute();
 }
