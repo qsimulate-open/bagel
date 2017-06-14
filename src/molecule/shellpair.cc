@@ -74,48 +74,49 @@ bool ShellPair::is_neighbour(shared_ptr<const ShellPair> sp, const double ws) co
 
 void ShellPair::init() {
 
-  const vector<double> exp0 = shells_[0]->exponents();
-  const vector<double> exp1 = shells_[1]->exponents();
   shared_ptr<const Shell> b0 = shells_[0];
   shared_ptr<const Shell> b1 = shells_[1];
+  const vector<double> exp0 = b0->exponents();
+  const vector<double> exp1 = b1->exponents();
   nbasis0_ = b0->nbasis();
   nbasis1_ = b1->nbasis();
   assert(b0->angular_number() < 7 && b1->angular_number() < 7);
-
-  #if 1
-  // centre
-  centre_ = {{0.0, 0.0, 0.0}};
-  for (auto& expi0 : exp0) {
-    for (auto& expi1 : exp1) {
-      const double cxp_inv = 1.0 / (expi0 + expi1);
-      centre_[0] += (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
-      centre_[1] += (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
-      centre_[2] += (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
-    }
-  }
-  const int denom = b0->exponents().size() * b1->exponents().size();
-  centre_[0] /= denom;
-  centre_[1] /= denom;
-  centre_[2] /= denom;
-  #endif
 
   array<double, 3> AB;
   AB[0] = b0->position(0) - b1->position(0);
   AB[1] = b0->position(1) - b1->position(1);
   AB[2] = b0->position(2) - b1->position(2);
   const double rsq = AB[0] * AB[0] + AB[1] * AB[1] + AB[2] * AB[2];
-  const double lnthresh = log(thresh_);
+
+  const double tol = 20.0 / (log10(exp(1))*rsq);
+  // centre
+  centre_ = {{0.0, 0.0, 0.0}};
+  int nexp = 0;
+  for (auto& expi0 : exp0) {
+    for (auto& expi1 : exp1) {
+      const double cxp_inv = 1.0 / (expi0 + expi1);
+//      if (expi0*expi1*cxp_inv > tol) continue;
+      centre_[0] += (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
+      centre_[1] += (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
+      centre_[2] += (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
+      ++nexp;
+    }
+  }
+  assert(nexp == exp0.size()*exp1.size());
+  centre_[0] /= nexp;
+  centre_[1] /= nexp;
+  centre_[2] /= nexp;
 
   // extent
 //  array<double, 7> scale = {{1.0, 1.1781, 1.3333, 1.4726, 1.7181, 1.8286}};
+  const double lnthresh = log(thresh_);
   double extentA = 0.0;
   double extentB = 0.0;
-  const double tol = 20.0 / log10(exp(1));
   for (auto& expi0 : exp0) {
     for (auto& expi1 : exp1) {
       const double cxp_inv = 1.0 / (expi0 + expi1);
       const double expi01 = expi0 * expi1;
-      if (expi01*rsq*cxp_inv > tol) continue;
+      if (expi01*cxp_inv > tol) continue;
       const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
       const double r01sq = (-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv;
 

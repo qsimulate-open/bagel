@@ -58,6 +58,7 @@ void FMM::init() {
     nsh += a->shells().size();
 
   const int nsp = geom_->nshellpair();
+  cout << "*****    nsp = " << nsp << endl;
 #if 0
   double maxext = 0;
   for (int i = 1; i != nsp_; ++i)
@@ -67,21 +68,20 @@ void FMM::init() {
   if (maxws > ns2) throw runtime_error("maxws > 2**ns");
 #endif
 
-  maxxyz_ = {{0, 0, 0}};
   double rad = 0;
   int isp = 0;
+  isp_.reserve(nsp);
   for (int i = 0; i != nsp; ++i) {
-    if (geom_->shellpair(i)->extent() < numerical_zero__) continue;
+    if (geom_->shellpair(i)->schwarz() < geom_->schwarz_thresh()) continue;
     isp_.push_back(i);
     ++isp;
     for (int j = 0; j != 3; ++j) {
       const double jco = geom_->shellpair(i)->centre(j);
-      if (abs(jco) > maxxyz_[j]) maxxyz_[j] = abs(jco);
-      if (maxxyz_[j] > rad) rad = maxxyz_[j];
+      rad = max(rad, abs(jco));
     }
   }
-  assert(isp_.size() == isp);
   nsp_ = isp;
+  assert(isp_.size() == nsp_);
   coordinates_.resize(nsp_);
   for (int i = 0; i != nsp_; ++i)
     coordinates_[i] = geom_->shellpair(isp_[i])->centre();
@@ -89,7 +89,6 @@ void FMM::init() {
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
   coordinates_.resize(nsp_);
-  isp_.resize(nsp_);
 
   get_boxes();
 
@@ -107,6 +106,7 @@ void FMM::get_boxes() {
 
   // find out unempty leaves
   vector<array<int, 3>> boxid; // max dimension 2**(ns+1)-1
+  boxid.reserve(nsp_);
   unique_ptr<int[]> ibox(new int[nsp_]);
 
   map<array<int, 3>, int> treemap;
@@ -147,14 +147,14 @@ void FMM::get_boxes() {
   // get all unempty boxes
   int nbox = 0;
   for (int il = 0; il != nleaf; ++il) {
-    vector<shared_ptr<const ShellPair>> sp;
+    vector<shared_ptr<const ShellPair>> sp(leaves[il].size());
+    int cnt = 0;
     for (auto& isp : leaves[il])
-      sp.insert(sp.end(), geom_->shellpair(isp));
+      sp[cnt++] = geom_->shellpair(isp);
     array<int, 3> id = boxid[il];
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-    //cout << " LEAF *** " <<  id[0]-ns2/2 << " * " << id[1]-ns2/2 << " * " << id[2]-ns2/2 << "  ***  " << id[0] << " * " << id[1] << " * " << id[2] << endl;
     auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh(), do_multiresolution_);
     box_.insert(box_.end(), newbox);
     ++nbox;
@@ -190,16 +190,6 @@ void FMM::get_boxes() {
             if (!parent_found) {
               if (nss != 0) {
                 const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
-#if 0
-                array<double, 3> centre;
-                centre[0] = ((int) floor(0.5*(i+1)) - offset-1) * boxsize + 0.5*boxsize;
-                centre[1] = ((int) floor(0.5*(j+1)) - offset-1) * boxsize + 0.5*boxsize;
-                centre[2] = ((int) floor(0.5*(k+1)) - offset-1) * boxsize + 0.5*boxsize;
-                cout << i << " * " << j << " * " << k << "  ***  " << (int) floor(0.5*(i+1))-offset << " * "
-                                                                   << (int) floor(0.5*(j+1))-offset << " * "
-                                                                   << (int) floor(0.5*(k+1))-offset
-                     << "  ***  " << idxp[0] << " * " << idxp[1] << " * " << idxp[2] << endl;
-#endif
                 auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}}, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh(), do_multiresolution_);
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
