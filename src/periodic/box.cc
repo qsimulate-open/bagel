@@ -50,40 +50,42 @@ void Box::init() {
     nbasis1_ += i->nbasis1();
   }
 
-#if 1
   centre_ = {{0, 0, 0}};
-  for (auto& i : sp_) {
-    centre_[0] += i->centre(0);
-    centre_[1] += i->centre(1);
-    centre_[2] += i->centre(2);
-  }
-  centre_[0] /= nsp();
-  centre_[1] /= nsp();
-  centre_[2] /= nsp();
-#else
-  if (nchild() != 0) {
-    centre_ = {{0, 0, 0}};
+  extent_ = 0.0;
+  if (nchild() == 0) {
+    #if 0
+    for (auto& i : sp_) {
+      if (i->schwarz() < schwarz_thresh_) continue;
+      for (int j = 0; j != 3; ++j) centre_[j] += i->centre(j);
+    }
+    centre_[0] /= nsp();
+    centre_[1] /= nsp();
+    centre_[2] /= nsp();
+    #endif
+    for (auto& i : sp_) {
+      if (i->schwarz() < schwarz_thresh_) continue;
+      double rad = 0;
+      for (int j = 0; j != 3; ++j) rad += pow(i->centre(j)-centre_[j], 2.0);
+      const double ei = sqrt(rad) + i->extent();
+      assert(ei > 0);
+      extent_ = max(extent_, ei);
+    }
+  } else {
     for (int n = 0; n != nchild(); ++n) {
       shared_ptr<const Box> i = child(n);
-      centre_[0] += i->centre(0);
-      centre_[1] += i->centre(1);
-      centre_[2] += i->centre(2);
+      for (int j = 0; j != 3; ++j)  centre_[j] += i->centre(j);
     }
     centre_[0] /= nchild();
     centre_[1] /= nchild();
     centre_[2] /= nchild();
-  }
-#endif
-
-  extent_ = 0;
-  for (auto& i : sp_) {
-    if (i->schwarz() < thresh_) continue;
-    double tmp = 0;
-    for (int j = 0; j != 3; ++j)
-      tmp += pow(i->centre(j)-centre_[j], 2.0);
-    const double ei = sqrt(tmp) + i->extent();
-    assert(ei > 0);
-    extent_ = max(extent_, ei);
+    for (int n = 0; n != nchild(); ++n) {
+      shared_ptr<const Box> i = child(n);
+      double rad = 0.0;
+      for (int j = 0; j != 3; ++j) rad += pow(i->centre(j)-centre_[j], 2.0);
+      const double ei = sqrt(rad) + i->extent();
+      assert(ei > 0);
+      extent_ = max(extent_, ei);
+    }
   }
 
   ws_ = (int) ceil(extent_/boxsize_);
@@ -125,10 +127,6 @@ void Box::get_branches() {
   }
   assert(nsp == sp_.size());
   branch_.resize(cnt);
-
-  //cout << "*** Branches " << endl;
-  //for (auto& b : branch_)
-    //cout << "IWS = " << b->ws() << " NSP = " << b->sp().size() << endl;
 }
 
 
@@ -178,12 +176,20 @@ void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
 bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
 
 #if 1
-  double rr = 0;
-  for (int i = 0; i != 3; ++i)
-    rr += pow(centre_[i] - box->centre(i), 2);
-
-  const bool out = (sqrt(rr) <= (1.0+ws)*(extent_ + box->extent()));
-  return out;
+  if (nchild() == 0) {
+    double rr = 0;
+    for (int i = 0; i != 3; ++i) rr += pow(centre_[i] - box->centre(i), 2);
+    return (sqrt(rr) <= (1.0+ws)*(extent_ + box->extent()));
+  } else {
+    for (int n0 = 0; n0 != nchild(); ++n0) {
+      shared_ptr<const Box> i = child(n0);
+      for (int n1 = 0; n1 != box->nchild(); ++n1) {
+        shared_ptr<const Box> j = box->child(n1);
+        if (i->is_neigh(j, ws)) return true;
+      }
+    }
+    return false;
+  }
 #endif
 
 #if 0
