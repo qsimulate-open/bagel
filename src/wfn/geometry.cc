@@ -358,7 +358,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
 
-  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", skip_self_interaction_);
+  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
