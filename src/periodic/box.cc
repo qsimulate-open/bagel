@@ -53,7 +53,6 @@ void Box::init() {
   centre_ = {{0, 0, 0}};
   extent_ = 0.0;
   if (nchild() == 0) {
-    #if 0
     for (auto& i : sp_) {
       if (i->schwarz() < schwarz_thresh_) continue;
       for (int j = 0; j != 3; ++j) centre_[j] += i->centre(j);
@@ -61,7 +60,6 @@ void Box::init() {
     centre_[0] /= nsp();
     centre_[1] /= nsp();
     centre_[2] /= nsp();
-    #endif
     for (auto& i : sp_) {
       if (i->schwarz() < schwarz_thresh_) continue;
       double rad = 0;

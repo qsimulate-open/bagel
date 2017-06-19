@@ -53,10 +53,6 @@ void FMM::init() {
   nbasis_ = geom_->nbasis();
   const int ns2 = pow(2, ns_);
 
-  int nsh = 0;
-  for (auto& a : geom_->atoms())
-    nsh += a->shells().size();
-
   const int nsp = geom_->nshellpair();
   cout << "*****    nsp = " << nsp << endl;
 #if 0
