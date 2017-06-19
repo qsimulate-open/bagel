@@ -33,8 +33,8 @@ using namespace bagel;
 
 const static double pisq__ = pi__ * pi__;
 
-ShellPair::ShellPair(const array<shared_ptr<const Shell>, 2>& sh, const array<int, 2>& ofs, const pair<int, int>& ind, const double thr)
- : shells_(sh), offset_(ofs), shell_ind_(ind), thresh_(thr) {
+ShellPair::ShellPair(const array<shared_ptr<const Shell>, 2>& sh, const array<int, 2>& ofs, const pair<int, int>& ind, const string ext, const double thr)
+ : shells_(sh), offset_(ofs), shell_ind_(ind), extent_type_(ext), thresh_(thr) {
   init();
 }
 
@@ -76,8 +76,6 @@ void ShellPair::init() {
 
   shared_ptr<const Shell> b0 = shells_[0];
   shared_ptr<const Shell> b1 = shells_[1];
-  const vector<double> exp0 = b0->exponents();
-  const vector<double> exp1 = b1->exponents();
   nbasis0_ = b0->nbasis();
   nbasis1_ = b1->nbasis();
   assert(b0->angular_number() < 7 && b1->angular_number() < 7);
@@ -91,18 +89,15 @@ void ShellPair::init() {
   const double tol = 20.0 / (log10(exp(1))*rsq);
   // centre
   centre_ = {{0.0, 0.0, 0.0}};
-  int nexp = 0;
-  for (auto& expi0 : exp0) {
-    for (auto& expi1 : exp1) {
+  for (auto& expi0 : b0->exponents()) {
+    for (auto& expi1 : b1->exponents()) {
       const double cxp_inv = 1.0 / (expi0 + expi1);
-//      if (expi0*expi1*cxp_inv > tol) continue;
       centre_[0] += (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
       centre_[1] += (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
       centre_[2] += (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
-      ++nexp;
     }
   }
-  assert(nexp == exp0.size()*exp1.size());
+  const int nexp = b0->exponents().size()*b1->exponents().size();
   centre_[0] /= nexp;
   centre_[1] /= nexp;
   centre_[2] /= nexp;
@@ -110,51 +105,120 @@ void ShellPair::init() {
   // extent
 //  array<double, 7> scale = {{1.0, 1.1781, 1.3333, 1.4726, 1.7181, 1.8286}};
   const double lnthresh = log(thresh_);
-  double extentA = 0.0;
-  double extentB = 0.0;
-  for (auto& expi0 : exp0) {
-    for (auto& expi1 : exp1) {
-      const double cxp_inv = 1.0 / (expi0 + expi1);
-      const double expi01 = expi0 * expi1;
-      if (expi01*cxp_inv > tol) continue;
-      const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
-      const double r01sq = (-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv;
+  if (extent_type_ == "sierka" || extent_type_ == "sierka-alhrichs" || extent_type_ == "alhrichs") {
+    double extentA = 0.0;
+    double extentB = 0.0;
+    for (auto& expi0 : b0->exponents()) {
+      for (auto& expi1 : b1->exponents()) {
+        const double cxp_inv = 1.0 / (expi0 + expi1);
+        const double expi01 = expi0 * expi1;
+        if (expi01*cxp_inv > tol) continue;
+        const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
+        const double r01sq = (-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv;
 
-      array<double, 3> P;
-      P[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
-      P[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
-      P[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
+        array<double, 3> P;
+        P[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
+        P[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
+        P[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
 
-      array<double, 3> r0;
-      r0[0] = P[0] - b0->position(0);
-      r0[1] = P[1] - b0->position(1);
-      r0[2] = P[2] - b0->position(2);
-      const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
+        array<double, 3> r0;
+        r0[0] = P[0] - b0->position(0);
+        r0[1] = P[1] - b0->position(1);
+        r0[2] = P[2] - b0->position(2);
+        const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
 
-      array<double, 3> r1;
-      r1[0] = P[0] - b1->position(0);
-      r1[1] = P[1] - b1->position(1);
-      r1[2] = P[2] - b1->position(2);
-      const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
+        array<double, 3> r1;
+        r1[0] = P[0] - b1->position(0);
+        r1[1] = P[1] - b1->position(1);
+        r1[2] = P[2] - b1->position(2);
+        const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
 
-      if (r01sq > 0) {
-        const double r01 = sqrt(r01sq);
-        extentA = max(r01 + d0, extentA);
-        extentB = max(r01 + d1, extentB);
-      } else {
-        extentA = max(1.0e-2, extentA);
-        extentB = max(1.0e-2, extentB);
+        if (r01sq > 0) {
+          const double r01 = sqrt(r01sq);
+          extentA = max(r01 + d0, extentA);
+          extentB = max(r01 + d1, extentB);
+        } else {
+          extentA = max(1.0e-2, extentA);
+          extentB = max(1.0e-2, extentB);
+        }
+      }
+    }
+    extent_ = min(extentA, extentB);
+  } else if (extent_type_ == "perez-jorda" || extent_type_ == "pj-yang" || extent_type_ == "yang") {
+    extent_ = 0.0;
+    for (auto& expi0 : b0->exponents()) {
+      for (auto& expi1 : b1->exponents()) {
+        const double cxp_inv = 1.0 / (expi0 + expi1);
+        const double expi01 = expi0 * expi1;
+        if (expi01*cxp_inv > tol) continue;
+        const double r01 = sqrt(-0.5*lnthresh - pow(expi01 * rsq * cxp_inv, 2.0) + 0.75*log(4.0*expi01/pisq__)*cxp_inv);
+
+        array<double, 3> ld;
+        ld[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - centre_[0];
+        ld[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - centre_[1];
+        ld[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - centre_[2];
+        const double d = sqrt(ld[0]*ld[0] + ld[1]*ld[1] + ld[2]*ld[2]);
+        extent_ = max(extent_, r01+d);
       }
     }
   }
-  extent_ = min(extentA, extentB);
 //  extent_ *= scale[b0->angular_number()] * scale[b1->angular_number()];
+
 #if 0
-  if (extentA < extentB) {
-     centre_ = b0->position();
-  } else {
-     centre_ = b1->position();
+  double extentA = 0.0;
+  double extentB = 0.0;
+  for (int icnt0 = 0; icnt0 != b0->num_contracted(); ++icnt0) {
+    vector<double> vcont0 = b0->contractions(icnt0);
+    const int i0 = b0->contraction_lower()[icnt0];
+    int iprim0 = 0;
+    for (auto& cont0 : vcont0) {
+      const double expi0 = b0->exponents(i0+iprim0);
+
+      for (int icnt1 = 0; icnt1 != b1->num_contracted(); ++icnt1) {
+        vector<double> vcont1 = b1->contractions(icnt1);
+        const int i1 = b1->contraction_lower()[icnt1];
+        int iprim1 = 0;
+        for (auto& cont1 : vcont1) {
+          const double expi1 = b1->exponents(i1+iprim1);
+
+          const double cxp_inv = 1.0 / (expi0 + expi1);
+          const double expi01 = expi0 * expi1;
+          if (expi01*cxp_inv > tol) continue;
+          const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
+          const double r01sq = (-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv;
+
+          array<double, 3> P;
+          P[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
+          P[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
+          P[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
+
+          array<double, 3> r0;
+          r0[0] = P[0] - b0->position(0);
+          r0[1] = P[1] - b0->position(1);
+          r0[2] = P[2] - b0->position(2);
+          const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
+
+          array<double, 3> r1;
+          r1[0] = P[0] - b1->position(0);
+          r1[1] = P[1] - b1->position(1);
+          r1[2] = P[2] - b1->position(2);
+          const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
+
+          if (r01sq > 0) {
+            const double r01 = sqrt(r01sq)*cont0*cont1;
+            extentA = max(r01 + d0, extentA);
+            extentB = max(r01 + d1, extentB);
+          } else {
+            extentA = max(1.0e-2, extentA);
+            extentB = max(1.0e-2, extentB);
+          }
+          ++iprim1;
+        }
+      }
+      ++iprim0;
+    }
   }
+  extent_ = min(extentA, extentB);
 #endif
 
   // schwarz

@@ -580,6 +580,8 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 void Geometry::get_shellpairs() {
 
+  const string type = "sierka"; //TODO: make this user-defined
+
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
   for (int n = 0; n != natom(); ++n) {
@@ -595,7 +597,7 @@ void Geometry::get_shellpairs() {
     for (int i1 = 0; i1 != nsh; ++i1) {
       const int i01 = i0 * nsh + i1;
       shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0));
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), type);
     }
   }
 }

@@ -37,6 +37,7 @@ class ShellPair {
     std::array<std::shared_ptr<const Shell>, 2> shells_;
     std::array<int, 2> offset_;
     std::pair<int, int> shell_ind_;
+    std::string extent_type_;
     int nbasis0_, nbasis1_;
 
     double thresh_;
@@ -47,7 +48,8 @@ class ShellPair {
 
   public:
     ShellPair() { }
-    ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset, const std::pair<int, int>& shell_ind, const double thresh = 1e-10);
+    ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset,
+              const std::pair<int, int>& shell_ind, const std::string extent_type = "sierka", const double thresh = 1e-10);
     bool is_neighbour(std::shared_ptr<const ShellPair> sp, const double ws) const;
 
     const std::array<std::shared_ptr<const Shell>, 2>& shells() const { return shells_; }
