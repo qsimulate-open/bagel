@@ -146,19 +146,22 @@ void ShellPair::init() {
     extent_ = min(extentA, extentB);
   } else if (extent_type_ == "perez-jorda" || extent_type_ == "pj-yang" || extent_type_ == "yang") {
     extent_ = 0.0;
+    const double lntau = log(1.0e-6);
+    //const double lntau = log(sqrt(thresh_));
     for (auto& expi0 : b0->exponents()) {
       for (auto& expi1 : b1->exponents()) {
         const double cxp_inv = 1.0 / (expi0 + expi1);
         const double expi01 = expi0 * expi1;
-        if (expi01*cxp_inv > tol) continue;
-        const double r01 = sqrt(-0.5*lnthresh - pow(expi01 * rsq * cxp_inv, 2.0) + 0.75*log(4.0*expi01/pisq__)*cxp_inv);
+//        if (expi01*cxp_inv > tol) continue;
+        const double tmp = (-lntau- expi01*cxp_inv*rsq + 0.75*log(4.0*expi01/pisq__))*cxp_inv;
+        const double r01sq = max(0.0, tmp);
 
         array<double, 3> ld;
         ld[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv - centre_[0];
         ld[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv - centre_[1];
         ld[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv - centre_[2];
         const double d = sqrt(ld[0]*ld[0] + ld[1]*ld[1] + ld[2]*ld[2]);
-        extent_ = max(extent_, r01+d);
+        extent_ = max(extent_, sqrt(r01sq)+d);
       }
     }
   }
