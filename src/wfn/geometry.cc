@@ -47,6 +47,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   spherical_ = true;
   lmax_ = 0;
   dofmm_   = geominfo->get<bool>("cfmm", false);
+  extent_type_ = to_lower(geominfo->get<string>("extent_type", "sierka"));
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -149,7 +150,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 }
 
 
-void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
+void Geometry::common_init2(const bool print, const double thresh, const bool nodf, const bool get_sp) {
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
@@ -175,9 +176,9 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
-  if (dofmm_) get_shellpairs();
-
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
+
+  if (dofmm_ && get_sp) get_shellpairs(extent_type_);
 }
 
 
@@ -578,10 +579,10 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 }
 
 
-void Geometry::get_shellpairs() {
+void Geometry::get_shellpairs(const string type) {
 
-  const string type = "sierka"; //TODO: make this user-defined
-
+  cout << "*** Getting shell pairs using " << type << " definition of extent" << endl;
+  const string extent_type = (type == "") ? "sierka" : type;
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
   for (int n = 0; n != natom(); ++n) {
@@ -597,7 +598,7 @@ void Geometry::get_shellpairs() {
     for (int i1 = 0; i1 != nsh; ++i1) {
       const int i01 = i0 * nsh + i1;
       shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), type);
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), extent_type);
     }
   }
 }
@@ -777,4 +778,30 @@ void Geometry::init_magnetism() {
   for (auto& i : atoms_)
     atom.push_back(i->apply_magnetic_field(magnetic_field_, london_));
   atoms_ = atom;
+}
+
+
+Geometry::Geometry(const Geometry& o, const string type)
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
+
+  if (!o.dofmm_)
+    throw logic_error("Geometry construction called during FMM only");
+
+  // members of Molecule
+  spherical_ = o.spherical_;
+  aux_merged_ = o.aux_merged_;
+  basisfile_ = o.basisfile_;
+  auxfile_ = o.auxfile_;
+  symmetry_ = o.symmetry_;
+  gamma_ = o.gamma_;
+  external_ = o.external_;
+  magnetic_field_ = o.magnetic_field_;
+  dofmm_ = o.dofmm_;
+  atoms_ = o.atoms_;
+  aux_atoms_ = o.aux_atoms_;
+
+  common_init1();
+  common_init2(false, overlap_thresh_, true, false);
+  get_shellpairs(type);
 }

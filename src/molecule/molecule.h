@@ -78,6 +78,7 @@ class Molecule {
 
     // FMM
     bool dofmm_;
+    std::string extent_type_;
 
     // Computes the nuclear repulsion energy.
     double compute_nuclear_repulsion();
