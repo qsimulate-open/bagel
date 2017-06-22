@@ -489,7 +489,6 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
     }
   }
 
-  //cout << "**** NTASK = " << ntask << endl;
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 
@@ -1363,7 +1362,6 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_partial(shared_ptr<const Matrix> d
     }
   }
 
-  //cout << "**** NTASK (WS) = " << ntask << endl;
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 
@@ -1531,7 +1529,6 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_corr(shared_ptr<const Matrix> dens
     }
   }
 
-  //cout << "**** NTASK (corr) = " << ntask << endl;
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
 

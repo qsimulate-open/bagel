@@ -40,8 +40,9 @@ const static int batchsize = 25;
 
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws, const bool ex, const int lmax_k, const bool do_ws)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), do_multiresolution_(do_ws) {
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws,
+         const bool ex, const int lmax_k, const bool do_ws, const bool print)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), do_multiresolution_(do_ws), debug_(print) {
 
   init();
 }
@@ -54,16 +55,6 @@ void FMM::init() {
   const int ns2 = pow(2, ns_);
 
   const int nsp = geom_->nshellpair();
-  cout << "*****    nsp = " << nsp << endl;
-#if 0
-  double maxext = 0;
-  for (int i = 1; i != nsp_; ++i)
-    if (maxext < geom_->shellpair(i)->extent())
-      maxext = geom_->shellpair(i)->extent();
-  const int maxws = maxext / ws_;
-  if (maxws > ns2) throw runtime_error("maxws > 2**ns");
-#endif
-
   double rad = 0;
   int isp = 0;
   isp_.reserve(nsp);
@@ -229,27 +220,29 @@ void FMM::get_boxes() {
     icnt += nbranch_[ir];
   }
 
-#if 1
-  cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
-  cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " *** BATCHSIZE " << batchsize << " lmax " << lmax_ << " lmax_k " << lmax_k_
-       << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
-  int i = 0;
-  for (auto& b : box_) {
-    const bool ipar = (b->parent()) ? true : false;
-    int nsp_neigh = 0;
-    for (auto& n : b->neigh())
-      nsp_neigh += n->nsp();
-    int nsp_inter = 0;
-    for (auto& i : b->interaction_list())
-      nsp_inter += i->nsp();
-    cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp()
-         << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
-         << " ninter = " << b->ninter() << " nsp " << nsp_inter
-         << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
-         << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
-    ++i;
+  if (debug_) {
+    cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
+    cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " lmaxJ " << lmax_;
+    if (do_exchange_)
+      cout << " *** BATCHSIZE " << batchsize << " lmax_k " << lmax_k_;
+    cout << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
+    int i = 0;
+    for (auto& b : box_) {
+      const bool ipar = (b->parent()) ? true : false;
+      int nsp_neigh = 0;
+      for (auto& n : b->neigh())
+        nsp_neigh += n->nsp();
+      int nsp_inter = 0;
+      for (auto& i : b->interaction_list())
+        nsp_inter += i->nsp();
+      cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp()
+           << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
+           << " ninter = " << b->ninter() << " nsp " << nsp_inter
+           << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
+           << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
+      ++i;
+    }
   }
-#endif
 
   fmminit.tick_print("FMM initialisation");
 }
@@ -456,7 +449,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-      cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
+      if (debug_) 
+        cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
@@ -479,7 +473,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
 // check kij is symmetric
   auto kji = kij->transpose();
   const double err = (*kij - *kji).rms();
-  if (err > 1e-15) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
+  if (err > 1e-15 && debug_)
+     cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
 #if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
@@ -487,7 +482,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
   auto ksr = krs->transpose();
   const double errk = (*krs - *ksr).rms();
-  if (errk > 1e-15) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
+  if (errk > 1e-15 && debug_)
+    cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
 #else
   auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
   krs->copy_block(0, 0, nocc, nocc, kij->data());
@@ -519,7 +515,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
-      cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
+      if (debug_)
+        cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
@@ -542,7 +539,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 // check kij is symmetric
   auto kji = kij->transpose();
   const double err = (*kij - *kji).rms();
-  if (err > 1e-15) cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
+  if (err > 1e-15 && debug_)
+    cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
 #if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
@@ -550,7 +548,8 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
   auto ksr = krs->transpose();
   const double errk = (*krs - *ksr).rms();
-  if (errk > 1e-15) cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
+  if (errk > 1e-15 && debug_)
+    cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
 #else
   auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
   krs->copy_block(0, 0, nocc, nocc, kij->data());

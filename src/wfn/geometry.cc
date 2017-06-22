@@ -581,7 +581,6 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 void Geometry::get_shellpairs(const string type) {
 
-  cout << "*** Getting shell pairs using " << type << " definition of extent" << endl;
   const string extent_type = (type == "") ? "sierka" : type;
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
