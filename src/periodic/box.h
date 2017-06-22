@@ -29,7 +29,7 @@
 
 #include <src/util/constants.h>
 #include <src/util/parallel/resources.h>
-#include <src/periodic/branch.h>
+#include <src/molecule/shellpair.h>
 
 namespace bagel {
 
@@ -60,11 +60,6 @@ class Box {
     std::shared_ptr<ZMatrix> mlm_ji_;
     std::vector<std::array<int, 2>> offsets_;
     std::vector<std::pair<int, int>> coffsets_s_, coffsets_u_;
-
-    // multiresolution
-    bool do_multiresolution_;
-    std::vector<std::shared_ptr<const Branch>> branch_;
-    void get_branches(); 
 
     void init();
     void insert_sp(const std::vector<std::shared_ptr<const ShellPair>>&);
@@ -105,9 +100,8 @@ class Box {
   public:
     Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
         const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0, const double schwarz = 0.0, const bool do_ws = false)
-     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz),
-       do_multiresolution_(do_ws) { }
+        const double thresh = 0.0, const double schwarz = 0.0)
+     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
 
     Box(std::shared_ptr<const Box> b, const std::vector<std::shared_ptr<const ShellPair>>& sp)
      : rank_(b->rank()), boxsize_(b->boxsize()), centre_(b->centre()), boxid_(b->boxid()), tvec_(b->tvec()), lmax_(b->lmax()), lmax_k_(b->lmax_k()),
@@ -142,8 +136,6 @@ class Box {
     const std::vector<std::shared_ptr<const ShellPair>>& sp() const { return sp_; }
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     const std::array<std::shared_ptr<const Shell>, 2>& shells(const int i) const { return sp_[i]->shells(); }
-
-    const std::vector<std::shared_ptr<const Branch>>& branch() const { return branch_; }
 
     std::shared_ptr<ZVectorB> multipole() const { return multipole_; }
     std::shared_ptr<ZVectorB> localJ() const { return localJ_; }

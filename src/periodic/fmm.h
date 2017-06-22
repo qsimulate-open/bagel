@@ -54,7 +54,6 @@ class FMM {
     double base_extent_;
     bool do_exchange_;
     int lmax_k_;
-    bool do_multiresolution_;
     bool debug_;
 
     void init();
@@ -66,7 +65,7 @@ class FMM {
 
   public:
     FMM(std::shared_ptr<const Geometry> geom, const int ns, const int lmax = 10, const double thresh = PRIM_SCREEN_THRESH,
-        const double ws = 1.0, const bool do_exchange = false, const int lmax_k = 10, const bool do_multiresolution = false, const bool debug = true);
+        const double ws = 1.0, const bool do_exchange = false, const int lmax_k = 10, const bool debug = true);
     ~FMM() { }
 
     const std::array<double, 3>& centre() const { return centre_; }

@@ -41,8 +41,8 @@ const static int batchsize = 25;
 const static Legendre plm;
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws,
-         const bool ex, const int lmax_k, const bool do_ws, const bool print)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), do_multiresolution_(do_ws), debug_(print) {
+         const bool ex, const int lmax_k, const bool print)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), debug_(print) {
 
   init();
 }
@@ -142,7 +142,7 @@ void FMM::get_boxes() {
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh(), do_multiresolution_);
+    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -177,7 +177,8 @@ void FMM::get_boxes() {
             if (!parent_found) {
               if (nss != 0) {
                 const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
-                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}}, nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh(), do_multiresolution_);
+                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}},
+                     nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -345,7 +346,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   Timer nftime;
 
-#if 1
   if (density) {
     assert(nbasis_ == density->ndim());
     auto maxden = make_shared<VectorB>(geom_->nshellpair());
@@ -369,21 +369,15 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     }
 
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
-    auto nf_corr = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = (do_multiresolution_) ? box_[i]->compute_Fock_nf_partial(density, maxden) : box_[i]->compute_Fock_nf(density, maxden);
+        auto ei = box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
-        if (do_multiresolution_) {
-          auto nfci = box_[i]->compute_Fock_nf_corr(density, maxden);
-          blas::ax_plus_y_n(1.0, nfci->data(), nbasis_*nbasis_, nf_corr->data());
-        }
       }
     out->allreduce();
     ff->allreduce();
-    nf_corr->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
@@ -391,16 +385,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
-    
-    if (do_multiresolution_) {
-      for (int i = 0; i != nbasis_; ++i) nf_corr->element(i, i) *= 2.0;
-      nf_corr->fill_upper();
-      const double enjc = 0.5*density->dot_product(*nf_corr);
-      cout << "    o  Additional far-field Coulomb energy: " << setprecision(6) << enjc << endl;
-      *out += *nf_corr;
-    }
   }
-#endif
 
   nftime.tick_print("near-field");
   resources__->proc()->cout_on();
