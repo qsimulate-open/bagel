@@ -52,14 +52,20 @@ void Box::init() {
 
   centre_ = {{0, 0, 0}};
   extent_ = 0.0;
+  nsp_ = 0;
+  for (auto& i : sp_) {
+    if (i->schwarz() < schwarz_thresh_) continue;
+    ++nsp_;
+  }
+
   if (nchild() == 0) {
     for (auto& i : sp_) {
       if (i->schwarz() < schwarz_thresh_) continue;
       for (int j = 0; j != 3; ++j) centre_[j] += i->centre(j);
     }
-    centre_[0] /= nsp();
-    centre_[1] /= nsp();
-    centre_[2] /= nsp();
+    centre_[0] /= nsp_;
+    centre_[1] /= nsp_;
+    centre_[2] /= nsp_;
     for (auto& i : sp_) {
       if (i->schwarz() < schwarz_thresh_) continue;
       double rad = 0;
@@ -100,7 +106,7 @@ void Box::get_branches() {
   branch_.resize(nbranch);
   vector<vector<shared_ptr<const ShellPair>>> br(nbranch);
   for (int i = 0; i != nbranch; ++i)
-     br[i].reserve(nsp());
+     br[i].reserve(sp_.size());
 
   for (auto& sp : sp_) {
     if (sp->schwarz() < thresh_) continue;
@@ -246,7 +252,7 @@ void Box::sort_sp() {
     const vector<shared_ptr<const ShellPair>> csp = c->sp();
     newsp.insert(newsp.end(), csp.begin(), csp.end());
   }
-  assert(newsp.size() == nsp());
+  assert(newsp.size() == sp_.size());
   sp_ = newsp;
 }
 
@@ -256,7 +262,7 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
   multipole_->fill(0.0);
 
   if (nchild() == 0) { // leaf
-    TaskQueue<function<void(void)>> tasks(nsp());
+    TaskQueue<function<void(void)>> tasks(nsp_);
     mutex jmutex;
     for (auto& v : sp_) {
       if (v->schwarz() < thresh_) continue;
@@ -314,7 +320,7 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
   olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
 
   if (nchild() == 0) { // leaf
-    TaskQueue<function<void(void)>> tasks(nsp());
+    TaskQueue<function<void(void)>> tasks(nsp_);
     mutex kmutex;
     for (auto& v : sp_) {
       if (v->schwarz() < thresh_) continue;
@@ -592,12 +598,12 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
 
 
 void Box::print_box() const {
-  cout << "Box " << boxid_ << " Rank = " << rank_ << " *** nchild = " << nchild() << " *** nsp = " << nsp()
+  cout << "Box " << boxid_ << " Rank = " << rank_ << " *** nchild = " << nchild() << " *** nsp = " << sp_.size()
        << " *** nneigh = " << nneigh() << " *** ninter = " << ninter() << " *** extent = " << extent_
        << " *** centre = " << setprecision(3) << centre_[0] << "  " << centre_[1] << "  " << centre_[2] << endl;
 
 //  cout << " *** Shell pairs at ***" << endl;
-//  for (int i = 0; i != nsp(); ++i)
+//  for (int i = 0; i != sp_.size(); ++i)
 //    cout << setprecision(5) << sp(i)->centre(0) << "  " << sp(i)->centre(1) << "  " << sp(i)->centre(2) << endl;
 }
 
@@ -733,7 +739,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) 
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
 
   // compute multipoles again - not efficient - for now
-  TaskQueue<function<void(void)>> tasks(nsp());
+  TaskQueue<function<void(void)>> tasks(nsp_);
   mutex jmutex;
   for (auto& v : sp_) {
     if (v->schwarz() < thresh_) continue;
@@ -769,7 +775,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
   auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_);
   assert(ocoeff_ti->mdim() == olm_mdim_);
   const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
-  TaskQueue<function<void(void)>> tasks(nsp());
+  TaskQueue<function<void(void)>> tasks(nsp_);
   mutex kmutex;
   for (auto& v : sp_) {
     if (v->schwarz() < thresh_) continue;

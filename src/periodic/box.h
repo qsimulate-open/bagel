@@ -52,6 +52,7 @@ class Box {
     int nbasis0_, nbasis1_;
     int nmult_;
     int nocc_;
+    int nsp_;
     size_t nsize_, msize_, olm_ndim_, olm_mdim_, olm_size_block_;
 
     std::vector<std::shared_ptr<ZMatrix>> box_olm_;
@@ -126,7 +127,7 @@ class Box {
     double thresh() const { return thresh_; }
     double schwarz_thresh() const { return schwarz_thresh_; }
 
-    int nsp() const { return sp_.size(); }
+    int nsp() const { return nsp_; }
     int nchild() const { return child_.size(); }
     int nneigh() const { return neigh_.size(); }
     int ninter() const { return inter_.size(); }
