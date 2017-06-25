@@ -192,7 +192,8 @@ void RHF::compute() {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1>>(previous_fock)->half();
       /* TEST CONVERGENCE WITH MULTIPOLE RANKS */
-      for (int lmaxK = 0; lmaxK != 6; ++lmaxK) {
+      #if 0
+      for (int lmaxK = 3; lmaxK != 6; ++lmaxK) {
         for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
           auto fmm = make_shared<const FMM>(geom_, 5, lmaxJ, 1.0e-12, 0.0, true, lmaxK, false);
           shared_ptr<const Matrix> tmpJ = fmm->compute_Fock_FMM(aodensity_);
@@ -202,7 +203,7 @@ void RHF::compute() {
           cout << "LMAXJ " << lmaxJ << "  LMAXK " << lmaxK << " ENERGY " << setprecision(9) << energy << " ERROR " << (energy_-energy)*1.0e6 << endl;
         } 
       }
-
+      #endif
 
       break;
     } else if (iter == max_iter_-1) {

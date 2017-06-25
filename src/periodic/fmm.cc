@@ -36,13 +36,16 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-const static int batchsize = 25;
 
 const static Legendre plm;
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws,
-         const bool ex, const int lmax_k, const bool print)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k), debug_(print) {
+         const bool ex, const int lmax_k, const bool print, const int batchsize)
+ : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k),
+   debug_(print), xbatchsize_(batchsize) {
+
+  if (batchsize < 0)
+    xbatchsize_ = (int) ceil(0.5*geom_->nele()/mpi__->size());
 
   init();
 }
@@ -225,7 +228,7 @@ void FMM::get_boxes() {
     cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
     cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " lmaxJ " << lmax_;
     if (do_exchange_)
-      cout << " *** BATCHSIZE " << batchsize << " lmax_k " << lmax_k_;
+      cout << " *** BATCHSIZE " << xbatchsize_ << " lmax_k " << lmax_k_;
     cout << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
     int i = 0;
     for (auto& b : box_) {
@@ -425,7 +428,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   auto ocoeff = make_shared<const Matrix>(coeff->slice(0,nocc));
 
   auto krj = make_shared<Matrix>(nbasis_, nocc);
-  const int nbatch = (nocc-1) / batchsize+1;
+  const int nbatch = (nocc-1) / xbatchsize_+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
 
@@ -491,7 +494,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   Timer ktime;
   const int nocc = ocoeff->mdim();
   auto krj = make_shared<Matrix>(nbasis_, nocc);
-  const int nbatch = (nocc-1) / batchsize+1;
+  const int nbatch = (nocc-1) / xbatchsize_+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
 
