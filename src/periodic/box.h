@@ -48,7 +48,7 @@ class Box {
     std::vector<std::shared_ptr<const Box>> neigh_;
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
-    double thresh_, extent_, schwarz_thresh_;
+    double extent_, schwarz_thresh_;
     int nbasis0_, nbasis1_;
     int nmult_;
     int nocc_;
@@ -100,12 +100,12 @@ class Box {
   public:
     Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
         const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
-        const double thresh = 0.0, const double schwarz = 0.0)
-     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), thresh_(thresh), schwarz_thresh_(schwarz) { }
+        const double schwarz = 0.0)
+     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), schwarz_thresh_(schwarz) { }
 
     Box(std::shared_ptr<const Box> b, const std::vector<std::shared_ptr<const ShellPair>>& sp)
      : rank_(b->rank()), boxsize_(b->boxsize()), centre_(b->centre()), boxid_(b->boxid()), tvec_(b->tvec()), lmax_(b->lmax()), lmax_k_(b->lmax_k()),
-       sp_(sp), thresh_(b->thresh()), schwarz_thresh_(b->schwarz_thresh()) { }
+       sp_(sp), schwarz_thresh_(b->schwarz_thresh()) { }
 
     ~Box() { }
 
@@ -118,7 +118,6 @@ class Box {
     const std::array<int, 3>& tvec() const { return tvec_; }
     int lmax() const { return lmax_; }
     int lmax_k() const { return lmax_k_; }
-    double thresh() const { return thresh_; }
     double schwarz_thresh() const { return schwarz_thresh_; }
 
     int nsp() const { return nsp_; }

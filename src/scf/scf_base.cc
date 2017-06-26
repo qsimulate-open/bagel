@@ -64,8 +64,8 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   if (dofmm_) {
     const bool dodf = idata_->get<bool>("df", true);
     if (dodf) throw runtime_error("FMM only works without DF now");
-    fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", 1.0e-10),
-                                         idata_->get<double>("ws", 1.0), idata_->get<bool>("exchange", false), idata_->get<int>("lmax_exchange", 10),
+    fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
+                                         idata_->get<bool>("exchange", true), idata_->get<int>("lmax_exchange", 2),
                                          idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
   }
   multipole_print_ = idata_->get<int>("multipole", 1);

@@ -39,9 +39,9 @@ static const double pisq__ = pi__ * pi__;
 
 const static Legendre plm;
 
-FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double thresh, const double ws,
+FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
          const bool ex, const int lmax_k, const bool print, const int batchsize)
- : geom_(geom), ns_(ns), lmax_(lmax), thresh_(thresh), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k),
+ : geom_(geom), ns_(ns), lmax_(lmax), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k),
    debug_(print), xbatchsize_(batchsize) {
 
   if (batchsize < 0)
@@ -145,7 +145,7 @@ void FMM::get_boxes() {
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_, geom_->schwarz_thresh());
+    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -181,7 +181,7 @@ void FMM::get_boxes() {
               if (nss != 0) {
                 const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
                 auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}},
-                     nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_, geom_->schwarz_thresh());
+                     nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
