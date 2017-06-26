@@ -35,6 +35,132 @@
 using namespace std;
 using namespace bagel;
 
+void Opt::edit_tinker_input() const {
+  system("mv -f tinkin.xyz tinkin.xyz.old");
+  ifstream fs_tinker_qmmm_old("tinkin.xyz.old");
+  ofstream fs_tinker_qmmm("tinkin.xyz");
+  string line;
+  getline(fs_tinker_qmmm_old,line);
+  fs_tinker_qmmm << line << endl;
+  {
+    int i = 0;
+    while (getline(fs_tinker_qmmm_old,line)) {
+      stringstream ss(line);
+      int dum;
+      string atomnm;
+      double x,y,z;
+      ss >> dum >> atomnm >> x >> y >> z;
+      fs_tinker_qmmm << setw(6) << dum << setw(3) << atomnm << setw(20) << setprecision(10) << current_->xyz()->element(0,i) * au2angstrom__ <<
+        setw(20) << setprecision(10) << current_->xyz()->element(1,i) * au2angstrom__ <<
+        setw(20) << setprecision(10) << current_->xyz()->element(2,i) * au2angstrom__;
+      // get the rest dummies and print it to TINKER input
+      while (ss >> dum)
+        fs_tinker_qmmm << setw(6) << dum;
+      fs_tinker_qmmm << endl;
+      ++i;
+    }
+  }
+  fs_tinker_qmmm_old.close();
+  fs_tinker_qmmm.close();
+}
+
+
+tuple<double,shared_ptr<GradFile>> Opt::do_tinker_grad() const {
+  Timer timer;
+  double mmen;
+  auto out = make_shared<GradFile>(current_->natom());
+  // generate TINKER input & run TINKER testgrad.x
+  // (tinker inputs are prepared in tinker1 and tinker2 directories)
+
+  chdir("tinker1");
+
+  edit_tinker_input();
+  system("testgrad -k tinkin.key tinkin.xyz y n n > gradientls");
+  system("grep 'Total Potential' gradientls | cut -c 29- > ../energy_qmmm");        // energy in kcal/mol
+  char cmd[256];
+  sprintf (cmd, "grep -A %d 'Cartesian Gradient Breakdown over Individual Atoms' gradientls | grep -v 'Gradient' | grep 'Anlyt' | cut -c 8- > ../grad_qmmm", current_->natom()+3);
+  system(cmd);
+
+  chdir("../");
+  timer.tick_print("Running TINKER for whole region");
+  chdir("tinker2");
+
+  edit_tinker_input();
+  system("testgrad -k tinkin.key tinkin.xyz y n n > gradientls");
+  system("grep 'Total Potential' gradientls | cut -c 29- > ../energy_qm");        // energy in kcal/mol
+  sprintf (cmd, "grep -A %d 'Cartesian Gradient Breakdown over Individual Atoms' gradientls | grep -v 'Gradient' | grep 'Anlyt' | cut -c 8- > ../grad_qm", current_->natom()+3);
+  system(cmd);
+
+  chdir("../");
+  timer.tick_print("Running TINKER for QM region");
+
+  // parse all the outputs
+  ifstream fs_energy_qmmm("energy_qmmm");
+  if (!fs_energy_qmmm.is_open()) throw runtime_error("energy_qmmm cannot be opened");
+  string line;
+  double mmen_1;
+  {
+    getline(fs_energy_qmmm,line);
+    stringstream ss(line);
+    ss >> mmen_1;
+  }
+  fs_energy_qmmm.close();
+
+  ifstream fs_energy_qm("energy_qm");
+  if (!fs_energy_qm.is_open()) throw runtime_error("energy_qm cannot be opened");
+  double mmen_2;
+  {
+    getline(fs_energy_qm,line);
+    stringstream ss(line);
+    ss >> mmen_2;
+  }
+  fs_energy_qm.close();
+
+  ifstream fs_grad_qmmm("grad_qmmm");
+  if (!fs_grad_qmmm.is_open()) throw runtime_error("grad_qmmm cannot be opened");
+  auto grad_1 = make_shared<GradFile>(current_->natom());
+  {
+    int i = 0;
+    while (getline(fs_grad_qmmm,line)) {
+      int dum;
+      stringstream ss(line);
+      ss >> dum >> grad_1->element(0,i) >> grad_1->element(1,i) >> grad_1->element(2,i);
+      ++i;
+    }
+  }
+  fs_grad_qmmm.close();
+
+  ifstream fs_grad_qm("grad_qm");
+  if (!fs_grad_qm.is_open()) throw runtime_error("grad_qm cannot be opened");
+  auto grad_2 = make_shared<GradFile>(current_->natom());
+  {
+    int i = 0;
+    while (getline(fs_grad_qm,line)) {
+      int dum;
+      stringstream ss(line);
+      ss >> dum >> grad_2->element(0,i) >> grad_2->element(1,i) >> grad_2->element(2,i);
+      ++i;
+    }
+  }
+  fs_grad_qm.close();
+
+  // energy : kcal / mol
+  mmen = (mmen_1 - mmen_2) * 4.184 / (au2kjmol__);
+
+  stringstream ss; ss << "MM energy = " << setw(10) << setprecision(5) << mmen;
+  timer.tick_print(ss.str());
+
+  // gradient : kcal / mol / angstrom
+  grad_1->scale(4.184*au2angstrom__ / au2kjmol__);
+  grad_2->scale(4.184*au2angstrom__ / au2kjmol__);
+
+  *out = *grad_1 - *grad_2;
+
+  // return the energy and gradient
+  return tie(mmen,out);
+}
+
+
 tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_mecigrad(shared_ptr<PTree> cinput, shared_ptr<const Reference> ref) const {
   // MECI: minimize E2 while E2-E1 = 0 -> project out g and h from D(E2). [Bearpark, Robb, Schlegel (CPL 1994, 223, 269)]
 
@@ -68,6 +194,16 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
     x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state2_, maxziter_, target_state_, nacmtype_));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
+  }
+
+  if (qmmm_tinker_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    tie(mmen,mmgrad) = do_tinker_grad();
+    *cgrad2 = *cgrad2 + *mmgrad;
+    *cgrad1 = *cgrad1 + *mmgrad;
+    en1 += mmen;
+    en2 += mmen;
   }
 
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
@@ -291,6 +427,16 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
+  if (qmmm_tinker_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    tie(mmen,mmgrad) = do_tinker_grad();
+    *cgrad2 = *cgrad2 + *mmgrad;
+    *cgrad1 = *cgrad1 + *mmgrad;
+    en1 += mmen;
+    en2 += mmen;
+  }
+
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
   if (x1norm > 1.0e-8)
@@ -409,7 +555,6 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
   }
 
   if (numerical) {
-
     auto m = idata_->get_child("method");
     const int nproc = idata_->get<int>("nproc", 1);
     const double dx = idata_->get<double>("numerical_dx", 0.001);
@@ -417,7 +562,14 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
     out = eval.compute();
     prev_ref = eval.ref();
     en = eval.energy();
+  }
 
+  if (qmmm_tinker_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    tie(mmen,mmgrad) = do_tinker_grad();
+    *out = *out + *mmgrad;
+    en += mmen;
   }
 
   return tie(en,prev_ref,out);

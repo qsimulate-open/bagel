@@ -56,6 +56,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   numerical_ = idat->get<bool>("numerical", false);
   hess_update_ = to_lower(idat->get<string>("hess_update", "flowchart"));
   hess_approx_ = idat->get<bool>("hess_approx", true);
+  qmmm_tinker_ = idat->get<bool>("qmmm_tinker", false);
 
   constrained_ = idat->get<bool>("constrained", false);
   if (constrained_) {
