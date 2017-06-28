@@ -43,7 +43,7 @@
 
 namespace bagel {
 
- class StackMem {
+class StackMem {
   protected:
     std::unique_ptr<double[]> stack_area_;
     size_t pointer_;
@@ -54,20 +54,7 @@ namespace bagel {
 #endif
 
   public:
-    StackMem() : pointer_(0LU), total_(20000000LU) { // TODO 80MByte
-      stack_area_ = std::unique_ptr<double[]>(new double[total_]);
-
-      // in case we use Libint for ERI
-    #ifdef LIBINT_INTERFACE
-      // TODO 20LU should not be hardwired
-      libint_t_ = std::unique_ptr<Libint_t[]>(new Libint_t[20LU*20LU*20LU*20LU]);
-      if (libint2_need_memory_3eri1(LIBINT2_MAX_AM_3eri1) < libint2_need_memory_eri(LIBINT2_MAX_AM_eri)) {
-        LIBINT2_PREFIXED_NAME(libint2_init_eri)(&libint_t_[0], LIBINT2_MAX_AM_eri, 0);
-      } else {
-        LIBINT2_PREFIXED_NAME(libint2_init_3eri1)(&libint_t_[0], LIBINT2_MAX_AM_3eri1, 0);
-      }
-    #endif
-    }
+    StackMem();
 
     template <typename DataType = double>
     DataType* get(const size_t size) {
@@ -95,37 +82,17 @@ namespace bagel {
 };
 
 
- class Resources {
+class Resources {
   private:
     std::shared_ptr<Process> proc_;
     std::map<std::shared_ptr<StackMem>, std::atomic_flag> stackmem_;
     size_t max_num_threads_;
 
   public:
-    Resources(const int max) : proc_(std::make_shared<Process>()), max_num_threads_(max) {
-#ifdef LIBINT_INTERFACE
-      LIBINT2_PREFIXED_NAME(libint2_static_init)();
-#endif
-      for (int i = 0; i != max; ++i)
-        stackmem_[std::make_shared<StackMem>()].clear();
-    }
+    Resources(const int max);
 
-    std::shared_ptr<StackMem> get() {
-      for (auto& i : stackmem_) {
-        if (!i.second.test_and_set())
-          return i.first;
-      }
-      // This error most often occurs if we forget to destruct one integral object before constructing another
-      throw std::runtime_error("Stack Memory exhausted");
-      return nullptr;
-    }
-
-    void release(std::shared_ptr<StackMem> o) {
-      o->clear();
-      auto iter = stackmem_.find(o);
-      assert(iter != stackmem_.end());
-      iter->second.clear();
-    }
+    std::shared_ptr<StackMem> get();
+    void release(std::shared_ptr<StackMem> o);
 
     size_t max_num_threads() const { return max_num_threads_; }
     std::shared_ptr<Process> proc() { return proc_; }

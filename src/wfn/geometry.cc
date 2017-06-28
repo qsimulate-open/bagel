@@ -55,6 +55,9 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   // symmetry
   symmetry_ = to_lower(geominfo->get<string>("symmetry", "c1"));
 
+  // skip self interaction between the charges.
+  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", true);
+
   // cartesian or not.
   const bool cart = geominfo->get<bool>("cartesian", false);
   if (cart) {
@@ -197,6 +200,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
+  skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
   int iat = 0;
@@ -309,6 +313,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
+  skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -343,6 +348,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
+  dkh_ = o.dkh_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -350,8 +356,10 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  dofmm_ = geominfo->get<bool>("cfmm", false);
+  dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
+
+  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
   // check if a magnetic field has been supplied
   auto newfield = geominfo->get_child_optional("magnetic_field");
@@ -362,7 +370,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
       for (int i = 0; i != 3; ++i)
         magnetic_field_[i] /= au2tesla__;
 
-    const string basis = geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian");
+    const string basis = to_lower(geominfo->get<string>("basis_type", london_ ? "giao" : "gaussian"));
     if (basis == "giao" || basis == "london") london_ = true;
     else if (basis == "gaussian") london_ = false;
     else throw runtime_error("Basis set type not recognized; should be Gaussian or London");
@@ -435,6 +443,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
   dofmm_ = nmer.front()->dofmm_;
+  skip_self_interaction_ = nmer.front()->skip_self_interaction_;
 
   /************************************************************
   * Going down the list of protected variables, merge the     *
@@ -515,6 +524,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
+  skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", true);
 
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
@@ -554,7 +564,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   get_electric_field(geominfo);
 }
 
-
 shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
   auto grad = make_shared<Matrix>(3, natom());
@@ -564,6 +573,7 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
     if (i % mpi__->size() == mpi__->rank()) {
       for (auto& b : atoms_) {
         if (a == b) continue;
+        if (skip_self_interaction_ && (a->dummy() && b->dummy())) continue;
         const array<double,3> displ = a->displ(b);
         const double c = b->atom_charge() * ac;
         const double dist = a->distance(b);

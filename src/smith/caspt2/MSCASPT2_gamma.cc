@@ -26,13 +26,12 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 #include <src/smith/caspt2/MSCASPT2.h>
-#include <src/smith/caspt2/MSCASPT2_tasks1.h>
-#include <src/smith/caspt2/MSCASPT2_tasks2.h>
+#include <src/smith/caspt2/MSCASPT2_tasks.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
-using namespace bagel::SMITH::MSCASPT2;
+using bagel::SMITH::MSCASPT2::FutureTensor;
 
 shared_ptr<FutureTensor> MSCASPT2::MSCASPT2::Gamma0_() {
   vector<IndexRange> Gamma0_index = {active_, active_, active_, active_, active_, active_};

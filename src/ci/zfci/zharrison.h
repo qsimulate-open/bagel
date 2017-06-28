@@ -94,6 +94,7 @@ class ZHarrison : public Method {
 
     // integral reuse
     bool store_half_ints_;
+    bool store_gaunt_half_ints_;
 
     // restart
     bool restart_;
@@ -177,7 +178,7 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store = false);
+              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store_c = false, const bool store_g = false);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
 
@@ -196,6 +197,7 @@ class ZHarrison : public Method {
     std::shared_ptr<const RelCIWfn> conv_to_ciwfn() const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
+    double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const RelMOFile> jop() const { return jop_; }
@@ -221,6 +223,11 @@ class ZHarrison : public Method {
 
     // interface functions
     void dump_ints() const;
+    void read_external_rdm12_av(const std::string& file);
+    std::shared_ptr<Kramers<2,ZRDM<1>>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<4,ZRDM<2>>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<8,ZRDM<4>>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
 };
 
 

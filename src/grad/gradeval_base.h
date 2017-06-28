@@ -74,7 +74,7 @@ class GradEval_base {
                                                 const std::shared_ptr<const Geometry> g2 = nullptr,
                                                 const std::shared_ptr<const DFDist> g2o = nullptr,
                                                 const std::shared_ptr<const Matrix> g2o2 = nullptr);
-    /// Basically do the same thing with contract_gradient, but without nuclear gradient
+    /// Basically do the same as in contract_gradient, but without nuclear gradient
     std::shared_ptr<GradFile> contract_nacme   (const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
                                                 const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2,
                                                 const std::shared_ptr<const Matrix> v,

@@ -45,8 +45,10 @@ MPI_Interface::MPI_Interface()
   if (provided != MPI_THREAD_MULTIPLE)
     throw runtime_error("MPI_THREAD_MULTIPLE not provided");
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
-  MPI_Comm_size(MPI_COMM_WORLD, &size_);
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank_);
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size_);
+  rank_ = world_rank_;
+  size_ = world_size_;
 #ifdef HAVE_SCALAPACK
   tie(nprow_, npcol_) = numgrid(size());
   if (rank() == 0)
@@ -81,10 +83,13 @@ MPI_Interface::MPI_Interface()
     tag_ub_ = *get_val;
   }
 
-  // start Global Arrays here
+  // set MPI_COMM_WORLD to mpi_comm_
+  mpi_comm_ = MPI_COMM_WORLD;
 #else
-  rank_ = 0;
-  size_ = 1;
+  world_rank_ = 0;
+  world_size_ = 1;
+  rank_ = world_rank_;
+  size_ = world_size_;
 #endif
 }
 
@@ -103,163 +108,68 @@ MPI_Interface::~MPI_Interface() {
 
 void MPI_Interface::barrier() const {
 #ifdef HAVE_MPI_H
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(mpi_comm_);
 #endif
-}
-
-
-// barrier without locking mutex all the time
-void MPI_Interface::soft_barrier() {
-  vector<int> receive; receive.reserve(size_);
-  vector<size_t> msg(size_);
-  for (int i = 0; i != size_; ++i) {
-    if (i == rank_) continue;
-    // using the biggest tag value
-    request_send(&msg[rank_], 1, i, tag_ub_);
-    receive.push_back(request_recv(&msg[i], 1, i, tag_ub_));
-  }
-  bool done;
-  do {
-    done = true;
-    for (auto& i : receive)
-      if (!test(i)) { done = false; break; }
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-}
-
-
-void MPI_Interface::reduce(double* a, const size_t size, const int root) const {
-#ifdef HAVE_MPI_H
-  MPI_Reduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, root, MPI_COMM_WORLD);
-#endif
-}
-
-
-void MPI_Interface::reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const {
-#ifdef HAVE_MPI_H
-  MPI_Reduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-#endif
-}
-
-int MPI_Interface::ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) {
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Ireduce_scatter(sendbuf, recvbuf, recvcnts, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
 }
 
 
 void MPI_Interface::allreduce(double* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, MPI_SUM, mpi_comm_);
 #endif
 }
 
 
 void MPI_Interface::allreduce(int* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_INT, MPI_SUM, mpi_comm_);
 #endif
 }
 
 
 void MPI_Interface::allreduce(complex<double>* a, const size_t size) const {
 #ifdef HAVE_MPI_H
-  MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Allreduce(MPI_IN_PLACE, static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, mpi_comm_);
 #endif
-}
-
-
-int MPI_Interface::iallreduce(size_t* a, const size_t size) {
-  static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Iallreduce(MPI_IN_PLACE, static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
-}
-
-
-void MPI_Interface::soft_allreduce(size_t* a, const size_t size) {
-  vector<size_t> receive;
-  vector<size_t> msg(size_*size);
-  for (int i = 0; i != size_; ++i) {
-    if (i == rank_) continue;
-    request_send(a, size, i, tag_ub_-1);
-    receive.push_back(request_recv(&msg[i*size], size, i, tag_ub_-1));
-  }
-  bool done;
-  do {
-    done = true;
-    for (auto& i : receive)
-      if (!test(i)) { done = false; break; }
-    if (!done) this_thread::sleep_for(sleeptime__);
-  } while (!done);
-  for (int i = 0; i != size_; ++i)
-    if (i != rank_) {
-      for (int j = 0; j != size; ++j) a[j] += msg[i*size+j];
-    }
 }
 
 
 void MPI_Interface::broadcast(size_t* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
-  MPI_Bcast(static_cast<void*>(a), size, MPI_UNSIGNED_LONG_LONG, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, root, mpi_comm_);
 #endif
 }
 
 
 void MPI_Interface::broadcast(double* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Bcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, root, mpi_comm_);
 #endif
 }
 
 
 void MPI_Interface::broadcast(complex<double>* a, const size_t size, const int root) const {
 #ifdef HAVE_MPI_H
-  MPI_Bcast(static_cast<void*>(a), size, MPI_CXX_DOUBLE_COMPLEX, root, MPI_COMM_WORLD);
-#endif
-}
-
-
-int MPI_Interface::ibroadcast(double* a, const size_t size, const int root) {
-#ifdef HAVE_MPI_H
-  vector<MPI_Request> rq;
-  MPI_Request c;
-  MPI_Ibcast(static_cast<void*>(a), size, MPI_DOUBLE, root, MPI_COMM_WORLD, &c);
-  rq.push_back(c);
-#endif
-  lock_guard<mutex> lock(mpimutex_);
-#ifdef HAVE_MPI_H
-  request_.emplace(cnt_, rq);
-#endif
-  ++cnt_;
-  return cnt_-1;
-}
-
-
-void MPI_Interface::broadcast_force(const double* a, const size_t size, const int root) const {
-#ifdef HAVE_MPI_H
-  // sometimes we need to broadcast const objects for consistency...
-  double* aa = const_cast<double*>(a);
-  MPI_Bcast(static_cast<void*>(aa), size, MPI_DOUBLE, root, MPI_COMM_WORLD);
+  assert(size != 0);
+  const int nbatch = (size-1)/bsize  + 1;
+  for (int i = 0; i != nbatch; ++i)
+    MPI_Bcast(static_cast<void*>(a+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, root, mpi_comm_);
 #endif
 }
 
@@ -267,7 +177,7 @@ void MPI_Interface::broadcast_force(const double* a, const size_t size, const in
 void MPI_Interface::allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
-  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, MPI_COMM_WORLD);
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_DOUBLE, static_cast<void*>(rec), rsize, MPI_DOUBLE, mpi_comm_);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);
@@ -278,7 +188,7 @@ void MPI_Interface::allgather(const double* send, const size_t ssize, double* re
 void MPI_Interface::allgather(const complex<double>* send, const size_t ssize, complex<double>* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
-  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_CXX_DOUBLE_COMPLEX, static_cast<void*>(rec), rsize, MPI_CXX_DOUBLE_COMPLEX, MPI_COMM_WORLD);
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_CXX_DOUBLE_COMPLEX, static_cast<void*>(rec), rsize, MPI_CXX_DOUBLE_COMPLEX, mpi_comm_);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);
@@ -290,7 +200,7 @@ void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* re
 #ifdef HAVE_MPI_H
   static_assert(sizeof(size_t) == sizeof(unsigned long long), "size_t is assumed to be the same size as unsigned long long");
   // I hate const_cast. Blame the MPI C binding
-  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_UNSIGNED_LONG_LONG, static_cast<void*>(rec), rsize, MPI_UNSIGNED_LONG_LONG, MPI_COMM_WORLD);
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_UNSIGNED_LONG_LONG, static_cast<void*>(rec), rsize, MPI_UNSIGNED_LONG_LONG, mpi_comm_);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);
@@ -301,7 +211,7 @@ void MPI_Interface::allgather(const size_t* send, const size_t ssize, size_t* re
 void MPI_Interface::allgather(const int* send, const size_t ssize, int* rec, const size_t rsize) const {
 #ifdef HAVE_MPI_H
   // I hate const_cast. Blame the MPI C binding
-  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, MPI_COMM_WORLD);
+  MPI_Allgather(const_cast<void*>(static_cast<const void*>(send)), ssize, MPI_INT, static_cast<void*>(rec), rsize, MPI_INT, mpi_comm_);
 #else
   assert(ssize == rsize);
   copy_n(send, ssize, rec);
@@ -317,7 +227,7 @@ int MPI_Interface::request_send(const double* sbuf, const size_t size, const int
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, tag, MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<double*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, dest, tag, mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -338,7 +248,7 @@ int MPI_Interface::request_send(const complex<double>* sbuf, const size_t size, 
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<complex<double>*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, dest, tag, MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<complex<double>*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, dest, tag, mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -360,7 +270,7 @@ int MPI_Interface::request_send(const size_t* sbuf, const size_t size, const int
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
     // I hate const_cast. Blame the MPI C binding
-    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, dest, tag, MPI_COMM_WORLD, &c);
+    MPI_Isend(const_cast<size_t*>(sbuf+i*bsize), (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, dest, tag, mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -381,7 +291,7 @@ int MPI_Interface::request_recv(double* rbuf, const size_t size, const int origi
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
-    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_DOUBLE, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -401,7 +311,7 @@ int MPI_Interface::request_recv(complex<double>* rbuf, const size_t size, const 
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
-    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_CXX_DOUBLE_COMPLEX, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -421,7 +331,7 @@ int MPI_Interface::request_recv(size_t* rbuf, const size_t size, const int origi
   const int nbatch = (size-1)/bsize  + 1;
   for (int i = 0; i != nbatch; ++i) {
     MPI_Request c;
-    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), MPI_COMM_WORLD, &c);
+    MPI_Irecv(rbuf+i*bsize, (i+1 == nbatch ? size-i*bsize : bsize), MPI_UNSIGNED_LONG_LONG, (origin == -1 ? MPI_ANY_SOURCE : origin), (tag==-1 ? MPI_ANY_TAG : tag), mpi_comm_, &c);
     rq.push_back(c);
   }
 #endif
@@ -469,6 +379,51 @@ bool MPI_Interface::test(const int rq) {
   }
 #endif
   return out;
+}
+
+
+// MPI Communicators
+void MPI_Interface::split(const int n) {
+#ifdef HAVE_MPI_H
+#ifdef HAVE_SCALAPACK
+  // first make a map between MPI ranks and process numbers
+  vector<int> pmap(world_size_, 0);
+  pmap[world_rank_] = pnum(myprow_, mypcol_);
+  allreduce(pmap.data(), world_size_);
+#endif
+  MPI_Comm new_comm;
+  const int icomm = world_rank_ / n;
+  MPI_Comm_split(MPI_COMM_WORLD, icomm, world_rank_, &new_comm);
+  mpi_comm_ = new_comm;
+  MPI_Comm_rank(mpi_comm_, &rank_);
+  MPI_Comm_size(mpi_comm_, &size_);
+#ifdef HAVE_SCALAPACK
+  blacs_gridexit_(context_);
+  tie(nprow_, npcol_) = numgrid(size_);
+  vector<int> imap(size_);
+  for (int i = 0; i != size_; ++i)
+    imap[i] = pmap[icomm*n + i];
+  blacs_get_(0, 0, context_);
+  blacs_gridmap_(context_, imap.data(), nprow_, nprow_, npcol_);
+  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+#endif
+#endif
+}
+
+
+void MPI_Interface::merge() {
+#ifdef HAVE_MPI_H
+  MPI_Comm_free(&mpi_comm_);
+  mpi_comm_ = MPI_COMM_WORLD;
+  rank_ = world_rank_;
+  size_ = world_size_;
+#ifdef HAVE_SCALAPACK
+  blacs_gridexit_(context_);
+  tie(nprow_, npcol_) = numgrid(size_);
+  sl_init_(context_, nprow_, npcol_);
+  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+#endif
+#endif
 }
 
 

@@ -69,16 +69,19 @@ class Stevens_Operator {
 
 class Pseudospin {
   protected:
-    int nspin_;
-    int nspin1_;
+    int nspin_;                              // 2S   (number of unpaired electrons)
+    int nspin1_;                             // 2S+1
+    int norb_;
     std::vector<double> ref_energy_;
-    std::vector<Stevens_Operator> ESO_;
+    std::vector<Stevens_Operator> eso_;
     std::shared_ptr<const Matrix> dtensor_;
-    double Dval_;
-    double Eval_;
+    double dval_;
+    double eval_;
     std::array<double,3> gval_; // absolute value of principle g-tensor elements (sign not determined)
 
+    std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const PTree> idata_;
+    std::shared_ptr<const RelCIWfn> ciwfn_;
 
     // These are the basic spin operators
     std::array<std::shared_ptr<ZMatrix>,3> spin_xyz_;
@@ -105,9 +108,9 @@ class Pseudospin {
     std::shared_ptr<const Matrix> read_axes(std::shared_ptr<const Matrix> default_axes) const;
 
   public:
-    Pseudospin(const int nspin, std::shared_ptr<const PTree> idata);
+    Pseudospin(const int nspin, std::shared_ptr<const Geometry> geom, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
 
-    void compute(const ZHarrison& zfci);
+    void compute(const std::vector<double> energy, std::shared_ptr<const RelCoeff_Block> active_coeff);
 
     // return symbolic spin matrices
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
@@ -115,23 +118,23 @@ class Pseudospin {
     std::shared_ptr<ZMatrix> spin_minus() const { return spin_minus_; }
 
     // return calculated ZFS parameters
-    std::vector<Stevens_Operator> ESO() const { return ESO_; }
-    Stevens_Operator ESO(const int i) const { return ESO_[i]; }
+    std::vector<Stevens_Operator> eso() const { return eso_; }
+    Stevens_Operator eso(const int i) const { return eso_[i]; }
     std::shared_ptr<const Matrix> dtensor() const { return dtensor_; }
-    double Dval() const { return Dval_; }
-    double Eval() const { return Eval_; }
+    double dval() const { return dval_; }
+    double eval() const { return eval_; }
     std::array<double,3> gval() const { return gval_; }
     double gval(const int i) const { return gval_[i]; }
 
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
-    void compute_numerical_hamiltonian(const ZHarrison& zfci, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void compute_numerical_hamiltonian(const std::vector<double> energy_in, std::shared_ptr<const RelCoeff_Block> active_coeff);
     std::pair<std::shared_ptr<const Matrix>, std::array<double,3>> identify_magnetic_axes() const;
 
     // to extract D-tensor
     std::shared_ptr<const ZMatrix> compute_spin_eigenvalues() const;
     std::vector<Stevens_Operator> extract_hamiltonian_parameters(const std::vector<Stevens_Operator> param, std::shared_ptr<const ZMatrix> spinham_s) const;
-    std::tuple<std::shared_ptr<const Matrix>, double, double> compute_Dtensor(const std::vector<Stevens_Operator> input) const;
+    std::tuple<std::shared_ptr<const Matrix>, double, double> compute_dtensor(const std::vector<Stevens_Operator> input) const;
 
     // To verify that a matrix in pseudospin basis has specified time-reversal symmetry
     // The bool parameters tell us if the matrix should be symmetric or antisymmetric under Hermitian conjugation and time-reversal, respectively

@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "tzvpp",
   "df_basis" : "tzvpp-jkfit",
   "angstrom" : false,
@@ -15,10 +14,8 @@
 {
   "title"  : "casscf",
   "nstate" : 1,
-  "algorithm" : "hybrid",
-  "maxiter_switch" : 5,
-  "nact"   : 0,
-  "nact_cas" : 2,
+  "nopen"  : 0,
+  "nact"   : 2,
   "nclosed" : 1
 }
 

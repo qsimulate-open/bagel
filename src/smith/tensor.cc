@@ -128,6 +128,28 @@ double Tensor_<DataType>::orthog(const list<shared_ptr<const Tensor_<DataType>>>
   return n;
 }
 
+template <typename DataType>
+shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix_3index() const {
+  vector<IndexRange> o = indexrange();
+  assert(o.size() == 3);
+
+  const size_t off0 = o[0].front().offset();
+  const size_t off1 = o[1].front().offset();
+  const size_t off2 = o[2].front().offset();
+
+  auto out = make_shared<MatType>(o[0].size(), o[1].size()*o[2].size());
+  for (auto& i2 : o[2].range())
+    for (auto& i1 : o[1].range())
+      for (auto& i0 : o[0].range()) {
+        auto input = get_block(i0, i1, i2);
+        for (size_t io2 = 0; io2 != i2.size(); ++io2)
+          for (size_t io1 = 0; io1 != i1.size(); ++io1)
+            copy_n(&(input[0+i0.size()*(io1+i1.size()*io2)]),
+                   i0.size(), out->element_ptr(i0.offset()-off0, io1+i1.offset()-off1 + o[1].size()*(io2+i2.offset()-off2)));
+      }
+
+  return out;
+}
 
 template <typename DataType>
 shared_ptr<typename Tensor_<DataType>::MatType> Tensor_<DataType>::matrix() const {
@@ -163,5 +185,8 @@ shared_ptr<typename Tensor_<DataType>::VecType> Tensor_<DataType>::vectorb() con
 template class Tensor_<double>;
 template class Tensor_<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+BOOST_CLASS_EXPORT_IMPLEMENT(Tensor_<double>)
+BOOST_CLASS_EXPORT_IMPLEMENT(Tensor_<complex<double>>)
 
 #endif

@@ -38,20 +38,18 @@ class FiniteGrad : public GradEval_base {
     std::shared_ptr<const Reference> ref_;
 
     mutable std::shared_ptr<Muffle> muffle_;
-
     double energy_;
 
     int target_state_;
     double dx_;
-    std::string method_;
+    int nproc_;
 
   public:
     // Constructor does nothing here
-    FiniteGrad(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), method_(method) {
+    FiniteGrad(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const double dx, const int nproc)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state_(target), dx_(dx), nproc_(nproc) {
     }
 
-    // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute();
 
     double energy() const { return energy_; }
@@ -75,7 +73,7 @@ class FiniteNacm : public GradEval_base {
     int target_state1_;
     int target_state2_;
     double dx_;
-    std::string method_;
+    int nproc_;
 
     void init() {
       if (geom_->external())
@@ -93,12 +91,11 @@ class FiniteNacm : public GradEval_base {
     }
 
   public:
-    FiniteNacm(const std::string method, std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx)
-      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), method_(method) {
+    FiniteNacm(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, const int target, const int target2, const double dx, const int nproc)
+      : GradEval_base(geom), idata_(idata), ref_(ref), target_state1_(target), target_state2_(target2), dx_(dx), nproc_(nproc) {
       init();
     }
 
-    // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute() { throw std::logic_error("NACME for this method has not been implemented"); }
 
     double energy1 () const { return energy1_; }

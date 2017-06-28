@@ -61,13 +61,30 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm2all_ = cas.rdm2all_;
   rdm3all_ = cas.rdm3all_;
   rdm4all_ = cas.rdm4all_;
+
+  den0ci = cas.rdm0_->clone();
+  den1ci = cas.rdm1_->clone();
+  den2ci = cas.rdm2_->clone();
+  den3ci = cas.rdm3_->clone();
+  den4ci = cas.rdm3_->clone();
+
+  // Total tensor (that is summed up)
+  den0cit = cas.rdm0_->clone();
+  den1cit = cas.rdm1_->clone();
+  den2cit = cas.rdm2_->clone();
+  den3cit = cas.rdm3_->clone();
+  den4cit = cas.rdm3_->clone();
+
+  den0ciall = make_shared<Vec<Tensor>>();
+  den1ciall = make_shared<Vec<Tensor>>();
+  den2ciall = make_shared<Vec<Tensor>>();
+  den3ciall = make_shared<Vec<Tensor>>();
+  den4ciall = make_shared<Vec<Tensor>>();
 }
 
-void MSCASPT2::MSCASPT2::solve_dm() {
+void MSCASPT2::MSCASPT2::solve_dm(const int targetJ, const int targetI) {
   {
     const int nstates = info_->ciwfn()->nstates();
-    const int targetJ = info_->target();
-    const int targetI = info_->target2();
 
     shared_ptr<Tensor> resultv = den1->clone();
     for (int jst = 0; jst != nstates; ++jst) { // bra
@@ -94,10 +111,73 @@ void MSCASPT2::MSCASPT2::solve_dm() {
   }
 }
 
-void MSCASPT2::MSCASPT2::solve_deriv() {
+void MSCASPT2::MSCASPT2::add_total(double factor) {
+  den0cit->ax_plus_y(factor, den0ci);
+  den1cit->ax_plus_y(factor, den1ci);
+  den2cit->ax_plus_y(factor, den2ci);
+  den3cit->ax_plus_y(factor, den3ci);
+  den4cit->ax_plus_y(factor, den4ci);
+}
+
+void MSCASPT2::MSCASPT2::zero_total() {
+  den0cit->zero();
+  den1cit->zero();
+  den2cit->zero();
+  den3cit->zero();
+  den4cit->zero();
+}
+
+void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
+  const int nstates = info_->ciwfn()->nstates();
+  Timer timer(1);
+  for (int nst = 0; nst != nstates; ++nst) {
+    const size_t ndet = ci_deriv_->data(nst)->size();
+    const size_t nact  = info_->nact();
+    const size_t norb2 = nact*nact;
+    const size_t ijmax = info_->cimaxchunk();
+    const size_t ijnum = ndet * norb2 * norb2;
+    const size_t npass = (ijnum-1) / ijmax + 1;
+    const size_t nsize = (ndet-1) / npass + 1;
+    if (npass > 1)
+      cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      const size_t ioffset = ipass * nsize;
+      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+
+      // If it is the first time for this state, compute fock-weighted 2RDM derivative and save it
+      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
+        = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
+      for (int mst = 0; mst != nstates; ++mst) {
+        den0cit = den0ciall->at(nst, mst);
+        den1cit = den1ciall->at(nst, mst);
+        den2cit = den2ciall->at(nst, mst);
+        den3cit = den3ciall->at(nst, mst);
+        den4cit = den4ciall->at(nst, mst);
+        mpi__->barrier();
+
+        deci = make_shared<Tensor>(vector<IndexRange>{ci_});
+        deci->allocate();
+        auto bdata = make_shared<VectorB>(ndet);
+        shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+        while (!queue->done())
+          queue->next_compute();
+
+        blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);
+        blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
+      }
+      if (npass > 1) {
+        stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+        timer.tick_print(ss.str());
+      }
+    }
+  }
+}
+
+
+void MSCASPT2::MSCASPT2::solve_deriv(const int target) {
   Timer timer;
   const int nstates = info_->ciwfn()->nstates();
-  const int target = info_->target();
 
   // first-order energy from the energy expression
   // TODO these can be computed more efficiently using mixed states
@@ -177,69 +257,45 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
 
   // CI derivative..
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-  // outer most look over RDM derivatives
-  for (int nst = 0; nst != nstates; ++nst) {
-    const size_t cisize = ci_deriv_->data(nst)->size();
-    const size_t cimax = 1000; // TODO interface to the input
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
-    const double nheff = (*heff_)(nst, target);
 
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
+  for (int mst = 0; mst != nstates; ++mst) {
+    const double mheff = (*heff_)(mst, target);
+    shared_ptr<Queue> dec;
 
-      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
-
-      // output area
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-
-      shared_ptr<Queue> dec;
+    for (int nst = 0; nst != nstates; ++nst) {
+      const double nheff = (*heff_)(nst, target);
+      zero_total();
 
       for (int lst = 0; lst != nstates; ++lst) {
         const double lheff = (*heff_)(lst, target);
-        // derivative with respect to M
-        for (int mst = 0; mst != nstates; ++mst) {
-          const double mheff = (*heff_)(mst, target);
+        if (!info_->sssr() || nst == lst) {
+          l2 = t2all_[lst]->at(nst);
+          dec = make_deci3q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(lheff*mheff);
+        }
 
-          // <N|T_LN H|I>
-          if (!info_->sssr() || nst == lst) {
-            l2 = t2all_[lst]->at(nst);
-            dec = make_deci3q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(lheff*mheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
+        if (!info_->sssr() || mst == lst) {
+          l2 = t2all_[lst]->at(mst);
+          dec = make_deci4q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(lheff*nheff);
+        }
 
-          // <I|T_LM H|N>
-          if (!info_->sssr() || mst == lst) {
-            l2 = t2all_[lst]->at(mst);
-            dec = make_deci4q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(lheff*nheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
-
-          // -2Es <N|T_LN T_LM|I>
-          if (!info_->sssr() || (mst == lst && nst == lst)) {
-            e0_ = 2.0*info_->shift();
-            l2 = t2all_[lst]->at(nst);
-            t2 = t2all_[lst]->at(mst);
-            dec = make_deci2q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(lheff*lheff, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
+        if (!info_->sssr() || (mst == lst && nst == lst)) {
+          e0_ = 2.0*info_->shift();
+          l2 = t2all_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deci2q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(lheff*lheff);
         }
       }
 
-      // derivative with respect to M
-      for (int mst = 0; mst != nstates; ++mst) {
-        if (info_->sssr() && nst != mst)
-          continue;
-
+      if (!info_->sssr() || nst == mst) {
         l2 = lall_[mst]->at(nst);
         dec = make_deci3q(/*zero*/true);
         while (!dec->done())
@@ -273,20 +329,31 @@ void MSCASPT2::MSCASPT2::solve_deriv() {
           while (!dec->done())
             dec->next_compute();
         }
-        blas::ax_plus_y_n(1.0, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+        add_total(1.0);
       }
-      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass
-                          << "   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
-      timer.tick_print(ss.str());
+
+      // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4cit->scale(den4factor);
+
+      den0ciall->emplace(nst, mst, den0cit->copy());
+      den1ciall->emplace(nst, mst, den1cit->copy());
+      den2ciall->emplace(nst, mst, den2cit->copy());
+      den3ciall->emplace(nst, mst, den3cit->copy());
+      den4ciall->emplace(nst, mst, den4cit->copy());
     }
+
+    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
+    timer.tick_print(ss.str());
   }
+
+  do_rdm_deriv(1.0);
+  timer.tick_print("CI derivative contraction");
 }
 
-void MSCASPT2::MSCASPT2::solve_nacme() {
+void MSCASPT2::MSCASPT2::solve_nacme(const int targetJ, const int targetI) {
   Timer timer;
   const int nstates = info_->ciwfn()->nstates();
-  const int targetJ = info_->target();
-  const int targetI = info_->target2();
 
   // first-order energy from the energy expression
   {
@@ -374,77 +441,52 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
 
   // CI derivative..
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-  // outer most look over RDM derivatives
-  for (int nst = 0; nst != nstates; ++nst) {
-    const size_t cisize = ci_deriv_->data(nst)->size();
-    const size_t cimax = 1000; // TODO interface to the input
-    const size_t npass = (cisize-1)/cimax+1;
-    const size_t chunk = (cisize-1)/npass+1;
-    const double nheffJ = (*heff_)(nst, targetJ);
-    const double nheffI = (*heff_)(nst, targetI);
 
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      const size_t offset = ipass * chunk;
-      const size_t size = min(chunk, cisize-offset);
+  for (int mst = 0; mst != nstates; ++mst) {
+    const double mheffJ = (*heff_)(mst, targetJ);
+    const double mheffI = (*heff_)(mst, targetI);
+    shared_ptr<Queue> dec;
 
-      tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3deriv_, rdm4deriv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, offset, size);
-
-      // output area
-      deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-      deci->allocate();
-
-      shared_ptr<Queue> dec;
+    for (int nst = 0; nst != nstates; ++nst) {
+      const double nheffJ = (*heff_)(nst, targetJ);
+      const double nheffI = (*heff_)(nst, targetI);
+      zero_total();
 
       for (int lst = 0; lst != nstates; ++lst) {
         const double lheffJ = (*heff_)(lst, targetJ);
         const double lheffI = (*heff_)(lst, targetI);
-
         const double lnhJI  = (lheffJ * nheffI + lheffI * nheffJ) * 0.5;
         const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
-        // derivative with respect to M
-        for (int mst = 0; mst != nstates; ++mst) {
-          const double mheffJ = (*heff_)(mst, targetJ);
-          const double mheffI = (*heff_)(mst, targetI);
+        const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
 
-          const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
+        if (!info_->sssr() || nst == lst) {
+          l2 = t2all_[lst]->at(nst);
+          dec = make_deci3q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(lmhJI);
+        }
 
-          // <N|T_LN H|I>
-          if (!info_->sssr() || nst == lst) {
-            l2 = t2all_[lst]->at(nst);
-            dec = make_deci3q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(lmhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
+        if (!info_->sssr() || mst == lst) {
+          l2 = t2all_[lst]->at(mst);
+          dec = make_deci4q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(lnhJI);
+        }
 
-          // <I|T_LM H|N>
-          if (!info_->sssr() || mst == lst) {
-            l2 = t2all_[lst]->at(mst);
-            dec = make_deci4q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(lnhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
-
-          // -2Es <N|T_LN T_LM|I>
-          if (!info_->sssr() || (mst == lst && nst == lst)) {
-            e0_ = 2.0*info_->shift();
-            l2 = t2all_[lst]->at(nst);
-            t2 = t2all_[lst]->at(mst);
-            dec = make_deci2q(/*zero*/true);
-            while (!dec->done())
-              dec->next_compute();
-            blas::ax_plus_y_n(llhJI, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
-          }
+        if (!info_->sssr() || (mst == lst && nst == lst)) {
+          e0_ = 2.0*info_->shift();
+          l2 = t2all_[lst]->at(nst);
+          t2 = t2all_[lst]->at(mst);
+          dec = make_deci2q(/*zero=*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(llhJI);
         }
       }
 
-      // derivative with respect to M
-      for (int mst = 0; mst != nstates; ++mst) {
-        if (info_->sssr() && nst != mst)
-          continue;
-
+      if (!info_->sssr() || nst == mst) {
         l2 = lall_[mst]->at(nst);
         dec = make_deci3q(/*zero*/true);
         while (!dec->done())
@@ -478,13 +520,26 @@ void MSCASPT2::MSCASPT2::solve_nacme() {
           while (!dec->done())
             dec->next_compute();
         }
-        blas::ax_plus_y_n(1.0, deci->vectorb()->data(), size, ci_deriv_->data(mst)->data()+offset);
+        add_total(1.0);
       }
-      stringstream ss; ss << "CI derivative evaluation " << setw(5) << ipass+1 << " / " << npass
-                          << "   (" << setw(2) << nst+1 << " /" << setw(2) << nstates << ")";
-      timer.tick_print(ss.str());
+
+      // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4cit->scale(den4factor);
+
+      den0ciall->emplace(nst, mst, den0cit->copy());
+      den1ciall->emplace(nst, mst, den1cit->copy());
+      den2ciall->emplace(nst, mst, den2cit->copy());
+      den3ciall->emplace(nst, mst, den3cit->copy());
+      den4ciall->emplace(nst, mst, den4cit->copy());
     }
+
+    stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
+    timer.tick_print(ss.str());
   }
+
+  do_rdm_deriv(1.0);
+  timer.tick_print("CI derivative contraction");
 }
 
 #endif

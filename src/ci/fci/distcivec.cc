@@ -40,11 +40,28 @@ DistCivector<DataType>::DistCivector(shared_ptr<const Determinants> det)
 
 
 template<typename DataType>
+DistCivector<DataType>::DistCivector(shared_ptr<const Civector<DataType>> civ)
+  : RMAWindow<DataType>(), det_(civ->det()), lena_(civ->det()->lena()), lenb_(civ->det()->lenb()), dist_(lena_, mpi__->size()),
+    astart_(dist_.start(mpi__->rank())), aend_(astart_ + dist_.size(mpi__->rank())) {
+  if (size() == 0)
+    throw runtime_error("Use either Knowles or Harrison for FCI");
+  // create an window
+  this->initialize();
+  // fill up with initial data in civ
+  for (int ia = 0; ia != lena_; ++ia)
+    if (is_local(ia))
+      for (int ib = 0; ib != lenb_; ++ib)
+        set_local(ia - astart_, ib, civ->data(ib + ia*lenb_));
+  fence();
+}
+
+
+template<typename DataType>
 shared_ptr<Civector<DataType>> DistCivector<DataType>::civec() const {
   auto out = make_shared<Civector<DataType>>(det_);
-  for (int i = 0; i != mpi__->size(); ++i)
-    this->rma_rget(out->data(), i, dist_.start(i)*lenb_, dist_.size(i)*lenb_);
-  fence();
+  copy_n(data(), dist_.size(mpi__->rank()) * lenb_, out->element_ptr(0, astart_));
+  mpi__->allreduce(out->data(), global_size());
+
   return out;
 }
 
@@ -134,9 +151,9 @@ shared_ptr<DistCivector<DataType>> DistCivector<DataType>::spin() const {
             i = (*i)->test() ? acc.erase(i) : ++i;
         }
       }
-      for (auto i = acc.begin(); i != acc.end(); ) {
-        (*i)->wait();
-        i = acc.erase(i);
+      for (auto k = acc.begin(); k != acc.end(); ) {
+        (*k)->wait();
+        k = acc.erase(k);
       }
 
       const DataType* sbuf = intermediate->local_data();

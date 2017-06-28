@@ -25,6 +25,7 @@
 #include <src/global.h>
 #include <src/pt2/mp2/mp2grad.h>
 #include <src/grad/force.h>
+#include <src/grad/hess.h>
 #include <src/opt/optimize.h>
 #include <src/wfn/localization.h>
 #include <src/asd/construct_asd.h>
@@ -53,7 +54,6 @@ int main(int argc, char** argv) {
 
     auto idata = make_shared<const PTree>(input);
 
-    shared_ptr<Method> method;
     shared_ptr<const Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
@@ -73,9 +73,50 @@ int main(int argc, char** argv) {
       const string title = to_lower(itree->get<string>("title", ""));
       if (title.empty()) throw runtime_error("title is missing in one of the input blocks");
 
+      if (title == "molecule") {
+        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
+        if (itree->get<bool>("restart", false))
+          ref.reset();
+        if (ref) ref = ref->project_coeff(geom);
+        if (!itree->get<string>("molden_file", "").empty())
+          ref = make_shared<Reference>(geom, itree);
+      } else {
+        if (!geom) {
+          if (title != "continue" && !(title == "relsmith" && itree->get<string>("method", "") == "continue") && title != "load_ref")
+            throw runtime_error("molecule block is missing");
+        } else {
+          if (!itree->get<bool>("df",true)) dodf = false;
+          if (!itree->get<bool>("cfmm", false)) dofmm = true;
+          if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
+        }
+      }
+
+      if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
+        if (itree->get<string>("method", "") != "continue")
+          throw runtime_error(title + " needs a reference");
+
+      if (title == "optimize") {
+
+        auto opt = make_shared<Optimize>(itree, geom, ref);
+        opt->compute();
+        ref = opt->conv_to_ref();
+        geom = opt->geometry();
+
+      } else if (title == "forces" || title == "force" || title == "nacme" || title == "dgrad") {
+        // "forces" does many force calculations at once (SA-CASSCF and MS-CASPT2)
+
+        auto opt = make_shared<Force>(itree, geom, ref);
+        opt->compute();
+
+      } else if (title == "hessian") {
+
+        auto hess = make_shared<Hess>(itree, geom, ref);
+        hess->compute();
+        ref = hess->conv_to_ref();
+
 #ifndef DISABLE_SERIALIZATION
-      if (itree->get<bool>("load_ref", false)) {
-        const string name = itree->get<string>("ref_in", "");
+      } else if (title == "load_ref") {
+        const string name = itree->get<string>("file", "reference");
         if (name == "") throw runtime_error("Please provide a filename for the Reference object to be read.");
         IArchive archive(name);
         shared_ptr<Reference> ptr;
@@ -92,65 +133,12 @@ int main(int argc, char** argv) {
           vector<int> rdm_states = itree->get_vector<int>("rdm_state");
           ref = ref->extract_average_rdm(rdm_states);
         }
-      }
+
+      } else if (title == "save_ref") {
+        const string name = itree->get<string>("file", "reference");
+        OArchive archive(name);
+        archive << ref;
 #endif
-
-      if (title == "molecule") {
-        geom = geom ? make_shared<Geometry>(*geom, itree) : make_shared<Geometry>(itree);
-        if (itree->get<bool>("restart", false))
-          ref.reset();
-        if (ref) ref = ref->project_coeff(geom);
-        if (!itree->get<string>("molden_file", "").empty())
-          ref = make_shared<Reference>(geom, itree);
-      } else {
-        if (!geom) throw runtime_error("molecule block is missing");
-        if (!itree->get<bool>("df",true)) dodf = false;
-        if (!itree->get<bool>("cfmm", false)) dofmm = true;
-        if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
-      }
-
-      if ((title == "smith" || title == "relsmith" || title == "fci") && ref == nullptr)
-        throw runtime_error(title + " needs a reference");
-
-      // most methods are constructed here
-      method = construct_method(title, itree, geom, ref);
-
-#ifndef DISABLE_SERIALIZATION
-      if (title == "continue") {
-        IArchive archive(itree->get<string>("archive"));
-        Method* ptr;
-        archive >> ptr;
-        method = shared_ptr<Method>(ptr);
-      }
-#endif
-
-      if (method) {
-
-        method->compute();
-        ref = method->conv_to_ref();
-#ifndef DISABLE_SERIALIZATION
-        if (itree->get<bool>("save_ref", false)) {
-          const string name = itree->get<string>("ref_out", "reference");
-          OArchive archive(name);
-          archive << ref;
-        }
-#endif
-
-      } else if (title == "optimize") {
-
-        auto opt = make_shared<Optimize>(itree, geom, ref);
-        opt->compute();
-
-      } else if (title == "force") {
-
-        auto opt = make_shared<Force>(itree, geom, ref);
-        opt->compute();
-
-      } else if (title == "nacme") {
-
-        auto opt = make_shared<Force>(itree, geom, ref);
-        opt->compute();
-
       } else if (title == "dimerize") { // dimerize forms the dimer object, does a scf calculation, and then localizes
         const string form = itree->get<string>("form", "displace");
         if (form == "d" || form == "disp" || form == "displace") {
@@ -216,17 +204,17 @@ int main(int argc, char** argv) {
       } else if (title == "print") {
 
         const bool orbitals = itree->get<bool>("orbitals", false);
+        const bool vibration = itree->get<bool>("vibration", false);
         const string out_file = itree->get<string>("file", "out.molden");
 
         if (mpi__->rank() == 0) {
           MoldenOut mfs(out_file);
           mfs << geom;
-          if (orbitals) mfs << ref;
+          if (orbitals || vibration) mfs << ref;
         }
-
       } else {
-        if (title != "molecule")
-          throw runtime_error("unknown method");
+        // otherwise, they are considered single point energy calculation
+        tie(ignore, ref) = get_energy(title, itree, geom, ref);
       }
 
       // Save functionality
@@ -248,9 +236,11 @@ int main(int argc, char** argv) {
     print_footer();
   } catch (const exception& e) {
     resources__->proc()->cout_on();
-    cout << "  ERROR ON RANK " << mpi__->rank() << ": EXCEPTION RAISED:" << e.what() << endl;
+    if (mpi__->size() > 1)
+      cout << "  ERROR ON MPI PROCESS " << mpi__->rank() << ": EXCEPTION RAISED:  " << e.what() << endl;
+    else
+      cout << "  ERROR: EXCEPTION RAISED:  " << e.what() << endl;
     resources__->proc()->cout_off();
-    throw;
   } catch (...) {
     throw;
   }

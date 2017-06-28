@@ -35,24 +35,51 @@ using namespace bagel;
 shared_ptr<Reference> ZReference::project_coeff(shared_ptr<const Geometry> geomin, const bool check_geom_change) const {
   assert(check_geom_change);
   if (!geomin->magnetism() || !geom_->magnetism())
-    throw std::runtime_error("ZReference::project_coeff(...) is only for GIAO wavefunctions.  Not implemented for SOSCF or GIAO -> standard, etc.");
+    throw runtime_error("ZReference::project_coeff(...) is only for GIAO wavefunctions.  Not implemented for SOSCF or GIAO -> standard, etc.");
 
   shared_ptr<Reference> out;
 
-  // standard 4-component wavefunction
-  // project to a new basis
-  const ZOverlap overlap(geomin);
-  ZOverlap sinv = overlap;
-  sinv.inverse();
-  MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
-  auto c = make_shared<ZCoeff>(sinv * mixed * *zcoeff_);
+  bool moved = false;
+  bool newbasis = false;
 
-  // make coefficient orthogonal (under the overlap metric)
-  ZMatrix unit = *c % overlap * *c;
-  unit.inverse_half();
-  *c *= unit;
+  if (check_geom_change) {
+    auto j = geomin->atoms().begin();
+    for (auto& i : geom_->atoms()) {
+      moved |= i->distance(*j) > 1.0e-12;
+      newbasis |= i->basis() != (*j)->basis();
+      ++j;
+    }
+  } else {
+    newbasis = true;
+  }
 
-  out = make_shared<ZReference>(geomin, c, energy_, nocc(), nact(), nvirt()+(geomin->nbasis()-geom_->nbasis()));
+  if (moved && newbasis)
+    throw runtime_error("changing geometry and basis set at the same time is not allowed");
 
+  if (newbasis) {
+    // project to a new basis
+    const ZOverlap snew(geomin);
+    ZOverlap snewinv = snew;
+    snewinv.inverse();
+    MixedBasis<ComplexOverlapBatch, ZMatrix> mixed(geom_, geomin);
+    auto c = make_shared<ZCoeff>(snewinv * mixed * *zcoeff_);
+
+    // make coefficient orthogonal (under the overlap metric)
+    ZMatrix unit = *c % snew * *c;
+    unit.inverse_half();
+    *c *= unit;
+
+    out = make_shared<ZReference>(geomin, c, energy_, nocc(), nact(), nvirt()+(geomin->nbasis()-geom_->nbasis()));
+  } else {
+    ZOverlap snew(geomin);
+    ZOverlap sold(geom_);
+    snew.inverse_half();
+    sold.sqrt();
+    auto c = make_shared<ZCoeff>(snew * sold * *zcoeff_);
+
+    out = make_shared<ZReference>(geomin, c, energy_, nocc(), nact(), nvirt()+(geomin->nbasis()-geom_->nbasis()));
+  }
+  // Need to update coeffA_ and coeffB_ if we make UHF work with London orbitals
+  assert(!coeffA_);
   return out;
 }

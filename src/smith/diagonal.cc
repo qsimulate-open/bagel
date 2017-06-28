@@ -29,6 +29,8 @@
 #include <src/smith/caspt2/CASPT2.h>
 #include <src/smith/relmrci/RelMRCI.h>
 #include <src/smith/relcaspt2/RelCASPT2.h>
+#include <src/smith/casa/CASA.h>
+#include <src/smith/relcasa/RelCASA.h>
 
 using namespace std;
 using namespace bagel;
@@ -114,6 +116,16 @@ void RelCASPT2::RelCASPT2::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tenso
     }
   }
   mpi__->barrier();
+}
+
+
+void CASA::CASA::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  // Not currently using optimized code for diagonal contributions
+}
+
+
+void RelCASA::RelCASA::diagonal(shared_ptr<Tensor> r, shared_ptr<const Tensor> t, const bool diag) const {
+  // Not currently using optimized code for diagonal contributions
 }
 
 

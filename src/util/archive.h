@@ -40,15 +40,18 @@ class OArchive {
     std::ofstream os_;
 
     using Ostream = boost::archive::binary_oarchive;
-    Ostream archive_;
+    std::shared_ptr<Ostream> archive_;
 
   public:
-    OArchive(std::string name) : filename_(name+".archive"), os_(filename_), archive_(os_) {
+    OArchive(std::string name) : filename_(name+".archive"), os_(filename_) {
+      if (!os_.is_open())
+        throw std::runtime_error("Error trying to create the file " + filename_ + ".  Possibly the target directory is not accessible.");
+      archive_ = std::make_shared<Ostream>(os_);
     }
 
     template<typename T>
     OArchive& operator<<(const T& val) {
-      archive_ << val;
+      *archive_ << val;
       return *this;
     }
 
@@ -63,17 +66,30 @@ class IArchive {
     std::ifstream is_;
 
     using Istream = boost::archive::binary_iarchive;
-    Istream archive_;
+    std::shared_ptr<Istream> archive_;
 
   public:
-    IArchive(std::string name) : filename_(name+".archive"), is_(filename_), archive_(is_) {
+    IArchive(std::string name) : filename_(name+".archive"), is_(filename_) {
       if (!is_.is_open())
-        throw std::runtime_error(name+".archive not found");
+        throw std::runtime_error("File not found: " + filename_);
+      archive_ = std::make_shared<Istream>(is_);
     }
 
     template<typename T>
     IArchive& operator>>(T& val) {
-      archive_ >> val;
+
+      try {
+        *archive_ >> val;
+
+      // just to make error messages more user-friendly
+      } catch (const std::exception& e) {
+        if (std::string(e.what()).find("input stream error") != std::string::npos) {
+          throw std::runtime_error("Boost failed when trying to load information from a binary archive.  This error may occur when reading files generated with a different version of BAGEL.");
+        } else {
+          throw;
+        }
+      }
+
       return *this;
     }
 

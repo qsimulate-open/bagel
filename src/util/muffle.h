@@ -42,9 +42,9 @@ class Muffle {
     Muffle(std::string filename = "", const bool append = false, const bool split_nodes = false) {
       saved_ = std::cout.rdbuf();
       if (split_nodes)
-        filename += ("_" + std::to_string(mpi__->rank()));
+        filename += ("_" + std::to_string(mpi__->world_rank()));
 
-      if (filename != "" && (mpi__->rank() == 0 || split_nodes))
+      if (filename != "" && (mpi__->world_rank() == 0 || split_nodes))
         redirect_ = append ? std::make_shared<std::ofstream>(filename, std::ios::app) : std::make_shared<std::ofstream>(filename);
       else
         redirect_ = std::make_shared<std::ostringstream>();

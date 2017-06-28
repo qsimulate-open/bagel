@@ -10,7 +10,7 @@
 #include <fstream>
 #define SPHERICAL 1
 
-constexpr int ANG_HRR_END = 7;
+constexpr int ANG_HRR_END = 8;
 
 using namespace std;
 
@@ -33,7 +33,7 @@ int main() {
 
   stringstream out;
   out << "//" << endl;
-  out << "// BAGEL - Parallel electron correlation program." << endl;
+  out << "// BAGEL - Brilliantly Advanced General Electronic Structure Library" << endl;
   out << "// Filename: " << filename << endl;
   out << "// Copyright (C) 2009 Toru Shiozaki" << endl;
   out << "//" << endl;
@@ -42,19 +42,18 @@ int main() {
   out << "//" << endl;
   out << "// This file is part of the BAGEL package." << endl;
   out << "//" << endl;
-  out << "// The BAGEL package is free software; you can redistribute it and/or modify" << endl;
-  out << "// it under the terms of the GNU Library General Public License as published by" << endl;
-  out << "// the Free Software Foundation; either version 3, or (at your option)" << endl;
-  out << "// any later version." << endl;
+  out << "// This program is free software: you can redistribute it and/or modify" << endl;
+  out << "// it under the terms of the GNU General Public License as published by" << endl,
+  out << "// the Free Software Foundation, either version 3 of the License, or" << endl;
+  out << "// (at your option) any later version." << endl;
   out << "//" << endl;
-  out << "// The BAGEL package is distributed in the hope that it will be useful," << endl;
+  out << "// This program is distributed in the hope that it will be useful," << endl;
   out << "// but WITHOUT ANY WARRANTY; without even the implied warranty of" << endl;
   out << "// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the" << endl;
-  out << "// GNU Library General Public License for more details." << endl;
+  out << "// GNU General Public License for more details." << endl;
   out << "//" << endl;
-  out << "// You should have received a copy of the GNU Library General Public License" << endl;
-  out << "// along with the BAGEL package; see COPYING.  If not, write to" << endl;
-  out << "// the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA." << endl;
+  out << "// You should have received a copy of the GNU General Public License" << endl;
+  out << "// along with this program.  If not, see <http://www.gnu.org/licenses/>." << endl;
   out << "//" << endl;
   out << endl;
   out << endl;
@@ -76,6 +75,11 @@ int main() {
     const int x3end = xyz[x3];
     const string label = String<int>(x3) + String<int>(x2);
 
+    if (x2 == 7 && x3 == 0) {
+      out << "\
+#ifdef COMPILE_J_ORB\n";
+    }
+
 #if SPHERICAL
     out << "\
 void CSortList::sort_indices_" << label << "_sph(complex<double>* target, const complex<double>* source, const int c3end, const int c2end, const int loopsize, const bool swap23) {\n";
@@ -87,7 +91,7 @@ void CSortList::sort_indices_" << label << "(complex<double>* target, const comp
   const int innerloopsize = c2end * c3end * " << x2end*x3end << ";\n\
   if (!swap23) {\n\
     int offset = 0;\n\
-    const int cont2csize = " << x2end << " * c2end; \n\
+    const int cont2csize = " << x2end << " * c2end;\n\
     for (int i = 0; i != loopsize; ++i, offset += innerloopsize) {\n\
       complex<double>* current_target = &target[offset];\n\
       const complex<double>* current_source = &source[offset];\n\
@@ -134,8 +138,13 @@ void CSortList::sort_indices_" << label << "(complex<double>* target, const comp
 \n\
 }" << endl << endl << endl;
 
-
 }}
+
+  if (ANG_HRR_END > 7) {
+    out << "\
+#endif\n";
+  }
+
   ofs << out.str() << endl;
   ofs.close();
   return 0;

@@ -189,7 +189,10 @@ shared_ptr<const Shell> Shell::cartesian_shell() const {
 
 
 void Shell::init_relativistic() {
-  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+#ifndef COMPILE_J_ORB
+  if (angular_number_ == 6) throw runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
+#endif
+  if (angular_number_ == 7) throw runtime_error("Relativistic codes cannot use j-type main basis functions, since k-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
@@ -201,7 +204,10 @@ void Shell::init_relativistic() {
 
 void Shell::init_relativistic(const array<double,3> magnetic_field, bool london) {
   assert(magnetism_);
-  if (angular_number_ == 6) throw runtime_error("Relativistic codes cannot use i-type main basis functions, since j-type would be needed for the small component.");
+#ifndef COMPILE_J_ORB
+  if (angular_number_ == 6) throw runtime_error("Relativistic calculations with i-type orbital basis functions require j-type integrals for the small component.  Recompile with -DCOMPILE_J_ORB to use this feature.");
+#endif
+  if (angular_number_ == 7) throw runtime_error("Relativistic codes cannot use j-type main basis functions, since k-type would be needed for the small component.");
   relativistic_ = true;
   aux_decrement_ = kinetic_balance_uncont<-1>();
   aux_increment_ = kinetic_balance_uncont<1>();
@@ -222,11 +228,11 @@ void Shell::compute_grid_value(double* b, double* dx, double* dy, double* dz, co
   auto range = contraction_ranges_.begin();
   const int nang = angular_number();
 
-  double tmp0[65];
-  double tmpx[65];
-  double tmpy[65];
-  double tmpz[65];
-  static_assert(65 > (ANG_HRR_END+1)*(ANG_HRR_END+1), "ANG_HRR_END is assumed to be 7");
+  double tmp0[82];
+  double tmpx[82];
+  double tmpy[82];
+  double tmpz[82];
+  static_assert(82 > (ANG_HRR_END+1)*(ANG_HRR_END+1), "ANG_HRR_END is assumed to be 8");
   double powx[11], powy[11], powz[11];
   powx[0] =  powy[0] = powz[0] = 0.0;
   for (int i = 0; i != angular_number()+1; ++i) {
@@ -301,8 +307,8 @@ void Shell::compute_grid_value_deriv2(double* bxx, double* bxy, double* byy, dou
                                       const double& x, const double& y, const double& z) const {
   const double rr = x*x+y*y+z*z;
   auto range = contraction_ranges_.begin();
-  double tmp[6][50];
-  assert(50 > ANG_HRR_END*ANG_HRR_END);
+  double tmp[6][65];
+  assert(65 > ANG_HRR_END*ANG_HRR_END);
 
   const int nxyz = nbasis() / num_contracted();
   const int nang = angular_number();

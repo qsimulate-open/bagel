@@ -77,7 +77,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_;
+      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -88,7 +88,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;

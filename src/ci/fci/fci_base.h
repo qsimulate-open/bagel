@@ -34,7 +34,6 @@
 
 namespace bagel {
 
-template<class CivecType, class DvecType>
 class FCI_base : public Method {
   protected:
 
@@ -57,10 +56,7 @@ class FCI_base : public Method {
 
     // results
     std::vector<double> energy_;
-    std::shared_ptr<DvecType> cc_;
     std::shared_ptr<MOFile> jop_;
-    // denominator
-    std::shared_ptr<CivecType> denom_;
 
     // RDMs; should be resized in constructors
     std::shared_ptr<VecRDM<1>> rdm1_;
@@ -69,9 +65,6 @@ class FCI_base : public Method {
     std::vector<double> weight_;
     std::shared_ptr<RDM<1>> rdm1_av_;
     std::shared_ptr<RDM<2>> rdm2_av_;
-
-    // davidson
-    std::shared_ptr<DavidsonDiag<CivecType>> davidson_;
 
     virtual void print_header() const = 0;
 
@@ -87,34 +80,6 @@ class FCI_base : public Method {
 
     // functions related to natural orbitals
     void update_rdms(std::shared_ptr<const Matrix> coeff);
-
-    // internal function for RDM1 and RDM2 computations
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_last_step(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const CivecType>) const;
-
-  private:
-    // serialization
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int version) {
-      boost::serialization::split_member(ar, *this, version);
-    }
-    template<class Archive>
-    void save(Archive& ar, const unsigned int) const {
-      ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << davidson_subspace_ << nguess_ << thresh_ << print_thresh_
-         << nelea_ << neleb_ << ncore_ << norb_ << nstate_ << det_
-         << energy_ << cc_ << rdm1_ << rdm2_ << weight_ << rdm1_av_ << rdm2_av_ << davidson_;
-    }
-    template<class Archive>
-    void load(Archive& ar, const unsigned int) {
-      // jop_ and denom_ will be constructed in derived classes
-      ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> davidson_subspace_ >> nguess_ >> thresh_ >> print_thresh_
-         >> nelea_ >> neleb_ >> ncore_ >> norb_ >> nstate_ >> det_
-         >> energy_ >> cc_ >> rdm1_ >> rdm2_ >> weight_ >> rdm1_av_ >> rdm2_av_ >> davidson_;
-      restarted_ = true;
-    }
 
   public:
     // this constructor is ugly... to be fixed some day...
@@ -140,15 +105,15 @@ class FCI_base : public Method {
 
     std::shared_ptr<const Determinants> det() const { return det_; }
     std::shared_ptr<const MOFile> jop() const { return jop_; }
-    std::shared_ptr<const CivecType> denom() const { return denom_; }
-    std::shared_ptr<const DvecType> civectors() const { return cc_; }
+    virtual std::shared_ptr<const Civec> denom() const = 0;
+    virtual std::shared_ptr<const Dvec> civectors() const = 0;
 
     std::vector<double> energy() const { return energy_; }
     double energy(const int i) const { return energy_.at(i); }
 
     // compute all states at once + averaged rdm
-    void compute_rdm12();
-    void compute_rdm12(const int ist, const int jst);
+    virtual void compute_rdm12() = 0;
+    virtual void compute_rdm12(const int ist, const int jst) = 0;
     // compute 3 and 4 RDMs
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const = 0;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
@@ -157,13 +122,15 @@ class FCI_base : public Method {
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const = 0;
 
     virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_from_civec(std::shared_ptr<const CivecType>, std::shared_ptr<const CivecType>) const = 0;
-    std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>>
-      compute_rdm12_av_from_dvec(std::shared_ptr<const DvecType>, std::shared_ptr<const DvecType>, std::shared_ptr<const Determinants> o = nullptr) const;
+      compute_rdm12_av_from_dvec(std::shared_ptr<const Dvec>, std::shared_ptr<const Dvec>, std::shared_ptr<const Determinants> o = nullptr) const = 0;
 
     // rdm ci derivatives
     virtual std::shared_ptr<Dvec> rdm1deriv(const int istate) const = 0;
     virtual std::shared_ptr<Dvec> rdm2deriv(const int istate) const = 0;
+    virtual std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel = true) const = 0;
+    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const = 0;
+
     // 4RDM derivative is precontracted by an Fock operator
     virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const = 0;
@@ -187,10 +154,9 @@ class FCI_base : public Method {
 
     virtual std::shared_ptr<const CIWfn> conv_to_ciwfn() const = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;
-};
 
-extern template class FCI_base<Civec,Dvec>;
-extern template class FCI_base<DistCivec,DistDvec>;
+    virtual void read_external_rdm12_av(const std::string& file) = 0;
+};
 
 }
 

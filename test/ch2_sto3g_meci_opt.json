@@ -1,0 +1,29 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "sto-3g",
+  "df_basis" : "svp-jkfit",
+  "geometry" : [
+  { "atom" : "C", "xyz" : [     -7.866971,      5.313377,     -0.592330 ] },
+  { "atom" : "H", "xyz" : [     -8.357249,      3.395294,     -0.361773 ] },
+  { "atom" : "H", "xyz" : [     -7.821773,      7.081184,     -1.494701 ] }
+  ]
+},
+
+{
+  "title" : "optimize",
+  "opttype" : "meci",
+  "target" : 0,
+  "target2" : 1,
+  "maxstep" : 0.01,
+  "method" : [ {
+    "title" : "casscf",
+    "nstate" : 2,
+    "nclosed" : 3,
+    "nact" : 2
+  } ]
+}
+
+]}
+

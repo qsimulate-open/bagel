@@ -23,7 +23,7 @@
 //
 
 #include <src/asd/multisite/multisite.h>
-#include <src/wfn/construct_method.h>
+#include <src/wfn/get_energy.h>
 #include <src/wfn/localization.h>
 #include <src/scf/hf/fock.h>
 #include <src/scf/hf/rhf.h>
@@ -292,9 +292,7 @@ void MultiSite::scf(const shared_ptr<const PTree> idata) {
 
   // SCF
   auto hfdata = idata->get_child_optional("hf") ? idata->get_child_optional("hf") : make_shared<PTree>();
-  auto rhf = dynamic_pointer_cast<RHF>(construct_method("hf", hfdata, sref_->geom(), sref_));
-  rhf->compute();
-  sref_ = rhf->conv_to_ref();
+  tie(ignore, sref_) = get_energy("hf", hfdata, sref_->geom(), sref_);
   stopwatch.tick_print("Multisite SCF");
 
   const int nclosed = sref_->nclosed();

@@ -1,0 +1,36 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : true,
+  "geometry" : [
+    { "atom" : "H",  "xyz" :  [  -0.000000,     -0.000000,      0.00000000000] },
+    { "atom" : "He", "xyz" :  [  -0.000000,     -0.000000,      0.99999992826] }
+  ]
+},
+
+{
+  "title" : "rohf",
+  "nact" : 1,
+  "thresh" : 1.0e-12
+},
+
+{
+  "title" : "ras",
+  "nspin" : 1,
+  "nstate" : 2,
+  "active" : [
+    [1],
+    [2, 3, 4, 5, 6, 7, 8],
+    [9, 10]
+  ],
+  "max_holes" : 2,
+  "max_particles" : 3,
+  "thresh" : 1.0e-7,
+  "maxiter" : 20,
+  "sparse" : false
+}
+
+] }

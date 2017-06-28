@@ -66,6 +66,21 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+    std::shared_ptr<Vec<Tensor>> den0ciall;
+    std::shared_ptr<Vec<Tensor>> den1ciall;
+    std::shared_ptr<Vec<Tensor>> den2ciall;
+    std::shared_ptr<Vec<Tensor>> den3ciall;
+    std::shared_ptr<Vec<Tensor>> den4ciall;
+    std::shared_ptr<Tensor> den0ci;
+    std::shared_ptr<Tensor> den1ci;
+    std::shared_ptr<Tensor> den2ci;
+    std::shared_ptr<Tensor> den3ci;
+    std::shared_ptr<Tensor> den4ci;
+    std::shared_ptr<Tensor> den0cit;
+    std::shared_ptr<Tensor> den1cit;
+    std::shared_ptr<Tensor> den2cit;
+    std::shared_ptr<Tensor> den3cit;
+    std::shared_ptr<Tensor> den4cit;
 
     // storage for output
     std::shared_ptr<Matrix> den1_;
@@ -89,6 +104,8 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
     std::shared_ptr<Tensor> rdm3deriv_;
+    std::shared_ptr<Matrix> rdm2fderiv_;
+    std::shared_ptr<Tensor> rdm3fderiv_;
     std::shared_ptr<Tensor> rdm4deriv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
@@ -159,6 +176,10 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
+    std::shared_ptr<Queue> contract_rdm_deriv(const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
+    void zero_total();
+    void add_total(double factor);
+    void do_rdm_deriv(double factor);
 
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
@@ -174,9 +195,9 @@ class MSCASPT2 {
     MSCASPT2(const CASPT2::CASPT2& cas);
     ~MSCASPT2() {}
 
-    void solve_deriv();
-    void solve_nacme();
-    void solve_dm();
+    void solve_deriv(const int target);
+    void solve_nacme(const int targetJ, const int targetI);
+    void solve_dm(const int targetJ, const int targetI);
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }

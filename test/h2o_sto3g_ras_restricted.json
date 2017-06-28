@@ -1,0 +1,33 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "sto-3g",
+  "df_basis" : "svp",
+  "angstrom" : true,
+  "geometry" : [
+    { "atom" : "H", "xyz" : [ -0.22767998367, -0.82511994081,  -2.66609980874] },
+    { "atom" : "O", "xyz" : [  0.18572998668, -0.14718998944,  -3.25788976629] },
+    { "atom" : "H", "xyz" : [  0.03000999785,  0.71438994875,  -2.79590979943] }
+  ]
+},
+
+{
+  "title" : "hf",
+  "thresh" : 1.0e-12
+},
+
+{
+  "title" : "ras",
+  "nstate" : 2,
+  "active" : [ [1],
+               [2, 3, 4, 5],
+               [6, 7] ],
+  "max_holes" : 1,
+  "max_particles" : 2,
+  "maxiter" : 10,
+  "thresh" : 1.0e-7,
+  "sparse" : false
+}
+
+]}

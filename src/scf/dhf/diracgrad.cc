@@ -36,7 +36,7 @@ using namespace bagel;
 #define LOCAL_TIMING
 
 template<>
-shared_ptr<GradFile> GradEval<Dirac>::compute() {
+shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   assert(ref_->nact() == 0);
   geom_ = task_->geom();
 
@@ -340,6 +340,8 @@ shared_ptr<GradFile> GradEval<Dirac>::compute() {
 
   grad_->print();
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad_;
 }

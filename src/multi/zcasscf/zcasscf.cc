@@ -36,8 +36,17 @@
 using namespace std;
 using namespace bagel;
 
-ZCASSCF::ZCASSCF(const shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> ref)
+ZCASSCF::ZCASSCF(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
   : Method(idat, geom, ref) {
+  // check if RDMs are supplied externally
+  external_rdm_ = idata_->get<string>("external_rdm", "");
+  if (!external_rdm_.empty()) {
+    IArchive ar("relref");
+    shared_ptr<RelReference> r;
+    ar >> r;
+    ref_ = ref = r;
+  }
+
   if (!dynamic_pointer_cast<const RelReference>(ref)) {
     if (ref != nullptr && ref->coeff()->ndim() == geom->nbasis()) {
       nr_coeff_ = ref->coeff();
@@ -75,17 +84,14 @@ void ZCASSCF::init() {
 
   auto relref = dynamic_pointer_cast<const RelReference>(ref_);
 
-  gaunt_ = idata_->get<bool>("gaunt",relref->gaunt());
-  breit_ = idata_->get<bool>("breit",relref->breit());
+  gaunt_ = idata_->get<bool>("gaunt", relref->gaunt());
+  breit_ = idata_->get<bool>("breit", relref->breit());
 
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
 
   // Invoke Kramer's symmetry for any case without magnetic field
   tsymm_ = !geom_->magnetism();
-
-  // coefficient parameters
-  const bool kramers_coeff = idata_->get<bool>("kramers_coeff", relref->kramers());
 
   nneg_ = geom_->nbasis()*2;
 
@@ -98,9 +104,8 @@ void ZCASSCF::init() {
     overlap_ = make_shared<RelOverlap_London>(geom_);
   }
 
-  // nocc from the input. If not present, full valence active space is generated.
+  // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
-  nact_ = idata_->get<int>("nact_cas", nact_);
   if (!nact_) energy_.resize(1);
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
@@ -123,19 +128,53 @@ void ZCASSCF::init() {
   charge_ = idata_->get<int>("charge", 0);
   if (nclosed_*2 > geom_->nele() - charge_)
     throw runtime_error("too many closed orbitals in the input");
+  thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
   shared_ptr<const RelCoeff_Striped> scoeff;
   if (hcore_guess) {
-    auto s12 = overlap_->tildex(1.0e-10);
+    auto s12 = overlap_->tildex(thresh_overlap_);
+    if (s12->mdim() != s12->ndim())
+      remove_lindep(s12->mdim());
+
     auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
     VectorB eig(hctmp->ndim());
     hctmp->diagonalize(eig);
     scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
   } else if (nr_coeff_ == nullptr) {
-    scoeff = make_shared<const RelCoeff_Striped>(*relref->relcoeff_full(), nclosed_, nact_, nvirtnr_, nneg_);
+
+    // first set coefficient
+    scoeff = relref->relcoeff_full();
+
+    // If we have fewer MOs than AOs (linearly dependent basis set and/or coefficient projection)
+    if (4 * geom_->nbasis() != scoeff->mdim()) {
+      shared_ptr<const ZMatrix> tildex = overlap_->tildex(thresh_overlap_);
+      if (tildex->mdim() != tildex->ndim())
+        remove_lindep(tildex->mdim());
+
+      // Still not enough MOs (such as after coefficient projection)
+      if (scoeff->mdim() != 2 * nbasis_) {
+        ZMatrix c(scoeff->ndim(), tildex->mdim());
+        c.copy_block(0, 0, scoeff->ndim(), scoeff->npos(), scoeff->slice(0, scoeff->npos()));
+        c.copy_block(0, tildex->mdim() - scoeff->nneg(), scoeff->ndim(), scoeff->nneg(), scoeff->slice(scoeff->npos(), scoeff->mdim()));
+
+        shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
+        c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
+
+        scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
+        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
+#ifndef NDEBUG
+        ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
+        assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
+#endif
+      }
+    }
+
+    scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
+    if (nr_coeff_->ndim() != nr_coeff_->mdim())
+      remove_lindep(4*nr_coeff_->mdim());
     scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }
 
@@ -143,6 +182,12 @@ void ZCASSCF::init() {
   max_iter_ = idata_->get<int>("maxiter", 100);
   // get maxiter from the input
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
+
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
+  // to save binary archives with each iteration
+  restart_cas_ = idata_->get<bool>("restart_cas", false);
 
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
@@ -163,7 +208,7 @@ void ZCASSCF::init() {
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!kramers_coeff)
+  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
 
   // specify active orbitals and move into the active space
@@ -220,19 +265,23 @@ shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff
 
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-  auto out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
-                                       fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  shared_ptr<RelReference> out;
+  if (nact_)
+    out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
+                                    fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  else
+    out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
   return out;
 }
 
 
-void ZCASSCF::print_natocc() const {
-  assert(occup_.size() > 0);
+void ZCASSCF::print_natocc(const VectorB& occup) const {
+  assert(occup.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = tsymm_ ? occup_.size() / 2 : occup_.size();
+  const int num = tsymm_ ? occup.size() / 2 : occup.size();
   for (int i = 0; i != num; ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup_[i] << endl;
+    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
   cout << "  ============================================ " << endl;
 }
 
@@ -244,4 +293,15 @@ shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_pt
   const bool do_gaunt = !coulomb_only && gaunt_;
   const bool do_breit = !coulomb_only && breit_;
   return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), do_gaunt, do_breit, /*store half*/false, /*robust*/do_breit);
+}
+
+
+void ZCASSCF::remove_lindep(const int nspinor) {
+  assert(nspinor < (4 * geom_->nbasis()));
+  assert(nspinor % 4 == 0);
+  const int ndel = (4*geom_->nbasis() - nspinor) / 4;
+  nbasis_ -= 2*ndel;
+  nneg_ -= 2*ndel;
+  nvirt_ -= 2*ndel;
+  nvirtnr_ -= ndel;
 }

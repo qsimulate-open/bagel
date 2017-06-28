@@ -50,9 +50,9 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   if (is_same<DataType,complex<double>>::value)
     closed_.merge(IndexRange(info_->nclosed()-info_->ncore(), max, closed_.nblock(), ncore2+closed_.size(), info_->ncore()));
 
-  active_ = IndexRange(info_->nact(), min(max,10), closed_.nblock(), ncore2+closed_.size());
+  active_ = IndexRange(info_->nact(), min(10,max), closed_.nblock(), ncore2+closed_.size());
   if (is_same<DataType,complex<double>>::value)
-    active_.merge(IndexRange(info_->nact(), min(max,10), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
+    active_.merge(IndexRange(info_->nact(), min(10,max), closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size(),
                                                                                             ncore2+closed_.size()));
 
   virt_ = IndexRange(info_->nvirt(), max, closed_.nblock()+active_.nblock(), ncore2+closed_.size()+active_.size());
@@ -99,13 +99,18 @@ SpinFreeMethod<DataType>::SpinFreeMethod(shared_ptr<const SMITH_Info<DataType>> 
   fockact_ = fockact->get_conjg();
 
   // set Eref
-  const int nstates = info_->ciwfn()->nstates();
+  const int nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
   eref_ = make_shared<MatType>(nstates, nstates);
-  for (int i = 0; i != nstates; ++i)
-    eref_->element(i, i) = info_->ciwfn()->energy(i);
+  if (info_->nact())
+    for (int i = 0; i != nstates; ++i)
+      eref_->element(i, i) = info_->ciwfn()->energy(i);
+  else
+    eref_->element(0, 0) = info_->ref()->energy(0);
 
-  if (nstates > 1 && info_->do_xms())
+  if (nstates > 1 && info_->do_xms()) {
     rotate_xms();
+    eref_->print("Reference energies in XMS basis");
+  }
 
   // rdms.
   if (info_->ciwfn()) {
@@ -137,6 +142,8 @@ void SpinFreeMethod<double>::rotate_xms() {
     }
   }
 
+  fmn.print("State-averaged Fock matrix over basis states");
+
   // diagonalize fmn
   VectorB eig(nstates);
   fmn.diagonalize(eig);
@@ -151,25 +158,8 @@ void SpinFreeMethod<double>::rotate_xms() {
   }
   cout << endl << endl;
 
-  // construct CIWfn
-  shared_ptr<const CIWfn> ciwfn = info_->ciwfn();
-  shared_ptr<const Dvec> dvec = ciwfn->civectors();
-  shared_ptr<Dvec> new_dvec = dvec->clone();
-  vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
-  vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
-
-  for (int jst =0; jst != nstates; ++jst) {
-    for (int ist =0; ist != nstates; ++ist)
-      new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
-  }
-
-  vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i)
-    energies[i] = ciwfn->energy(i);
-  auto new_ciwfn = make_shared<CIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
-                                      energies, new_dvec, ciwfn->det());
-
   // construct Reference
+  shared_ptr<const CIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
   auto new_ref = make_shared<Reference>(info_->geom(), make_shared<Coeff>(*info_->coeff()), info_->nclosed(), info_->nact(),
                                         info_->nvirt() + info_->nfrozenvirt(), info_->ref()->energy(), info_->ref()->rdm1(), info_->ref()->rdm2(),
                                         info_->ref()->rdm1_av(), info_->ref()->rdm2_av(), new_ciwfn);
@@ -195,18 +185,19 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
       shared_ptr<const Kramers<2,ZRDM<1>>> krdm1;
       tie(krdm1, ignore) = info_->rdm12(jst, ist);
       shared_ptr<ZRDM<1>> rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
+      assert(fockact_->size() == rdm1->size());
       // then assign the dot product: fmn=fij rdm1
       fmn(jst, ist) = blas::dot_product_noconj(fockact_->data(), fockact_->size(), rdm1->data());
-      assert(fockact_->size() == rdm1->size());
       fmn(ist, jst) = std::conj(fmn(jst, ist));
 #ifndef NDEBUG
       tie(krdm1, ignore) = info_->rdm12(ist, jst);
       rdm1 = expand_kramers(krdm1, krdm1->begin()->second->norb());
-      assert(std::abs(fmn(ist, jst) - blas::dot_product(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
+      assert(std::abs(fmn(ist, jst) - blas::dot_product_noconj(fockact_->data(), fockact_->size(), rdm1->data())) < 1.0e-6);
 #endif
     }
   }
 
+  fmn.print("State-averaged Fock matrix over basis states");
   // diagonalize fmn
   VectorB eig(nstates);
   fmn.diagonalize(eig);
@@ -221,30 +212,8 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   }
   cout << endl << endl;
 
-  // construct CIWfn
-  // TODO:  Verify this chunk of code carefully
-  shared_ptr<const RelCIWfn> ciwfn = info_->ciwfn();
-  shared_ptr<const RelZDvec> dvec = ciwfn->civectors();
-  shared_ptr<RelZDvec> new_dvec = dvec->clone();
-
-  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
-  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
-
-  for (auto& i: dvecs) {
-    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
-    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
-    for (int jst =0; jst != nstates; ++jst)
-      for (int ist =0; ist != nstates; ++ist)
-        new_civecs[jst]->ax_plus_y(fmn(ist,jst), civecs[ist]);
-  }
-
-  vector<double> energies(ciwfn->nstates());
-  for (int i = 0; i != ciwfn->nstates(); ++i)
-    energies[i] = ciwfn->energy(i);
-  auto new_ciwfn = make_shared<RelCIWfn>(ciwfn->geom(), ciwfn->ncore(), ciwfn->nact(), ciwfn->nstates(),
-                                         energies, new_dvec, ciwfn->det());
-
   // construct Reference
+  shared_ptr<const RelCIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
   auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
   auto relcoeff = dynamic_pointer_cast<const RelCoeff_Block>(info_->coeff());
   assert(relref && relcoeff);
@@ -283,7 +252,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
       shared_ptr<const RDM<4>> rdm4; // TODO to be removed
-      tie(rdm1, rdm2) = info_->rdm12(jst, ist, (nstates > 1 && info_->do_xms()));
+      tie(rdm1, rdm2) = info_->rdm12(jst, ist);
       tie(rdm3, rdm4) = info_->rdm34(jst, ist);
       shared_ptr<RDM<3>> frdm4 = rdm3->clone();
       auto rdm4v = group(group(*rdm4, 6,8), 0,6);
@@ -422,7 +391,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
                    shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size) {
 
-  auto ci = IndexRange(size, info->maxtile());
+  auto ci = IndexRange(size, info->cimaxtile());
   auto rci = make_shared<const IndexRange>(ci);
 
   const int nact = info->nact();
@@ -479,6 +448,66 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
 
 
 template<>
+tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
+                   shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>, shared_ptr<Matrix>>
+  SpinFreeMethod<double>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
+                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const Matrix> rdm2fd_in) {
+
+  auto ci = IndexRange(size, info->cimaxtile());
+  auto rci = make_shared<const IndexRange>(ci);
+
+  const int nact = info->nact();
+  auto rdm0d = make_shared<VectorB>(size);
+  copy_n(info->ref()->civectors()->data(istate)->data() + offset, size, rdm0d->data());
+
+  auto rdm1d = make_shared<Matrix>(size, nact*nact);
+  {
+    shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
+    auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
+      assert(out->mdim() == in->ij());
+      for (int i = 0; i != in->ij(); ++i)
+        copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
+    };
+    fill2(rdm1a, rdm1d);
+  }
+
+  shared_ptr<Matrix> rdm2d;
+  shared_ptr<Matrix> rdm2fd;
+  shared_ptr<Matrix> rdm3fd;
+
+  // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn.
+  if (reset)
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
+  else
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
+
+  vector<IndexRange> o1 = {ci};
+  vector<IndexRange> o3 = {ci, active, active};
+  vector<IndexRange> o5 = {ci, active, active, active, active};
+
+  const int nclo = info->nclosed();
+  const vector<int> inpoff1{0};
+  const vector<int> inpoff3{0,nclo,nclo};
+  const vector<int> inpoff5{0,nclo,nclo,nclo,nclo};
+
+  const btas::CRange<1> range1(rdm1d->extent(0));
+  const btas::CRange<3> range3(rdm1d->extent(0), nact, nact);
+  const btas::CRange<5> range5(rdm2d->extent(0), nact, nact, nact, nact);
+
+  static_pointer_cast<btas::Tensor1<double>>(rdm0d)->resize(range1);
+  static_pointer_cast<btas::Tensor2<double>>(rdm1d)->resize(range3);
+  static_pointer_cast<btas::Tensor2<double>>(rdm2d)->resize(range5);
+  static_pointer_cast<btas::Tensor2<double>>(rdm3fd)->resize(range5);
+  auto rdm0deriv = fill_block<1,double>(rdm0d, inpoff1, o1);
+  auto rdm1deriv = fill_block<3,double>(rdm1d, inpoff3, o3);
+  auto rdm2deriv = fill_block<5,double>(rdm2d, inpoff5, o5);
+  auto rdm3fderiv = fill_block<5,double>(rdm3fd, inpoff5, o5);
+
+  return tie(ci, rci, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, rdm2fd);
+}
+
+
+template<>
 void SpinFreeMethod<complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size) {
   throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
 }
@@ -497,18 +526,83 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<doubl
 }
 
 
+template<>
+std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const {
+  // construct CIWfn
+  const int nstates = input->nstates();
+  assert(rotation.ndim() == rotation.mdim() && rotation.ndim() == nstates);
+  shared_ptr<const Dvec> dvec = input->civectors();
+  shared_ptr<Dvec> new_dvec = dvec->clone();
+  vector<shared_ptr<Civector<double>>> civecs = dvec->dvec();
+  vector<shared_ptr<Civector<double>>> new_civecs = new_dvec->dvec();
+
+  for (int jst =0; jst != nstates; ++jst) {
+    for (int ist =0; ist != nstates; ++ist)
+      new_civecs[jst]->ax_plus_y(rotation(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(nstates);
+  for (int i = 0; i != nstates; ++i)
+    energies[i] = input->energy(i);
+  return make_shared<CIWfn>(input->geom(), input->ncore(), input->nact(), nstates, energies, new_dvec, input->det());
+}
+
+
+template<>
+std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const {
+  // construct CIWfn
+  // TODO:  Verify this chunk of code carefully
+  const int nstates = input->nstates();
+  assert(rotation.ndim() == rotation.mdim() && rotation.ndim() == nstates);
+  shared_ptr<const RelZDvec> dvec = input->civectors();
+  shared_ptr<RelZDvec> new_dvec = dvec->clone();
+
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> dvecs = dvec->dvecs();
+  map<pair<int, int>, shared_ptr<Dvector<complex<double>>>> new_dvecs = new_dvec->dvecs();
+
+  for (auto& i: dvecs) {
+    vector<shared_ptr<Civector<complex<double>>>> civecs = dvecs.at(i.first)->dvec();
+    vector<shared_ptr<Civector<complex<double>>>> new_civecs = new_dvecs.at(i.first)->dvec();
+    for (int jst =0; jst != nstates; ++jst)
+      for (int ist =0; ist != nstates; ++ist)
+        new_civecs[jst]->ax_plus_y(rotation(ist,jst), civecs[ist]);
+  }
+
+  vector<double> energies(nstates);
+  for (int i = 0; i != nstates; ++i)
+    energies[i] = input->energy(i);
+  return make_shared<RelCIWfn>(input->geom(), input->ncore(), input->nact(), nstates, energies, new_dvec, input->det());
+}
+
+
+template<>
+tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>,
+          shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<ZMatrix>>
+  SpinFreeMethod<complex<double>>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
+          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const ZMatrix> rdm2fd_in) {
+  throw logic_error("SpinFreeMethod::feed_rdm_deriv_3 is not implemented for relativistic cases.");
+  IndexRange d;
+  shared_ptr<IndexRange> du;
+  shared_ptr<Tensor_<complex<double>>> dum;
+  shared_ptr<ZMatrix> dumm;
+  return tie(d, du, dum, dum, dum, dum, dumm);
+}
+
+
 template<typename DataType>
 void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
-  // ist is bra, jst is ket.
-  // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
-  rdm0_ = rdm0all_->at(jst, ist);
-  rdm1_ = rdm1all_->at(jst, ist);
-  rdm2_ = rdm2all_->at(jst, ist);
-  rdm3_ = rdm3all_->at(jst, ist);
-  rdm4_ = rdm4all_->at(jst, ist);
+  if (info_->nact()) {
+    // ist is bra, jst is ket.
+    // CAREFUL! the following is due to SMITH's convention (i.e., index are reversed)
+    rdm0_ = rdm0all_->at(jst, ist);
+    rdm1_ = rdm1all_->at(jst, ist);
+    rdm2_ = rdm2all_->at(jst, ist);
+    rdm3_ = rdm3all_->at(jst, ist);
+    rdm4_ = rdm4all_->at(jst, ist);
 
-  // ensure that get_block calls are done after RDMs are set in every node
-  mpi__->barrier();
+    // ensure that get_block calls are done after RDMs are set in every node
+    mpi__->barrier();
+  }
 }
 
 
@@ -539,24 +633,28 @@ void SpinFreeMethod<DataType>::print_iteration(const bool noconv) {
 template<typename DataType>
 void SpinFreeMethod<DataType>::compute_e0() {
   assert(!!f1_);
-  const size_t nstates = info_->ciwfn()->nstates();
+  const size_t nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
   e0all_.resize(nstates);
-  for (int ist = 0; ist != nstates; ++ist) {
-    DataType sum = 0.0;
-    set_rdm(ist, ist);
-    assert(!!rdm1_);
-    for (auto& i1 : active_) {
-      for (auto& i0 : active_) {
-        if (f1_->is_local(i0, i1)) {
-          const size_t size = i0.size() * i1.size();
-          unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
-          unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
-          sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+  if (info_->nact()) {
+    for (int ist = 0; ist != nstates; ++ist) {
+      DataType sum = 0.0;
+      set_rdm(ist, ist);
+      assert(!!rdm1_);
+      for (auto& i1 : active_) {
+        for (auto& i0 : active_) {
+          if (f1_->is_local(i0, i1)) {
+            const size_t size = i0.size() * i1.size();
+            unique_ptr<DataType[]> fdata = f1_->get_block(i0, i1);
+            unique_ptr<DataType[]> rdata = rdm1_->get_block(i0, i1);
+            sum += blas::dot_product_noconj(fdata.get(), size, rdata.get());
+          }
         }
       }
+      mpi__->allreduce(&sum, 1);
+      e0all_[ist] = detail::real(sum);
     }
-    mpi__->allreduce(&sum, 1);
-    e0all_[ist] = detail::real(sum);
+  } else {
+    e0all_[0] = 0.0;
   }
   // printout
   cout << endl;

@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "lanl2dz-ecp",
   "df_basis" : "svp-jkfit",
   "angstrom" : "true",

@@ -51,6 +51,8 @@ void RelCoeff::print_info() const {
 
 RelCoeff_Striped::RelCoeff_Striped(const ZMatView& _coeff, const int _nclosed, const int _nact, const int _nvirt, const int _nneg, const bool move_neg)
  : RelCoeff(_coeff.ndim(), _coeff.localized(), _nclosed, _nact, _nvirt, _nneg) {
+  assert(ndim() == _coeff.ndim());
+  assert(mdim() == _coeff.mdim());
   if (!move_neg) {
     // copy input matrix directly
     copy_block(0, 0, ndim(), mdim(), _coeff);
@@ -266,7 +268,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
                           shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
 
   // quaternion diagonalization has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
-  assert((nact_ > 1 || !tsymm));
+  assert((nact_ != 1 || !tsymm));
   assert(nbasis_ == geom->nbasis());
 
   shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);

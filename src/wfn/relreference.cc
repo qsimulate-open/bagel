@@ -43,77 +43,97 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   shared_ptr<Reference> out;
   const bool giao = (geomin->magnetism() || geom_->magnetism());
+  if ((geomin->magnetism() && !geom_->magnetism()) || (!geomin->magnetism() && geom_->magnetism()))
+    throw runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
 
-  // standard 4-component wavefunction
-  if (!giao) {
-    // in this case we first form overlap matrices
-    RelOverlap overlap(geomin);
-    RelOverlap sinv = overlap;
-    sinv.inverse();
+  bool moved = false;
+  bool newbasis = false;
 
-    MixedBasis<OverlapBatch> smixed(geom_, geomin);
-    MixedBasis<KineticBatch> tmixed(geom_, geomin);
+  if (check_geom_change) {
+    auto j = geomin->atoms().begin();
+    for (auto& i : geom_->atoms()) {
+      moved |= i->distance(*j) > 1.0e-12;
+      newbasis |= i->basis() != (*j)->basis();
+      ++j;
+    }
+  } else {
+    newbasis = true;
+  }
+
+  if (moved && newbasis)
+    throw runtime_error("changing geometry and basis set at the same time is not allowed");
+
+  if (newbasis) {
+    // 4-component wavefunction, change of basis
+    // in this case we first form overlap and S^-1 matrices
+    shared_ptr<ZMatrix> sinv;
+    if (giao)
+      sinv = make_shared<RelOverlap_London>(geomin);
+    else
+      sinv = make_shared<RelOverlap>(geomin);
+    shared_ptr<ZMatrix> overlap = sinv->copy();
+    sinv->inverse();
+
     const int nb = geomin->nbasis();
     const int mb = geom_->nbasis();
-    const complex<double> one(1.0);
-    const complex<double> sca = one * (0.5/(c__*c__));
     ZMatrix mixed(nb*4, mb*4);
-    mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
-    mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
-    mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
-    mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
 
-    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
+    if (!giao) {
+
+      MixedBasis<OverlapBatch> smixed(geom_, geomin);
+      MixedBasis<KineticBatch> tmixed(geom_, geomin);
+
+      const complex<double> one(1.0);
+      const complex<double> sca = one * (0.5/(c__*c__));
+      mixed.copy_real_block(one,    0,    0, nb, mb, smixed);
+      mixed.copy_real_block(one,   nb,   mb, nb, mb, smixed);
+      mixed.copy_real_block(sca, 2*nb, 2*mb, nb, mb, tmixed);
+      mixed.copy_real_block(sca, 3*nb, 3*mb, nb, mb, tmixed);
+    } else {
+
+      shared_ptr<const Geometry> relgeomin = geomin->relativistic(false);
+      MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, relgeomin);
+      MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
+
+      const complex<double> r2 (0.25 / (c__*c__));
+      const complex<double> i2 (0.0, r2.real());
+      mixed.copy_block(0,    0, nb, mb, smixed);
+      mixed.copy_block(nb,  mb, nb, mb, smixed);
+      mixed.add_block( r2, 2*nb, 2*mb, nb, mb, *smallovl.data(0));
+      mixed.add_block( r2, 3*nb, 3*mb, nb, mb, *smallovl.data(0));
+      mixed.add_block( i2, 2*nb, 2*mb, nb, mb, *smallovl.data(1));
+      mixed.add_block(-i2, 3*nb, 3*mb, nb, mb, *smallovl.data(1));
+      mixed.add_block( i2, 2*nb, 3*mb, nb, mb, *smallovl.data(2));
+      mixed.add_block( i2, 3*nb, 2*mb, nb, mb, *smallovl.data(2));
+      mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
+      mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
+    }
+    auto c = make_shared<ZMatrix>(*sinv * mixed * *relcoeff_);
 
     // make coefficient orthogonal
-    ZMatrix unit = *c % overlap * *c;
+    ZMatrix unit = *c % *overlap * *c;
     unit.inverse_half();
     *c *= unit;
 
     auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
-  // 4-component GIAO wavefunction
   } else {
 
-    if (!geomin->magnetism() || !geom_->magnetism())
-      throw std::runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
-    // in this case we first form overlap matrices
-    RelOverlap_London overlap(geomin);
-    RelOverlap_London sinv = overlap;
-    sinv.inverse();
-
-    shared_ptr<const Geometry> relgeomin = geomin->relativistic(false);
-    MixedBasis<ComplexOverlapBatch, ZMatrix> smixed(geom_, relgeomin);
-    MixedBasisArray<SmallInts1e_London<ComplexOverlapBatch>, ZMatrix> smallovl(geom_, relgeomin);
-
-    const int nb = geomin->nbasis();
-    const int mb = geom_->nbasis();
-    const complex<double> r2 (0.25 / (c__*c__));
-    const complex<double> i2 (0.0, r2.real());
-
-    ZMatrix mixed(nb*4, mb*4);
-    mixed.copy_block(0,    0, nb, mb, smixed);
-    mixed.copy_block(nb,  mb, nb, mb, smixed);
-    mixed.add_block( r2, 2*nb, 2*mb, nb, mb, *smallovl.data(0));
-    mixed.add_block( r2, 3*nb, 3*mb, nb, mb, *smallovl.data(0));
-    mixed.add_block( i2, 2*nb, 2*mb, nb, mb, *smallovl.data(1));
-    mixed.add_block(-i2, 3*nb, 3*mb, nb, mb, *smallovl.data(1));
-    mixed.add_block( i2, 2*nb, 3*mb, nb, mb, *smallovl.data(2));
-    mixed.add_block( i2, 3*nb, 2*mb, nb, mb, *smallovl.data(2));
-    mixed.add_block( r2, 2*nb, 3*mb, nb, mb, *smallovl.data(3));
-    mixed.add_block(-r2, 3*nb, 2*mb, nb, mb, *smallovl.data(3));
-
-    auto c = make_shared<ZMatrix>(sinv * mixed * *relcoeff_);
-
-    // make coefficient orthogonal
-    ZMatrix unit = *c % overlap * *c;
-    unit.inverse_half();
-    *c *= unit;
+    // 4-component wavefunction, change of atom positions
+    shared_ptr<ZMatrix> snew, sold;
+    if (!giao) {
+      snew = make_shared<RelOverlap>(geomin);
+      sold = make_shared<RelOverlap>(geom_);
+    } else {
+      snew = make_shared<RelOverlap_London>(geomin);
+      sold = make_shared<RelOverlap_London>(geom_);
+    }
+    snew->inverse_half();
+    sold->sqrt();
+    auto c = make_shared<ZMatrix>(*snew * *sold * *relcoeff_);
 
     auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
-
   }
   return out;
 }
@@ -147,10 +167,10 @@ shared_ptr<const Kramers<8,ZRDM<4>>> RelReference::rdm4(const int ist, const int
 }
 
 
-shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const {
+shared_ptr<Reference> RelReference::extract_state(const vector<int> input, const bool update_rdms) const {
   ZFCI_bare fci(ciwfn_);
   using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  cout << " * Extracting CI coefficients from RelReference object for state the following states: ";
+  cout << " * Extracting CI coefficients from RelReference object for the following states: ";
   for (int i = 0; i != input.size(); ++i)
     cout << input[i] << " ";
   cout << endl;
@@ -165,27 +185,16 @@ shared_ptr<Reference> RelReference::extract_state(const vector<int> input) const
                                         make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
 
   // Use extract_average_rdm(...) to get desired RDMs and prepare output
-  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(input));
-  return make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
-}
-
-
-shared_ptr<Reference> RelReference::extract_state(const int istate, const vector<int> input) const {
-  ZFCI_bare fci(ciwfn_);
-  using PairType = pair<shared_ptr<const RelSpace>,shared_ptr<const RelSpace>>;
-  const vector<int> rdm_state = input.size() ? input : vector<int>(1, istate);
-  cout << " * Extracting CI coefficients from RelReference object for state " << istate << "." << endl;
-
-  // Construct a RelCIWfn with only CI coefficients for the desired state
-  auto newciwfn = make_shared<RelCIWfn>(geom_, fci.ncore(), fci.norb(), 1, vector<double>(1, energy_[istate]),
-                                        ciwfn_->civectors()->extract_state(istate),
-                                        make_shared<PairType>(make_pair(ciwfn_->det()->first, ciwfn_->det()->second)));
-
-  // Use extract_average_rdm(...) to get desired RDMs and prepare output
-  shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(rdm_state));
-  return make_shared<RelReference>(geom_, relcoeff_, energy_[istate], nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
-                                   kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+  shared_ptr<RelReference> out;
+  if (update_rdms) {
+    shared_ptr<RelReference> rdmref = dynamic_pointer_cast<RelReference>(extract_average_rdm(input));
+    out = make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                    kramers_, rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+  } else {
+    out = make_shared<RelReference>(geom_, relcoeff_, newenergies, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
+                                    kramers_, rdm1_av(), rdm2_av(), newciwfn);
+  }
+  return out;
 }
 
 
@@ -259,6 +268,3 @@ shared_ptr<Reference> RelReference::extract_average_rdm(const vector<int> rdm_st
   return make_shared<RelReference>(geom_, relcoeff_, energy_, nneg_, nclosed_, nact_, nvirt_, gaunt_, breit_,
                                    kramers_, rdm1_out, rdm2_out, ciwfn_);
 }
-
-
-

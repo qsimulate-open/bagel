@@ -126,27 +126,8 @@ void ProductRASCI::compute() {
   vector<shared_ptr<ProductRASCivec>> cc(nstate_);
   generate(cc.begin(), cc.end(), [this] () { return make_shared<ProductRASCivec>(space_, left_, nelea_, neleb_); });
 
-#ifdef DEBUG
-  resources__->proc()->cout_on();
-  for (int i = 0 ; i < mpi__->size(); ++i) {
-    if (i == mpi__->rank()) {
-      cout << "rank " << i << ":" << endl;
-#endif
-#if 0
-      cout << "  - block states:" << endl;
-      for (auto& i : denom_->sectors())
-        cout << "    - " << i.second->mdim() << " states with " << i.first.nelea << " alpha and " << i.first.neleb << " beta electrons" << endl;
-#else
-      cout << "  - block states: " << left_->nstates() << endl;
-#endif
-      cout << "  - total size of configuration space: " << denom_->size() << endl;
-#ifdef DEBUG
-    }
-    mpi__->barrier();
-    this_thread::sleep_for(sleeptime__);
-  }
-  resources__->proc()->cout_off();
-#endif
+  cout << "  - block states: " << left_->nstates() << endl;
+  cout << "  - total size of configuration space: " << denom_->size() << endl;
 
   // find determinants that have small diagonal energies
   model_guess(cc);

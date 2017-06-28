@@ -56,6 +56,7 @@ std::vector<double> run_opt(std::string filename) {
   std::cout.rdbuf(backup_stream);
   return out;
 }
+
 std::vector<double> reference_scf_opt() {
   std::vector<double> out(6);
   out[2] = 1.749334;
@@ -92,13 +93,13 @@ std::vector<double> reference_ks_opt() {
   out[5] = 0.002208;
   return out;
 }
-std::vector<double> reference_cas_act_opt() {
+std::vector<double> reference_cas_opt() {
   std::vector<double> out(6);
   out[2] = 1.734489;
   out[5] =-0.003832;
   return out;
 }
-std::vector<double> reference_sacas_act_opt() {
+std::vector<double> reference_sacas_opt() {
   std::vector<double> out(6);
   out[2] = 1.702348;
   out[5] =-0.000261;
@@ -128,6 +129,19 @@ std::vector<double> reference_hcl_opt() {
   out[5] = 0.317095;
   return out;
 }
+std::vector<double> reference_ch2_opt() {
+  std::vector<double> out(9);
+  out[0] =-7.922434;
+  out[1] = 5.294612;
+  out[2] =-0.676026;
+  out[3] =-8.364093;
+  out[4] = 3.365386;
+  out[5] =-0.356820;
+  out[6] =-7.482149;
+  out[7] = 7.223682;
+  out[8] =-0.997476;
+  return out;
+}
 
 BOOST_AUTO_TEST_SUITE(TEST_OPT)
 
@@ -150,8 +164,9 @@ BOOST_AUTO_TEST_CASE(MP2_Opt) {
     BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_mp2_aux_opt"),    reference_mp2_aux_opt(),  1.0e-4));
 }
 BOOST_AUTO_TEST_CASE(CASSCF_Opt) {
-    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_act_opt"),    reference_cas_act_opt(),      1.0e-4));
-    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_sacas_act_opt"),  reference_sacas_act_opt(),    1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_cas_opt"),    reference_cas_opt(),      1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("hf_svp_sacas_opt"),  reference_sacas_opt(),    1.0e-4));
+    BOOST_CHECK(compare<std::vector<double>>(run_opt("ch2_sto3g_meci_opt"),reference_ch2_opt(),      1.0e-4));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

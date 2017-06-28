@@ -46,6 +46,59 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
 }
 
 
+void FCI::compute_rdm12() {
+  // Needs initialization here because we use daxpy.
+  // For nstate_ == 1, rdm1_av_ = rdm1_->at(0).
+  if (rdm1_av_ == nullptr && nstate_ > 1) {
+    rdm1_av_ = make_shared<RDM<1>>(norb_);
+    rdm2_av_ = make_shared<RDM<2>>(norb_);
+  } else if (nstate_ > 1) {
+    rdm1_av_->zero();
+    rdm2_av_->zero();
+  }
+  // we need expanded lists
+  auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, /*compressed=*/false, /*mute=*/true);
+  cc_->set_det(detex);
+
+  for (int i = 0; i != nstate_; ++i)
+    compute_rdm12(i, i);
+
+  // calculate state averaged RDMs
+  if (nstate_ != 1) {
+    for (int ist = 0; ist != nstate_; ++ist) {
+      rdm1_av_->ax_plus_y(weight_[ist], rdm1_->at(ist));
+      rdm2_av_->ax_plus_y(weight_[ist], rdm2_->at(ist));
+    }
+  } else {
+    rdm1_av_ = rdm1_->at(0,0);
+    rdm2_av_ = rdm2_->at(0,0);
+  }
+
+  cc_->set_det(det_);
+}
+
+
+void FCI::compute_rdm12(const int ist, const int jst) {
+  if (det_->compress()) {
+    auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
+    cc_->set_det(detex);
+  }
+
+  shared_ptr<Civec> ccbra = cc_->data(ist);
+  shared_ptr<Civec> ccket = cc_->data(jst);
+
+  shared_ptr<RDM<1>> rdm1;
+  shared_ptr<RDM<2>> rdm2;
+  tie(rdm1, rdm2) = compute_rdm12_from_civec(ccbra, ccket);
+
+  // setting to private members.
+  rdm1_->emplace(ist, jst, rdm1);
+  rdm2_->emplace(ist, jst, rdm2);
+
+  cc_->set_det(det_);
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   FCI::compute_rdm12_from_civec(shared_ptr<const Civec> cbra, shared_ptr<const Civec> cket) const {
 
@@ -67,6 +120,85 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
+
+  const int nri = cibra->asize()*cibra->lenb();
+  const int ij  = norb_*norb_;
+
+  // 1RDM c^dagger <I|\hat{E}|0>
+  // 2RDM \sum_I <0|\hat{E}|I> <I|\hat{E}|0>
+  auto rdm1 = make_shared<RDM<1>>(norb_);
+  auto rdm2 = make_shared<RDM<2>>(norb_);
+  {
+    auto cibra_data = make_shared<VectorB>(nri);
+    copy_n(cibra->data(), nri, cibra_data->data());
+
+    auto dket_data = make_shared<Matrix>(nri, ij);
+    for (int i = 0; i != ij; ++i)
+      copy_n(dket->data(i)->data(), nri, dket_data->element_ptr(0, i));
+    auto rdm1t = btas::group(*rdm1,0,2);
+    btas::contract(1.0, *dket_data, {0,1}, *cibra_data, {0}, 0.0, rdm1t, {1});
+
+    auto dbra_data = dket_data;
+    if (dbra != dket) {
+      dbra_data = make_shared<Matrix>(nri, ij);
+      for (int i = 0; i != ij; ++i)
+        copy_n(dbra->data(i)->data(), nri, dbra_data->element_ptr(0, i));
+    }
+    auto rdm2t = group(group(*rdm2, 2,4), 0,2);
+    btas::contract(1.0, *dbra_data, {1,0}, *dket_data, {1,2}, 0.0, rdm2t, {0,2});
+  }
+
+  // sorting... a bit stupid but cheap anyway
+  // This is since we transpose operator pairs in dgemm - cheaper to do so after dgemm (usually Nconfig >> norb_**2).
+  unique_ptr<double[]> buf(new double[norb_*norb_]);
+  for (int i = 0; i != norb_; ++i) {
+    for (int k = 0; k != norb_; ++k) {
+      copy_n(&rdm2->element(0,0,k,i), norb_*norb_, buf.get());
+      blas::transpose(buf.get(), norb_, norb_, rdm2->element_ptr(0,0,k,i));
+    }
+  }
+
+  // put in diagonal into 2RDM
+  // Gamma{i+ k+ l j} = Gamma{i+ j k+ l} - delta_jk Gamma{i+ l}
+  for (int i = 0; i != norb_; ++i)
+    for (int k = 0; k != norb_; ++k)
+      for (int j = 0; j != norb_; ++j)
+        rdm2->element(j,k,k,i) -= rdm1->element(j,i);
+
+  return tie(rdm1, rdm2);
+}
+
+
+tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
+FCI::compute_rdm12_av_from_dvec(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Determinants> o) const {
+
+  if (o != nullptr) {
+    dbra->set_det(o);
+    dket->set_det(o);
+  }
+
+  auto rdm1 = make_shared<RDM<1>>(norb_);
+  auto rdm2 = make_shared<RDM<2>>(norb_);
+
+  assert(dbra->ij() == dket->ij() && dbra->det() == dket->det());
+
+  for (int i = 0; i != dbra->ij(); ++i) {
+    shared_ptr<RDM<1>> r1;
+    shared_ptr<RDM<2>> r2;
+    tie(r1, r2) = compute_rdm12_from_civec(dbra->data(i), dket->data(i));
+    rdm1->ax_plus_y(weight_[i], r1);
+    rdm2->ax_plus_y(weight_[i], r2);
+  }
+
+  if (o != nullptr) {
+    dbra->set_det(det_);
+    dket->set_det(det_);
+  }
+
+  return tie(rdm1, rdm2);
+}
 
 // computes 3 and 4RDM
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const int jst) const {
@@ -91,50 +223,150 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
     sigma_2a2(cket, dket);
   }
 
-  // second make <J|E_kl|I><I|E_ij|0> - delta_li <J|E_kj|0>
-  auto make_evec = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, shared_ptr<Dvec> tmp) {
-    int ijkl = 0;
-    int ij = 0;
-    for (auto iter = d->dvec().begin(); iter != d->dvec().end(); ++iter, ++ij) {
-      if (ij % mpi__->size() == mpi__->rank()) {
-        const int j = ij/norb_;
-        const int i = ij-j*norb_;
-        tmp->zero();
-        sigma_2a1(*iter, tmp);
-        sigma_2a2(*iter, tmp);
-        int kl = 0;
-        for (auto t = tmp->dvec().begin(); t != tmp->dvec().end(); ++t, ++ijkl, ++kl) {
-          copy_n((*t)->data(), e->ndim(), e->element_ptr(0,ijkl));
-          const int l = kl/norb_;
-          const int k = kl-l*norb_;
-          if (l == i)
-            blas::ax_plus_y_n(-1.0, d->data(k+j*norb_)->data(), e->ndim(), e->element_ptr(0,ijkl));
+  // second make <J|E_kl|I><I|E_ij|0> - delta_il <J|E_kj|0>
+  auto make_evec_half = [this](shared_ptr<Dvec> d, shared_ptr<Matrix> e, const int dsize, const int offset) {
+    const int norb2 = norb_ * norb_;
+    const int lena = cc_->det()->lena();
+    const int lenb = cc_->det()->lenb();
+    int no = 0;
+
+    for (int ij = 0; ij != norb2; ++ij) {
+      const int j = ij/norb_;
+      const int i = ij-j*norb_;
+
+      for (int kl = ij; kl != norb2; ++kl) {
+        const int l = kl/norb_;
+        const int k = kl-l*norb_;
+
+        for (auto& iter : cc_->det()->phia(k,l)) {
+          size_t iaJ = iter.source;
+          size_t iaI = iter.target;
+          double sign = static_cast<double>(iter.sign);
+          for (size_t ib = 0; ib != lenb; ++ib) {
+            size_t iI = ib + iaI*lenb;
+            size_t iJ = ib + iaJ*lenb;
+            if ((iJ - offset) < dsize && iJ >= offset)
+              e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
+          }
         }
-      } else {
-        ijkl += tmp->dvec().size();
+
+        for (size_t ia = 0; ia != lena; ++ia) {
+          for (auto& iter : cc_->det()->phib(k,l)) {
+            size_t ibJ = iter.source;
+            size_t ibI = iter.target;
+            double sign = static_cast<double>(iter.sign);
+            size_t iI = ibI + ia*lenb;
+            size_t iJ = ibJ + ia*lenb;
+            if ((iJ - offset) < dsize && iJ >= offset)
+              e->element(iJ-offset, no) += sign * d->data(ij)->data(iI);
+          }
+        }
+
+        if (i == l) {
+          const int kj = k+j*norb_;
+          for (size_t iJ = offset; iJ != offset+dsize; ++iJ) {
+            e->element(iJ-offset, no) -= d->data(kj)->data(iJ);
+          }
+        }
+        ++no;
       }
     }
-    e->allreduce();
   };
-  auto ebra = make_shared<Matrix>(cbra->det()->size(), norb_*norb_*norb_*norb_);
-  auto tmp = make_shared<Dvec>(cbra->det(), norb_*norb_);
-  make_evec(dbra, ebra, tmp);
 
-  shared_ptr<Matrix> eket = ebra;
-  if (cbra != cket) {
-    eket = ebra->clone();
-    make_evec(dket, eket, tmp);
+  // RDM3, RDM4 construction is multipassed and parallelized:
+  //  (1) When ndet > 10000, (ndet < 10000 -> too small, almost no gain)
+  //  and (2) When we have processes more than one
+  //  OR  (3) When the number of words in <I|E_ij,kl|0> is larger than (10,10) case (635,040,000)
+  const size_t ndet = cbra->det()->size();
+  const size_t norb2 = norb_ * norb_;
+  const size_t ijmax = 635040001 * 2;
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = ((mpi__->size() * 2 > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() * 2 : (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
+  Timer timer;
+  if (npass > 1) {
+    cout << "    * Third and fourth order RDM (" << setw(2) << ist + 1 << "," << setw(2) << jst + 1 << ") evaluation" << endl;
+    cout << "      will be done with " << npass << " passes" << endl;
   }
 
-  // size of the RI space
-  auto dbram = make_shared<Matrix>(dbra->det()->size(), norb_*norb_);
-  copy_n(dbra->data(0)->data(), dbram->size(), dbram->data());
+  rdm3->zero();
+  rdm4->zero();
 
-  // first form <0|E_mn|I><I|E_ij,kl|0>
+  // multipassing through {I}
+  for (size_t ipass = 0; ipass != npass; ++ipass) {
+    if (ipass % mpi__->size() != mpi__->rank()) continue;
+
+    const size_t ioffset = ipass * nsize;
+    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+    const size_t halfsize = norb2 * (norb2 + 1) / 2;
+    auto eket_half = make_shared<Matrix>(isize, halfsize, /*local=*/true);
+    make_evec_half(dket, eket_half, isize, ioffset);
+
+    auto dbram = make_shared<Matrix>(isize, norb2, /*local=*/true);
+    for (size_t ij = 0; ij != norb2; ++ij)
+      copy_n(&(dbra->data(ij)->data(ioffset)), isize, dbram->element_ptr(0, ij));
+
+    // put in third-order RDM: <0|E_mn|I><I|E_ij < kl|0>
+    auto tmp3 = make_shared<Matrix>(*dbram % *eket_half);
+    auto tmp3_full = make_shared<Matrix>(norb2, norb2 * norb2, /*local=*/true);
+
+    for (size_t mn = 0; mn != norb2; ++mn) {
+      int no = 0;
+      for (size_t ij = 0; ij != norb2; ++ij) {
+        for (size_t kl = ij; kl != norb2; ++kl) {
+          int ijkl = ij + kl*norb2;
+          int klij = kl + ij*norb2;
+          tmp3_full->element(mn, ijkl) = tmp3->element(mn, no);
+          tmp3_full->element(mn, klij) = tmp3->element(mn, no);
+          ++no;
+        }
+      }
+    }
+    sort_indices<1,0,2,1,1,1,1>(tmp3_full->data(), rdm3->data(), norb_, norb_, norb2*norb2);
+
+    // put in fourth-order RDM: <0|E_ij > kl|I><I|E_mn < op|0>
+    shared_ptr<Matrix> ebra_half = eket_half;
+    if (cbra != cket) {
+      ebra_half = eket_half->clone();
+      make_evec_half(dbra, ebra_half, isize, ioffset);
+    }
+    auto tmp4 = make_shared<Matrix>(*ebra_half % *eket_half);
+    auto tmp4_full = make_shared<Matrix>(norb2 * norb2, norb2 * norb2, /*local=*/true);
+
+    {
+      int nklij = 0;
+      for (size_t kl = 0; kl != norb2; ++kl) {
+        for (size_t ij = kl; ij != norb2; ++ij) {
+          int nmnop = 0;
+          int klij = kl+ij*norb2;
+          int ijkl = ij+kl*norb2;
+          for (size_t mn = 0; mn != norb2; ++mn) {
+            for (size_t op = mn; op != norb2; ++op) {
+              int mnop = mn + op*norb2;
+              int opmn = op + mn*norb2;
+              tmp4_full->element(ijkl, mnop) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(klij, mnop) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(ijkl, opmn) = tmp4->element(nklij, nmnop);
+              tmp4_full->element(klij, opmn) = tmp4->element(nklij, nmnop);
+              ++nmnop;
+            }
+          }
+          ++nklij;
+        }
+      }
+    }
+    sort_indices<1,0,3,2,4,1,1,1,1>(tmp4_full->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb2*norb2);
+  }
+
+  rdm3->allreduce();
+  rdm4->allreduce();
+
+  if (npass > 1) {
+    timer.tick_print("RDM evaluation (multipassing)");
+  }
+
+  // The remaining terms can be evaluated without multipassing
   {
-    auto tmp3 = make_shared<Matrix>(*dbram % *eket);
-    sort_indices<1,0,2,0,1,1,1>(tmp3->data(), rdm3->data(), norb_, norb_, norb_*norb_*norb_*norb_);
-
     // then perform Eq. 49 of JCP 89 5803 (Werner's MRCI paper)
     // we assume that rdm2_[ist] is set
     for (int i0 = 0; i0 != norb_; ++i0)
@@ -146,10 +378,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
           }
   }
 
-  // 4RDM <0|E_ij,kl|I><I|E_mn,op|0>
   {
-    auto tmp4 = make_shared<Matrix>(*ebra % *eket);
-    sort_indices<1,0,3,2,4,0,1,1,1>(tmp4->data(), rdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_*norb_*norb_);
     for (int l = 0; l != norb_; ++l)
       for (int k = 0; k != norb_; ++k)
         for (int j = 0; j != norb_; ++j)

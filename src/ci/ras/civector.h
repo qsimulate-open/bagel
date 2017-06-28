@@ -117,10 +117,8 @@ class RASCivecView_ : public RASCivector_impl<DataType> {
     const DataType* data() const override { return data_ptr_; }
 
     RASCivecView_(RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
-    RASCivecView_(RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
-
     RASCivecView_(const RASCivector<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
-    RASCivecView_(const RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) {}
+    RASCivecView_(const RASCivecView_<DataType>& o) : RASCivecView_(o.det(), o.data()) { can_write_ = o.can_write_; }
 
     // Spin functions are only implememted as specialized functions for double (see civec.cc)
     std::shared_ptr<RASCivector<DataType>> spin() const;

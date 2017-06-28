@@ -22,40 +22,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <src/grad/force.h>
 #include <src/wfn/reference.h>
 
-std::vector<double> run_force(std::string filename) {
-
-  std::string outputname = filename + ".testout";
-  std::string inputname = location__ + filename + ".json";
-  auto ofs = std::make_shared<std::ofstream>(outputname, std::ios::trunc);
-  std::streambuf* backup_stream = std::cout.rdbuf(ofs->rdbuf());
-
-  auto idata = std::make_shared<const PTree>(inputname);
-  auto keys = idata->get_child("bagel");
-  std::shared_ptr<const Geometry> geom;
-  std::shared_ptr<const Reference> ref;
-
-  std::vector<double> out;
-
-  for (auto& itree : *keys) {
-    const std::string method = to_lower(itree->get<std::string>("title", ""));
-
-    if (method == "molecule") {
-      geom = std::make_shared<const Geometry>(itree);
-    } else if (method == "force") {
-      auto force = std::make_shared<Force>(itree, geom, ref);
-      std::shared_ptr<const GradFile> grad = force->compute();
-      out = std::vector<double>(grad->data(), grad->data()+grad->size());
-    } else {
-      throw std::logic_error("Not yet implemented (run_force)");
-    }
-  }
-  assert(!out.empty());
-  std::cout.rdbuf(backup_stream);
-  return out;
-}
 std::vector<double> reference_ms() {
   std::vector<double> out(6);
   out[2] =  0.0396123988;

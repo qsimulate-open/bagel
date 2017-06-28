@@ -41,17 +41,6 @@ double relcas_energy(std::string inp) {
   for (auto& itree : *keys) {
     const std::string method = to_lower(itree->get<std::string>("title", ""));
 
-#ifndef DISABLE_SERIALIZATION
-    if (itree->get<bool>("load_ref", false)) {
-      const std::string name = itree->get<std::string>("ref_in", "");
-      assert (name != "");
-      IArchive archive(name);
-      std::shared_ptr<Reference> ptr;
-      archive >> ptr;
-      ref = std::shared_ptr<Reference>(ptr);
-    }
-#endif
-
     if (method == "molecule") {
       geom = geom ? std::make_shared<Geometry>(*geom, itree) : std::make_shared<Geometry>(itree);
       if (itree->get<bool>("restart", false))
@@ -69,13 +58,10 @@ double relcas_energy(std::string inp) {
       ref = scf->conv_to_ref();
 
     } else if (method == "casscf") {
-      std::string algorithm = itree->get<std::string>("algorithm", "");
-      if (algorithm == "superci" || algorithm == "") {
-        auto cas = std::make_shared<SuperCI>(itree, geom, ref);
-        cas->compute();
-        ref = cas->conv_to_ref();
-        energy = ref->energy(0);
-      }
+      auto cas = std::make_shared<CASSecond>(itree, geom, ref);
+      cas->compute();
+      ref = cas->conv_to_ref();
+      energy = ref->energy(0);
 
     } else if (method == "zcasscf") {
       std::string algorithm = itree->get<std::string>("algorithm", "");
@@ -87,15 +73,23 @@ double relcas_energy(std::string inp) {
       } else {
         throw std::logic_error("unknown algorithm");
       }
-    }
+
 #ifndef DISABLE_SERIALIZATION
-    if (itree->get<bool>("save_ref", false)) {
-      const std::string name = itree->get<std::string>("ref_out", "");
+    } else if (method == "save_ref") {
+      const std::string name = itree->get<std::string>("file", "");
       assert (name != "");
       OArchive archive(name);
       archive << ref;
-    }
+
+    } else if (method == "load_ref") {
+      const std::string name = itree->get<std::string>("file", "");
+      assert (name != "");
+      IArchive archive(name);
+      std::shared_ptr<Reference> ptr;
+      archive >> ptr;
+      ref = std::shared_ptr<Reference>(ptr);
 #endif
+    }
   }
   std::cout.rdbuf(backup_stream);
   return energy;
@@ -111,7 +105,7 @@ BOOST_AUTO_TEST_CASE(ZCASSCF) {
   BOOST_CHECK(compare(relcas_energy("nh_svp_triplet_gaunt"),    -54.93378556));
   BOOST_CHECK(compare(relcas_energy("o2_svp_triplet_breit"),   -149.56647946));
 #ifndef DISABLE_SERIALIZATION
-//BOOST_CHECK(compare(relcas_energy("hf_tzvpp_bfgs_saveref"), -100.03016820));
+  BOOST_CHECK(compare(relcas_energy("hf_tzvpp_zcasscf_saveref"), -100.03016820));
 #endif
 }
 

@@ -58,13 +58,48 @@ class SubTask_ {
     std::shared_ptr<Tensor_<DataType>> out_tensor() { return out_; }
 };
 
+// When we have multiple outputs
+// N is the number of target indices, M is the number of input tensors, and L is the
+// number of output tensors. The others are same.
+template<int N, int M, int L, typename DataType>
+class SubTask_Merged_ {
+  protected:
+    const std::array<const Index, N> block_index_;
+    const std::array<std::shared_ptr<const Tensor_<DataType>>, M> in_;
+    const std::array<std::shared_ptr<Tensor_<DataType>>, L> out_;
+
+  public:
+    SubTask_Merged_(const std::array<const Index, N>& i, const std::array<std::shared_ptr<const Tensor_<DataType>>, M>& j, const std::array<std::shared_ptr<Tensor_<DataType>>, L>& k)
+      : block_index_(i), in_(j), out_(k) { }
+
+    virtual void compute() = 0;
+
+    const Index& block(const size_t& i) const { return block_index_[i]; }
+    const std::array<std::shared_ptr<const Tensor_<DataType>>, M>& in_tensors() const { return in_; }
+    const std::array<std::shared_ptr<Tensor_<DataType>>, L>& out_tensors() const { return out_; }
+    std::shared_ptr<const Tensor_<DataType>> in_tensor(const size_t& i) const { return in_[i]; }
+    std::shared_ptr<Tensor_<DataType>> out_tensor(const size_t& i) { return out_[i]; }
+};
+
 namespace CASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace CASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
+namespace CASA { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MSCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
+namespace MSCASPT2 { template<int N, int M, int L> using SubTask_Merged = SubTask_Merged_<N,M,L,double>; }
 namespace SPCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace MRCI   { template<int N, int M> using SubTask = SubTask_<N,M,double>; }
 namespace RelCASPT2 { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
+namespace RelCASA { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 namespace RelMRCI   { template<int N, int M> using SubTask = SubTask_<N,M,std::complex<double>>; }
 
+extern template class SubTask_Merged_<2,1,5,double>;
+extern template class SubTask_Merged_<4,1,5,double>;
+extern template class SubTask_Merged_<6,1,5,double>;
+extern template class SubTask_Merged_<8,1,5,double>;
+extern template class SubTask_Merged_<2,2,5,double>;
+extern template class SubTask_Merged_<4,2,5,double>;
+extern template class SubTask_Merged_<6,2,5,double>;
+extern template class SubTask_Merged_<8,2,5,double>;
 extern template class SubTask_<1,1,double>;
 extern template class SubTask_<1,2,double>;
 extern template class SubTask_<1,3,double>;

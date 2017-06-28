@@ -111,7 +111,7 @@ class RDM : public btas::TensorN<DataType, rank*2> {
       return nullptr;
     }
 
-    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals(const bool occ_sort = false) const {
+    std::pair<std::shared_ptr<Matrix>, VectorB> generate_natural_orbitals() const {
       throw std::logic_error("RDM<N>::generate_natural_orbitals() should not be called with N>1");
       return std::pair<std::shared_ptr<Matrix>, VectorB>();
     }
@@ -164,7 +164,7 @@ using ZRDM = RDM<rank, std::complex<double>>;
 template<> bool RDM<1,double>::natural_orbitals() const;
 template<> std::vector<double> RDM<1,double>::diag() const;
 
-template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals(const bool occ_sort) const;
+template<> std::pair<std::shared_ptr<Matrix>, VectorB> RDM<1,double>::generate_natural_orbitals() const;
 
 template<> void RDM<1,double>::transform(std::shared_ptr<const Matrix> coeff);
 template<> void RDM<2,double>::transform(std::shared_ptr<const Matrix> coeff);
@@ -210,6 +210,7 @@ struct fill_in<N,DataType,2> {
   }
 };
 }
+
 
 template<int N, typename DataType>
 std::shared_ptr<RDM<N,DataType>> expand_kramers(std::shared_ptr<const Kramers<2*N,RDM<N,DataType>>> o, const size_t norb) {

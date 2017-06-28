@@ -104,7 +104,81 @@ class StorageIncore : public RMAWindow<DataType> {
     size_t local_lo_;
     size_t local_hi_;
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      std::map<size_t, std::pair<size_t, size_t>> hashtable_ordered;
+      for (auto& i: hashtable_)
+        hashtable_ordered.emplace(i);
+      ar << RMAWindow<DataType>::initialized_ << totalsize_ << hashtable_ordered;
+
+      // Process 0 collects and saves tensor's contents, tile by tile
+      // Other processes do nothing; this requires them to be writing to a different file from Process 0
+      if (mpi__->rank() == 0) {
+        for (auto& i : hashtable_ordered) {
+          size_t rank, off, size;
+          std::tie(rank, off, size) = locate(i.first);
+          std::vector<DataType> tmp(size, 0.0);
+          rma_get(tmp.data(), i.first);
+          ar << tmp;
+        }
+      }
+      mpi__->barrier();
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      std::map<size_t, std::pair<size_t, size_t>> hashtable_ordered;
+      bool init;
+      ar >> init >> totalsize_ >> hashtable_ordered;
+
+      // Determine distribution information (assuming mpi__->size() might have changed)
+      const size_t blocksize = (totalsize_-1)/mpi__->size()+1;
+      blocks_ = std::map<size_t, int>();
+      size_t tsize = 0;
+      for (auto& i : hashtable_ordered) {
+        if (i.second.first == i.second.second) continue;
+        if (blocks_.size()*blocksize <= tsize)
+          blocks_.emplace(tsize, blocks_.size());
+        tsize += (i.second.second - i.second.first);
+      }
+      assert(totalsize_ == tsize);
+      local_lo_ = local_hi_ = std::numeric_limits<size_t>::max();
+      for (auto iter = blocks_.begin(); iter != blocks_.end(); ++iter)
+        if (iter->second == mpi__->rank()) {
+          local_lo_ = iter->first;
+          auto iterp = ++iter;
+          local_hi_ = iterp != blocks_.end() ? iterp->first : totalsize_;
+          break;
+        }
+
+      // copy hashtable
+      for (auto& i: hashtable_ordered)
+        hashtable_.emplace(i);
+      if (init)
+        initialize();
+
+      // All processes read the whole archive, and save the data that belong to them
+      for (auto& i : hashtable_ordered) {
+        size_t rank, off, size;
+        std::tie(rank, off, size) = locate(i.first);
+        std::vector<DataType> tmp(size, 0.0);
+        ar >> tmp;
+        if (rank == mpi__->rank())
+          rma_put(tmp.data(), i.first);
+      }
+      mpi__->barrier();
+    }
+
   public:
+    StorageIncore() { }
     StorageIncore(const std::map<size_t, size_t>& size, bool init);
 
     // required functions by RMAWindow
@@ -180,5 +254,9 @@ using Storage = StorageIncore<DataType>;
 
 }
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::StorageIncore<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::StorageIncore<std::complex<double>>)
 
 #endif

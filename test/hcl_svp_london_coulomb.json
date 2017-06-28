@@ -2,7 +2,6 @@
 
 {
   "title" : "molecule",
-  "symmetry" : "C1",
   "basis" : "3-21g",
   "df_basis" : "svp-jkfit",
   "basis_type" : "london",

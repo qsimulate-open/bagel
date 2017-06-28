@@ -50,8 +50,14 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // enforce time-reversal symmetry
     bool tsymm_;
 
+    // RDMs are given externally (e.g., FCIQMC)
+    std::string external_rdm_;
+
     double thresh_;
     double thresh_micro_;
+    double thresh_overlap_;
+    bool conv_ignore_;
+    bool restart_cas_;
 
     int nstate_;
 
@@ -62,7 +68,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
-    VectorB occup_;
 
     void print_header() const;
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
@@ -88,7 +93,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::shared_ptr<RelCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
 
   public:
-    ZCASSCF(const std::shared_ptr<const PTree> idat, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> ref = nullptr);
+    ZCASSCF(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     virtual void compute() override = 0;
 
@@ -98,7 +103,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
-    void print_natocc() const;
+    void print_natocc(const VectorB& ocup) const;
+    // just updates nvirt_, etc. if we have a linearly dependent basis set
+    void remove_lindep(const int nspinor);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -108,14 +115,18 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int nvirtnr() const { return nvirtnr_; }
     int nbasis() const { return nbasis_; }
     int nstate() const { return nstate_; }
+    int charge() const { return charge_; }
     int max_iter() const { return max_iter_; }
     int max_micro_iter() const { return max_micro_iter_; }
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
-    double occup(const int i) const { return occup_[i]; }
+    double thresh_overlap() const { return thresh_overlap_; }
     bool tsymm() const { return tsymm_; }
+    double energy(const int i) const { return energy_.at(i); }
+    std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
+    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
 };
 
 }

@@ -1,0 +1,24 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : "false",
+  "geometry" : [
+    { "atom" : "F",  "xyz" : [ -0.000000,     -0.000000,      1.920616]},
+    { "atom" : "H",  "xyz" : [ -0.000000,     -0.000000,      0.305956]}
+  ]
+},
+
+{
+  "title" : "force",
+  "numerical" : true,
+  "method" : [ {
+    "title" : "mp2",
+    "frozen" : true,
+    "aux_basis" : "cc-pvtz-ri"
+  } ]
+}
+
+]}

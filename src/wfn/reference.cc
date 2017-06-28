@@ -54,9 +54,9 @@ Reference::Reference(shared_ptr<const Geometry> g, shared_ptr<const Coeff> c,
   for (auto& i : *rdm2_)
     mpi__->broadcast(i.second->data(), i.second->size(), 0);
   if (rdm1_av_)
-    mpi__->broadcast_force(rdm1_av_->data(), rdm1_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm1_av_->data()), rdm1_av_->size(), 0);
   if (rdm2_av_)
-    mpi__->broadcast_force(rdm2_av_->data(), rdm2_av_->size(), 0);
+    mpi__->broadcast(const_cast<double*>(rdm2_av_->data()), rdm2_av_->size(), 0);
 
   //if (nact_ && rdm1_.empty())
   //  throw logic_error("If nact != 0, Reference::Reference wants to have RDMs.");
@@ -139,6 +139,19 @@ shared_ptr<Dvec> Reference::rdm2deriv(const int istate) const {
 }
 
 
+shared_ptr<Matrix> Reference::rdm2deriv_offset(const int istate, const size_t offset, const size_t size) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm2deriv_offset(istate, offset, size);
+}
+
+
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>
+Reference::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
+  FCI_bare fci(ciwfn_);
+  return fci.rdm3deriv(istate, fock, offset, size, fock_ebra_in);
+}
+
+
 tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
 Reference::rdm34deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
   FCI_bare fci(ciwfn_);
@@ -176,7 +189,9 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     Overlap snewinv = snew;
     snewinv.inverse_symmetric();
     MixedBasis<OverlapBatch> mixed(geom_, geomin);
-    auto c = make_shared<Coeff>(snewinv * mixed * *coeff_);
+    auto coeff = coeff_->copy();
+    coeff->delocalize();
+    auto c = make_shared<Coeff>(snewinv * mixed * *coeff);
 
     // make coefficient orthogonal (under the overlap metric)
     Matrix unit = *c % snew * *c;
@@ -186,21 +201,31 @@ shared_ptr<Reference> Reference::project_coeff(shared_ptr<const Geometry> geomin
     out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
     if (coeffA_) {
       assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA_ * unit);
-      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB_ * unit);
+      auto coeffA = coeffA_->copy();
+      auto coeffB = coeffB_->copy();
+      coeffA->delocalize();
+      coeffB->delocalize();
+      out->coeffA_ = make_shared<Coeff>(snewinv * mixed * *coeffA * unit);
+      out->coeffB_ = make_shared<Coeff>(snewinv * mixed * *coeffB * unit);
     }
   } else {
     Overlap snew(geomin);
     Overlap sold(geom_);
     snew.inverse_half();
     sold.sqrt();
-    auto c = make_shared<Coeff>(snew * sold * *coeff_);
+    auto coeff = coeff_->copy();
+    coeff->delocalize();
+    auto c = make_shared<Coeff>(snew * sold * *coeff);
 
     out = make_shared<Reference>(geomin, c, nclosed_, nact_, coeff_->mdim()-nclosed_-nact_, energy_);
     if (coeffA_) {
       assert(coeffB_);
-      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA_);
-      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB_);
+      auto coeffA = coeffA_->copy();
+      auto coeffB = coeffB_->copy();
+      coeffA->delocalize();
+      coeffB->delocalize();
+      out->coeffA_ = make_shared<Coeff>(snew * sold * *coeffA);
+      out->coeffB_ = make_shared<Coeff>(snew * sold * *coeffB);
     }
   }
 
@@ -303,3 +328,73 @@ shared_ptr<Reference> Reference::set_ractive(set<int> ras1, set<int> ras2, set<i
 
   return make_shared<Reference>(geom_, make_shared<const Coeff>(*tmp_coeff), nclosed, nactive, nvirt);
 }
+
+
+shared_ptr<Reference> Reference::extract_state(const vector<int> input, const bool update_rdms) const {
+  cout << " * Extracting CI coefficients from Reference object for the following states: ";
+  for (int i = 0; i != input.size(); ++i)
+    cout << input[i] << " ";
+  cout << endl;
+
+  vector<double> newenergies(input.size());
+  for (int i = 0; i != input.size(); ++i)
+    newenergies[i] = energy_[input[i]];
+
+  // Construct a CIWfn with only CI coefficients for the desired state
+  auto newciwfn = make_shared<CIWfn>(geom_, nclosed_, nact_, input.size(), newenergies,
+                                     ciwfn_->civectors()->extract_state(input), ciwfn_->det());
+
+  // Use extract_average_rdm(...) to get desired RDMs and prepare output
+  shared_ptr<Reference> out;
+  if (update_rdms) {
+    shared_ptr<Reference> rdmref = extract_average_rdm(input);
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, newenergies,
+                                 rdmref->rdm1(), rdmref->rdm2(), rdmref->rdm1_av(), rdmref->rdm2_av(), newciwfn);
+  } else {
+    out = make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, newenergies,
+                                 rdm1(), rdm2(), rdm1_av(), rdm2_av(), newciwfn);
+  }
+  return out;
+}
+
+
+// TODO Cleanup or remove?  Body is mostly the same as FCI_base::compute_rdm12()
+shared_ptr<Reference> Reference::extract_average_rdm(const vector<int> rdm_state) const {
+  if (rdm_state.size() == 0 || rdm_state.size() > nstate())
+    throw runtime_error("Trying to obtain a state-averaged RDM over some invalid number of states.");
+
+  cout << " * Extracting RDMs for ";
+  cout << (rdm_state.size() > 1 ? "the average of the following states: " : "the following state: ");
+  for (int i = 0; i != rdm_state.size(); ++i)
+    cout << rdm_state[i] << " ";
+  cout << endl;
+
+  // for one-body RDM
+  auto rdm1 = make_shared<VecRDM<1>>();
+  auto rdm2 = make_shared<VecRDM<2>>();
+  auto rdm1_av = make_shared<RDM<1>>(nact_);
+  auto rdm2_av = make_shared<RDM<2>>(nact_);
+
+  for (int index = 0; index != rdm_state.size(); ++index) {
+    const int istate = rdm_state[index];
+    // one and two body RDMs
+    rdm1->emplace(index, rdm1_->at(istate)->copy());
+    rdm2->emplace(index, rdm2_->at(istate)->copy());
+  }
+
+  if (rdm_state.size() > 1) {
+    for (int index = 0; index != rdm_state.size(); ++index) {
+      const int istate = rdm_state[index];
+      const double weight = 1.0/static_cast<double>(rdm_state.size());
+      rdm1_av->ax_plus_y(weight, rdm1_->at(istate));
+      rdm2_av->ax_plus_y(weight, rdm2_->at(istate));
+    }
+  } else {
+    rdm1_av = rdm1_->at(rdm_state[0])->copy();
+    rdm2_av = rdm2_->at(rdm_state[0])->copy();
+  }
+
+  return make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_, rdm1, rdm2, rdm1_av, rdm2_av, ciwfn_);
+}
+
+

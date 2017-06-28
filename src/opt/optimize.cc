@@ -48,5 +48,6 @@ void Optimize::compute() {
   auto opt = make_shared<Opt>(idata_, methodblock, geom_, ref_);
   opt->compute();
   geom_ = opt->geometry();
-
+  ref_ = opt->conv_to_ref();
 }
+

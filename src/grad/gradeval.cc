@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 template<>
-shared_ptr<GradFile> GradEval<RHF>::compute() {
+shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   assert(task_->dodf());
   Timer timer;
 
@@ -58,14 +58,18 @@ shared_ptr<GradFile> GradEval<RHF>::compute() {
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
   grad->print();
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }
 
 
 template<>
-shared_ptr<GradFile> GradEval<UHF>::compute() {
+shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   Timer timer;
 
   //- One ELECTRON PART -//
@@ -82,14 +86,18 @@ shared_ptr<GradFile> GradEval<UHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }
 
 
 template<>
-shared_ptr<GradFile> GradEval<ROHF>::compute() {
+shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   Timer timer;
 
   //- One ELECTRON PART -//
@@ -106,14 +114,18 @@ shared_ptr<GradFile> GradEval<ROHF>::compute() {
 
   shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }
 
 
 template<>
-shared_ptr<GradFile> GradEval<KS>::compute() {
+shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   Timer timer;
 
   //- One ELECTRON PART -//
@@ -137,7 +149,11 @@ shared_ptr<GradFile> GradEval<KS>::compute() {
 
   grad->print();
 
+  dipole_ = task_->scf_dipole();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
+
+  energy_ = ref_->energy(0);
 
   return grad;
 }

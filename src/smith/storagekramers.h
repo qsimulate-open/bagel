@@ -134,7 +134,16 @@ class StorageKramers : public StorageIncore<DataType> {
       RMAWindow<DataType>::rma_add(dat, generate_hash_key(indices));
     }
 
+  private:
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & boost::serialization::base_object<StorageIncore<DataType>>(*this) & stored_sectors_ & perm_;
+    }
+
   public:
+    StorageKramers() { }
     // TODO temp constructor
     StorageKramers(const std::map<size_t, size_t>& size, const bool init)
       : StorageIncore<DataType>(size, init) {
@@ -199,5 +208,9 @@ using StorageK = StorageKramers<DataType>;
 
 }
 }
+
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::StorageKramers<double>)
+BOOST_CLASS_EXPORT_KEY(bagel::SMITH::StorageKramers<std::complex<double>>)
 
 #endif

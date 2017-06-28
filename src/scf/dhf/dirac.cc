@@ -49,7 +49,7 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   robust_ = idata->get<bool>("robust", false);
 
   // when computing gradient, we store half-transform integrals
-  do_grad_ = idata->get<bool>("gradient", false);
+  do_grad_ = idata->get<bool>("_gradient", false);
   if (do_grad_ && geom_->magnetism()) throw runtime_error("Gradient integrals have not been implemented for a GIAO basis.");
 
   geom_ = geom->relativistic(gaunt_);
@@ -70,6 +70,9 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
+
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
 
   if (nele_ % 2 != 0) {
     if (geom_->nonzero_magnetic_field())
@@ -158,8 +161,10 @@ void Dirac::compute() {
       }
       break;
     } else if (iter == max_iter_-1) {
-      cout << indent << endl << indent << "  * Max iteration reached in SCF." << endl << endl;
-      throw runtime_error("Max iteration reached in Dirac--Fock SCF");
+      if (!conv_ignore_)
+        throw runtime_error("Max iteration reached in Dirac--Hartree--Fock SCF");
+      else
+        cout << endl << indent << "  * Max iteration reached in Dirac--Hartree--Fock SCF.  Convergence not reached! *   " << endl << endl;
     }
 
     if (iter >= diis_start_) {

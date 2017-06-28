@@ -7,7 +7,7 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 
 *** Authors ***
 
-  See the AUTHORS file
+  Author contributions can be found in the manual.
 
 
 *** Citation ***
@@ -16,20 +16,10 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
   "BAGEL, Brilliantly Advanced General Electronic-structure Library.
   http://www.nubakery.org under the GNU General Public License."
 
-  See doc/papers.json for BAGEL-related publications, which are also
-  listed on our website. If you contributed or used BAGEL and cited above,
-  feel free to update this file so that your papers appear on the website.
-
 
 *** License ***
 
   BAGEL is distributed under the GPLv3+.
-
-
-*** Special Thanks ***
-
-  BAGEL includes a modified version of the ALGLIB package (under the GPLv2+),
-  for CG and L-BFGS optimizers. See http://www.alglib.net.
 
 
 *** Support ***
@@ -42,16 +32,15 @@ BAGEL, Brilliantly Advanced General Electronic-structure Library
 
 *** Disclaimer ***
 
-  This is a public pre-alpha version and may have serious bugs.
   If you find problems that persist for an extended period of time,
   please open an issue or make a pull request with a patch.
   The BAGEL developers are trying their best, but are not commited to fix
   all the reported bugs in a timely manner due to time constraints.
 
-  Developers are likely to have newer code in their private branches.
-  If you want to gain access to a program that implements a published work and
-  you do not find it in the public repository, please write to the authors.
-
-  BAGEL is intended for use in parallel environments with a few Terabyte
+  BAGEL is intended for use in parallel environments with a large amount
   of distributed memory (e.g., hence there is no disk interface).
   We are NOT going to optimize BAGEL for a stand-alone workstation.
+
+  BAGEL is being tested primarily on Linux (CentOS and SUSE) and MacOS
+  that we have access to.  Since the program is standard compliant,
+  it is expected that BAGEL also works on other platforms.

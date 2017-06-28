@@ -67,7 +67,7 @@ Matrix::Matrix(const DistMatrix& o) : Matrix_base<double>(o.ndim(), o.mdim()), s
 MatView Matrix::slice(const int mstart, const int mend) {
   assert(mstart >= 0 && mend <= mdim());
   auto low = {0, mstart};
-  auto up  = {ndim(), mend};
+  auto up  = {static_cast<int>(ndim()), mend};
   return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
 }
 
@@ -75,7 +75,7 @@ MatView Matrix::slice(const int mstart, const int mend) {
 const MatView Matrix::slice(const int mstart, const int mend) const {
   assert(mstart >= 0 && mend <= mdim());
   auto low = {0, mstart};
-  auto up  = {ndim(), mend};
+  auto up  = {static_cast<int>(ndim()), mend};
   return MatView(btas::make_rwview(this->range().slice(low, up), this->storage()), localized_);
 }
 
@@ -416,7 +416,9 @@ shared_ptr<const Matrix> Matrix::distmatrix() const {
 #endif
 
 void Matrix::print (const string tag, int len) const {
-  cout << endl << "  ++ " << tag << " ++" << endl << endl;
+  if (tag != "")
+    cout << endl << "  ++ " << tag << " ++" << endl << endl;
+
   int len_n, len_m;
 
   if (len == 0 || (len > mdim() && len > ndim())) {
@@ -426,15 +428,15 @@ void Matrix::print (const string tag, int len) const {
     len_n = len_m = len;
   }
 
-  for (int i = 0; i != len_n/6; ++i) {
+  for (int i = 0; i != len_m/6; ++i) {
     cout << setw(6) << " ";
     for (int k = 0; k != 6; ++k)
       cout << setw(20) << i * 6 + k;
     cout << endl;
-    for (int j = 0; j != len_m; ++j) {
+    for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
       for (int k = 0; k != 6; ++k)
-        cout << setw(20) << setprecision(10) << *element_ptr(i * 6 + k, j);
+        cout << setw(20) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }
     cout << endl;
@@ -443,14 +445,14 @@ void Matrix::print (const string tag, int len) const {
   if (len_m%6) {
     int i = len_m/6;
     cout << setw(6) << " ";
-    for (int k = 0; k != len_n%6; ++k)
+    for (int k = 0; k != len_m%6; ++k)
       cout << setw(20) << i * 6 + k;
     cout << endl;
 
-    for (int j = 0; j != len_m; ++j) {
+    for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
-      for (int k = 0; k != len_n%6; ++k)
-        cout << setw(20) << setprecision(10) << *element_ptr(i * 6 + k, j);
+      for (int k = 0; k != len_m%6; ++k)
+        cout << setw(20) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }
     cout << endl;

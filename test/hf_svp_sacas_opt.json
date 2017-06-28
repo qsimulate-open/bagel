@@ -1,0 +1,25 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "angstrom" : false,
+  "geometry" : [
+    { "atom" : "H",  "xyz" : [   -0.000000,     -0.000000,      1.700000] },
+    { "atom" : "F",  "xyz" : [   -0.000000,     -0.000000,      0.000000] }
+  ]
+},
+
+{
+  "title" : "optimize",
+  "method" : [ {
+    "title" : "casscf",
+    "nopen" : 0,
+    "nact" : 2,
+    "nclosed" : 4,
+    "nstate" : 2
+  } ]
+}
+
+]}

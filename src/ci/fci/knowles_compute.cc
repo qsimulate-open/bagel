@@ -82,7 +82,6 @@ shared_ptr<Dvec> KnowlesHandy::form_sigma(shared_ptr<const Dvec> ccvec, shared_p
     // (task3) one-electron beta: sigma(Psib', Psia) += sign h'(ij) C(Psib, Psia)
     sigma_3(cc, sigma, jop);
     pdebug.tick_print("task3");
-
   }
 
   return sigmavec;

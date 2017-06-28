@@ -29,6 +29,7 @@
 #include <src/util/math/davidson.h>
 #include <src/smith/extrap.h>
 #include <src/smith/relmrci/RelMRCI.h>
+#include <src/prop/pseudospin/pseudospin.h>
 
 using namespace std;
 using namespace bagel;
@@ -108,9 +109,8 @@ void RelMRCI::RelMRCI::solve() {
   rtmp->zero();
 
   Timer mtimer;
-  int iter = 0;
   vector<bool> conv(nstates_, false);
-  for ( ; iter != info_->maxiter(); ++iter) {
+  for (int iter = 0; iter != info_->maxiter(); ++iter) {
 
     // loop over state of interest
     vector<shared_ptr<const Amplitude<std::complex<double>>>> a0;
@@ -182,15 +182,15 @@ void RelMRCI::RelMRCI::solve() {
     }
 
     energy_ = davidson.compute(a0, r0);
+    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
 
     // find new trial vectors
-    vector<shared_ptr<Residual<std::complex<double>>>> res = davidson.residual();
     for (int i = 0; i != nstates_; ++i) {
       const double err = res[i]->tensor()->rms();
       print_iteration(iter, energy_[i]+core_nuc, err, mtimer.tick(), i);
 
-      t2all_[i]->zero();
       conv[i] = err < info_->thresh();
+      t2all_[i]->zero();
       if (!conv[i]) {
         e0_ = e0all_[i];
         update_amplitude(t2all_[i], res[i]->tensor());
@@ -200,7 +200,7 @@ void RelMRCI::RelMRCI::solve() {
 
     if (all_of(conv.begin(), conv.end(), [](bool i){ return i;})) break;
   }
-  print_iteration(iter == info_->maxiter());
+  print_iteration(!all_of(conv.begin(), conv.end(), [](bool i){ return i;}));
   timer.tick_print("MRCI energy evaluation");
 
   // Davidson corrections...
@@ -219,11 +219,23 @@ void RelMRCI::RelMRCI::solve() {
       eref /= c;
       const double eq = energy_[i]+core_nuc + (energy_[i]+core_nuc-eref)*(1.0-c)/c;
       print_iteration(0, eq, 0.0, 0.0, i);
+      energy_q[i] = eq;
     }
     cout << endl;
 
   }
   timer.tick_print("MRCI+Q energy evaluation");
+
+  // TODO When the Property class is implemented, this should be one
+  if (info_->aniso_data()) {
+    if (info_->geom()->magnetism()) {
+      cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << endl;
+    } else {
+      const int nspin = info_->aniso_data()->get<int>("nspin", nstates_-1);
+      Pseudospin ps(nspin, info_->geom(), info_->ciwfn(), info_->aniso_data());
+      ps.compute(energy_, info_->relref()->relcoeff()->block_format()->active_part());
+    }
+  }
 }
 
 

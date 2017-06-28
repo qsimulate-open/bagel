@@ -1,18 +1,17 @@
 AUTOMAKE_OPTIONS = subdir-objects
 lib_LTLIBRARIES = libbagel_smith.la
-libbagel_smith_la_SOURCES = smith_info.cc indexrange.cc storage.cc storagekramers.cc denom.cc tensor.cc futuretensor.cc \
-spinfreebase.cc subtask.cc smith.cc caspt2.cc caspt2grad.cc caspt2grad_util.cc moint.cc diagonal.cc queue.cc caspt2nacm.cc \
+libbagel_smith_la_SOURCES = smith_info.cc indexrange.cc storage.cc storagekramers.cc denom.cc tensor.cc futuretensor.cc multitensor.cc \
+spinfreebase.cc subtask.cc smith.cc caspt2.cc caspt2grad.cc caspt2grad_util.cc moint.cc diagonal.cc queue.cc \
 caspt2/CASPT2.cc caspt2/CASPT2_gamma.cc caspt2/CASPT2_normq.cc caspt2/CASPT2_sourceq.cc caspt2/CASPT2_density1q.cc caspt2/CASPT2_density2q.cc \
-caspt2/CASPT2_deciq1.cc caspt2/CASPT2_deciq2.cc caspt2/CASPT2_deciq3.cc caspt2/CASPT2_residualq1.cc caspt2/CASPT2_residualq2.cc caspt2/CASPT2_residualq3.cc \
-caspt2/CASPT2_densityq1.cc caspt2/CASPT2_densityq2.cc caspt2/CASPT2_densityq3.cc \
+caspt2/CASPT2_deciq.cc caspt2/CASPT2_residualq.cc caspt2/CASPT2_densityq.cc \
 caspt2/CASPT2_tasks1.cc caspt2/CASPT2_tasks2.cc caspt2/CASPT2_tasks3.cc caspt2/CASPT2_tasks4.cc caspt2/CASPT2_tasks5.cc \
 caspt2/CASPT2_tasks6.cc caspt2/CASPT2_tasks7.cc caspt2/CASPT2_tasks8.cc caspt2/CASPT2_tasks9.cc caspt2/CASPT2_tasks10.cc \
 caspt2/CASPT2_tasks11.cc caspt2/CASPT2_tasks12.cc caspt2/CASPT2_tasks13.cc caspt2/CASPT2_tasks14.cc caspt2/CASPT2_tasks15.cc \
-caspt2/CASPT2_tasks16.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc caspt2/CASPT2_gen3.cc caspt2/CASPT2_gen4.cc \
+caspt2/CASPT2_tasks16.cc caspt2/CASPT2_tasks17.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc caspt2/CASPT2_gen3.cc caspt2/CASPT2_gen4.cc \
 caspt2/CASPT2_gen5.cc caspt2/CASPT2_gen6.cc caspt2/CASPT2_gen7.cc caspt2/CASPT2_gen8.cc \
 caspt2/CASPT2_gen9.cc caspt2/CASPT2_gen10.cc caspt2/CASPT2_gen11.cc caspt2/CASPT2_gen12.cc \
-caspt2/CASPT2_gen13.cc caspt2/CASPT2_gen14.cc caspt2/CASPT2_gen15.cc caspt2/CASPT2_gen16.cc \
-\
+caspt2/CASPT2_gen13.cc caspt2/CASPT2_gen14.cc caspt2/CASPT2_gen15.cc caspt2/CASPT2_gen16.cc caspt2/CASPT2_gen17.cc \
+caspt2/CASPT2_contract.cc caspt2/CASPT2_contract_tasks.cc caspt2/CASPT2_contract_gen.cc \
 caspt2/SPCASPT2.cc caspt2/SPCASPT2_gamma.cc caspt2/SPCASPT2_densityq.cc caspt2/SPCASPT2_density1q.cc caspt2/SPCASPT2_gen1.cc \
 caspt2/SPCASPT2_gen2.cc caspt2/SPCASPT2_gen3.cc caspt2/SPCASPT2_gen4.cc caspt2/SPCASPT2_gen5.cc caspt2/SPCASPT2_gen6.cc \
 caspt2/SPCASPT2_tasks1.cc caspt2/SPCASPT2_tasks2.cc caspt2/SPCASPT2_tasks3.cc caspt2/SPCASPT2_tasks4.cc caspt2/SPCASPT2_tasks5.cc \
@@ -27,6 +26,7 @@ caspt2/MSCASPT2_tasks1.cc caspt2/MSCASPT2_tasks2.cc caspt2/MSCASPT2_tasks3.cc ca
 caspt2/MSCASPT2_tasks6.cc caspt2/MSCASPT2_tasks7.cc caspt2/MSCASPT2_tasks8.cc caspt2/MSCASPT2_tasks9.cc caspt2/MSCASPT2_tasks10.cc \
 caspt2/MSCASPT2_tasks11.cc caspt2/MSCASPT2_tasks12.cc caspt2/MSCASPT2_tasks13.cc \
 \
+caspt2/MSCASPT2_contract.cc caspt2/MSCASPT2_contract_tasks.cc caspt2/MSCASPT2_contract_gen.cc \
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_normq.cc \
 mrci/MRCI_residualq1.cc mrci/MRCI_residualq2.cc mrci/MRCI_residualq3.cc mrci/MRCI_residualq4.cc mrci/MRCI_residualq5.cc \
 mrci/MRCI_residualq6.cc mrci/MRCI_residualq7.cc mrci/MRCI_residualq8.cc mrci/MRCI_residualq9.cc \
@@ -44,6 +44,16 @@ relcaspt2/RelCASPT2_gen1.cc relcaspt2/RelCASPT2_gen2.cc relcaspt2/RelCASPT2_gen3
 relcaspt2/RelCASPT2_gen6.cc \
 relcaspt2/RelCASPT2_tasks1.cc relcaspt2/RelCASPT2_tasks2.cc relcaspt2/RelCASPT2_tasks3.cc relcaspt2/RelCASPT2_tasks4.cc relcaspt2/RelCASPT2_tasks5.cc \
 relcaspt2/RelCASPT2_tasks6.cc \
+\
+casa/CASA.cc casa/CASA_gamma.cc casa/CASA_residualq.cc casa/CASA_sourceq.cc \
+casa/CASA_gen1.cc casa/CASA_gen2.cc casa/CASA_gen3.cc casa/CASA_gen4.cc casa/CASA_gen5.cc casa/CASA_gen6.cc \
+casa/CASA_tasks1.cc casa/CASA_tasks2.cc casa/CASA_tasks3.cc casa/CASA_tasks4.cc casa/CASA_tasks5.cc casa/CASA_tasks6.cc \
+\
+relcasa/RelCASA.cc relcasa/RelCASA_gamma.cc relcasa/RelCASA_residualq.cc relcasa/RelCASA_sourceq.cc \
+relcasa/RelCASA_gen1.cc relcasa/RelCASA_gen2.cc relcasa/RelCASA_gen3.cc relcasa/RelCASA_gen4.cc relcasa/RelCASA_gen5.cc \
+relcasa/RelCASA_gen6.cc \
+relcasa/RelCASA_tasks1.cc relcasa/RelCASA_tasks2.cc relcasa/RelCASA_tasks3.cc relcasa/RelCASA_tasks4.cc relcasa/RelCASA_tasks5.cc \
+relcasa/RelCASA_tasks6.cc \
 \
 relmrci/RelMRCI.cc relmrci/RelMRCI_gamma.cc relmrci/RelMRCI_sourceq.cc relmrci/RelMRCI_normq.cc \
 relmrci/RelMRCI_residualq1.cc relmrci/RelMRCI_residualq2.cc relmrci/RelMRCI_residualq3.cc \

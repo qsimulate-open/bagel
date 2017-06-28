@@ -48,6 +48,10 @@ class Molecule {
     int lmax_;
     int aux_lmax_;
 
+    // FMM
+    bool dofmm_;
+    std::string extent_type_;
+
     // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int>> offsets_;
     std::vector<std::vector<int>> aux_offsets_;
@@ -76,11 +80,8 @@ class Molecule {
     // external magnetic field
     std::array<double,3> magnetic_field_;
 
-    // FMM
-    bool dofmm_;
-    std::string extent_type_;
-
     // Computes the nuclear repulsion energy.
+    bool skip_self_interaction_;
     double compute_nuclear_repulsion();
 
     // Constructor helpers
@@ -93,7 +94,7 @@ class Molecule {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & spherical_ & aux_merged_ & nbasis_ & nele_ & nfrc_ & naux_ & lmax_ & aux_lmax_ & offsets_ & aux_offsets_ & basisfile_ & auxfile_
-         & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & gamma_ & external_ & magnetic_field_;
+         & atoms_ & aux_atoms_ & nuclear_repulsion_ & symmetry_ & plist_ & nirrep_ & gamma_ & external_ & magnetic_field_ & dofmm_ & skip_self_interaction_;
     }
 
   public:
@@ -123,6 +124,7 @@ class Molecule {
     double gamma() const {return gamma_; }
     int nirrep() const { return nirrep_; }
     bool dofmm() const { return dofmm_; }
+    bool skip_self_interaction() { return skip_self_interaction_; }
 
     // The position of the specific function in the basis set.
     const std::vector<std::vector<int>>& offsets() const { return offsets_; }
@@ -167,7 +169,9 @@ class Molecule {
     std::array<std::shared_ptr<const Matrix>,3> compute_internal_coordinate(
         std::shared_ptr<const Matrix> prev = nullptr,
         std::vector<std::shared_ptr<const OptExpBonds>> explicit_bond = std::vector<std::shared_ptr<const OptExpBonds>>(),
-        std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>()) const;
+        std::vector<std::shared_ptr<const OptConstraint>> cmat = std::vector<std::shared_ptr<const OptConstraint>>(),
+        bool negative_hessian = false,
+        bool verbose = true) const;
     // driver for compute B matrix for redundant coordinate (original Wilson B)
     std::array<std::shared_ptr<const Matrix>,4> compute_redundant_coordinate(std::shared_ptr<const Matrix> prev = nullptr) const;
 

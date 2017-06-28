@@ -26,7 +26,7 @@
   "charge" : "-1",
   "state" : [0,4,0,1],
   "only_electrons" : "true",
-  "nact_cas" : 3,
+  "nact" : 3,
   "nclosed" : 7,
   "thresh" : 4.0e-6,
   "aniso" : {

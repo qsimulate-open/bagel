@@ -26,6 +26,7 @@
 #define __SRC_MULTI_ZCASSCF_ZCASNOOPT_H
 
 #include <src/multi/zcasscf/zcasscf.h>
+#include <src/prop/pseudospin/pseudospin.h>
 
 namespace bagel {
 
@@ -40,13 +41,26 @@ class ZCASNoopt : public ZCASSCF {
      : ZCASSCF(idat, geom, ref) { common_init(); }
 
     void compute() override {
-      Timer fci_time(0);
-      fci_->compute();
-      fci_time.tick_print("ZFCI");
-      std::cout << " Computing RDMs from FCI calculation " << std::endl;
-      fci_->compute_rdm12();
-      fci_time.tick_print("RDMs");
+      if (external_rdm_.empty()) {
+        std::cout << " Computing RDMs from FCI calculation " << std::endl;
+        fci_->compute();
+        fci_->compute_rdm12();
+      } else {
+        fci_->read_external_rdm12_av(external_rdm_);
+      }
       energy_ = fci_->energy();
+
+      // TODO When the Property class is implemented, this should be one
+      std::shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
+      if (aniso_data) {
+        if (geom_->magnetism()) {
+          std::cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << std::endl;
+        } else {
+          const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
+          Pseudospin ps(nspin, geom_, fci_->conv_to_ciwfn(), aniso_data);
+          ps.compute(energy_, coeff_->active_part());
+        }
+      }
     }
 
 };

@@ -40,12 +40,15 @@ namespace bagel {
 
 class MPI_Interface {
   protected:
+    int world_rank_;
+    int world_size_;
     int rank_;
     int size_;
 
     int cnt_;
     // request handles
 #ifdef HAVE_MPI_H
+    MPI_Comm mpi_comm_;
     std::map<int, std::vector<MPI_Request>> request_;
 #endif
     int nprow_;
@@ -67,6 +70,8 @@ class MPI_Interface {
     MPI_Interface();
     ~MPI_Interface();
 
+    int world_rank() const { return world_rank_; }
+    int world_size() const { return world_size_; }
     int rank() const { return rank_; }
     int size() const { return size_; }
     bool last() const { return rank() == size()-1; }
@@ -74,27 +79,14 @@ class MPI_Interface {
     // collective functions
     // barrier
     void barrier() const;
-    // barrier but with less mutex lock
-    void soft_barrier();
-    // sum reduce to the root process
-    void reduce(double*, const size_t size, const int root) const;
-    // sum reduce and scatter to each process
-    void reduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts) const;
-    int ireduce_scatter(double* sendbuf, double* recvbuf, int* recvcnts);
     // sum reduce and broadcast to each process
     void allreduce(int*, const size_t size) const;
     void allreduce(double*, const size_t size) const;
     void allreduce(std::complex<double>*, const size_t size) const;
-    int iallreduce(size_t*, const size_t size);
-    // all reduce but with less mutex lock
-    void soft_allreduce(size_t*, const size_t size);
     // broadcast
     void broadcast(size_t*, const size_t size, const int root) const;
     void broadcast(double*, const size_t size, const int root) const;
     void broadcast(std::complex<double>*, const size_t size, const int root) const;
-    int ibroadcast(double*, const size_t size, const int root);
-    // broadcast of const objects. Use with caution...
-    void broadcast_force(const double*, const size_t size, const int root) const;
     void allgather(const double* send, const size_t ssize, double* rec, const size_t rsize) const;
     void allgather(const std::complex<double>* send, const size_t ssize, std::complex<double>* rec, const size_t rsize) const;
     void allgather(const size_t* send, const size_t ssize, size_t* rec, const size_t rsize) const;
@@ -117,6 +109,13 @@ class MPI_Interface {
     int context() const { return context_; }
     int myprow() const { return myprow_; }
     int mypcol() const { return mypcol_; }
+
+#ifdef HAVE_MPI_H
+    // communicators. n is the number of processes per communicator.
+    const MPI_Comm& mpi_comm() const { return mpi_comm_; }
+#endif
+    void split(const int n);
+    void merge();
 
     int pnum(const int prow, const int pcol) const;
     std::pair<int,int> numroc(const int, const int) const;

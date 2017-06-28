@@ -21,7 +21,7 @@
   "breit" : true,
   "gaunt" : true,
   "state" : [0,0,1],
-  "nact_cas" : 2,
+  "nact" : 2,
   "nclosed" : 7,
   "thresh" : 2.0e-6
 }
