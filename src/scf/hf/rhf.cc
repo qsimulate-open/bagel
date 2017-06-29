@@ -64,7 +64,7 @@ void RHF::compute() {
   shared_ptr<const DistMatrix> aodensity;
 
 //  auto newgeom = make_shared<const Geometry>(*geom_, "yang");
-//  auto fmmK = make_shared<const FMM>(newgeom, 5/*ns*/, 10/*lmaxJ*/, 1.0e-11/*fmmthresh*/, 0.1/*ws*/, true/*exchange*/, 2/*lmaxK*/, false);
+//  auto fmmK = make_shared<const FMM>(newgeom, 5/*ns*/, 10/*lmaxJ*/, 0.1/*ws*/, true/*exchange*/, 2/*lmaxK*/, false);
   if (!restarted_) {
     if (coeff_ == nullptr) {
       shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
@@ -195,7 +195,7 @@ void RHF::compute() {
       #if 0
       for (int lmaxK = 3; lmaxK != 6; ++lmaxK) {
         for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
-          auto fmm = make_shared<const FMM>(geom_, 5, lmaxJ, 1.0e-12, 0.0, true, lmaxK, false);
+          auto fmm = make_shared<const FMM>(geom_, 5, lmaxJ, 0.0, true, lmaxK, false);
           shared_ptr<const Matrix> tmpJ = fmm->compute_Fock_FMM(aodensity_);
           shared_ptr<const Matrix> tmpK = fmm->compute_K_ff(make_shared<const Matrix>(coeff_->slice(0, nocc_)), overlap_);
           auto fock = make_shared<const Matrix>(*hcore_ + *tmpJ - *tmpK);

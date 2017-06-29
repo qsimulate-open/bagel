@@ -31,7 +31,6 @@ using namespace bagel;
 // Non-DF Fock matrix, standard basis
 template <>
 void Fock<0>::fock_two_electron_part(shared_ptr<const Matrix> den) {
-  cout << "Schwarz thresh " << setprecision(15) << schwarz_thresh_ << endl;
   const vector<shared_ptr<const Atom>> atoms = geom_->atoms();
   vector<shared_ptr<const Shell>> basis;
   vector<int> offset;

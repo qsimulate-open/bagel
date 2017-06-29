@@ -21,7 +21,8 @@
   "title" : "hf",
   "exchange" : "true",
   "lmax_exchange" : "2",
-  "thresh" : 1.0e-10
+  "debug" : "true",
+  "thresh" : 1.0e-6
 }
 
 ]}
