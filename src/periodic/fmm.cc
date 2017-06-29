@@ -391,13 +391,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
   }
 
   nftime.tick_print("near-field");
-  resources__->proc()->cout_on();
-  for (int i = 0; i < mpi__->size(); ++i) {
-      //cout << "rank " << mpi__->rank() << " broadcast size " << out->size() << endl;
-    mpi__->barrier();
-    this_thread::sleep_for(10 * sleeptime__);
-  }
-  resources__->proc()->cout_off();
 
   fmmtime.tick_print("FMM-J");
 
@@ -609,12 +602,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
   }
 
   nftime.tick_print("near-field-K");
-  resources__->proc()->cout_on();
-  for (int i = 0; i < mpi__->size(); ++i) {
-    mpi__->barrier();
-    this_thread::sleep_for(10 * sleeptime__);
-  }
-  resources__->proc()->cout_off();
 
   return out;
 }
@@ -674,12 +661,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
   }
 
   nftime.tick_print("near-field-J");
-  resources__->proc()->cout_on();
-  for (int i = 0; i < mpi__->size(); ++i) {
-    mpi__->barrier();
-    this_thread::sleep_for(10 * sleeptime__);
-  }
-  resources__->proc()->cout_off();
 
   return out;
 }

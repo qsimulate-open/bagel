@@ -38,7 +38,7 @@ using namespace bagel;
 
 template <typename MatType, typename OvlType, typename HcType, class Enable>
 SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> re, const bool need_schwarz)
- : Method(idat, make_shared<const Geometry>(*geom, array<double, 3>{{-geom->charge_center()[0], -geom->charge_center()[1], -geom->charge_center()[2]}}), re), eig_(geom->nbasis()) {
+ : Method(idat, geom, re), eig_(geom->nbasis()) {
 
   // if this is called by Opt
   do_grad_ = idata_->get<bool>("_gradient", false);
