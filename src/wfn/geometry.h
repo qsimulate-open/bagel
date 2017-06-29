@@ -92,11 +92,15 @@ class Geometry : public Molecule {
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
-      if (dfmap[dfindex].expired()) {
-        compute_integrals(overlap_thresh_);
-        dfmap[dfindex] = df_;
+      if (!dofmm_) {
+        if (dfmap[dfindex].expired()) {
+          compute_integrals(overlap_thresh_);
+          dfmap[dfindex] = df_;
+        } else {
+          df_ = dfmap[dfindex].lock();
+        }
       } else {
-        df_ = dfmap[dfindex].lock();
+        get_shellpairs(extent_type_);
       }
 
       bool do_rel, do_gaunt;
