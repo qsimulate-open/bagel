@@ -76,6 +76,7 @@ class SCF_base_ : public Method {
 
     // FMM
     std::shared_ptr<const FMM> fmm_;
+    std::shared_ptr<const FMM> fmmK_;
 
     bool restart_;
 

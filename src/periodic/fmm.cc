@@ -457,7 +457,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   if (err > 1e-15 && debug_)
      cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
-#if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
@@ -465,10 +464,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff_from_den(shared_ptr<const Matrix> den
   const double errk = (*krs - *ksr).rms();
   if (errk > 1e-15 && debug_)
     cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
-#else
-  auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
-  krs->copy_block(0, 0, nocc, nocc, kij->data());
-#endif
+
   projtime.tick_print("Krs from Krj");
 
   const double enk = 0.5*density->dot_product(*krs);
@@ -523,7 +519,6 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   if (err > 1e-15 && debug_)
     cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
-#if 1
   auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
   auto sck = make_shared<const Matrix>(*sc ^ *krj);
   auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
@@ -531,10 +526,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   const double errk = (*krs - *ksr).rms();
   if (errk > 1e-15 && debug_)
     cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
-#else
-  auto krs = make_shared<Matrix>(ocoeff->ndim(), ocoeff->ndim());
-  krs->copy_block(0, 0, nocc, nocc, kij->data());
-#endif
+
   projtime.tick_print("Krs from Krj");
   
   shared_ptr<const Matrix> density = ocoeff->form_density_rhf(nocc);

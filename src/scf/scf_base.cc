@@ -64,9 +64,20 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   if (dofmm_) {
     const bool dodf = idata_->get<bool>("df", true);
     if (dodf) throw runtime_error("FMM only works without DF now");
-    fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
-                                         idata_->get<bool>("exchange", true), idata_->get<int>("lmax_exchange", 2),
-                                         idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
+    const bool fmmk = idata_->get<bool>("FMM-K", false);
+    if (fmmk) {
+      const string extent_type = idata_->get<string>("extent_K", "sierka");
+      auto newgeom = make_shared<const Geometry>(*geom_, extent_type);
+      fmmK_ = make_shared<const FMM>(newgeom, idata_->get<int>("ns_exchange", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws_exchange", 0.0),
+                                     true /*exchange*/, idata_->get<int>("lmax_exchange", 2),
+                                     idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
+      fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
+                                    false /*exchange*/, 2 /*lmaxK*/, idata_->get<bool>("debug", false));
+    } else {
+      fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
+                                    idata_->get<bool>("exchange", true), idata_->get<int>("lmax_exchange", 2),
+                                    idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
+    }
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
   dma_print_ = idata_->get<int>("dma", 0);
@@ -108,7 +119,6 @@ void SCF_base_<ZMatrix, ZOverlap, ZHcore, enable_if<true>::type>::get_coeff(cons
   assert(cref);
   coeff_ = cref->zcoeff();
 }
-
 
 template class SCF_base_<Matrix, Overlap, Hcore>;
 template class SCF_base_<ZMatrix, ZOverlap, ZHcore>;
