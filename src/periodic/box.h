@@ -46,6 +46,7 @@ class Box {
     std::vector<std::weak_ptr<const Box>> child_;
     std::vector<std::shared_ptr<const Box>> inter_;
     std::vector<std::shared_ptr<const Box>> neigh_;
+    std::vector<std::shared_ptr<const Box>> nonneigh_;
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
     double extent_, schwarz_thresh_;
@@ -85,7 +86,7 @@ class Box {
     void compute_M2L_X();
     void compute_L2L();
     void compute_L2L_X();
-    double compute_exact_energy_ff(std::shared_ptr<const Matrix> density) const; //debug
+    std::shared_ptr<const Matrix> compute_exact_ff(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ff_K(std::shared_ptr<const Matrix> ocoeff_ti) const;
@@ -132,6 +133,7 @@ class Box {
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
     const std::vector<std::shared_ptr<const Box>>& neigh() const { return neigh_; }
     const std::vector<std::shared_ptr<const Box>>& interaction_list() const { return inter_; }
+    const std::vector<std::shared_ptr<const Box>>& nonneigh() const { return nonneigh_; }
     const std::vector<std::shared_ptr<const ShellPair>>& sp() const { return sp_; }
     std::shared_ptr<const ShellPair> sp(const int i) const { return sp_[i]; }
     const std::array<std::shared_ptr<const Shell>, 2>& shells(const int i) const { return sp_[i]->shells(); }

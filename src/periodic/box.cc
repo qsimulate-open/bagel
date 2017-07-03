@@ -131,14 +131,20 @@ void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
   if ((box.empty()) || (box[0]->rank() != rank_)) return;
 
   neigh_.resize(box.size());
+  nonneigh_.resize(box.size());
   int nn = 0;
+  int nnn = 0;
   for (auto& b : box) {
     if (is_neigh(b, ws)) {
       neigh_[nn] = b;
       ++nn;
+    } else {
+      nonneigh_[nnn] = b;
+      ++nnn;
     }
   }
   neigh_.resize(nn);
+  nonneigh_.resize(nnn);
 }
 
 
@@ -772,15 +778,21 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
 }
 
 
-double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //for debug
+shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density) const { //for debug
 
   auto jff = make_shared<Matrix>(density->ndim(), density->mdim());
   jff->zero();
 
   int ntask = 0;
-  for (auto& inter : inter_)
-    ntask += inter->sp().size();
-  ntask *= sp_.size();
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < schwarz_thresh_) continue;
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
+        if (v23->schwarz() < schwarz_thresh_) continue;
+        ++ntask;
+      }
+    }
+  }
 
   TaskQueue<function<void(void)>> tasks(ntask);
   mutex jmutex;
@@ -795,8 +807,8 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
     const int b1offset = v01->offset(0);
     const int b1size = b1->nbasis();
 
-    for (auto& inter : inter_) {
-      for (auto& v23 : inter->sp()) {
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
         const int b2offset = v23->offset(1);
@@ -838,9 +850,9 @@ double Box::compute_exact_energy_ff(shared_ptr<const Matrix> density) const { //
     }
   }
   tasks.compute();
-  const double out = 0.5*jff->dot_product(*density);
+/////  const double out = 0.5*jff->dot_product(*density);
 
-  return out;
+  return jff;
 }
 
 
