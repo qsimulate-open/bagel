@@ -90,8 +90,6 @@ class Box {
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ff_K(std::shared_ptr<const Matrix> ocoeff_ti) const;
-    std::shared_ptr<const Matrix> compute_Fock_nf_partial(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
-    std::shared_ptr<const Matrix> compute_Fock_nf_corr(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     // temporary: allow constructing FMM_J and FMM_K separately with different parameters
     std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
