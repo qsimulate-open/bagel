@@ -159,7 +159,7 @@ void RHF::compute() {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1>>(previous_fock)->half();
       /* TEST CONVERGENCE WITH MULTIPOLE RANKS */
-      #if 1
+      #if 0
       for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
         auto fmm = make_shared<const FMM>(geom_, 5, lmaxJ, 0.0, false, 2, false);
         shared_ptr<const Matrix> tmpJ = fmm->compute_Fock_FMM(aodensity_);
@@ -190,7 +190,6 @@ void RHF::compute() {
 
     coeff = make_shared<const DistMatrix>(*coeff * intermediate);
     coeff_ = make_shared<const Coeff>(*coeff->matrix());
-
 
     if (!dodf_) {
       shared_ptr<const Matrix> new_density = coeff_->form_density_rhf(nocc_);
@@ -236,12 +235,14 @@ shared_ptr<const Matrix> RHF::compute_Fock_FMM(shared_ptr<const Matrix> density,
   if (!fmmK_) {
     shared_ptr<const Matrix> fock_JK = fmm_->compute_Fock_FMM(density);
     shared_ptr<const Matrix> Kff = fmm_->compute_K_ff(coeff, overlap_);
-    fock = make_shared<const Matrix>(*hcore_ + *fock_JK - *Kff);
+    //fock = make_shared<const Matrix>(*hcore_ + *fock_JK - *Kff);
+    fock = make_shared<const Matrix>(*hcore_ + *fock_JK);
   } else {
     shared_ptr<const Matrix> fock_J = fmm_->compute_Fock_FMM_J(density);
     shared_ptr<const Matrix> Knf = fmmK_->compute_Fock_FMM_K(density);
     shared_ptr<const Matrix> Kff = fmmK_->compute_K_ff(coeff, overlap_);
-    fock = make_shared<const Matrix>(*hcore_ + *fock_J + *Knf - *Kff);
+    //fock = make_shared<const Matrix>(*hcore_ + *fock_J + *Knf - *Kff);
+    fock = make_shared<const Matrix>(*hcore_ + *fock_J + *Knf);
   }
 
   return fock;

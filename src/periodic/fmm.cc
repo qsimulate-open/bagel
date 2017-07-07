@@ -372,22 +372,30 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     }
 
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
+    auto ffk = make_shared<Matrix>(nbasis_, nbasis_); //debug
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
+        auto ffik = box_[i]->compute_exact_ff(density); //debug
+        blas::ax_plus_y_n(1.0, ffik->data(), nbasis_*nbasis_, ffk->data()); //debug
       }
     out->allreduce();
     ff->allreduce();
+    ffk->allreduce(); //debug
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
 
+    const double enk = -0.5*density->dot_product(*ffk); //debug
+    cout << "    o  Far-field exchange energy: " << setprecision(6) << enk << endl; //debug
+
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
+    *out += *ffk; //debug
   }
 
   nftime.tick_print("near-field");
@@ -582,15 +590,22 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
       (*maxden)(i01) = denmax;
     }
 
+    auto ffk = make_shared<Matrix>(nbasis_, nbasis_); //debug
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf_K(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
+        auto ek = box_[i]->compute_exact_ff(density); //debug
+        blas::ax_plus_y_n(1.0, ek->data(), nbasis_*nbasis_, ffk->data()); //debug
       }
     out->allreduce();
+    ffk->allreduce(); //debug
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
+    *out += *ffk; //debug
+    const double enk = -0.5*density->dot_product(*ffk);
+    cout << "    o  Far-field exact exchange energy: " << setprecision(6) << enk << endl;
   }
 
   nftime.tick_print("near-field-K");

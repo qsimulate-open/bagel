@@ -836,7 +836,7 @@ shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density)
                   const int j2n = j2 * density->ndim();
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     const double eri = *eridata;
-                    jff->element(j1, j0) += density_data[j2n + j3] * eri;
+                    //jff->element(j1, j0) += density_data[j2n + j3] * eri;
                     jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
                   }
                 }
@@ -850,7 +850,6 @@ shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density)
     }
   }
   tasks.compute();
-/////  const double out = 0.5*jff->dot_product(*density);
 
   return jff;
 }
