@@ -312,7 +312,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
       auto rdm1ex  = expand_kramers(rdm1, info_->nact());
       auto rdm2ex  = expand_kramers(rdm2, info_->nact());
       auto rdm3ex  = expand_kramers(rdm3, info_->nact());
-      denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4);
+      if (!info_->sssr() || jst == ist)
+        denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4);
 
       auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);
