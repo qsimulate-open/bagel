@@ -20,6 +20,12 @@ with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.
 
+The optimizer in BAGEL has been interfaced with an external molecular mechanics program, ``TINKER``,
+using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
+To perform this, the ``TINKER`` input files (keyword file ``tinkin.key`` and initial coordinate file ``tinkin.xyz``)
+should be provided in ``tinker1`` and ``tinker2`` subdirectories, respectively.
+The ``testgrad`` program in the ``TINKER`` package should be installed in ``$PATH``.
+
 The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file ``opt.log``.
 The history of the optimization and the final geometry are also saved in the ``MOLDEN`` files ``opt_history.molden`` and ``opt.molden``,
@@ -238,8 +244,28 @@ Optional Keywords (Minimum Energy Path)
    | **Values:**
    |    ``1``: use the direction of the lowest eigenvector.
    |    ``-1``: use the opposite direction of the lowest eigenvector.
-   | **Default:** 1.
+   | **Default:** 1
    | **Recommendation:** run two calculations with "1" and "-1" to get the full path.
+
+Optional Keywords (QM/MM)
+-------------------------
+
+.. topic:: ``qmmm``
+
+   | **Description:** Do QM/MM energy optimization.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: do QM/MM optimization.
+   |    ``false``: do gas phase optimization.
+   | **Default:** false
+
+.. topic:: ``qmmm_program``
+
+   | **Description:** Molecular mechanics program to do QM/MM.
+   | **Datatype:** string
+   | **Values:**
+   |    ``tinker``: do QM/MM optimization with TINKER.
+   | **Default:** tinker.
 
 
 Example
