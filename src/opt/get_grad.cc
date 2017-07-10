@@ -70,6 +70,17 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
+  if (qmmm_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    qmmm_driver_->edit_input(current_);
+    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    *cgrad2 = *cgrad2 + *mmgrad;
+    *cgrad1 = *cgrad1 + *mmgrad;
+    en1 += mmen;
+    en2 += mmen;
+  }
+
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
   if (x1norm > 1.0e-8)
@@ -291,6 +302,17 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
+  if (qmmm_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    qmmm_driver_->edit_input(current_);
+    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    *cgrad2 = *cgrad2 + *mmgrad;
+    *cgrad1 = *cgrad1 + *mmgrad;
+    en1 += mmen;
+    en2 += mmen;
+  }
+
   auto x1 = make_shared<GradFile>(*cgrad1 - *cgrad2);
   const double x1norm = x1->norm();
   if (x1norm > 1.0e-8)
@@ -409,7 +431,6 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
   }
 
   if (numerical) {
-
     auto m = idata_->get_child("method");
     const int nproc = idata_->get<int>("nproc", 1);
     const double dx = idata_->get<double>("numerical_dx", 0.001);
@@ -417,7 +438,15 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
     out = eval.compute();
     prev_ref = eval.ref();
     en = eval.energy();
+  }
 
+  if (qmmm_) {
+    double mmen;
+    shared_ptr<GradFile> mmgrad;
+    qmmm_driver_->edit_input(current_);
+    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    *out = *out + *mmgrad;
+    en += mmen;
   }
 
   return tie(en,prev_ref,out);
