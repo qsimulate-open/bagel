@@ -37,6 +37,7 @@
 #include <src/wfn/get_energy.h>
 #include <src/opt/constraint.h>
 #include <src/util/muffle.h>
+#include <src/opt/qmmm.h>
 
 namespace bagel {
 
@@ -70,7 +71,8 @@ class Opt {
     bool scratch_;
 
     bool numerical_;
-    bool qmmm_tinker_;
+    bool qmmm_;
+    std::shared_ptr<QMMM> qmmm_driver_;
 
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
@@ -137,8 +139,6 @@ class Opt {
     std::shared_ptr<Matrix> hessian_update_bfgs(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> hs) const;
     std::shared_ptr<Matrix> hessian_update_sr1(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
     std::shared_ptr<Matrix> hessian_update_psb(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
-    std::tuple<double,std::shared_ptr<GradFile>> do_tinker_grad() const;
-    void edit_tinker_input() const;
 
     double do_adaptive() const;
 

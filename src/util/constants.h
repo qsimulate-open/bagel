@@ -55,7 +55,8 @@ static constexpr double au2coulomb__ = 1.6021766208e-19;   // CODATA 2014 elemen
 static constexpr double au2meter__ = 5.2917721067e-11;     // CODATA 2014 Bohr radius
 static constexpr double avogadro__ = 6.022140857e23;       // CODATA 2014 Avogadro constant
 static constexpr double g_elec__ = 2.00231930436182;       // Absolute value of CODATA 2014 electron g factor
-static constexpr double amu2kilogram__ = 1.660539040e-27;   // COTDATA 2014 atomic mass unit-kilogram relationship
+static constexpr double amu2kilogram__ = 1.660539040e-27;  // COTDATA 2014 atomic mass unit-kilogram relationship
+static constexpr double kcal2kj__ = 4.184;                 // Absolute definition of thermochemical calorie
 
 /************************************************************
 *  Derived unit conversions                                 *
