@@ -372,19 +372,15 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     }
 
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
-    auto ffk = make_shared<Matrix>(nbasis_, nbasis_); //debug
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
         auto ei = box_[i]->compute_Fock_nf(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
-        auto ffik = box_[i]->compute_exact_ff_K(density); //debug
-        blas::ax_plus_y_n(1.0, ffik->data(), nbasis_*nbasis_, ffk->data()); //debug
       }
     out->allreduce();
     ff->allreduce();
-    ffk->allreduce(); //debug
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(9) << enj << endl;
@@ -392,7 +388,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
     *out += *ff;
-    *out += *ffk; //debug
   }
 
   nftime.tick_print("near-field");
@@ -524,57 +519,14 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
     if (err > 1e-15 && debug_)
       cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
 
-    #if 0
-    auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
-    auto sck = make_shared<const Matrix>(*sc ^ *krj);
-    auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
-    auto ksr = krs->transpose();
-    const double errk = (*krs - *ksr).rms();
-    if (errk > 1e-15 && debug_)
-      cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
-    #endif
     projtime.tick_print("Projecting K");
   }
   
   const double enk = ocoeff->dot_product(*krj);
   cout << "          o    Far-field Exchange energy: " << setprecision(9) << enk << endl;
 
-/////////////// debug get exact exchange ////////////
-#if 1
- shared_ptr<const Matrix> density = ocoeff->form_density_rhf(nocc);
- auto ffk = make_shared<Matrix>(nbasis_, nbasis_);
- auto ffj = make_shared<Matrix>(nbasis_, nbasis_);
- auto krs2 = make_shared<const Matrix>(nbasis_, nbasis_);
- if (density) {
-    for (int i = 0; i != nbranch_[0]; ++i)
-      if (i % mpi__->size() == mpi__->rank()) {
-        auto ffik = box_[i]->compute_exact_ff_K(density);
-        blas::ax_plus_y_n(1.0, ffik->data(), nbasis_*nbasis_, ffk->data());
-        auto ffij = box_[i]->compute_exact_ff_J(density);
-        blas::ax_plus_y_n(1.0, ffij->data(), nbasis_*nbasis_, ffj->data());
-      }
-    ffk->allreduce();
-    ffj->allreduce();
-
-    //// debug check occ approx
-    #if 1
-    auto krj2 = make_shared<const Matrix>(*ffk * *ocoeff);
-    auto kij = make_shared<const Matrix>(*ocoeff % *krj2);
-    auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
-    auto sck = make_shared<const Matrix>(*sc ^ *krj2);
-    krs2 = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
-    #endif
-    const double enk = -0.5*density->dot_product(*ffk);
-    cout << "    o  Far-field exact exchange energy: " << setprecision(9) << enk << endl;
-    const double enj = 0.5*density->dot_product(*ffj);
-    cout << "    o  Far-field exact Coulomb energy: " << setprecision(9) << enj << endl;
-  }
-#endif
-/////////////// end debug
-
   ktime.tick_print("FMM-K");
   return krj;
-  //return make_shared<const Matrix>(*ffk * *ocoeff);
 }
 
 
