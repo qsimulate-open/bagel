@@ -141,30 +141,6 @@ void RHF::compute() {
     } else {
       previous_fock = compute_Fock_FMM(aodensity_, make_shared<const Matrix>(coeff_->slice(0, nocc_)));
     }
-#if 0
-    auto ocoeff = make_shared<const Matrix>(coeff_->slice(0, nocc_));
-    shared_ptr<const Matrix> Kff_rj = fmm_->compute_K_ff(ocoeff, overlap_);
-    shared_ptr<const Matrix> Knf = fmm_->compute_Fock_FMM_K(aodensity_);
-    auto Knf_rj = make_shared<const Matrix>(*Knf * *ocoeff);
-    auto krj = make_shared<const Matrix>(*Knf_rj - *Kff_rj);
-  
-    auto kij = make_shared<const Matrix>(*ocoeff % *krj);
-    auto sc = make_shared<const Matrix>(*overlap_ * *ocoeff);
-    auto sck = make_shared<const Matrix>(*sc ^ *krj);
-    auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
-    shared_ptr<const Matrix> fock_J = fmm_->compute_Fock_FMM_J(aodensity_);
-    auto fmmfock = make_shared<const Matrix>(*hcore_+*fock_J + *krs);
-    auto error_vector_fmm = make_shared<const Matrix>(*fmmfock**aodensity_**overlap_ - *overlap_**aodensity_**fmmfock);
-    auto error_vector_exact = make_shared<const Matrix>(*previous_fock**aodensity_**overlap_ - *overlap_**aodensity_**previous_fock);
-    auto diff1 = make_shared<const Matrix>(*error_vector_exact-*error_vector_fmm);
-    cout << "**** Diff in error vector **" << setprecision(9) << diff1->rms() << endl;
-    const double energyfmm = 0.5*aodensity_->dot_product(*hcore_+*fmmfock) + geom_->nuclear_repulsion();
-    cout << "**** ENERGY from FMM " << setprecision(8) << energyfmm << endl;
-    const double energy = 0.5*aodensity_->dot_product(*hcore_+*previous_fock) + geom_->nuclear_repulsion();
-    cout << "**** ENERGY exact " << setprecision(8) << energy << endl;
-    previous_fock = fmmfock;
-    shared_ptr<const DistMatrix> error_vector = error_vector_fmm->distmatrix();
-#endif
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
     energy_  = 0.5*aodensity->dot_product(*hcore+*fock) + geom_->nuclear_repulsion();
@@ -181,13 +157,16 @@ void RHF::compute() {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1>>(previous_fock)->half();
       /* TEST CONVERGENCE WITH MULTIPOLE RANKS */
-      #if 0
-      for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
-        auto fmm = make_shared<const FMM>(geom_, 5, lmaxJ, 0.0, false, 2, false);
-        shared_ptr<const Matrix> tmpJ = fmm->compute_Fock_FMM(aodensity_);
-        auto fock = make_shared<const Matrix>(*hcore_ + *tmpJ);
-        const double energy  = 0.5*aodensity->dot_product(*hcore_+*fock) + geom_->nuclear_repulsion();
-        cout << "NS=5 LMAXJ " << lmaxJ << " NO EXCHANGE  " << setprecision(9) << energy << " ERROR " << (energy_-energy)*1.0e6 << " microhartree" <<  endl;
+      #if 1
+      for (int lmaxK = 0; lmaxK != 6; ++lmaxK) {
+        for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
+          auto newfmm = make_shared<const FMM>(geom_, 4, lmaxJ, 0.0, true, lmaxK, false);
+          auto ocoeff = make_shared<const Matrix>(coeff_->slice(0, nocc_));
+          shared_ptr<const Matrix> Kff_rj = newfmm->compute_K_ff(ocoeff, overlap_);
+          shared_ptr<const Matrix> JKmat = newfmm->compute_Fock_FMM(aodensity_);
+          const double energy  = 0.5*aodensity->dot_product(*hcore_+*hcore_+*JKmat) - ocoeff->dot_product(*Kff_rj) + geom_->nuclear_repulsion();
+          cout << "NS=4 LMAXJ " << lmaxJ << " LMAXK " << lmaxK << " EN= " << setprecision(9) << energy << " ERROR " << (energy_-energy)*1.0e6 << " microhartree" <<  endl;
+        }
       }
       #endif
 
