@@ -87,6 +87,8 @@ class Box {
     void compute_L2L();
     void compute_L2L_X();
     std::shared_ptr<const Matrix> compute_exact_ff(std::shared_ptr<const Matrix> density) const; //debug
+    std::shared_ptr<const Matrix> compute_exact_ff_K(std::shared_ptr<const Matrix> density) const; //debug
+    std::shared_ptr<const Matrix> compute_exact_ff_J(std::shared_ptr<const Matrix> density) const; //debug
     std::shared_ptr<const Matrix> compute_Fock_nf(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_ff(std::shared_ptr<const Matrix> density) const;
     std::shared_ptr<const Matrix> compute_Fock_ff_K(std::shared_ptr<const Matrix> ocoeff_ti) const;

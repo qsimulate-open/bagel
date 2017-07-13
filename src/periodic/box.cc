@@ -267,8 +267,8 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       r12[0] = c->centre(0) - centre_[0];
       r12[1] = c->centre(1) - centre_[1];
       r12[2] = c->centre(2) - centre_[2];
-      shared_ptr<const ZVectorB> smoment = shift_multipoles(c->multipole(), r12);
-#if 0
+      //shared_ptr<const ZVectorB> smoment = shift_multipoles(c->multipole(), r12);
+#if 1
       //*** debug using K
       auto cmultipole = make_shared<ZMatrix>(1, nmult_);
       copy_n(c->multipole()->data(), nmult_, cmultipole->data());
@@ -354,8 +354,8 @@ void Box::compute_L2L() {
     r12[0] = centre_[0] - parent_->centre(0);
     r12[1] = centre_[1] - parent_->centre(1);
     r12[2] = centre_[2] - parent_->centre(2);
-    shared_ptr<const ZVectorB> slocal = shift_localL(parent_->localJ(), r12);
-#if 0
+    //shared_ptr<const ZVectorB> slocal = shift_localL(parent_->localJ(), r12);
+#if 1
     //*** debug using K
     auto plocalJ = make_shared<ZMatrix>(1, nmult_);
     copy_n(parent_->localJ()->data(), nmult_, plocalJ->data());
@@ -395,8 +395,8 @@ void Box::compute_M2L() {
     r12[0] = centre_[0] - it->centre(0);
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
-    shared_ptr<const ZVectorB> slocal = shift_localM(it->multipole(), r12);
-#if 0
+    //shared_ptr<const ZVectorB> slocal = shift_localM(it->multipole(), r12);
+#if 1
     //*** debug using K
     auto imultipole = make_shared<ZMatrix>(1, nmult_);
     copy_n(it->multipole()->data(), nmult_, imultipole->data());
@@ -836,7 +836,7 @@ shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density)
                   const int j2n = j2 * density->ndim();
                   for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
                     const double eri = *eridata;
-                    //jff->element(j1, j0) += density_data[j2n + j3] * eri;
+                    jff->element(j1, j0) += density_data[j2n + j3] * eri;
                     jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
                   }
                 }
@@ -1279,4 +1279,156 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density
   tasks.compute();
 
   return out;
+}
+
+
+shared_ptr<const Matrix> Box::compute_exact_ff_J(shared_ptr<const Matrix> density) const { //for debug
+
+  auto jff = make_shared<Matrix>(density->ndim(), density->mdim());
+  jff->zero();
+
+  int ntask = 0;
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < schwarz_thresh_) continue;
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
+        if (v23->schwarz() < schwarz_thresh_) continue;
+        ++ntask;
+      }
+    }
+  }
+
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
+
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < schwarz_thresh_) continue;
+    shared_ptr<const Shell> b0 = v01->shell(1);
+    const int b0offset = v01->offset(1);
+    const int b0size = b0->nbasis();
+
+    shared_ptr<const Shell> b1 = v01->shell(0);
+    const int b1offset = v01->offset(0);
+    const int b1size = b1->nbasis();
+
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
+        if (v23->schwarz() < schwarz_thresh_) continue;
+        shared_ptr<const Shell> b2 = v23->shell(1);
+        const int b2offset = v23->offset(1);
+        const int b2size = b2->nbasis();
+
+        shared_ptr<const Shell> b3 = v23->shell(0);
+        const int b3offset = v23->offset(0);
+        const int b3size = b3->nbasis();
+
+        array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+        tasks.emplace_back(
+          [this, &jff, &density, input, b0offset, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, &jmutex]() {
+            const double* density_data = density->data();
+
+            ERIBatch eribatch(input, 0.0);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                const int j1n = j1 * density->ndim();
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  const int j2n = j2 * density->ndim();
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    const double eri = *eridata;
+                    jff->element(j1, j0) += density_data[j2n + j3] * eri;
+                  }
+                }
+              }
+            }
+
+          }
+        );
+
+      }
+    }
+  }
+  tasks.compute();
+
+  return jff;
+}
+
+
+shared_ptr<const Matrix> Box::compute_exact_ff_K(shared_ptr<const Matrix> density) const { //for debug
+
+  auto jff = make_shared<Matrix>(density->ndim(), density->mdim());
+  jff->zero();
+
+  int ntask = 0;
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < schwarz_thresh_) continue;
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
+        if (v23->schwarz() < schwarz_thresh_) continue;
+        ++ntask;
+      }
+    }
+  }
+
+  TaskQueue<function<void(void)>> tasks(ntask);
+  mutex jmutex;
+
+  for (auto& v01 : sp_) {
+    if (v01->schwarz() < schwarz_thresh_) continue;
+    shared_ptr<const Shell> b0 = v01->shell(1);
+    const int b0offset = v01->offset(1);
+    const int b0size = b0->nbasis();
+
+    shared_ptr<const Shell> b1 = v01->shell(0);
+    const int b1offset = v01->offset(0);
+    const int b1size = b1->nbasis();
+
+    for (auto& nonneigh : nonneigh_) {
+      for (auto& v23 : nonneigh->sp()) {
+        if (v23->schwarz() < schwarz_thresh_) continue;
+        shared_ptr<const Shell> b2 = v23->shell(1);
+        const int b2offset = v23->offset(1);
+        const int b2size = b2->nbasis();
+
+        shared_ptr<const Shell> b3 = v23->shell(0);
+        const int b3offset = v23->offset(0);
+        const int b3size = b3->nbasis();
+
+        array<shared_ptr<const Shell>,4> input = {{b3, b2, b1, b0}};
+
+        tasks.emplace_back(
+          [this, &jff, &density, input, b0offset, b0size, b1offset, b1size, b2offset, b2size, b3offset, b3size, &jmutex]() {
+            const double* density_data = density->data();
+
+            ERIBatch eribatch(input, 0.0);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+
+            lock_guard<mutex> lock(jmutex);
+            for (int j0 = b0offset; j0 != b0offset + b0size; ++j0) {
+              for (int j1 = b1offset; j1 != b1offset + b1size; ++j1) {
+                const int j1n = j1 * density->ndim();
+                for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {
+                  const int j2n = j2 * density->ndim();
+                  for (int j3 = b3offset; j3 != b3offset + b3size; ++j3, ++eridata) {
+                    const double eri = *eridata;
+                    jff->element(j3, j0) -= density_data[j1n + j2] * eri * 0.5;
+                  }
+                }
+              }
+            }
+
+          }
+        );
+
+      }
+    }
+  }
+  tasks.compute();
+
+  return jff;
 }
