@@ -897,7 +897,7 @@ shared_ptr<const ZMatrix> Box::shift_multipolesX(const int lmax, shared_ptr<cons
       }
     }
   }
-  zgemm3m_("N", "C", olm_size_block, nmult, nmult, 1.0, oa->data(), olm_size_block, lmjk.data(), nmult, 0.0, ob->data(), olm_size_block);
+  zgemm3m_("N", "T", olm_size_block, nmult, nmult, 1.0, oa->data(), olm_size_block, lmjk.data(), nmult, 0.0, ob->data(), olm_size_block);
 
   return ob;
 }
@@ -946,7 +946,7 @@ shared_ptr<const ZMatrix> Box::shift_localLX(const int lmax, const shared_ptr<co
     }
   }
 
-  zgemm3m_("N", "C", olm_size_block, nmult, nmult, 1.0, mr->data(), olm_size_block, lmjk.data(), nmult, 0.0, mrb->data(), olm_size_block);
+  zgemm3m_("N", "T", olm_size_block, nmult, nmult, 1.0, mr->data(), olm_size_block, lmjk.data(), nmult, 0.0, mrb->data(), olm_size_block);
   return mrb;
 }
 
@@ -986,7 +986,7 @@ shared_ptr<const ZMatrix> Box::shift_localMX(const int lmax, shared_ptr<const ZM
     }
   }
 
-  zgemm3m_("N", "C", olm_size_block, nmult, nmult, 1.0, olm->data(), olm_size_block, lmjk.data(), nmult, 0.0, mb->data(), olm_size_block);
+  zgemm3m_("N", "T", olm_size_block, nmult, nmult, 1.0, olm->data(), olm_size_block, lmjk.data(), nmult, 0.0, mb->data(), olm_size_block);
   return mb;
 }
 
