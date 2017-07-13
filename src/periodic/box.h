@@ -76,11 +76,8 @@ class Box {
     void compute_M2M_X(std::shared_ptr<const Matrix> ocoeff_sj, std::shared_ptr<const Matrix> ocoeff_ui);
     void compute_multipolesX();
     void sort_sp();
-    std::shared_ptr<const ZVectorB> shift_multipoles(std::shared_ptr<const ZVectorB> oa, std::array<double, 3> rab) const;
     std::shared_ptr<const ZMatrix> shift_multipolesX(const int lmax, std::shared_ptr<const ZMatrix> oa, std::array<double, 3> rab) const;
-    std::shared_ptr<const ZVectorB> shift_localL(std::shared_ptr<const ZVectorB> mr, std::array<double, 3> rb) const;
     std::shared_ptr<const ZMatrix> shift_localLX(const int lmax, std::shared_ptr<const ZMatrix> mr, std::array<double, 3> rb) const;
-    std::shared_ptr<const ZVectorB> shift_localM(std::shared_ptr<const ZVectorB> olm, std::array<double, 3> r12) const;
     std::shared_ptr<const ZMatrix> shift_localMX(const int lmax, std::shared_ptr<const ZMatrix> olm, std::array<double, 3> r12) const;
     void compute_M2L();
     void compute_M2L_X();

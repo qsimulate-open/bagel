@@ -237,16 +237,11 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
       r12[0] = c->centre(0) - centre_[0];
       r12[1] = c->centre(1) - centre_[1];
       r12[2] = c->centre(2) - centre_[2];
-      //shared_ptr<const ZVectorB> smoment = shift_multipoles(c->multipole(), r12);
-#if 1
-      //*** debug using K
       auto cmultipole = make_shared<ZMatrix>(1, nmult_);
       copy_n(c->multipole()->data(), nmult_, cmultipole->data());
       shared_ptr<const ZMatrix> tmp = shift_multipolesX(lmax_, cmultipole, r12);
       auto smoment = make_shared<ZVectorB>(nmult_);
       copy_n(tmp->data(), nmult_, smoment->data());
-      //*** end debug using K
-#endif
       blas::ax_plus_y_n(1.0, smoment->data(), nmult_, multipole_->data());
     }
   }
@@ -324,16 +319,11 @@ void Box::compute_L2L() {
     r12[0] = centre_[0] - parent_->centre(0);
     r12[1] = centre_[1] - parent_->centre(1);
     r12[2] = centre_[2] - parent_->centre(2);
-    //shared_ptr<const ZVectorB> slocal = shift_localL(parent_->localJ(), r12);
-#if 1
-    //*** debug using K
     auto plocalJ = make_shared<ZMatrix>(1, nmult_);
     copy_n(parent_->localJ()->data(), nmult_, plocalJ->data());
     shared_ptr<const ZMatrix> tmp = shift_localLX(lmax_, plocalJ, r12);
     auto slocal = make_shared<ZVectorB>(nmult_);
     copy_n(tmp->data(), nmult_, slocal->data());
-    //*** end debug using K
-#endif
     blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
   }
 }
@@ -365,16 +355,11 @@ void Box::compute_M2L() {
     r12[0] = centre_[0] - it->centre(0);
     r12[1] = centre_[1] - it->centre(1);
     r12[2] = centre_[2] - it->centre(2);
-    //shared_ptr<const ZVectorB> slocal = shift_localM(it->multipole(), r12);
-#if 1
-    //*** debug using K
     auto imultipole = make_shared<ZMatrix>(1, nmult_);
     copy_n(it->multipole()->data(), nmult_, imultipole->data());
     shared_ptr<const ZMatrix> tmp = shift_localMX(lmax_, imultipole, r12);
     auto slocal = make_shared<ZVectorB>(nmult_);
     copy_n(tmp->data(), nmult_, slocal->data());
-    //*** end debug using K
-#endif
     blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
   }
 }
@@ -545,131 +530,6 @@ void Box::print_box() const {
 //  cout << " *** Shell pairs at ***" << endl;
 //  for (int i = 0; i != sp_.size(); ++i)
 //    cout << setprecision(5) << sp(i)->centre(0) << "  " << sp(i)->centre(1) << "  " << sp(i)->centre(2) << endl;
-}
-
-
-// M2L: given O(a) and R(a-b) get M(b)
-shared_ptr<const ZVectorB> Box::shift_localM(shared_ptr<const ZVectorB> olm, array<double, 3> r12) const {
-
-  const double r = sqrt(r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2]);
-  const double ctheta = (r > numerical_zero__) ? r12[2]/r : 0.0;
-  const double phi = atan2(r12[1], r12[0]);
-
-  auto mb = make_shared<ZVectorB>(nmult_);
-  unique_ptr<double[]> plm0(new double[(2*lmax_+1)*(2*lmax_+1)]);
-  for (int l = 0; l != 2*lmax_+1; ++l)
-    for (int m = 0; m <= 2 * l; ++m) {
-      const int b = m-l;
-      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
-      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
-    }
-
-  for (int l = 0; l <= lmax_; ++l) {
-    const double phase_l = (1-((l&1)<<1));
-    for (int j = 0; j <= lmax_; ++j) {
-      const int a = l + j;
-      const double rr = 1.0 / pow(r, a + 1);
-      for (int m = 0; m <= 2 * l; ++m) {
-        for (int k = 0; k <= 2 * j; ++k) {
-          const int b = m - l + k - j;
-          double prefactor = plm0[a*a+a+b] * rr * f(a-abs(b));
-          const complex<double> Mab = polar(prefactor, b*phi);
-          (*mb)(l*l+m) += phase_l*Mab * (*olm)(j*j+k);
-        }
-      }
-    }
-  }
-
-  return mb;
-}
-
-
-// M2M: given O(a) and R(b-a) get O(b)
-shared_ptr<const ZVectorB> Box::shift_multipoles(const shared_ptr<const ZVectorB> oa, array<double, 3> rab) const {
-
-  const double r = sqrt(rab[0]*rab[0] + rab[1]*rab[1] + rab[2]*rab[2]);
-  const double ctheta = (r > numerical_zero__) ? rab[2]/r : 0.0;
-  const double phi = atan2(rab[1], rab[0]);
-
-  auto ob = make_shared<ZVectorB>(nmult_);
-  unique_ptr<double[]> plm0(new double[nmult_]);
-  for (int l = 0; l != lmax_+1; ++l)
-    for (int m = 0; m <= 2 * l; ++m) {
-      const int b = m-l;
-      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
-      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
-    }
-
-  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
-  fill_n(invfac.get(), 2*lmax_+1, 1.0);
-  for (int i = 1; i <= 2*lmax_; ++i)
-    for (int j = i; j <= 2*lmax_; ++j)
-      invfac[j] /= i;
-
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int j = 0; j <= lmax_; ++j) {
-      const int a = l - j;
-      const double rr = pow(r, a);
-      if (a < 0) continue;
-      for (int m = 0; m <= 2 * l; ++m) {
-        const int lo = max(-a, m-l-j);
-        const int hi = min( a, m-l+j);
-        for (int b = lo; b <= hi; ++b) {
-          const int k = m - l - b + j;
-          const double prefactor = rr * plm0[a*a+a+b] * invfac[a+abs(b)];
-          const complex<double> Oab = polar(prefactor, -b*phi);
-          (*ob)(l*l+m) += Oab * (*oa)(j*j+k);
-        }
-      }
-    }
-  }
-
-  return ob;
-}
-
-
-// L2L: given M(r) and R(b) get M(r-b)
-shared_ptr<const ZVectorB> Box::shift_localL(const shared_ptr<const ZVectorB> mr, array<double, 3> rb) const {
-
-  const double r = sqrt(rb[0]*rb[0] + rb[1]*rb[1] + rb[2]*rb[2]);
-  const double ctheta = (r > numerical_zero__) ? rb[2]/r : 0.0;
-  const double phi = atan2(rb[1], rb[0]);
-
-  auto mrb = make_shared<ZVectorB>(nmult_);
-
-  unique_ptr<double[]> plm0(new double[nmult_]);
-  for (int l = 0; l != lmax_+1; ++l)
-    for (int m = 0; m <= 2 * l; ++m) {
-      const int b = m-l;
-      const double sign = (b >= 0) ? 1.0 : (1-((b&1)<<1));
-      plm0[l*l+m] = sign * plm.compute(l, abs(b), ctheta);
-    }
-
-  unique_ptr<double[]> invfac(new double[2*lmax_+1]);
-  fill_n(invfac.get(), 2*lmax_+1, 1.0);
-  for (int i = 1; i <= 2*lmax_; ++i)
-    for (int j = i; j <= 2*lmax_; ++j)
-      invfac[j] /= i;
-
-  for (int l = 0; l <= lmax_; ++l) {
-    for (int j = 0; j <= lmax_; ++j) {
-      const int a = j - l;
-      const double rr = pow(r, a);
-      if (a < 0) continue;
-      for (int m = 0; m <= 2 * l; ++m) {
-        const int lo = max(-a, l-m-j);
-        const int hi = min( a, l-m+j);
-        for (int b = lo; b <= hi; ++b) {
-          const int k = m - l + b + j;
-          const double prefactor = rr * plm0[a*a+a+b] * invfac[a+abs(b)];
-          const complex<double> Oab = polar(prefactor, -b*phi);
-          (*mrb)(l*l+m) += Oab * (*mr)(j*j+k);
-        }
-      }
-    }
-  }
-
-  return mrb;
 }
 
 
