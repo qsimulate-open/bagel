@@ -141,7 +141,7 @@ void RHF::compute() {
     } else {
       previous_fock = compute_Fock_FMM(aodensity_, make_shared<const Matrix>(coeff_->slice(0, nocc_)));
     }
-#if 1
+#if 0
     auto ocoeff = make_shared<const Matrix>(coeff_->slice(0, nocc_));
     shared_ptr<const Matrix> Kff_rj = fmm_->compute_K_ff(ocoeff, overlap_);
     shared_ptr<const Matrix> Knf = fmm_->compute_Fock_FMM_K(aodensity_);
@@ -162,12 +162,8 @@ void RHF::compute() {
     cout << "**** ENERGY from FMM " << setprecision(8) << energyfmm << endl;
     const double energy = 0.5*aodensity_->dot_product(*hcore_+*previous_fock) + geom_->nuclear_repulsion();
     cout << "**** ENERGY exact " << setprecision(8) << energy << endl;
-#endif
-#if 1
     previous_fock = fmmfock;
     shared_ptr<const DistMatrix> error_vector = error_vector_fmm->distmatrix();
-#else
-    shared_ptr<const DistMatrix> error_vector = error_vector_exact->distmatrix();
 #endif
     shared_ptr<const DistMatrix> fock = previous_fock->distmatrix();
 
@@ -175,11 +171,7 @@ void RHF::compute() {
 
     pdebug.tick_print("Fock build");
 
-#if 0
     auto error_vector = make_shared<const DistMatrix>(*fock**aodensity**overlap - *overlap**aodensity**fock);
-    auto diff = make_shared<const DistMatrix>(*error_vector-*error_vector_fmm);
-    cout << "**** Diff in error vector " << setprecision(9) << diff->rms() << endl;
-#endif
     const double error = error_vector->rms();
 
     cout << indent << setw(5) << iter << setw(20) << fixed << setprecision(8) << energy_ << "   "
@@ -259,20 +251,28 @@ shared_ptr<const Reference> RHF::conv_to_ref() const {
 
 
 // FMM
-shared_ptr<const Matrix> RHF::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> coeff) {
+shared_ptr<const Matrix> RHF::compute_Fock_FMM(shared_ptr<const Matrix> density, shared_ptr<const Matrix> ocoeff) {
 
-  shared_ptr<const Matrix> fock;
+  shared_ptr<const Matrix> Kff_rj;
+  shared_ptr<const Matrix> Knf;
   if (!fmmK_) {
-    shared_ptr<const Matrix> fock_JK = fmm_->compute_Fock_FMM(density);
-    shared_ptr<const Matrix> Kff = fmm_->compute_K_ff(coeff, overlap_);
-    //fock = make_shared<const Matrix>(*hcore_ + *fock_JK - *Kff);
-    fock = make_shared<const Matrix>(*hcore_ + *fock_JK);
+    Kff_rj = fmm_->compute_K_ff(ocoeff, overlap_);
+    Knf = fmm_->compute_Fock_FMM_K(density);
   } else {
-    shared_ptr<const Matrix> fock_J = fmm_->compute_Fock_FMM_J(density);
-    shared_ptr<const Matrix> Knf = fmmK_->compute_Fock_FMM_K(density);
-    shared_ptr<const Matrix> Kff = fmmK_->compute_K_ff(coeff, overlap_);
-    fock = make_shared<const Matrix>(*hcore_ + *fock_J + *Knf - *Kff);
+    Kff_rj = fmmK_->compute_K_ff(ocoeff, overlap_);
+    Knf = fmmK_->compute_Fock_FMM_K(density);
   }
 
-  return fock;
+  shared_ptr<const Matrix> krs = hcore_->clone();
+  if (ocoeff) {
+    auto Knf_rj = make_shared<const Matrix>(*Knf * *ocoeff);
+    auto krj = make_shared<const Matrix>(*Knf_rj - *Kff_rj);
+    auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+    auto sc = make_shared<const Matrix>(*overlap_ * *ocoeff);
+    auto sck = make_shared<const Matrix>(*sc ^ *krj);
+    krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
+  }
+  shared_ptr<const Matrix> fock_J = fmm_->compute_Fock_FMM_J(density);
+
+  return make_shared<const Matrix>(*hcore_ + *fock_J + *krs);
 }
