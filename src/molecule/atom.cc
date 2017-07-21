@@ -203,7 +203,7 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 }
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number()),
+: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_), atom_number_(old.atom_number()),
   averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
 
   assert(displacement.size() == 3 && old.position().size() == 3);
