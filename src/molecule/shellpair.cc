@@ -152,7 +152,7 @@ void ShellPair::init() {
       for (auto& expi1 : b1->exponents()) {
         const double cxp_inv = 1.0 / (expi0 + expi1);
         const double expi01 = expi0 * expi1;
-//        if (expi01*cxp_inv > tol) continue;
+        if (expi01*cxp_inv > tol) continue;
         const double tmp = (-lntau- expi01*cxp_inv*rsq + 0.75*log(4.0*expi01/pisq__))*cxp_inv;
         const double r01sq = max(0.0, tmp);
 

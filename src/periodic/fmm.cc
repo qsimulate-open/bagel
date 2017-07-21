@@ -637,10 +637,12 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     ff->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
-    cout << "    o  Far-field Coulomb energy: " << setprecision(6) << enj << endl;
+    cout << "    o  Far-field Coulomb energy: " << setprecision(9) << enj << endl;
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
     out->fill_upper();
+    ff->fill_lower();
+
     *out += *ff;
   }
 
