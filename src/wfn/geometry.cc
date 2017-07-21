@@ -398,7 +398,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   }
   const string prevaux = auxfile_;
   auxfile_ = geominfo->get<string>("df_basis", auxfile_);
-  if (prevaux != auxfile_ || atoms) {
+  if (!auxfile_.empty() && (prevaux != auxfile_ || atoms)) {
     aux_atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(auxfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_df_basis");
@@ -418,7 +418,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     // discard the previous one before we compute the new one. Note that df_'s are mutable... too bad, I know..
     if (discard)
       o.discard_df();
-    common_init2(true, overlap_thresh_);
+    common_init2(true, overlap_thresh_, auxfile_.empty());
   } else {
     df_ = o.df_;
     dfs_ = o.dfs_;
