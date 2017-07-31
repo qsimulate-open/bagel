@@ -47,7 +47,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   spherical_ = true;
   lmax_ = 0;
   dofmm_   = geominfo->get<bool>("cfmm", false);
-  extent_type_ = to_lower(geominfo->get<string>("extent_type", "sierka"));
+  extent_type_ = to_lower(geominfo->get<string>("extent_type", "yang"));
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -181,7 +181,8 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   nuclear_repulsion_ = compute_nuclear_repulsion();
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 
-  if (dofmm_ && get_sp) get_shellpairs(extent_type_);
+//  if (dofmm_ && get_sp) get_shellpairs(extent_type_);
+  get_shellpairs(extent_type_);
 }
 
 
@@ -591,14 +592,17 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 void Geometry::get_shellpairs(const string type) {
 
-  const string extent_type = (type == "") ? "sierka" : type;
+  const string extent_type = (type == "") ? "yang" : type;
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
+  vector<int> iat;
   for (int n = 0; n != natom(); ++n) {
     const vector<int> tmpoff = offset(n);
     offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
     const vector<shared_ptr<const Shell>> tmpsh = atoms_[n]->shells();
     basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
+    const vector<int> tmpat(tmpsh.size(), n);
+    iat.insert(iat.end(), tmpat.begin(), tmpat.end());
   }
   const int nsh = basis.size();
 
@@ -607,7 +611,28 @@ void Geometry::get_shellpairs(const string type) {
     for (int i1 = 0; i1 != nsh; ++i1) {
       const int i01 = i0 * nsh + i1;
       shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), extent_type);
+                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), make_pair(iat[i1], iat[i0]), extent_type);
+    }
+  }
+
+  if (!aux_atoms_.empty()) {
+    vector<int> aoffsets;
+    vector<shared_ptr<const Shell>> abasis;
+    vector<int> aiat;
+    for (int n = 0; n != aux_atoms_.size(); ++n) {
+      const vector<int> tmpoff = aux_offset(n);
+      aoffsets.insert(aoffsets.end(), tmpoff.begin(), tmpoff.end());
+      const vector<shared_ptr<const Shell>> tmpsh = aux_atoms_[n]->shells();
+      abasis.insert(abasis.end(), tmpsh.begin(), tmpsh.end());
+      const vector<int> tmpat(tmpsh.size(), n);
+      aiat.insert(aiat.end(), tmpat.begin(), tmpat.end());
+    }
+
+    auto ashell = std::make_shared<const Shell>(abasis.front()->spherical());
+    aux_shellpairs_.resize(abasis.size());
+    for (int i = 0; i != abasis.size(); ++i) {
+      aux_shellpairs_[i] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{abasis[i], ashell}},
+                                                        array<int, 2>{{aoffsets[i], -1}}, make_pair(i, -1), make_pair(aiat[i], -1), extent_type);
     }
   }
 }

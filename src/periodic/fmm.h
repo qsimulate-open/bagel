@@ -51,7 +51,7 @@ class FMM {
     std::vector<std::shared_ptr<Box>> box_;
     double ws_;
     double base_extent_;
-    bool do_exchange_;
+    bool do_exchange_, do_cadfj_;
     int lmax_k_;
     bool debug_;
     int xbatchsize_;
@@ -63,9 +63,13 @@ class FMM {
     void M2L(const bool do_exchange = false) const;
     void L2L(const bool do_exchange = false) const;
 
+    //NF-CADF-J
+    std::shared_ptr<const Matrix> XY_;
+    void compute_2index();
+
   public:
     FMM(std::shared_ptr<const Geometry> geom, const int ns = 4, const int lmax = 10, const double ws = 0.0,
-        const bool do_exchange = true, const int lmax_k = 2, const bool debug = true, const int batchsize = -1);
+        const bool do_exchange = true, const int lmax_k = 2, const bool do_cadfj = false, const bool debug = true, const int batchsize = -1);
     ~FMM() { }
 
     const std::array<double, 3>& centre() const { return centre_; }

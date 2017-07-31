@@ -67,8 +67,9 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors_;
 
     // Schwarz, multipoles
-    void get_shellpairs(const std::string extent_type = "sierka");
+    void get_shellpairs(const std::string extent_type = "yang");
     std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
+    std::vector<std::shared_ptr<const ShellPair>> aux_shellpairs_;
 
   private:
     // serialization
@@ -163,6 +164,9 @@ class Geometry : public Molecule {
     std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
     std::shared_ptr<const ShellPair> shellpair(const int i) const { return shellpairs_[i]; }
     int nshellpair() const { return shellpairs_.size(); }
+    std::vector<std::shared_ptr<const ShellPair>> aux_shellpairs() const { return aux_shellpairs_; }
+    std::shared_ptr<const ShellPair> aux_shellpair(const int i) const { return aux_shellpairs_[i]; }
+    int nauxshellpair() const { return aux_shellpairs_.size(); }
 
 };
 

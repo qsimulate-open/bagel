@@ -27,13 +27,12 @@
 #include <src/util/f77.h>
 #include <src/periodic/box.h>
 #include <src/integral/os/multipolebatch.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/periodic/localexpansion.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/util/taskqueue.h>
 #include <mutex>
 #include <src/util/timer.h>
 #include <src/util/math/factorial.h>
+#include <src/util/math/legendre.h>
 
 using namespace bagel;
 using namespace std;
@@ -43,12 +42,6 @@ const static Legendre plm;
 const static Factorial f;
 
 void Box::init() {
-
-  nbasis0_ = 0;   nbasis1_ = 0;
-  for (auto& i : sp_) {
-    nbasis0_ += i->nbasis0();
-    nbasis1_ += i->nbasis1();
-  }
 
   centre_ = {{0, 0, 0}};
   extent_ = 0.0;
@@ -96,6 +89,7 @@ void Box::init() {
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   multipole_ = make_shared<ZVectorB>(nmult_);
   localJ_ = make_shared<ZVectorB>(nmult_);
+  form_neigh_auxsp();
 }
 
 
@@ -137,6 +131,7 @@ void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
   for (auto& b : box) {
     if (is_neigh(b, ws)) {
       neigh_[nn] = b;
+      if (b->boxid() == boxid_) neighid_ == nn;
       ++nn;
     } else {
       nonneigh_[nnn] = b;
@@ -821,14 +816,6 @@ shared_ptr<const ZMatrix> Box::shift_localMX(const int lmax, shared_ptr<const ZM
 }
 
 
-double Box::coulomb_ff() const {
- 
-  const complex<double> en = blas::dot_product(multipole_->data(), nmult_, localJ_->data());
-  assert(abs(en.imag()) < 1e-10);
-  return en.real();
-}
-
-
 shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
   assert(nchild() == 0);
@@ -1109,4 +1096,282 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density
   tasks.compute();
 
   return out;
+}
+
+
+/* CADF for near-field
+   o near-field wrt rs: (rs|tu) = (rs|X)CX + CY(Y|tu) - CX(X|Y)CY
+   o CX = (X|Y)-1(Y|tu) where tu in nf, XY at tu
+   o CY = (rs|X)(X|Y)-1 where rs in box, XY at rs
+   o CX(X|Y)CY: X at rs, Y at tu
+*/
+
+// CX = (X|Y)-1(Y|tu)Dtu
+shared_ptr<const VectorB> Box::compute_CX(shared_ptr<const Matrix> xyint, shared_ptr<const Matrix> density) const {
+
+  int dimX = 0;
+  for (auto& asp_at : neigh_auxsp_) 
+    for (auto& asp : asp_at) dimX += asp->nbasis0();
+
+  auto out = make_shared<VectorB>(dimX);
+
+  vector<shared_ptr<const ShellPair>> ashell;
+  for (auto& neigh : neigh_) {
+    for (auto& sp : neigh->sp()) {
+       const int iaux0 = neigh_atommap_.find(sp->atom_ind(0))->second;
+       const int iaux1 = neigh_atommap_.find(sp->atom_ind(1))->second;
+       vector<shared_ptr<const ShellPair>> ashell = neigh_auxsp_[iaux0];
+       ashell.insert(ashell.begin(), neigh_auxsp_[iaux1].begin(), neigh_auxsp_[iaux1].end()); 
+
+       vector<shared_ptr<const ShellPair>> shells(1, sp);
+       shared_ptr<const Matrix> tu_y__yx = compute_3index(shells, ashell, xyint);
+       assert(tu_y__yx->ndim() == sp->nbasis0()*sp->nbasis1());
+
+       shared_ptr<const Matrix> subden = density->get_submatrix(sp->offset(0), sp->offset(1), sp->nbasis0(), sp->nbasis0());
+
+       // contract and add to out
+       const int nbas0 = offset_neigh_auxsp_[iaux0].second;
+       const int nbas1 = offset_neigh_auxsp_[iaux1].second;
+       assert(tu_y__yx->mdim() == nbas0 + nbas1);
+       int pos = offset_neigh_auxsp_[iaux0].first;
+       for (int i = 0; i != nbas0; ++i)
+         (*out)[pos++] = blas::dot_product(tu_y__yx->data()+i*tu_y__yx->ndim(), tu_y__yx->ndim(), subden->data());
+
+       pos = offset_neigh_auxsp_[iaux1].first;
+       for (int i = nbas0; i != nbas0+nbas1; ++i)
+         (*out)[pos++] = blas::dot_product(tu_y__yx->data()+i*tu_y__yx->ndim(), tu_y__yx->ndim(), subden->data());
+    }
+  }
+
+  return out;
+}
+
+
+// CYrs = (rs|X)(X|Y)-1
+shared_ptr<const Matrix> Box::compute_Yrs(shared_ptr<const ShellPair> rs, shared_ptr<const Matrix> xyint) const {
+
+  const int ndim = rs->nbasis0()*rs->nbasis1();
+
+  const int iaux0 = atommap_.find(rs->atom_ind(0))->second;
+  const int iaux1 = atommap_.find(rs->atom_ind(1))->second;
+  int mdim = 0;
+  for (auto& asp : auxsp_[iaux0]) mdim += asp->nbasis0();
+  for (auto& asp : auxsp_[iaux1]) mdim += asp->nbasis1();
+
+  vector<shared_ptr<const ShellPair>> ashell = auxsp_[iaux0];
+  ashell.insert(ashell.begin(), auxsp_[iaux1].begin(), auxsp_[iaux1].end()); 
+
+  vector<shared_ptr<const ShellPair>> shells(1, rs);
+  shared_ptr<const Matrix> rs_x__xy = compute_3index(shells, ashell, xyint);
+  assert(rs_x__xy->ndim() == ndim && rs_x__xy->mdim() == mdim);
+
+  return rs_x__xy;
+}
+
+
+//(rs|X) or (rs|X)(X|Y)^-1
+shared_ptr<const Matrix> Box::compute_3index(const vector<shared_ptr<const ShellPair>>& shells,
+                                             const vector<shared_ptr<const ShellPair>>& ashell, shared_ptr<const Matrix> xy) const {
+  
+  Timer time3index;
+  size_t ndim = 0; for (auto& sp : shells) ndim += sp->nbasis0() * sp->nbasis1();
+  size_t mdim = 0; for (auto& a : ashell) mdim += a->nbasis0();
+
+  auto out = make_shared<Matrix>(ndim, mdim); //(rs|X)
+  auto i3 = make_shared<const Shell>(ashell.front()->shell(0)->spherical());
+
+  int iabas = 0;
+  for (auto& a : ashell) {
+    shared_ptr<const Shell> i0 = a->shell(0);
+    int ish0 = 0; int ish1 = 0;
+    for (auto& sp : shells) {
+      shared_ptr<const Shell> i1 = sp->shell(0);
+      shared_ptr<const Shell> i2 = sp->shell(1);
+      assert(i1->nbasis() == sp->nbasis0() && i2->nbasis() == sp->nbasis1());
+
+      double* const data = out->data();
+      ERIBatch eribatch(array<shared_ptr<const Shell>,4>{{i3, i0, i1, i2}}, 2.0);
+      eribatch.compute();
+      const double* eridata = eribatch.data();
+      for (int a0 = iabas; a0 += iabas+i0->nbasis(); ++a0)
+        for (int j0 = 0; j0 != sp->nbasis0(); ++j0)
+          for (int j1 = 0; j1 != sp->nbasis1(); ++j1, ++eridata)
+            data[a0*ndim + ((j1+ish1)*sp->nbasis0()+(j0+ish0))] += *eridata;
+      ish0 += sp->nbasis0();
+      ish1 += sp->nbasis1();
+    }
+    iabas += i0->nbasis();
+  }
+  time3index.tick_print("compute (rs|X)");
+
+  if (xy) {
+    auto subxy = make_shared<Matrix>(mdim, mdim);
+    int i0 = 0;
+    for (auto& a0 : ashell) {
+      int i1 = 0;
+      for (auto& a1 : ashell) {
+        shared_ptr<const Matrix> tmp = xy->get_submatrix(a0->offset(0), a1->offset(0), a0->nbasis0(), a1->nbasis0());
+        subxy->copy_block(i0, i1, a0->nbasis0(), a1->nbasis0(), tmp->data());
+        i1 += a1->nbasis0();
+      }
+      i0 += a0->nbasis0();
+    }
+    subxy->inverse();
+
+    shared_ptr<Matrix> tmp = out->clone();
+    dgemm_("N", "N", ndim, mdim, mdim, 1.0, out->data(), ndim, subxy->data(), mdim, 0.0, tmp->data(), mdim);
+    out = tmp;
+    time3index.tick_print("compute C = (rs|X)(X|Y)^-1");
+  }
+
+  return out; 
+}
+
+
+shared_ptr<const Matrix> Box::compute_CADF_nf_J(shared_ptr<const Matrix> density, shared_ptr<const Matrix> xyint) const {
+
+  shared_ptr<const VectorB> coeff_X = compute_CX(xyint, density);
+  auto out = make_shared<Matrix>(density->ndim(), density->mdim());
+
+  //Jrs in box
+  TaskQueue<function<void(void)>> tasks(nsp_);
+  mutex jmutex;
+  for (auto& rs : sp_) {
+    tasks.emplace_back(
+      [this, &out, &rs, &density, &xyint, &coeff_X, &jmutex]() {
+        shared_ptr<const Matrix> coeff_Y_rs = compute_Yrs(rs, xyint);
+        shared_ptr<const Matrix> jrs1 = compute_from_left(rs, coeff_Y_rs, density);        
+        shared_ptr<const Matrix> jrs2 = compute_from_right(rs, coeff_X);        
+        shared_ptr<const Matrix> jrs3 = compute_from_left_and_right(rs, coeff_X, coeff_Y_rs, xyint);
+
+        auto jrs = make_shared<const Matrix>(*jrs1 + *jrs2 - *jrs3); 
+        lock_guard<mutex> lock(jmutex);
+        out->add_block(1.0, rs->offset(0), rs->offset(1), rs->nbasis0(), rs->nbasis1(), jrs->data());
+      }
+    );
+  }
+
+  return out;
+}
+
+// C_rs_Y (Y|tu)Dtu
+shared_ptr<const Matrix> Box::compute_from_left(shared_ptr<const ShellPair> rs, shared_ptr<const Matrix> coeff_Y_rs, shared_ptr<const Matrix> density) const {
+
+  const size_t ndim = rs->nbasis0();
+  const size_t mdim = rs->nbasis1();
+  assert(ndim*mdim == coeff_Y_rs->ndim());
+  auto out = make_shared<Matrix>(ndim, mdim);
+
+  const int iaux0 = atommap_.find(rs->atom_ind(0))->second;
+  const int iaux1 = atommap_.find(rs->atom_ind(1))->second;
+  vector<shared_ptr<const ShellPair>> ashell = auxsp_[iaux0];
+  ashell.insert(ashell.begin(), auxsp_[iaux1].begin(), auxsp_[iaux1].end());  // Y
+
+  const int dimY = coeff_Y_rs->mdim();
+  auto int_y = make_shared<VectorB>(dimY);
+  for (auto& neigh : neigh_) {
+    for (auto& sp : neigh->sp()) {
+       vector<shared_ptr<const ShellPair>> shells(1, sp);
+       shared_ptr<const Matrix> tu_y = compute_3index(shells, ashell);
+       shared_ptr<const Matrix> subden = density->get_submatrix(sp->offset(0), sp->offset(1), sp->nbasis0(), sp->nbasis1());
+       for (int i = 0; i != dimY; ++i)
+         (*int_y)[i] += blas::dot_product(tu_y->data() + i*tu_y->ndim(), tu_y->ndim(), subden->data());
+    }
+  }
+
+  auto jrs = make_shared<VectorB>(ndim*mdim);
+  dgemm_("N", "N", ndim*mdim, 1, dimY, 1.0, coeff_Y_rs->data(), ndim*mdim, int_y->data(), dimY, 0.0, jrs->data(), ndim*mdim);
+
+  out->copy_block(0, 0, ndim, mdim, jrs->data());
+  return out;
+}
+
+
+// (rs|X)CX
+shared_ptr<const Matrix> Box::compute_from_right(shared_ptr<const ShellPair> rs, shared_ptr<const VectorB> coeff_X) const {
+
+  const size_t ndim = rs->nbasis0();
+  const size_t mdim = rs->nbasis1();
+  auto out = make_shared<Matrix>(ndim, mdim);
+
+  vector<shared_ptr<const ShellPair>> ashell;
+  for (auto& auxsp_at : neigh_auxsp_)
+    ashell.insert(ashell.end(), auxsp_at.begin(), auxsp_at.end());
+
+  vector<shared_ptr<const ShellPair>> shells(1, rs);
+  shared_ptr<const Matrix> rs_X = compute_3index(shells, ashell);
+  const int dimX = coeff_X->size();
+  auto jrs = make_shared<VectorB>(ndim*mdim);
+  dgemm_("N", "N", ndim*mdim, 1, dimX, 1.0, rs_X->data(), ndim*mdim, coeff_X->data(), dimX, 0.0, jrs->data(), ndim*mdim);
+
+  out->copy_block(0, 0, ndim, mdim, jrs->data());
+  return out;
+}
+
+
+// CX(X|Y)CYrs
+shared_ptr<const Matrix> Box::compute_from_left_and_right(shared_ptr<const ShellPair> rs, shared_ptr<const VectorB> coeff_X,
+                                                          shared_ptr<const Matrix> coeff_Y_rs, shared_ptr<const Matrix> xyint) const {
+
+  const size_t ndim = rs->nbasis0();
+  const size_t mdim = rs->nbasis1();
+  auto out = make_shared<Matrix>(ndim, mdim);
+
+  const int iaux0 = neigh_atommap_.find(rs->atom_ind(0))->second;
+  const int iaux1 = neigh_atommap_.find(rs->atom_ind(1))->second;
+  vector<shared_ptr<const ShellPair>> yshell = neigh_auxsp_[iaux0];
+  yshell.insert(yshell.begin(), neigh_auxsp_[iaux1].begin(), neigh_auxsp_[iaux1].end());
+
+  auto subxy = make_shared<Matrix>(coeff_X->size(), coeff_Y_rs->mdim());
+  int iysh = 0;
+  for (auto& ysh : yshell) {
+    int ixsh = 0;
+    for (auto& auxsp_at : neigh_auxsp_) {
+      for (auto& xsh : auxsp_at) {
+        shared_ptr<const Matrix> tmp = xyint->get_submatrix(xsh->offset(0), ysh->offset(0), xsh->nbasis0(), ysh->nbasis0());
+        subxy->copy_block(ixsh, iysh, xsh->nbasis0(), ysh->nbasis0(), tmp->data());
+
+        ixsh += xsh->nbasis0();
+      }
+    }
+    iysh += ysh->nbasis0();
+  }
+                                                         
+  auto intermediate = make_shared<VectorB>(coeff_Y_rs->mdim());
+  dgemm_("T", "N", 1, coeff_Y_rs->mdim(), coeff_X->size(), 1.0, coeff_X->data(), coeff_X->size(),
+                      subxy->data(), coeff_X->size(), 0.0, intermediate->data(), 1);
+  auto jrs = make_shared<VectorB>(ndim*mdim);
+  dgemm_("N", "T", 1, ndim*mdim, coeff_Y_rs->mdim(), 1.0, intermediate->data(), 1,
+                      coeff_Y_rs->data(), ndim*mdim, 0.0, jrs->data(), 1);
+
+  out->copy_block(0, 0, ndim, mdim, jrs->data());
+  return out;
+}
+
+
+void Box::form_neigh_auxsp() {
+
+  if (auxsp_.empty()) return;
+  assert(neigh_atommap_.empty());
+  int nneigh_atom = 0;
+  int ibas = 0;
+  for (auto& neigh : neigh_) {
+    for (auto& auxsp_at : neigh->auxsp()) {
+      const int atomid = auxsp_at.front()->atom_ind(0); 
+      map<int, int>::iterator atom = neigh_atommap_.find(atomid);
+      const bool at_found = (atom != neigh_atommap_.end());
+      if (!at_found) {
+        neigh_atommap_.insert(neigh_atommap_.end(), pair<int, int>(atomid, nneigh_atom));
+        neigh_auxsp_.resize(nneigh_atom+1);
+        neigh_auxsp_[nneigh_atom] = auxsp_at;
+
+        offset_neigh_auxsp_.resize(nneigh_atom+1);
+        int nbas = 0;
+        for (auto& asp : auxsp_at) nbas += asp->nbasis0();
+        offset_neigh_auxsp_[nneigh_atom] = make_pair(ibas, ibas+nbas);
+        ++nneigh_atom;
+        ibas += nbas;
+      }
+    } 
+  }
 }

@@ -36,7 +36,7 @@ class ShellPair {
   protected:
     std::array<std::shared_ptr<const Shell>, 2> shells_;
     std::array<int, 2> offset_;
-    std::pair<int, int> shell_ind_;
+    std::pair<int, int> shell_ind_, atom_ind_;
     std::string extent_type_;
     int nbasis0_, nbasis1_;
 
@@ -49,7 +49,7 @@ class ShellPair {
   public:
     ShellPair() { }
     ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset,
-              const std::pair<int, int>& shell_ind, const std::string extent_type = "sierka", const double thresh = 1e-10);
+              const std::pair<int, int>& shell_ind, const std::pair<int, int>& atom_ind, const std::string extent_type = "yang", const double thresh = 1e-10);
     bool is_neighbour(std::shared_ptr<const ShellPair> sp, const double ws) const;
 
     const std::array<std::shared_ptr<const Shell>, 2>& shells() const { return shells_; }
@@ -58,6 +58,8 @@ class ShellPair {
     int offset(const int i) const { assert(i==0 || i==1); return offset_[i]; }
     const std::pair<int, int>& shell_ind() const { return shell_ind_; }
     int shell_ind(const int i) const { assert(i==0 || i==1); return (i == 0) ? shell_ind_.first : shell_ind_.second; }
+    const std::pair<int, int>& atom_ind() const { return atom_ind_; }
+    int atom_ind(const int i) const { assert(i==0 || i==1); return (i == 0) ? atom_ind_.first : atom_ind_.second; }
     double schwarz() const { return schwarz_; }
     const std::array<double, 3>& centre() const { return centre_; }
     double centre(const int i) const { return centre_[i]; }
