@@ -67,7 +67,7 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors_;
 
     // Schwarz, multipoles
-    void get_shellpairs(const std::string extent_type = "sierka");
+    void get_shellpairs(const std::string extent_type = "yang");
     std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
 
   private:

@@ -66,7 +66,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
     if (dodf) throw runtime_error("FMM only works without DF now");
     const bool fmmk = idata_->get<bool>("FMM-K", false);
     if (fmmk) {
-      const string extent_type = idata_->get<string>("extent_exchange", "sierka");
+      const string extent_type = idata_->get<string>("extent_exchange", "yang");
       auto newgeom = make_shared<const Geometry>(*geom_, extent_type);
       fmmK_ = make_shared<const FMM>(newgeom, idata_->get<int>("ns_exchange", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws_exchange", 0.0),
                                      true /*exchange*/, idata_->get<int>("lmax_exchange", 2),

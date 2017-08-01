@@ -27,17 +27,12 @@
 #include <src/periodic/fmm.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <src/integral/os/multipolebatch.h>
-#include <src/periodic/localexpansion.h>
-#include <src/periodic/jexpansion.h>
 #include <boost/math/special_functions/erf.hpp>
 
 using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-
-const static Legendre plm;
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
          const bool ex, const int lmax_k, const bool print, const int batchsize)

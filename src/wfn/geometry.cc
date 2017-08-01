@@ -47,7 +47,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   spherical_ = true;
   lmax_ = 0;
   dofmm_   = geominfo->get<bool>("cfmm", false);
-  extent_type_ = to_lower(geominfo->get<string>("extent_type", "sierka"));
+  extent_type_ = to_lower(geominfo->get<string>("extent_type", "yang"));
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -591,7 +591,7 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 void Geometry::get_shellpairs(const string type) {
 
-  const string extent_type = (type == "") ? "sierka" : type;
+  const string extent_type = (type == "") ? "yang" : type;
   vector<int> offsets;
   vector<shared_ptr<const Shell>> basis;
   for (int n = 0; n != natom(); ++n) {
