@@ -50,6 +50,7 @@ class Box {
     std::vector<std::shared_ptr<const ShellPair>> sp_;
 
     double extent_, schwarz_thresh_;
+    int nbasis0_, nbasis1_;
     int nmult_;
     int nocc_;
     int nsp_;
@@ -89,32 +90,14 @@ class Box {
     // temporary: allow constructing FMM_J and FMM_K separately with different parameters
     std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
-
-    // NF-CADF-J [only for leaves]
-    int neighid_;
-    std::map<int, int> atommap_, neigh_atommap_;
-    std::vector<std::vector<std::shared_ptr<const ShellPair>>> auxsp_, neigh_auxsp_;
-    std::vector<std::pair<int, int>> offset_neigh_auxsp_;
-    void form_neigh_auxsp();
-    std::shared_ptr<const Matrix> compute_3index(const std::vector<std::shared_ptr<const ShellPair>>& shells,
-                                                 const std::vector<std::shared_ptr<const ShellPair>>& ashell,
-                                                 std::shared_ptr<const Matrix> xy = nullptr) const;
-    std::shared_ptr<const Matrix> compute_CADF_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const Matrix> xyint) const;
-    std::shared_ptr<const VectorB> compute_CX(std::shared_ptr<const Matrix> xyint, std::shared_ptr<const Matrix> density) const;
-    std::shared_ptr<const Matrix> compute_Yrs(std::shared_ptr<const ShellPair> sp, std::shared_ptr<const Matrix> xyint) const;
-    std::shared_ptr<const Matrix> compute_from_left(std::shared_ptr<const ShellPair> sp, std::shared_ptr<const Matrix> coeff_Y_rs,
-                                                    std::shared_ptr<const Matrix> density) const;
-    std::shared_ptr<const Matrix> compute_from_right(std::shared_ptr<const ShellPair> sp, std::shared_ptr<const VectorB> coeff_X) const;
-    std::shared_ptr<const Matrix> compute_from_left_and_right(std::shared_ptr<const ShellPair> sp, std::shared_ptr<const VectorB> coeff_X,
-                                                              std::shared_ptr<const Matrix> coeff_Y_rs, std::shared_ptr<const Matrix> xyint) const;
+    double coulomb_ff() const;
+    double exchange_ff() const;
 
   public:
-    Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10, const int lmax_k = 10,
-        const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(), const double schwarz = 0.0,
-        const std::vector<std::vector<std::shared_ptr<const ShellPair>>>& asp = std::vector<std::vector<std::shared_ptr<const ShellPair>>>(),
-        const std::map<int, int> atmap = std::map<int, int>())
-     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k),
-       sp_(sp), schwarz_thresh_(schwarz), auxsp_(asp), atommap_(atmap) { }
+    Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
+        const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
+        const double schwarz = 0.0)
+     : rank_(n), boxsize_(size), centre_(c), boxid_(id), tvec_(v), lmax_(lmax), lmax_k_(lmax_k), sp_(sp), schwarz_thresh_(schwarz) { }
 
     Box(std::shared_ptr<const Box> b, const std::vector<std::shared_ptr<const ShellPair>>& sp)
      : rank_(b->rank()), boxsize_(b->boxsize()), centre_(b->centre()), boxid_(b->boxid()), tvec_(b->tvec()), lmax_(b->lmax()), lmax_k_(b->lmax_k()),
@@ -138,6 +121,8 @@ class Box {
     int nneigh() const { return neigh_.size(); }
     int ninter() const { return inter_.size(); }
     double extent() const { return extent_; }
+    int nbasis0() const { return nbasis0_; }
+    int nbasis1() const { return nbasis1_; }
 
     std::shared_ptr<const Box> parent() const { return parent_; }
     std::shared_ptr<const Box> child(const int i) const { return child_[i].lock(); }
@@ -157,8 +142,6 @@ class Box {
     int box_olm_size() const { return box_olm_[0]->size(); }
     std::vector<std::shared_ptr<ZMatrix>>& box_olm() { return box_olm_; }
     std::shared_ptr<ZMatrix> box_olm(const int i) const { return box_olm_[i]; }
-
-    std::vector<std::vector<std::shared_ptr<const ShellPair>>> auxsp() const { return auxsp_; }
 
     void print_box() const;
 };

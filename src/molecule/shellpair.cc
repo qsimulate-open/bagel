@@ -33,10 +33,8 @@ using namespace bagel;
 
 const static double pisq__ = pi__ * pi__;
 
-ShellPair::ShellPair(const array<shared_ptr<const Shell>, 2>& sh, const array<int, 2>& ofs, const pair<int, int>& ind,
-                     const pair<int, int>& aind, const string ext, const double thr)
- : shells_(sh), offset_(ofs), shell_ind_(ind), atom_ind_(aind), extent_type_(ext), thresh_(thr) {
-  if (ind.first < 0 || ind.second < 0) extent_type_ = "sierka";
+ShellPair::ShellPair(const array<shared_ptr<const Shell>, 2>& sh, const array<int, 2>& ofs, const pair<int, int>& ind, const string ext, const double thr)
+ : shells_(sh), offset_(ofs), shell_ind_(ind), extent_type_(ext), thresh_(thr) {
   init();
 }
 

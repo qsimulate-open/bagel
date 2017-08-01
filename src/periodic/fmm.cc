@@ -27,23 +27,25 @@
 #include <src/periodic/fmm.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
-#include <src/integral/rys/eribatch.h>
+#include <src/integral/os/multipolebatch.h>
+#include <src/periodic/localexpansion.h>
+#include <src/periodic/jexpansion.h>
+#include <boost/math/special_functions/erf.hpp>
 
 using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
 
+const static Legendre plm;
+
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
-         const bool ex, const int lmax_k, const bool cadfj, const bool print, const int batchsize)
+         const bool ex, const int lmax_k, const bool print, const int batchsize)
  : geom_(geom), ns_(ns), lmax_(lmax), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k),
-   do_cadfj_(cadfj), debug_(print), xbatchsize_(batchsize) {
+   debug_(print), xbatchsize_(batchsize) {
 
   if (batchsize < 0)
     xbatchsize_ = (int) ceil(0.5*geom_->nele()/mpi__->size());
-
-  if (do_cadfj_ && geom_->aux_atoms().empty())
-    throw logic_error("Aux functions required for FMM-CADF-J");
 
   init();
 }
@@ -76,6 +78,7 @@ void FMM::init() {
 
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
+  coordinates_.resize(nsp_);
 
   get_boxes();
 
@@ -142,49 +145,7 @@ void FMM::get_boxes() {
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-   
-    vector<vector<shared_ptr<const ShellPair>>> auxsp;
-    map<int, int> atmap;
-    if (do_cadfj_) { //if CADF-J, form list of aux shell pairs in each leaf
-      vector<int> atoms_in_leaf;
-      assert(atmap.empty());
-      int nat = 0;
-      for (auto& p : sp) {
-        const int iat0 = p->atom_ind(0);
-        map<int, int>::iterator at0 = atmap.find(iat0);
-        const bool at0_found = (at0 != atmap.end());
-        if (!at0_found) {
-          atmap.insert(atmap.end(), pair<int, int>(iat0, nat));
-          atoms_in_leaf.resize(nat+1);
-          atoms_in_leaf[nat] = iat0;
-          ++nat;
-        }
-        const int iat1 = p->atom_ind(1);
-        map<int, int>::iterator at1 = atmap.find(iat1);
-        const bool at1_found = (at1 != atmap.end());
-        if (!at1_found) {
-          atmap.insert(atmap.end(), pair<int, int>(iat1, nat));
-          atoms_in_leaf.resize(nat+1);
-          atoms_in_leaf[nat] = iat1;
-          ++nat;
-        }
-      } 
-      assert(atoms_in_leaf.size() == nat);
-      vector<shared_ptr<const ShellPair>> auxsp(atoms_in_leaf.size());
-      auto ashell = std::make_shared<const Shell>(sp.front()->shell(0)->spherical());
-      for (auto& a : atoms_in_leaf) {
-        shared_ptr<const Atom> auxat = geom_->aux_atoms()[a];
-        const vector<int> tmpoff = geom_->aux_offset(a);
-        vector<shared_ptr<const ShellPair>> tmpshell(auxat->shells().size());
-        int ish = 0;
-        for (auto& auxsh : auxat->shells()) {
-          tmpshell[ish] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{auxsh, ashell}},
-                                                       array<int, 2>{{tmpoff[ish], -1}}, make_pair(-1/*unknown*/, -1), make_pair(a, -1), "sierka");
-          ++ish;
-        }
-      }
-    } // end of CADF-J part
-    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, geom_->schwarz_thresh(), auxsp, atmap);
+    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -273,16 +234,16 @@ void FMM::get_boxes() {
     for (auto& b : box_) {
       const bool ipar = (b->parent()) ? true : false;
       int nsp_neigh = 0;
-      for (auto& n : b->neigh()) nsp_neigh += n->nsp();
+      for (auto& n : b->neigh())
+        nsp_neigh += n->nsp();
       int nsp_inter = 0;
-      for (auto& i : b->interaction_list()) nsp_inter += i->nsp();
-
+      for (auto& i : b->interaction_list())
+        nsp_inter += i->nsp();
       cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp()
            << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
            << " ninter = " << b->ninter() << " nsp " << nsp_inter
            << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
-           << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar;
-      cout << endl;
+           << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
       ++i;
     }
   }
@@ -667,8 +628,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_CADF_nf_J(density, XY_);
-        //auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
+        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
@@ -689,47 +649,4 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
   nftime.tick_print("near-field-J");
 
   return out;
-}
-
-
-void FMM::compute_2index() {
-
-  Timer time2index;
-  vector<shared_ptr<const Shell>> ashell;
-  for (int n = 0; n != geom_->aux_atoms().size(); ++n) {
-    const vector<shared_ptr<const Shell>> tmpsh = geom_->aux_atoms()[n]->shells();
-    ashell.insert(ashell.end(), tmpsh.begin(), tmpsh.end());
-  }
-
-  int nbas = 0; for (auto& a : ashell) nbas += a->nbasis();
-  auto XY = make_shared<Matrix>(nbas, nbas);
-  TaskQueue<function<void(void)>> tasks(ashell.size()*ashell.size());
-  auto b3 = make_shared<const Shell>(ashell.front()->spherical());
-
-  tasks.emplace_back(
-    [this, ashell, &b3, &XY, nbas]() {
-      double* const data = XY->data();
-      int u = 0;
-      int o0 = 0;
-      for (auto& b0 : ashell) {
-        int o1 = 0;
-        for (auto& b1 : ashell) {
-          if (o0 <= o1) {
-            ERIBatch eribatch(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, 2.0);
-            eribatch.compute();
-            const double* eridata = eribatch.data();
-            for (int j0 = o0; j0 != o0 + b0->nbasis(); ++j0)
-              for (int j1 = o1; j1 != o1 + b1->nbasis(); ++j1, ++eridata)
-                data[j1*nbas+j0] = data[j0*nbas+j1] = *eridata;
-          }
-          o1 += b1->nbasis();
-        }
-        o0 += b0->nbasis();
-      }
-    }
-  );
-
-  tasks.compute();
-  time2index.tick_print("2-index (X|Y)");
-  XY_ = XY;
 }

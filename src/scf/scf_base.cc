@@ -69,13 +69,13 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
       const string extent_type = idata_->get<string>("extent_exchange", "sierka");
       auto newgeom = make_shared<const Geometry>(*geom_, extent_type);
       fmmK_ = make_shared<const FMM>(newgeom, idata_->get<int>("ns_exchange", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws_exchange", 0.0),
-                                     true /*exchange*/, idata_->get<int>("lmax_exchange", 2), false /*CADF-J*/,
+                                     true /*exchange*/, idata_->get<int>("lmax_exchange", 2),
                                      idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
       fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
-                                    false /*exchange*/, 2 /*lmaxK*/, idata_->get<bool>("CADF-J", false), idata_->get<bool>("debug", false));
+                                    false /*exchange*/, 2 /*lmaxK*/, idata_->get<bool>("debug", false));
     } else {
       fmm_ = make_shared<const FMM>(geom_, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("ws", 0.0),
-                                    idata_->get<bool>("exchange", true), idata_->get<int>("lmax_exchange", 2), idata_->get<bool>("CADF-J", false),
+                                    idata_->get<bool>("exchange", true), idata_->get<int>("lmax_exchange", 2),
                                     idata_->get<bool>("debug", false), idata_->get<int>("batch_size", -1));
     }
   }
