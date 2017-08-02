@@ -28,6 +28,7 @@
 #include <mutex>
 #include <src/util/math/xyzfile.h>
 #include <src/wfn/geometry.h>
+#include <src/mat1e/hcore.h>
 
 namespace bagel {
 
@@ -53,6 +54,11 @@ class GradEval_base {
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(const std::shared_ptr<const Matrix> n);
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(std::array<std::shared_ptr<const Matrix>,6> n,  const std::shared_ptr<const Geometry> geom = nullptr);
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_sigma(const std::shared_ptr<const Matrix> v);
+
+    /// get DKH one-electron hamiltonian numerical gradient
+    std::vector<std::shared_ptr<Matrix>> dkh_grad();
+    // contract DKH numerical gradient with d, add it to grad_
+    void contract_grad1e_dkh(std::vector<std::shared_ptr<Matrix>> dkhg, std::shared_ptr<const Matrix> d);
 
     /// contract 3-index 2-electron gradient integrals with density matrix "o".
     std::vector<std::shared_ptr<GradTask>> contract_grad2e(const std::shared_ptr<const DFDist> o,               const std::shared_ptr<const Geometry> geom = nullptr);

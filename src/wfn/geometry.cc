@@ -80,6 +80,8 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 
   // DKH2 Hamiltonian
   dkh_ = geominfo->get<bool>("dkh", false);
+  // finite difference length for DKH semi-numerical gradient
+  dkh_dx_ = geominfo->get<double>("dkh_dx", 0.001);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -152,7 +154,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 }
 
 
-void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
+void Geometry::common_init2(const bool print, const double thresh, const bool nodf, const bool noshell) {
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
@@ -178,16 +180,19 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
   }
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
-  get_shellpairs();
+
+  if (!noshell)
+    get_shellpairs();
 
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
 }
 
 
 // suitable for geometry updates in optimization
-Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
+Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf, const bool noshell)
+  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), dkh_dx_(o.dkh_dx_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
     do_periodic_df_(o.do_periodic_df_) {
+
 
   // Members of Molecule
   spherical_ = o.spherical_;
@@ -208,6 +213,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     atoms_.push_back(make_shared<Atom>(**i, cdispl));
     aux_atoms_.push_back(make_shared<Atom>(**j, cdispl));
   }
+
 
   // second find the unique frame.
   // (i) center of chages
@@ -293,13 +299,13 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   common_init1();
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
-  common_init2(false, overlap_thresh_, nodf);
+  common_init2(false, overlap_thresh_, nodf, noshell);
   if (o.magnetism())
     throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), dkh_dx_(o.dkh_dx_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule

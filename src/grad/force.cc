@@ -58,14 +58,14 @@ shared_ptr<GradFile> Force::compute() {
   cinput->put("_gradient", true);
 
   numerical_ = idata_->get<bool>("numerical", false);
-  if (geom_->dkh()) {
-    cout << "  Analytcal gradient not supplied for DKH Hamiltonian." << endl;
-    numerical_ = true;
-  }
   if (numerical_)
     cout << "  The gradients will be computed with finite difference." << endl;
   else
     cout << "  The gradients will be computed analytically." << endl;
+
+  if (geom_->dkh()) {
+    cout << "  Semi-numerical gradient (de Jong, Harrison, Dixon) is used for DKH Hamiltonian." << endl;
+  }
 
   shared_ptr<GradFile> out;
 
