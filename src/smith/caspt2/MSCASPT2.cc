@@ -147,7 +147,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
 
       // If it is the first time for this state, compute fock-weighted 2RDM derivative and save it
       tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv_3(info_, active_, fockact_, nst, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
       for (int mst = 0; mst != nstates; ++mst) {
         den0cit = den0ciall->at(nst, mst);
         den1cit = den1ciall->at(nst, mst);
