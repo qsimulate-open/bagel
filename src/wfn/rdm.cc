@@ -48,30 +48,23 @@ vector<double> RDM<1>::diag() const {
 
 template<>
 pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
-  auto buf = make_shared<Matrix>(norb(),norb(),true);
+  auto buf = make_shared<Matrix>(norb(), norb());
   buf->add_diag(2.0);
-  daxpy_(norb()*norb(), -1.0, data(), 1, buf->data(), 1);
+  blas::ax_plus_y_n(-1.0, data(), norb()*norb(), buf->data());
 
   VectorB vec(norb());
   buf->diagonalize(vec);
 
-  for (auto& i : vec) i = 2.0-i;
-  auto buf2 = buf->clone();
-  VectorB vec2(norb());
-
-  // sort by natural orbital occupation numbers instead
-  const int b2n = buf2->ndim();
-  for (int i = 0; i != buf2->mdim(); ++i) {
-    copy_n(buf->element_ptr(0, buf2->mdim()-1-i), b2n, buf2->element_ptr(0, i));
-    vec2[b2n-1-i] = vec[i] > 0.0 ? vec[i] : 0.0;
+  for (auto& i : vec) {
+    i = i<2.0 ? 2.0-i : 0.0;
   }
 
   // fix the phase
   for (int i = 0; i != norb(); ++i) {
-    if (buf2->element(i,i) < 0.0)
-      blas::scale_n(-1.0, buf2->element_ptr(0,i), norb());
+    if (buf->element(i,i) < 0.0)
+      blas::scale_n(-1.0, buf->element_ptr(0,i), norb());
   }
-  return {buf2, vec2};
+  return {buf, vec};
 }
 
 
