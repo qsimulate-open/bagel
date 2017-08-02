@@ -379,9 +379,9 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
 
 
 template<>
-void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size) {
+void SpinFreeMethod<double>::feed_rdm_deriv(const int istate, const size_t offset, const size_t size) {
   tie(ci_,rci_, rdm0deriv_,rdm1deriv_,rdm2deriv_,rdm3deriv_,rdm4deriv_)
-    = feed_rdm_deriv(info_, active_, fockact_, info_->target(), offset, size);
+    = feed_rdm_deriv(info_, active_, fockact_, istate, offset, size);
 }
 
 
@@ -509,7 +509,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
 
 
 template<>
-void SpinFreeMethod<complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size) {
+void SpinFreeMethod<complex<double>>::feed_rdm_deriv(const int istate, const size_t offset, const size_t size) {
   throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
 }
 

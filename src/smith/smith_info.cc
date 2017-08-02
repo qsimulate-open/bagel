@@ -78,8 +78,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   // These are not input parameters (set automatically)
   grad_    = idata->get<bool>("_grad", false);
-  target_  = idata->get<int>("_target", -1);
-  target2_ = idata->get<int>("_target2", -1);
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
   shift_  = idata->get<double>("shift", 0.0);
@@ -110,8 +108,8 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_),
-    maxiter_(info->maxiter_), target_(info->target_), target2_(info->target2_),
-    maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_), cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
+    maxiter_(info->maxiter_), maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_),
+    cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),
     restart_each_iter_(info->restart_each_iter_), thresh_overlap_(info->thresh_overlap_),

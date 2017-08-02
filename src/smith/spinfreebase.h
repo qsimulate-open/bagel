@@ -107,7 +107,7 @@ class SpinFreeMethod {
     // init functions
     void rotate_xms();
     void feed_rdm_denom();
-    void feed_rdm_deriv(const size_t offset, const size_t size);
+    void feed_rdm_deriv(const int istate, const size_t offset, const size_t size);
     std::shared_ptr<CIWfnT> rotate_ciwfn(std::shared_ptr<const CIWfnT> input, const MatType& rotation) const;
 
     // printing functions called from the solve function of a derived class
@@ -144,7 +144,6 @@ class SpinFreeMethod {
     double e0() const { return e0_; }
     std::vector<double> e0all() const { return e0all_; }
     std::vector<double> energyvec() const { return energy_; }
-    double energy() const { return energy(info_->target()); }
     double energy(int n) const { return energy_[n]; }
 
     virtual void solve() = 0;
@@ -168,11 +167,11 @@ class SpinFreeMethod {
 
 template<> void SpinFreeMethod<double>::rotate_xms();
 template<> void SpinFreeMethod<double>::feed_rdm_denom();
-template<> void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size);
+template<> void SpinFreeMethod<double>::feed_rdm_deriv(const int istate, const size_t offset, const size_t size);
 template<> std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const;
 template<> void SpinFreeMethod<std::complex<double>>::rotate_xms();
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom();
-template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size);
+template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_deriv(const int istate, const size_t offset, const size_t size);
 template<> std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const;
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>,
