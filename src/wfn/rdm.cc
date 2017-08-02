@@ -55,15 +55,8 @@ pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
   VectorB vec(norb());
   buf->diagonalize(vec);
 
-  for (auto& i : vec) {
+  for (auto& i : vec)
     i = i<2.0 ? 2.0-i : 0.0;
-  }
-
-  // fix the phase
-  for (int i = 0; i != norb(); ++i) {
-    if (buf->element(i,i) < 0.0)
-      blas::scale_n(-1.0, buf->element_ptr(0,i), norb());
-  }
   return {buf, vec};
 }
 
