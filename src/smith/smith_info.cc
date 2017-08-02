@@ -77,8 +77,8 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   }
 
   // These are not input parameters (set automatically)
-  target_  = idata->get<int>("_target", -1);
   grad_    = idata->get<bool>("_grad", false);
+  target_  = idata->get<int>("_target", -1);
   target2_ = idata->get<int>("_target2", -1);
 
   thresh_ = idata->get<double>("thresh", grad_ ? 1.0e-8 : 1.0e-6);
@@ -104,8 +104,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
     throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");
   if (!external_rdm_.empty() && is_same<DataType,double>::value)
     throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
-
-  assert(!(grad_ && target_ < 0));
 }
 
 
