@@ -103,10 +103,8 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm0deriv_;
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
-    std::shared_ptr<Tensor> rdm3deriv_;
     std::shared_ptr<Matrix> rdm2fderiv_;
     std::shared_ptr<Tensor> rdm3fderiv_;
-    std::shared_ptr<Tensor> rdm4deriv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();

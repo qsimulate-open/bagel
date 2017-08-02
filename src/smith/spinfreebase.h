@@ -93,8 +93,6 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor_<DataType>> rdm0deriv_;
     std::shared_ptr<Tensor_<DataType>> rdm1deriv_;
     std::shared_ptr<Tensor_<DataType>> rdm2deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm3deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm4deriv_;
 
     std::shared_ptr<Tensor_<DataType>> sigma_;
 
