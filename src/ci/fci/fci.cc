@@ -29,6 +29,7 @@
 #include <src/ci/fci/modelci.h>
 #include <src/util/combination.hpp>
 #include <src/util/exception.h>
+#include <src/prop/multipole.h>
 
 using namespace std;
 using namespace bagel;
@@ -116,9 +117,8 @@ void FCI::common_init() {
     if (norb_  < 0) norb_ = idata_->get<int>("norb", ref_->coeff()->mdim()-ncore_);
   }
 
-  // Configure properties to be calculated on the final wavefunctions
-  if (idata_->get<bool>("dipoles", false))
-    properties_.push_back(make_shared<CIDipole>(ref_, ncore_, ncore_+norb_));
+  // calculate dipole moments if requested 
+  dipoles_ = idata_->get<bool>("dipoles", false);
 
   // additional charge
   const int charge = idata_->get<int>("charge", 0);
@@ -393,8 +393,15 @@ void FCI::compute() {
   cc_ = make_shared<Dvec>(*cc);
   cc_->print(print_thresh_);
 
-  for (auto& iprop : properties_) {
-    iprop->compute(cc_);
-    iprop->print();
+  if (dipoles_) {
+    compute_rdm12();
+    cout << endl;
+    for (int i = 0; i != nstate_; ++i) { 
+      stringstream ss; ss << "state " << i;
+      shared_ptr<const Matrix> mordm = rdm1(i)->rdm1_mat(ncore_);
+      auto ocoeff = ref_->coeff()->slice(0, ncore_+norb_);
+      Dipole dipole(geom_, make_shared<Matrix>(ocoeff * *mordm ^ ocoeff), ss.str()); 
+      dipole.compute();
+    }
   }
 }
