@@ -34,46 +34,8 @@ using namespace bagel;
 
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
+                                                      const shared_ptr<const Matrix> v, const bool numerical,
                                                       const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
-  grad_->zero();
-
-  vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
-  vector<shared_ptr<GradTask>> task2 = contract_grad1e<GradTask1>(d, w);
-  vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);
-  task.insert(task.end(), task2.begin(), task2.end());
-  task.insert(task.end(), task3.begin(), task3.end());
-
-  if (g2 && g2o) {
-    vector<shared_ptr<GradTask>> task0 = contract_grad2e(g2o, g2);
-    task.insert(task.end(), task0.begin(), task0.end());
-  }
-  if (g2 && g2o2) {
-    vector<shared_ptr<GradTask>> task0 = contract_grad2e_2index(g2o2, g2);
-    task.insert(task.end(), task0.begin(), task0.end());
-  }
-
-  TaskQueue<shared_ptr<GradTask>> tq(move(task));
-  tq.compute();
-
-  *grad_ += *geom_->compute_grad_vnuc();
-
-  grad_->allreduce();
-
-  if (geom_->dkh()) {
-    Timer dkht;
-    vector<shared_ptr<Matrix>> dkhg = dkh_grad();
-    dkht.tick_print("DKH matrix element gradient");
-    contract_grad1e_dkh(dkhg, d);
-    dkht.tick_print("DKH gradient contraction");
-  }
-
-  return grad_;
-}
-
-shared_ptr<GradFile> GradEval_base::contract_nacme(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
-                                                   const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
-                                                   const shared_ptr<const Matrix> v, const bool numerical,
-                                                   const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
   grad_->zero();
 
   if (!numerical) {
@@ -87,9 +49,17 @@ shared_ptr<GradFile> GradEval_base::contract_nacme(const shared_ptr<const Matrix
       task.insert(task.end(), task4.begin(), task4.end());
     }
 
+    if (g2 && g2o) {
+      vector<shared_ptr<GradTask>> task0 = contract_grad2e(g2o, g2);
+      task.insert(task.end(), task0.begin(), task0.end());
+    }
+    if (g2 && g2o2) {
+      vector<shared_ptr<GradTask>> task0 = contract_grad2e_2index(g2o2, g2);
+      task.insert(task.end(), task0.begin(), task0.end());
+    }
+
     TaskQueue<shared_ptr<GradTask>> tq(move(task));
     tq.compute();
-
   } else {
     vector<shared_ptr<GradTask>> task = contract_grad1e<GradTask1s>(v, v);
 
@@ -97,8 +67,12 @@ shared_ptr<GradFile> GradEval_base::contract_nacme(const shared_ptr<const Matrix
     tq.compute();
   }
 
+  if (!v)
+    *grad_ += *geom_->compute_grad_vnuc();
+
   grad_->allreduce();
 
+  // TODO to be moved
   if (geom_->dkh()) {
     Timer dkht;
     vector<shared_ptr<Matrix>> dkhg = dkh_grad();

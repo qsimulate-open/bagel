@@ -633,7 +633,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   timer.tick_print("Effective densities");
 
   // compute gradients
-  shared_ptr<GradFile> gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
+  shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
   if (nacmtype != 3)
     gradient->scale(1.0/egap);

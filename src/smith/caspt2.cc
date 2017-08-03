@@ -279,7 +279,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
 
   auto gfin = make_shared<Matrix>((*acoeff_ref * (*gmo) ^ *acoeff_ref) + (*coeff_ref * (*vd1a) ^ *coeff_ref));
   auto grad_basis = make_shared<GradFile>(geom_->natom());
-  grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
+  grad_basis = contract_gradient(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
   *grad += *grad_basis;
   grad->print(": NACME calculated with finite difference", 0);

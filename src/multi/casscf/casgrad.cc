@@ -363,7 +363,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_nacme(const int istate, const int
   shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
-  gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
+  gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
   if (nacmtype != 3)
     gradient->scale(1.0/egap);
   gradient->print(": Nonadiabatic coupling vector", 0);
@@ -504,7 +504,10 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_dgrad(const int istate, const int
   shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
   shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
-  gradient = contract_nacme(dtotao, xmatao, qrs, qq, nullptr);
+  auto qxmatao = xmatao->clone();
+  qxmatao->zero();
+
+  gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
   gradient->print(": Difference gradient vector", 0);
 
   cout << setw(50) << left << "  * DGRAD computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;

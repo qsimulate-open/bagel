@@ -351,7 +351,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int
   cout << endl;
 
   // gradient evaluation
-  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, cgeom, sep32, sep22);
+  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, /*nacme = */nullptr, false, cgeom, sep32, sep22);
 
   time.tick_print("Gradient integrals contracted");
   cout << endl;
