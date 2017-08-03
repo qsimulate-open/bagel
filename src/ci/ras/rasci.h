@@ -28,7 +28,6 @@
 #define NORDMS
 
 #include <src/ci/fci/mofile.h>
-#include <src/ci/fci/properties.h>
 #include <src/ci/ras/civector.h>
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
@@ -60,9 +59,6 @@ class RASCI : public Method {
 
     // number of states
     int nstate_;
-
-    // properties to be calculated
-    //std::vector<std::shared_ptr<CIProperties>> properties_;
 
     // total energy
     std::vector<double> energy_;
