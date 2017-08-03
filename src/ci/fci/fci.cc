@@ -396,12 +396,20 @@ void FCI::compute() {
   if (dipoles_) {
     compute_rdm12();
     cout << endl;
+    auto ocoeff = ref_->coeff()->slice(0, ncore_+norb_);
     for (int i = 0; i != nstate_; ++i) { 
       stringstream ss; ss << "state " << i;
       shared_ptr<const Matrix> mordm = rdm1(i)->rdm1_mat(ncore_);
-      auto ocoeff = ref_->coeff()->slice(0, ncore_+norb_);
       Dipole dipole(geom_, make_shared<Matrix>(ocoeff * *mordm ^ ocoeff), ss.str()); 
       dipole.compute();
     }
+    for (int i = 0; i != nstate_; ++i)
+      for (int j = 0; j != i; ++j) { 
+        stringstream ss; ss << "states " << i << " " << j;
+        compute_rdm12(i, j);
+        shared_ptr<const Matrix> mordm = rdm1(i,j)->rdm1_mat(ncore_, false);
+        Dipole dipole(geom_, make_shared<Matrix>(ocoeff * *mordm ^ ocoeff), ss.str()); 
+        dipole.compute();
+      }
   }
 }
