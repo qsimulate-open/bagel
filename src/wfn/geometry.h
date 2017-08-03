@@ -47,7 +47,7 @@ class Geometry : public Molecule {
     mutable std::shared_ptr<DFDist> dfsl_;
 
     // Constructor helpers
-    void common_init2(const bool print, const double thresh, const bool nodf = false, const bool noshell = false);
+    void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh) const;
     void get_electric_field(std::shared_ptr<const PTree>& geominfo);
     void set_london(std::shared_ptr<const PTree>& geominfo);
@@ -116,7 +116,7 @@ class Geometry : public Molecule {
     Geometry(std::shared_ptr<const PTree> idata);
     Geometry(const std::vector<std::shared_ptr<const Atom>> atoms, std::shared_ptr<const PTree> o);
     Geometry(const Geometry& o, std::shared_ptr<const PTree> idata, const bool discard_prev_df = true);
-    Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false, const bool noshell = false);
+    Geometry(const Geometry& o, std::shared_ptr<const Matrix> disp, std::shared_ptr<const PTree> geominfo, const bool rotate = true, const bool nodf = false);
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 

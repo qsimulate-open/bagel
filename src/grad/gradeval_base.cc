@@ -196,7 +196,6 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_sigma(const shared_p
 
 vector<shared_ptr<Matrix>> GradEval_base::dkh_grad() {
   vector<shared_ptr<Matrix>> dkhgrad;
-  Timer timer(2);
   const int natom = geom_->natom();
 
   const double dx = geom_->dkh_dx();
@@ -207,7 +206,7 @@ vector<shared_ptr<Matrix>> GradEval_base::dkh_grad() {
       {
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = dx;
-        auto geom_plus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), /*rotate=*/false, /*nodf=*/true, /*noshell=*/true);
+        auto geom_plus = make_shared<Molecule>(*geom_, displ, false);
         auto hd_plus = make_shared<Hcore>(geom_plus, /* nodkh = */false);
         auto ho_plus = make_shared<Hcore>(geom_plus, /* nodkh = */true);
 
@@ -218,7 +217,7 @@ vector<shared_ptr<Matrix>> GradEval_base::dkh_grad() {
       {
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = -dx;
-        auto geom_minus = make_shared<Geometry>(*geom_, displ, make_shared<PTree>(), /*rotate=*/false, /*nodf=*/true, /*noshell=*/true);
+        auto geom_minus = make_shared<Molecule>(*geom_, displ, false);
         auto hd_minus = make_shared<Hcore>(geom_minus, /*nodkh = */false);
         auto ho_minus = make_shared<Hcore>(geom_minus, /*nodkh = */true);
 
