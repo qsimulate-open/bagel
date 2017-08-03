@@ -45,15 +45,16 @@ class GradEval_base {
     std::shared_ptr<const Geometry> geom_;
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
+    template<typename T>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
     /// same as above, but one can specify density matrices to each integral kernel
+    template<typename T>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
     /// contract small NAI gradient integrals with an array of densities
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
     /// contract finite-nucleus NAI gradient
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(const std::shared_ptr<const Matrix> n);
     std::vector<std::shared_ptr<GradTask>> contract_grad1e_fnai(std::array<std::shared_ptr<const Matrix>,6> n,  const std::shared_ptr<const Geometry> geom = nullptr);
-    std::vector<std::shared_ptr<GradTask>> contract_grad1e_sigma(const std::shared_ptr<const Matrix> v);
 
     /// get DKH one-electron hamiltonian numerical gradient
     std::vector<std::shared_ptr<Matrix>> dkh_grad();
@@ -81,13 +82,13 @@ class GradEval_base {
                                                 const std::shared_ptr<const DFDist> g2o = nullptr,
                                                 const std::shared_ptr<const Matrix> g2o2 = nullptr);
     /// Basically do the same as in contract_gradient, but without nuclear gradient
-    std::shared_ptr<GradFile> contract_nacme   (const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
-                                                const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2,
-                                                const std::shared_ptr<const Matrix> v,
-                                                const bool numerical = false,
-                                                const std::shared_ptr<const Geometry> g2 = nullptr,
-                                                const std::shared_ptr<const DFDist> g2o = nullptr,
-                                                const std::shared_ptr<const Matrix> g2o2 = nullptr);
+    std::shared_ptr<GradFile> contract_nacme(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
+                                             const std::shared_ptr<const DFDist> o, const std::shared_ptr<const Matrix> o2,
+                                             const std::shared_ptr<const Matrix> v,
+                                             const bool numerical = false,
+                                             const std::shared_ptr<const Geometry> g2 = nullptr,
+                                             const std::shared_ptr<const DFDist> g2o = nullptr,
+                                             const std::shared_ptr<const Matrix> g2o2 = nullptr);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return nullptr; }
 
   friend class GradTask1;
