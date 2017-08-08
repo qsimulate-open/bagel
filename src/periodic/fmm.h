@@ -44,13 +44,11 @@ class FMM {
     bool do_ff_;
     std::vector<std::array<double, 3>> coordinates_;
     std::array<double, 3> centre_;
-    std::array<double, 3> maxxyz_;
     double boxsize_, unitsize_;
     std::vector<int> nbranch_;
 
     std::vector<std::shared_ptr<Box>> box_;
     double ws_;
-    double base_extent_;
     bool do_exchange_;
     int lmax_k_;
     bool debug_;
@@ -68,9 +66,6 @@ class FMM {
         const bool do_exchange = true, const int lmax_k = 2, const bool debug = true, const int batchsize = -1);
     ~FMM() { }
 
-    const std::array<double, 3>& centre() const { return centre_; }
-    double boxsize() const { return boxsize_; }
-    bool do_exchange() const { return do_exchange_; }
     std::shared_ptr<const Matrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density = nullptr) const;
     std::shared_ptr<const Matrix> compute_Fock_FMM_K(std::shared_ptr<const Matrix> density = nullptr) const;
     std::shared_ptr<const Matrix> compute_Fock_FMM_J(std::shared_ptr<const Matrix> density = nullptr) const;

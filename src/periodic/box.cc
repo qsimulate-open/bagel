@@ -43,12 +43,7 @@ const static Factorial f;
 
 void Box::init() {
 
-  nbasis0_ = 0;   nbasis1_ = 0;
-  for (auto& i : sp_) {
-    nbasis0_ += i->nbasis0();
-    nbasis1_ += i->nbasis1();
-  }
-
+  nchild_ = child_.size();
   centre_ = {{0, 0, 0}};
   extent_ = 0.0;
   nsp_ = 0;
@@ -57,7 +52,7 @@ void Box::init() {
     ++nsp_;
   }
 
-  if (nchild() == 0) {
+  if (nchild_ == 0) {
     for (auto& i : sp_) {
       if (i->schwarz() < schwarz_thresh_) continue;
       for (int j = 0; j != 3; ++j) centre_[j] += i->centre(j);
@@ -74,15 +69,15 @@ void Box::init() {
       extent_ = max(extent_, ei);
     }
   } else {
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> i = child(n);
+    for (int n = 0; n != nchild_; ++n) {
+      shared_ptr<const Box> i = child_[n].lock();
       for (int j = 0; j != 3; ++j)  centre_[j] += i->centre(j);
     }
-    centre_[0] /= nchild();
-    centre_[1] /= nchild();
-    centre_[2] /= nchild();
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> i = child(n);
+    centre_[0] /= nchild_;
+    centre_[1] /= nchild_;
+    centre_[2] /= nchild_;
+    for (int n = 0; n != nchild_; ++n) {
+      shared_ptr<const Box> i = child_[n].lock();
       double rad = 0.0;
       for (int j = 0; j != 3; ++j) rad += pow(i->centre(j)-centre_[j], 2.0);
       const double ei = sqrt(rad) + i->extent();
@@ -93,8 +88,8 @@ void Box::init() {
 
   ws_ = (int) ceil(extent_/boxsize_);
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
-  multipole_ = make_shared<ZVectorB>(nmult_);
-  localJ_ = make_shared<ZVectorB>(nmult_);
+  olm_ = make_shared<ZVectorB>(nmult_);
+  mlm_ = make_shared<ZVectorB>(nmult_);
 }
 
 
@@ -108,9 +103,10 @@ void Box::insert_sp(const vector<shared_ptr<const ShellPair>>& sp) {
 }
 
 
-void Box::insert_child(shared_ptr<const Box> child) {
+void Box::insert_child(weak_ptr<const Box> c) {
 
   const int nchild = child_.size();
+  shared_ptr<const Box> child = c.lock();
   if (child) {
     child_.resize(nchild + 1);
     child_[nchild] = child;
@@ -118,22 +114,23 @@ void Box::insert_child(shared_ptr<const Box> child) {
 }
 
 
-void Box::insert_parent(shared_ptr<const Box> parent) {
+void Box::insert_parent(weak_ptr<const Box> p) {
 
-  assert(!parent_);
-  parent_ = parent;
+  parent_ = p;
 }
 
 
-void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
+void Box::get_neigh(const vector<weak_ptr<Box>>& box, const double ws) {
 
-  if ((box.empty()) || (box[0]->rank() != rank_)) return;
+  shared_ptr<const Box> box0 = box[0].lock();
+  if ((box.empty()) || (box0->rank() != rank_)) return;
 
   neigh_.resize(box.size());
   nonneigh_.resize(box.size());
   int nn = 0;
   int nnn = 0;
-  for (auto& b : box) {
+  for (int i = 0; i != box.size(); ++i) {
+    shared_ptr<const Box> b = box[i].lock();
     if (is_neigh(b, ws)) {
       neigh_[nn] = b;
       ++nn;
@@ -144,20 +141,22 @@ void Box::get_neigh(const vector<shared_ptr<Box>>& box, const double ws) {
   }
   neigh_.resize(nn);
   nonneigh_.resize(nnn);
+  nneigh_ = neigh_.size();
 }
 
 
-bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
+bool Box::is_neigh(weak_ptr<const Box> b, const double ws) const {
 
-  if (nchild() == 0) {
+  shared_ptr<const Box> box = b.lock();
+  if (nchild_ == 0) {
     double rr = 0;
     for (int i = 0; i != 3; ++i) rr += pow(centre_[i] - box->centre(i), 2);
     return (sqrt(rr) <= (1.0+ws)*(extent_ + box->extent()));
   } else {
-    for (int n0 = 0; n0 != nchild(); ++n0) {
-      shared_ptr<const Box> i = child(n0);
-      for (int n1 = 0; n1 != box->nchild(); ++n1) {
-        shared_ptr<const Box> j = box->child(n1);
+    for (int n0 = 0; n0 != nchild_; ++n0) {
+      shared_ptr<const Box> i = child_[n0].lock();
+      for (int n1 = 0; n1 != box->child().size(); ++n1) {
+        shared_ptr<const Box> j = box->child()[n1].lock();
         if (i->is_neigh(j, ws)) return true;
       }
     }
@@ -165,30 +164,34 @@ bool Box::is_neigh(shared_ptr<const Box> box, const double ws) const {
   }
 }
 
-void Box::get_inter(const vector<shared_ptr<Box>>& box, const double ws) {
+void Box::get_inter(const vector<weak_ptr<Box>>& box, const double ws) {
 
-  if ((box.empty()) || (box[0]->rank() != rank_)) return;
+  shared_ptr<const Box> box0 = box[0].lock();
+  if ((box.empty()) || (box0->rank() != rank_)) return;
 
+  shared_ptr<const Box> parent = parent_.lock();
   inter_.resize(box.size());
   int ni = 0;
-  for (auto& b : box) {
-    if ((!is_neigh(b, ws)) && (!parent_ || parent_->is_neigh(b->parent(), ws))) {
+  for (int i = 0; i != box.size(); ++i) {
+    shared_ptr<const Box> b = box[i].lock();
+    if ((!is_neigh(b, ws)) && (!parent || parent->is_neigh(b->parent(), ws))) {
       inter_[ni] = b;
       ++ni;
     }
   }
   inter_.resize(ni);
+  ninter_ = inter_.size();
 }
 
 
 void Box::sort_sp() {
 
-  if (nchild() == 0) return;
+  if (nchild_ == 0) return;
 
-  assert(nchild() > 0);
+  assert(nchild_ > 0);
   vector<shared_ptr<const ShellPair>> newsp;
-  for (int n = 0; n != nchild(); ++n) {
-    shared_ptr<const Box> c = child(n);
+  for (int n = 0; n != nchild_; ++n) {
+    shared_ptr<const Box> c = child_[n].lock();
     const vector<shared_ptr<const ShellPair>> csp = c->sp();
     newsp.insert(newsp.end(), csp.begin(), csp.end());
   }
@@ -199,9 +202,9 @@ void Box::sort_sp() {
 
 void Box::compute_M2M(shared_ptr<const Matrix> density) {
 
-  multipole_->fill(0.0);
+  olm_->fill(0.0);
 
-  if (nchild() == 0) { // leaf
+  if (nchild_ == 0) { // leaf
     TaskQueue<function<void(void)>> tasks(nsp_);
     mutex jmutex;
     for (auto& v : sp_) {
@@ -224,24 +227,21 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
           }
 
           lock_guard<mutex> lock(jmutex);
-          blas::ax_plus_y_n(1.0, olm->data(), nmult_, multipole_->data());
+          blas::ax_plus_y_n(1.0, olm->data(), nmult_, olm_->data());
         }
       );
     }
     tasks.compute();
   } else { // shift children's multipoles
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> c = child(n);
-      array<double, 3> r12;
-      r12[0] = c->centre(0) - centre_[0];
-      r12[1] = c->centre(1) - centre_[1];
-      r12[2] = c->centre(2) - centre_[2];
+    for (int n = 0; n != nchild_; ++n) {
+      shared_ptr<const Box> c = child_[n].lock();
+      const array<double, 3> r12 = {{c->centre(0) - centre_[0], c->centre(1) - centre_[1], c->centre(2) - centre_[2]}};
       auto cmultipole = make_shared<ZMatrix>(1, nmult_);
-      copy_n(c->multipole()->data(), nmult_, cmultipole->data());
+      copy_n(c->olm()->data(), nmult_, cmultipole->data());
       shared_ptr<const ZMatrix> tmp = shift_multipolesX(lmax_, cmultipole, r12);
       auto smoment = make_shared<ZVectorB>(nmult_);
       copy_n(tmp->data(), nmult_, smoment->data());
-      blas::ax_plus_y_n(1.0, smoment->data(), nmult_, multipole_->data());
+      blas::ax_plus_y_n(1.0, smoment->data(), nmult_, olm_->data());
     }
   }
 }
@@ -251,21 +251,22 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Matrix> ocoeff_ui) {
 
   olm_ndim_ = ocoeff_sj->mdim();  olm_mdim_ = ocoeff_ui->mdim();
-  const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
-  olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
+  olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, (lmax_k_+1)*(lmax_k_+1));
+  Timer m2mx;
 
-  if (nchild() == 0) { // leaf
-    TaskQueue<function<void(void)>> tasks(nsp_);
-    mutex kmutex;
+  if (nchild_ == 0) { // leaf
+//    TaskQueue<function<void(void)>> tasks(nsp_);
+//    mutex kmutex;
     for (auto& v : sp_) {
       if (v->schwarz() < schwarz_thresh_) continue;
 
-      tasks.emplace_back(
-        [this, nmult_k, &v, &ocoeff_sj, &ocoeff_ui, &kmutex]() {
+//      tasks.emplace_back(
+//        [this, &v, &ocoeff_sj, &ocoeff_ui, &kmutex]() {
           MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
           olm_su.compute();
           const int dimb0 = v->shell(0)->nbasis();
           const int dimb1 = v->shell(1)->nbasis();
+          const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
           auto zsj = make_shared<const ZMatrix>(*(ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0)), 1.0);
           auto zui = make_shared<const ZMatrix>(*(ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
           auto tmp_olm_ji = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
@@ -275,15 +276,15 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
             zgemm3m_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.data(), dimb0, 0.0, tmp_olm_ji->data()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
           }
           tmp_olm_ji = tmp_olm_ji->get_conjg()->copy();
-          lock_guard<mutex> lock(kmutex);
+//          lock_guard<mutex> lock(kmutex);
           blas::ax_plus_y_n(1.0, tmp_olm_ji->data(), olm_ji_->size(), olm_ji_->data());
-        }
-      );
+//        }
+//      );
     }
-    tasks.compute();
+//    tasks.compute();
   } else { // shift children's multipoles
-    for (int n = 0; n != nchild(); ++n) {
-      shared_ptr<const Box> c = child(n);
+    for (int n = 0; n != nchild_; ++n) {
+      shared_ptr<const Box> c = child_[n].lock();
       array<double, 3> r12;
       r12[0] = c->centre(0) - centre_[0];
       r12[1] = c->centre(1) - centre_[1];
@@ -293,37 +294,42 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       blas::ax_plus_y_n(1.0, smoment->data(), olm_ji_->size(), olm_ji_->data());
     }
   }
+  m2mx.tick_print("M2M-X in box");
 }
 
 
 void Box::compute_L2L_X() {
 
+  Timer l2lx;
   // from parent
-  if (parent_) {
+  shared_ptr<const Box> parent = parent_.lock();
+  if (parent) {
     array<double, 3> r12;
-    r12[0] = centre_[0] - parent_->centre(0);
-    r12[1] = centre_[1] - parent_->centre(1);
-    r12[2] = centre_[2] - parent_->centre(2);
-    shared_ptr<const ZMatrix> slocal = shift_localLX(lmax_k_, parent_->mlm_ji(), r12);
+    r12[0] = centre_[0] - parent->centre(0);
+    r12[1] = centre_[1] - parent->centre(1);
+    r12[2] = centre_[2] - parent->centre(2);
+    shared_ptr<const ZMatrix> slocal = shift_localLX(lmax_k_, parent->mlm_ji(), r12);
     blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
   }
+  l2lx.tick_print("L2L-X in box");
 }
 
 
 void Box::compute_L2L() {
 
   // from parent
-  if (parent_) {
+  shared_ptr<const Box> parent = parent_.lock();
+  if (parent) {
     array<double, 3> r12;
-    r12[0] = centre_[0] - parent_->centre(0);
-    r12[1] = centre_[1] - parent_->centre(1);
-    r12[2] = centre_[2] - parent_->centre(2);
+    r12[0] = centre_[0] - parent->centre(0);
+    r12[1] = centre_[1] - parent->centre(1);
+    r12[2] = centre_[2] - parent->centre(2);
     auto plocalJ = make_shared<ZMatrix>(1, nmult_);
-    copy_n(parent_->localJ()->data(), nmult_, plocalJ->data());
+    copy_n(parent->mlm()->data(), nmult_, plocalJ->data());
     shared_ptr<const ZMatrix> tmp = shift_localLX(lmax_, plocalJ, r12);
     auto slocal = make_shared<ZVectorB>(nmult_);
     copy_n(tmp->data(), nmult_, slocal->data());
-    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
+    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, mlm_->data());
   }
 }
 
@@ -331,13 +337,12 @@ void Box::compute_L2L() {
 void Box::compute_M2L_X() {
 
   mlm_ji_ = olm_ji_->clone();
+  if (inter_.size() != ninter_) { cout << "More inter " << inter_.size() << " > " << ninter_ << endl; throw logic_error("Line 342 Compute M2L_X");}
 
   // from interaction list
-  for (auto& it : inter_) {
-    array<double, 3> r12;
-    r12[0] = centre_[0] - it->centre(0);
-    r12[1] = centre_[1] - it->centre(1);
-    r12[2] = centre_[2] - it->centre(2);
+  for (int i = 0; i != ninter_; ++i) {
+    shared_ptr<const Box> it = inter_[i].lock();
+    const array<double, 3> r12 = {{centre_[0] - it->centre(0), centre_[1] - it->centre(1), centre_[2] - it->centre(2)}};
     shared_ptr<const ZMatrix> slocal = shift_localMX(lmax_k_, it->olm_ji(), r12);
     blas::ax_plus_y_n(1.0, slocal->data(), mlm_ji_->size(), mlm_ji_->data());
   }
@@ -346,27 +351,25 @@ void Box::compute_M2L_X() {
 
 void Box::compute_M2L() {
 
-  localJ_->fill(0.0);
+  mlm_->fill(0.0);
 
   // from interaction list
-  for (auto& it : inter_) {
-    array<double, 3> r12;
-    r12[0] = centre_[0] - it->centre(0);
-    r12[1] = centre_[1] - it->centre(1);
-    r12[2] = centre_[2] - it->centre(2);
+  for (int i = 0; i != ninter_; ++i) {
+    shared_ptr<const Box> it = inter_[i].lock();
+    const array<double, 3> r12 = {{centre_[0] - it->centre(0), centre_[1] - it->centre(1), centre_[2] - it->centre(2)}};
     auto imultipole = make_shared<ZMatrix>(1, nmult_);
-    copy_n(it->multipole()->data(), nmult_, imultipole->data());
+    copy_n(it->olm()->data(), nmult_, imultipole->data());
     shared_ptr<const ZMatrix> tmp = shift_localMX(lmax_, imultipole, r12);
     auto slocal = make_shared<ZVectorB>(nmult_);
     copy_n(tmp->data(), nmult_, slocal->data());
-    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, localJ_->data());
+    blas::ax_plus_y_n(1.0, slocal->data(), nmult_, mlm_->data());
   }
 }
 
 
 shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
-  assert(nchild() == 0);
+  assert(nchild_ == 0);
 
   auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
@@ -387,7 +390,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
     const int i01 = i0 * nsh + i1;
     const double density_01 = (*max_den)(i01) * 4.0;
 
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         const int i2 = v23->shell_ind(1);
@@ -433,7 +437,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
     const int i01 = i0 * nsh + i1;
     const double density_01 = (*max_den)(i01) * 4.0;
 
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
@@ -522,8 +527,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf(shared_ptr<const Matrix> density, 
 
 
 void Box::print_box() const {
-  cout << "Box " << boxid_ << " Rank = " << rank_ << " *** nchild = " << nchild() << " *** nsp = " << sp_.size()
-       << " *** nneigh = " << nneigh() << " *** ninter = " << ninter() << " *** extent = " << extent_
+  cout << "Box " << boxid_ << " Rank = " << rank_ << " *** nchild = " << nchild_ << " *** nsp = " << sp_.size()
+       << " *** nneigh = " << nneigh_ << " *** ninter = " << ninter_ << " *** extent = " << extent_
        << " *** centre = " << setprecision(3) << centre_[0] << "  " << centre_[1] << "  " << centre_[2] << endl;
 
 //  cout << " *** Shell pairs at ***" << endl;
@@ -534,7 +539,7 @@ void Box::print_box() const {
 
 shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) const {
 
-  assert(nchild() == 0);
+  assert(nchild_ == 0);
   auto out = make_shared<ZMatrix>(density->ndim(), density->mdim());
 
   // compute multipoles again - not efficient - for now
@@ -557,7 +562,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) 
         for (int i = v->offset(1); i != dimb1 + v->offset(1); ++i)
           for (int j = v->offset(0); j != dimb0 + v->offset(0); ++j)
             for (int k = 0; k != mpole.num_blocks(); ++k)
-              out->element(i, j) += conj(*dat[k]++) * (*localJ_)(k);
+              out->element(i, j) += conj(*dat[k]++) * (*mlm_)(k);
       }
     );
   }
@@ -570,7 +575,8 @@ shared_ptr<const Matrix> Box::compute_Fock_ff(shared_ptr<const Matrix> density) 
 
 shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_ti) const {
 
-  assert(nchild() == 0);
+  Timer fock_ffk;
+  assert(nchild_ == 0);
   auto out = make_shared<Matrix>(ocoeff_ti->ndim(), olm_ndim_);
   assert(ocoeff_ti->mdim() == olm_mdim_);
   const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
@@ -602,6 +608,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
     );
   }
   tasks.compute();
+  fock_ffk.tick_print("Build Krj in box");
 
   return out;
 }
@@ -615,7 +622,8 @@ shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density)
   int ntask = 0;
   for (auto& v01 : sp_) {
     if (v01->schwarz() < schwarz_thresh_) continue;
-    for (auto& nonneigh : nonneigh_) {
+    for (int n = 0; n != nonneigh_.size(); ++n) {
+      shared_ptr<const Box> nonneigh = neigh_[n].lock();
       for (auto& v23 : nonneigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         ++ntask;
@@ -636,7 +644,8 @@ shared_ptr<const Matrix> Box::compute_exact_ff(shared_ptr<const Matrix> density)
     const int b1offset = v01->offset(0);
     const int b1size = b1->nbasis();
 
-    for (auto& nonneigh : nonneigh_) {
+    for (int n = 0; n != nonneigh_.size(); ++n) {
+      shared_ptr<const Box> nonneigh = neigh_[n].lock();
       for (auto& v23 : nonneigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
@@ -820,17 +829,9 @@ shared_ptr<const ZMatrix> Box::shift_localMX(const int lmax, shared_ptr<const ZM
 }
 
 
-double Box::coulomb_ff() const {
- 
-  const complex<double> en = blas::dot_product(multipole_->data(), nmult_, localJ_->data());
-  assert(abs(en.imag()) < 1e-10);
-  return en.real();
-}
-
-
 shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
-  assert(nchild() == 0);
+  assert(nchild_ == 0);
   auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
 
@@ -850,7 +851,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density
     const int i01 = i0 * nsh + i1;
     const double density_01 = (*max_den)(i01) * 4.0;
 
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         const int i2 = v23->shell_ind(1);
@@ -890,7 +892,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density
     const int i01 = i0 * nsh + i1;
     const double density_01 = (*max_den)(i01) * 4.0;
 
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);
@@ -969,7 +972,7 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_J(shared_ptr<const Matrix> density
 
 shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density, shared_ptr<const VectorB> max_den) const {
 
-  assert(nchild() == 0);
+  assert(nchild_ == 0);
   auto out = make_shared<Matrix>(density->ndim(), density->mdim());
   out->zero();
 
@@ -987,7 +990,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density
     if (i1 < i0) continue;
 
     const int i01 = i0 * nsh + i1;
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         const int i2 = v23->shell_ind(1);
@@ -1029,7 +1033,8 @@ shared_ptr<const Matrix> Box::compute_Fock_nf_K(shared_ptr<const Matrix> density
     const int b1size = b1->nbasis();
 
     const int i01 = i0 * nsh + i1;
-    for (auto& neigh : neigh_) {
+    for (int n = 0; n != nneigh_; ++n) {
+      shared_ptr<const Box> neigh = neigh_[n].lock();
       for (auto& v23 : neigh->sp()) {
         if (v23->schwarz() < schwarz_thresh_) continue;
         shared_ptr<const Shell> b2 = v23->shell(1);

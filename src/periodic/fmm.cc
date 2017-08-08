@@ -33,6 +33,7 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
+static constexpr std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
          const bool ex, const int lmax_k, const bool print, const int batchsize)
@@ -79,7 +80,7 @@ void FMM::init() {
 
   do_ff_ = false;
   for (int i = 0; i != nbranch_[0]; ++i)
-    if (box_[i]->ninter() != 0) do_ff_ = true;
+    if (box_[i]->ninter_ != 0) do_ff_ = true;
 }
 
 
@@ -203,21 +204,27 @@ void FMM::get_boxes() {
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
 
+  cout << "Got all boxes now initialise" << endl;
+
   for (auto& b : box_)
     b->init();
 
+  cout << "Finished initialising" << endl;
+
   int icnt = 0;
   for (int ir = ns_; ir > -1; --ir) {
-    vector<shared_ptr<Box>> tmpbox(nbranch_[ir]);
+    vector<weak_ptr<Box>> tmpbox(nbranch_[ir]);
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
       tmpbox[ib] = box_[nbox_-icnt-nbranch_[ir]+ib];
     for (auto& b : tmpbox) {
-      b->get_neigh(tmpbox, ws_);
-      b->get_inter(tmpbox, ws_);
-      b->sort_sp();
+      shared_ptr<Box> b0 = b.lock();
+      b0->get_neigh(tmpbox, ws_);
+      b0->get_inter(tmpbox, ws_);
+      b0->sort_sp();
     }
     icnt += nbranch_[ir];
   }
+  cout << "Finish getting neighbours and inter list" << endl;
 
   if (debug_) {
     cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
@@ -227,16 +234,20 @@ void FMM::get_boxes() {
     cout << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
     int i = 0;
     for (auto& b : box_) {
-      const bool ipar = (b->parent()) ? true : false;
+      const bool ipar = (b->parent_.lock()) ? true : false;
       int nsp_neigh = 0;
-      for (auto& n : b->neigh())
-        nsp_neigh += n->nsp();
+      for (int j = 0; j != b->neigh_.size(); ++j) {
+        shared_ptr<const Box> ne = b->neigh_[j].lock();
+        nsp_neigh += ne->nsp_;
+      }
       int nsp_inter = 0;
-      for (auto& i : b->interaction_list())
-        nsp_inter += i->nsp();
-      cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp()
-           << " nchild = " << b->nchild() << " nneigh = " << b->nneigh() << " nsp " << nsp_neigh
-           << " ninter = " << b->ninter() << " nsp " << nsp_inter
+      for (int j = 0; j != b->inter_.size(); ++j) {
+        shared_ptr<const Box> inter = b->inter_[j].lock();
+        nsp_inter += inter->nsp_;
+      }
+      cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp_
+           << " nchild = " << b->nchild_ << " nneigh = " << b->nneigh_ << " nsp " << nsp_neigh
+           << " ninter = " << b->ninter_ << " nsp " << nsp_inter
            << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
            << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
       ++i;
@@ -255,7 +266,7 @@ void FMM::M2M(shared_ptr<const Matrix> density, const bool dox) const {
       box_[i]->compute_M2M(density);
 
   for (int i = 0; i != nbranch_[0]; ++i)
-    mpi__->broadcast(box_[i]->multipole()->data(), box_[i]->multipole()->size(), i % mpi__->size());
+    mpi__->broadcast(box_[i]->olm()->data(), box_[i]->olm()->size(), i % mpi__->size());
 
   m2mtime.tick_print("Compute multipoles");
 
@@ -275,8 +286,10 @@ void FMM::M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Matrix> oco
 
   int icnt = 0;
   for (int i = 0; i != ns_+1; ++i) {
-    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
+    for (int j = 0; j != nbranch_[i]; ++j, ++icnt) {
       box_[icnt]->compute_M2M_X(ocoeff_sj, ocoeff_ui);
+      if (icnt >= nbox_) throw logic_error("Trying to access beyond nbox in M2M_X");
+    }
   }
   m2mtime.tick_print("M2M-X pass");
   assert(icnt == nbox_);
@@ -322,8 +335,11 @@ void FMM::L2L(const bool dox) const {
     l2ltime.tick_print("L2L pass");
   } else {
     for (int ir = ns_; ir > -1; --ir) {
-      for (int ib = 0; ib != nbranch_[ir]; ++ib)
-        box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L_X();
+      for (int ib = 0; ib != nbranch_[ir]; ++ib) {
+        const int ibox = nbox_-icnt-nbranch_[ir]+ib;
+        box_[ibox]->compute_L2L_X();
+        if (icnt >= nbox_) throw logic_error("Trying to access beyond nbox in M2M_X");
+      }
 
       icnt += nbranch_[ir];
     }
@@ -491,9 +507,11 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
-      M2M_X(ocoeff_sj, ocoeff_ui);
-      M2L(true);
-      L2L(true);
+      {
+        M2M_X(ocoeff_sj, ocoeff_ui);
+        M2L(true);
+        L2L(true);
+      }
       Timer assembletime;
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
@@ -530,9 +548,9 @@ void FMM::print_boxes(const int i) const {
   int ib = 0;
   for (auto& b : box_) {
     if (b->rank() == i) {
-      cout << "Box " << ib << " rank = " << i << " *** size " << b->boxsize() << " *** nchild = " << b->nchild() << " *** nsp = " << b->nsp() << " *** Shell pairs at:" << endl;
-      for (int i = 0; i != b->nsp(); ++i)
-        cout << setprecision(5) << b->sp(i)->centre(0) << "  " << b->sp(i)->centre(1) << "  " << b->sp(i)->centre(2) << endl;
+      cout << "Box " << ib << " rank = " << i << " *** size " << b->boxsize() << " *** nchild = " << b->nchild_ << " *** nsp = " << b->nsp_ << " *** Shell pairs at:" << endl;
+      for (int i = 0; i != b->nsp_; ++i)
+        cout << setprecision(5) << b->sp()[i]->centre(0) << "  " << b->sp()[i]->centre(1) << "  " << b->sp()[i]->centre(2) << endl;
       ++ib;
     }
     if (b->rank() > i) break;
@@ -574,6 +592,12 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
         auto ei = box_[i]->compute_Fock_nf_K(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
       }
+    resources__->proc()->cout_on();
+    for (int i = 0; i < mpi__->size(); ++i) {
+      mpi__->barrier();
+      this_thread::sleep_for(10 * sleeptime__);
+    }
+    resources__->proc()->cout_off();
     out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
@@ -596,7 +620,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
   M2L();
   L2L();
 
-  Timer nftime;
+  Timer jtime;
 
   if (density) {
     assert(nbasis_ == density->ndim());
@@ -623,13 +647,24 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
-        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
       }
-    out->allreduce();
     ff->allreduce();
+    fmmtime.tick_print("FMM-J");
+
+    for (int i = 0; i != nbranch_[0]; ++i)
+      if (i % mpi__->size() == mpi__->rank()) {
+        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
+        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
+      }
+    resources__->proc()->cout_on();
+    for (int i = 0; i < mpi__->size(); ++i) {
+      mpi__->barrier();
+      this_thread::sleep_for(10 * sleeptime__);
+    }
+    resources__->proc()->cout_off();
+    out->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(9) << enj << endl;
@@ -641,7 +676,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     *out += *ff;
   }
 
-  nftime.tick_print("near-field-J");
+  jtime.tick_print("J build");
 
   return out;
 }
