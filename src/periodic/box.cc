@@ -277,24 +277,16 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
           const int dimb1 = v->shell(1)->nbasis();
           const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
 
-          shared_ptr<const Matrix> sj = ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0);
-          shared_ptr<const Matrix> ui = ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1);
-          auto mat_su = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
-          mat_su->copy_block(0, 0, olm_ndim_*olm_mdim_, nmult_k, olm_su.data());
-          auto olm_ji_r = make_shared<Matrix>(olm_ndim_*olm_mdim_, nmult_k);
-          auto olm_ji_i = make_shared<Matrix>(olm_ndim_*olm_mdim_, nmult_k);
+          auto zsj = make_shared<const ZMatrix>(*(ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0)), 1.0);
+          auto zui = make_shared<const ZMatrix>(*(ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
+          auto tmp_olm_ji = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
 
           for (int k = 0; k != nmult_k; ++k) {
-            Matrix olm_si_r(dimb0, ocoeff_ui->mdim());
-            dgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, mat_su->get_real_part()->data() + olm_su.size_block()*k,
-                             dimb0, ui->data(), dimb1, 0.0, olm_si_r.data(), dimb0);
-            dgemm_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, sj->data(), dimb0, olm_si_r.data(), dimb0, 0.0, olm_ji_r->data()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
-            Matrix olm_si_i(dimb0, ocoeff_ui->mdim());
-            dgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, mat_su->get_imag_part()->data() + olm_su.size_block()*k,
-                             dimb0, ui->data(), dimb1, 0.0, olm_si_i.data(), dimb0);
-            dgemm_("T", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, sj->data(), dimb0, olm_si_i.data(), dimb0, 0.0, olm_ji_i->data()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
+            ZMatrix olm_si(dimb0, ocoeff_ui->mdim());
+            zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.data(), dimb0);
+            zgemm_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.data(), dimb0, 0.0, tmp_olm_ji->data()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
           }
-          auto tmp_olm_ji = make_shared<const ZMatrix>(*olm_ji_r, -1.0**olm_ji_i);
+          tmp_olm_ji = tmp_olm_ji->get_conjg();
           lock_guard<mutex> lock(kmutex);
           blas::ax_plus_y_n(1.0, tmp_olm_ji->data(), olm_ji_->size(), olm_ji_->data());
         }
