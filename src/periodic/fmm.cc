@@ -33,7 +33,6 @@ using namespace bagel;
 using namespace std;
 
 static const double pisq__ = pi__ * pi__;
-static constexpr std::chrono::microseconds sleeptime__ = std::chrono::microseconds(100);
 
 FMM::FMM(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
          const bool ex, const int lmax_k, const bool print, const int batchsize)
@@ -204,12 +203,8 @@ void FMM::get_boxes() {
   assert(accumulate(nbranch_.begin(), nbranch_.end(), 0) == nbox);
   nbox_ = nbox;
 
-  cout << "Got all boxes now initialise" << endl;
-
   for (auto& b : box_)
     b->init();
-
-  cout << "Finished initialising" << endl;
 
   int icnt = 0;
   for (int ir = ns_; ir > -1; --ir) {
@@ -224,7 +219,6 @@ void FMM::get_boxes() {
     }
     icnt += nbranch_[ir];
   }
-  cout << "Finish getting neighbours and inter list" << endl;
 
   if (debug_) {
     cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
@@ -592,12 +586,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
         auto ei = box_[i]->compute_Fock_nf_K(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
       }
-    resources__->proc()->cout_on();
-    for (int i = 0; i < mpi__->size(); ++i) {
-      mpi__->barrier();
-      this_thread::sleep_for(10 * sleeptime__);
-    }
-    resources__->proc()->cout_off();
     out->allreduce();
 
     for (int i = 0; i != nbasis_; ++i) out->element(i, i) *= 2.0;
@@ -658,12 +646,6 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
         auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
         blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
       }
-    resources__->proc()->cout_on();
-    for (int i = 0; i < mpi__->size(); ++i) {
-      mpi__->barrier();
-      this_thread::sleep_for(10 * sleeptime__);
-    }
-    resources__->proc()->cout_off();
     out->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
