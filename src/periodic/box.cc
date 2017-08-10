@@ -40,9 +40,10 @@ extern "C" {
               const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,
               const std::complex<double>* beta, std::complex<double>* c, const int* ldc);
 }
- void zgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
-               const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
-               const std::complex<double> beta, std::complex<double>* c, const int ldc) { ::zgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }
+
+static void zgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
+                   const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
+                   const std::complex<double> beta, std::complex<double>* c, const int ldc) { ::zgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }
 
 using namespace bagel;
 using namespace std;
@@ -279,16 +280,16 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
 
           auto zsj = make_shared<const ZMatrix>(*(ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0)), 1.0);
           auto zui = make_shared<const ZMatrix>(*(ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
-          auto tmp_olm_ji = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
+          unique_ptr<complex<double>[]> tmp_olm_ji(new complex<double>[olm_ndim_*olm_mdim_*nmult_k]);
 
           for (int k = 0; k != nmult_k; ++k) {
-            ZMatrix olm_si(dimb0, ocoeff_ui->mdim());
-            zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.data(), dimb0);
-            zgemm_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.data(), dimb0, 0.0, tmp_olm_ji->data()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
+            unique_ptr<complex<double>[]> olm_si(new complex<double>[dimb0*ocoeff_ui->mdim()]);
+            zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.get(), dimb0);
+            zgemm_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.get(), dimb0, 0.0, tmp_olm_ji.get()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
           }
-          tmp_olm_ji = tmp_olm_ji->get_conjg();
+          blas::conj_n(tmp_olm_ji.get(), olm_ndim_*olm_mdim_*nmult_k);
           lock_guard<mutex> lock(kmutex);
-          blas::ax_plus_y_n(1.0, tmp_olm_ji->data(), olm_ji_->size(), olm_ji_->data());
+          blas::ax_plus_y_n(1.0, tmp_olm_ji.get(), olm_ji_->size(), olm_ji_->data());
         }
       );
     }
