@@ -192,8 +192,8 @@ shared_ptr<GradFile> Force::compute() {
 
     } else {
 
-        numerical_ = true;
-        cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
+      numerical_ = true;
+      cout << "  It seems like no analytical gradient method available; moving to finite difference " << endl;
 
     }
 

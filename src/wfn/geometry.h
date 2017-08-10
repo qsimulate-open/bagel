@@ -120,8 +120,13 @@ class Geometry : public Molecule {
     Geometry(const Geometry& o, const std::array<double,3> disp);
     Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 
-    // Returns a constant
+    // Gradients
+    std::vector<std::shared_ptr<Matrix>> dkh_grad() const;
+    std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
+    std::shared_ptr<Matrix> compute_grad_1ecorr(std::shared_ptr<const Matrix> den) const;
+
+    // Returns a constant
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
     bool dkh() const { return dkh_; }

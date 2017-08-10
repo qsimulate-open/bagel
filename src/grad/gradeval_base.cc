@@ -70,16 +70,11 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
   if (!v)
     *grad_ += *geom_->compute_grad_vnuc();
 
-  grad_->allreduce();
+  // TODO For now, it is branched with dkh(), but this should perform any possible 1e-Hamiltonian modifications
+  if (geom_->dkh())
+    *grad_ += *geom_->compute_grad_1ecorr(d);
 
-  // TODO to be moved
-  if (geom_->dkh()) {
-    Timer dkht;
-    vector<shared_ptr<Matrix>> dkhg = dkh_grad();
-    dkht.tick_print("DKH matrix element gradient");
-    contract_grad1e_dkh(dkhg, d);
-    dkht.tick_print("DKH gradient contraction");
-  }
+  grad_->allreduce();
 
   return grad_;
 }
@@ -132,56 +127,6 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
   }
 
   return out;
-}
-
-
-vector<shared_ptr<Matrix>> GradEval_base::dkh_grad() {
-  vector<shared_ptr<Matrix>> dkhgrad;
-  const int natom = geom_->natom();
-
-  const double dx = geom_->dkh_dx();
-
-  for (int i = 0; i != natom; ++i) {
-    for (int j = 0; j != 3; ++j) {
-      shared_ptr<Matrix> h_plus;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = dx;
-        auto geom_plus = make_shared<Molecule>(*geom_, displ, false);
-        auto hd_plus = make_shared<Hcore>(geom_plus, /* nodkh = */false);
-        auto ho_plus = make_shared<Hcore>(geom_plus, /* nodkh = */true);
-
-        h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
-      }
-
-      shared_ptr<Matrix> h_minus;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = -dx;
-        auto geom_minus = make_shared<Molecule>(*geom_, displ, false);
-        auto hd_minus = make_shared<Hcore>(geom_minus, /*nodkh = */false);
-        auto ho_minus = make_shared<Hcore>(geom_minus, /*nodkh = */true);
-
-        h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
-      }
-
-      dkhgrad.push_back(make_shared<Matrix>(*h_plus - *h_minus));
-      dkhgrad[j+i*3]->scale(1.0 / (2.0 * dx));
-    }
-  }
-
-  return dkhgrad;
-}
-
-
-void GradEval_base::contract_grad1e_dkh(vector<shared_ptr<Matrix>> dkhg, shared_ptr<const Matrix> d) {
-  int natom = geom_->natom();
-
-  for (int i = 0; i != natom; ++i) {
-    for (int j = 0; j != 3; ++j) {
-      grad_->element(j,i) += dkhg[j+i*3]->dot_product(d);
-    }
-  }
 }
 
 
@@ -458,4 +403,3 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_pt
   }
   return out;
 }
-

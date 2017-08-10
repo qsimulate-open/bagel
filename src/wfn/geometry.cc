@@ -465,6 +465,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   get_electric_field(geominfo);
 }
 
+
 shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
   auto grad = make_shared<Matrix>(3, natom());
@@ -486,6 +487,65 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
     }
     ++i;
   }
+  return grad;
+}
+
+
+vector<shared_ptr<Matrix>> Geometry::dkh_grad() const {
+  vector<shared_ptr<Matrix>> dkhgrad;
+
+  for (int i = 0; i != natom(); ++i) {
+    for (int j = 0; j != 3; ++j) {
+      shared_ptr<Matrix> h_plus;
+      {
+        auto displ = make_shared<XYZFile>(natom());
+        displ->element(j,i) = dkh_dx();
+        auto geom_plus = make_shared<Molecule>(*this, displ, false);
+        auto hd_plus = make_shared<Hcore>(geom_plus, /* nodkh = */false);
+        auto ho_plus = make_shared<Hcore>(geom_plus, /* nodkh = */true);
+
+        h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
+      }
+
+      shared_ptr<Matrix> h_minus;
+      {
+        auto displ = make_shared<XYZFile>(natom());
+        displ->element(j,i) = -dkh_dx();
+        auto geom_minus = make_shared<Molecule>(*this, displ, false);
+        auto hd_minus = make_shared<Hcore>(geom_minus, /*nodkh = */false);
+        auto ho_minus = make_shared<Hcore>(geom_minus, /*nodkh = */true);
+
+        h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
+      }
+
+      dkhgrad.push_back(make_shared<Matrix>(*h_plus - *h_minus));
+      dkhgrad[j+i*3]->scale(1.0 / (2.0 * dkh_dx()));
+    }
+  }
+
+  return dkhgrad;
+}
+
+
+shared_ptr<Matrix> Geometry::compute_grad_dkh(shared_ptr<const Matrix> den) const {
+  auto out = make_shared<Matrix>(3,natom());
+  vector<shared_ptr<Matrix>> dkhg = dkh_grad();
+
+  for (int i = 0; i != natom(); ++i)
+    for (int j = 0; j != 3; ++j)
+      out->element(j,i) += dkhg[j+i*3]->dot_product(den);
+
+  return out;
+}
+
+
+shared_ptr<Matrix> Geometry::compute_grad_1ecorr(shared_ptr<const Matrix> den) const {
+  shared_ptr<Matrix> grad;
+
+  if (dkh()) {
+    grad = compute_grad_dkh(den);
+  }
+
   return grad;
 }
 
