@@ -321,7 +321,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t[i]));
 
       // compute rms for state i
-      error = rall_[i]->norm() / pow(rall_[i]->size(), 0.25);
+      error = rall_[i]->rms();
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
 

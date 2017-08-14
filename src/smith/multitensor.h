@@ -119,15 +119,6 @@ class MultiTensor_ {
 
     size_t nref() const { assert(fac_.size() == tensors_.size()); return fac_.size(); }
 
-    size_t size() const {
-      size_t size = fac_.size();
-      for (auto& i : tensors_)
-        if (i)
-          size += i->size_alloc();
-
-      return size;
-    }
-
     double norm() const {
       double out = 0.0;
       for (auto& i : fac_)
@@ -139,7 +130,11 @@ class MultiTensor_ {
     }
 
     double rms() const {
-      return norm() / std::sqrt(size());
+      size_t size = fac_.size();
+      for (auto& i : tensors_)
+        if (i)
+          size += i->size_alloc();
+      return norm() / std::sqrt(size);
     }
 
     DataType dot_product(const MultiTensor_<DataType>& o) const {
