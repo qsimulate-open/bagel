@@ -249,7 +249,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
       energy_[i] += detail::real(dot_product_transpose(rall_[i], t[i]));
 
       // compute rms for state i
-      error = rall_[i]->rms();
+      error = rall_[i]->norm() / pow(rall_[i]->size(), 0.25);
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
 
