@@ -156,42 +156,6 @@ void RHF::compute() {
     if (error < thresh_scf_) {
       cout << indent << endl << indent << "  * SCF iteration converged." << endl << endl;
       if (do_grad_) half_ = dynamic_pointer_cast<const Fock<1>>(previous_fock)->half();
-      /* TEST CONVERGENCE WITH MULTIPOLE RANKS */
-      #if 1
-      for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
-        auto newfmm = make_shared<const FMM>(geom_, 5, lmaxJ, -0.1, false, 2, false);
-        auto ocoeff = make_shared<const Matrix>(coeff_->slice(0, nocc_));
-        shared_ptr<const Matrix> Knf = newfmm->compute_Fock_FMM_K(aodensity_);
-        auto Knf_rj = make_shared<const Matrix>(*Knf * *ocoeff);
-        auto krj = make_shared<const Matrix>(*Knf_rj);
-        auto kij = make_shared<const Matrix>(*ocoeff % *krj);
-        auto sc = make_shared<const Matrix>(*overlap_ * *ocoeff);
-        auto sck = make_shared<const Matrix>(*sc ^ *krj);
-        auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
-        shared_ptr<const Matrix> fock_J = newfmm->compute_Fock_FMM_J(aodensity_);
-        const double energy  = 0.5*aodensity->dot_product(*hcore_+*hcore_+*fock_J+*krs) + geom_->nuclear_repulsion();
-        cout << "NS=5 LMAXJ " << lmaxJ << " NO EXCHANGE " << " EN= " << setprecision(9) << energy << " ERROR " << (energy_-energy)*1.0e3 << " millihartree" <<  endl;
-      }
-      #endif
-      #if 1
-      for (int lmaxK = 0; lmaxK != 2; ++lmaxK) {
-        for (int lmaxJ = 0; lmaxJ != 16; ++lmaxJ) {
-          auto newfmm = make_shared<const FMM>(geom_, 5, lmaxJ, -0.1, true, lmaxK, false);
-          auto ocoeff = make_shared<const Matrix>(coeff_->slice(0, nocc_));
-          shared_ptr<const Matrix> Knf = newfmm->compute_Fock_FMM_K(aodensity_);
-          shared_ptr<const Matrix> Kff_rj = newfmm->compute_K_ff(ocoeff, overlap_);
-          auto Knf_rj = make_shared<const Matrix>(*Knf * *ocoeff);
-          auto krj = make_shared<const Matrix>(*Knf_rj - *Kff_rj);
-          auto kij = make_shared<const Matrix>(*ocoeff % *krj);
-          auto sc = make_shared<const Matrix>(*overlap_ * *ocoeff);
-          auto sck = make_shared<const Matrix>(*sc ^ *krj);
-          auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
-          shared_ptr<const Matrix> fock_J = newfmm->compute_Fock_FMM_J(aodensity_);
-          const double energy  = 0.5*aodensity->dot_product(*hcore_+*hcore_+*fock_J+*krs) + geom_->nuclear_repulsion();
-          cout << "NS=5 LMAXJ " << lmaxJ << " LMAXK " << lmaxK << " EN= " << setprecision(9) << energy << " ERROR " << (energy_-energy)*1.0e3 << " millihartree" <<  endl;
-        }
-      }
-      #endif
 
       break;
     } else if (iter == max_iter_-1) {

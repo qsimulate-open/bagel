@@ -24,7 +24,6 @@
 //
 
 
-#include <src/util/f77.h>
 #include <src/periodic/box.h>
 #include <src/integral/os/multipolebatch.h>
 #include <src/integral/rys/eribatch.h>
@@ -33,7 +32,6 @@
 #include <src/util/timer.h>
 #include <src/util/math/factorial.h>
 #include <src/util/math/legendre.h>
-  #include "mkl_service.h"
 
 extern "C" {
   void zgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
