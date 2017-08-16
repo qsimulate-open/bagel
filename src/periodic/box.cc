@@ -645,43 +645,33 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
   }
   tasks.compute();
 #else
-  int size0 = 0;
-  for (auto& v : sp_) size0 += v->shell(0)->nbasis();
-  auto olm_ri = make_shared<ZMatrix>(size0, olm_mdim_*nmult_k);
-  int offset = 0;
+  ZMatrix interm(nshell0_, ocoeff_ti->mdim()*nmult_k, true);
+
   for (auto& v : sp_) {
     if (v->schwarz() < schwarz_thresh_) continue;
 
-    tasks.emplace_back(
-      [this, nmult_k, &v, &ocoeff_ti, &out, offset, &olm_ri]() {
-        MultipoleBatch olm_rt(v->shells(), centre_, lmax_k_);
-        olm_rt.compute();
-        const int dimb0 = v->shell(0)->nbasis();
-        const int dimb1 = v->shell(1)->nbasis();
-        auto zti = make_shared<const ZMatrix>(*(ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
-        unique_ptr<complex<double>[]> olm_ri_tmp(new complex<double>[dimb0*olm_mdim_]);
-        for (int k = 0; k != nmult_k; ++k) {
-          zgemm_("N", "N", dimb0, olm_mdim_, dimb1, 1.0, olm_rt.data() + olm_rt.size_block()*k, dimb0, zti->data(), dimb1, 0.0, olm_ri_tmp.get(), dimb0);
-          olm_ri->copy_block(offset, k*olm_mdim_, dimb0, olm_mdim_, olm_ri_tmp.get());
-        }
-      }
-    );
-    offset += v->shell(0)->nbasis();
-  }
-  tasks.compute();
+    MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
+    olm_su.compute();
+    const int dimb0 = v->shell(0)->nbasis();
+    const int dimb1 = v->shell(1)->nbasis();
+    const ZMatrix zti(*ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
+    const int off = get<0>(shell0_.at(v->shell(0)));
+    for (int k = 0; k != nmult_k; ++k) 
+      zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
+                                                        1.0, interm.element_ptr(off, ocoeff_ti->mdim()*k), interm.ndim());
+  }   
 
-  ZMatrix kjr(olm_ndim_, size0);
-  zgemm_("N", "C", olm_ndim_, size0, olm_mdim_*nmult_k, 1.0, mlm_ji_->data(), olm_ndim_, olm_ri->data(), size0, 0.0, kjr.data(), olm_ndim_);
+  ZMatrix kjr(olm_ndim_, nshell0_);
+  zgemm_("N", "C", olm_ndim_, nshell0_, olm_mdim_*nmult_k, 1.0, mlm_ji_->data(), olm_ndim_, interm.data(), nshell0_, 0.0, kjr.data(), olm_ndim_);
 
   auto krj = kjr.get_real_part()->transpose();
 
-  offset = 0;
-  for (auto& v : sp_) {
-    if (v->schwarz() < schwarz_thresh_) continue;
-    const int dimb0 = v->shell(0)->nbasis();
+  for (auto& i : shell0_) {
+    const int dimb0 = i.first->nbasis();
+    const int local_offset = get<0>(i.second);
+    const int all_offset = get<1>(i.second);
     for (int i = 0; i != olm_ndim_; ++i)
-      copy_n(out->element_ptr(v->offset(0), i), dimb0, krj->element_ptr(offset, i)); 
-    offset += dimb0;
+      blas::ax_plus_y_n(1.0, krj->element_ptr(local_offset, i), dimb0, out->element_ptr(all_offset, i)); 
   }
 #endif
 
