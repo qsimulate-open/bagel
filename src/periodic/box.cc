@@ -100,6 +100,13 @@ void Box::init() {
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   olm_ = make_shared<ZVectorB>(nmult_);
   mlm_ = make_shared<ZVectorB>(nmult_);
+
+  nshell0_ = 0;
+  for (auto& i : sp_) {
+    auto it = shell0_.insert(make_pair(i->shell(0), make_tuple(nshell0_, i->offset(0))));
+    if (it.second)
+      nshell0_ += i->shell(0)->nbasis();
+  }
 }
 
 
@@ -260,10 +267,12 @@ void Box::compute_M2M(shared_ptr<const Matrix> density) {
 //|su) C_ui C_sj
 void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Matrix> ocoeff_ui) {
 
+  const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
   olm_ndim_ = ocoeff_sj->mdim();  olm_mdim_ = ocoeff_ui->mdim();
-  olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, (lmax_k_+1)*(lmax_k_+1));
+  olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
 
   if (nchild_ == 0) { // leaf
+#if 0
     TaskQueue<function<void(void)>> tasks(nsp_);
     mutex kmutex;
     for (auto& v : sp_) {
@@ -280,9 +289,9 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
           auto zsj = make_shared<const ZMatrix>(*(ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0)), 1.0);
           auto zui = make_shared<const ZMatrix>(*(ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
           unique_ptr<complex<double>[]> tmp_olm_ji(new complex<double>[olm_ndim_*olm_mdim_*nmult_k]);
+          unique_ptr<complex<double>[]> olm_si(new complex<double>[dimb0*ocoeff_ui->mdim()]);
 
           for (int k = 0; k != nmult_k; ++k) {
-            unique_ptr<complex<double>[]> olm_si(new complex<double>[dimb0*ocoeff_ui->mdim()]);
             zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.get(), dimb0);
             zgemm_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.get(), dimb0, 0.0, tmp_olm_ji.get()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
           }
@@ -293,6 +302,36 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       );
     }
     tasks.compute();
+#else
+    ZMatrix interm(nshell0_, ocoeff_ui->mdim()*nmult_k, true);
+
+    for (auto& v : sp_) {
+      if (v->schwarz() < schwarz_thresh_) continue;
+
+      MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
+      olm_su.compute();
+      const int dimb0 = v->shell(0)->nbasis();
+      const int dimb1 = v->shell(1)->nbasis();
+      const ZMatrix zui(*ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
+      const int off = get<0>(shell0_.at(v->shell(0)));
+      for (int k = 0; k != nmult_k; ++k)
+        zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
+                                                          1.0, interm.element_ptr(off, ocoeff_ui->mdim()*k), interm.ndim());
+    }
+    blas::conj_n(interm.data(), interm.size());
+
+    ZMatrix icoeff(nshell0_, ocoeff_sj->mdim(), true);
+    for (auto& i : shell0_) {
+      const int local_offset = get<0>(i.second);
+      const int all_offset = get<1>(i.second);
+      const int size = i.first->nbasis();
+      for (int m = 0; m != ocoeff_sj->mdim(); ++m)
+        for (int n = 0; n != size; ++n) 
+          icoeff(n+local_offset, m) = ocoeff_sj->element(n+all_offset, m);
+    }
+    zgemm_("C", "N", icoeff.mdim(), interm.mdim(), nshell0_, 1.0, icoeff.data(), nshell0_, interm.data(), nshell0_, 0.0, olm_ji_->data(), icoeff.mdim());
+
+#endif
   } else { // shift children's multipoles
     for (int n = 0; n != nchild_; ++n) {
       shared_ptr<const Box> c = child_[n].lock();
