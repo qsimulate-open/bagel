@@ -323,7 +323,7 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
           unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ui->mdim()*nmult_k]);
           for (int k = 0; k != nmult_k; ++k)
             zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
-                                                              1.0, tmp.get(), dimb0); 
+                                                              0.0, tmp.get()+dimb0*ocoeff_ui->mdim()*k, dimb0); 
 //                                                            1.0, interm.element_ptr(off, ocoeff_ui->mdim()*k), interm.ndim());
           lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
           const int off = get<0>(shell0_.at(v->shell(0)));
@@ -675,7 +675,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
         unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ti->mdim()*nmult_k]);
         for (int k = 0; k != nmult_k; ++k) 
           zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
-                                                            1.0, tmp.get(), dimb0); 
+                                                            0.0, tmp.get()+dimb0*ocoeff_ti->mdim()*k, dimb0); 
 //                                                          1.0, interm.element_ptr(off, ocoeff_ti->mdim()*k), interm.ndim());
         lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
         const int off = get<0>(shell0_.at(v->shell(0)));
