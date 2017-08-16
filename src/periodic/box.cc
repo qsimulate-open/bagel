@@ -102,10 +102,13 @@ void Box::init() {
   mlm_ = make_shared<ZVectorB>(nmult_);
 
   nshell0_ = 0;
+  int cnt = 0;
   for (auto& i : sp_) {
-    auto it = shell0_.insert(make_pair(i->shell(0), make_tuple(nshell0_, i->offset(0))));
-    if (it.second)
+    auto it = shell0_.insert(make_pair(i->shell(0), make_tuple(nshell0_, i->offset(0), cnt)));
+    if (it.second) {
       nshell0_ += i->shell(0)->nbasis();
+      ++cnt;
+    }
   }
 }
 
@@ -304,20 +307,31 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
     tasks.compute();
 #else
     ZMatrix interm(nshell0_, ocoeff_ui->mdim()*nmult_k, true);
+    TaskQueue<function<void(void)>> tasks(nsp_);
+    vector<mutex> mmutex(shell0_.size());
 
     for (auto& v : sp_) {
       if (v->schwarz() < schwarz_thresh_) continue;
 
-      MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
-      olm_su.compute();
-      const int dimb0 = v->shell(0)->nbasis();
-      const int dimb1 = v->shell(1)->nbasis();
-      const ZMatrix zui(*ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
-      const int off = get<0>(shell0_.at(v->shell(0)));
-      for (int k = 0; k != nmult_k; ++k)
-        zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
-                                                          1.0, interm.element_ptr(off, ocoeff_ui->mdim()*k), interm.ndim());
+      tasks.emplace_back(
+        [this, v, ocoeff_ui, &mmutex, nmult_k, &interm]() {
+          MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
+          olm_su.compute();
+          const int dimb0 = v->shell(0)->nbasis();
+          const int dimb1 = v->shell(1)->nbasis();
+          const ZMatrix zui(*ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
+          unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ui->mdim()*nmult_k]);
+          for (int k = 0; k != nmult_k; ++k)
+            zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
+                                                              1.0, tmp.get(), dimb0); 
+//                                                            1.0, interm.element_ptr(off, ocoeff_ui->mdim()*k), interm.ndim());
+          lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
+          const int off = get<0>(shell0_.at(v->shell(0)));
+          interm.add_block(1.0, off, 0, dimb0, ocoeff_ui->mdim()*nmult_k, tmp.get()); 
+        }
+      );
     }
+    tasks.compute();
     blas::conj_n(interm.data(), interm.size());
 
     ZMatrix icoeff(nshell0_, ocoeff_sj->mdim(), true);
@@ -646,19 +660,28 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
   tasks.compute();
 #else
   ZMatrix interm(nshell0_, ocoeff_ti->mdim()*nmult_k, true);
+  vector<mutex> mmutex(shell0_.size());
 
   for (auto& v : sp_) {
     if (v->schwarz() < schwarz_thresh_) continue;
 
-    MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
-    olm_su.compute();
-    const int dimb0 = v->shell(0)->nbasis();
-    const int dimb1 = v->shell(1)->nbasis();
-    const ZMatrix zti(*ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
-    const int off = get<0>(shell0_.at(v->shell(0)));
-    for (int k = 0; k != nmult_k; ++k) 
-      zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
-                                                        1.0, interm.element_ptr(off, ocoeff_ti->mdim()*k), interm.ndim());
+    tasks.emplace_back(
+      [this, v, ocoeff_ti, &mmutex, nmult_k, &interm]() {
+        MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
+        olm_su.compute();
+        const int dimb0 = v->shell(0)->nbasis();
+        const int dimb1 = v->shell(1)->nbasis();
+        const ZMatrix zti(*ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
+        unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ti->mdim()*nmult_k]);
+        for (int k = 0; k != nmult_k; ++k) 
+          zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
+                                                            1.0, tmp.get(), dimb0); 
+//                                                          1.0, interm.element_ptr(off, ocoeff_ti->mdim()*k), interm.ndim());
+        lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
+        const int off = get<0>(shell0_.at(v->shell(0)));
+        interm.add_block(1.0, off, 0, dimb0, ocoeff_ti->mdim()*nmult_k, tmp.get()); 
+      }
+    );
   }   
 
   ZMatrix kjr(olm_ndim_, nshell0_);
