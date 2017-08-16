@@ -407,15 +407,13 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
   if (!do_exchange_ || !ocoeff)
     return overlap->clone();
 
-  Timer ktime;
   const int nocc = ocoeff->mdim();
   auto krj = make_shared<Matrix>(nbasis_, nocc);
   const int nbatch = (nocc-1) / xbatchsize_+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
 
-  Timer mtime;
-
+  Timer ktime;
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
@@ -452,10 +450,10 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
     projtime.tick_print("Projecting K");
   }
   
+  ktime.tick_print("FMM-K");
   const double enk = ocoeff->dot_product(*krj);
   cout << "          o    Far-field Exchange energy: " << setprecision(9) << enk << endl;
 
-  ktime.tick_print("FMM-K");
   return krj;
 }
 
