@@ -683,6 +683,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
       }
     );
   }   
+  tasks.compute();
 
   ZMatrix kjr(olm_ndim_, nshell0_);
   zgemm_("N", "C", olm_ndim_, nshell0_, olm_mdim_*nmult_k, 1.0, mlm_ji_->data(), olm_ndim_, interm.data(), nshell0_, 0.0, kjr.data(), olm_ndim_);
