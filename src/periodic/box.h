@@ -48,11 +48,13 @@ class Box {
     std::vector<std::weak_ptr<const Box>> neigh_;
     std::vector<std::weak_ptr<const Box>> nonneigh_; //for debugging
     std::vector<std::shared_ptr<const ShellPair>> sp_;
+    std::map<std::shared_ptr<const Shell>, std::tuple<int/*local_offset*/,int/*all_offset*/>> shell0_;
     int nchild_, ninter_, nneigh_;
 
     double extent_, schwarz_thresh_;
     int nmult_;
     int nsp_;
+    int nshell0_;
     size_t nsize_, msize_, olm_ndim_, olm_mdim_, olm_size_block_;
 
     std::shared_ptr<ZMatrix> olm_ji_;
