@@ -24,30 +24,17 @@
 //
 
 
+#include <mutex>
 #include <src/periodic/box.h>
 #include <src/integral/os/multipolebatch.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/util/taskqueue.h>
-#include <mutex>
-#include <src/util/timer.h>
 #include <src/util/math/factorial.h>
 #include <src/util/math/legendre.h>
-#include <src/util/prim_op.h>
-
-extern "C" {
-  void zgemm_(const char* transa, const char* transb, const int* m, const int* n, const int* k,
-              const std::complex<double>* alpha, const std::complex<double>* a, const int* lda, const std::complex<double>* b, const int* ldb,
-              const std::complex<double>* beta, std::complex<double>* c, const int* ldc);
-}
-
-static void zgemm_(const char* transa, const char* transb, const int m, const int n, const int k,
-                   const std::complex<double> alpha, const std::complex<double>* a, const int lda, const std::complex<double>* b, const int ldb,
-                   const std::complex<double> beta, std::complex<double>* c, const int ldc) { ::zgemm_(transa,transb,&m,&n,&k,&alpha,a,&lda,b,&ldb,&beta,c,&ldc); }
 
 using namespace bagel;
 using namespace std;
 
-static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
 const static Factorial f;
 
@@ -275,37 +262,6 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
   olm_ji_ = make_shared<ZMatrix>(olm_ndim_*olm_mdim_, nmult_k);
 
   if (nchild_ == 0) { // leaf
-#if 0
-    TaskQueue<function<void(void)>> tasks(nsp_);
-    mutex kmutex;
-    for (auto& v : sp_) {
-      if (v->schwarz() < schwarz_thresh_) continue;
-
-      tasks.emplace_back(
-        [this, &v, &ocoeff_sj, &ocoeff_ui, &kmutex]() {
-          MultipoleBatch olm_su(v->shells(), centre_, lmax_k_);
-          olm_su.compute();
-          const int dimb0 = v->shell(0)->nbasis();
-          const int dimb1 = v->shell(1)->nbasis();
-          const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
-
-          auto zsj = make_shared<const ZMatrix>(*(ocoeff_sj->cut(v->offset(0), v->offset(0)+dimb0)), 1.0);
-          auto zui = make_shared<const ZMatrix>(*(ocoeff_ui->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
-          unique_ptr<complex<double>[]> tmp_olm_ji(new complex<double>[olm_ndim_*olm_mdim_*nmult_k]);
-          unique_ptr<complex<double>[]> olm_si(new complex<double>[dimb0*ocoeff_ui->mdim()]);
-
-          for (int k = 0; k != nmult_k; ++k) {
-            zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui->data(), dimb1, 0.0, olm_si.get(), dimb0);
-            zgemm_("C", "N", ocoeff_sj->mdim(), ocoeff_ui->mdim(), dimb0, 1.0, zsj->data(), dimb0, olm_si.get(), dimb0, 0.0, tmp_olm_ji.get()+k*olm_ndim_*olm_mdim_, ocoeff_sj->mdim());
-          }
-          blas::conj_n(tmp_olm_ji.get(), olm_ndim_*olm_mdim_*nmult_k);
-          lock_guard<mutex> lock(kmutex);
-          blas::ax_plus_y_n(1.0, tmp_olm_ji.get(), olm_ji_->size(), olm_ji_->data());
-        }
-      );
-    }
-    tasks.compute();
-#else
     ZMatrix interm(nshell0_, ocoeff_ui->mdim()*nmult_k, true);
     TaskQueue<function<void(void)>> tasks(nsp_);
     vector<mutex> mmutex(shell0_.size());
@@ -324,7 +280,6 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
           for (int k = 0; k != nmult_k; ++k)
             zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
                                                               0.0, tmp.get()+dimb0*ocoeff_ui->mdim()*k, dimb0); 
-//                                                            1.0, interm.element_ptr(off, ocoeff_ui->mdim()*k), interm.ndim());
           lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
           const int off = get<0>(shell0_.at(v->shell(0)));
           interm.add_block(1.0, off, 0, dimb0, ocoeff_ui->mdim()*nmult_k, tmp.get()); 
@@ -345,7 +300,6 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
     }
     zgemm_("C", "N", icoeff.mdim(), interm.mdim(), nshell0_, 1.0, icoeff.data(), nshell0_, interm.data(), nshell0_, 0.0, olm_ji_->data(), icoeff.mdim());
 
-#endif
   } else { // shift children's multipoles
     for (int n = 0; n != nchild_; ++n) {
       shared_ptr<const Box> c = child_[n].lock();
@@ -630,35 +584,6 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
   const int nmult_k = (lmax_k_+1)*(lmax_k_+1);
   TaskQueue<function<void(void)>> tasks(nsp_);
 
-#if 0
-  mutex kmutex;
-  for (auto& v : sp_) {
-    if (v->schwarz() < schwarz_thresh_) continue;
-
-    tasks.emplace_back(
-      [this, nmult_k, &v, &ocoeff_ti, &out, &kmutex]() {
-        MultipoleBatch olm_rt(v->shells(), centre_, lmax_k_);
-        olm_rt.compute();
-        const int dimb0 = v->shell(0)->nbasis();
-        const int dimb1 = v->shell(1)->nbasis();
-        auto zti = make_shared<const ZMatrix>(*(ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1)), 1.0);
-
-        Matrix krj(dimb0, olm_ndim_);
-        for (int k = 0; k != nmult_k; ++k) {
-          ZMatrix olm_ri(dimb0, olm_mdim_);
-          zgemm_("N", "N", dimb0, olm_mdim_, dimb1, 1.0, olm_rt.data() + olm_rt.size_block()*k, dimb0, zti->data(), dimb1, 0.0, olm_ri.data(), dimb0);
-          dgemm_("N", "T", dimb0, olm_ndim_, olm_mdim_, 1.0, (olm_ri.get_real_part())->data(), dimb0, 
-                                              (mlm_ji_->get_real_part())->data()+k*olm_ndim_*olm_mdim_, olm_ndim_, 1.0, krj.data(), dimb0);
-          dgemm_("N", "T", dimb0, olm_ndim_, olm_mdim_, 1.0, (olm_ri.get_imag_part())->data(), dimb0, 
-                                              (mlm_ji_->get_imag_part())->data()+k*olm_ndim_*olm_mdim_, olm_ndim_, 1.0, krj.data(), dimb0);
-        }
-        lock_guard<mutex> lock(kmutex);
-        out->add_block(1.0, v->offset(0), 0, dimb0, olm_ndim_, krj.data());
-      }
-    );
-  }
-  tasks.compute();
-#else
   ZMatrix interm(nshell0_, ocoeff_ti->mdim()*nmult_k, true);
   vector<mutex> mmutex(shell0_.size());
 
@@ -676,7 +601,6 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
         for (int k = 0; k != nmult_k; ++k) 
           zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
                                                             0.0, tmp.get()+dimb0*ocoeff_ti->mdim()*k, dimb0); 
-//                                                          1.0, interm.element_ptr(off, ocoeff_ti->mdim()*k), interm.ndim());
         lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
         const int off = get<0>(shell0_.at(v->shell(0)));
         interm.add_block(1.0, off, 0, dimb0, ocoeff_ti->mdim()*nmult_k, tmp.get()); 
@@ -697,7 +621,6 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
     for (int i = 0; i != olm_ndim_; ++i)
       blas::ax_plus_y_n(1.0, krj->element_ptr(local_offset, i), dimb0, out->element_ptr(all_offset, i)); 
   }
-#endif
 
   return out;
 }
