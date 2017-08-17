@@ -114,6 +114,84 @@ Keywords
    | **Default:** false
    | **Recommendation:** Use ``true`` with single state dynamics / optimizations.
 
+Example
+=======
+
+Sample input
+------------
+A sample input for HF molecule using CASSCF.
+This input computes the nuclear gradient for states 0 and 1 as well as the derivative coupling vector between these two states:
+
+.. code-block:: javascript
+
+  { "bagel" : [
+
+  {
+    "title" : "molecule",
+    "basis" : "svp",
+    "df_basis" : "svp-jkfit",
+    "angstrom" : false,
+    "geometry" : [
+      { "atom" : "H",  "xyz" : [   -0.000000,     -0.000000,      1.700000] },
+      { "atom" : "F",  "xyz" : [   -0.000000,     -0.000000,      0.000000] }
+    ]
+  },
+
+  {
+    "title" : "forces",
+    "grads" : [
+      { "title" : "force", "target" : 0 },
+      { "title" : "force", "target" : 1 },
+      { "title" : "nacme", "target" : 0, "target2" : 1 }
+    ],
+    "export" : true,
+    "method" : [ {
+      "title" : "casscf",
+      "nopen" : 0,
+      "nact" : 2,
+      "nclosed" : 4,
+      "nstate" : 2
+    } ]
+  }
+
+  ]}
+
+Executing BAGEL with this input will generate the following text files:
+
+ENERGY.out
+----------
+
+.. code-block:: none
+
+  -99.9135619715
+  -99.5339025461
+
+FORCE_0.out
+-----------
+
+.. code-block:: none
+
+                         0                   1                   2
+     0       -0.0000000000       -0.0000000000       -0.0019342533
+     1        0.0000000000        0.0000000000        0.0019342533
+
+FORCE_1.out
+-----------
+
+.. code-block:: none
+
+                         0                   1                   2
+     0        0.0000000000        0.0000000000       -0.2535235791
+     1       -0.0000000000       -0.0000000000        0.2535235791
+
+NACME_0_1.out
+-------------
+
+.. code-block:: none
+
+                         0                   1                   2
+     0       -0.0355272749       -0.0991581135        0.0000000000
+     1       -0.0285426596       -0.0796637587       -0.0000000000
 
 References
 ==========
