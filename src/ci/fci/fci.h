@@ -26,18 +26,17 @@
 #define __BAGEL_FCI_FCI_H
 
 #include <src/ci/fci/dvec.h>
-#include <src/ci/fci/properties.h>
 #include <src/ci/fci/fci_base.h>
 
 namespace bagel {
 
 class FCI : public FCI_base {
   protected:
-    // properties to be calculated
-    std::vector<std::shared_ptr<CIProperties>> properties_;
     std::shared_ptr<Dvec> cc_;
     std::shared_ptr<Civec> denom_;
     std::shared_ptr<DavidsonDiag<Civec>> davidson_;
+
+    bool dipoles_;
 
   private:
     // serialization

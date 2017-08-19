@@ -56,6 +56,7 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
   numerical_ = idat->get<bool>("numerical", false);
   hess_update_ = to_lower(idat->get<string>("hess_update", "flowchart"));
   hess_approx_ = idat->get<bool>("hess_approx", true);
+  qmmm_ = idat->get<bool>("qmmm", false);
 
   constrained_ = idat->get<bool>("constrained", false);
   if (constrained_) {
@@ -74,6 +75,17 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
       bonds_.push_back(make_shared<const OptExpBonds>(e));
     }
     cout << endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms in overall" << endl;
+  }
+
+  if (qmmm_) {
+    string qmmm_program = to_lower(idat->get<string>("qmmm_program", "tinker"));
+    if (qmmm_program == "tinker") {
+      qmmm_driver_ = make_shared<QMMM_Tinker>();
+    } else {
+      throw runtime_error("QM/MM optimization is only supported with TINKER program");
+    }
+    // QM/MM does not (and probably, should not) support the internal coordinates
+    internal_ = false;
   }
 
   opttype_ = to_lower(idat->get<string>("opttype", "energy"));

@@ -66,6 +66,11 @@ The minimum distance conical intersection (MDCI) can be also optimized by replac
 with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.</p>
+<p>The optimizer in BAGEL has been interfaced with an external molecular mechanics program, <code class="docutils literal"><span class="pre">TINKER</span></code>,
+using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
+To perform this, the <code class="docutils literal"><span class="pre">TINKER</span></code> input files (keyword file <code class="docutils literal"><span class="pre">tinkin.key</span></code> and initial coordinate file <code class="docutils literal"><span class="pre">tinkin.xyz</span></code>)
+should be provided in <code class="docutils literal"><span class="pre">tinker1</span></code> and <code class="docutils literal"><span class="pre">tinker2</span></code> subdirectories, respectively.
+The <code class="docutils literal"><span class="pre">testgrad</span></code> program in the <code class="docutils literal"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal"><span class="pre">$PATH</span></code>.</p>
 <p>The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file <code class="docutils literal"><span class="pre">opt.log</span></code>.
 The history of the optimization and the final geometry are also saved in the <code class="docutils literal"><span class="pre">MOLDEN</span></code> files <code class="docutils literal"><span class="pre">opt_history.molden</span></code> and <code class="docutils literal"><span class="pre">opt.molden</span></code>,
@@ -361,8 +366,36 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">1</span></code>: use the direction of the lowest eigenvector.</div>
 <div class="line"><code class="docutils literal"><span class="pre">-1</span></code>: use the opposite direction of the lowest eigenvector.</div>
 </div>
-<div class="line"><strong>Default:</strong> 1.</div>
+<div class="line"><strong>Default:</strong> 1</div>
 <div class="line"><strong>Recommendation:</strong> run two calculations with &#8220;1&#8221; and &#8220;-1&#8221; to get the full path.</div>
+</div>
+</div>
+</div>
+<div class="section" id="optional-keywords-qm-mm">
+<h3>Optional Keywords (QM/MM)<a class="headerlink" href="#optional-keywords-qm-mm" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Do QM/MM energy optimization.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: do QM/MM optimization.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: do gas phase optimization.</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm_program</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Molecular mechanics program to do QM/MM.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">tinker</span></code>: do QM/MM optimization with TINKER.</div>
+</div>
+<div class="line"><strong>Default:</strong> tinker.</div>
 </div>
 </div>
 </div>

@@ -23,3 +23,6 @@ Please cite the package as: ::
     BAGEL, Brilliantly Advanced General Electronic-structure Library.
     http://www.nubakery.org under the GNU General Public License.
 
+A reivew can be found at: ::
+
+    WIREs Comput. Mol. Sci, e1331 (2017). DOI: 10.1002/wcms.1331

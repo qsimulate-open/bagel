@@ -27,7 +27,7 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Molecular Hessian and frequency analysis" href="hess.html" />
-    <link rel="prev" title="Nuclear gradient and derivative coupling" href="force.html" />
+    <link rel="prev" title="Molecular geometry optimization" href="../opt/optimize.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -37,7 +37,7 @@
           <a href="hess.html" title="Molecular Hessian and frequency analysis"
              accesskey="N">next</a></li>
         <li class="right" >
-          <a href="force.html" title="Nuclear gradient and derivative coupling"
+          <a href="../opt/optimize.html" title="Molecular geometry optimization"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
@@ -151,6 +151,79 @@ Additionally, include BAGEL for QM package for QM/MM in the CMake installation o
 </div>
 </div>
 </div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="sample-input">
+<h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
+<p>A sample input for HF molecule using CASSCF.
+This input computes the nuclear gradient for states 0 and 1 as well as the derivative coupling vector between these two states:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;H&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">1.700000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>   <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000000</span><span class="p">,</span>      <span class="mf">0.000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;forces&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;grads&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="s2">&quot;export&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;nopen&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span>
+  <span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Executing BAGEL with this input will generate the following text files:</p>
+</div>
+<div class="section" id="energy-out">
+<h3>ENERGY.out<a class="headerlink" href="#energy-out" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-none"><div class="highlight"><pre><span></span>-99.9135619715
+-99.5339025461
+</pre></div>
+</div>
+</div>
+<div class="section" id="force-0-out">
+<h3>FORCE_0.out<a class="headerlink" href="#force-0-out" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-none"><div class="highlight"><pre><span></span>                    0                   1                   2
+0       -0.0000000000       -0.0000000000       -0.0019342533
+1        0.0000000000        0.0000000000        0.0019342533
+</pre></div>
+</div>
+</div>
+<div class="section" id="force-1-out">
+<h3>FORCE_1.out<a class="headerlink" href="#force-1-out" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-none"><div class="highlight"><pre><span></span>                    0                   1                   2
+0        0.0000000000        0.0000000000       -0.2535235791
+1       -0.0000000000       -0.0000000000        0.2535235791
+</pre></div>
+</div>
+</div>
+<div class="section" id="nacme-0-1-out">
+<h3>NACME_0_1.out<a class="headerlink" href="#nacme-0-1-out" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-none"><div class="highlight"><pre><span></span>                    0                   1                   2
+0       -0.0355272749       -0.0991581135        0.0000000000
+1       -0.0285426596       -0.0796637587       -0.0000000000
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="references">
 <h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="general-references">
@@ -205,8 +278,8 @@ Additionally, include BAGEL for QM package for QM/MM in the CMake installation o
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="force.html"
-                        title="previous chapter">Nuclear gradient and derivative coupling</a></p>
+  <p class="topless"><a href="../opt/optimize.html"
+                        title="previous chapter">Molecular geometry optimization</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="hess.html"
                         title="next chapter">Molecular Hessian and frequency analysis</a></p>
@@ -231,7 +304,7 @@ Additionally, include BAGEL for QM package for QM/MM in the CMake installation o
           <a href="hess.html" title="Molecular Hessian and frequency analysis"
              >next</a></li>
         <li class="right" >
-          <a href="force.html" title="Nuclear gradient and derivative coupling"
+          <a href="../opt/optimize.html" title="Molecular geometry optimization"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>

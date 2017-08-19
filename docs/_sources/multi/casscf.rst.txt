@@ -105,6 +105,12 @@ Keywords
    | **Datatype**: int
    | **Default**: 0
 
+.. topic:: ``nspin``
+
+   | **Description:** The spin multiplicity of the wavefunction (2S+1). 
+   | **Datatype:** int
+   | **Default:** 0
+
 .. topic:: ``maxiter``
 
    | **Description:** Maximum number of macroiteration.

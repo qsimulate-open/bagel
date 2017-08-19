@@ -109,6 +109,7 @@ void ASD<VecType>::compute() {
   if (compute_rdm_) compute_rdm12();
 
   if (dipoles_) { // TODO Redo to make better use of memory
+#if 0
     std::cout << "  o Computing properties" << std::endl;
     std::shared_ptr<const Reference> dimerref = dimer_->sref();
     DimerDipole dipole(dimerref, dimerref->nclosed(), dimerref->nclosed() + dimer_->active_refs().first->nact(), dimerref->nclosed() + dimerref->nact(), dimerref->coeff());
@@ -120,6 +121,9 @@ void ASD<VecType>::compute() {
       auto prop = std::make_shared<Matrix>( (*adiabats_) % (*tmp) * (*adiabats_) );
       properties_.emplace_back(label, prop);
     }
+#else
+    throw std::logic_error("Dipole moments should be computed from density matrices");
+#endif
   }
 
   print(print_thresh_);
