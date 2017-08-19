@@ -127,8 +127,7 @@ void RHF::compute() {
     if (restart_) {
       stringstream ss; ss << "scf_" << iter;
       OArchive archive(ss.str());
-      auto ref = make_shared<Reference>(geom_, coeff_, nocc_, 0, coeff_->mdim()-nocc(), vector<double>{energy_});
-      archive << ref;
+      archive << static_cast<Method*>(this);
     }
 #endif
 
