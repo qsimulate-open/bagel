@@ -24,8 +24,8 @@
 //
 
 
-#ifndef __SRC_PERIODIC_BOX_H
-#define __SRC_PERIODIC_BOX_H
+#ifndef __SRC_SCF_FMM_BOX_H
+#define __SRC_SCF_FMM_BOX_H
 
 #include <src/util/constants.h>
 #include <src/util/parallel/resources.h>

@@ -25,7 +25,7 @@
 
 
 #include <mutex>
-#include <src/periodic/box.h>
+#include <src/scf/fmm/box.h>
 #include <src/integral/os/multipolebatch.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/util/taskqueue.h>

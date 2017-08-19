@@ -30,9 +30,7 @@
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
-#include <src/periodic/tree.h>
-#include <src/periodic/tree_sp.h>
-#include <src/periodic/fmm.h>
+#include <src/scf/fmm/fmm.h>
 
 namespace bagel {
 

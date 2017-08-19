@@ -24,7 +24,7 @@
 //
 
 
-#include <src/periodic/fmm.h>
+#include <src/scf/fmm/fmm.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
 

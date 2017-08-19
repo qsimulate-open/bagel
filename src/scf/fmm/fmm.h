@@ -24,12 +24,12 @@
 //
 
 
-#ifndef __SRC_PERIODIC_FMM_H
-#define __SRC_PERIODIC_FMM_H
+#ifndef __SRC_SCF_FMM_FMM_H
+#define __SRC_SCF_FMM_FMM_H
 
 #include <set>
 #include <src/wfn/geometry.h>
-#include <src/periodic/box.h>
+#include <src/scf/fmm/box.h>
 
 namespace bagel {
 
