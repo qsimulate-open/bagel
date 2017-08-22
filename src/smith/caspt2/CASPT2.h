@@ -144,6 +144,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::shared_ptr<Queue> contract_rdm_deriv(const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
     void do_rdm_deriv(double factor);
+    void solve_lambda(const int targetJ, const int targetI);
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);

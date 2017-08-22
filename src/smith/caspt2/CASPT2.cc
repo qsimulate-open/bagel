@@ -134,6 +134,7 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   }
 }
 
+
 void CASPT2::CASPT2::solve() {
   Timer timer;
   print_iteration();
@@ -349,62 +350,73 @@ void CASPT2::CASPT2::solve_dm(const int istate, const int jstate) {
 }
 
 
+void CASPT2::CASPT2::solve_lambda(const int targetJ, const int targetI) {
+  // Lambda equation solver
+  // source stores the result of summation over M'
+  for (int i = 0; i != nstates_; ++i)
+    lall_.push_back(t2all_[i]->clone());
+  print_iteration();
+
+  auto sourceJ = make_shared<MultiTensor>(nstates_);
+  auto sourceI = make_shared<MultiTensor>(nstates_);
+  for (auto& i : *sourceJ)
+    i = init_residual();
+  for (auto& i : *sourceI)
+    i = init_residual();
+
+  for (int ist = 0; ist != nstates_; ++ist) { // L states
+    auto sist = make_shared<MultiTensor>(nstates_);
+    for (int jst = 0; jst != nstates_; ++jst) {
+      if (sall_[ist]->at(jst)) {
+        sist->at(jst) = sall_[ist]->at(jst);
+      } else {
+        set_rdm(jst, ist);
+        s = init_residual();
+        shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+        while(!sourceq->done())
+          sourceq->next_compute();
+        sist->at(jst) = s;
+      }
+    }
+    sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
+    sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
+  }
+
+  for (int istate = 0; istate != nstates_; ++istate) { //K states
+    sall_[istate]->zero();
+    for (int jst = 0; jst != nstates_; ++jst)
+      if (!info_->sssr() || istate == jst) {
+        sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI), sourceI->at(jst));
+        sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetJ), sourceJ->at(jst));
+      }
+    if (info_->shift() != 0.0) {
+      // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
+      n = init_residual();
+      for (int jst = 0; jst != nstates_; ++jst) { // bra
+        for (int ist = 0; ist != nstates_; ++ist) { // ket
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          shared_ptr<Queue> normq = make_normq(true, jst == ist);
+          while (!normq->done())
+            normq->next_compute();
+          sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * (*heff_)(istate, targetJ) * (*heff_)(istate, targetI), n);
+        }
+      }
+    }
+  }
+  // solve linear equation and store lambda in lall
+  lall_ = solve_linear(sall_, lall_);
+}
+
+
 void CASPT2::CASPT2::solve_deriv(const int target) {
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
   if (info_->do_ms() && nstates_ > 1) {
-    // allocate lall_
-    for (int i = 0; i != nstates_; ++i)
-      lall_.push_back(t2all_[i]->clone());
-    // lamda eqn :   T_M <omega' | H | M' > T_M' + <omega' | f - E0_M + Eshift | Omega> lamdba  - E_shift * (T_M)^2 * <proj|Psi_M>= 0
-    // compute first term and shift term (if used)
-    print_iteration();
+    solve_lambda(target, target);
 
-    // source stores the result of summation over M'
-    auto source = make_shared<MultiTensor>(nstates_);
-    for (auto& i : *source)
-      i = init_residual();
-    for (int ist = 0; ist != nstates_; ++ist) {//N states
-      auto sist = make_shared<MultiTensor>(nstates_);
-      for (int jst = 0; jst != nstates_; ++jst) {
-        if (sall_[ist]->at(jst)) {
-          sist->at(jst) = sall_[ist]->at(jst);
-        } else {
-          set_rdm(jst, ist);
-          s = init_residual();
-          shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-          while(!sourceq->done())
-            sourceq->next_compute();
-          sist->at(jst) = s;
-        }
-      }
-      source->ax_plus_y((*heff_)(ist, target), sist);
-    }
-
-    for (int istate = 0; istate != nstates_; ++istate) { //L states
-      sall_[istate]->zero();
-      for (int jst = 0; jst != nstates_; ++jst)
-        if (!info_->sssr() || istate == jst)
-          sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), source->at(jst));
-      if (info_->shift() != 0.0) {
-        // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
-        n = init_residual();
-        for (int jst = 0; jst != nstates_; ++jst) { // bra
-          for (int ist = 0; ist != nstates_; ++ist) { // ket
-            if (info_->sssr() && (jst != istate || ist != istate))
-              continue;
-            set_rdm(jst, ist);
-            t2 = t2all_[istate]->at(ist);
-            shared_ptr<Queue> normq = make_normq(true, jst == ist);
-            while (!normq->done())
-              normq->next_compute();
-            sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * pow((*heff_)(istate, target), 2.0), n);
-          }
-        }
-      }
-    }
-    // solve linear equation and store lambda in lall
-    lall_ = solve_linear(sall_, lall_);
     timer.tick_print("CASPT2 lambda equation");
   }
 
@@ -589,66 +601,8 @@ void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI, const int
   if (nstates_ == 1)
     throw logic_error("Single state CASPT2 NACME calculation not possible");
 
-  // First solve lambda equation if this is MS-CASPT2
-  // allocate lall_
-  for (int i = 0; i != nstates_; ++i)
-    lall_.push_back(t2all_[i]->clone());
-  // lamda eqn
-  // compute first term and shift term (if used)
-  print_iteration();
+  solve_lambda(targetJ, targetI);
 
-  // source stores the result of summation over M'
-  auto sourceJ = make_shared<MultiTensor>(nstates_);
-  auto sourceI = make_shared<MultiTensor>(nstates_);
-  for (auto& i : *sourceJ)
-    i = init_residual();
-  for (auto& i : *sourceI)
-    i = init_residual();
-
-  for (int ist = 0; ist != nstates_; ++ist) { // L states
-    auto sist = make_shared<MultiTensor>(nstates_);
-    for (int jst = 0; jst != nstates_; ++jst) {
-      if (sall_[ist]->at(jst)) {
-        sist->at(jst) = sall_[ist]->at(jst);
-      } else {
-        set_rdm(jst, ist);
-        s = init_residual();
-        shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-        while(!sourceq->done())
-          sourceq->next_compute();
-        sist->at(jst) = s;
-      }
-    }
-    sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
-    sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
-  }
-
-  for (int istate = 0; istate != nstates_; ++istate) { //K states
-    sall_[istate]->zero();
-    for (int jst = 0; jst != nstates_; ++jst)
-      if (!info_->sssr() || istate == jst) {
-        sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI), sourceI->at(jst));
-        sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetJ), sourceJ->at(jst));
-      }
-    if (info_->shift() != 0.0) {
-      // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
-      n = init_residual();
-      for (int jst = 0; jst != nstates_; ++jst) { // bra
-        for (int ist = 0; ist != nstates_; ++ist) { // ket
-          if (info_->sssr() && (jst != istate || ist != istate))
-            continue;
-          set_rdm(jst, ist);
-          t2 = t2all_[istate]->at(ist);
-          shared_ptr<Queue> normq = make_normq(true, jst == ist);
-          while (!normq->done())
-            normq->next_compute();
-          sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * (*heff_)(istate, targetJ) * (*heff_)(istate, targetI), n);
-        }
-      }
-    }
-  }
-  // solve linear equation and store lambda in lall
-  lall_ = solve_linear(sall_, lall_);
   timer.tick_print("CASPT2 lambda equation");
 
   MSCASPT2::MSCASPT2 ms(*this);
