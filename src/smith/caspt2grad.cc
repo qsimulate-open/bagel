@@ -277,7 +277,11 @@ template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
 
-  task_->compute_gradient(istate, jstate, nacmtype);
+  if (jobtitle == "nacme")
+    task_->compute_gradient(istate, jstate, nacmtype);
+  else
+    task_->compute_gradient(istate, istate);
+
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
@@ -335,7 +339,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_Y(half, halfj, halfjj, /*nacme=*/(istate != jstate));
+  tie(yrs, fulld1) = task_->compute_Y(half, halfj, halfjj, /*nacme=*/(jobtitle=="nacme"));
 
   timer.tick_print("Yrs evaluation");
 
