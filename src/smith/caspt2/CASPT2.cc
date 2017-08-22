@@ -412,9 +412,24 @@ void CASPT2::CASPT2::solve_lambda(const int targetJ, const int targetI) {
 
 
 void CASPT2::CASPT2::get_cideriv(const int targetJ, const int targetI, const int nacmtype) {
+
+  // some additional terms to be added
   const int ncore = info_->ncore();
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
+  {
+    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
+    auto dtmp = den2_->copy();
+    for (int ist = 0; ist != nstates_; ++ist) {
+      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j)
+          dtmp->element(j, i) -=  correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
+    }
+    dtmp->symmetrize();
+    den2_ = dtmp;
+  }
+
   shared_ptr<const Reference> ref = info_->ref();
   const MatView acoeff = coeff_->slice(nclosed+ncore, nclosed+ncore+nact);
 
@@ -490,11 +505,15 @@ void CASPT2::CASPT2::get_cideriv(const int targetJ, const int targetI, const int
 }
 
 
-void CASPT2::CASPT2::solve_deriv(const int target) {
+void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const int nacmtype) {
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
+
+  if (!((targetJ != targetI) && (nstates_ > 1)))
+    throw logic_error("Single state CASPT2 NACME calculation not possible");
+
   if (info_->do_ms() && nstates_ > 1) {
-    solve_lambda(target, target);
+    solve_lambda(targetJ, targetI);
 
     timer.tick_print("CASPT2 lambda equation");
   }
@@ -548,7 +567,7 @@ void CASPT2::CASPT2::solve_deriv(const int target) {
   } else {
     // in case when CASPT2 is not variational...
     MSCASPT2::MSCASPT2 ms(*this);
-    ms.solve_gradient(target, target);
+    ms.solve_gradient(targetJ, targetI);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
@@ -584,86 +603,6 @@ void CASPT2::CASPT2::solve_deriv(const int target) {
     }
   }
   timer.tick_print("T1 norm evaluation");
-
-  // some additional terms to be added
-  const int nclosed = info_->nclosed()-info_->ncore();
-  const int nact = info_->nact();
-  {
-    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
-    auto dtmp = den2_->copy();
-    for (int ist = 0; ist != nstates_; ++ist) {
-      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j)
-          dtmp->element(j, i) -=  correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-    }
-    dtmp->symmetrize();
-    den2_ = dtmp;
-  }
-
-  get_cideriv(target, target);
-
-  // restore original energy
-  energy_ = pt2energy_;
-  timer.tick_print("Postprocessing SMITH");
-}
-
-
-void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI, const int nacmtype) {
-  Timer timer;
-  if (nstates_ == 1)
-    throw logic_error("Single state CASPT2 NACME calculation not possible");
-
-  solve_lambda(targetJ, targetI);
-
-  timer.tick_print("CASPT2 lambda equation");
-
-  MSCASPT2::MSCASPT2 ms(*this);
-  ms.solve_gradient(targetJ, targetI);
-  den1_ = ms.rdm11();
-  den2_ = ms.rdm12();
-  Den1_ = ms.rdm21();
-  vden1_ = ms.vden1();
-  ci_deriv_ = ms.ci_deriv();
-  dcheck_ = ms.dcheck();
-  timer.tick();
-
-  correlated_norm_.resize(nstates_);
-  n = init_residual();
-  for (int istate = 0; istate != nstates_; ++istate) {
-    double tmp = 0.0;
-    for (int jst = 0; jst != nstates_; ++jst) { // bra
-      for (int ist = 0; ist != nstates_; ++ist) { // ket
-        if (info_->sssr() && (jst != istate || ist != istate))
-          continue;
-        set_rdm(jst, ist);
-        t2 = t2all_[istate]->at(ist);
-        shared_ptr<Queue> normq = make_normq(true, jst == ist);
-        while (!normq->done())
-          normq->next_compute();
-        tmp += dot_product_transpose(n, lall_[istate]->at(jst));
-      }
-    }
-    correlated_norm_[istate] = tmp;
-  }
-
-  timer.tick_print("T1 norm evaluation");
-
-  // some additional terms to be added
-  const int nclosed = info_->nclosed()-info_->ncore();
-  const int nact = info_->nact();
-  {
-    // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
-    auto dtmp = den2_->copy();
-    for (int ist = 0; ist != nstates_; ++ist) {
-      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j)
-          dtmp->element(j, i) -=  correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-    }
-    dtmp->symmetrize();
-    den2_ = dtmp;
-  }
 
   get_cideriv(targetJ, targetI, nacmtype);
 

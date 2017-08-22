@@ -78,7 +78,7 @@ void Smith::compute_grad(const int istate) {
   auto algop = make_shared<CASPT2::CASPT2>(*(dynamic_pointer_cast<CASPT2::CASPT2>(algo_)));
   assert(algop);
 
-  algop->solve_deriv(istate);
+  algop->solve_gradient(istate, istate);
   dm1_ = algop->rdm12();
   dm11_ = algop->rdm11();
   dm2_ = algop->rdm21();
@@ -117,7 +117,7 @@ void Smith::compute_nacme(const int istate, const int jstate, const int nacmtype
     auto algop = make_shared<CASPT2::CASPT2>(*(dynamic_pointer_cast<CASPT2::CASPT2>(algo_)));
     assert(algop);
 
-    algop->solve_nacme(istate, jstate, nacmtype);
+    algop->solve_gradient(istate, jstate, nacmtype);
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
     vd1_ = algop->vden1();

@@ -153,8 +153,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     ~CASPT2() {}
 
     void solve();
-    void solve_deriv(const int target);
-    void solve_nacme(const int targetJ, const int targetI, const int nacmtype);
+    void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
     void solve_dm(const int istate, const int jstate);
 
     std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
