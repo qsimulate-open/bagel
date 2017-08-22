@@ -3,9 +3,9 @@
 {
   "title" : "molecule",
   "symmetry" : "C1",
-  "basis" : "sto-3g",
+  "basis" : "svp",
   "angstrom" : "true",
-  "cfmm" : "true",
+  "cfmm" : "false",
   "schwarz_thresh" : "1.0e-8",
   "extent_type" : "yang",
   "geometry" : [
