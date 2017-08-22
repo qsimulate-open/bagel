@@ -116,12 +116,6 @@ Keywords for RHF-FMM
    | **Datatype**: int
    | **Default**: :math:`2`
 
-.. topic:: ``fmm_thresh``
-
-   | **Description**: integral screening threshold used in FMM
-   | **Datatype**: double
-   | **Default**: ``thresh_overlap``
-
 ========
 Examples
 ========
@@ -379,7 +373,6 @@ RHF-FMM
      "ns" : "4",
      "lmax" : "10",
      "ws" : "0.5",
-     "thresh_fmm" : "1.0e-12",
      "exchange" : true,
      "lmax_exchange" : "2",
      "title" : "hf",
