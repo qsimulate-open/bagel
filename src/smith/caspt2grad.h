@@ -146,8 +146,6 @@ class CASPT2Energy : public Method {
   protected:
     std::shared_ptr<const Matrix> coeff_;
     std::shared_ptr<const Matrix> msrot_;
-    std::shared_ptr<const Matrix> xmsrot_;
-    std::shared_ptr<const Matrix> heffrot_;
     std::vector<double> energy_;
     std::shared_ptr<FCI_base> fci_;
     std::shared_ptr<Matrix> vd1_;
@@ -164,12 +162,8 @@ class CASPT2Energy : public Method {
     void compute() override;
 
     const double& msrot(int i, int j) const { return msrot_->element(i, j); }
-    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
-    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<const Matrix> msrot() const { return msrot_; }
-    std::shared_ptr<const Matrix> xmsrot() const { return xmsrot_; }
-    std::shared_ptr<const Matrix> heffrot() const { return heffrot_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
     int target1() const { return target_state1_; }
     int target2() const { return target_state2_; }

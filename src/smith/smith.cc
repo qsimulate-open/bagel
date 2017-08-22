@@ -73,44 +73,12 @@ void Smith::compute() {
 }
 
 
-void Smith::compute_grad(const int istate) {
+void Smith::compute_gradient(const int istate, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
-  auto algop = make_shared<CASPT2::CASPT2>(*(dynamic_pointer_cast<CASPT2::CASPT2>(algo_)));
-  assert(algop);
-
-  algop->solve_gradient(istate, istate);
-  dm1_ = algop->rdm12();
-  dm11_ = algop->rdm11();
-  dm2_ = algop->rdm21();
-  dcheck_ = algop->dcheck();
-
-  // compute <1|1>
-  wf1norm_ = algop->correlated_norm();
-  // convert ci derivative tensor to civec
-  cider_ = algop->ci_deriv();
-  msrot_ = algop->msrot();
-  coeff_ = algop->coeff();
-
-  // if spin-density is requested...
-  if (idata_->get<bool>("_hyperfine")) {
-    auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
-    sp->solve();
-    sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
-    sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
-  }
-#else
-  throw logic_error("You must enable SMITH during compilation for this method to be available.");
-#endif
-}
-
-
-void Smith::compute_nacme(const int istate, const int jstate, const int nacmtype) {
   if (!(algo_->info()->grad())) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);
     algop->solve_dm(istate, jstate);
     msrot_ = algop->msrot();
-    xmsrot_ = algop->xmsrot();
-    heffrot_ = algop->heffrot();
     coeff_ = algop->coeff();
     vd1_ = algop->vden1();
   } else {
@@ -120,19 +88,28 @@ void Smith::compute_nacme(const int istate, const int jstate, const int nacmtype
     algop->solve_gradient(istate, jstate, nacmtype);
     dm1_ = algop->rdm12();
     dm11_ = algop->rdm11();
-    vd1_ = algop->vden1();
     dm2_ = algop->rdm21();
     dcheck_ = algop->dcheck();
+    if (istate != jstate) vd1_ = algop->vden1();
 
     // compute <1|1>
     wf1norm_ = algop->correlated_norm();
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
-    xmsrot_ = algop->xmsrot();
-    heffrot_ = algop->heffrot();
     msrot_ = algop->msrot();
     coeff_ = algop->coeff();
+
+  // if spin-density is requested...
+    if (idata_->get<bool>("_hyperfine")) {
+      auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
+      sp->solve();
+      sdm1_ = make_shared<Matrix>(*sp->rdm12() * 2.0 - *dm1_); // CAUTION! dm1 includes <1|1>D0 where as sp->rdm12() does not
+      sdm11_ = make_shared<Matrix>(*sp->rdm11() * 2.0 - *dm11_);
+    }
   }
+#else
+  throw logic_error("You must enable SMITH during compilation for this method to be available.");
+#endif
 }
 
 

@@ -92,12 +92,10 @@ void CASPT2Energy::compute() {
   ref_->energy() = energy_;
 
   if (target_state1_!=-1) {
-    smith->compute_nacme(target_state1_, target_state2_, 0);
+    smith->compute_gradient(target_state1_, target_state2_, 0);
     ncore_   = smith->algo()->info()->ncore();
     coeff_   = smith->coeff();
     msrot_   = smith->msrot();
-    xmsrot_  = smith->xmsrot();
-    heffrot_ = smith->heffrot();
 
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
       if (!ncore_) {

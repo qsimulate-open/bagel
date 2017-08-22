@@ -67,9 +67,6 @@ class Smith : public Method {
     // rotation matrix in MS-CASPT2
     std::shared_ptr<const Matrix> msrot_;
     std::shared_ptr<const Matrix> vd1_;
-    std::vector<double> foeig_;
-    std::shared_ptr<const Matrix> xmsrot_;
-    std::shared_ptr<const Matrix> heffrot_;
 
     std::shared_ptr<const Matrix> coeff_;
 
@@ -78,8 +75,7 @@ class Smith : public Method {
 
     void compute() override;
     // Gradient module to be separated
-    void compute_grad(const int istate);
-    void compute_nacme(const int istate, const int jstate, const int nacmtype);
+    void compute_gradient(const int istate, const int jstate, const int nacmtype = 1);
 
     // just return the reference used in SMITH code
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
@@ -93,10 +89,7 @@ class Smith : public Method {
     std::vector<double> wf1norm() const { return wf1norm_; }
     std::shared_ptr<const Dvec> cideriv() const { return cider_; }
     std::shared_ptr<const Matrix> msrot() const { return msrot_; }
-    std::shared_ptr<const Matrix> xmsrot() const { return xmsrot_; }
-    std::shared_ptr<const Matrix> heffrot() const { return heffrot_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
-    std::vector<double> foeig() const { return foeig_; }
 
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
 

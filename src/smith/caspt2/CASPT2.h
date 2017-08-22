@@ -154,9 +154,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
     void solve_dm(const int istate, const int jstate);
 
-    std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
-    std::shared_ptr<const Matrix> heffrot() const { return heff_; }
-
     std::shared_ptr<const Matrix> msrot() const { return xmsmat_ ? std::make_shared<Matrix>(*xmsmat_ * *heff_) : heff_; }
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }

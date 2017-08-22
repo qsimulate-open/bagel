@@ -174,7 +174,7 @@ void CASPT2Grad::compute_grad(const int target) {
   // for hyperfine coupling
   target_ = target;
 
-  smith_->compute_grad(target);
+  smith_->compute_gradient(target, target);
 
   // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
   coeff_ = smith_->coeff();
@@ -256,7 +256,7 @@ void CASPT2Grad::compute_nacme(const int istate, const int jstate, const int nac
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  smith_->compute_nacme(istate, jstate, nacmtype);
+  smith_->compute_gradient(istate, jstate, nacmtype);
 
   coeff_ = smith_->coeff();
 
