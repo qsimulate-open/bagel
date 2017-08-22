@@ -229,9 +229,6 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int 
     sd11_ = d1set(sd11tmp);
   }
 
-  auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
-  vd1_ = d1set(vd1tmp);
-
   if (nact) {
     d10ms_ = make_shared<RDM<1>>(nact);
     d20ms_ = make_shared<RDM<2>>(nact);
@@ -251,6 +248,9 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int 
   d2_ = smith_->dm2();
 
   if (istate != jstate) {
+    auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
+    vd1_ = d1set(vd1tmp);
+
     auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
     *vd1_ += *d10IJ;
     cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
