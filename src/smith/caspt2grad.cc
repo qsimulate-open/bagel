@@ -274,18 +274,7 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter) {
-#ifdef COMPILE_SMITH
-  // temporary
-  return nullptr;
-#else
-  return nullptr;
-#endif
-}
-
-
-template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
 
   task_->compute_gradient(istate, jstate, nacmtype);
@@ -315,15 +304,15 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
   if (nact)
     d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
-  if (istate == jstate)
+  if (jobtitle == "nacme")
+    d0ms->symmetrize();
+  else
     for (int i = 0; i != nclosed; ++i)
       d0ms->element(i,i) = 2.0;
-  else
-    d0ms->symmetrize();
 
   const MatView ocoeff = coeff->slice(0, nocc);
 
-  if (istate != jstate) {
+  if (jobtitle == "nacme") {
     string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, tdmlabel);
@@ -354,7 +343,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
 
-  if (nacmtype == 0 || nacmtype == 2)
+  if (jobtitle == "nacme" && (nacmtype == 0 || nacmtype == 2))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -407,7 +396,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   // xmat in the AO basis
   auto xmatao = make_shared<Matrix>(*coeff * *xmat ^ *coeff);
   shared_ptr<Matrix> qxmatao;
-  if (istate != jstate) {
+  if (jobtitle == "nacme") {
     auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
     if (nacmtype == 0)
@@ -433,7 +422,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
         for (int j = 0; j != nact; ++j)
           dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
       shared_ptr<DFFullDist> qijd;
-      if (istate != jstate)
+      if (jobtitle == "nacme")
         qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
       else
         qijd = qij->apply_2rdm(D, dd, nclosed, nact);
@@ -510,28 +499,13 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if ((istate != jstate) && (nacmtype != 3))
+  if ((jobtitle == "nacme") && (nacmtype != 3))
     gradient->scale(1.0/egap);
   gradient->print();
   timer.tick_print("Gradient integral contraction");
 
-  if (istate==jstate)
+  if (jobtitle == "force")
     energy_ = task_->energy();
-  return gradient;
-#else
-  return nullptr;
-#endif
-}
-
-template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
-#ifdef COMPILE_SMITH
-  shared_ptr<GradFile> gradient;
-
-  if (jobtitle=="force")
-    gradient = compute_nacme(istate, maxziter, istate, 1);
-  else
-    gradient = compute_nacme(istate, maxziter, jstate, nacmtype);
   return gradient;
 #else
   return nullptr;
