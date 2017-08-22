@@ -548,7 +548,7 @@ void CASPT2::CASPT2::solve_deriv(const int target) {
   } else {
     // in case when CASPT2 is not variational...
     MSCASPT2::MSCASPT2 ms(*this);
-    ms.solve_deriv(target);
+    ms.solve_gradient(target, target);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
     Den1_ = ms.rdm21();
@@ -619,7 +619,7 @@ void CASPT2::CASPT2::solve_nacme(const int targetJ, const int targetI, const int
   timer.tick_print("CASPT2 lambda equation");
 
   MSCASPT2::MSCASPT2 ms(*this);
-  ms.solve_nacme(targetJ, targetI);
+  ms.solve_gradient(targetJ, targetI);
   den1_ = ms.rdm11();
   den2_ = ms.rdm12();
   Den1_ = ms.rdm21();

@@ -161,8 +161,7 @@ class MSCASPT2 {
     MSCASPT2(const CASPT2::CASPT2& cas);
     ~MSCASPT2() {}
 
-    void solve_deriv(const int target);
-    void solve_nacme(const int targetJ, const int targetI);
+    void solve_gradient(const int targetJ, const int targetI);
     void solve_dm(const int targetJ, const int targetI);
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
