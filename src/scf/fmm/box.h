@@ -90,7 +90,15 @@ class Box {
     std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
 
+    // serialization
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
+
   public:
+    Box() { }
     Box(int n, double size, const std::array<double, 3>& c, const int id, const std::array<int, 3>& v, const int lmax = 10,
         const int lmax_k = 10, const std::vector<std::shared_ptr<const ShellPair>>& sp = std::vector<std::shared_ptr<const ShellPair>>(),
         const double schwarz = 0.0)

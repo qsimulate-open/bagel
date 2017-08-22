@@ -88,9 +88,7 @@ class SCF_base_ : public Method {
       ar & boost::serialization::base_object<Method>(*this);
       ar & tildex_ & overlap_ & hcore_ & coeff_ & dofmm_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & dma_print_ & schwarz_ & eig_ & energy_
-         & nocc_ & noccB_ & do_grad_ & restart_;
-      if (dofmm_)
-        throw std::logic_error("Restart capability for FMM has not been implemented.");
+         & nocc_ & noccB_ & do_grad_ & restart_ & fmm_ & fmmK_;
     }
 
   public:

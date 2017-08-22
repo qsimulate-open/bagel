@@ -61,7 +61,27 @@ class FMM {
     void M2L(const bool do_exchange = false) const;
     void L2L(const bool do_exchange = false) const;
 
+    // serialization
+    friend class boost::serialization::access;
+    template<class Archive>
+    void save(Archive& ar, const unsigned int) const {
+      ar << geom_ << ns_ << lmax_ << ws_ << do_exchange_ << lmax_k_ << debug_ << xbatchsize_;
+    }
+
+    template<class Archive>
+    void load(Archive& ar, const unsigned int) {
+      ar >> geom_ >> ns_ >> lmax_ >> ws_ >> do_exchange_ >> lmax_k_ >> debug_ >> xbatchsize_;
+      init();
+    }
+
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int file_version) {
+      boost::serialization::split_member(ar, *this, file_version);
+    }
+
+
   public:
+    FMM() { }
     FMM(std::shared_ptr<const Geometry> geom, const int ns = 4, const int lmax = 10, const double ws = 0.0,
         const bool do_exchange = true, const int lmax_k = 2, const bool debug = true, const int batchsize = -1);
     ~FMM() { }
