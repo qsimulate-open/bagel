@@ -143,14 +143,14 @@ void CASPT2Grad::compute_dipole() {
 
   cout << "  * CASPT2 statewise and transition dipole moments" << endl << endl;
   for (int istate = 0; istate != nstate; ++istate) {
-    cout << "    * State" << setw(11) << istate << " : ";
+    cout << "    * State   " << setw(11) << istate << " : ";
     cout << "  (" << setw(12) << setprecision(6) << state_dipole[istate][0] << ", " << setw(12) << state_dipole[istate][1]
       << ", " << setw(12) << state_dipole[istate][2] << ") a.u." << endl << endl;
   }
 
   for (int istate = 1, counter = 0; istate != nstate; ++istate) {
     for (int jstate = 0; jstate != istate; ++jstate, ++counter) {
-      cout << "    * Transition" << setw(2) << istate << " -" << setw(2) << jstate << " : ";
+      cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
         cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
              << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
       const double egap = smith_->algo()->energy(jstate) - smith_->algo()->energy(istate);
