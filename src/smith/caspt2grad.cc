@@ -61,8 +61,6 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 
   // gradient/property calculation
   do_hyperfine_ = inp->get<bool>("hyperfine", false);
-  // unrelaxed dipole moments: solve lambda equations for all the states
-  do_dipole_ = inp->get<bool>("dipole", false);
   timer.tick_print("Reference calculation");
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
@@ -85,15 +83,12 @@ void CASPT2Grad::compute() {
 
   smith_ = make_shared<Smith>(smithinput, ref_->geom(), ref_);
   smith_->compute();
-
-  if (do_dipole_) {
-    compute_dipole();
-  }
 #endif
 }
 
 
-void CASPT2Grad::compute_dipole() {
+template<>
+void GradEval<CASPT2Grad>::compute_dipole() const {
 #ifdef COMPILE_SMITH
   const int nmobasis = ref_->coeff()->mdim();
   const int nclosed = ref_->nclosed();
@@ -104,17 +99,17 @@ void CASPT2Grad::compute_dipole() {
   vector<vector<double>> transition_dipole;
 
   for (int istate = 0; istate != nstate; ++istate) {
-    compute_gradient(istate, istate, 1, /*nocider=*/true);
+    task_->compute_gradient(istate, istate, 1, /*nocider=*/true);
 
     {
       auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
       if (nact)
-        d0ms->add_block(1.0, nclosed, nclosed, nact, nact, d10ms());
+        d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
       for (int i = 0; i != nclosed; ++i)
         d0ms->element(i,i) = 2.0;
       {
         string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate);
-        auto dtotao = make_shared<Matrix>(*(smith_->coeff()) * (*d0ms + *d11() + *d1()) ^ *(smith_->coeff()));
+        auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
         Dipole dipole(geom_, dtotao, dmlabel);
         auto moment = dipole.compute();
         state_dipole.push_back(moment);
@@ -124,15 +119,15 @@ void CASPT2Grad::compute_dipole() {
 
   for (int istate = 1; istate != nstate; ++istate) {
     for (int jstate = 0; jstate != istate; ++jstate) {
-      compute_gradient(istate, jstate, 1, /*nocider=*/true);
+      task_->compute_gradient(istate, jstate, 1, /*nocider=*/true);
 
       {
         auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
         if (nact)
-          d0ms->add_block(1.0, nclosed, nclosed, nact, nact, d10ms());
+          d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
         {
           string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
-          auto dtotao = make_shared<Matrix>(*(smith_->coeff()) * (*d0ms + *d11() + *d1()) ^ *(smith_->coeff()));
+          auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
           Dipole dipole(geom_, dtotao, dmlabel);
           auto moment = dipole.compute();
           transition_dipole.push_back(moment);
@@ -153,7 +148,7 @@ void CASPT2Grad::compute_dipole() {
       cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
         cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
              << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
-      const double egap = smith_->algo()->energy(jstate) - smith_->algo()->energy(istate);
+      const double egap = energyvec()[jstate] - energyvec()[istate];
       auto moment = transition_dipole[counter];
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
       const double fnm = (2.0 / 3.0) * egap * r2;

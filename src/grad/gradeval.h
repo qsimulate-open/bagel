@@ -73,6 +73,10 @@ class GradEval : public GradEval_base {
     std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int maxziter = 100, const int jstate = -1, const int nacmtype = 1)
       { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
 
+    // compute_dipole() computes the dipole moments for the states and all possible pair of states
+    void compute_dipole() const
+      { throw std::logic_error("compute_dipole() only works for CASSCF and CASPT2"); }
+
     double energy() const { return energy_; }
     std::vector<double> energyvec() const { return ref_->energy(); }
     const std::vector<double>& dipole() const { return dipole_; }
@@ -96,6 +100,9 @@ template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::st
 // CASSCF is slightly more complicated. These functions are implemented in casgrad.cc
 template<> void GradEval<CASSCF>::init();
 template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
+
+template<> void GradEval<CASSCF>::compute_dipole() const;
+template<> void GradEval<CASPT2Grad>::compute_dipole() const;
 
 }
 

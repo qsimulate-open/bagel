@@ -81,7 +81,6 @@ class CASPT2Grad : public Method {
 
     // properties
     bool do_hyperfine_;
-    bool do_dipole_;
     std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
@@ -111,7 +110,6 @@ class CASPT2Grad : public Method {
 
     void compute() override;
     void compute_gradient(const int istate, const int jstate, const int nacmtype = 1, const bool nocider = false);
-    void compute_dipole();
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }

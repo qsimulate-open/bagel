@@ -58,6 +58,63 @@ void GradEval<CASSCF>::init() {
 
 
 template<>
+void GradEval<CASSCF>::compute_dipole() const {
+  const int nmobasis = ref_->coeff()->mdim();
+  const int nstate = ref_->nstate();
+
+  vector<vector<double>> state_dipole;
+  vector<vector<double>> transition_dipole;
+
+  for (int istate = 0; istate != nstate; ++istate) {
+    auto rdms = ref_->rdm1_mat(istate);
+    shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
+    string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate);
+    Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), dmlabel);
+    auto moment = dipole.compute();
+    state_dipole.push_back(moment);
+  }
+
+  for (int istate = 1; istate != nstate; ++istate) {
+    for (int jstate = 0; jstate != istate; ++jstate) {
+      shared_ptr<const RDM<1>> rdm1_tr;
+      shared_ptr<const RDM<2>> rdm2_tr;
+
+      tie(rdm1_tr, rdm2_tr) = ref_->rdm12(jstate, istate);
+      auto rdms = ref_->rdm1_mat_tr(rdm1_tr);
+      rdms->symmetrize();
+      shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
+
+      string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
+      Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), dmlabel);
+      auto moment = dipole.compute();
+      transition_dipole.push_back(moment);
+    }
+  }
+
+  cout << "  * CASSCF statewise and transition dipole moments" << endl << endl;
+  for (int istate = 0; istate != nstate; ++istate) {
+    cout << "    * State   " << setw(11) << istate << " : ";
+    cout << "  (" << setw(12) << setprecision(6) << state_dipole[istate][0] << ", " << setw(12) << state_dipole[istate][1]
+      << ", " << setw(12) << state_dipole[istate][2] << ") a.u." << endl << endl;
+  }
+
+  for (int istate = 1, counter = 0; istate != nstate; ++istate) {
+    for (int jstate = 0; jstate != istate; ++jstate, ++counter) {
+      cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
+        cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
+             << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
+      const double egap = energyvec()[jstate] - energyvec()[istate];
+      auto moment = transition_dipole[counter];
+      const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
+      const double fnm = (2.0 / 3.0) * egap * r2;
+
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+    }
+  }
+}
+
+
+template<>
 shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
