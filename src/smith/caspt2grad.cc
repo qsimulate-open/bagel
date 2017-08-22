@@ -94,6 +94,7 @@ void CASPT2Grad::compute() {
 
 
 void CASPT2Grad::compute_dipole() {
+#ifdef COMPILE_SMITH
   const int nmobasis = ref_->coeff()->mdim();
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -103,7 +104,7 @@ void CASPT2Grad::compute_dipole() {
   vector<vector<double>> transition_dipole;
 
   for (int istate = 0; istate != nstate; ++istate) {
-    compute_grad(istate);
+    compute_gradient(istate, istate);
 
     {
       auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -123,7 +124,7 @@ void CASPT2Grad::compute_dipole() {
 
   for (int istate = 1; istate != nstate; ++istate) {
     for (int jstate = 0; jstate != istate; ++jstate) {
-      compute_nacme(istate, jstate, 0);
+      compute_gradient(istate, jstate, 0);
 
       {
         auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -163,20 +164,20 @@ void CASPT2Grad::compute_dipole() {
         << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
     }
   }
+#endif
 }
 
 
-void CASPT2Grad::compute_grad(const int target) {
+void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int nacmtype) {
+#ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  // for hyperfine coupling
-  target_ = target;
+  target_ = istate;
 
-  smith_->compute_gradient(target, target);
+  smith_->compute_gradient(istate, jstate, nacmtype);
 
-  // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
   coeff_ = smith_->coeff();
 
   if (nact)
@@ -228,14 +229,16 @@ void CASPT2Grad::compute_grad(const int target) {
     sd11_ = d1set(sd11tmp);
   }
 
-  // zeroth order RDM
+  auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
+  vd1_ = d1set(vd1tmp);
+
   if (nact) {
     d10ms_ = make_shared<RDM<1>>(nact);
     d20ms_ = make_shared<RDM<2>>(nact);
     for (int ist = 0; ist != nstates_; ++ist) {
-      const double ims = msrot(ist, target);
+      const double ims = msrot(ist, jstate);
       for (int jst = 0; jst != nstates_; ++jst) {
-        const double jms = msrot(jst, target);
+        const double jms = msrot(jst, istate);
         shared_ptr<const RDM<1>> rdm1t;
         shared_ptr<const RDM<2>> rdm2t;
         tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
@@ -244,88 +247,22 @@ void CASPT2Grad::compute_grad(const int target) {
       }
     }
   }
-  d2_ = smith_->dm2();
-  energy_ = smith_->algo()->energy(target);
-  cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
-}
-
-
-void CASPT2Grad::compute_nacme(const int istate, const int jstate, const int nacmtype) {
-#ifdef COMPILE_SMITH
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
-
-  smith_->compute_gradient(istate, jstate, nacmtype);
-
-  coeff_ = smith_->coeff();
-
-  cideriv_ = smith_->cideriv()->copy();
-  ncore_   = smith_->algo()->info()->ncore();
-  wf1norm_ = smith_->wf1norm();
-  msrot_   = smith_->msrot();
-  nstates_ = wf1norm_.size();
-  assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-  assert(nstates_ == smith_->algo()->info()->ciwfn()->nstates());
-
-  const double energy1 = smith_->algo()->energy(istate);
-  const double energy2 = smith_->algo()->energy(jstate);
-
-  Timer timer;
-
-  // save correlated density matrices d(1), d(2), and ci derivatives
-  auto d1tmp = make_shared<Matrix>(*smith_->dm1());
-  auto d11tmp = make_shared<Matrix>(*smith_->dm11());
-  d1tmp->symmetrize();
-  d11tmp->symmetrize();
-  // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
-  d11tmp->scale(2.0);
-
-  auto d1set = [this](shared_ptr<const Matrix> d1t) {
-    if (!ncore_) {
-      return d1t->copy();
-    } else {
-      auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-      out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
-      return out;
-    }
-  };
-  d1_ = d1set(d1tmp);
-  d11_ = d1set(d11tmp);
-
-  // XMS density matrix
-  if (smith_->dcheck()) {
-    shared_ptr<const Matrix> dc = smith_->dcheck();
-    assert(dc->ndim() == nact && dc->mdim() == nact);
-    auto tmp = make_shared<Matrix>(nocc, nocc);
-    tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
-    dcheck_ = tmp;
-  }
-
-  auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
-  vd1_ = d1set(vd1tmp);
-
-  d10ms_ = make_shared<RDM<1>>(nact);
-  d20ms_ = make_shared<RDM<2>>(nact);
-  for (int ist = 0; ist != nstates_; ++ist) {
-    const double ims = msrot(ist, jstate);
-    for (int jst = 0; jst != nstates_; ++jst) {
-      const double jms = msrot(jst, istate);
-      shared_ptr<const RDM<1>> rdm1t;
-      shared_ptr<const RDM<2>> rdm2t;
-      tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
-      d10ms_->ax_plus_y(ims*jms, *rdm1t);
-      d20ms_->ax_plus_y(ims*jms, *rdm2t);
-    }
-  }
-
-  auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
-  *vd1_ += *d10IJ;
 
   d2_ = smith_->dm2();
 
-  cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
-  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1 - energy2) * au2eV__ << " eV" << endl << endl;
+  if (istate != jstate) {
+    auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
+    *vd1_ += *d10IJ;
+    cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
+
+    const double energy1 = smith_->algo()->energy(istate);
+    const double energy2 = smith_->algo()->energy(jstate);
+    cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1 - energy2) * au2eV__ << " eV" << endl << endl;
+  } else {
+    energy_ = smith_->algo()->energy(istate);
+    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
+  }
+
 #endif
 }
 
@@ -340,7 +277,7 @@ template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter) {
 #ifdef COMPILE_SMITH
 
-  task_->compute_grad(istate);
+  task_->compute_gradient(istate, istate);
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
@@ -539,7 +476,7 @@ template<>
 shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype) {
 #ifdef COMPILE_SMITH
 
-  task_->compute_nacme(istate, jstate, nacmtype);
+  task_->compute_gradient(istate, jstate, nacmtype);
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();

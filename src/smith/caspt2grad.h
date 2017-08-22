@@ -110,8 +110,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     void compute() override;
-    void compute_grad(const int istate);
-    void compute_nacme(const int istate, const int jstate, const int nacmtype);
+    void compute_gradient(const int istate, const int jstate, const int nacmtype = 1);
     void compute_dipole();
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
