@@ -72,11 +72,6 @@ class GradEval : public GradEval_base {
     // compute() computes effective density matrices and perform gradient contractions
     std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int maxziter = 100, const int jstate = -1, const int nacmtype = 1)
       { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
-    // gradient type specific implementations
-    std::shared_ptr<GradFile> compute_grad(const int istate = 0, const int maxziter = 100)
-      { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF)"); }
-    std::shared_ptr<GradFile> compute_nacme(const std::string jobtitle = "nacme", const int istate = 0, const int maxziter = 100, const int jstate = 1, const int nacmtype = 0)
-      { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF)"); }
 
     double energy() const { return energy_; }
     std::vector<double> energyvec() const { return ref_->energy(); }
@@ -101,8 +96,6 @@ template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::st
 // CASSCF is slightly more complicated. These functions are implemented in casgrad.cc
 template<> void GradEval<CASSCF>::init();
 template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int maxziter);
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute_nacme(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
 
 }
 

@@ -58,7 +58,7 @@ void GradEval<CASSCF>::init() {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int maxziter) {
+shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();
@@ -69,6 +69,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
 
   Timer timer;
   shared_ptr<GradFile> gradient;
+
   // if single state calculation, we use specialized code
   if (ref_->nstate() == 1) {
     //- One ELECTRON PART -//
@@ -100,10 +101,35 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
 
   } else {
 
-
     // state-averaged density matrices
     shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
     shared_ptr<const RDM<2>> rdm2_av = task_->fci()->rdm2_av();
+
+    // transition density matrix elements
+    shared_ptr<const RDM<1>> rdm1_tr;
+    shared_ptr<const RDM<2>> rdm2_tr;
+    const double egap = ref_->energy(istate) - ref_->energy(jstate);
+
+    if (jobtitle!="force") {
+      cout << "  === " << to_upper(jobtitle) << " evaluation === " << endl << endl;
+      cout << "    * " << to_upper(jobtitle) << " Target states: " << istate << " - " << jstate << endl;
+      cout << "    * Energy gap is:       " << setprecision(10) << fabs(egap) * au2eV__ << " eV" << endl << endl;
+    }
+
+    if (jobtitle=="dgrad") {
+      shared_ptr<const RDM<1>> rdm1_1;
+      shared_ptr<const RDM<2>> rdm2_1;
+      shared_ptr<const RDM<1>> rdm1_2;
+      shared_ptr<const RDM<2>> rdm2_2;
+      tie(rdm1_1, rdm2_1) = ref_->rdm12(jstate, jstate);
+      tie(rdm1_2, rdm2_2) = ref_->rdm12(istate, istate);
+      rdm1_tr = make_shared<RDM<1>>(*rdm1_1 - *rdm1_2);
+      rdm2_tr = make_shared<RDM<2>>(*rdm2_1 - *rdm2_2);
+    } else if (jobtitle=="nacme") {
+      tie(rdm1_tr, rdm2_tr) = ref_->rdm12(jstate, istate);
+    } else {
+      tie(rdm1_tr, rdm2_tr) = ref_->rdm12(istate, istate);
+    }
 
     // related to denominators
     const int nmobasis = coeff->mdim();
@@ -119,27 +145,60 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
     //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
     // 1) one-electron contribution
     auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * ocoeff);
-    shared_ptr<const Matrix> rdm1 = ref_->rdm1_mat(istate);
-    assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
-    g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo * *rdm1);
 
-    // 2) two-electron contribution
+    shared_ptr<Matrix> rdm1;
+    shared_ptr<Matrix> rdms;
+    if (jobtitle == "nacme" || jobtitle == "dgrad") {
+      rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
+      rdms = ref_->rdm1_mat_tr(rdm1_tr);
+      rdms->symmetrize();
+    } else {
+      rdm1 = ref_->rdm1_mat(istate);
+      rdms = ref_->rdm1_mat(istate);
+    }
+
+    assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
+
+    // 1-1) CI term in Lagrangian: RDM1 is symmetrized here
+    g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
+
+    // determinant term (1)
+    if (jobtitle == "nacme" && (nacmtype == 0 || nacmtype == 2))
+      g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
+
+    // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
     shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
-    shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(istate), *ref_->rdm1(istate), nclosed, nact);
-    shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
-    g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+    if (jobtitle == "nacme" || jobtitle == "dgrad") {
+      shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tran(*rdm2_tr, *rdm1_tr, nclosed, nact);
+      auto buf = make_shared<Matrix>(*half->form_2index(fulld, 0.5) + *half->form_2index(fulld->swap(), 0.5));
+      g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+    } else {
+      shared_ptr<const DFFullDist> fulld = full->apply_2rdm(*ref_->rdm2(istate), *ref_->rdm1(istate), nclosed, nact);
+      shared_ptr<const Matrix> buf = half->form_2index(fulld, 1.0);
+      g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
+    }
 
     // Recalculate the CI vectors (which can be avoided... TODO)
     shared_ptr<const Dvec> civ = task_->fci()->civectors();
 
-    // CI derivative is zero
+    // CI derivative is also zero here
     auto g1 = make_shared<Dvec>(task_->fci()->det(), ref_->nstate());
     // combine gradient file
     auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
-    // compute unrelaxed dipole...
-    shared_ptr<Matrix> dtot = ref_->rdm1_mat(istate)->resize(nmobasis, nmobasis);
-    {
+    // compute unrelaxed transition dipole...
+    shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
+    if (jobtitle == "nacme") {
+      string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
+      Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), tdmlabel);
+      auto moment = dipole.compute();
+
+      const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
+      const double fnm = (2.0 / 3.0) * egap * r2;
+
+      cout << "    * Oscillator strength for transition between " << istate << " - "
+        << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+    } else {
       Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), "Unrelaxed");
       dipole.compute();
     }
@@ -163,10 +222,10 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
     tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec, civ, detex);
 
     shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
-    zrdm1_mat->symmetrize();
+    if (jobtitle != "nacme")
+      zrdm1_mat->symmetrize();
     dtot->ax_plus_y(1.0, zrdm1_mat);
 
-    // here dtot is the relaxed 1RDM in the MO basis
     auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
 
     // compute relaxed dipole moment
@@ -175,8 +234,17 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
       dipole_ = dipole.compute();
     }
 
-    // xmat in the AO basis
-    auto xmatao = make_shared<Matrix>(*ref_->coeff() * *xmat ^ *ref_->coeff());
+    auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
+
+    shared_ptr<Matrix> qxmatao;
+    if (jobtitle == "nacme" || jobtitle == "dgrad") {
+      shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
+      if (nacmtype == 0 && jobtitle == "nacme")
+        qxmat->scale(egap);
+      else
+        qxmat->zero();
+      qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());
+    }
 
     //- TWO ELECTRON PART -//
     // half is computed long before
@@ -185,14 +253,18 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
     {
       shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * zmat->slice(0,nocc));
       {
-        RDM<2> D(*ref_->rdm2(istate)+*zrdm2);
-        RDM<1> dd(*ref_->rdm1(istate)+*zrdm1);
-        // symetrize dd (zrdm1 needs symmetrization)
+        RDM<2> D(*rdm2_tr+*zrdm2);
+        RDM<1> dd(*rdm1_tr+*zrdm1);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
 
-        shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+        shared_ptr<DFFullDist> qijd;
+        if (jobtitle == "nacme" || jobtitle == "dgrad")
+          qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
+        else
+          qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+
         qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
         qri = qijd->back_transform(ocoeff);
       }
@@ -205,195 +277,16 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int 
     shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
     shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
-    gradient = contract_gradient(dtotao, xmatao, qrs, qq);
+    gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
+    if (jobtitle == "nacme" && nacmtype != 3)
+      gradient->scale(1.0/egap);
   }
   gradient->print();
+
   cout << setw(50) << left << "  * Gradient computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
 
-  energy_ = ref_->energy(istate);
-
-  return gradient;
-}
-
-
-template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute_nacme(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
-  const int nclosed = ref_->nclosed();
-  const int nocc = ref_->nocc();
-  const int nact = ref_->nact();
-  shared_ptr<const Coeff> coeff = ref_->coeff();
-  assert(task_->coeff() == coeff);
-  const MatView ocoeff = ref_->coeff()->slice(0, nocc);
-
-  Timer timer;
-  shared_ptr<GradFile> gradient;
-
-  // state-averaged density matrices
-  shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
-  shared_ptr<const RDM<2>> rdm2_av = task_->fci()->rdm2_av();
-
-  // transition density matrix elements
-  shared_ptr<const RDM<1>> rdm1_tr;
-  shared_ptr<const RDM<2>> rdm2_tr;
-  const double egap = ref_->energy(istate) - ref_->energy(jstate);
-
-  cout << "  === " << to_upper(jobtitle) << " evaluation === " << endl << endl;
-  cout << "    * " << to_upper(jobtitle) << " Target states: " << istate << " - " << jstate << endl;
-  cout << "    * Energy gap is:       " << setprecision(10) << fabs(egap) * au2eV__ << " eV" << endl << endl;
-
-  if (jobtitle=="dgrad") {
-    shared_ptr<const RDM<1>> rdm1_1;
-    shared_ptr<const RDM<2>> rdm2_1;
-    shared_ptr<const RDM<1>> rdm1_2;
-    shared_ptr<const RDM<2>> rdm2_2;
-    tie(rdm1_1, rdm2_1) = ref_->rdm12(jstate, jstate);
-    tie(rdm1_2, rdm2_2) = ref_->rdm12(istate, istate);
-    rdm1_tr = make_shared<RDM<1>>(*rdm1_1 - *rdm1_2);
-    rdm2_tr = make_shared<RDM<2>>(*rdm2_1 - *rdm2_2);
-  } else {
-    tie(rdm1_tr, rdm2_tr) = ref_->rdm12(jstate, istate);
-  }
-
-  // related to denominators
-  const int nmobasis = coeff->mdim();
-  assert(nmobasis == nclosed+nact+ref_->nvirt());
-
-  // TODO they are redundant, though...
-  shared_ptr<DFHalfDist> half  = geom_->df()->compute_half_transform(ocoeff)->apply_J();
-  shared_ptr<DFHalfDist> halfjj = half->apply_J();
-
-  // orbital derivative is nonzero
-  auto g0 = make_shared<Matrix>(nmobasis, nmobasis);
-  // 1/2 Y_ri = hd_ri + K^{kl}_{rj} D^{lk}_{ji}
-  //          = hd_ri + (kr|G)(G|jl) D(lj, ki)
-  // 1) one-electron contribution
-  auto hmo = make_shared<const Matrix>(*ref_->coeff() % *ref_->hcore() * ocoeff);
-
-  shared_ptr<Matrix> rdms = ref_->rdm1_mat_tr(rdm1_tr);
-  shared_ptr<Matrix> rdm1 = ref_->rdm1_mat_tr(rdm1_tr);
-  rdms->symmetrize();
-
-  assert(rdm1->ndim() == nocc && rdm1->mdim() == nocc);
-
-  // 1-1) CI term in Lagrangian: RDM1 is symmetrized here
-  g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
-
-  // determinant term (1)
-  if (nacmtype == 0 || nacmtype == 2)
-    g0->add_block(egap, 0, 0, nocc, nocc, *rdm1);
-
-  // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
-  shared_ptr<const DFFullDist> full  = half->compute_second_transform(ocoeff);
-  shared_ptr<const DFFullDist> fulld = full->apply_2rdm_tran(*rdm2_tr, *rdm1_tr, nclosed, nact);
-  auto buf = make_shared<Matrix>(*half->form_2index(fulld, 0.5) + *half->form_2index(fulld->swap(), 0.5));
-
-  g0->add_block(2.0, 0, 0, nmobasis, nocc, *ref_->coeff() % *buf);
-
-  // Recalculate the CI vectors (which can be avoided... TODO)
-  shared_ptr<const Dvec> civ = task_->fci()->civectors();
-
-  // CI derivative is also zero here
-  auto g1 = make_shared<Dvec>(task_->fci()->det(), ref_->nstate());
-  // combine gradient file
-  auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-
-  // compute unrelaxed transition dipole...
-  shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
-  {
-    string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
-    Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), tdmlabel);
-    auto moment = dipole.compute();
-
-    const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
-    const double fnm = (2.0 / 3.0) * egap * r2;
-
-    cout << "    * Oscillator strength for transition between " << istate << " - "
-      << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
-  }
-
-  // solve CP-CASSCF
-  auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
-  shared_ptr<const Matrix> zmat, xmat, dummy;
-  shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter);
-
-  // form Zd + dZ^+
-  shared_ptr<const Matrix> dsa = rdm1_av->rdm1_mat(nclosed)->resize(nmobasis, nmobasis);
-  auto dm = make_shared<Matrix>(*zmat * *dsa + (*dsa ^ *zmat));
-  dtot->ax_plus_y(1.0, dm);
-
-  // form zdensity
-  auto detex = make_shared<Determinants>(task_->fci()->norb(), task_->fci()->nelea(), task_->fci()->neleb(), false, /*mute=*/true);
-  shared_ptr<const RDM<1>> zrdm1;
-  shared_ptr<const RDM<2>> zrdm2;
-  tie(zrdm1, zrdm2) = task_->fci()->compute_rdm12_av_from_dvec(zvec, civ, detex);
-
-  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
-  dtot->ax_plus_y(1.0, zrdm1_mat);
-
-  auto dtotao = make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff());
-
-  // compute relaxed dipole moment (TODO is this meaningful in this case?)
-  {
-    Dipole dipole(geom_, dtotao, "Relaxed transition");
-    dipole.compute();
-  }
-
-  // determinant term (2)
-  shared_ptr<Matrix> qxmat = rdm1->resize(nmobasis, nmobasis);
-  if (nacmtype == 0)
-    qxmat->scale(egap);
-  else
-    qxmat->zero();
-
-  auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
-  auto qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());
-
-  //- TWO ELECTRON PART -//
-  // half is computed long before
-  shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
-  shared_ptr<DFHalfDist> qri;
-  {
-    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*ref_->coeff() * zmat->slice(0,nocc));
-    {
-      RDM<2> D(*rdm2_tr+*zrdm2);
-      RDM<1> dd(*rdm1_tr+*zrdm1);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
-
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
-      qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact));
-      qri = qijd->back_transform(ocoeff);
-    }
-    {
-      shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*rdm2_av, *rdm1_av, nclosed, nact);
-      qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
-    }
-  }
-
-  shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-  shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
-
-  gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
-  if (jobtitle == "nacme" && nacmtype != 3)
-    gradient->scale(1.0/egap);
-  gradient->print(": Nonadiabatic coupling vector", 0);
-
-  cout << setw(50) << left << "  * NACME computed with " << setprecision(2) << right << setw(10) << timer.tick() << endl << endl;
-
-  return gradient;
-}
-
-
-template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
-  shared_ptr<GradFile> gradient;
-
-  if (jobtitle=="force")
-    gradient = compute_grad(istate, maxziter);
-  else
-    gradient = compute_nacme(jobtitle, istate, maxziter, jstate, nacmtype);
+  if (jobtitle == "force")
+    energy_ = ref_->energy(istate);
 
   return gradient;
 }
