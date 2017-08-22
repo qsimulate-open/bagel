@@ -152,7 +152,7 @@ void CASPT2Grad::compute_dipole() {
     for (int jstate = 0; jstate != istate; ++jstate, ++counter) {
       cout << "    * Transition" << setw(2) << istate << " -" << setw(2) << jstate << " : ";
         cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
-             << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl << endl;
+             << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
       const double egap = smith_->algo()->energy(jstate) - smith_->algo()->energy(istate);
       auto moment = transition_dipole[counter];
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
