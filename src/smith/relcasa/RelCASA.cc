@@ -307,7 +307,7 @@ void RelCASA::RelCASA::load_t2all(shared_ptr<MultiTensor> t2in, const int ist) {
 }
 
 
-void RelCASA::RelCASA::solve_deriv() {
+void RelCASA::RelCASA::solve_gradient(const int targetJ, const int targetI, const int nacmtype) {
   throw std::logic_error("Nuclear gradients not implemented for RelCASA");
 }
 

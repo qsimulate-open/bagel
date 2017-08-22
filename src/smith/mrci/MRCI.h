@@ -185,7 +185,7 @@ class MRCI : public SpinFreeMethod<double> {
     ~MRCI() {}
 
     void solve();
-    void solve_deriv();
+    void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;

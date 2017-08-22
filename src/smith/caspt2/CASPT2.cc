@@ -509,7 +509,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
 
-  if (!((targetJ != targetI) && (nstates_ > 1)))
+  if ((targetJ != targetI) && (nstates_ == 1))
     throw logic_error("Single state CASPT2 NACME calculation not possible");
 
   if (info_->do_ms() && nstates_ > 1) {
@@ -573,6 +573,8 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
     Den1_ = ms.rdm21();
     ci_deriv_ = ms.ci_deriv();
     dcheck_ = ms.dcheck();
+    if (targetJ != targetI)
+      vden1_ = ms.vden1();
     timer.tick();
   }
 
