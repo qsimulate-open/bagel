@@ -76,9 +76,10 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   }
 
   // DKH2 Hamiltonian
-  dkh_ = geominfo->get<bool>("dkh", false);
+  auto dkh = geominfo->get<bool>("dkh", false);
   // finite difference length for DKH semi-numerical gradient
-  dkh_dx_ = geominfo->get<double>("dkh_dx", 0.001);
+  auto mat1e_dx = geominfo->get<double>("mat1e_dx", 0.001);
+  mat1ecorr_ = make_shared<Mat1eCorr>(dkh, mat1e_dx);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -179,7 +180,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), dkh_dx_(o.dkh_dx_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
+  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), mat1ecorr_(o.mat1ecorr_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
@@ -190,7 +191,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), dkh_dx_(o.dkh_dx_), magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), mat1ecorr_(o.mat1ecorr_),  magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
@@ -234,7 +235,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_atoms_ = o.aux_atoms_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
-  dkh_ = o.dkh_;
+  mat1ecorr_ = o.mat1ecorr_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -242,7 +243,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
   dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
-  dkh_ = geominfo->get<bool>("dkh", dkh_);
+  auto dkh = geominfo->get<bool>("dkh", mat1ecorr_->dkh());
+  mat1ecorr_ = make_shared<Mat1eCorr>(dkh, mat1ecorr_->mat1e_dx());
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
@@ -319,7 +321,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), dkh_(nmer.front()->dkh()), magnetism_(false), london_(nmer.front()->london_),
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), mat1ecorr_(nmer.front()->mat1ecorr()), magnetism_(false), london_(nmer.front()->london_),
   use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_),  do_periodic_df_(false) {
 
   // A member of Molecule
@@ -422,7 +424,8 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   print_atoms();
 
-  dkh_ = geominfo->get<bool>("dkh", false);
+  auto dkh = geominfo->get<bool>("dkh", false);
+  mat1ecorr_ = make_shared<Mat1eCorr>(dkh);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -462,60 +465,10 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 }
 
 
-vector<shared_ptr<Matrix>> Geometry::dkh_grad() const {
-  vector<shared_ptr<Matrix>> dkhgrad;
-
-  for (int i = 0; i != natom(); ++i) {
-    for (int j = 0; j != 3; ++j) {
-      shared_ptr<Matrix> h_plus;
-      {
-        auto displ = make_shared<XYZFile>(natom());
-        displ->element(j,i) = dkh_dx();
-        auto geom_plus = make_shared<Molecule>(*this, displ, false);
-        auto hd_plus = make_shared<Hcore>(geom_plus, /* nodkh = */false);
-        auto ho_plus = make_shared<Hcore>(geom_plus, /* nodkh = */true);
-
-        h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
-      }
-
-      shared_ptr<Matrix> h_minus;
-      {
-        auto displ = make_shared<XYZFile>(natom());
-        displ->element(j,i) = -dkh_dx();
-        auto geom_minus = make_shared<Molecule>(*this, displ, false);
-        auto hd_minus = make_shared<Hcore>(geom_minus, /*nodkh = */false);
-        auto ho_minus = make_shared<Hcore>(geom_minus, /*nodkh = */true);
-
-        h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
-      }
-
-      dkhgrad.push_back(make_shared<Matrix>(*h_plus - *h_minus));
-      dkhgrad[j+i*3]->scale(1.0 / (2.0 * dkh_dx()));
-    }
-  }
-
-  return dkhgrad;
-}
-
-
-shared_ptr<Matrix> Geometry::compute_grad_dkh(shared_ptr<const Matrix> den) const {
-  auto out = make_shared<Matrix>(3,natom());
-  vector<shared_ptr<Matrix>> dkhg = dkh_grad();
-
-  for (int i = 0; i != natom(); ++i)
-    for (int j = 0; j != 3; ++j)
-      out->element(j,i) += dkhg[j+i*3]->dot_product(den);
-
-  return out;
-}
-
-
 shared_ptr<Matrix> Geometry::compute_grad_1ecorr(shared_ptr<const Matrix> den) const {
   shared_ptr<Matrix> grad;
 
-  if (dkh()) {
-    grad = compute_grad_dkh(den);
-  }
+  grad = mat1ecorr_->compute_grad(make_shared<Molecule>(*this), den);
 
   return grad;
 }

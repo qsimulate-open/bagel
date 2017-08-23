@@ -70,9 +70,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
   if (!v)
     *grad_ += *geom_->compute_grad_vnuc();
 
-  // TODO For now, it is branched with dkh(), but this should perform any possible 1e-Hamiltonian modifications
-  if (geom_->dkh())
-    *grad_ += *geom_->compute_grad_1ecorr(d);
+  *grad_ += *geom_->compute_grad_1ecorr(d);
 
   grad_->allreduce();
 

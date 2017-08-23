@@ -33,7 +33,7 @@ using namespace bagel;
 
 
 CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re)
-  : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom, !geom->dkh())) {
+  : Method(idat, geom, re), hcore_(make_shared<Hcore>(geom, !geom->mat1ecorr()->dkh())) {
 
   // check if RDMs are supplied externally
   external_rdm_ = idata_->get<string>("external_rdm", "");

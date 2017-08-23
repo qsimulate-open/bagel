@@ -27,6 +27,7 @@
 #define __SRC_WFN_GEOMETRY_H
 
 #include <src/df/df.h>
+#include <src/wfn/mat1ecorr.h>
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
 #include <src/molecule/shellpair.h>
@@ -53,9 +54,8 @@ class Geometry : public Molecule {
     void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
-    // DKH2 Hamiltonian
-    bool dkh_;
-    double dkh_dx_;
+    // All possible 1-e modifications
+    std::shared_ptr<Mat1eCorr> mat1ecorr_;
 
     // Magnetism-specific parameters
     bool magnetism_;
@@ -78,7 +78,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_;
+      ar << schwarz_thresh_ << overlap_thresh_ << mat1ecorr_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -89,7 +89,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> mat1ecorr_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -121,18 +121,15 @@ class Geometry : public Molecule {
     Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
 
     // Gradients
-    std::vector<std::shared_ptr<Matrix>> dkh_grad() const;
-    std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
     std::shared_ptr<Matrix> compute_grad_1ecorr(std::shared_ptr<const Matrix> den) const;
 
     // Returns a constant
     double schwarz_thresh() const { return schwarz_thresh_; }
     double overlap_thresh() const { return overlap_thresh_; }
-    bool dkh() const { return dkh_; }
+    std::shared_ptr<Mat1eCorr> mat1ecorr() const { return mat1ecorr_; }
     bool london() const { return london_; }
     bool magnetism() const { return magnetism_; }
-    double dkh_dx() const { return dkh_dx_; }
 
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
