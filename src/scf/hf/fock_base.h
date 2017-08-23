@@ -47,8 +47,6 @@ class Fock_base_ : public Matrix1e_<MatType, Enable> {
     std::vector<double> schwarz_;
     double schwarz_thresh_;
 
-    void apply_symmetry();
-
   private:
     // serialization
     friend class boost::serialization::access;
@@ -59,8 +57,8 @@ class Fock_base_ : public Matrix1e_<MatType, Enable> {
 
   public:
     Fock_base_() { }
-    Fock_base_(const std::shared_ptr<const Geometry>, const std::shared_ptr<const MatType> prev, const std::shared_ptr<const MatType> den,
-              const std::vector<double>& = std::vector<double>());
+    Fock_base_(std::shared_ptr<const Geometry>, std::shared_ptr<const MatType> prev, std::shared_ptr<const MatType> den,
+               const std::vector<double>& = std::vector<double>());
     virtual ~Fock_base_() { }
 
     using MatType::mdim;
@@ -70,10 +68,6 @@ class Fock_base_ : public Matrix1e_<MatType, Enable> {
     using Matrix1e_<MatType, Enable>::init;
 
 };
-
-// specialized for GIAO cases
-template <>
-void Fock_base_<ZMatrix, std::enable_if<true>::type>::apply_symmetry();
 
 using Fock_base = Fock_base_<Matrix>;
 using Fock_base_London = Fock_base_<ZMatrix>;

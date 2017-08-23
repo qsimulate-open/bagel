@@ -366,12 +366,6 @@ void DistFCI::const_denom() {
 void DistFCI::compute() {
   Timer pdebug(3);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("FCI: C1 only at the moment.");
-
-  // some constants
-  //const int ij = nij();
-
   // Creating an initial CI vector
   vector<shared_ptr<DistCivec>> cc(nstate_);
   for (auto& i : cc)
