@@ -80,13 +80,13 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 }
 
 
-template<typename T>
+template<typename IntegralType>
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w) {
-  return contract_grad1e<T>(d, d, w);
+  return contract_grad1e<IntegralType>(d, d, w);
 }
 
 
-template<typename T>
+template<typename IntegralType>
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
@@ -114,7 +114,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset_ = {*o0, *o1};
 
-          out.push_back(make_shared<T>(input, atom, offset_, nmat, kmat, omat, this));
+          out.push_back(make_shared<IntegralType>(input, atom, offset_, nmat, kmat, omat, this));
         }
       }
     }
