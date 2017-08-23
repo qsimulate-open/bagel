@@ -167,63 +167,6 @@ void ShellPair::init() {
   }
 //  extent_ *= scale[b0->angular_number()] * scale[b1->angular_number()];
 
-#if 0
-  double extentA = 0.0;
-  double extentB = 0.0;
-  for (int icnt0 = 0; icnt0 != b0->num_contracted(); ++icnt0) {
-    vector<double> vcont0 = b0->contractions(icnt0);
-    const int i0 = b0->contraction_lower()[icnt0];
-    int iprim0 = 0;
-    for (auto& cont0 : vcont0) {
-      const double expi0 = b0->exponents(i0+iprim0);
-
-      for (int icnt1 = 0; icnt1 != b1->num_contracted(); ++icnt1) {
-        vector<double> vcont1 = b1->contractions(icnt1);
-        const int i1 = b1->contraction_lower()[icnt1];
-        int iprim1 = 0;
-        for (auto& cont1 : vcont1) {
-          const double expi1 = b1->exponents(i1+iprim1);
-
-          const double cxp_inv = 1.0 / (expi0 + expi1);
-          const double expi01 = expi0 * expi1;
-          if (expi01*cxp_inv > tol) continue;
-          const double s01 = pow(4.0 * expi01 * cxp_inv * cxp_inv, 0.75) * exp(-expi01 * cxp_inv * rsq);
-          const double r01sq = (-lnthresh + log(s01) + 0.5 * log(expi0 + expi1)) * cxp_inv;
-
-          array<double, 3> P;
-          P[0] = (b0->position(0) * expi0 + b1->position(0) * expi1) * cxp_inv;
-          P[1] = (b0->position(1) * expi0 + b1->position(1) * expi1) * cxp_inv;
-          P[2] = (b0->position(2) * expi0 + b1->position(2) * expi1) * cxp_inv;
-
-          array<double, 3> r0;
-          r0[0] = P[0] - b0->position(0);
-          r0[1] = P[1] - b0->position(1);
-          r0[2] = P[2] - b0->position(2);
-          const double d0 = sqrt(r0[0]*r0[0] + r0[1]*r0[1] + r0[2]*r0[2]);
-
-          array<double, 3> r1;
-          r1[0] = P[0] - b1->position(0);
-          r1[1] = P[1] - b1->position(1);
-          r1[2] = P[2] - b1->position(2);
-          const double d1 = sqrt(r1[0]*r1[0] + r1[1]*r1[1] + r1[2]*r1[2]);
-
-          if (r01sq > 0) {
-            const double r01 = sqrt(r01sq)*cont0*cont1;
-            extentA = max(r01 + d0, extentA);
-            extentB = max(r01 + d1, extentB);
-          } else {
-            extentA = max(1.0e-2, extentA);
-            extentB = max(1.0e-2, extentB);
-          }
-          ++iprim1;
-        }
-      }
-      ++iprim0;
-    }
-  }
-  extent_ = min(extentA, extentB);
-#endif
-
   // schwarz
   array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
 #ifdef LIBINT_INTERFACE
