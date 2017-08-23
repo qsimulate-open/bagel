@@ -74,17 +74,13 @@ void Fock<0>::fock_two_electron_part(shared_ptr<const Matrix> den) {
   // starting 2-e Fock matrix evaluation!
   ////////////////////////////////////////////
   //////////////// ONLY FOR REFERENCES. //////////////////
-  shared_ptr<Petite> plist = geom_->plist();;
 
   for (int i0 = 0; i0 != size; ++i0) {
-    if (!plist->in_p1(i0)) continue;
-
     const shared_ptr<const Shell>  b0 = basis[i0];
     const int b0offset = offset[i0];
     const int b0size = b0->nbasis();
     for (int i1 = i0; i1 != size; ++i1) {
       const unsigned int i01 = i0 *size + i1;
-      if (!plist->in_p2(i01)) continue;
 
       const shared_ptr<const Shell>  b1 = basis[i1];
       const int b1offset = offset[i1];
@@ -103,8 +99,6 @@ void Fock<0>::fock_two_electron_part(shared_ptr<const Matrix> den) {
         for (int i3 = i2; i3 != size; ++i3) {
           const unsigned int i23 = i2 * size + i3;
           if (i23 < i01) continue;
-          int ijkl = plist->in_p4(i01, i23, i0, i1, i2, i3);
-          if (ijkl == 0) continue;
 
           const double density_change_23 = max_density_change[i2 * size + i3] * 4.0;
           const double density_change_03 = max_density_change[i0 * size + i2];
@@ -143,7 +137,7 @@ void Fock<0>::fock_two_electron_part(shared_ptr<const Matrix> den) {
               }
 
               const bool eqlj0j1 = (j0 == j1);
-              const double scal01 = (eqlj0j1 ? 0.5 : 1.0) * static_cast<double>(ijkl);
+              const double scal01 = (eqlj0j1 ? 0.5 : 1.0);
               const int j1n = j1 * ndim();
 
               for (int j2 = b2offset; j2 != b2offset + b2size; ++j2) {

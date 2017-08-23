@@ -39,7 +39,6 @@ using namespace bagel;
 typedef std::shared_ptr<Matrix1e> RefDensity;
 typedef std::shared_ptr<Atom> RefAtom;
 typedef std::shared_ptr<Shell> RefShell;
-typedef std::shared_ptr<Petite> RefPetite;
 
 #if 0
 void Fock::slater_two_electron_part() {

@@ -289,7 +289,6 @@ Sample input
 
   {
     "title" : "molecule",
-    "symmetry" : "C1",
     "basis" : "cc-pvdz",
     "df_basis" : "cc-pvdz-jkfit",
     "angstrom" : false,

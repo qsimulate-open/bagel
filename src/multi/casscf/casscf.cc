@@ -58,8 +58,6 @@ CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> ge
 
 
 void CASSCF::common_init() {
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("CASSCF: C1 only at the moment.");
   print_header();
 
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");

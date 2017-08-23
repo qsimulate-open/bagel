@@ -50,7 +50,6 @@ Example
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "svp",
      "df_basis" : "svp-jkfit",
      "angstrom" : true,
