@@ -73,8 +73,6 @@ from which you should get an output file as follows:
 
   *** Geometry ***
 
-  Symmetry: c1
-
   { "atom" : "F", "xyz" : [     -0.000000,     -0.000000,      2.720616 ] },
   { "atom" : "H", "xyz" : [     -0.000000,     -0.000000,      0.305956 ] },
 

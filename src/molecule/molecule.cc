@@ -46,8 +46,6 @@ Molecule::Molecule(const Molecule& o, shared_ptr<const Matrix> displ, const bool
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
-  gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   dofmm_ = o.dofmm_;
@@ -183,8 +181,6 @@ double Molecule::compute_nuclear_repulsion() {
 
 void Molecule::print_atoms() const {
   cout << "  *** Geometry ***" << endl << endl;
-  cout << "  Symmetry: " << symmetry() << endl;
-  cout << endl;
   for (auto i : atoms_) i->print();
   cout << endl;
 }

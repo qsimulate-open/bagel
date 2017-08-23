@@ -204,7 +204,6 @@ Example with mixed basis sets and density fitting basis sets:
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "svp",
      "df_basis" : "svp-jkfit",
      "angstrom" : "false",
@@ -230,7 +229,6 @@ and providing a value for ``"molden_file"``:
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "molden",
      "df_basis" : "svp-jkfit",
      "cartesian" : true,
@@ -249,7 +247,6 @@ Example with external magnetic field using Gauge-invariant atomic orbitals (GIAO
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "svp",
      "df_basis" : "svp-jkfit",
      "angstrom" : "false",
@@ -350,7 +347,6 @@ Example for CuH2 using cc-pvtz basis set for H and lanl2dz-ecp for the heavy ato
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "lanl2dz-ecp",
      "df_basis" : "svp-jkfit",
      "angstrom" : "true",
@@ -464,7 +460,6 @@ A dihydrogen molecule with a nearby dummy charge of +0.2. Note that the charge s
 
    {
      "title" : "molecule",
-     "symmetry" : "C1",
      "basis" : "tzvpp",
      "df_basis" : "tzvpp-jkfit",
      "angstrom" : "true",

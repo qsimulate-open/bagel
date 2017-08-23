@@ -251,9 +251,6 @@ void RASCI::print_header() const {
 void RASCI::compute() {
   Timer pdebug(0);
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (geom_->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
-
   // Creating an initial CI vector
   cc_ = make_shared<RASDvec>(det_, nstate_);
 

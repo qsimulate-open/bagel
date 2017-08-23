@@ -34,9 +34,6 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
 {
   print_header();
 
-  // at the moment I only care about C1 symmetry, with dynamics in mind
-  if (ref_->geom()->nirrep() > 1) throw runtime_error("RASCI: C1 only at the moment.");
-
   max_iter_ = input_->get<int>("maxiter", 100);
   davidson_subspace_ = input_->get<int>("davidson_subspace", 5);
 
