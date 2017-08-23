@@ -66,9 +66,11 @@ class Geometry : public Molecule {
     bool do_periodic_df_;
     std::vector<std::array<double, 3>> primitive_vectors_;
 
-    // Schwarz, multipoles
+    // FMM
     void get_shellpairs(const std::string extent_type = "yang");
     std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
+    bool dofmm_;
+    std::string extent_type_;
 
   private:
     // serialization

@@ -48,10 +48,6 @@ class Molecule {
     int lmax_;
     int aux_lmax_;
 
-    // FMM
-    bool dofmm_;
-    std::string extent_type_;
-
     // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int>> offsets_;
     std::vector<std::vector<int>> aux_offsets_;
