@@ -12,8 +12,8 @@
 
 {
   "title" : "nacme",
-  "target" : 0,
-  "target2" : 3,
+  "target" : 3,
+  "target2" : 0,
   "method" : [ {
     "title" : "casscf",
     "nstate" : 4,

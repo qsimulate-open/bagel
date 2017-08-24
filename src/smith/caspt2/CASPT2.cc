@@ -588,11 +588,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
 
   if (!nocider) {
     shared_ptr<const Matrix> fock = focksub(ref->rdm1_mat(), coeff_->slice(0, ref->nocc()), true); // f
+    shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
+
     if (targetJ == targetI) {
-      // Gradient case: is special case of NACME case, with targetJ = targetI
+      // Gradient case. Special case of NACME with targetJ = targetI
       // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
       // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
-      shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
      
       for (int ist = 0; ist != nstates_; ++ist) {
         const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_[ist]);
@@ -643,14 +644,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
 
     } else {
       // NACME case. targetJ and target I are separately used
-      shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
-     
       for (int ist = 0; ist != nstates_; ++ist) {
         const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_[ist]);
         shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
             ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+      }
     
       const Matrix ur(xmsmat_ ? *xmsmat_ * *heff_ : *heff_);
       for (int ist = 0; ist != nstates_; ++ist)
@@ -658,7 +658,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
           double urheff = (ur(ist,targetJ)*(*heff_)(jst,targetI) + ur(ist, targetI)*(*heff_)(jst,targetJ)) * ref->energy(ist);
           ci_deriv_->data(jst)->ax_plus_y(urheff, info_orig_->ciwfn()->civectors()->data(ist));
         }
-      }
     
       if (xmsmat_) {
         Matrix wmn(nstates_, nstates_);
@@ -667,7 +666,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
           for (int j = 0; j != i; ++j) {
             double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
                       - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
-            if (nacmtype==0)
+            if (nacmtype == 0)
               cy += (pt2energy_[targetI] - pt2energy_[targetJ])
                   * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
             wmn(j,i) = fabs(e0all_[j]-e0all_[i]) > 1.0e-12 ? -0.5 * cy / (e0all_[j]-e0all_[i]) : 0.0;

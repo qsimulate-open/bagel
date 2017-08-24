@@ -249,7 +249,7 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int 
 
     const double energy1 = smith_->algo()->energy(istate);
     const double energy2 = smith_->algo()->energy(jstate);
-    cout << "    * Energy gap is:       " << setprecision(10) << energy1 - energy2 * au2eV__ << " eV" << endl << endl;
+    cout << "    * Energy gap is:       " << setprecision(10) << (energy1 - energy2) * au2eV__ << " eV" << endl << endl;
   } else {
     energy_ = smith_->algo()->energy(istate);
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
