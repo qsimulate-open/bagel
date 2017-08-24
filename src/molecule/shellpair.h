@@ -37,6 +37,7 @@ class ShellPair {
     std::array<std::shared_ptr<const Shell>, 2> shells_;
     std::array<int, 2> offset_;
     std::pair<int, int> shell_ind_;
+    std::string extent_type_;
     int nbasis0_, nbasis1_;
 
     double thresh_;
@@ -45,10 +46,19 @@ class ShellPair {
     double extent_;
     void init();
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & shells_ & offset_ & shell_ind_ & extent_type_ & nbasis0_ & nbasis1_
+         & thresh_ & schwarz_ & centre_ & extent_;
+    }
+
   public:
     ShellPair() { }
-    ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset, const std::pair<int, int>& shell_ind, const double thresh = 1e-10);
-    bool is_neighbour(std::shared_ptr<const ShellPair> sp, const int ws) const;
+    ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset,
+              const std::pair<int, int>& shell_ind, const std::string extent_type = "yang", const double thresh = 1e-10);
+    bool is_neighbour(std::shared_ptr<const ShellPair> sp, const double ws) const;
 
     const std::array<std::shared_ptr<const Shell>, 2>& shells() const { return shells_; }
     std::shared_ptr<const Shell> shell(const int i) const { assert(i==0 || i==1); return shells_[i]; }

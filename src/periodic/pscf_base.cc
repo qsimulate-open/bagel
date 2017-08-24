@@ -42,7 +42,7 @@ PSCF_base::PSCF_base(const shared_ptr<const PTree> idata, const shared_ptr<const
 
   Timer pscf;
 
-  if (geom->dofmm()) {
+  if (geom->fmm()) {
     const int lmax   = idata->get<int>("l_max", 10);
     const int ws     = idata->get<int>("ws", 2);
     const double beta   = idata->get<double>("beta", 1.0);
