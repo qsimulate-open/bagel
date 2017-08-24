@@ -96,6 +96,7 @@ std::vector<double> reference_dkh_grad() {
   std::vector<double> out(6);
   out[2] = 0.1590879594;
   out[5] = -0.1590879594;
+  return out;
 }
 
 BOOST_AUTO_TEST_SUITE(TEST_FORCE)
