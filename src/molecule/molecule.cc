@@ -74,8 +74,6 @@ double Molecule::compute_nuclear_repulsion() {
 
 void Molecule::print_atoms() const {
   cout << "  *** Geometry ***" << endl << endl;
-  cout << "  Symmetry: " << symmetry() << endl;
-  cout << endl;
   for (auto i : atoms_) i->print();
   cout << endl;
 }

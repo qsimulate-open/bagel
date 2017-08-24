@@ -50,9 +50,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
 
-  // symmetry
-  symmetry_ = to_lower(geominfo->get<string>("symmetry", "c1"));
-
   // skip self interaction between the charges.
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", true);
 
@@ -112,9 +109,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite_));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
-  for (auto& i : atoms_)
-    if (symmetry_ != "c1" && i->dummy())
-      throw runtime_error("External point charges are only allowed in C1 calculations so far.");
 
   /* Set up aux_atoms_ */
   auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
@@ -171,10 +165,6 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
     cout << "        elapsed time:  " << setw(10) << setprecision(2) << timer.tick() << " sec." << endl << endl;
   }
 
-  // symmetry set-up
-  plist_ = make_shared<Petite>(atoms_, symmetry_);
-  nirrep_ = plist_->nirrep();
-
   if (print) {
     cout << endl;
     cout << "  Number of basis functions: " << setw(8) << nbasis() << endl;
@@ -196,8 +186,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
-  gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   fmm_ = o.fmm_;
@@ -309,8 +297,6 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
-  gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   skip_self_interaction_ = o.skip_self_interaction_;
@@ -341,11 +327,9 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
   external_ = o.external_;
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
-  gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
   fmm_ = o.fmm_;
   dkh_ = o.dkh_;
@@ -353,7 +337,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
-  symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
@@ -438,7 +421,6 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
-  symmetry_ = nmer.front()->symmetry_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
   fmm_ = nmer.front()->fmm_;
@@ -449,35 +431,26 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   * data, pick the best ones, or make sure they all match     *
   ************************************************************/
   /* spherical_ should match across the vector*/
-  for(auto& inmer : nmer) {
-     if (spherical_ != (inmer)->spherical_) {
-        throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
-     }
-  }
-
-  /* symmetry_ should match across the vector*/
-  for(auto& inmer : nmer) {
-     if (symmetry_ != (inmer)->symmetry_) {
-        throw runtime_error("Attempting to construct a geometry that is a mixture of different symmetries");
-     }
-  }
+  for (auto& inmer : nmer)
+    if (spherical_ != (inmer)->spherical_)
+      throw runtime_error("Attempting to construct a geometry that is a mixture of cartesian and spherical bases");
 
   /* external field would hopefully match, but for now, if it doesn't, just disable */
-  for(auto& inmer : nmer) {
-     if(!(equal(external_.begin(), external_.end(), inmer->external_.begin()))){
-        fill(external_.begin(), external_.end(), 0.0); break;
-     }
-  }
+  for (auto& inmer : nmer)
+    if (!(equal(external_.begin(), external_.end(), inmer->external_.begin()))) {
+      fill(external_.begin(), external_.end(), 0.0);
+      break;
+    }
 
   /* atoms_ and aux_atoms_ can be merged */
   vector<shared_ptr<const Atom>> new_atoms;
   vector<shared_ptr<const Atom>> new_aux_atoms;
-  for(auto& inmer : nmer) {
-     auto iatoms = inmer->atoms();
-     auto iaux = inmer->aux_atoms();
+  for (auto& inmer : nmer) {
+    auto iatoms = inmer->atoms();
+    auto iaux = inmer->aux_atoms();
 
-     new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
-     new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
+    new_atoms.insert(new_atoms.end(), iatoms.begin(), iatoms.end());
+    new_aux_atoms.insert(new_aux_atoms.end(), iaux.begin(), iaux.end());
   }
   atoms_ = new_atoms;
   aux_atoms_ = new_aux_atoms;
@@ -485,12 +458,11 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   basisfile_ = nmer.front()->basisfile_;
   auxfile_ = nmer.front()->auxfile();
   aux_merged_ = nmer.front()->aux_merged_;
-  gamma_ = nmer.front()->gamma();
 
   /* Use the strictest thresholds */
-  for(auto& inmer : nmer) {
-     schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
-     overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
+  for (auto& inmer : nmer) {
+    schwarz_thresh_ = min(schwarz_thresh_, inmer->schwarz_thresh_);
+    overlap_thresh_ = min(overlap_thresh_, inmer->overlap_thresh_);
   }
 
   /* Data is merged (crossed fingers), now finish */
@@ -541,8 +513,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
         aux_atoms_.push_back(make_shared<const Atom>(i->spherical(), i->name(), i->position(), auxfile_, make_pair(auxfile_, bdata), elem));
     }
   }
-  // symmetry
-  symmetry_ = geominfo->get<string>("symmetry", "c1");
 
   common_init1();
 

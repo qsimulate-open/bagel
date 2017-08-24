@@ -258,8 +258,6 @@ vector<pair<bitset<nbit__> , bitset<nbit__>>> ZHarrison::detseeds(const int ndet
 void ZHarrison::compute() {
   Timer pdebug(2);
 
-  if (geom_->nirrep() > 1) throw runtime_error("ZFCI: C1 only at the moment.");
-
   if (!restarted_) {
     // Creating an initial CI vector
     cc_ = make_shared<RelZDvec>(space_, nstate_); // B runs first
