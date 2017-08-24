@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: mat1ecorr.cc
+// Filename: hcoreinfo.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -24,15 +24,15 @@
 
 
 #include <src/mat1e/hcore.h>
-#include <src/wfn/mat1ecorr.h>
+#include <src/wfn/hcoreinfo.h>
 
 using namespace std;
 using namespace bagel;
 
 
-BOOST_CLASS_EXPORT_IMPLEMENT(Mat1eCorr)
+BOOST_CLASS_EXPORT_IMPLEMENT(HcoreInfo)
 
-vector<shared_ptr<Matrix>> Mat1eCorr::dkh_grad(shared_ptr<const Molecule> current) const {
+vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {
   int natom = current->natom();
   vector<shared_ptr<Matrix>> dkhgrad;
 
@@ -69,7 +69,7 @@ vector<shared_ptr<Matrix>> Mat1eCorr::dkh_grad(shared_ptr<const Molecule> curren
 }
 
 
-shared_ptr<Matrix> Mat1eCorr::compute_grad_dkh(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
+shared_ptr<Matrix> HcoreInfo::compute_grad_dkh(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
   int natom = current->natom();
   auto out = make_shared<Matrix>(3,natom);
   vector<shared_ptr<Matrix>> dkhg = dkh_grad(current);
@@ -82,7 +82,7 @@ shared_ptr<Matrix> Mat1eCorr::compute_grad_dkh(shared_ptr<const Molecule> curren
 }
 
 
-shared_ptr<Matrix> Mat1eCorr::compute_grad(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
+shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
   int natom = current->natom();
   auto out = make_shared<Matrix>(3, natom);
 

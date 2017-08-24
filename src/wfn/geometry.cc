@@ -78,7 +78,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   auto dkh = geominfo->get<bool>("dkh", false);
   // finite difference length for DKH semi-numerical gradient
   auto mat1e_dx = geominfo->get<double>("mat1e_dx", 0.001);
-  mat1ecorr_ = make_shared<const Mat1eCorr>(dkh, mat1e_dx);
+  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, mat1e_dx);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -181,7 +181,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), mat1ecorr_(o.mat1ecorr_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_), fmm_(o.fmm_) {
+  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), hcoreinfo_(o.hcoreinfo_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_), fmm_(o.fmm_) {
 
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
@@ -192,7 +192,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), mat1ecorr_(o.mat1ecorr_),  magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), hcoreinfo_(o.hcoreinfo_),  magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   // members of Molecule
@@ -235,15 +235,15 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_atoms_ = o.aux_atoms_;
   magnetic_field_ = o.magnetic_field_;
   fmm_ = o.fmm_;
-  mat1ecorr_ = o.mat1ecorr_;
+  hcoreinfo_ = o.hcoreinfo_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  auto dkh = geominfo->get<bool>("dkh", mat1ecorr_->dkh());
-  mat1ecorr_ = make_shared<const Mat1eCorr>(dkh, mat1ecorr_->mat1e_dx());
+  auto dkh = geominfo->get<bool>("dkh", hcoreinfo_->dkh());
+  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, hcoreinfo_->mat1e_dx());
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
@@ -320,7 +320,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), mat1ecorr_(nmer.front()->mat1ecorr()), magnetism_(false), london_(nmer.front()->london_),
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), hcoreinfo_(nmer.front()->hcoreinfo()), magnetism_(false), london_(nmer.front()->london_),
   use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_),  do_periodic_df_(false) {
 
   // A member of Molecule
@@ -423,7 +423,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   print_atoms();
 
   auto dkh = geominfo->get<bool>("dkh", false);
-  mat1ecorr_ = make_shared<const Mat1eCorr>(dkh);
+  hcoreinfo_ = make_shared<const HcoreInfo>(dkh);
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
@@ -644,7 +644,7 @@ void Geometry::init_magnetism() {
 
 
 Geometry::Geometry(const Geometry& o, const string type)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), mat1ecorr_(o.mat1ecorr_), magnetism_(false),
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), hcoreinfo_(o.hcoreinfo_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
   if (!o.fmm_)

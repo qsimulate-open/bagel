@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: mat1ecorr.h
+// Filename: hcoreinfo.h
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -23,14 +23,14 @@
 //
 
 
-#ifndef __SRC_WFN_MAT1ECORR_H
-#define __SRC_WFN_MAT1ECORR_H
+#ifndef __SRC_WFN_HCOREINFO_H
+#define __SRC_WFN_HCOREINFO_H
 
 #include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class Mat1eCorr {
+class HcoreInfo {
   protected:
     // DKH
     bool dkh_;
@@ -48,8 +48,8 @@ class Mat1eCorr {
     }
 
   public:
-    Mat1eCorr() { }
-    Mat1eCorr(bool dkh, double mat1e_dx = 0.001) : dkh_(dkh), mat1e_dx_(mat1e_dx) { }
+    HcoreInfo() { }
+    HcoreInfo(bool dkh, double mat1e_dx = 0.001) : dkh_(dkh), mat1e_dx_(mat1e_dx) { }
 
     bool dkh() const { return dkh_; };
     double mat1e_dx() const { return mat1e_dx_; };
