@@ -102,7 +102,9 @@ BOOST_AUTO_TEST_CASE(DF_HF) {
     BOOST_CHECK(compare(scf_energy("cuh2_ecp_hf"),       -196.12254012));
     BOOST_CHECK(compare(scf_energy("hbr_ecp_sohf"),       -13.68431370));
     BOOST_CHECK(compare(scf_energy("h2o_svp_fmm"),        -151.91459783));
+#ifndef DISABLE_SERIALIZATION
     BOOST_CHECK(compare(scf_energy("h2o_svp_fmm_restart"),-151.91459783));
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()
