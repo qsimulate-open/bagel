@@ -10,52 +10,43 @@ Description
 The relativistic version of the fully internally contracted CASPT2. As in its non-relativistic analogue, single-state calculations,
 multi-state calculations, and its extended variant are available. Of course, this is implemented with the automatic code generator SMITH3.
 
+Title: ``relsmith``
+
 Keywords
 ========
 CASSCF keywords
 ---------------
-See :ref:`casscf`.
+See :ref:`zcasscf`.
 
 SMITH keywords
 --------------
 
 The default values are recommended unless mentioned otherwise.
 
-.. topic:: ``title``
+.. topic:: ``method``
 
-   | **Description:** Method to use in SMITH-generated code.
+   | **Description:** Do multistate CASPT2.
    | **Datatype:** string
    | **Values:**
-   |    ``caspt2``: Request (Rel)CASPT2 calculation.
-   |    ``mrci``: Request (Rel)MRCI calculation.
-   |    ``casa``: Request (Rel)CAS/A calculation.
-   | **Default:** N/A.
+   |    ``caspt2``: Standard CASPT2.
+   |    ``casa``  : Use Dyall's Hamiltonian
 
 .. topic:: ``ms``
 
    | **Description:** Do multistate CASPT2.
    | **Datatype:** bool
-   | **Values:**
-   |    ``true``: Do MS-CASPT2.
-   |    ``false``: Do SS-CASPT2.
    | **Default:** true.
 
 .. topic:: ``xms``
 
    | **Description:** Do extended multistate CASPT2.
    | **Datatype:** bool
-   | **Values:**
-   |    ``true``: Do XMS-CASPT2.
-   |    ``false``: Do MS-CASPT2.
    | **Default:** true.
 
 .. topic:: ``sssr``
 
    | **Description:** Use SS-SR contraction scheme.
    | **Datatype:** bool
-   | **Values:**
-   |    ``true``: use SS-SR contraction scheme.
-   |    ``false``: use MS-MR contraction scheme.
    | **Default:** true.
 
 .. topic:: ``shift``
@@ -63,7 +54,6 @@ The default values are recommended unless mentioned otherwise.
    | **Description:** Vertical shift.
    | **Datatype:** double precision
    | **Default:** 0.0
-   | **Recommendation:** Use default. Increase the value if the convergence problem presents.
 
 .. topic:: ``thresh``
 
@@ -95,6 +85,12 @@ The default values are recommended unless mentioned otherwise.
    | **Datatype:** int
    | **Default:** 0
 
+.. topic:: ``block_diag_fock``
+
+   | **Description:** Using a block-diagonal zeroth-order Hamiltonian
+   | **Datatype:** bool
+   | **Default:** false.
+
 .. topic:: ``maxiter``
 
    | **Description:** Maximum number of iterations in CASPT2 calculations.
@@ -117,50 +113,103 @@ The default values are recommended unless mentioned otherwise.
 
 Example
 =======
-XMS-CASPT2 calculation based on the two-state CASSCF reference function, with vertical shift of 0.2 :math:`E_h`. "SS-SR" contraction scheme is used.
-The active space of (6e,6o), which comprises three :math:`\pi` and three :math:`\pi^*` orbitals, is used.
 
 Sample input
 ------------
 
 .. code-block:: javascript
 
-  { "bagel" : [
+   { "bagel" : [
+   
+   {
+     "title" : "molecule",
+     "basis" : "svp",
+     "df_basis" : "svp-jkfit",
+     "angstrom" : true,
+     "geometry" : [
+       { "atom" : "O",  "xyz" : [ 0.000, 0.000, 1.210 ]},
+       { "atom" : "O",  "xyz" : [ 0.000, 0.000, 0.000 ]}
+     ]
+   },
+   
+   {
+     "title" : "hf",
+     "charge" : "+2"
+   },
+   
+   {
+     "title" : "dhf",
+     "charge" : "+2"
+   },
+   
+   {
+     "title"  : "zcasscf",
+     "algorithm" : "second",
+     "charge" : "0",
+     "state" : [0, 0, 1],
+     "thresh" : 1.0e-7,
+     "nclosed"  : 7,
+     "nact"   : 2
+   },
+   
+   {
+     "title" : "relsmith",
+     "method" : "caspt2",
+     "sssr" : "false",
+     "ncore" : 2,
+     "ms" : "true",
+     "xms" : "true",
+     "shift" : "0.0"
+   }
+   
+   ]}
 
-  {
-    "title" : "molecule",
-    "basis" : "svp",
-    "df_basis" : "svp-jkfit",
-    "geometry" : [
-    { "atom" : "C", "xyz" : [     -0.079002,      2.543870,      0.000000 ] },
-    { "atom" : "C", "xyz" : [      2.557470,      2.543870,      0.000000 ] },
-    { "atom" : "C", "xyz" : [      3.875630,      4.826190,      0.000000 ] },
-    { "atom" : "C", "xyz" : [      2.557250,      7.109950,     -0.002266 ] },
-    { "atom" : "C", "xyz" : [     -0.078588,      7.109800,     -0.003171 ] },
-    { "atom" : "C", "xyz" : [     -1.396870,      4.826620,     -0.001289 ] },
-    { "atom" : "H", "xyz" : [     -1.117900,      0.744245,      0.000850 ] },
-    { "atom" : "H", "xyz" : [      3.595900,      0.743875,      0.002485 ] },
-    { "atom" : "H", "xyz" : [      5.953730,      4.826340,      0.001198 ] },
-    { "atom" : "H", "xyz" : [      3.596980,      8.909240,     -0.002377 ] },
-    { "atom" : "H", "xyz" : [     -1.118170,      8.909350,     -0.004972 ] },
-    { "atom" : "H", "xyz" : [     -3.474820,      4.826960,     -0.001629 ] }
-    ]
-  },
-  {
-    "title" : "caspt2",
-    "smith" : {
-      "method" : "caspt2",
-      "ms" : true,
-      "xms" : true,
-      "sssr" : true,
-      "shift" : 0.2
-    }
-    "nstate" : 2,
-    "nact" : 6,
-    "nclosed" : 18,
-    "active" : [17, 20, 21, 22, 23, 30]
-  }
-  ]}
+from which one obtains:
+
+.. code-block:: javascript
+
+
+    * Zeroth order energy : state  0       -0.4311850170
+    * Zeroth order energy : state  1       -0.4310720094
+    * Zeroth order energy : state  2       -0.4310720094
+
+      ---- iteration ----
+
+        0    -0.40810540     0.00007016      1.68
+        1    -0.40848834     0.00000542      1.69
+        2    -0.40849019     0.00000029      1.71
+
+        0    -0.40811484     0.00007016      1.69
+        1    -0.40849779     0.00000542      1.73
+        2    -0.40849965     0.00000029      1.71
+
+        0    -0.40811484     0.00007016      1.69
+        1    -0.40849779     0.00000542      1.70
+        2    -0.40849965     0.00000029      1.71
+
+      -------------------
+
+
+    * RelCASPT2 energy : state  0     -149.9873960059
+    * RelCASPT2 energy : state  1     -149.9873936834
+    * RelCASPT2 energy : state  2     -149.9873936834
+
+    * MS-RelCASPT2 Heff
+      (-149.9873960059,-0.0000000000)(-0.0000000000,0.0000000000)(0.0000000000,0.0000000000)
+      (-0.0000000000,-0.0000000000)(-149.9873936834,-0.0000000000)(-0.0000000000,0.0000000000)
+      (0.0000000000,-0.0000000000)(-0.0000000000,-0.0000000000)(-149.9873936834,-0.0000000000)
+
+
+    * MS-RelCASPT2 rotation matrix
+      (1.0000000000,0.0000000000)(0.0000000000,0.0000000000)(0.0000000000,0.0000000000)
+      (0.0000000000,0.0000000000)(-0.6368984967,-0.5022763292)(0.5834453739,-0.0408691780)
+      (0.0000000000,0.0000000000)(-0.3871525869,-0.4383967022)(-0.8062487204,-0.0887930563)
+
+    * MS-RelCASPT2 energy : state  0     -149.9873960059
+    * MS-RelCASPT2 energy : state  1     -149.9873936834
+    * MS-RelCASPT2 energy : state  2     -149.9873936834
+
+
 
 References
 ==========
@@ -184,7 +233,7 @@ General References
 +---------------------------------------------------+-------------------------------------------------------------------------------------------------------+
 | MS-CASPT2                                         | J\. Finley, P.-Å. Malmqvist, B. O. Roos, and L. Serrano-Andres, Chem. Phys. Lett. **288**, 299 (1998).|
 +---------------------------------------------------+-------------------------------------------------------------------------------------------------------+
-| Extended multiconfigurational perturbation theory | A\. A. Granovsky, J. Chem. Phys. **134**, 214113 (2011).                                              |
+| XMCQDPT2                                          | A\. A. Granovsky, J. Chem. Phys. **134**, 214113 (2011).                                              |
 +---------------------------------------------------+-------------------------------------------------------------------------------------------------------+
 | XMS-CASPT2                                        | T\. Shiozaki, W. Győrffy, P. Celani, and H.-J. Werner, J. Chem. Phys. **135**, 081106 (2011).         |
 +---------------------------------------------------+-------------------------------------------------------------------------------------------------------+

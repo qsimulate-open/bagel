@@ -11,7 +11,7 @@ BAGEL supports efficient evaluations of analytical energy gradient and derivativ
 
    methods.rst
    force.rst
+   ../opt/optimize.rst
    dynamics.rst
    hess.rst
-   ../opt/optimize.rst
 

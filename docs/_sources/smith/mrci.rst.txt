@@ -11,6 +11,8 @@ Fully internally contracted multireference configuration interactions up to the 
 This is implemented with the automatical code generator SMITH3.
 By default, the Davidson corrected (+Q) energy is also printed.
 
+Title: ``smith``, method: ``mrci``
+
 ==================
 Prerequisites
 ==================
@@ -28,16 +30,6 @@ SMITH keywords
 --------------
 
 The default values are recommended unless mentioned otherwise.
-
-.. topic:: ``title``
-
-   | **Description:** Method to use in SMITH-generated code.
-   | **Datatype:** string
-   | **Values:**
-   |    ``caspt2``: Request (Rel)CASPT2 calculation.
-   |    ``mrci``: Request (Rel)MRCI calculation.
-   |    ``casa``: Request (Rel)CAS/A calculation.
-   | **Default:** N/A.
 
 .. topic:: ``thresh``
 

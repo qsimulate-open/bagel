@@ -12,11 +12,19 @@ the transition state geometry (or the saddle point on the potential energy surfa
 In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
-In the conical intersection optimization, the
+In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
 degeneracy lifting vectors out (gradient projection).
+The minimum distance conical intersection (MDCI) can be also optimized by replacing the upper state gradient in MECI optimization
+with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.
+
+The optimizer in BAGEL has been interfaced with an external molecular mechanics program, ``TINKER``,
+using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
+To perform this, the ``TINKER`` input files (keyword file ``tinkin.key`` and initial coordinate file ``tinkin.xyz``)
+should be provided in ``tinker1`` and ``tinker2`` subdirectories, respectively.
+The ``testgrad`` program in the ``TINKER`` package should be installed in ``$PATH``.
 
 The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file ``opt.log``.
@@ -41,7 +49,8 @@ Required Keywords
    | **Datatype:** string
    | **Values:**
    |    ``energy``: find the most stable geometry.
-   |    ``conical``: find the conical intersections, according to gradient projection method.
+   |    ``conical`` or ``meci``: find the minimum energy conical intersections, according to gradient projection method.
+   |    ``mdci``: find the minimum distance conical intersections, according to modified gradient projection method.
    |    ``transition``: find the transition state geometry (saddle point on the PES).
    |    ``mep``: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.
    | **Default:** energy.
@@ -127,7 +136,7 @@ Optional Keywords (Universal)
    |    ``true``: use redundant internal coordinate.
    |    ``false``: use delocalized internal coordinate.
    | **Default:** false.
-   | **Recommendation:** use default, except for the cases that has a problem in constructing delocalized internals (such as formaldehyde).
+   | **Recommendation:** use default.
 
 .. topic:: ``maxiter``
 
@@ -197,19 +206,33 @@ Optional Keywords (Conical Intersection Optimization)
    |    ``0``: use full nonadiabatic coupling.
    |    ``1``: use interstate coupling.
    |    ``2``: use nonadiabatic coupling with built-in electronic translational factor (ETF).
-   | **Default:** 1.
+   |    ``3``: use interstate coupling without weighting it by energy gap.
+   | **Default:** 3.
 
 .. topic:: ``thielc3``
 
    | **Description:** Thiel's C_3 parameter, which is multiplied to the full gradient.
    | **Datatype:** double precision
-   | **Default:** 2.0.
+   | **Default:** 2.0 (MECI) or 0.01 (MDCI).
 
 .. topic:: ``thielc4``
 
    | **Description:** Thiel's C_4 parameter, which is multiplied to the gradient difference.
    | **Datatype:** double precision
    | **Default:** 0.5
+
+.. topic:: ``mdci_reference_geometry``
+
+   | **Description:** Specify reference geometry used in MDCI optimization.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: specify reference geometry in the ``refgeom`` block.
+   |    ``false``: the first geometry for optimization is considered as the reference geometry.
+   | **Default:** false
+
+.. topic:: ``refgeom``
+
+   | **Description:** Reference geometry for MDCI optimization. The format is the same as the ``molecule`` block.
 
 Optional Keywords (Minimum Energy Path)
 ---------------------------------------
@@ -221,8 +244,28 @@ Optional Keywords (Minimum Energy Path)
    | **Values:**
    |    ``1``: use the direction of the lowest eigenvector.
    |    ``-1``: use the opposite direction of the lowest eigenvector.
-   | **Default:** 1.
+   | **Default:** 1
    | **Recommendation:** run two calculations with "1" and "-1" to get the full path.
+
+Optional Keywords (QM/MM)
+-------------------------
+
+.. topic:: ``qmmm``
+
+   | **Description:** Do QM/MM energy optimization.
+   | **Datatype:** bool
+   | **Values:**
+   |    ``true``: do QM/MM optimization.
+   |    ``false``: do gas phase optimization.
+   | **Default:** false
+
+.. topic:: ``qmmm_program``
+
+   | **Description:** Molecular mechanics program to do QM/MM.
+   | **Datatype:** string
+   | **Values:**
+   |    ``tinker``: do QM/MM optimization with TINKER.
+   | **Default:** tinker.
 
 
 Example
@@ -246,7 +289,6 @@ Sample input
 
   {
     "title" : "molecule",
-    "symmetry" : "C1",
     "basis" : "cc-pvdz",
     "df_basis" : "cc-pvdz-jkfit",
     "angstrom" : false,
@@ -287,7 +329,11 @@ Sample input
   }
  ]}
 
-Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed. In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals, (4*e*,3*o*). Three sets of  :math:`\pi` and :math:`\pi^*` orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair). The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target). In this example, we optimize the ground state.
+Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed.
+In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals.
+Three sets of  :math:`\pi` and :math:`\pi^*` orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
+The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target).
+In this example, we optimize the ground state.
 
 .. code-block:: javascript
 

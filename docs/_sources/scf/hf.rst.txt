@@ -246,7 +246,7 @@ RHF-FMM
 
    {
      "title" : "molecule",
-     "basis" : "/home/le/develop/bagel/src/basis/3-21g.json",
+     "basis" : "3-21g",
      "angstrom" : "true",
      "cfmm" : "true",
      "schwarz_thresh" : "1.0e-8",

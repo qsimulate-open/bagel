@@ -100,17 +100,15 @@
 <p>Intel MKL is strongly recommended for BLAS, LAPACK, and ScaLAPACK (distributed for free for academic users)</p>
 </div>
 <div class="section" id="downloading-the-source">
-<h2>Downloading the Source<a class="headerlink" href="#downloading-the-source" title="Permalink to this headline">¶</a></h2>
+<h2>Downloading the source<a class="headerlink" href="#downloading-the-source" title="Permalink to this headline">¶</a></h2>
 <p>The simplest approach is to just download and extract the tarball containing the most recent BAGEL release:</p>
 <pre class="literal-block">
-$ cd /your/parent/directory
 $ wget <a class="reference external" href="https://github.com/nubakery/bagel/archive/v">https://github.com/nubakery/bagel/archive/v</a>1.0.0.tar.gz
 $ tar xvf bagel-1.0.0.tar.gz
 $ cd bagel
 </pre>
 <p>Alternatively, you can clone the git repository:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd /your/parent/directory
-$ git clone https://github.com/nubakery/bagel.git
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ git clone https://github.com/nubakery/bagel.git
 $ cd bagel
 </pre></div>
 </div>
@@ -136,7 +134,9 @@ $ cd obj
 </li>
 <li><p class="first">Configure</p>
 <p>A minimal set of configure options is</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$(BOOST_ROOT)/lib&#39; &#39;--with-include=-I$(BOOST_ROOT)/include&#39;
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
+
+$ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$BOOST_ROOT/lib&#39; &#39;--with-include=-I$BOOST_ROOT/include&#39;
 </pre></div>
 </div>
 <dl class="docutils">
@@ -173,6 +173,14 @@ $ make install
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ BAGEL path_to_bagel/test/benzene_svp_mp2.json
 </pre></div>
 </div>
+<p>Also there is a suite of test programs. To run this, in obj</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ cd bagel/obj
+$ make check
+$ cd src
+$ ./TestSuite --log_level=all
+</pre></div>
+</div>
+<p>One of the tests (ASD-DMRG) is meant to fail.</p>
 </li>
 <li><p class="first">Additional Notes</p>
 <ul>

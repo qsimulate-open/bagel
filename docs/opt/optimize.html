@@ -26,18 +26,18 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Active space decomposition method" href="../asd/asd.html" />
-    <link rel="prev" title="Molecular Hessian and frequency analysis" href="../grad/hess.html" /> 
+    <link rel="next" title="Interface to dynamics codes" href="../grad/dynamics.html" />
+    <link rel="prev" title="Nuclear gradient and derivative coupling" href="../grad/force.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../asd/asd.html" title="Active space decomposition method"
+          <a href="../grad/dynamics.html" title="Interface to dynamics codes"
              accesskey="N">next</a></li>
         <li class="right" >
-          <a href="../grad/hess.html" title="Molecular Hessian and frequency analysis"
+          <a href="../grad/force.html" title="Nuclear gradient and derivative coupling"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
@@ -59,11 +59,18 @@ the transition state geometry (or the saddle point on the potential energy surfa
 <p>In the optimizations, rather than using the exact Hessian, one can
 start using the approximate Hessian and update it according to the step taken.
 The advanced quasi-newton optimization methods, eigenvector following (EF) algorithm and rational functional optimization (RFO) are implemented.
-In the conical intersection optimization, the
+In the minimum energy conical intersection (MECI) optimization, the
 molecular gradient is replaced by the sum of the energy difference gradient and the upper state gradient after projecting the
 degeneracy lifting vectors out (gradient projection).
+The minimum distance conical intersection (MDCI) can be also optimized by replacing the upper state gradient in MECI optimization
+with the distance vector to the reference geometry.
 In addition, the minimum energy path to the reactants and products
 from the saddle point can be calculated using the second order algorithm, without mass weighting.</p>
+<p>The optimizer in BAGEL has been interfaced with an external molecular mechanics program, <code class="docutils literal"><span class="pre">TINKER</span></code>,
+using which mixed quantum mechanics/molecular mechanics (QM/MM) optimization can be performed.
+To perform this, the <code class="docutils literal"><span class="pre">TINKER</span></code> input files (keyword file <code class="docutils literal"><span class="pre">tinkin.key</span></code> and initial coordinate file <code class="docutils literal"><span class="pre">tinkin.xyz</span></code>)
+should be provided in <code class="docutils literal"><span class="pre">tinker1</span></code> and <code class="docutils literal"><span class="pre">tinker2</span></code> subdirectories, respectively.
+The <code class="docutils literal"><span class="pre">testgrad</span></code> program in the <code class="docutils literal"><span class="pre">TINKER</span></code> package should be installed in <code class="docutils literal"><span class="pre">$PATH</span></code>.</p>
 <p>The output contains the gradient evaluation progress at the first step of the optimization, and the status of the optimization.
 The other information, including the quantum chemistry calculations at the optimization steps, are deposited in the file <code class="docutils literal"><span class="pre">opt.log</span></code>.
 The history of the optimization and the final geometry are also saved in the <code class="docutils literal"><span class="pre">MOLDEN</span></code> files <code class="docutils literal"><span class="pre">opt_history.molden</span></code> and <code class="docutils literal"><span class="pre">opt.molden</span></code>,
@@ -93,7 +100,8 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
 <div class="line"><code class="docutils literal"><span class="pre">energy</span></code>: find the most stable geometry.</div>
-<div class="line"><code class="docutils literal"><span class="pre">conical</span></code>: find the conical intersections, according to gradient projection method.</div>
+<div class="line"><code class="docutils literal"><span class="pre">conical</span></code> or <code class="docutils literal"><span class="pre">meci</span></code>: find the minimum energy conical intersections, according to gradient projection method.</div>
+<div class="line"><code class="docutils literal"><span class="pre">mdci</span></code>: find the minimum distance conical intersections, according to modified gradient projection method.</div>
 <div class="line"><code class="docutils literal"><span class="pre">transition</span></code>: find the transition state geometry (saddle point on the PES).</div>
 <div class="line"><code class="docutils literal"><span class="pre">mep</span></code>: find the minimum energy path using the second-order algorithm, starting from the transition state geometry.</div>
 </div>
@@ -210,7 +218,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use delocalized internal coordinate.</div>
 </div>
 <div class="line"><strong>Default:</strong> false.</div>
-<div class="line"><strong>Recommendation:</strong> use default, except for the cases that has a problem in constructing delocalized internals (such as formaldehyde).</div>
+<div class="line"><strong>Recommendation:</strong> use default.</div>
 </div>
 </div>
 <div class="topic">
@@ -305,8 +313,9 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">0</span></code>: use full nonadiabatic coupling.</div>
 <div class="line"><code class="docutils literal"><span class="pre">1</span></code>: use interstate coupling.</div>
 <div class="line"><code class="docutils literal"><span class="pre">2</span></code>: use nonadiabatic coupling with built-in electronic translational factor (ETF).</div>
+<div class="line"><code class="docutils literal"><span class="pre">3</span></code>: use interstate coupling without weighting it by energy gap.</div>
 </div>
-<div class="line"><strong>Default:</strong> 1.</div>
+<div class="line"><strong>Default:</strong> 3.</div>
 </div>
 </div>
 <div class="topic">
@@ -314,7 +323,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Thiel&#8217;s C_3 parameter, which is multiplied to the full gradient.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
-<div class="line"><strong>Default:</strong> 2.0.</div>
+<div class="line"><strong>Default:</strong> 2.0 (MECI) or 0.01 (MDCI).</div>
 </div>
 </div>
 <div class="topic">
@@ -323,6 +332,25 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><strong>Description:</strong> Thiel&#8217;s C_4 parameter, which is multiplied to the gradient difference.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
 <div class="line"><strong>Default:</strong> 0.5</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">mdci_reference_geometry</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Specify reference geometry used in MDCI optimization.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: specify reference geometry in the <code class="docutils literal"><span class="pre">refgeom</span></code> block.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: the first geometry for optimization is considered as the reference geometry.</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">refgeom</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Reference geometry for MDCI optimization. The format is the same as the <code class="docutils literal"><span class="pre">molecule</span></code> block.</div>
 </div>
 </div>
 </div>
@@ -338,8 +366,36 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">1</span></code>: use the direction of the lowest eigenvector.</div>
 <div class="line"><code class="docutils literal"><span class="pre">-1</span></code>: use the opposite direction of the lowest eigenvector.</div>
 </div>
-<div class="line"><strong>Default:</strong> 1.</div>
+<div class="line"><strong>Default:</strong> 1</div>
 <div class="line"><strong>Recommendation:</strong> run two calculations with &#8220;1&#8221; and &#8220;-1&#8221; to get the full path.</div>
+</div>
+</div>
+</div>
+<div class="section" id="optional-keywords-qm-mm">
+<h3>Optional Keywords (QM/MM)<a class="headerlink" href="#optional-keywords-qm-mm" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Do QM/MM energy optimization.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: do QM/MM optimization.</div>
+<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: do gas phase optimization.</div>
+</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">qmmm_program</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Molecular mechanics program to do QM/MM.</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">tinker</span></code>: do QM/MM optimization with TINKER.</div>
+</div>
+<div class="line"><strong>Default:</strong> tinker.</div>
 </div>
 </div>
 </div>
@@ -357,7 +413,6 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 
  <span class="p">{</span>
    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
-   <span class="s2">&quot;symmetry&quot;</span> <span class="o">:</span> <span class="s2">&quot;C1&quot;</span><span class="p">,</span>
    <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz&quot;</span><span class="p">,</span>
    <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;cc-pvdz-jkfit&quot;</span><span class="p">,</span>
    <span class="s2">&quot;angstrom&quot;</span> <span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
@@ -399,7 +454,11 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed. In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals, (4*e*,3*o*). Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair). The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target). In this example, we optimize the ground state.</p>
+<p>Using the same molecule block, a geometry optimization with XMS-CASPT2 can be performed.
+In this particular example as is often the case, the active keyword is used to select the orbitals for the active space that includes 4 electrons and 3 orbitals.
+Three sets of  <span class="math">\(\pi\)</span> and <span class="math">\(\pi^*\)</span> orbitals localized on the phenyl rings are included along with one non-bonding orbital (oxygen lone pair).
+The casscf orbitals are state-averaged over three states. Since a multistate calculation is performed, the user must specify which state is to be optimized (the target).
+In this example, we optimize the ground state.</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;casscf&quot;</span><span class="p">,</span>
   <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span>
@@ -498,11 +557,11 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../grad/hess.html"
-                        title="previous chapter">Molecular Hessian and frequency analysis</a></p>
+  <p class="topless"><a href="../grad/force.html"
+                        title="previous chapter">Nuclear gradient and derivative coupling</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../asd/asd.html"
-                        title="next chapter">Active space decomposition method</a></p>
+  <p class="topless"><a href="../grad/dynamics.html"
+                        title="next chapter">Interface to dynamics codes</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
@@ -521,10 +580,10 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
-          <a href="../asd/asd.html" title="Active space decomposition method"
+          <a href="../grad/dynamics.html" title="Interface to dynamics codes"
              >next</a></li>
         <li class="right" >
-          <a href="../grad/hess.html" title="Molecular Hessian and frequency analysis"
+          <a href="../grad/force.html" title="Nuclear gradient and derivative coupling"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">BAGEL Manual</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../user-manual.html" ><strong>BAGEL user manual</strong></a> &#187;</li>
