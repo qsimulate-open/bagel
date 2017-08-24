@@ -68,7 +68,7 @@ void GradEval<CASSCF>::compute_dipole() const {
   for (int istate = 0; istate != nstate; ++istate) {
     auto rdms = ref_->rdm1_mat(istate);
     shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
-    string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate);
+    const string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate);
     Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), dmlabel);
     auto moment = dipole.compute();
     state_dipole.push_back(moment);
@@ -84,14 +84,14 @@ void GradEval<CASSCF>::compute_dipole() const {
       rdms->symmetrize();
       shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
 
-      string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
+      const string dmlabel = "CASSCF unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
       Dipole dipole(geom_, make_shared<Matrix>(*ref_->coeff() * *dtot ^ *ref_->coeff()), dmlabel);
       auto moment = dipole.compute();
       transition_dipole.push_back(moment);
     }
   }
 
-  cout << "  * CASSCF statewise and transition dipole moments" << endl << endl;
+  cout << "  * CASSCF dipole moments" << endl << endl;
   for (int istate = 0; istate != nstate; ++istate) {
     cout << "    * State   " << setw(11) << istate << " : ";
     cout << "  (" << setw(12) << setprecision(6) << state_dipole[istate][0] << ", " << setw(12) << state_dipole[istate][1]
@@ -103,19 +103,19 @@ void GradEval<CASSCF>::compute_dipole() const {
       cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
         cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
              << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
-      const double egap = energyvec()[jstate] - energyvec()[istate];
+      const double egap = energyvec()[istate] - energyvec()[jstate];
       auto moment = transition_dipole[counter];
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
       const double fnm = (2.0 / 3.0) * egap * r2;
 
-      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << endl << endl;
     }
   }
 }
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
+shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();
@@ -167,13 +167,13 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     shared_ptr<const RDM<2>> rdm2_tr;
     const double egap = ref_->energy(istate) - ref_->energy(jstate);
 
-    if (jobtitle!="force") {
+    if (jobtitle != "force") {
       cout << "  === " << to_upper(jobtitle) << " evaluation === " << endl << endl;
       cout << "    * " << to_upper(jobtitle) << " Target states: " << istate << " - " << jstate << endl;
-      cout << "    * Energy gap is:       " << setprecision(10) << fabs(egap) * au2eV__ << " eV" << endl << endl;
+      cout << "    * Energy gap is:       " << setprecision(10) << egap * au2eV__ << " eV" << endl << endl;
     }
 
-    if (jobtitle=="dgrad") {
+    if (jobtitle == "dgrad") {
       shared_ptr<const RDM<1>> rdm1_1;
       shared_ptr<const RDM<2>> rdm2_1;
       shared_ptr<const RDM<1>> rdm1_2;
@@ -182,7 +182,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
       tie(rdm1_2, rdm2_2) = ref_->rdm12(istate, istate);
       rdm1_tr = make_shared<RDM<1>>(*rdm1_1 - *rdm1_2);
       rdm2_tr = make_shared<RDM<2>>(*rdm2_1 - *rdm2_2);
-    } else if (jobtitle=="nacme") {
+    } else if (jobtitle == "nacme") {
       tie(rdm1_tr, rdm2_tr) = ref_->rdm12(jstate, istate);
     } else {
       tie(rdm1_tr, rdm2_tr) = ref_->rdm12(istate, istate);
@@ -243,7 +243,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     // combine gradient file
     auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
-    // compute unrelaxed transition dipole...
+    // compute unrelaxed dipole
     shared_ptr<Matrix> dtot = rdms->resize(nmobasis, nmobasis);
     if (jobtitle == "nacme") {
       string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
@@ -291,7 +291,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
       dipole_ = dipole.compute();
     }
 
-    auto xmatao  = make_shared<Matrix>(*ref_->coeff() * (*xmat) ^ *ref_->coeff());
+    auto xmatao  = make_shared<Matrix>(*ref_->coeff() * *xmat ^ *ref_->coeff());
 
     shared_ptr<Matrix> qxmatao;
     if (jobtitle == "nacme" || jobtitle == "dgrad") {
@@ -300,7 +300,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
         qxmat->scale(egap);
       else
         qxmat->zero();
-      qxmatao = make_shared<Matrix>(*ref_->coeff() * (*qxmat) ^ *ref_->coeff());
+      qxmatao = make_shared<Matrix>(*ref_->coeff() * *qxmat ^ *ref_->coeff());
     }
 
     //- TWO ELECTRON PART -//

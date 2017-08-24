@@ -101,6 +101,8 @@ class GradTask1 : public GradTask {
 class GradTask1s : public GradTask {
   private:
     std::array<std::shared_ptr<const Shell>, 2> shell_;
+    std::shared_ptr<const Matrix> den2_;
+    std::shared_ptr<const Matrix> den3_;
     std::shared_ptr<const Matrix> eden_;
 
     // implemented in gradeval_base.h
@@ -110,7 +112,7 @@ class GradTask1s : public GradTask {
   public:
     GradTask1s(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
                const std::shared_ptr<const Matrix> vmat, const std::shared_ptr<const Matrix> kmat, const std::shared_ptr<const Matrix> omat, GradEval_base* p)
-      : GradTask(a, o, p), shell_(s), eden_(vmat) { }
+      : GradTask(a, o, p), shell_(s), den2_(omat), den3_(kmat), eden_(vmat) { }
     void compute();
 };
 

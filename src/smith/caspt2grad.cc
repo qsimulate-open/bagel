@@ -108,7 +108,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
       for (int i = 0; i != nclosed; ++i)
         d0ms->element(i,i) = 2.0;
       {
-        string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate);
+        const string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate);
         auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
         Dipole dipole(geom_, dtotao, dmlabel);
         auto moment = dipole.compute();
@@ -126,7 +126,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
         if (nact)
           d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
         {
-          string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
+          const string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
           auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
           Dipole dipole(geom_, dtotao, dmlabel);
           auto moment = dipole.compute();
@@ -136,7 +136,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
     }
   }
 
-  cout << "  * CASPT2 statewise and transition dipole moments" << endl << endl;
+  cout << "  * CASPT2 dipole moments" << endl << endl;
   for (int istate = 0; istate != nstate; ++istate) {
     cout << "    * State   " << setw(11) << istate << " : ";
     cout << "  (" << setw(12) << setprecision(6) << state_dipole[istate][0] << ", " << setw(12) << state_dipole[istate][1]
@@ -148,12 +148,12 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
       cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
         cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
              << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
-      const double egap = energyvec()[jstate] - energyvec()[istate];
+      const double egap = energyvec()[istate] - energyvec()[jstate];
       auto moment = transition_dipole[counter];
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
       const double fnm = (2.0 / 3.0) * egap * r2;
 
-      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << endl << endl;
     }
   }
 #endif
@@ -249,7 +249,7 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int 
 
     const double energy1 = smith_->algo()->energy(istate);
     const double energy2 = smith_->algo()->energy(jstate);
-    cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1 - energy2) * au2eV__ << " eV" << endl << endl;
+    cout << "    * Energy gap is:       " << setprecision(10) << energy1 - energy2 * au2eV__ << " eV" << endl << endl;
   } else {
     energy_ = smith_->algo()->energy(istate);
     cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
@@ -266,7 +266,7 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype) {
 #ifdef COMPILE_SMITH
 
   if (jobtitle == "nacme")

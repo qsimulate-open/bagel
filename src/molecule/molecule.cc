@@ -39,7 +39,7 @@ const static AtomMap atommap_;
 BOOST_CLASS_EXPORT_IMPLEMENT(Molecule)
 
 
-// initialize Molecule (not geometry) with displacement
+// Initialize Molecule with displacement
 Molecule::Molecule(const Molecule& o, shared_ptr<const Matrix> displ, const bool rotate) {
 
   spherical_ = o.spherical_;

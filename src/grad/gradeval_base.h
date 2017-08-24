@@ -44,10 +44,10 @@ class GradEval_base {
     std::shared_ptr<const Geometry> geom_;
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
-    template<typename IntegralType>
+    template<typename TaskType>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
     /// same as above, but one can specify density matrices to each integral kernel
-    template<typename IntegralType>
+    template<typename TaskType>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
     /// contract small NAI gradient integrals with an array of densities
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
@@ -78,16 +78,15 @@ class GradEval_base {
                                                 const std::shared_ptr<const Matrix> g2o2 = nullptr);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return nullptr; }
 
-  friend class GradTask1;
-  friend class GradTask1s;
-  friend class GradTask2;
-  friend class GradTask3;
-  friend class GradTask1r;
-  friend class GradTask1f;
-  friend class GradTask3r;
-  friend class GradTask1rf;
+    friend class GradTask1;
+    friend class GradTask1s;
+    friend class GradTask2;
+    friend class GradTask3;
+    friend class GradTask1r;
+    friend class GradTask1f;
+    friend class GradTask3r;
+    friend class GradTask1rf;
 };
-
 
 template<typename TBatch>
 std::shared_ptr<GradFile> GradTask1::compute_os(std::shared_ptr<const Matrix> den) const {
