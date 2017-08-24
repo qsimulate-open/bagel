@@ -99,7 +99,7 @@ void Smith::compute_gradient(const int istate, const int jstate, const int nacmt
     msrot_ = algop->msrot();
     coeff_ = algop->coeff();
 
-  // if spin-density is requested...
+    // if spin-density is requested...
     if (idata_->get<bool>("_hyperfine")) {
       auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
       sp->solve();

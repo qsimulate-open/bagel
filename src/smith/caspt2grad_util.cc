@@ -307,11 +307,12 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
     auto d0 = make_shared<Matrix>(nmobasis, nmobasis);
     if (nact)
       d0->add_block(1.0, nclosed, nclosed, nact, nact, *d10ms_);
-    if (nacme)
+    if (nacme) {
       d0->symmetrize();
-    else
+    } else {
       for (int i = 0; i != nclosed; ++i)
         d0->element(i,i) = 2.0;
+    }
     *out += hmo * (*d1_ + *d11_ + *d0) * 2.0;
   }
 
