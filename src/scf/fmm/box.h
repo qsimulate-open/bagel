@@ -27,8 +27,6 @@
 #ifndef __SRC_SCF_FMM_BOX_H
 #define __SRC_SCF_FMM_BOX_H
 
-#include <src/util/constants.h>
-#include <src/util/parallel/resources.h>
 #include <src/molecule/shellpair.h>
 
 namespace bagel {
@@ -89,13 +87,6 @@ class Box {
     // allow constructing FMM_J and FMM_K separately with different parameters
     std::shared_ptr<const Matrix> compute_Fock_nf_J(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
     std::shared_ptr<const Matrix> compute_Fock_nf_K(std::shared_ptr<const Matrix> density, std::shared_ptr<const VectorB> max_den) const;
-
-    // serialization
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int file_version) {
-      boost::serialization::split_member(ar, *this, file_version);
-    }
-
 
   public:
     Box() { }
