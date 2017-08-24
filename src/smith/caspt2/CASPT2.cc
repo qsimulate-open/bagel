@@ -409,7 +409,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
         }
       }
     } else {
-      // NACME case
+      // NACME case: more general, requires more memory
       auto sourceJ = make_shared<MultiTensor>(nstates_);
       auto sourceI = make_shared<MultiTensor>(nstates_);
       for (auto& i : *sourceJ)
