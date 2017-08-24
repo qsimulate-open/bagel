@@ -206,7 +206,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           while (!queue->done())
             queue->next_compute();
           result->ax_plus_y(ijhJI, den1);
-          resultv->ax_plus_y(ijvJI, den1);
+          if (targetJ != targetI)
+            resultv->ax_plus_y(ijvJI, den1);
 
           shared_ptr<Queue> queue2 = make_density2q(true, ist == jst);
           while (!queue2->done())
