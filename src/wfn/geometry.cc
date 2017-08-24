@@ -749,8 +749,6 @@ Geometry::Geometry(const Geometry& o, const string type)
   aux_merged_ = o.aux_merged_;
   basisfile_ = o.basisfile_;
   auxfile_ = o.auxfile_;
-  symmetry_ = o.symmetry_;
-  gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   atoms_ = o.atoms_;
