@@ -309,7 +309,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   const MatView ocoeff = coeff->slice(0, nocc);
 
   if (jobtitle == "nacme") {
-    string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
+    const string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, tdmlabel);
     auto moment = dipole.compute();
@@ -400,7 +400,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
     else
       qxmat->zero();
 
-    qxmatao = make_shared<Matrix>(*coeff * (*qxmat) ^ *coeff);
+    qxmatao = make_shared<Matrix>(*coeff * *qxmat ^ *coeff);
   }
 
 
