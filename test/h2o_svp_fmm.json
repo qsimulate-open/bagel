@@ -5,7 +5,7 @@
   "symmetry" : "C1",
   "basis" : "svp",
   "angstrom" : "true",
-  "cfmm" : "false",
+  "cfmm" : "true",
   "schwarz_thresh" : "1.0e-8",
   "extent_type" : "yang",
   "geometry" : [
