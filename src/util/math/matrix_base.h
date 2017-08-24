@@ -103,6 +103,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     size_t ndim() const { return this->extent(0); }
     size_t mdim() const { return this->extent(1); }
 
+    void fill_lower();
     void fill_upper();
     void fill_upper_conjg();
     void fill_upper_negative();

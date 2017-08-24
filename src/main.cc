@@ -86,7 +86,6 @@ int main(int argc, char** argv) {
             throw runtime_error("molecule block is missing");
         } else {
           if (!itree->get<bool>("df",true)) dodf = false;
-          if (!itree->get<bool>("cfmm", false)) dofmm = true;
           if (dodf && !geom->df() && !geom->do_periodic_df() && !dofmm) throw runtime_error("It seems that DF basis was not specified in molecule block");
         }
       }

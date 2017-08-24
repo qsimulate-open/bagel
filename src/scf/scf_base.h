@@ -30,9 +30,7 @@
 #include <src/mat1e/hcore.h>
 #include <src/mat1e/giao/zhcore.h>
 #include <src/wfn/method.h>
-#include <src/periodic/tree.h>
-#include <src/periodic/tree_sp.h>
-#include <src/periodic/fmm.h>
+#include <src/scf/fmm/fmm.h>
 
 namespace bagel {
 
@@ -46,7 +44,6 @@ class SCF_base_ : public Method {
     std::shared_ptr<const HcType> hcore_;
     std::shared_ptr<const Coeff_<MatType>> coeff_;
 
-    bool dofmm_;
     int max_iter_;
 
     int diis_start_;
@@ -75,7 +72,9 @@ class SCF_base_ : public Method {
     std::shared_ptr<DFHalfDist> half_;
 
     // FMM
+    bool dofmm_;
     std::shared_ptr<const FMM> fmm_;
+    std::shared_ptr<const FMM> fmmK_;
 
     bool restart_;
 
@@ -87,11 +86,9 @@ class SCF_base_ : public Method {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & boost::serialization::base_object<Method>(*this);
-      ar & tildex_ & overlap_ & hcore_ & coeff_ & dofmm_ & max_iter_ & diis_start_ & diis_size_
+      ar & tildex_ & overlap_ & hcore_ & coeff_ & max_iter_ & diis_start_ & diis_size_
          & thresh_overlap_ & thresh_scf_ & multipole_print_ & dma_print_ & schwarz_ & eig_ & energy_
-         & nocc_ & noccB_ & do_grad_ & restart_;
-      if (dofmm_)
-        throw std::logic_error("Restart capability for FMM has not been implemented.");
+         & nocc_ & noccB_ & do_grad_ & restart_ & dofmm_ & fmm_ & fmmK_;
     }
 
   public:

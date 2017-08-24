@@ -44,7 +44,7 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   do_grad_ = idata_->get<bool>("_gradient", false);
   // enable restart capability
   restart_ = idata_->get<bool>("restart", false);
-  dofmm_   = geom_->dofmm();
+  dofmm_   = !(geom_->fmm() == nullptr);
 
   Timer scfb;
   overlap_ = make_shared<const OvlType>(geom_);
@@ -64,10 +64,10 @@ SCF_base_<MatType, OvlType, HcType, Enable>::SCF_base_(shared_ptr<const PTree> i
   thresh_scf_ = idata_->get<double>("thresh_scf", thresh_scf_);
 
   if (dofmm_) {
-    const bool dodf = idata_->get<bool>("df", true);
-    if (dodf) throw runtime_error("FMM only works without DF now");
-    fmm_ = make_shared<const FMM>(geom, idata_->get<int>("ns", 2), idata_->get<int>("lmax", 10), idata_->get<double>("thresh_fmm", thresh_overlap_),
-                                        idata_->get<int>("ws", 0));
+    fmm_ = make_shared<const FMM>(idata_, geom);
+    const bool fmmk = idata_->get<bool>("FMM-K", false);
+    if (fmmk)
+      fmmK_ = make_shared<const FMM>(idata_, geom, true);
   }
   multipole_print_ = idata_->get<int>("multipole", 1);
   dma_print_ = idata_->get<int>("dma", 0);
@@ -109,7 +109,6 @@ void SCF_base_<ZMatrix, ZOverlap, ZHcore, enable_if<true>::type>::get_coeff(cons
   assert(cref);
   coeff_ = cref->zcoeff();
 }
-
 
 template class SCF_base_<Matrix, Overlap, Hcore>;
 template class SCF_base_<ZMatrix, ZOverlap, ZHcore>;

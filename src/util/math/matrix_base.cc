@@ -104,6 +104,15 @@ Matrix_base<DataType>& Matrix_base<DataType>::operator=(Matrix_base<DataType>&& 
 
 
 template<typename DataType>
+void Matrix_base<DataType>::fill_lower() {
+  assert(ndim() == mdim());
+  for (size_t i = 0; i != mdim(); ++i)
+    for (size_t j = i+1; j != ndim(); ++j)
+      element(j, i) = element(i, j);
+}
+
+
+template<typename DataType>
 void Matrix_base<DataType>::fill_upper() {
   assert(ndim() == mdim());
   for (size_t i = 0; i != mdim(); ++i)

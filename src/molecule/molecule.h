@@ -47,9 +47,6 @@ class Molecule {
     int lmax_;
     int aux_lmax_;
 
-    // FMM
-    bool dofmm_;
-
     // these two offsets are in principle redundant information (can be derived from Shells);
     std::vector<std::vector<int>> offsets_;
     std::vector<std::vector<int>> aux_offsets_;
@@ -84,7 +81,7 @@ class Molecule {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & spherical_ & aux_merged_ & nbasis_ & nele_ & nfrc_ & naux_ & lmax_ & aux_lmax_ & offsets_ & aux_offsets_ & basisfile_ & auxfile_
-         & atoms_ & aux_atoms_ & nuclear_repulsion_ & external_ & magnetic_field_ & dofmm_ & skip_self_interaction_;
+         & atoms_ & aux_atoms_ & nuclear_repulsion_ & external_ & magnetic_field_ & skip_self_interaction_;
     }
 
   public:
@@ -111,7 +108,6 @@ class Molecule {
     const std::string basisfile() const { return basisfile_; }
     const std::string auxfile() const { return auxfile_; }
     virtual double nuclear_repulsion() const { return nuclear_repulsion_; }
-    bool dofmm() const { return dofmm_; }
     bool skip_self_interaction() { return skip_self_interaction_; }
 
     // The position of the specific function in the basis set.

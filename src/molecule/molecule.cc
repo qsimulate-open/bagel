@@ -48,7 +48,6 @@ Molecule::Molecule(const Molecule& o, shared_ptr<const Matrix> displ, const bool
   auxfile_ = o.auxfile_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
-  dofmm_ = o.dofmm_;
   skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
@@ -312,7 +311,6 @@ bool Molecule::operator==(const Molecule& o) const {
   out &= spherical_ == o.spherical_;
   out &= atoms_.size() == o.atoms_.size();
   out &= aux_atoms_.size() == o.aux_atoms_.size();
-  out &= dofmm_ == o.dofmm_;
 
   for (auto i = atoms_.begin(), j = o.atoms_.begin(); i != atoms_.end(); ++i, ++j) out &= **i == **j;
   for (auto i = aux_atoms_.begin(), j = o.aux_atoms_.begin(); i != aux_atoms_.end(); ++i, ++j) out &= **i == **j;

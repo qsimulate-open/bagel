@@ -41,6 +41,7 @@ class RHF : public SCF_base {
     bool restarted_;
 
     std::shared_ptr<DIIS<DistMatrix>> diis_;
+    std::shared_ptr<const Matrix> compute_Fock_FMM(std::shared_ptr<const Matrix> density, std::shared_ptr<const Matrix> coeff = nullptr);
 
   private:
     // serialization
