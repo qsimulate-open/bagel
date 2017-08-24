@@ -70,7 +70,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
   if (!v)
     *grad_ += *geom_->compute_grad_vnuc();
 
-  *grad_ += *geom_->compute_grad_1ecorr(d);
+  *grad_ += *geom_->mat1ecorr()->compute_grad(geom_, d);
 
   grad_->allreduce();
 

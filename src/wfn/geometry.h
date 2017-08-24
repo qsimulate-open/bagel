@@ -122,7 +122,6 @@ class Geometry : public Molecule {
 
     // Gradients
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
-    std::shared_ptr<Matrix> compute_grad_1ecorr(std::shared_ptr<const Matrix> den) const;
 
     // Returns a constant
     double schwarz_thresh() const { return schwarz_thresh_; }
