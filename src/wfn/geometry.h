@@ -29,7 +29,7 @@
 #include <src/df/df.h>
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
-#include <src/molecule/shellpair.h>
+#include <src/wfn/fmminfo.h>
 
 namespace bagel {
 
@@ -47,7 +47,7 @@ class Geometry : public Molecule {
     mutable std::shared_ptr<DFDist> dfsl_;
 
     // Constructor helpers
-    void common_init2(const bool print, const double thresh, const bool nodf = false, const bool get_sp = true);
+    void common_init2(const bool print, const double thresh, const bool nodf = false);
     void compute_integrals(const double thresh) const;
     void get_electric_field(std::shared_ptr<const PTree>& geominfo);
     void set_london(std::shared_ptr<const PTree>& geominfo);
@@ -60,6 +60,8 @@ class Geometry : public Molecule {
     bool magnetism_;
     bool london_;
     bool use_finite_;
+
+    // ECP
     bool use_ecp_basis_;
 
     // Lattice parameters
@@ -67,10 +69,7 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors_;
 
     // FMM
-    void get_shellpairs(const std::string extent_type = "yang");
-    std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
-    bool dofmm_;
-    std::string extent_type_;
+    std::shared_ptr<const FMMInfo> fmm_;
 
   private:
     // serialization
@@ -79,7 +78,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_;
+      ar << schwarz_thresh_ << overlap_thresh_ << dkh_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_ << fmm_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -90,19 +89,17 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> dkh_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_ >> fmm_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
-      if (!dofmm_) {
+      if (!fmm_) {
         if (dfmap[dfindex].expired()) {
           compute_integrals(overlap_thresh_);
           dfmap[dfindex] = df_;
         } else {
           df_ = dfmap[dfindex].lock();
         }
-      } else {
-        get_shellpairs(extent_type_);
       }
 
       bool do_rel, do_gaunt;
@@ -162,10 +159,8 @@ class Geometry : public Molecule {
     bool do_periodic_df() const { return do_periodic_df_; }
     std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
-    std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
-    std::shared_ptr<const ShellPair> shellpair(const int i) const { return shellpairs_[i]; }
-    int nshellpair() const { return shellpairs_.size(); }
-
+    // FMM
+    std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }
 };
 
 }

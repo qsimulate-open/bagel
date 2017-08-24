@@ -46,6 +46,14 @@ class ShellPair {
     double extent_;
     void init();
 
+  private:
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int) {
+      ar & shells_ & offset_ & shell_ind_ & extent_type_ & nbasis0_ & nbasis1_
+         & thresh_ & schwarz_ & centre_ & extent_;
+    }
+
   public:
     ShellPair() { }
     ShellPair(const std::array<std::shared_ptr<const Shell>, 2>& shells, const std::array<int, 2>& offset,

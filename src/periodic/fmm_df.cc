@@ -1,6 +1,6 @@
 //
 // BAGEL - Parallel electron correlation program.
-// Filename: fmm.cc
+// Filename: fmm_df.cc
 // Copyright (C) 2016 Toru Shiozaki
 //
 // Author: Hai-Anh Le <anh@u.northwestern.edu>
@@ -24,83 +24,77 @@
 //
 
 
-#include <src/scf/fmm/fmm.h>
+#include <src/periodic/fmm_df.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/mpi_interface.h>
+#include <boost/math/special_functions/erf.hpp>
+#include <src/integral/rys/eribatch.h>
 
 using namespace bagel;
 using namespace std;
 
+static const double pisq__ = pi__ * pi__;
 
-FMM::FMM(std::shared_ptr<const PTree> idata, shared_ptr<const Geometry> geom, const bool kbuild) {
+FMM_DF::FMM_DF(shared_ptr<const Geometry> geom, const int ns, const int lmax, const double ws,
+         const bool ex, const int lmax_k, const bool print, const int batchsize)
+ : geom_(geom), ns_(ns), lmax_(lmax), ws_(ws), do_exchange_(ex), lmax_k_(lmax_k),
+   debug_(print), xbatchsize_(batchsize) {
 
-  const bool dodf = idata->get<bool>("df", true);
-  if (dodf) throw runtime_error("FMM only works without DF now");
-  assert(geom->fmm());
-
-  lmax_ = idata->get<int>("lmax", 10);
-  const int batchsize = idata->get<int>("batch_size", -1);
   if (batchsize < 0)
-    xbatchsize_ = (int) ceil(0.5*geom->nele()/mpi__->size());
-  debug_ = idata->get<bool>("debug", false);
+    xbatchsize_ = (int) ceil(0.5*geom_->nele()/mpi__->size());
 
-  if (kbuild) {
-    auto newgeom = make_shared<const Geometry>(*geom, idata->get<string>("extent_exchange", "yang"));
-    geomdata_ = newgeom->fmm();
-    ns_ = idata->get<int>("ns_exchange", 2);
-    ws_ = idata->get<double>("ws_exchange", 0.0);
-    do_exchange_ = true;
-  } else {
-    geomdata_ = geom->fmm();
-    ns_ = idata->get<int>("ns", 2);
-    ws_ = idata->get<double>("ws", 0.0);
-    do_exchange_ = idata->get<bool>("exchange", true);
-    lmax_k_ = idata->get<int>("lmax_exchange", 2);
-  }
-
-  centre_ = geom->charge_center();
-  nbasis_ = geom->nbasis();
-  thresh_ = geom->schwarz_thresh();
   init();
+
+  vector<shared_ptr<const Shell>> abasis;
+  for (int n = 0; n != geom_->aux_atoms().size(); ++n) {
+    const vector<shared_ptr<const Shell>> tmpsh = geom_->aux_atoms()[n]->shells();
+    abasis.insert(abasis.end(), tmpsh.begin(), tmpsh.end());
+  }
+  compute_2index(abasis, true);
 }
 
 
-void FMM::init() {
+void FMM_DF::init() {
 
+  centre_ = geom_->charge_center();
+  nbasis_ = geom_->nbasis();
+  naux_ = geom_->naux();
   const int ns2 = pow(2, ns_);
 
-  const int nsp = geomdata_->nshellpair();
+  const int nsp = geom_->nshellpair();
   double rad = 0;
   int isp = 0;
   isp_.reserve(nsp);
   for (int i = 0; i != nsp; ++i) {
-    if (geomdata_->shellpair(i)->schwarz() < thresh_) continue;
+    if (geom_->shellpair(i)->schwarz() < geom_->schwarz_thresh()) continue;
     isp_.push_back(i);
     ++isp;
     for (int j = 0; j != 3; ++j) {
-      const double jco = geomdata_->shellpair(i)->centre(j);
+      const double jco = geom_->shellpair(i)->centre(j);
       rad = max(rad, abs(jco));
     }
   }
   nsp_ = isp;
   assert(isp_.size() == nsp_);
+  nasp_ = geom_->nauxshellpair();
+
   coordinates_.resize(nsp_);
-  for (int i = 0; i != nsp_; ++i)
-    coordinates_[i] = geomdata_->shellpair(isp_[i])->centre();
+  for (int i = 0; i != nsp_; ++i) coordinates_[i] = geom_->shellpair(isp_[i])->centre();
+  acoordinates_.resize(nasp_);
+  for (int i = 0; i != nasp_; ++i) acoordinates_[i] = geom_->aux_shellpair(i)->centre();
 
   boxsize_  = 2.05 * rad;
   unitsize_ = boxsize_/ns2;
-  coordinates_.resize(nsp_);
 
   get_boxes();
 
   do_ff_ = false;
   for (int i = 0; i != nbranch_[0]; ++i)
-    if (box_[i]->ninter_ != 0) do_ff_ = true;
+    if (box_[i]->ninter() != 0) do_ff_ = true;
 }
 
 
-void FMM::get_boxes() {
+void FMM_DF::get_boxes() {
 
   Timer fmminit;
 
@@ -109,7 +103,7 @@ void FMM::get_boxes() {
   // find out unempty leaves
   vector<array<int, 3>> boxid; // max dimension 2**(ns+1)-1
   boxid.reserve(nsp_);
-  unique_ptr<int[]> ibox(new int[nsp_]);
+  unique_ptr<int[]> ibox(new int[nsp_+nasp_]);
 
   map<array<int, 3>, int> treemap;
   assert(treemap.empty());
@@ -135,29 +129,63 @@ void FMM::get_boxes() {
     }
   }
   assert(nleaf == boxid.size() && nleaf <= nsp_);
+  
+
+  for (int isp = 0; isp != nasp_; ++isp) {
+    array<int, 3> idxbox;
+    for (int i = 0; i != 3; ++i) {
+      const double coi = acoordinates_[isp][i]-centre_[i];
+      idxbox[i] = (int) floor(coi/unitsize_) + ns2/2 + 1;
+      assert(idxbox[i] <= ns2 && idxbox[i] > 0);
+    }
+
+    map<array<int, 3>,int>::iterator box = treemap.find(idxbox);
+    const bool box_found = (box != treemap.end());
+    const int iasp = nsp_ + isp;
+    if (box_found) {
+      ibox[iasp] = treemap.find(idxbox)->second;
+    } else {
+      treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxbox, nleaf));
+      ibox[iasp] = nleaf;
+      boxid.resize(nleaf+1);
+      boxid[nleaf] = idxbox;
+      ++nleaf;
+    }
+  }
+  assert(nleaf == boxid.size() && nleaf <= nsp_+nasp_);
 
   // get leaves
   nleaf_ = nleaf;
   vector<vector<int>> leaves(nleaf);
   for (int isp = 0; isp != nsp_; ++isp) {
     const int n = ibox[isp];
-    assert(n < nleaf);
     const int ingeom = isp_[isp];
     leaves[n].insert(leaves[n].end(), ingeom);
+  }
+
+  for (int isp = 0; isp != nasp_; ++isp) {
+    const int n = ibox[nsp_+isp];
+    leaves[n].insert(leaves[n].end(), isp-nasp_);
   }
 
   // get all unempty boxes
   int nbox = 0;
   for (int il = 0; il != nleaf; ++il) {
     vector<shared_ptr<const ShellPair>> sp(leaves[il].size());
-    int cnt = 0;
+    vector<shared_ptr<const ShellPair>> asp(leaves[il].size());
+    int cnt = 0; int cnta = 0;
     for (auto& isp : leaves[il])
-      sp[cnt++] = geomdata_->shellpair(isp);
+      if (isp >= 0) {
+        sp[cnt++] = geom_->shellpair(isp);
+      } else {
+        asp[cnta++] = geom_->aux_shellpair(isp+nasp_);
+      }
+    sp.resize(cnt); asp.resize(cnta);
     array<int, 3> id = boxid[il];
     array<double, 3> centre;
     for (int i = 0; i != 3; ++i)
       centre[i] = (id[i]-ns2/2-1)*unitsize_ + 0.5*unitsize_;
-    auto newbox = make_shared<Box>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, thresh_);
+    auto newbox = make_shared<Box_DF>(0, unitsize_, centre, il, id, lmax_, lmax_k_, sp, asp, geom_->schwarz_thresh());
     box_.insert(box_.end(), newbox);
     ++nbox;
   }
@@ -192,8 +220,8 @@ void FMM::get_boxes() {
             if (!parent_found) {
               if (nss != 0) {
                 const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
-                auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}},
-                     nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_);
+                auto newbox = make_shared<Box_DF>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}},
+                     nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), box_[ichild]->auxsp(), geom_->schwarz_thresh());
                 box_.insert(box_.end(), newbox);
                 treemap.insert(treemap.end(), pair<array<int, 3>,int>(idxp, nbox));
                 box_[nbox]->insert_child(box_[ichild]);
@@ -205,6 +233,7 @@ void FMM::get_boxes() {
               const int ibox = treemap.find(idxp)->second;
               box_[ibox]->insert_child(box_[ichild]);
               box_[ibox]->insert_sp(box_[ichild]->sp());
+              box_[ibox]->insert_auxsp(box_[ichild]->auxsp());
               box_[ichild]->insert_parent(box_[ibox]);
               ++nbranch;
             }
@@ -225,42 +254,38 @@ void FMM::get_boxes() {
 
   int icnt = 0;
   for (int ir = ns_; ir > -1; --ir) {
-    vector<weak_ptr<Box>> tmpbox(nbranch_[ir]);
+    vector<shared_ptr<Box_DF>> tmpbox(nbranch_[ir]);
     for (int ib = 0; ib != nbranch_[ir]; ++ib)
       tmpbox[ib] = box_[nbox_-icnt-nbranch_[ir]+ib];
     for (auto& b : tmpbox) {
-      shared_ptr<Box> b0 = b.lock();
-      b0->get_neigh(tmpbox, ws_);
-      b0->get_inter(tmpbox, ws_);
-      b0->sort_sp();
+      b->get_neigh(tmpbox, ws_);
+      b->get_inter(tmpbox, ws_);
+      b->sort_sp();
     }
     icnt += nbranch_[ir];
   }
 
   if (debug_) {
-    cout << "Centre of Charge: " << setprecision(3) << centre_[0] << "  " << centre_[1] << "  " << centre_[2] << endl;
-    cout << "ns_ = " << ns_ << " nbox = " << nbox_ << "  nleaf = " << nleaf << " nsp = " << nsp_ << " ws = " << ws_ << " lmaxJ " << lmax_;
+    cout << "Centre of Charge: " << setprecision(3) << geom_->charge_center()[0] << "  " << geom_->charge_center()[1] << "  " << geom_->charge_center()[2] << endl;
+    cout << "ns_ " << ns_ << " nbox " << nbox_ << "  nleaf " << nleaf << " nsp " << nsp_ << " nasp " << nasp_ << " ws " << ws_ << " lmaxJ " << lmax_;
     if (do_exchange_)
       cout << " *** BATCHSIZE " << xbatchsize_ << " lmax_k " << lmax_k_;
     cout << " boxsize = " << boxsize_ << " leafsize = " << unitsize_ << endl;
     int i = 0;
     for (auto& b : box_) {
-      const bool ipar = (b->parent_.lock()) ? true : false;
+      const bool ipar = (b->parent()) ? true : false;
       int nsp_neigh = 0;
-      for (int j = 0; j != b->neigh_.size(); ++j) {
-        shared_ptr<const Box> ne = b->neigh_[j].lock();
-        nsp_neigh += ne->nsp_;
-      }
+      for (auto& n : b->neigh())
+        nsp_neigh += n->nsp();
       int nsp_inter = 0;
-      for (int j = 0; j != b->inter_.size(); ++j) {
-        shared_ptr<const Box> inter = b->inter_[j].lock();
-        nsp_inter += inter->nsp_;
-      }
-      cout << i << " rank = " << b->rank() << "  boxsize = " << b->boxsize() << " extent = " << b->extent() << " nsp = " << b->nsp_
-           << " nchild = " << b->nchild_ << " nneigh = " << b->nneigh_ << " nsp " << nsp_neigh
-           << " ninter = " << b->ninter_ << " nsp " << nsp_inter
-           << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2)
-           << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar << endl;
+      for (auto& i : b->interaction_list())
+        nsp_inter += i->nsp();
+      cout << i << " rank = " << b->rank() << "  boxsize " << b->boxsize() << " extent " << b->extent() << " nsp " << b->nsp() << " nasp " << b->auxsp().size()
+           << " nchild = " << b->nchild() << " nneigh " << b->nneigh() << " nsp " << nsp_neigh
+           << " ninter = " << b->ninter() << " nsp " << nsp_inter << " auxneigh " << b->aux_neigh().size() << " auxnonneigh " << b->aux_nonneigh().size()
+           << " centre = " << b->centre(0) << " " << b->centre(1) << " " << b->centre(2);
+//           << " idxc = " << b->tvec()[0] << " " << b->tvec()[1] << " " << b->tvec()[2] << " *** " << ipar
+      cout << endl;
       ++i;
     }
   }
@@ -269,7 +294,7 @@ void FMM::get_boxes() {
 }
 
 
-void FMM::M2M(shared_ptr<const Matrix> density, const bool dox) const {
+void FMM_DF::M2M(shared_ptr<const Matrix> density, const bool dox) const {
 
   Timer m2mtime;
   for (int i = 0; i != nbranch_[0]; ++i)
@@ -277,7 +302,7 @@ void FMM::M2M(shared_ptr<const Matrix> density, const bool dox) const {
       box_[i]->compute_M2M(density);
 
   for (int i = 0; i != nbranch_[0]; ++i)
-    mpi__->broadcast(box_[i]->olm()->data(), box_[i]->olm()->size(), i % mpi__->size());
+    mpi__->broadcast(box_[i]->multipole()->data(), box_[i]->multipole()->size(), i % mpi__->size());
 
   m2mtime.tick_print("Compute multipoles");
 
@@ -291,23 +316,21 @@ void FMM::M2M(shared_ptr<const Matrix> density, const bool dox) const {
 }
 
 
-void FMM::M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Matrix> ocoeff_ui) const {
+void FMM_DF::M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Matrix> ocoeff_ui) const {
 
   Timer m2mtime;
 
   int icnt = 0;
   for (int i = 0; i != ns_+1; ++i) {
-    for (int j = 0; j != nbranch_[i]; ++j, ++icnt) {
+    for (int j = 0; j != nbranch_[i]; ++j, ++icnt)
       box_[icnt]->compute_M2M_X(ocoeff_sj, ocoeff_ui);
-      if (icnt >= nbox_) throw logic_error("Trying to access beyond nbox in M2M_X");
-    }
   }
   m2mtime.tick_print("M2M-X pass");
   assert(icnt == nbox_);
 }
 
 
-void FMM::M2L(const bool dox) const {
+void FMM_DF::M2L(const bool dox) const {
 
   Timer m2ltime;
 
@@ -330,7 +353,7 @@ void FMM::M2L(const bool dox) const {
 }
 
 
-void FMM::L2L(const bool dox) const {
+void FMM_DF::L2L(const bool dox) const {
 
   Timer l2ltime;
 
@@ -346,11 +369,8 @@ void FMM::L2L(const bool dox) const {
     l2ltime.tick_print("L2L pass");
   } else {
     for (int ir = ns_; ir > -1; --ir) {
-      for (int ib = 0; ib != nbranch_[ir]; ++ib) {
-        const int ibox = nbox_-icnt-nbranch_[ir]+ib;
-        box_[ibox]->compute_L2L_X();
-        if (icnt >= nbox_) throw logic_error("Trying to access beyond nbox in M2M_X");
-      }
+      for (int ib = 0; ib != nbranch_[ir]; ++ib)
+        box_[nbox_-icnt-nbranch_[ir]+ib]->compute_L2L_X();
 
       icnt += nbranch_[ir];
     }
@@ -359,7 +379,7 @@ void FMM::L2L(const bool dox) const {
 }
 
 
-shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
+shared_ptr<const Matrix> FMM_DF::compute_Fock_FMM(shared_ptr<const Matrix> density) const {
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
@@ -373,15 +393,15 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   if (density) {
     assert(nbasis_ == density->ndim());
-    auto maxden = make_shared<VectorB>(geomdata_->nshellpair());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
     const double* density_data = density->data();
-    for (int i01 = 0; i01 != geomdata_->nshellpair(); ++i01) {
-      shared_ptr<const Shell> sh0 = geomdata_->shellpair(i01)->shell(1);
-      const int offset0 = geomdata_->shellpair(i01)->offset(1);
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
       const int size0 = sh0->nbasis();
 
-      shared_ptr<const Shell> sh1 = geomdata_->shellpair(i01)->shell(0);
-      const int offset1 = geomdata_->shellpair(i01)->offset(0);
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
       const int size1 = sh1->nbasis();
 
       double denmax = 0.0;
@@ -419,18 +439,97 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 }
 
 
-shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shared_ptr<const Matrix> overlap) const {
+shared_ptr<const Matrix> FMM_DF::compute_K_ff_from_den(shared_ptr<const Matrix> density, shared_ptr<const Matrix> overlap) const {
+
+  if (!do_exchange_ || !density)
+    return overlap->clone();
+
+  Timer ktime;
+  shared_ptr<Matrix> coeff = density->copy();
+  *coeff *= -1.0;
+  int nocc = 0;
+  {
+    VectorB vec(density->ndim());
+    coeff->diagonalize(vec);
+    for (int i = 0; i != density->ndim(); ++i) {
+      if (vec[i] < -1.0e-8) {
+        ++nocc;
+        const double fac = std::sqrt(-vec(i));
+        for_each(coeff->element_ptr(0,i), coeff->element_ptr(0,i+1), [&fac](double& i) { i *= fac; });
+      } else { break; }
+    }
+  }
+  auto ocoeff = make_shared<const Matrix>(coeff->slice(0,nocc));
+
+  auto krj = make_shared<Matrix>(nbasis_, nocc);
+  const int nbatch = (nocc-1) / xbatchsize_+1;
+  StaticDist dist(nocc, nbatch);
+  vector<pair<size_t, size_t>> table = dist.atable();
+
+  Timer mtime;
+
+  int u = 0;
+  for (auto& itable : table) {
+    if (u++ % mpi__->size() == mpi__->rank()) {
+      if (debug_) 
+        cout << "BATCH " << u << "  from " << itable.first << " doing " << itable.second << " MPI " << u << endl;
+      auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
+      shared_ptr<const Matrix> ocoeff_sj = ocoeff;
+
+      M2M_X(ocoeff_sj, ocoeff_ui);
+      M2L(true);
+      L2L(true);
+      Timer assembletime;
+      for (int i = 0; i != nbranch_[0]; ++i) {
+        auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
+        assert(ffx->ndim() == nbasis_ && ffx->mdim() == nocc);
+        blas::ax_plus_y_n(1.0, ffx->data(), nbasis_*nocc, krj->data());
+      }
+      assembletime.tick_print("Building Krj");
+    }
+  }
+  krj->allreduce();
+
+  Timer projtime;
+  auto kij = make_shared<const Matrix>(*ocoeff % *krj);
+// check kij is symmetric
+  auto kji = kij->transpose();
+  const double err = (*kij - *kji).rms();
+  if (err > 1e-15 && debug_)
+     cout << " *** Warning: Kij is not symmetric: rms(K-K^T) = " << setprecision(20) << err << endl;
+
+  auto sc = make_shared<const Matrix>(*overlap * *ocoeff);
+  auto sck = make_shared<const Matrix>(*sc ^ *krj);
+  auto krs = make_shared<const Matrix>(*sck + *(sck->transpose()) - *sc * (*kij ^ *sc));
+  auto ksr = krs->transpose();
+  const double errk = (*krs - *ksr).rms();
+  if (errk > 1e-15 && debug_)
+    cout << " *** Warning: Krs is not symmetric: rms(K-K^T) = " << setprecision(20) << errk << endl;
+
+  projtime.tick_print("Krs from Krj");
+
+  const double enk = 0.5*density->dot_product(*krs);
+  cout << "          o    Far-field Exchange energy: " << setprecision(6) << enk << endl;
+
+  ktime.tick_print("FMM-K");
+  return krs;
+}
+
+
+shared_ptr<const Matrix> FMM_DF::compute_K_ff(shared_ptr<const Matrix> ocoeff, shared_ptr<const Matrix> overlap) const {
 
   if (!do_exchange_ || !ocoeff)
     return overlap->clone();
 
+  Timer ktime;
   const int nocc = ocoeff->mdim();
   auto krj = make_shared<Matrix>(nbasis_, nocc);
   const int nbatch = (nocc-1) / xbatchsize_+1;
   StaticDist dist(nocc, nbatch);
   vector<pair<size_t, size_t>> table = dist.atable();
 
-  Timer ktime;
+  Timer mtime;
+
   int u = 0;
   for (auto& itable : table) {
     if (u++ % mpi__->size() == mpi__->rank()) {
@@ -439,11 +538,9 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
       auto ocoeff_ui = make_shared<const Matrix>(ocoeff->slice(itable.first, itable.first+itable.second));
       shared_ptr<const Matrix> ocoeff_sj = ocoeff;
 
-      {
-        M2M_X(ocoeff_sj, ocoeff_ui);
-        M2L(true);
-        L2L(true);
-      }
+      M2M_X(ocoeff_sj, ocoeff_ui);
+      M2L(true);
+      L2L(true);
       Timer assembletime;
       for (int i = 0; i != nbranch_[0]; ++i) {
         auto ffx = box_[i]->compute_Fock_ff_K(ocoeff_ui);
@@ -467,22 +564,22 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
     projtime.tick_print("Projecting K");
   }
   
-  ktime.tick_print("FMM-K");
   const double enk = ocoeff->dot_product(*krj);
   cout << "          o    Far-field Exchange energy: " << setprecision(9) << enk << endl;
 
+  ktime.tick_print("FMM-K");
   return krj;
 }
 
 
-void FMM::print_boxes(const int i) const {
+void FMM_DF::print_boxes(const int i) const {
 
   int ib = 0;
   for (auto& b : box_) {
     if (b->rank() == i) {
-      cout << "Box " << ib << " rank = " << i << " *** size " << b->boxsize() << " *** nchild = " << b->nchild_ << " *** nsp = " << b->nsp_ << " *** Shell pairs at:" << endl;
-      for (int i = 0; i != b->nsp_; ++i)
-        cout << setprecision(5) << b->sp()[i]->centre(0) << "  " << b->sp()[i]->centre(1) << "  " << b->sp()[i]->centre(2) << endl;
+      cout << "Box " << ib << " rank = " << i << " *** size " << b->boxsize() << " *** nchild = " << b->nchild() << " *** nsp = " << b->nsp() << " *** Shell pairs at:" << endl;
+      for (int i = 0; i != b->nsp(); ++i)
+        cout << setprecision(5) << b->sp(i)->centre(0) << "  " << b->sp(i)->centre(1) << "  " << b->sp(i)->centre(2) << endl;
       ++ib;
     }
     if (b->rank() > i) break;
@@ -491,7 +588,7 @@ void FMM::print_boxes(const int i) const {
 }
 
 
-shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> density) const {
+shared_ptr<const Matrix> FMM_DF::compute_Fock_FMM_K(shared_ptr<const Matrix> density) const {
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
@@ -499,15 +596,15 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
   Timer nftime;
   if (density) {
     assert(nbasis_ == density->ndim());
-    auto maxden = make_shared<VectorB>(geomdata_->nshellpair());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
     const double* density_data = density->data();
-    for (int i01 = 0; i01 != geomdata_->nshellpair(); ++i01) {
-      shared_ptr<const Shell> sh0 = geomdata_->shellpair(i01)->shell(1);
-      const int offset0 = geomdata_->shellpair(i01)->offset(1);
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
       const int size0 = sh0->nbasis();
 
-      shared_ptr<const Shell> sh1 = geomdata_->shellpair(i01)->shell(0);
-      const int offset1 = geomdata_->shellpair(i01)->offset(0);
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
       const int size1 = sh1->nbasis();
 
       double denmax = 0.0;
@@ -536,7 +633,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
 }
 
 
-shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> density) const {
+shared_ptr<const Matrix> FMM_DF::compute_Fock_FMM_J(shared_ptr<const Matrix> density) const {
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
@@ -546,19 +643,19 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
   M2L();
   L2L();
 
-  Timer jtime;
+  Timer nftime;
 
   if (density) {
     assert(nbasis_ == density->ndim());
-    auto maxden = make_shared<VectorB>(geomdata_->nshellpair());
+    auto maxden = make_shared<VectorB>(geom_->nshellpair());
     const double* density_data = density->data();
-    for (int i01 = 0; i01 != geomdata_->nshellpair(); ++i01) {
-      shared_ptr<const Shell> sh0 = geomdata_->shellpair(i01)->shell(1);
-      const int offset0 = geomdata_->shellpair(i01)->offset(1);
+    for (int i01 = 0; i01 != geom_->nshellpair(); ++i01) {
+      shared_ptr<const Shell> sh0 = geom_->shellpair(i01)->shell(1);
+      const int offset0 = geom_->shellpair(i01)->offset(1);
       const int size0 = sh0->nbasis();
 
-      shared_ptr<const Shell> sh1 = geomdata_->shellpair(i01)->shell(0);
-      const int offset1 = geomdata_->shellpair(i01)->offset(0);
+      shared_ptr<const Shell> sh1 = geom_->shellpair(i01)->shell(0);
+      const int offset1 = geom_->shellpair(i01)->offset(0);
       const int size1 = sh1->nbasis();
 
       double denmax = 0.0;
@@ -573,18 +670,13 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     auto ff = make_shared<Matrix>(nbasis_, nbasis_);
     for (int i = 0; i != nbranch_[0]; ++i)
       if (i % mpi__->size() == mpi__->rank()) {
+        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
+        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
         auto ffi = box_[i]->compute_Fock_ff(density);
         blas::ax_plus_y_n(1.0, ffi->data(), nbasis_*nbasis_, ff->data());
       }
-    ff->allreduce();
-    fmmtime.tick_print("FMM-J");
-
-    for (int i = 0; i != nbranch_[0]; ++i)
-      if (i % mpi__->size() == mpi__->rank()) {
-        auto ei = box_[i]->compute_Fock_nf_J(density, maxden);
-        blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
-      }
     out->allreduce();
+    ff->allreduce();
 
     const double enj = 0.5*density->dot_product(*ff);
     cout << "    o  Far-field Coulomb energy: " << setprecision(9) << enj << endl;
@@ -596,7 +688,99 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
     *out += *ff;
   }
 
-  jtime.tick_print("J build");
+  nftime.tick_print("near-field-J");
+
+  return out;
+}
+
+
+void FMM_DF::compute_2index(const vector<shared_ptr<const Shell>>& ashell, const bool compute_inverse) {
+
+  Timer time_int;
+  const int naux = geom_->naux();
+  auto XYinv = make_shared<Matrix>(naux, naux);
+  TaskQueue<function<void(void)>> tasks(naux*naux);
+  auto b3 = make_shared<const Shell>(ashell.front()->spherical());
+
+  // naive static distribution
+  tasks.emplace_back(
+    [this, ashell, &b3, &XYinv, naux]() {
+      double* const data = XYinv->data();
+      int u = 0;
+      int o0 = 0;
+      for (auto& b0 : ashell) {
+        int o1 = 0;
+        for (auto& b1 : ashell) {
+          if (o0 <= o1 && ((u++ % mpi__->size() == mpi__->rank()))) {
+            ERIBatch eribatch(array<shared_ptr<const Shell>,4>{{b1, b3, b0, b3}}, 2.0);
+            eribatch.compute();
+            const double* eridata = eribatch.data();
+            for (int j0 = o0; j0 != o0 + b0->nbasis(); ++j0)
+              for (int j1 = o1; j1 != o1 + b1->nbasis(); ++j1, ++eridata)
+                data[j1+j0*naux] = data[j0+j1*naux] = *eridata;
+          }
+          o1 += b1->nbasis();
+        }
+        o0 += b0->nbasis();
+      }
+    }
+  );
+
+  tasks.compute();
+  XYinv->allreduce();
+  time_int.tick_print("2-index integrals");
+
+  Timer time_inv;
+  if (compute_inverse) {
+    XYinv->inverse();
+    XYinv->localize();
+    time_inv.tick_print("computing inverse");
+  }
+  XYinv_ = XYinv;
+}
+
+
+shared_ptr<const ZVectorB> FMM_DF::compute_CX() const {
+
+  Timer tcx;
+  auto out = make_shared<ZVectorB>(geom_->naux());
+  for (int i = 0; i != nbranch_[0]; ++i) {
+    if (i % mpi__->size() == mpi__->rank()) {
+      shared_ptr<const ZVectorB> cx = box_[i]->compute_CX(XYinv_);
+      blas::ax_plus_y_n(1.0, cx->data(), cx->size(), out->data());
+    }
+  }
+  out->allreduce();
+
+  tcx.tick_print("computing C_X");
+  return out;
+}
+
+
+shared_ptr<const Matrix> FMM_DF::compute_Fock_FMM_DF(shared_ptr<const Matrix> density) const {
+
+  auto out = make_shared<Matrix>(nbasis_, nbasis_);
+  out->zero();
+  if (!density) return out;
+ 
+  Timer fmmtime;
+
+  M2M(density);
+  M2L();
+  L2L();
+
+  shared_ptr<const ZVectorB> coeff_X = compute_CX();
+  for (int i = 0; i != nbranch_[0]; ++i)
+    if (i % mpi__->size() == mpi__->rank()) {
+      auto ei = box_[i]->compute_Coulomb_DF(density, coeff_X);
+      blas::ax_plus_y_n(1.0, ei->data(), nbasis_*nbasis_, out->data());
+    }
+  out->allreduce();
+
+  const double enj = 0.5*density->dot_product(*out);
+  cout << "    o  Far-field Coulomb energy: " << setprecision(9) << enj << endl;
+
+  fmmtime.tick_print("FMM-J");
 
   return out;
 }

@@ -46,8 +46,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   // members of Molecule
   spherical_ = true;
   lmax_ = 0;
-  dofmm_   = geominfo->get<bool>("cfmm", false);
-  extent_type_ = to_lower(geominfo->get<string>("extent_type", "yang"));
 
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", 1.0e-12);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
@@ -150,14 +148,19 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 
   common_init2(true, overlap_thresh_);
   get_electric_field(geominfo);
+
+  // FMM
+  const bool dofmm = geominfo->get<bool>("cfmm", false);
+  if (dofmm)
+    fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
 }
 
 
-void Geometry::common_init2(const bool print, const double thresh, const bool nodf, const bool get_sp) {
+void Geometry::common_init2(const bool print, const double thresh, const bool nodf) {
 
   if (london_ || nonzero_magnetic_field()) init_magnetism();
 
-  if (!auxfile_.empty() && !nodf && !do_periodic_df_ && !dofmm_) {
+  if (!auxfile_.empty() && !nodf && !do_periodic_df_ && !fmm_) {
     if (print) cout << "  Number of auxiliary basis functions: " << setw(8) << naux() << endl << endl;
     cout << "  Since a DF basis is specified, we compute 2- and 3-index integrals:" << endl;
     const double scale = magnetism_ ? 2.0 : 1.0;
@@ -180,8 +183,6 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
   nuclear_repulsion_ = compute_nuclear_repulsion();
   assert(magnetism_ ? (london_ || nonzero_magnetic_field()) : (!london_ && !nonzero_magnetic_field()));
-
-  if (dofmm_ && get_sp) get_shellpairs(extent_type_);
 }
 
 
@@ -199,7 +200,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
-  dofmm_ = o.dofmm_;
+  fmm_ = o.fmm_;
   skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
@@ -312,7 +313,6 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
-  dofmm_ = o.dofmm_;
   skip_self_interaction_ = o.skip_self_interaction_;
 
   // first construct atoms using displacements
@@ -347,7 +347,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   aux_atoms_ = o.aux_atoms_;
   gamma_ = o.gamma_;
   magnetic_field_ = o.magnetic_field_;
-  dofmm_ = o.dofmm_;
+  fmm_ = o.fmm_;
   dkh_ = o.dkh_;
 
   // check all the options
@@ -356,7 +356,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   symmetry_ = to_lower(geominfo->get<string>("symmetry", symmetry_));
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  dofmm_ = geominfo->get<bool>("cfmm", dofmm_);
   dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
@@ -442,7 +441,7 @@ Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   symmetry_ = nmer.front()->symmetry_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
-  dofmm_ = nmer.front()->dofmm_;
+  fmm_ = nmer.front()->fmm_;
   skip_self_interaction_ = nmer.front()->skip_self_interaction_;
 
   /************************************************************
@@ -515,7 +514,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   spherical_ = true;
   lmax_ = 0;
-  dofmm_ = false;
 
   atoms_ = atoms;
 
@@ -551,6 +549,9 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   print_atoms();
 
   dkh_ = geominfo->get<bool>("dkh", false);
+  const bool dofmm = geominfo->get<bool>("cfmm", false);
+  if (dofmm)
+    fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -589,34 +590,10 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 }
 
 
-void Geometry::get_shellpairs(const string type) {
-
-  const string extent_type = (type == "") ? "yang" : type;
-  vector<int> offsets;
-  vector<shared_ptr<const Shell>> basis;
-  for (int n = 0; n != natom(); ++n) {
-    const vector<int> tmpoff = offset(n);
-    offsets.insert(offsets.end(), tmpoff.begin(), tmpoff.end());
-    const vector<shared_ptr<const Shell>> tmpsh = atoms_[n]->shells();
-    basis.insert(basis.end(), tmpsh.begin(), tmpsh.end());
-  }
-  const int nsh = basis.size();
-
-  shellpairs_.resize(nsh * nsh);
-  for (int i0 = 0; i0 != nsh; ++i0) {
-    for (int i1 = 0; i1 != nsh; ++i1) {
-      const int i01 = i0 * nsh + i1;
-      shellpairs_[i01] = make_shared<const ShellPair>(array<shared_ptr<const Shell>, 2>{{basis[i1], basis[i0]}},
-                                                      array<int, 2>{{offsets[i1], offsets[i0]}}, make_pair(i1, i0), extent_type);
-    }
-  }
-}
-
-
 vector<double> Geometry::schwarz() const {
   
   vector<double> schwarz;
-  if (shellpairs_.empty()) {
+  if (!fmm_) {
     vector<int> offsets;
     vector<shared_ptr<const Shell>> basis;
     for (int n = 0; n != natom(); ++n) {
@@ -652,10 +629,10 @@ vector<double> Geometry::schwarz() const {
       }
     }
   } else {
-    const int nsp = shellpairs_.size();
+    const int nsp = fmm_->nshellpair();
     schwarz.resize(nsp);
     for (int i = 0; i != nsp; ++i)
-      schwarz[i] = shellpairs_[i]->schwarz();
+      schwarz[i] = fmm_->shellpair(i)->schwarz();
   }
 
   return schwarz;
@@ -794,7 +771,7 @@ Geometry::Geometry(const Geometry& o, const string type)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
     london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
 
-  if (!o.dofmm_)
+  if (!o.fmm_)
     throw logic_error("Geometry construction called during FMM only");
 
   // members of Molecule
@@ -806,11 +783,10 @@ Geometry::Geometry(const Geometry& o, const string type)
   gamma_ = o.gamma_;
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
-  dofmm_ = o.dofmm_;
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
 
   common_init1();
-  common_init2(false, overlap_thresh_, true, false);
-  get_shellpairs(type);
+  common_init2(false, overlap_thresh_, true);
+  fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(type));
 }
