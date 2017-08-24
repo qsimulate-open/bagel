@@ -61,8 +61,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
   };
 
   auto smallnaigrad = [](shared_ptr<const Molecule> mol) {
-    shared_ptr<Matrix> O_X;
-    GSmallNAIBatch smallnai;
+    shared_ptr<Matrix> O_X = make_shared<Matrix>(Matrix(1024, 1024));
     return O_X;
   };
 
@@ -71,7 +70,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
   const MixedBasis<OverlapBatch> U_T(mol, molu);
   Overlap s(molu);
   const Matrix s_inv12 = *s.tildex();
-  s_inv = s.inverse_symmetric();
+  const Matrix s_inv = s.inverse_symmetric();
   const Kinetic T_p(molu);
   // const Matrix T = U_T % T_p * U_T;
   const Matrix T_pp = s_inv12 % T_p * s_inv12;
@@ -97,7 +96,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
   const Matrix s_X = S_X_U - PU * s + s * PU;
   const Matrix T_ppX = s_inv12 % T_pX * s_inv12 - 0.5 * (s_inv * s_X * T_pp + T_pp * s_inv * s_X);
 
-  const Matrix T_ppX_W = W % T_ppX * W
+  const Matrix T_ppX_W = W % T_ppX * W;
   Matrix PW(nunc, nunc);
   for (int i = 0; i < nunc; ++i) {
     for (int j = i; j < nunc; ++j) {
@@ -201,3 +200,4 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
 
   Matrix_base<double>::operator=(T_relX + V_relX);
 }
+
