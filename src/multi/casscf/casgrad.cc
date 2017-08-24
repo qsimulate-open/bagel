@@ -238,7 +238,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     // Recalculate the CI vectors (which can be avoided... TODO)
     shared_ptr<const Dvec> civ = task_->fci()->civectors();
 
-    // CI derivative is also zero here
+    // CI derivative is zero
     auto g1 = make_shared<Dvec>(task_->fci()->det(), ref_->nstate());
     // combine gradient file
     auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);

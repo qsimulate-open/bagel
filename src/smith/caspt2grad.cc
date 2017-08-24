@@ -296,7 +296,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   const int nocc  = ref->nocc();
   const int nmobasis = coeff->mdim();
 
-  // d0, of course there are no core here
+  // d0 including core
   auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
   if (nact)
     d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
