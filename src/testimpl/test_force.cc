@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(Finite_Grad) {
 }
 
 BOOST_AUTO_TEST_CASE(Mat1e_Grad) {
-    BOOST_CHECK(compare(run_force("hf_mix_dfhf_dkh_grad"),   reference_dkh_grad(), 1.0e-5));
+    BOOST_CHECK(compare(run_force("hf_svp_dfhf_dkh_grad"),   reference_dkh_grad(), 1.0e-5));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
