@@ -36,6 +36,7 @@
 #include <src/wfn/method.h>
 #include <src/wfn/reference.h>
 #include <src/smith/tensor.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 
@@ -75,7 +76,7 @@ class Smith : public Method {
 
     void compute() override;
     // Gradient module to be separated
-    void compute_gradient(const int istate, const int jstate, const std::string nacmtype = "interstate", const bool nocider = false);
+    void compute_gradient(const int istate, const int jstate, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>("interstate"), const bool nocider = false);
 
     // just return the reference used in SMITH code
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }

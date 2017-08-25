@@ -322,7 +322,7 @@ void RelCASPT2::RelCASPT2::load_t2all(shared_ptr<MultiTensor> t2in, const int is
 }
 
 
-void RelCASPT2::RelCASPT2::solve_gradient(const int targetJ, const int targetI, const string nacmtype, const bool nocider) {
+void RelCASPT2::RelCASPT2::solve_gradient(const int targetJ, const int targetI, shared_ptr<const NacmType> nacmtype, const bool nocider) {
   throw std::logic_error("Nuclear gradients not implemented for RelCASPT2");
 }
 

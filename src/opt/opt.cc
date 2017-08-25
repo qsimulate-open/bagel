@@ -119,7 +119,10 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
       target_state_ = target_state2_;
       target_state2_ = tmpstate;
     }
-    nacmtype_ = to_lower(idat->get<string>("nacmtype", "noweight"));
+    {
+      const string nacm = to_lower(idata_->get<string>("nacmtype", "noweight"));
+      nacmtype_ = make_shared<NacmType>(nacm);
+    }
     thielc3_  = idat->get<double>("thielc3", opttype_=="mdci" ? 0.01 : 2.0);
     thielc4_  = idat->get<double>("thielc4", 0.5);
     adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function

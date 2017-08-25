@@ -92,7 +92,7 @@ void CASPT2Energy::compute() {
   ref_->energy() = energy_;
 
   if (target_state1_!=-1) {
-    smith->compute_gradient(target_state1_, target_state2_, 0);
+    smith->compute_gradient(target_state1_, target_state2_, make_shared<const NacmType>());
     ncore_   = smith->algo()->info()->ncore();
     coeff_   = smith->coeff();
     msrot_   = smith->msrot();

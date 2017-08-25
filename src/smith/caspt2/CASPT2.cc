@@ -350,7 +350,7 @@ void CASPT2::CASPT2::solve_dm(const int istate, const int jstate) {
 }
 
 
-void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const string nacmtype, const bool nocider) {
+void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared_ptr<const NacmType> nacmtype, const bool nocider) {
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
   assert (!((targetJ != targetI) && (nstates_ == 1)));
@@ -627,7 +627,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
           double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
                     - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
           // If this is Full NACME, <U | dU/dX> contribution should be added
-          if ((targetJ != targetI) && (nacmtype == "full" || nacmtype == "etf")) {
+          if ((targetJ != targetI) && (nacmtype->full() || nacmtype->etf())) {
             cy += (pt2energy_[targetI] - pt2energy_[targetJ])
                 * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
           }

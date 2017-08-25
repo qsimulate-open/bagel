@@ -30,6 +30,7 @@
 #include <src/ci/fci/distfci.h>
 #include <src/smith/tensor.h>
 #include <src/smith/smith.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 
@@ -109,7 +110,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     void compute() override;
-    void compute_gradient(const int istate, const int jstate, const std::string nacmtype = "interstate", const bool nocider = false);
+    void compute_gradient(const int istate, const int jstate, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>("interstate"), const bool nocider = false);
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }

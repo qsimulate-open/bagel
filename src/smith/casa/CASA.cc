@@ -252,7 +252,7 @@ void CASA::CASA::update_amplitude_casa(std::shared_ptr<MultiTensor> t, std::shar
   e0_ = e0save;
 }
 
-void CASA::CASA::solve_gradient(const int targetJ, const int targetI, const string nacmtype, const bool nocider) {
+void CASA::CASA::solve_gradient(const int targetJ, const int targetI, shared_ptr<const NacmType> nacmtype, const bool nocider) {
   throw runtime_error("Gradients are not implemented for CAS/A.");
 }
 

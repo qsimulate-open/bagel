@@ -35,6 +35,7 @@
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/smith_info.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 namespace SMITH {
@@ -151,7 +152,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     ~CASPT2() {}
 
     void solve();
-    void solve_gradient(const int targetJ, const int targetI, const std::string nacmtype = "interstate", const bool nocider = false);
+    void solve_gradient(const int targetJ, const int targetI, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>(), const bool nocider = false);
     void solve_dm(const int istate, const int jstate);
 
     std::shared_ptr<const Matrix> msrot() const { return xmsmat_ ? std::make_shared<Matrix>(*xmsmat_ * *heff_) : heff_; }

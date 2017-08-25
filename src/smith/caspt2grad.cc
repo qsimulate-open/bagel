@@ -99,7 +99,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
   vector<vector<double>> transition_dipole;
 
   for (int istate = 0; istate != nstate; ++istate) {
-    task_->compute_gradient(istate, istate, "interstate", /*nocider=*/true);
+    task_->compute_gradient(istate, istate, make_shared<NacmType>("interstate"), /*nocider=*/true);
 
     {
       auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -119,7 +119,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
 
   for (int istate = 1; istate != nstate; ++istate) {
     for (int jstate = 0; jstate != istate; ++jstate) {
-      task_->compute_gradient(istate, jstate, "interstate", /*nocider=*/true);
+      task_->compute_gradient(istate, jstate, make_shared<NacmType>("interstate"), /*nocider=*/true);
 
       {
         auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -160,7 +160,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
 }
 
 
-void CASPT2Grad::compute_gradient(const int istate, const int jstate, const string nacmtype, const bool nocider) {
+void CASPT2Grad::compute_gradient(const int istate, const int jstate, shared_ptr<const NacmType> nacmtype, const bool nocider) {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -266,7 +266,7 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const string nacmtype) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
 #ifdef COMPILE_SMITH
 
   if (jobtitle == "nacme")
@@ -340,7 +340,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
 
-  if (jobtitle == "nacme" && (nacmtype == "full" || nacmtype == "etf"))
+  if (jobtitle == "nacme" && (nacmtype->full() || nacmtype->etf()))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -396,7 +396,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   if (jobtitle == "nacme") {
     auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
-    if (nacmtype == "full")
+    if (nacmtype->full())
       qxmat->scale(egap);
     else
       qxmat->zero();
@@ -496,7 +496,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if ((jobtitle == "nacme") && (nacmtype != "noweight"))
+  if ((jobtitle == "nacme") && !(nacmtype->noweight()))
     gradient->scale(1.0/egap);
   gradient->print();
   timer.tick_print("Gradient integral contraction");

@@ -74,6 +74,10 @@ shared_ptr<GradFile> Force::compute() {
   const bool export_single = idata_->get<bool>("export_single", false);
   const bool compute_dipole = idata_->get<bool>("dipole", false);
 
+  const string nacm = to_lower(idata_->get<string>("nacmtype", "full"));
+  
+  shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(nacm);
+
   if (jobtitle == "forces") {
 
     // list of gradients (and NACMEs) to be evaluated. maxziter, nacmtype, target, target2 can be specified
@@ -90,7 +94,6 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
-        const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -108,7 +111,6 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
-        const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -177,7 +179,6 @@ shared_ptr<GradFile> Force::compute() {
     } else if (method == "casscf") {
 
       const int maxziter = idata_->get<int>("maxziter", 100);
-      const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole) force->compute_dipole();
@@ -188,7 +189,6 @@ shared_ptr<GradFile> Force::compute() {
     } else if (method == "caspt2") {
 
       const int maxziter = idata_->get<int>("maxziter", 100);
-      const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole) force->compute_dipole();

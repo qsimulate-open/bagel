@@ -36,6 +36,7 @@
 #include <src/smith/queue.h>
 #include <src/smith/multitensor.h>
 #include <src/smith/smith_info.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 namespace SMITH {
@@ -157,7 +158,7 @@ class RelMRCI : public SpinFreeMethod<std::complex<double>> {
     ~RelMRCI() {}
 
     void solve();
-    void solve_gradient(const int targetJ, const int targetI, const std::string nacmtype = "interstate", const bool nocider = false);
+    void solve_gradient(const int targetJ, const int targetI, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>(), const bool nocider = false);
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;
