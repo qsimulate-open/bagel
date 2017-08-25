@@ -54,9 +54,6 @@ class Geometry : public Molecule {
     void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
-    // Hcore Information
-    std::shared_ptr<const HcoreInfo> hcoreinfo_;
-
     // Magnetism-specific parameters
     bool magnetism_;
     bool london_;
@@ -65,6 +62,9 @@ class Geometry : public Molecule {
     // Lattice parameters
     bool do_periodic_df_;
     std::vector<std::array<double, 3>> primitive_vectors_;
+
+    // Hcore Information
+    std::shared_ptr<const HcoreInfo> hcoreinfo_;
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm_;
@@ -76,7 +76,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << hcoreinfo_ << magnetism_ << london_ << use_finite_ << do_periodic_df_ << fmm_;
+      ar << schwarz_thresh_ << overlap_thresh_ << magnetism_ << london_ << use_finite_ << do_periodic_df_ << hcoreinfo_ << fmm_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -87,7 +87,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> hcoreinfo_ >> magnetism_ >> london_ >> use_finite_ >> do_periodic_df_ >> fmm_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> magnetism_ >> london_ >> use_finite_ >> do_periodic_df_ >> hcoreinfo_ >> fmm_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;
@@ -130,8 +130,6 @@ class Geometry : public Molecule {
     bool london() const { return london_; }
     bool magnetism() const { return magnetism_; }
 
-    std::shared_ptr<const HcoreInfo> hcoreinfo() const { return hcoreinfo_; }
-
     // returns schwarz screening TODO not working for DF yet
     std::vector<double> schwarz() const;
 
@@ -159,6 +157,9 @@ class Geometry : public Molecule {
     std::array<double, 3> primitive_vectors(const int i) const { return primitive_vectors_[i]; };
     bool do_periodic_df() const { return do_periodic_df_; }
     std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
+
+    // Hcore Information
+    std::shared_ptr<const HcoreInfo> hcoreinfo() const { return hcoreinfo_; }
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }

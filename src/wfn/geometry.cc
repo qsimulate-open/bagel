@@ -177,7 +177,7 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), hcoreinfo_(o.hcoreinfo_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), fmm_(o.fmm_) {
+  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
@@ -188,8 +188,8 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
 
 
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), hcoreinfo_(o.hcoreinfo_),  magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),  magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -219,7 +219,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 // used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_) {
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -230,8 +230,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
   magnetic_field_ = o.magnetic_field_;
-  fmm_ = o.fmm_;
-  hcoreinfo_ = o.hcoreinfo_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
@@ -314,14 +312,13 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), hcoreinfo_(nmer.front()->hcoreinfo()), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_), do_periodic_df_(false) {
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
+  use_finite_(nmer.front()->use_finite_), do_periodic_df_(false), hcoreinfo_(nmer.front()->hcoreinfo()), fmm_(nmer.front()->fmm()) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
-  fmm_ = nmer.front()->fmm_;
   skip_self_interaction_ = nmer.front()->skip_self_interaction_;
 
   /************************************************************
@@ -637,8 +634,8 @@ void Geometry::init_magnetism() {
 
 
 Geometry::Geometry(const Geometry& o, const string type)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), hcoreinfo_(o.hcoreinfo_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_) {
 
   if (!o.fmm_)
     throw logic_error("Geometry construction called during FMM only");
