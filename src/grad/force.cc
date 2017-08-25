@@ -197,7 +197,7 @@ shared_ptr<GradFile> Force::compute() {
     } else {
 
       numerical_ = true;
-      cout << "  There is no analytical gradients available. Numerical gradient will be used." << endl;
+      cout << "  There is no analytical gradient available. Numerical gradient will be used." << endl;
 
     }
 

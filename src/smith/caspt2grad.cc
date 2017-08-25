@@ -502,6 +502,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
 
   if (jobtitle == "force")
     energy_ = task_->energy();
+  else
+    energy_ = 0.0;
+
   return gradient;
 #else
   throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");

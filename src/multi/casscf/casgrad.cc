@@ -346,6 +346,8 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
 
   if (jobtitle == "force")
     energy_ = ref_->energy(istate);
+  else
+    energy_ = 0.0;
 
   return gradient;
 }
