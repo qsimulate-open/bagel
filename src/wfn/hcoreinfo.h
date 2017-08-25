@@ -56,7 +56,7 @@ class HcoreInfo {
     }
 
   public:
-    HcoreInfo() { }
+    HcoreInfo() : dkh_(false), ecp_(false), mat1e_dx_(0.001) { }
     HcoreInfo(std::shared_ptr<const PTree> idata);
 
     bool dkh() const { return dkh_; };
