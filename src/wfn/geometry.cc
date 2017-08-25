@@ -322,7 +322,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
   schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), hcoreinfo_(nmer.front()->hcoreinfo()), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_),  do_periodic_df_(false) {
+  use_finite_(nmer.front()->use_finite_), do_periodic_df_(false) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
