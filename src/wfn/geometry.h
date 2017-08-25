@@ -121,7 +121,7 @@ class Geometry : public Molecule {
     Geometry(std::vector<std::shared_ptr<const Geometry>>, const bool nodf = false);
     Geometry(const Geometry& o, const std::string extent_type);
 
-    // Nuc - Nuc gradients
+    // Nucleus - nuclear gradients
     std::shared_ptr<const Matrix> compute_grad_vnuc() const;
 
     // Thresholds

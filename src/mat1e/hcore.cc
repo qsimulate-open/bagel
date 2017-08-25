@@ -41,7 +41,7 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol, shared_ptr<const HcoreInfo> hcoreinfo, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
+Hcore::Hcore(shared_ptr<const Molecule> mol, shared_ptr<const HcoreInfo> hcoreinfo) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
   if (!hcoreinfo || !(hcoreinfo->dkh())) {
     init(mol);
     fill_upper();

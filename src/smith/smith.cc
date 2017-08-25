@@ -90,7 +90,8 @@ void Smith::compute_gradient(const int istate, const int jstate, const string na
     dm11_ = algop->rdm11();
     dm2_ = algop->rdm21();
     dcheck_ = algop->dcheck();
-    if (istate != jstate) vd1_ = algop->vden1();
+    if (istate != jstate)
+      vd1_ = algop->vden1();
 
     // compute <1|1>
     wf1norm_ = algop->correlated_norm();
