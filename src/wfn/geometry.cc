@@ -86,10 +86,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
 
-  // DKH2 Hamiltonian
-  auto dkh = geominfo->get<bool>("dkh", false);
-  // finite difference length for DKH semi-numerical gradient
-  auto mat1e_dx = geominfo->get<double>("mat1e_dx", 0.001);
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -99,7 +95,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
-    hcoreinfo_ = make_shared<const HcoreInfo>(dkh);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   } else {
 
     // read the default basis file
@@ -107,8 +103,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    const bool use_ecp_basis = (basisfile_.find("ecp") != string::npos) ? true : false;
-    hcoreinfo_ = make_shared<const HcoreInfo>(dkh, use_ecp_basis, /*verbose=*/true, mat1e_dx);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
@@ -243,7 +238,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  auto dkh = geominfo->get<bool>("dkh", hcoreinfo_ ? hcoreinfo_->dkh() : false);
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
@@ -272,8 +266,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
-    const bool use_ecp_basis = (basisfile_.find("ecp") != string::npos) ? true : false;
-    hcoreinfo_ = make_shared<const HcoreInfo>(dkh, use_ecp_basis, /*verbose=*/true);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
@@ -423,8 +416,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   print_atoms();
 
-  auto dkh = geominfo->get<bool>("dkh", false);
-  hcoreinfo_ = make_shared<const HcoreInfo>(dkh);
+  hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));

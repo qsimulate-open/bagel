@@ -83,7 +83,8 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      if (compute_dipole) force->compute_dipole();
+      if (compute_dipole)
+        force->compute_dipole();
       for (auto& m : *joblist) {
         const string mtitle= to_lower(m->get<string>("title", "force"));
         const int target  = m->get<int>("target", 0);
@@ -100,7 +101,8 @@ shared_ptr<GradFile> Force::compute() {
 
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
-      if (compute_dipole) force->compute_dipole();
+      if (compute_dipole)
+        force->compute_dipole();
       for (auto& m : *joblist) {
         const string mtitle= to_lower(m->get<string>("title", "force"));
         const int target  = m->get<int>("target", 0);

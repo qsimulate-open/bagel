@@ -300,11 +300,12 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
   if (nact)
     d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
-  if (jobtitle == "nacme")
+  if (jobtitle == "nacme") {
     d0ms->symmetrize();
-  else
+  } else {
     for (int i = 0; i != nclosed; ++i)
       d0ms->element(i,i) = 2.0;
+  }
 
   const MatView ocoeff = coeff->slice(0, nocc);
 
@@ -508,5 +509,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   return gradient;
 #else
   throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
+  return nullptr;
 #endif
 }

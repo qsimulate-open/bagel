@@ -30,7 +30,16 @@ using namespace std;
 using namespace bagel;
 
 
-BOOST_CLASS_EXPORT_IMPLEMENT(HcoreInfo)
+HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) {
+  // DKH
+  dkh_ = idata->get<bool>("dkh", false);
+  mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
+
+  // ECP
+  const string basisfile = idata->get<string>("basis", "");
+  ecp_ = (basisfile.find("ecp") != string::npos) ? true : false;
+} 
+
 
 vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {
   int natom = current->natom();
@@ -43,8 +52,8 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = mat1e_dx();
         auto geom_plus = make_shared<Molecule>(*current, displ, false);
-        auto hd_plus = make_shared<Hcore>(geom_plus, make_shared<const HcoreInfo>(/*dkh = */true));
-        auto ho_plus = make_shared<Hcore>(geom_plus, make_shared<const HcoreInfo>(/*dkh = */false));
+        auto hd_plus = compute_dkh(geom_plus);
+        auto ho_plus = make_shared<Hcore>(geom_plus);
 
         h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
       }
@@ -54,8 +63,8 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = -mat1e_dx();
         auto geom_minus = make_shared<Molecule>(*current, displ, false);
-        auto hd_minus = make_shared<Hcore>(geom_minus, make_shared<const HcoreInfo>(/*dkh = */true));
-        auto ho_minus = make_shared<Hcore>(geom_minus, make_shared<const HcoreInfo>(/*dkh = */false));
+        auto hd_minus = compute_dkh(geom_minus);
+        auto ho_minus = make_shared<Hcore>(geom_minus);
 
         h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
       }
@@ -88,6 +97,23 @@ shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, s
 
   if (dkh())
     out = compute_grad_dkh(current, den);
+
+  return out;
+}
+
+
+shared_ptr<Matrix> HcoreInfo::compute_dkh(shared_ptr<const Molecule> current) const {
+  auto out = make_shared<DKHcore>(current);
+
+  return out;
+}
+
+
+shared_ptr<Matrix> HcoreInfo::compute(shared_ptr<const Molecule> current) const {
+  shared_ptr<Matrix> out;
+
+  if (dkh())
+    out = compute_dkh(current);
 
   return out;
 }
