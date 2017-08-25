@@ -89,7 +89,7 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
-        const int nacmtype = m->get<int>("nacmtype", 0);
+        const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -106,7 +106,7 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
-        const int nacmtype = m->get<int>("nacmtype", 0);
+        const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -175,7 +175,7 @@ shared_ptr<GradFile> Force::compute() {
     } else if (method == "casscf") {
 
       const int maxziter = idata_->get<int>("maxziter", 100);
-      const int nacmtype = idata_->get<int>("nacmtype", 0);
+      const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole) force->compute_dipole();
@@ -186,7 +186,7 @@ shared_ptr<GradFile> Force::compute() {
     } else if (method == "caspt2") {
 
       const int maxziter = idata_->get<int>("maxziter", 100);
-      const int nacmtype = idata_->get<int>("nacmtype", 0);
+      const string nacmtype = to_lower(idata_->get<string>("nacmtype", "full"));
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole) force->compute_dipole();

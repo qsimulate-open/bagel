@@ -110,7 +110,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     RelCASA(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
 
     void solve();
-    void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
+    void solve_gradient(const int targetJ, const int targetI, const std::string nacmtype = "interstate", const bool nocider = false);
 
     void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 

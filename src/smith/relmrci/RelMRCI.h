@@ -157,7 +157,7 @@ class RelMRCI : public SpinFreeMethod<std::complex<double>> {
     ~RelMRCI() {}
 
     void solve();
-    void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
+    void solve_gradient(const int targetJ, const int targetI, const std::string nacmtype = "interstate", const bool nocider = false);
 
     double accumulate(std::shared_ptr<Queue> queue) {
       double sum = 0.0;

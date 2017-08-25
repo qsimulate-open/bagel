@@ -101,7 +101,7 @@ class RelCASPT2 : public SpinFreeMethod<std::complex<double>> {
     ~RelCASPT2() {}
 
     void solve();
-    void solve_gradient(const int targetJ, const int targetI, const int nacmtype = 1);
+    void solve_gradient(const int targetJ, const int targetI, const std::string nacmtype = "interstate", const bool nocider = false);
 
     void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 

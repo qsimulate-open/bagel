@@ -160,7 +160,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
 }
 
 
-void CASPT2Grad::compute_gradient(const int istate, const int jstate, const int nacmtype, const bool nocider) {
+void CASPT2Grad::compute_gradient(const int istate, const int jstate, const string nacmtype, const bool nocider) {
 #ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
@@ -266,7 +266,7 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const string nacmtype) {
 #ifdef COMPILE_SMITH
 
   if (jobtitle == "nacme")
@@ -339,7 +339,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
 
-  if (jobtitle == "nacme" && (nacmtype == 0 || nacmtype == 2))
+  if (jobtitle == "nacme" && (nacmtype == "full" || nacmtype == "etf"))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -395,7 +395,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   if (jobtitle == "nacme") {
     auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
-    if (nacmtype == 0)
+    if (nacmtype == "full")
       qxmat->scale(egap);
     else
       qxmat->zero();
@@ -495,7 +495,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if ((jobtitle == "nacme") && (nacmtype != 3))
+  if ((jobtitle == "nacme") && (nacmtype != "noweight"))
     gradient->scale(1.0/egap);
   gradient->print();
   timer.tick_print("Gradient integral contraction");

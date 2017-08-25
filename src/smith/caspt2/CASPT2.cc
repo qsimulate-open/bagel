@@ -350,7 +350,7 @@ void CASPT2::CASPT2::solve_dm(const int istate, const int jstate) {
 }
 
 
-void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const int nacmtype, const bool nocider) {
+void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const string nacmtype, const bool nocider) {
   Timer timer;
   // First solve lambda equation if this is MS-CASPT2
   assert (!((targetJ != targetI) && (nstates_ == 1)));

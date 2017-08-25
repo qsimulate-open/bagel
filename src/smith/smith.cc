@@ -73,7 +73,7 @@ void Smith::compute() {
 }
 
 
-void Smith::compute_gradient(const int istate, const int jstate, const int nacmtype, const bool nocider) {
+void Smith::compute_gradient(const int istate, const int jstate, const string nacmtype, const bool nocider) {
 #ifdef COMPILE_SMITH
   if (!(algo_->info()->grad())) {
     auto algop = dynamic_pointer_cast<CASPT2::CASPT2>(algo_);

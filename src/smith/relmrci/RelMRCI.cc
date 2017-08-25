@@ -239,7 +239,7 @@ void RelMRCI::RelMRCI::solve() {
 }
 
 
-void RelMRCI::RelMRCI::solve_gradient(const int targetJ, const int targetI, const int nacmtype) {
+void RelMRCI::RelMRCI::solve_gradient(const int targetJ, const int targetI, const string nacmtype, const bool nocider) {
   throw std::logic_error("Nuclear gradients not implemented for RelMRCI");
 }
 

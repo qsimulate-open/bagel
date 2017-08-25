@@ -55,7 +55,7 @@ vector<double> GradEval<MP2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype) {
+shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, const string nacmtype) {
   Timer time;
 
   const size_t ncore = task_->ncore();

@@ -93,7 +93,7 @@ class Opt {
     bool hess_approx_;
     size_t size_;
     // nonadiabatic coupling type used in conical
-    int nacmtype_;
+    std::string nacmtype_;
     double thielc3_, thielc4_;
     // MEP direction
     int mep_direction_;

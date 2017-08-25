@@ -71,7 +71,7 @@ class GradEval : public GradEval_base {
     }
 
     // computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int jstate = -1, const int maxziter = 100, const int nacmtype = 1)
+    std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int jstate = -1, const int maxziter = 100, const std::string nacmtype = "interstate")
       { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
 
     // computes unrelaxed dipole moments
@@ -90,17 +90,17 @@ class GradEval : public GradEval_base {
 template<> std::vector<double> GradEval<MP2Grad>::energyvec() const;
 template<> std::vector<double> GradEval<CASPT2Grad>::energyvec() const;
 
-template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
 
 // These functions are implemented in casgrad.cc
 template<> void GradEval<CASSCF>::init();
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const int nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, const std::string nacmtype);
 
 template<> void GradEval<CASSCF>::compute_dipole() const;
 template<> void GradEval<CASPT2Grad>::compute_dipole() const;
