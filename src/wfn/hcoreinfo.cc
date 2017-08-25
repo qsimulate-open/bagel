@@ -30,7 +30,18 @@ using namespace std;
 using namespace bagel;
 
 
-BOOST_CLASS_EXPORT_IMPLEMENT(HcoreInfo)
+HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) {
+  // DKH
+  dkh_ = idata->get<bool>("dkh", false);
+  mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
+
+  // ECP
+  const string basisfile = geominfo->get<string>("basis", "");
+  ecp_ = (basisfile_.find("ecp") != string::npos) ? true : false;
+
+  if (verbose) print();
+} 
+
 
 vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {
   int natom = current->natom();
@@ -88,6 +99,23 @@ shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, s
 
   if (dkh())
     out = compute_grad_dkh(current, den);
+
+  return out;
+}
+
+
+shared_ptr<Matrix> HcoreInfo::compute_dkh(shared_ptr<const Molecule> current) const {
+  auto dkhcore = make_shared<DKHcore>(mol);
+
+  return out;
+}
+
+
+shared_ptr<Matrix> HcoreInfo::compute(shared_ptr<const Molecule> current) const {
+  shared_ptr<Matrix> out;
+
+  if (dkh())
+    out = compute_dkh(current);
 
   return out;
 }

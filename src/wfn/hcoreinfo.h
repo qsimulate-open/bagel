@@ -26,6 +26,7 @@
 #ifndef __SRC_WFN_HCOREINFO_H
 #define __SRC_WFN_HCOREINFO_H
 
+#include <src/mat1e/dkhcore.h>
 #include <src/molecule/molecule.h>
 
 // Contains info on Hcore.
@@ -56,20 +57,23 @@ class HcoreInfo {
     }
 
   public:
-    HcoreInfo(const bool dkh = false, const bool ecp = false, const bool verbose = true, const double mat1e_dx = 0.001)
-      : dkh_(dkh), ecp_(ecp), mat1e_dx_(mat1e_dx) { if (verbose) print(); }
+    HcoreInfo() { }
+    HcoreInfo(std::shared_ptr<const PTree> idata);
 
     bool dkh() const { return dkh_; };
     bool ecp() const { return ecp_; };
+    bool standard() const { return !(dkh_); };
     double mat1e_dx() const { return mat1e_dx_; };
     void print() const;
 
     // DKH specific
     std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;
     std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> compute_dkh(std::shared_ptr<const Molecule> current) const;
 
     // general function
     std::shared_ptr<Matrix> compute_grad(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<Matrix> compute(std::shared_ptr<const Molecule> current) const;
 };
 
 }
