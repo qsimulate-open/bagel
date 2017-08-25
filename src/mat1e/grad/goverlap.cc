@@ -23,7 +23,7 @@
 //
 
 
-#include <src/mat1e/goverlap.h>
+#include <src/mat1e/grad/goverlap.h>
 #include <src/integral/os/goverlapbatch.h>
 
 using namespace std;

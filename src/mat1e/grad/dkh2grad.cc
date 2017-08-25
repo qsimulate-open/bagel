@@ -23,7 +23,7 @@
 //
 
 
-#include <src/mat1e/dkh2grad.h>
+#include <src/mat1e/grad/dkh2grad.h>
 #include <src/mat1e/kinetic.h>
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
@@ -31,10 +31,8 @@
 #include <src/integral/os/overlapbatch.h>
 #include <src/mat1e/mixedbasis.h>
 #include <src/util/math/algo.h>
-#include <src/integral/os/gkineticbatch.h>
-#include <src/integral/os/goverlapbatch.h>
-#include <src/integral/rys/gnaibatch.h>
-#include <src/integral/rys/gsmallnaibatch.h>
+#include <src/mat1e/grad/goverlap.h>
+#include <src/mat1e/grad/gkinetic.h>
 
 using namespace std;
 using namespace bagel;
@@ -54,10 +52,15 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
     Matrix out(vec.size(), vec.size());
     for (int i = 0; i < vec.size(); ++i) {
       for (int j = i; j < vec.size(); ++j) {
-        out(i, j) = i == j ? vec(i) : 0
+        out(i, j) = i == j ? vec(i) : 0;
       }
     }
     return out;
+  };
+
+  auto naigrad = [](shared_ptr<const Molecule> mol) {
+    shared_ptr<Matrix> V_X = make_shared<Matrix>(Matrix(1024, 1024));
+    return V_X;
   };
 
   auto smallnaigrad = [](shared_ptr<const Molecule> mol) {
@@ -68,9 +71,10 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
   shared_ptr<const Molecule> molu = make_shared<Molecule>(*mol);
   molu = molu->uncontract();
   const MixedBasis<OverlapBatch> U_T(mol, molu);
-  Overlap s(molu);
+  const Overlap s(molu);
   const Matrix s_inv12 = *s.tildex();
-  const Matrix s_inv = s.inverse_symmetric();
+  Matrix s_inv = s;
+  s_inv.inverse_symmetric();
   const Kinetic T_p(molu);
   // const Matrix T = U_T % T_p * U_T;
   const Matrix T_pp = s_inv12 % T_p * s_inv12;
@@ -81,8 +85,8 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
 
   const Matrix T_pX = GKinetic(molu);
   const Matrix S_X = GOverlap(molu);
-  const Matrix V_pX = GNAI(molu);
-  const Matrix O_pX = smallnaigrad(molu);
+  const Matrix V_pX = *naigrad(molu);
+  const Matrix O_pX = *smallnaigrad(molu);
 
   const Matrix S_X_U = U_T * S_X ^ U_T;
   Matrix PU(nunc, nunc);
@@ -103,7 +107,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
       PW(i, j) = i == j ? 0 : T_ppX_W(i, j) / (t(j) - t(i));
     }
   }
-  const Matrix t_X = T_ppX_W - PW * t + t * PW;
+  const Matrix t_X = T_ppX_W - PW * vec2mat(t) + vec2mat(t) * PW;
 
   const double c2 = c__ * c__;
   VectorB Ep(nunc), A(nunc), K(nunc), B(nunc), Ep_X(nunc), A_X(nunc), K_X(nunc), B_X(nunc), R(nunc), R_inv(nunc), R_X(nunc), R_invX(nunc);
@@ -114,7 +118,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
     B(i) = A(i) * K(i);
     Ep_X(i) = c__ * t_X(i, i) / std::sqrt(2 * t(i) + c2);
     A_X(i) = c2 * Ep_X(i) / (-4 * pow(Ep(i), 2) * A(i));
-    K_X(i) = -1 * c__ * Ep_X(i) / pow(Ep + c2, 2);
+    K_X(i) = -1 * c__ * Ep_X(i) / pow(Ep(i) + c2, 2);
     B_X(i) = c__ * Ep_X(i) * (c__ * K(i) / (4 * pow(Ep(i), 2) * A(i)) - A(i) / pow(Ep(i) + c2, 2));
     R(i) = 2 * t(i) * pow(K(i), 2);
     R_inv(i) = 1 / R(i);
@@ -122,7 +126,7 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
     R_invX(i) = -1 * R_X(i) / pow(R(i), 2);
   }
   
-  const VectorB t_rel(nunc);
+  VectorB t_rel(nunc);
   for (int i = 0; i < nunc; ++i) {
     t_rel(i) = c__ * std::sqrt(2 * t(i) + c2) - c2;
   }
@@ -152,8 +156,8 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
   const Matrix O_ppX = s_inv12 % O_pX * s_inv12 - 0.5 * (s_inv * s_X * O_pp + O_pp * s_inv * s_X);
   const Matrix O_pppX = W % O_ppX * W - PW * O_ppp + O_ppp * PW;
 
-  Matrix V_ppprelX = A * V_pppX * A + A_X * V_ppp * A + A * V_ppp * A_X
-                    + B * O_pppX * B + B_X * O_ppp * B + B * O_ppp * B_X;
+  Matrix V_ppprelX = vec2mat(A) * V_pppX * vec2mat(A) + vec2mat(A_X) * V_ppp * vec2mat(A) + vec2mat(A) * V_ppp * vec2mat(A_X)
+                    + vec2mat(B) * O_pppX * vec2mat(B) + vec2mat(B_X) * O_ppp * vec2mat(B) + vec2mat(B) * O_ppp * vec2mat(B_X);
 
   Matrix V_long(nunc, nunc), A_long(nunc, nunc), O_long(nunc, nunc), B_long(nunc, nunc);
   Matrix V_longX(nunc, nunc), A_longX(nunc, nunc), O_longX(nunc, nunc), B_longX(nunc, nunc);
@@ -163,33 +167,37 @@ void DKH2grad::init(shared_ptr<const Molecule> mol) {
       A_long(i, j) = A(i) * V_long(i, j) * A(j);
       O_long(i, j) = O_ppp(i, j) / (Ep(i) + Ep(j));
       B_long(i, j) = B(i) * O_long(i, j) * B(j);
-      V_longX(i, j) = -1 * pow(Ep(i) + Ep(j), -2) * (Ep_X(i) + Ep_X(j)) * V_ppp + V_pppX / (Ep(i) + Ep(j));
-      A_longX(i, j) = A(i) * V_longX * A(j) + A_X(i) * V_long * A(j) + A(i) * V_long * A_X(j);
-      O_longX(i, j) = -1 * pow(Ep(i) + Ep(j), -2) * (Ep_X(i) + Ep_X(j)) * O_ppp + O_pppX / (Ep(i) + Ep(j));
-      B_longX(i, j) = B(i) * O_longX * B(j) + B_X(i) * O_long * B(j) + B(i) * O_long * B_X(j);
+      V_longX(i, j) = -1 * pow(Ep(i) + Ep(j), -2) * (Ep_X(i) + Ep_X(j)) * V_ppp(i, j) + V_pppX(i, j) / (Ep(i) + Ep(j));
+      A_longX(i, j) = A(i) * V_longX(i, j) * A(j) + A_X(i) * V_long(i, j) * A(j) + A(i) * V_long(i, j) * A_X(j);
+      O_longX(i, j) = -1 * pow(Ep(i) + Ep(j), -2) * (Ep_X(i) + Ep_X(j)) * O_ppp(i, j) + O_pppX(i, j) / (Ep(i) + Ep(j));
+      B_longX(i, j) = B(i) * O_longX(i, j) * B(j) + B_X(i) * O_long(i, j) * B(j) + B(i) * O_long(i, j) * B_X(j);
     }
   }
 
-  V_ppprelX += -1 * B_longX * Ep * A_long - B_long * Ep_X * A_long - B_long * Ep * A_longX
-            - A_longX *  Ep * B_long - A_long * Ep_X * B_long - A_long * Ep * B_longX
-            + A_longX * (Ep % R) * A_long + A_long * (Ep_X % R + Ep % R_X) * A_long + A_long * (Ep % R) * A_longX
-            + B_longX * (Ep % R_inv) * B_long + B_long * (Ep_X % R_inv + Ep % R_invX) * B_long + B_long * (Ep % R_inv) * B_longX
-            - 0.5 * (B_longX * A_long * Ep + B_long * A_longX * Ep + B_long * A_long * Ep_X)
-            - 0.5 * (A_longX * B_long * Ep + A_long * B_longX * Ep + A_long * B_long * Ep_X)
-            + 0.5 * (A_longX * R * A_long * Ep + A_long * R_X * A_long * Ep + A_long * R * A_longX * Ep + A_long * R * A_long * Ep_X)
-            + 0.5 * (B_longX * R_inv * B_long * Ep + B_long * R_invX * B_long * Ep + B_long * R_inv * B_longX * Ep + B_long * R_inv * B_long * Ep_X)
-            - 0.5 * (Ep_X * B_long * A_long + Ep * B_longX * A_long + Ep * B_long * A_longX)
-            - 0.5 * (Ep_X * A_long * B_long + Ep * A_longX * B_long + Ep * A_long * B_longX)
-            + 0.5 * (Ep_X * A_long * R * A_long + Ep * A_longX * R * A_long + Ep * A_long * R_X * A_long + Ep * A_long * R * A_longX)
-            + 0.5 * (Ep_X * B_long * R_inv * B_long + Ep * B_longX * R_inv * B_long + Ep * B_long * R_invX * B_long + Ep * B_long * R_inv * B_longX);
+  V_ppprelX += -1 * B_longX * vec2mat(Ep) * A_long - B_long * vec2mat(Ep_X) * A_long - B_long * vec2mat(Ep) * A_longX
+            - A_longX *  vec2mat(Ep) * B_long - A_long * vec2mat(Ep_X) * B_long - A_long * vec2mat(Ep) * B_longX
+            + A_longX * vec2mat(Ep % R) * A_long + A_long * vec2mat(Ep_X % R + Ep % R_X) * A_long + A_long * vec2mat(Ep % R) * A_longX
+            + B_longX * vec2mat(Ep % R_inv) * B_long + B_long * vec2mat(Ep_X % R_inv + Ep % R_invX) * B_long + B_long * vec2mat(Ep % R_inv) * B_longX
+            - 0.5 * (B_longX * A_long * vec2mat(Ep) + B_long * A_longX * vec2mat(Ep) + B_long * A_long * vec2mat(Ep_X))
+            - 0.5 * (A_longX * B_long * vec2mat(Ep) + A_long * B_longX * vec2mat(Ep) + A_long * B_long * vec2mat(Ep_X))
+            + 0.5 * (A_longX * vec2mat(R) * A_long * vec2mat(Ep) + A_long * vec2mat(R_X) * A_long * vec2mat(Ep))
+            + 0.5 * (A_long * vec2mat(R) * A_longX * vec2mat(Ep) + A_long * vec2mat(R) * A_long * vec2mat(Ep_X))
+            + 0.5 * (B_longX * vec2mat(R_inv) * B_long * vec2mat(Ep) + B_long * vec2mat(R_invX) * B_long * vec2mat(Ep))
+            + 0.5 * (B_long * vec2mat(R_inv) * B_longX * vec2mat(Ep) + B_long * vec2mat(R_inv) * B_long * vec2mat(Ep_X))
+            - 0.5 * (vec2mat(Ep_X) * B_long * A_long + vec2mat(Ep) * B_longX * A_long + vec2mat(Ep) * B_long * A_longX)
+            - 0.5 * (vec2mat(Ep_X) * A_long * B_long + vec2mat(Ep) * A_longX * B_long + vec2mat(Ep) * A_long * B_longX)
+            + 0.5 * (vec2mat(Ep_X) * A_long * vec2mat(R) * A_long + vec2mat(Ep) * A_longX * vec2mat(R) * A_long)
+            + 0.5 * (vec2mat(Ep) * A_long * vec2mat(R_X) * A_long + vec2mat(Ep) * A_long * vec2mat(R) * A_longX)
+            + 0.5 * (vec2mat(Ep_X) * B_long * vec2mat(R_inv) * B_long + vec2mat(Ep) * B_longX * vec2mat(R_inv) * B_long)
+            + 0.5 * (vec2mat(Ep) * B_long * vec2mat(R_invX) * B_long + vec2mat(Ep) * B_long * vec2mat(R_inv) * B_longX);
 
-  Matrix V_ppprel = A * V_ppp * A + B * O_ppp * B
-                  - B_long * Ep * A_long - A_long * Ep * B_long
-                  + A_long * (R % Ep) * A_long + B_long * (R_inv % Ep) * B_long
-                  - 0.5 * (B_long * A_long * Ep + A_long * B_long * Ep)
-                  + 0.5 * (A_long * R * A_long * Ep + B_long * R_inv * B_long * Ep)
-                  - 0.5 * (Ep * B_long * A_long + Ep * A_long * B_long)
-                  + 0.5 * (Ep * A_long * R * A_long + Ep * B_long * R_inv * B_long);
+  Matrix V_ppprel = vec2mat(A) * V_ppp * vec2mat(A) + vec2mat(B) * O_ppp * vec2mat(B)
+                  - B_long * vec2mat(Ep) * A_long - A_long * vec2mat(Ep) * B_long
+                  + A_long * vec2mat(R % Ep) * A_long + B_long * vec2mat(R_inv % Ep) * B_long
+                  - 0.5 * (B_long * A_long * vec2mat(Ep) + A_long * B_long * vec2mat(Ep))
+                  + 0.5 * (A_long * vec2mat(R) * A_long * vec2mat(Ep) + B_long * vec2mat(R_inv) * B_long * vec2mat(Ep))
+                  - 0.5 * (vec2mat(Ep) * B_long * A_long + vec2mat(Ep) * A_long * B_long)
+                  + 0.5 * (vec2mat(Ep) * A_long * vec2mat(R) * A_long + vec2mat(Ep) * B_long * vec2mat(R_inv) * B_long);
   
   const Matrix V_pprel = W * V_ppprel ^ W;
   const Matrix V_prel = s_inv12 * V_pprel ^ s_inv12;

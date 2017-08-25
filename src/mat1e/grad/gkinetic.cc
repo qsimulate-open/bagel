@@ -23,7 +23,7 @@
 //
 
 
-#include <src/mat1e/gkinetic.h>
+#include <src/mat1e/grad/gkinetic.h>
 #include <src/integral/os/gkineticbatch.h>
 
 using namespace std;
