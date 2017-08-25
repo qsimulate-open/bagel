@@ -99,7 +99,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
   vector<vector<double>> transition_dipole;
 
   for (int istate = 0; istate != nstate; ++istate) {
-    task_->compute_gradient(istate, istate, 1, /*nocider=*/true);
+    task_->compute_gradient(istate, istate, "interstate", /*nocider=*/true);
 
     {
       auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -119,7 +119,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
 
   for (int istate = 1; istate != nstate; ++istate) {
     for (int jstate = 0; jstate != istate; ++jstate) {
-      task_->compute_gradient(istate, jstate, 1, /*nocider=*/true);
+      task_->compute_gradient(istate, jstate, "interstate", /*nocider=*/true);
 
       {
         auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
@@ -153,7 +153,7 @@ void GradEval<CASPT2Grad>::compute_dipole() const {
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
       const double fnm = (2.0 / 3.0) * egap * r2;
 
-      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << endl << endl;
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
     }
   }
 #endif
@@ -318,7 +318,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
     const double fnm = (2.0 / 3.0) * egap * r2;
 
     cout << "    * Oscillator strength for transition between " << istate << " - "
-      << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+      << jstate << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
   } else {
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");

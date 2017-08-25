@@ -627,7 +627,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, const 
           double cy = info_->ciwfn()->civectors()->data(j)->dot_product(ci_deriv_->data(i))
                     - info_->ciwfn()->civectors()->data(i)->dot_product(ci_deriv_->data(j));
           // If this is Full NACME, <U | dU/dX> contribution should be added
-          if ((targetJ != targetI) && (nacmtype == 0)) {
+          if ((targetJ != targetI) && (nacmtype == "full" || nacmtype == "etf")) {
             cy += (pt2energy_[targetI] - pt2energy_[targetJ])
                 * ((*heff_)(i,targetI) * (*heff_)(j,targetJ) - (*heff_)(j,targetI) * (*heff_)(i,targetJ));
           }

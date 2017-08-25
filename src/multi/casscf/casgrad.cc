@@ -108,7 +108,7 @@ void GradEval<CASSCF>::compute_dipole() const {
       const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
       const double fnm = (2.0 / 3.0) * egap * r2;
 
-      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << endl << endl;
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
     }
   }
 }
@@ -250,7 +250,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
       const double fnm = (2.0 / 3.0) * egap * r2;
 
       cout << "    * Oscillator strength for transition between " << istate << " - "
-        << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
+        << jstate << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
     } else {
       Dipole dipole(geom_, make_shared<Matrix>(ocoeff * *rdms ^ ocoeff), "Unrelaxed");
       dipole.compute();
