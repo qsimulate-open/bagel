@@ -78,7 +78,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   auto dkh = geominfo->get<bool>("dkh", false);
   // finite difference length for DKH semi-numerical gradient
   auto mat1e_dx = geominfo->get<double>("mat1e_dx", 0.001);
-  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, mat1e_dx);
+  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, /*verbose=*/true, mat1e_dx);
 
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
@@ -243,7 +243,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
   auto dkh = geominfo->get<bool>("dkh", hcoreinfo_->dkh());
-  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, hcoreinfo_->mat1e_dx());
+  hcoreinfo_ = make_shared<const HcoreInfo>(dkh, /*verbose=*/true, hcoreinfo_->mat1e_dx());
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 

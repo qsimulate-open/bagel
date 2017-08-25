@@ -48,11 +48,12 @@ class HcoreInfo {
     }
 
   public:
-    HcoreInfo() { }
-    HcoreInfo(bool dkh, double mat1e_dx = 0.001) : dkh_(dkh), mat1e_dx_(mat1e_dx) { }
+    HcoreInfo() { print(); }
+    HcoreInfo(bool dkh, bool verbose = true, double mat1e_dx = 0.001) : dkh_(dkh), mat1e_dx_(mat1e_dx) { if (verbose) print(); }
 
     bool dkh() const { return dkh_; };
     double mat1e_dx() const { return mat1e_dx_; };
+    void print() const;
 
     // DKH specific
     std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;

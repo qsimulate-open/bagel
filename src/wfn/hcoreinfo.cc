@@ -43,8 +43,8 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = mat1e_dx();
         auto geom_plus = make_shared<Molecule>(*current, displ, false);
-        auto hd_plus = make_shared<Hcore>(geom_plus, /* nodkh = */false);
-        auto ho_plus = make_shared<Hcore>(geom_plus, /* nodkh = */true);
+        auto hd_plus = make_shared<Hcore>(geom_plus, make_shared<const HcoreInfo>(/*dkh = */true));
+        auto ho_plus = make_shared<Hcore>(geom_plus, make_shared<const HcoreInfo>(/*dkh = */false));
 
         h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
       }
@@ -54,8 +54,8 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = -mat1e_dx();
         auto geom_minus = make_shared<Molecule>(*current, displ, false);
-        auto hd_minus = make_shared<Hcore>(geom_minus, /*nodkh = */false);
-        auto ho_minus = make_shared<Hcore>(geom_minus, /*nodkh = */true);
+        auto hd_minus = make_shared<Hcore>(geom_minus, make_shared<const HcoreInfo>(/*dkh = */true));
+        auto ho_minus = make_shared<Hcore>(geom_minus, make_shared<const HcoreInfo>(/*dkh = */false));
 
         h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
       }
@@ -90,4 +90,10 @@ shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, s
     out = compute_grad_dkh(current, den);
 
   return out;
+}
+
+
+void HcoreInfo::print() const {
+  if (dkh())
+    cout << "      - Using DKHcore" << endl;
 }

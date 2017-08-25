@@ -26,6 +26,7 @@
 #ifndef __SRC_MOLECULE_ZHCORE_H
 #define __SRC_MOLECULE_ZHCORE_H
 
+#include <src/wfn/hcoreinfo.h>
 #include <src/mat1e/matrix1e.h>
 
 namespace bagel {
@@ -44,7 +45,7 @@ class ZHcore : public ZMatrix1e {
 
   public:
     ZHcore() { }
-    ZHcore(std::shared_ptr<const Molecule> mol, const bool nodkh = true, const bool dofmm = false);
+    ZHcore(std::shared_ptr<const Molecule> mol, std::shared_ptr<const HcoreInfo> hcoreinfo = nullptr, const bool dofmm = false);
 
 };
 
