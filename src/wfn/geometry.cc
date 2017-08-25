@@ -110,7 +110,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     const bool use_ecp_basis = (basisfile_.find("ecp") != string::npos) ? true : false;
     hcoreinfo_ = make_shared<const HcoreInfo>(dkh, use_ecp_basis, /*verbose=*/true, mat1e_dx);
     for (auto& a : *atoms)
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis, use_finite_));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
 
@@ -277,7 +277,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis, use_finite_));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
     } else {
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));

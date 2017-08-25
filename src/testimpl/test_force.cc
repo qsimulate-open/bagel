@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Finite_Grad) {
 #endif
 }
 
-BOOST_AUTO_TEST_CASE(Mat1e_Grad) {
+BOOST_AUTO_TEST_CASE(Hcore_Grad) {
     BOOST_CHECK(compare(run_force("hf_svp_dfhf_dkh_grad"),   reference_dkh_grad(), 1.0e-5));
 }
 
