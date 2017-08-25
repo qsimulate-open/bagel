@@ -36,14 +36,14 @@
 //        Ideally, they should be placed here.
 
 namespace bagel {
+
+enum HcoreType { standard, dkh, ecp };
+
 class HcoreInfo {
   protected:
-    // DKH
-    bool dkh_;
-    // ECP
-    bool ecp_;
-    // Other 1-e modifications should be placed here
+    HcoreType type_;
 
+    // for semi-numerical gradients
     double mat1e_dx_;
   
   private:
@@ -52,17 +52,17 @@ class HcoreInfo {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & dkh_ & ecp_ & mat1e_dx_;
+      ar & type_ & mat1e_dx_;
     }
 
   public:
-    HcoreInfo() : dkh_(false), ecp_(false), mat1e_dx_(0.001) { }
+    HcoreInfo() : type_(HcoreType::standard), mat1e_dx_(0.001) { }
     HcoreInfo(std::shared_ptr<const PTree> idata);
 
-    bool dkh() const { return dkh_; };
-    bool ecp() const { return ecp_; };
-    bool standard() const { return !(dkh_); };
-    double mat1e_dx() const { return mat1e_dx_; };
+    bool dkh() const { return type_ == HcoreType::dkh; }
+    bool ecp() const { return type_ == HcoreType::ecp; }
+    bool standard() const { return type_ == HcoreType::standard; }
+    double mat1e_dx() const { return mat1e_dx_; }
     void print() const;
 
     // DKH specific

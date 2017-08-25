@@ -31,14 +31,21 @@ using namespace std;
 using namespace bagel;
 
 
-HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) {
+HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard) {
   // DKH
-  dkh_ = idata->get<bool>("dkh", false);
+  const bool dkh = idata->get<bool>("dkh", false);
+  if (dkh)
+    type_ = HcoreType::dkh;
   mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
 
   // ECP
   const string basisfile = idata->get<string>("basis", "");
-  ecp_ = (basisfile.find("ecp") != string::npos) ? true : false;
+  const bool ecp = basisfile.find("ecp") != string::npos;
+  if (ecp) {
+    if (dkh)
+      throw runtime_error("DKH and ECP cannot be used simultaneously");
+    type_ = HcoreType::ecp;
+  }
 } 
 
 
