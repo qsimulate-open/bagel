@@ -401,3 +401,15 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e_fnai(const shared_pt
   }
   return out;
 }
+
+// explicit instantiation of the template functions
+template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1>(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
+template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1s>(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
+template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1>(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k,
+                                                                                 const std::shared_ptr<const Matrix> o);
+template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1s>(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k,
+                                                                                  const std::shared_ptr<const Matrix> o);

@@ -108,6 +108,18 @@ std::shared_ptr<GradFile> GradTask1s::compute_os(std::shared_ptr<const Matrix> d
   return batch.compute_gradient(cden, atomindex_[0], atomindex_[1], ge_->geom_->natom());
 }
 
+
+extern template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1>(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
+extern template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1s>(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
+extern template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1>(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k,
+                                                                                 const std::shared_ptr<const Matrix> o);
+extern template
+std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1s>(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k,
+                                                                                  const std::shared_ptr<const Matrix> o);
+
 }
 
 #endif
