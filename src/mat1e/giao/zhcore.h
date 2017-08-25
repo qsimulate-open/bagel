@@ -45,7 +45,7 @@ class ZHcore : public ZMatrix1e {
 
   public:
     ZHcore() { }
-    ZHcore(std::shared_ptr<const Molecule> mol, std::shared_ptr<const HcoreInfo> hcoreinfo = nullptr);
+    ZHcore(std::shared_ptr<const Molecule> mol, std::shared_ptr<const HcoreInfo> hcoreinfo = std::make_shared<const HcoreInfo>());
 
 };
 
