@@ -24,6 +24,7 @@
 
 
 #include <src/mat1e/hcore.h>
+#include <src/mat1e/dkhcore.h>
 #include <src/wfn/hcoreinfo.h>
 
 using namespace std;
@@ -52,7 +53,7 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = mat1e_dx();
         auto geom_plus = make_shared<Molecule>(*current, displ, false);
-        auto hd_plus = compute_dkh(geom_plus);
+        shared_ptr<Matrix> hd_plus = compute_dkh(geom_plus);
         auto ho_plus = make_shared<Hcore>(geom_plus);
 
         h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
@@ -63,7 +64,7 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
         auto displ = make_shared<XYZFile>(natom);
         displ->element(j,i) = -mat1e_dx();
         auto geom_minus = make_shared<Molecule>(*current, displ, false);
-        auto hd_minus = compute_dkh(geom_minus);
+        shared_ptr<Matrix> hd_minus = compute_dkh(geom_minus);
         auto ho_minus = make_shared<Hcore>(geom_minus);
 
         h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);

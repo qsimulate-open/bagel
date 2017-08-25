@@ -26,7 +26,6 @@
 #ifndef __SRC_WFN_HCOREINFO_H
 #define __SRC_WFN_HCOREINFO_H
 
-#include <src/mat1e/dkhcore.h>
 #include <src/molecule/molecule.h>
 
 // Contains info on Hcore.
