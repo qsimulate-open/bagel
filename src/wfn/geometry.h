@@ -54,16 +54,13 @@ class Geometry : public Molecule {
     void set_london(std::shared_ptr<const PTree>& geominfo);
     void init_magnetism();
 
-    // All possible 1-e modifications
+    // Hcore Information
     std::shared_ptr<const HcoreInfo> hcoreinfo_;
 
     // Magnetism-specific parameters
     bool magnetism_;
     bool london_;
     bool use_finite_;
-
-    // ECP
-    bool use_ecp_basis_;
 
     // Lattice parameters
     bool do_periodic_df_;
@@ -79,7 +76,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Molecule>(*this);
-      ar << schwarz_thresh_ << overlap_thresh_ << hcoreinfo_ << magnetism_ << london_ << use_finite_ << use_ecp_basis_ << do_periodic_df_ << fmm_;
+      ar << schwarz_thresh_ << overlap_thresh_ << hcoreinfo_ << magnetism_ << london_ << use_finite_ << do_periodic_df_ << fmm_;
       const size_t dfindex = !df_ ? 0 : std::hash<DFDist*>()(df_.get());
       ar << dfindex;
       const bool do_rel   = !!dfs_;
@@ -90,7 +87,7 @@ class Geometry : public Molecule {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Molecule>(*this);
-      ar >> schwarz_thresh_ >> overlap_thresh_ >> hcoreinfo_ >> magnetism_ >> london_ >> use_finite_ >> use_ecp_basis_ >> do_periodic_df_ >> fmm_;
+      ar >> schwarz_thresh_ >> overlap_thresh_ >> hcoreinfo_ >> magnetism_ >> london_ >> use_finite_ >> do_periodic_df_ >> fmm_;
       size_t dfindex;
       ar >> dfindex;
       static std::map<size_t, std::weak_ptr<DFDist>> dfmap;

@@ -28,12 +28,20 @@
 
 #include <src/molecule/molecule.h>
 
-namespace bagel {
+// Contains info on Hcore.
+//
+//   TODO
+//      o derived class for each method (DKH, ECP, ...)
+//      o for the time being, ECP parameters are saved in Atom object.
+//        Ideally, they should be placed here.
 
+namespace bagel {
 class HcoreInfo {
   protected:
     // DKH
     bool dkh_;
+    // ECP
+    bool ecp_;
     // Other 1-e modifications should be placed here
 
     double mat1e_dx_;
@@ -44,14 +52,15 @@ class HcoreInfo {
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & dkh_ & mat1e_dx_;
+      ar & dkh_ & ecp_ & mat1e_dx_;
     }
 
   public:
-    HcoreInfo() { print(); }
-    HcoreInfo(bool dkh, bool verbose = true, double mat1e_dx = 0.001) : dkh_(dkh), mat1e_dx_(mat1e_dx) { if (verbose) print(); }
+    HcoreInfo(const bool dkh = false, const bool ecp = false, const bool verbose = true, const double mat1e_dx = 0.001)
+      : dkh_(dkh), ecp_(ecp), mat1e_dx_(mat1e_dx) { if (verbose) print(); }
 
     bool dkh() const { return dkh_; };
+    bool ecp() const { return ecp_; };
     double mat1e_dx() const { return mat1e_dx_; };
     void print() const;
 
