@@ -41,7 +41,7 @@ The default values are recommended unless mentioned otherwise.
 
    | **Description:** Overlap threshold.
    | **Datatype:** double precision
-   | **Default:** 1.0-9
+   | **Default:** 1.0e-9
 
 .. topic:: ``frozen``
 

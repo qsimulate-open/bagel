@@ -77,7 +77,7 @@ The default values are recommended unless mentioned otherwise.
 
    | **Description:** Overlap cutoff threshold for internally contracted basis.
    | **Datatype:** Double precision
-   | **Default:** 1.0-9
+   | **Default:** 1.0e-9
 
 .. topic:: ``frozen``
 
@@ -271,7 +271,9 @@ BAGEL References
 +---------------------------------------------------+----------------------------------------------------------------------------------------------+
 | XMS-CASPT2 gradients                              | B\. Vlaisavljevich and T. Shiozaki, J. Chem. Theory Comput. **12**, 3781 (2016).             |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------+
-| XMS-CASPT2 derivative couplings                   | J\. W. Park and T. Shiozaki, J. Chem. Theory Comput. in press (2017).                        |
+| XMS-CASPT2 derivative couplings                   | J\. W. Park and T. Shiozaki, J. Chem. Theory Comput. **13**, 2561 (2017).                    |
++---------------------------------------------------+----------------------------------------------------------------------------------------------+
+| Current XMS-CASPT2 gradient algorithm             | J\. W. Park and T. Shiozaki, J. Chem. Theory Comput. **13**, 3676 (2017).                    |
 +---------------------------------------------------+----------------------------------------------------------------------------------------------+
 
 General References
