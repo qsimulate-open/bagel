@@ -72,8 +72,9 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
 
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
- : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), atom_number_(old.atom_number_),
-   averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge_), atom_exponent_(old.atom_exponent_), basis_(bas) {
+ : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_),
+   so_parameters_(old.so_parameters_), atom_number_(old.atom_number_), averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge_),
+   atom_exponent_(old.atom_exponent_), basis_(bas) {
 
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   if (name_ == "q") {
@@ -203,8 +204,9 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 }
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
-: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_), atom_number_(old.atom_number()),
-  averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge()), atom_exponent_(old.atom_exponent()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
+: spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_),
+  so_parameters_(old.so_parameters_),  atom_number_(old.atom_number()), averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge()),
+  atom_exponent_(old.atom_exponent()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
 
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();

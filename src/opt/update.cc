@@ -341,7 +341,7 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
 
 
 shared_ptr<XYZFile> Opt::iterate_displ() const {
-  shared_ptr<Geometry> currentv = make_shared<Geometry>(*current_);
+  shared_ptr<Molecule> currentv = make_shared<Geometry>(*current_);
   auto displ = make_shared<XYZFile>(*displ_);
   auto dqc = make_shared<XYZFile>(*displ_);
   bool flag = false;
@@ -353,7 +353,7 @@ shared_ptr<XYZFile> Opt::iterate_displ() const {
   array<shared_ptr<const Matrix>,3> bmat = bmat_;
   for (int i = 0; i != maxiter_; ++i) {
     displ = displ->transform(bmat[1], false);
-    currentv = make_shared<Geometry>(*currentv, displ, make_shared<const PTree>(), /*rotate=*/true, /*nodf=*/true);
+    currentv = make_shared<Molecule>(*currentv, displ, true);
     bmat = currentv->compute_internal_coordinate(bmat[0], bonds_, constraints_, (opttype_=="transition"), /*verbose=*/false);
     shared_ptr<const XYZFile> qcurrent = currentv->xyz();
     qcurrent = qcurrent->transform(bmat[0], true);

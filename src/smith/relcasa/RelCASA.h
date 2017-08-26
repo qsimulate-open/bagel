@@ -35,6 +35,7 @@
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/smith_info.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 namespace SMITH {
@@ -110,7 +111,7 @@ class RelCASA : public SpinFreeMethod<std::complex<double>> {
     RelCASA(std::shared_ptr<const SMITH_Info<std::complex<double>>> ref);
 
     void solve();
-    void solve_deriv();
+    void solve_gradient(const int targetJ, const int targetI, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>(), const bool nocider = false);
 
     void load_t2all(std::shared_ptr<MultiTensor> t2in, const int ist);
 

@@ -36,7 +36,7 @@ class Force {
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const Reference> ref_;
 
-    bool numerical_;		// numerical or analytical gradient?
+    bool numerical_;
     std::vector<double> energy_;
     std::vector<double> force_dipole_;
 
@@ -48,7 +48,6 @@ class Force {
     const std::vector<double>& force_dipole() const { return force_dipole_; }
 
 };
-
 
 }
 

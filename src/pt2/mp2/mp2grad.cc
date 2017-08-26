@@ -55,7 +55,7 @@ vector<double> GradEval<MP2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
+shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
   Timer time;
 
   const size_t ncore = task_->ncore();
@@ -351,7 +351,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, const int
   cout << endl;
 
   // gradient evaluation
-  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, cgeom, sep32, sep22);
+  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, /*nacme = */nullptr, false, cgeom, sep32, sep22);
 
   time.tick_print("Gradient integrals contracted");
   cout << endl;

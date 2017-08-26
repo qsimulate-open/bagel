@@ -379,79 +379,9 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
 
 
 template<>
-void SpinFreeMethod<double>::feed_rdm_deriv(const size_t offset, const size_t size) {
-  tie(ci_,rci_, rdm0deriv_,rdm1deriv_,rdm2deriv_,rdm3deriv_,rdm4deriv_)
-    = feed_rdm_deriv(info_, active_, fockact_, info_->target(), offset, size);
-}
-
-
-// static function so that it could be used by other classes (e.g., MSCASPT2)
-template<>
-tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
-                   shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>>
-  SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
-                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size) {
-
-  auto ci = IndexRange(size, info->cimaxtile());
-  auto rci = make_shared<const IndexRange>(ci);
-
-  const int nact = info->nact();
-  auto rdm0d = make_shared<VectorB>(size);
-  copy_n(info->ref()->civectors()->data(istate)->data() + offset, size, rdm0d->data());
-
-  auto rdm1d = make_shared<Matrix>(size, nact*nact);
-  auto rdm2d = make_shared<Matrix>(size, nact*nact*nact*nact);
-  {
-    shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
-    shared_ptr<Dvec> rdm2a = info->ref()->rdm2deriv(istate);
-    auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
-      assert(out->mdim() == in->ij());
-      for (int i = 0; i != in->ij(); ++i)
-        copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
-    };
-    fill2(rdm1a, rdm1d);
-    fill2(rdm2a, rdm2d);
-  }
-
-  // RDM4 is contracted a priori by the Fock operator
-  shared_ptr<Matrix> rdm3d, rdm4d;
-  tie(rdm3d, rdm4d) = info->ref()->rdm34deriv(istate, fockact, offset, size);
-
-  vector<IndexRange> o1 = {ci};
-  vector<IndexRange> o3 = {ci, active, active};
-  vector<IndexRange> o5 = {ci, active, active, active, active};
-  vector<IndexRange> o7 = {ci, active, active, active, active, active, active};
-
-  const int nclo = info->nclosed();
-  const vector<int> inpoff1{0};
-  const vector<int> inpoff3{0,nclo,nclo};
-  const vector<int> inpoff5{0,nclo,nclo,nclo,nclo};
-  const vector<int> inpoff7{0,nclo,nclo,nclo,nclo,nclo,nclo};
-
-  const btas::CRange<1> range1(rdm1d->extent(0));
-  const btas::CRange<3> range3(rdm1d->extent(0), nact, nact);
-  const btas::CRange<5> range5(rdm2d->extent(0), nact, nact, nact, nact);
-  const btas::CRange<7> range7(rdm3d->extent(0), nact, nact, nact, nact, nact, nact);
-
-  static_pointer_cast<btas::Tensor1<double>>(rdm0d)->resize(range1);
-  static_pointer_cast<btas::Tensor2<double>>(rdm1d)->resize(range3);
-  static_pointer_cast<btas::Tensor2<double>>(rdm2d)->resize(range5);
-  static_pointer_cast<btas::Tensor2<double>>(rdm3d)->resize(range7);
-  static_pointer_cast<btas::Tensor2<double>>(rdm4d)->resize(range7);
-  auto rdm0deriv = fill_block<1,double>(rdm0d, inpoff1, o1);
-  auto rdm1deriv = fill_block<3,double>(rdm1d, inpoff3, o3);
-  auto rdm2deriv = fill_block<5,double>(rdm2d, inpoff5, o5);
-  auto rdm3deriv = fill_block<7,double>(rdm3d, inpoff7, o7);
-  auto rdm4deriv = fill_block<7,double>(rdm4d, inpoff7, o7);
-
-  return tie(ci, rci, rdm0deriv, rdm1deriv, rdm2deriv, rdm3deriv, rdm4deriv);
-}
-
-
-template<>
 tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
                    shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>, shared_ptr<Matrix>>
-  SpinFreeMethod<double>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
+  SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
                    shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const Matrix> rdm2fd_in) {
 
   auto ci = IndexRange(size, info->cimaxtile());
@@ -509,25 +439,6 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
 
 
 template<>
-void SpinFreeMethod<complex<double>>::feed_rdm_deriv(const size_t offset, const size_t size) {
-  throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
-}
-
-
-template<>
-tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>,
-          shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>>
-  SpinFreeMethod<complex<double>>::feed_rdm_deriv(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
-          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size) {
-  throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
-  IndexRange d;
-  shared_ptr<IndexRange> du;
-  shared_ptr<Tensor_<complex<double>>> dum;
-  return tie(d, du, dum, dum, dum, dum, dum);
-}
-
-
-template<>
 std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const {
   // construct CIWfn
   const int nstates = input->nstates();
@@ -579,9 +490,9 @@ std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std
 template<>
 tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>,
           shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<ZMatrix>>
-  SpinFreeMethod<complex<double>>::feed_rdm_deriv_3(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
+  SpinFreeMethod<complex<double>>::feed_rdm_deriv(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
           shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const ZMatrix> rdm2fd_in) {
-  throw logic_error("SpinFreeMethod::feed_rdm_deriv_3 is not implemented for relativistic cases.");
+  throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
   IndexRange d;
   shared_ptr<IndexRange> du;
   shared_ptr<Tensor_<complex<double>>> dum;

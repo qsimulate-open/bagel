@@ -87,17 +87,92 @@ void CASPT2Grad::compute() {
 }
 
 
-void CASPT2Grad::compute_grad(const int target) {
+template<>
+void GradEval<CASPT2Grad>::compute_dipole() const {
+#ifdef COMPILE_SMITH
+  const int nmobasis = ref_->coeff()->mdim();
+  const int nclosed = ref_->nclosed();
+  const int nact = ref_->nact();
+  const int nstate = ref_->nstate();
+
+  vector<vector<double>> state_dipole;
+  vector<vector<double>> transition_dipole;
+
+  for (int istate = 0; istate != nstate; ++istate) {
+    task_->compute_gradient(istate, istate, make_shared<NacmType>("interstate"), /*nocider=*/true);
+
+    {
+      auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
+      if (nact)
+        d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
+      for (int i = 0; i != nclosed; ++i)
+        d0ms->element(i,i) = 2.0;
+      {
+        const string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate);
+        auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
+        Dipole dipole(geom_, dtotao, dmlabel);
+        auto moment = dipole.compute();
+        state_dipole.push_back(moment);
+      }
+    }
+  }
+
+  for (int istate = 1; istate != nstate; ++istate) {
+    for (int jstate = 0; jstate != istate; ++jstate) {
+      task_->compute_gradient(istate, jstate, make_shared<NacmType>("interstate"), /*nocider=*/true);
+
+      {
+        auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
+        if (nact)
+          d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
+        {
+          const string dmlabel = "CASPT2 unrelaxed dipole moment: " + to_string(istate) + " - " + to_string(jstate);
+          auto dtotao = make_shared<Matrix>(*(task_->smith()->algo()->coeff()) * (*d0ms + *(task_->d11()) + *(task_->d1())) ^ *(task_->smith()->algo()->coeff()));
+          Dipole dipole(geom_, dtotao, dmlabel);
+          auto moment = dipole.compute();
+          transition_dipole.push_back(moment);
+        }
+      }
+    }
+  }
+
+  cout << "  * CASPT2 dipole moments" << endl << endl;
+  for (int istate = 0; istate != nstate; ++istate) {
+    cout << "    * State   " << setw(11) << istate << " : ";
+    cout << "  (" << setw(12) << setprecision(6) << state_dipole[istate][0] << ", " << setw(12) << state_dipole[istate][1]
+      << ", " << setw(12) << state_dipole[istate][2] << ") a.u." << endl << endl;
+  }
+
+  for (int istate = 1, counter = 0; istate != nstate; ++istate) {
+    for (int jstate = 0; jstate != istate; ++jstate, ++counter) {
+      cout << "    * Transition   " << setw(2) << istate << " -" << setw(2) << jstate << " : ";
+        cout << "  (" << setw(12) << setprecision(6) << transition_dipole[counter][0] << ", " << setw(12) << transition_dipole[counter][1]
+             << ", " << setw(12) << transition_dipole[counter][2] << ") a.u." << endl;
+      const double egap = energyvec()[istate] - energyvec()[jstate];
+      auto moment = transition_dipole[counter];
+      const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
+      const double fnm = (2.0 / 3.0) * egap * r2;
+
+      cout << "    * Oscillator strength : " << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
+    }
+  }
+#endif
+}
+
+
+void CASPT2Grad::compute_gradient(const int istate, const int jstate, shared_ptr<const NacmType> nacmtype, const bool nocider) {
+#ifdef COMPILE_SMITH
   const int nclosed = ref_->nclosed();
   const int nact = ref_->nact();
   const int nocc = ref_->nocc();
 
-  smith_->compute_grad(target);
+  target_ = istate;
 
-  // use coefficients from smith (closed and virtual parts have been rotated in smith to make them canonical).
+  smith_->compute_gradient(istate, jstate, nacmtype, nocider);
+
   coeff_ = smith_->coeff();
 
-  if (nact)
+  if (nact && !nocider)
     cideriv_ = smith_->cideriv()->copy();
   ncore_   = smith_->algo()->info()->ncore();
   wf1norm_ = smith_->wf1norm();
@@ -146,14 +221,13 @@ void CASPT2Grad::compute_grad(const int target) {
     sd11_ = d1set(sd11tmp);
   }
 
-  // zeroth order RDM
   if (nact) {
     d10ms_ = make_shared<RDM<1>>(nact);
     d20ms_ = make_shared<RDM<2>>(nact);
     for (int ist = 0; ist != nstates_; ++ist) {
-      const double ims = msrot(ist, target);
+      const double ims = msrot(ist, jstate);
       for (int jst = 0; jst != nstates_; ++jst) {
-        const double jms = msrot(jst, target);
+        const double jms = msrot(jst, istate);
         shared_ptr<const RDM<1>> rdm1t;
         shared_ptr<const RDM<2>> rdm2t;
         tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
@@ -162,88 +236,25 @@ void CASPT2Grad::compute_grad(const int target) {
       }
     }
   }
-  d2_ = smith_->dm2();
-  energy_ = smith_->algo()->energy(target);
-  cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
-}
-
-
-void CASPT2Grad::compute_nacme(const int istate, const int jstate, const int nacmtype) {
-#ifdef COMPILE_SMITH
-  const int nclosed = ref_->nclosed();
-  const int nact = ref_->nact();
-  const int nocc = ref_->nocc();
-
-  smith_->compute_nacme(istate, jstate, nacmtype);
-
-  coeff_ = smith_->coeff();
-
-  cideriv_ = smith_->cideriv()->copy();
-  ncore_   = smith_->algo()->info()->ncore();
-  wf1norm_ = smith_->wf1norm();
-  msrot_   = smith_->msrot();
-  nstates_ = wf1norm_.size();
-  assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
-  assert(nstates_ == smith_->algo()->info()->ciwfn()->nstates());
-
-  const double energy1 = smith_->algo()->energy(istate);
-  const double energy2 = smith_->algo()->energy(jstate);
-
-  Timer timer;
-
-  // save correlated density matrices d(1), d(2), and ci derivatives
-  auto d1tmp = make_shared<Matrix>(*smith_->dm1());
-  auto d11tmp = make_shared<Matrix>(*smith_->dm11());
-  d1tmp->symmetrize();
-  d11tmp->symmetrize();
-  // a factor of 2 from the Hylleraas functional (which is not included in the generated code)
-  d11tmp->scale(2.0);
-
-  auto d1set = [this](shared_ptr<const Matrix> d1t) {
-    if (!ncore_) {
-      return d1t->copy();
-    } else {
-      auto out = make_shared<Matrix>(coeff_->mdim(), coeff_->mdim());
-      out->copy_block(ncore_, ncore_, coeff_->mdim()-ncore_, coeff_->mdim()-ncore_, d1t);
-      return out;
-    }
-  };
-  d1_ = d1set(d1tmp);
-  d11_ = d1set(d11tmp);
-
-  // XMS density matrix
-  if (smith_->dcheck()) {
-    shared_ptr<const Matrix> dc = smith_->dcheck();
-    assert(dc->ndim() == nact && dc->mdim() == nact);
-    auto tmp = make_shared<Matrix>(nocc, nocc);
-    tmp->add_block(1.0, nclosed, nclosed, nact, nact, dc);
-    dcheck_ = tmp;
-  }
-
-  auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
-  vd1_ = d1set(vd1tmp);
-
-  d10ms_ = make_shared<RDM<1>>(nact);
-  d20ms_ = make_shared<RDM<2>>(nact);
-  for (int ist = 0; ist != nstates_; ++ist) {
-    const double ims = msrot(ist, jstate);
-    for (int jst = 0; jst != nstates_; ++jst) {
-      const double jms = msrot(jst, istate);
-      shared_ptr<const RDM<1>> rdm1t;
-      shared_ptr<const RDM<2>> rdm2t;
-      tie(rdm1t, rdm2t) = ref_->rdm12(jst, ist, /*recompute*/true);
-      d10ms_->ax_plus_y(ims*jms, *rdm1t);
-      d20ms_->ax_plus_y(ims*jms, *rdm2t);
-    }
-  }
-
-  auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
-  *vd1_ += *d10IJ;
 
   d2_ = smith_->dm2();
 
-  cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
-  cout << "    * Energy gap is:       " << setprecision(10) << fabs(energy1 - energy2) * au2eV__ << " eV" << endl << endl;
+  if (istate != jstate) {
+    auto vd1tmp = make_shared<Matrix>(*smith_->vd1());
+    vd1_ = d1set(vd1tmp);
+
+    auto d10IJ = make_shared<Matrix>(*(ref_->rdm1_mat_tr(d10ms_)->resize(coeff_->mdim(),coeff_->mdim())));
+    *vd1_ += *d10IJ;
+    cout << "    * NACME Target states: " << istate << " - " << jstate << endl;
+
+    const double energy1 = smith_->algo()->energy(istate);
+    const double energy2 = smith_->algo()->energy(jstate);
+    cout << "    * Energy gap is:       " << setprecision(10) << (energy1 - energy2) * au2eV__ << " eV" << endl << endl;
+  } else {
+    energy_ = smith_->algo()->energy(istate);
+    cout << "    * CASPT2 energy:  " << setprecision(12) << setw(15) << energy_ << endl;
+  }
+
 #endif
 }
 
@@ -255,14 +266,20 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
 #ifdef COMPILE_SMITH
 
-  task_->compute_grad(istate);
+  if (jobtitle == "nacme")
+    task_->compute_gradient(istate, jstate, nacmtype);
+  else
+    task_->compute_gradient(istate, istate);
+
   Timer timer;
 
   shared_ptr<const Reference> ref = task_->ref();
   auto fci = task_->fci();
+
+  const double egap = task_->smith()->algo()->energy(jstate) - task_->smith()->algo()->energy(istate);
 
   const int nclosed = ref->nclosed();
   const int nact = ref->nact();
@@ -283,12 +300,27 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
   auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
   if (nact)
     d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
-  for (int i = 0; i != nclosed; ++i)
-    d0ms->element(i,i) = 2.0;
+  if (jobtitle == "nacme") {
+    d0ms->symmetrize();
+  } else {
+    for (int i = 0; i != nclosed; ++i)
+      d0ms->element(i,i) = 2.0;
+  }
 
   const MatView ocoeff = coeff->slice(0, nocc);
 
-  {
+  if (jobtitle == "nacme") {
+    const string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
+    auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
+    Dipole dipole(geom_, dtotao, tdmlabel);
+    auto moment = dipole.compute();
+
+    const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
+    const double fnm = (2.0 / 3.0) * egap * r2;
+
+    cout << "    * Oscillator strength for transition between " << istate << " - "
+      << jstate << setprecision(6) << setw(10) << fnm << " a.u." << endl << endl;
+  } else {
     auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
     Dipole dipole(geom_, dtotao, "CASPT2 unrelaxed");
     dipole.compute();
@@ -300,13 +332,19 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
   shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
   shared_ptr<Matrix> yrs;
   shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_Y_grad(half, halfj, halfjj);
+  tie(yrs, fulld1) = task_->compute_Y(half, halfj, halfjj, /*nacme=*/(jobtitle=="nacme"));
 
   timer.tick_print("Yrs evaluation");
 
   // solve CPCASSCF
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
+
+  if (jobtitle == "nacme" && (nacmtype->full() || nacmtype->etf()))
+    task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
+
+  timer.tick_print("Yrs non-Lagrangian terms");
+
   auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
 
   shared_ptr<const Dvec> civector;
@@ -354,6 +392,18 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
 
   // xmat in the AO basis
   auto xmatao = make_shared<Matrix>(*coeff * *xmat ^ *coeff);
+  shared_ptr<Matrix> qxmatao;
+  if (jobtitle == "nacme") {
+    auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
+
+    if (nacmtype->full())
+      qxmat->scale(egap);
+    else
+      qxmat->zero();
+
+    qxmatao = make_shared<Matrix>(*coeff * *qxmat ^ *coeff);
+  }
+
 
   // two-body part
   // first make occ-occ part (copy-and-paste from src/casscf/supercigrad.cc)
@@ -368,7 +418,11 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
-      shared_ptr<DFFullDist> qijd = qij->apply_2rdm(D, dd, nclosed, nact);
+      shared_ptr<DFFullDist> qijd;
+      if (jobtitle == "nacme")
+        qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
+      else
+        qijd = qij->apply_2rdm(D, dd, nclosed, nact);
 
       qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact));
       qri = qijd->back_transform(ocoeff);
@@ -396,196 +450,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const 
     dhfcc->ax_plus_y(1.0, task_->spin_density_relax(zrdm1, zrdm2, zmat));
     HyperFine hfcc(geom_, dhfcc, fci->det()->nspin(), "CASPT2 relaxed");
     hfcc.compute();
-  }
-
-  // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
-  qri->ax_plus_y(2.0, fulld1->apply_J()->back_transform(coeff));
-
-  // contributions from non-separable part
-  shared_ptr<Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
-
-  // separable part
-  vector<shared_ptr<const Matrix>> da;
-  vector<shared_ptr<const VectorB>> ca;
-
-  auto separable_pair = [&,this](shared_ptr<const Matrix> d0occ, shared_ptr<const Matrix> d1bas) {
-    shared_ptr<const Matrix> d0mo = make_shared<Matrix>(*d0occ ^ ocoeff);
-    shared_ptr<const Matrix> d0ao = make_shared<Matrix>(ocoeff * *d0mo);
-    shared_ptr<const Matrix> d1ao = make_shared<Matrix>(*coeff * *d1bas ^ *coeff);
-    shared_ptr<const VectorB> cd0 = geom_->df()->compute_cd(d0ao);
-    shared_ptr<const VectorB> cd1 = geom_->df()->compute_cd(d1ao);
-    ca.push_back(cd0);
-    da.push_back(d1ao);
-
-    shared_ptr<DFHalfDist> sepd = halfjj->apply_density(d1ao);
-    sepd->rotate_occ(d0occ);
-
-    qri->ax_plus_y(-1.0, sepd);
-    qri->add_direct_product(cd1, d0mo, 1.0);
-
-    *qq += (*cd0 ^ *cd1) * 2.0;
-    *qq += *halfjj->form_aux_2index(sepd, -1.0);
-    return make_tuple(cd0, d1ao);
-  };
-
-  separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), d1);
-
-  if (smallz)
-    separable_pair(smallz, d0sa);
-
-  // back transform the rest
-  shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
-  qrs->add_direct_product(ca, da, 1.0);
-
-  timer.tick_print("Effective densities");
-
-  // compute gradients
-  shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq);
-  gradient->print();
-  timer.tick_print("Gradient integral contraction");
-
-  // set energy
-  energy_ = task_->energy();
-  return gradient;
-#else
-  return nullptr;
-#endif
-}
-
-
-template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype) {
-#ifdef COMPILE_SMITH
-
-  task_->compute_nacme(istate, jstate, nacmtype);
-  Timer timer;
-
-  shared_ptr<const Reference> ref = task_->ref();
-  auto fci = task_->fci();
-
-  const double egap = task_->smith()->algo()->energy(jstate) - task_->smith()->algo()->energy(istate);
-
-  const int nclosed = ref->nclosed();
-  const int nact = ref->nact();
-
-  // second order density matrix
-  shared_ptr<const Matrix> d1 = task_->d1();
-  // first order density matrices
-  shared_ptr<const Matrix> d11 = task_->d11();
-  shared_ptr<const Dvec> cider = task_->cideriv();
-
-  shared_ptr<const Matrix> coeff = task_->coeff();
-
-  const int ncore = task_->ncore();
-  const int nocc  = ref->nocc();
-  const int nmobasis = coeff->mdim();
-
-  // d0, of course there are no core here
-  auto d0ms = make_shared<Matrix>(nmobasis, nmobasis);
-  d0ms->add_block(1.0, nclosed, nclosed, nact, nact, task_->d10ms());
-  d0ms->symmetrize();
-
-  const MatView ocoeff = coeff->slice(0, nocc);
-
-  {
-    string tdmlabel = "Transition dipole moment between " + to_string(istate) + " - " + to_string(jstate);
-    auto dtotao = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
-    Dipole dipole(geom_, dtotao, tdmlabel);
-    auto moment = dipole.compute();
-
-    const double r2 = moment[0] * moment[0] + moment[1] * moment[1] + moment[2] * moment[2];
-    const double fnm = (2.0 / 3.0) * egap * r2;
-
-    cout << "    * Oscillator strength for transition between " << istate << " - "
-      << jstate << setprecision(6) << setw(10) << fabs(fnm) << endl << endl;
-  }
-
-  // compute Yrs
-  shared_ptr<const DFHalfDist> half   = ref->geom()->df()->compute_half_transform(ocoeff);
-  shared_ptr<const DFHalfDist> halfj  = half->apply_J();
-  shared_ptr<const DFHalfDist> halfjj = halfj->apply_J();
-  shared_ptr<Matrix> yrs;
-  shared_ptr<const DFFullDist> fulld1; // (gamma| ir) D(ir,js)
-  tie(yrs, fulld1) = task_->compute_Y_nacme(half, halfj, halfjj);
-  timer.tick_print("Yrs evaluation");
-
-  // solve CPCASSCF
-  shared_ptr<Matrix> g0 = yrs;
-  shared_ptr<Dvec> g1 = cider->copy();
-
-  if (nacmtype == 0 || nacmtype == 2)
-    task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
-
-  timer.tick_print("Yrs non-Lagrangian terms");
-
-  auto grad = make_shared<PairFile<Matrix, Dvec>>(g0, g1);
-
-  shared_ptr<const Dvec> civector;
-  civector = ref->ciwfn()->civectors();
-
-  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
-  shared_ptr<const Matrix> zmat, xmat, smallz;
-  shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), maxziter, task_->dcheck(), /*xms*/!!task_->dcheck());
-
-  timer.tick_print("Z-CASSCF solution");
-
-  // form relaxed 1RDM
-  // form Zd + dZ^+
-  shared_ptr<const Matrix> d0sa = ref->rdm1_mat()->resize(nmobasis, nmobasis);
-  auto dm = make_shared<Matrix>(*zmat * *d0sa + (*d0sa ^ *zmat));
-
-  auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm);
-  if (smallz)
-    dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
-
-  // form zdensity
-  shared_ptr<const RDM<1>> zrdm1;
-  shared_ptr<const RDM<2>> zrdm2;
-  auto detex = make_shared<Determinants>(nact, fci->nelea(), fci->neleb(), false, /*mute=*/true);
-  tie(zrdm1, zrdm2) = fci->compute_rdm12_av_from_dvec(ref->ciwfn()->civectors(), zvec, detex);
-
-  shared_ptr<Matrix> zrdm1_mat = zrdm1->rdm1_mat(nclosed, false)->resize(nmobasis, nmobasis);
-  zrdm1_mat->symmetrize();
-  dtot->ax_plus_y(1.0, zrdm1_mat);
-
-  // compute relaxed dipole to check
-  auto dtotao = make_shared<Matrix>(*coeff * *dtot ^ *coeff);
-  {
-    Dipole dipole(geom_, dtotao, "CASPT2 relaxed");
-    dipole.compute();
-  }
-
-  // xmat in the AO basis
-  auto xmatao = make_shared<Matrix>(*coeff * *xmat ^ *coeff);
-  shared_ptr<Matrix> qxmat = task_->vd1()->resize(nmobasis, nmobasis);
-
-  if (nacmtype == 0)
-    qxmat->scale(egap);
-  else
-    qxmat->zero();
-
-  auto qxmatao = make_shared<Matrix>(*coeff * (*qxmat) ^ *coeff);
-
-  // two-body part
-  // first make occ-occ part (copy-and-paste from src/casscf/supercigrad.cc)
-  shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);
-  shared_ptr<DFHalfDist> qri;
-  {
-    shared_ptr<const Matrix> ztrans = make_shared<Matrix>(*coeff * zmat->slice(0,nocc));
-    RDM<2> D(*task_->d20ms()+*zrdm2);
-    RDM<1> dd(*task_->d10ms()+*zrdm1);
-    // symetrize dd (zrdm1 needs symmetrization)
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nact; ++j)
-        dd(j,i) = dd(i,j) = 0.5*(dd(j,i)+dd(i,j));
-    shared_ptr<DFFullDist> qijd = qij->apply_2rdm_tran(D, dd, nclosed, nact);
-
-    qijd->ax_plus_y(2.0, halfjj->compute_second_transform(ztrans)->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact));
-    qri = qijd->back_transform(ocoeff);
-
-    shared_ptr<const DFFullDist> qijd2 = qij->apply_2rdm(*ref->rdm2_av(), *ref->rdm1_av(), nclosed, nact);
-    qri->ax_plus_y(2.0, qijd2->back_transform(ztrans));
   }
 
   // D1 part. 2.0 seems to come from the difference between smith and bagel (?)
@@ -630,30 +494,21 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const
   timer.tick_print("Effective densities");
 
   // compute gradients
-  shared_ptr<GradFile> gradient = contract_nacme(dtotao, xmatao, qrs, qq, qxmatao);
+  shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if (nacmtype != 3)
+  if ((jobtitle == "nacme") && !(nacmtype->noweight()))
     gradient->scale(1.0/egap);
-  gradient->print(": Nonadiabatic coupling vector", 0);
-  timer.tick_print("NACME integral contraction");
+  gradient->print();
+  timer.tick_print("Gradient integral contraction");
+
+  if (jobtitle == "force")
+    energy_ = task_->energy();
+  else
+    energy_ = 0.0;
 
   return gradient;
 #else
-  return nullptr;
-#endif
-}
-
-template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
-#ifdef COMPILE_SMITH
-  shared_ptr<GradFile> gradient;
-
-  if (jobtitle=="force")
-    gradient = compute_grad(istate, maxziter);
-  else if (jobtitle=="nacme")
-    gradient = compute_nacme(istate, maxziter, jstate, nacmtype);
-  return gradient;
-#else
+  throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
   return nullptr;
 #endif
 }

@@ -92,6 +92,12 @@ std::vector<double> reference_cas_nacme() {
   out[5] =  0.1243972419;
   return out;
 }
+std::vector<double> reference_dkh_grad() {
+  std::vector<double> out(6);
+  out[2] = 0.1590879594;
+  out[5] = -0.1590879594;
+  return out;
+}
 
 BOOST_AUTO_TEST_SUITE(TEST_FORCE)
 
@@ -108,6 +114,10 @@ BOOST_AUTO_TEST_CASE(Finite_Grad) {
 #ifdef COMPILE_SMITH
     BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_finite"), reference_xms_finite(), 1.0e-5));
 #endif
+}
+
+BOOST_AUTO_TEST_CASE(Hcore_Grad) {
+    BOOST_CHECK(compare(run_force("hf_svp_dfhf_dkh_grad"),   reference_dkh_grad(), 1.0e-5));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -92,12 +92,10 @@ void CASPT2Energy::compute() {
   ref_->energy() = energy_;
 
   if (target_state1_!=-1) {
-    smith->compute_nacme(target_state1_, target_state2_, 0);
+    smith->compute_gradient(target_state1_, target_state2_, make_shared<const NacmType>());
     ncore_   = smith->algo()->info()->ncore();
     coeff_   = smith->coeff();
     msrot_   = smith->msrot();
-    xmsrot_  = smith->xmsrot();
-    heffrot_ = smith->heffrot();
 
     auto d1set = [this](shared_ptr<const Matrix> d1t) {
       if (!ncore_) {
@@ -279,7 +277,7 @@ shared_ptr<GradFile> FiniteNacm<CASPT2Energy>::compute() {
 
   auto gfin = make_shared<Matrix>((*acoeff_ref * (*gmo) ^ *acoeff_ref) + (*coeff_ref * (*vd1a) ^ *coeff_ref));
   auto grad_basis = make_shared<GradFile>(geom_->natom());
-  grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
+  grad_basis = contract_gradient(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
 
   *grad += *grad_basis;
   grad->print(": NACME calculated with finite difference", 0);
