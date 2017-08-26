@@ -96,7 +96,7 @@ Keywords for RHF-FMM
                       two collections of charges before they are considered distant
                       and can interact through multipole expansions
    | **Datatype**: int
-   | **Default**: :math:`2`
+   | **Default**: :math:`0`
 
 .. topic:: ``lmax``
 
@@ -108,19 +108,13 @@ Keywords for RHF-FMM
 
    | **Description**: whether to include far-field exchange using occ-RI-FMM
    | **Datatype**: bool 
-   | **Default**: false
+   | **Default**: true 
 
 .. topic:: ``lmax_exchange``
 
    | **Description**: order of the multipole expansions in FMM-K
    | **Datatype**: int
    | **Default**: :math:`2`
-
-.. topic:: ``fmm_thresh``
-
-   | **Description**: integral screening threshold used in FMM
-   | **Datatype**: double
-   | **Default**: ``thresh_overlap``
 
 ========
 Examples
@@ -376,10 +370,9 @@ RHF-FMM
 
    {
      "df" : false,
-     "ns" : "4",
+     "ns" : "5",
      "lmax" : "10",
-     "ws" : "0.5",
-     "thresh_fmm" : "1.0e-12",
+     "ws" : "0.0",
      "exchange" : true,
      "lmax_exchange" : "2",
      "title" : "hf",
@@ -387,6 +380,9 @@ RHF-FMM
    }
 
    ]}
+
+The converged SCF energy is :math:`-3629.48403990` after :math:`11` iterations, and the far-field
+exchange contribution is :math:`7.736` milli-hartree.
 
 ==========
 References
@@ -398,7 +394,7 @@ BAGEL References
 +-----------------------------------------------+----------------------------------------------------------------------------+
 |          Description of Reference             |                               Reference                                    |
 +===============================================+============================================================================+
-| Exact exchange evaluation using occ-RI-FMM    | H\.-A. Le and T. Shiozaki, *in preparation*.                               |
+| Exact exchange evaluation using occ-RI-FMM    | H\.-A. Le and T. Shiozaki, *submitted*, arXiv:1708.05353 (2017)            |
 +-----------------------------------------------+----------------------------------------------------------------------------+
 
 General References
