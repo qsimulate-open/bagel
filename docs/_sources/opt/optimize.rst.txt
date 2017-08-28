@@ -201,13 +201,13 @@ Optional Keywords (Conical Intersection Optimization)
 .. topic:: ``nacmtype``
 
    | **Description:** Type of non-adiabatic coupling matrix element to be used.
-   | **Datatype:** int
+   | **Datatype:** string
    | **Values:**
-   |    ``0``: use full nonadiabatic coupling.
-   |    ``1``: use interstate coupling.
-   |    ``2``: use nonadiabatic coupling with built-in electronic translational factor (ETF).
-   |    ``3``: use interstate coupling without weighting it by energy gap.
-   | **Default:** 3.
+   |    ``full``: use full nonadiabatic coupling.
+   |    ``interstate``: use interstate coupling.
+   |    ``etf``: use nonadiabatic coupling with built-in electronic translational factor (ETF).
+   |    ``noweight``: use interstate coupling without weighting it by energy gap.
+   | **Default:** noweight.
 
 .. topic:: ``thielc3``
 

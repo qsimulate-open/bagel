@@ -36,7 +36,7 @@ using namespace bagel;
 #define LOCAL_TIMING
 
 template<>
-shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype) {
+shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
   assert(ref_->nact() == 0);
   geom_ = task_->geom();
 
@@ -78,7 +78,7 @@ shared_ptr<GradFile> GradEval<Dirac>::compute(const string jobtitle, const int i
                      *sden +=*eden->get_submatrix(nbasis, nbasis, nbasis, nbasis);
 
   // nden, kden, sden (minus sign is taken care of inside)
-  vector<shared_ptr<GradTask>> task = contract_grad1e(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
+  vector<shared_ptr<GradTask>> task = contract_grad1e<GradTask1>(nden->get_real_part(), kden->get_real_part(), sden->get_real_part());
 
   // small NAI part..
   map<int, shared_ptr<Sigma>> sigma;

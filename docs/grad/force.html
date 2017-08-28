@@ -91,15 +91,15 @@
 <p class="topic-title first"><code class="docutils literal"><span class="pre">nacmtype</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Type of non-adiabatic coupling matrix element to be computed</div>
-<div class="line"><strong>Datatype:</strong> int</div>
+<div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">0</span></code>: Full non-adiabatic coupling</div>
-<div class="line"><code class="docutils literal"><span class="pre">1</span></code>: Interstate coupling</div>
-<div class="line"><code class="docutils literal"><span class="pre">2</span></code>: Non-adiabtic coupling with built-in electronic translational factor (ETF)</div>
-<div class="line"><code class="docutils literal"><span class="pre">3</span></code>: Interstate coupling without weighting it by energy gap</div>
+<div class="line"><code class="docutils literal"><span class="pre">full</span></code>: Full non-adiabatic coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">interstate</span></code>: Interstate coupling</div>
+<div class="line"><code class="docutils literal"><span class="pre">etf</span></code>: Non-adiabtic coupling with built-in electronic translational factor (ETF)</div>
+<div class="line"><code class="docutils literal"><span class="pre">noweight</span></code>: Interstate coupling without weighting it by energy gap</div>
 </div>
-<div class="line"><strong>Default:</strong> 0</div>
+<div class="line"><strong>Default:</strong> full.</div>
 </div>
 </div>
 </div>
@@ -152,15 +152,18 @@
 </div>
 </div>
 <div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">dipole</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Calculate unrelaxed (transition) dipole moments, available in SA-CASSCF and XMS-CASPT2.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
+<div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">export</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
-<div class="line"><strong>Values:</strong></div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
-</div>
 <div class="line"><strong>Default:</strong> false</div>
 <div class="line"><strong>Recommendation:</strong> This is used to interface with the QM/MM program. See section on non-adiabatic dynamics.</div>
 </div>
@@ -170,11 +173,6 @@
 <div class="line-block">
 <div class="line"><strong>Description:</strong> This option will export the nuclear gradient to a text file for a single state.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
-<div class="line"><strong>Values:</strong></div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Export file</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: Do not export file</div>
-</div>
 <div class="line"><strong>Default:</strong> false</div>
 <div class="line"><strong>Recommendation:</strong> This is used to interface with the QM/MM program. See section on non-adiabatic dynamics.</div>
 </div>
@@ -193,11 +191,6 @@
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The reference wavefunction is saved to an archive file.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
-<div class="line"><strong>Values:</strong></div>
-<div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: Archive file is saved</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code> : Archive file is not saved</div>
-</div>
 <div class="line"><strong>Default:</strong> false</div>
 <div class="line"><strong>Recommendation:</strong> Save file if it is likely that the calculation will need to be restarted.</div>
 </div>
@@ -329,13 +322,13 @@ The CASSCF orbitals are state-averaged over two states.</p>
  <span class="p">}</span>
 </pre></div>
 </div>
-<p>Using the keyword <code class="docutils literal"><span class="pre">forces</span></code>, you can run multiple gradient or derivative coupling calculations without repeating the energy calculations. The example below evaluates the nuclear gradient of the energy of the ground state, the first excited state, and the interstate coupling vector (<code class="docutils literal"><span class="pre">nacmtype</span></code> is 1) between these two states.</p>
+<p>Using the keyword <code class="docutils literal"><span class="pre">forces</span></code>, you can run multiple gradient or derivative coupling calculations without repeating the energy calculations. The example below evaluates the nuclear gradient of the energy of the ground state, the first excited state, and the interstate coupling vector (<code class="docutils literal"><span class="pre">nacmtype</span></code> is <code class="docutils literal"><span class="pre">interstate</span></code>) between these two states.</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;forces&quot;</span><span class="p">,</span>
    <span class="s2">&quot;grads&quot;</span> <span class="o">:</span> <span class="p">[</span>
      <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span> <span class="p">},</span>
      <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">},</span>
-     <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nacmtype&quot;</span> <span class="o">:</span> <span class="mi">1</span> <span class="p">}</span>
+     <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;nacme&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;target2&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;nacmtype&quot;</span> <span class="o">:</span> <span class="s2">&quot;interstate&quot;</span> <span class="p">}</span>
    <span class="p">],</span>
    <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
      <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
@@ -378,7 +371,10 @@ The CASSCF orbitals are state-averaged over two states.</p>
 <td>B. Vlaisavljevich and T. Shiozaki, J. Chem. Theory Comput. <strong>12</strong>, 3781 (2016).</td>
 </tr>
 <tr class="row-even"><td>(X)MS-CASPT2 derivative coupling</td>
-<td>J. W. Park and T. Shiozaki, <em>submitted</em>.</td>
+<td>J. W. Park and T. Shiozaki, J. Chem. Theory Comput. <strong>13</strong>, 2561 (2017).</td>
+</tr>
+<tr class="row-odd"><td>Current (X)MS-CASPT2 gradient algorithm</td>
+<td>J. W. Park and T. Shiozaki, J. Chem. Theory Comput. <strong>13</strong>, 3676 (2017).</td>
 </tr>
 </tbody>
 </table>

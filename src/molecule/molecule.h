@@ -88,6 +88,7 @@ class Molecule {
     Molecule() : external_{{0.0,0.0,0.0}}, magnetic_field_{{0.0,0.0,0.0}} {}
     Molecule(const std::vector<std::shared_ptr<const Atom>> a, const std::vector<std::shared_ptr<const Atom>> b)
       : atoms_(a), aux_atoms_(b), external_{{0.0,0.0,0.0}}, magnetic_field_{{0.0,0.0,0.0}} { }
+    Molecule(const Molecule& o, std::shared_ptr<const Matrix> disp, const bool rotate = true);
     virtual ~Molecule() { }
 
     // Returns shared pointers of Atom objects, which contains basis-set info.

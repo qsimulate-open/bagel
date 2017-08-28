@@ -35,6 +35,7 @@
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
 #include <src/smith/smith_info.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 namespace SMITH {
@@ -129,38 +130,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<FutureTensor> Gamma143_();
     std::shared_ptr<FutureTensor> Gamma196_();
     std::shared_ptr<FutureTensor> Gamma152_();
-    std::shared_ptr<FutureTensor> Gamma248_();
-    std::shared_ptr<FutureTensor> Gamma249_();
-    std::shared_ptr<FutureTensor> Gamma250_();
-    std::shared_ptr<FutureTensor> Gamma251_();
-    std::shared_ptr<FutureTensor> Gamma252_();
-    std::shared_ptr<FutureTensor> Gamma253_();
-    std::shared_ptr<FutureTensor> Gamma254_();
-    std::shared_ptr<FutureTensor> Gamma255_();
-    std::shared_ptr<FutureTensor> Gamma257_();
-    std::shared_ptr<FutureTensor> Gamma260_();
-    std::shared_ptr<FutureTensor> Gamma262_();
-    std::shared_ptr<FutureTensor> Gamma264_();
-    std::shared_ptr<FutureTensor> Gamma270_();
-    std::shared_ptr<FutureTensor> Gamma276_();
-    std::shared_ptr<FutureTensor> Gamma277_();
-    std::shared_ptr<FutureTensor> Gamma279_();
-    std::shared_ptr<FutureTensor> Gamma280_();
-    std::shared_ptr<FutureTensor> Gamma282_();
-    std::shared_ptr<FutureTensor> Gamma283_();
-    std::shared_ptr<FutureTensor> Gamma285_();
-    std::shared_ptr<FutureTensor> Gamma286_();
-    std::shared_ptr<FutureTensor> Gamma299_();
-    std::shared_ptr<FutureTensor> Gamma304_();
-    std::shared_ptr<FutureTensor> Gamma305_();
-    std::shared_ptr<FutureTensor> Gamma306_();
-    std::shared_ptr<FutureTensor> Gamma307_();
-    std::shared_ptr<FutureTensor> Gamma308_();
-    std::shared_ptr<FutureTensor> Gamma317_();
-    std::shared_ptr<FutureTensor> Gamma329_();
-    std::shared_ptr<FutureTensor> Gamma340_();
-    std::shared_ptr<FutureTensor> Gamma355_();
-    std::shared_ptr<FutureTensor> Gamma373_();
 
     std::shared_ptr<Queue> make_residualq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_sourceq(const bool reset = true, const bool diagonal = true);
@@ -183,12 +152,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     ~CASPT2() {}
 
     void solve();
-    void solve_deriv(const int target);
-    void solve_nacme(const int targetJ, const int targetI, const int nacmtype);
+    void solve_gradient(const int targetJ, const int targetI, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>(), const bool nocider = false);
     void solve_dm(const int istate, const int jstate);
-
-    std::shared_ptr<const Matrix> xmsrot() const { return xmsmat_ ? xmsmat_ : nullptr; }
-    std::shared_ptr<const Matrix> heffrot() const { return heff_; }
 
     std::shared_ptr<const Matrix> msrot() const { return xmsmat_ ? std::make_shared<Matrix>(*xmsmat_ * *heff_) : heff_; }
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }

@@ -31,6 +31,7 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/multi/casscf/casscf.h>
 #include <src/pt2/mp2/mp2grad.h>
+#include <src/grad/nacmtype.h>
 #include <src/grad/gradeval_base.h>
 #include <src/smith/caspt2grad.h>
 
@@ -63,22 +64,20 @@ class GradEval : public GradEval_base {
     }
 
   public:
+
     // Constructor performs energy calculation
     GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
       : GradEval_base(geom), idata_(idata), ref_(ref) {
       init();
     }
 
-    // compute() computes effective density matrices and perform gradient contractions
-    std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int maxziter = 100, const int jstate = -1, const int nacmtype = 0)
+    // computes effective density matrices and perform gradient contractions
+    std::shared_ptr<GradFile> compute(const std::string jobtitle = "force", const int istate = 0, const int jstate = -1, const int maxziter = 100, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>())
       { throw std::logic_error("Nuclear gradient for this method has not been implemented"); }
-    // gradient type specific implementations
-    std::shared_ptr<GradFile> compute_grad(const int istate = 0, const int maxziter = 100)
-      { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF and CASPT2)"); }
-    std::shared_ptr<GradFile> compute_dgrad(const int istate = 0, const int maxziter = 100, const int jstate = 1)
-      { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF)"); }
-    std::shared_ptr<GradFile> compute_nacme(const int istate = 0, const int maxziter = 100, const int jstate = 1, const int nacmtype = 0)
-      { throw std::logic_error("Something is wrong here (this branching is only done in CASSCF and CASPT2)"); }
+
+    // computes unrelaxed dipole moments
+    void compute_dipole() const
+      { throw std::logic_error("compute_dipole() only works for CASSCF and CASPT2"); }
 
     double energy() const { return energy_; }
     std::vector<double> energyvec() const { return ref_->energy(); }
@@ -92,22 +91,20 @@ class GradEval : public GradEval_base {
 template<> std::vector<double> GradEval<MP2Grad>::energyvec() const;
 template<> std::vector<double> GradEval<CASPT2Grad>::energyvec() const;
 
-template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_grad(const int istate, const int maxziter);
-template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<MP2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<Dirac>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
 
-// CASSCF is slightly more complicated. These functions are implemented in casgrad.cc
+// These functions are implemented in casgrad.cc
 template<> void GradEval<CASSCF>::init();
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int maxziter, const int jstate, const int nacmtype);
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute_grad(const int istate, const int maxziter);
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute_dgrad(const int istate, const int maxziter, const int jstate);
-template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute_nacme(const int istate, const int maxziter, const int jstate, const int nacmtype);
+template<> std::shared_ptr<GradFile> GradEval<CASSCF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, std::shared_ptr<const NacmType> nacmtype);
+
+template<> void GradEval<CASSCF>::compute_dipole() const;
+template<> void GradEval<CASPT2Grad>::compute_dipole() const;
 
 }
 

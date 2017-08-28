@@ -222,7 +222,7 @@ void MRCI::MRCI::solve() {
 }
 
 
-void MRCI::MRCI::solve_deriv() {
+void MRCI::MRCI::solve_gradient(const int targetJ, const int targetI, shared_ptr<const NacmType> nacmtype, const bool nocider) {
   throw std::logic_error("Nuclear gradients not implemented for MRCI");
 }
 

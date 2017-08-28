@@ -26,6 +26,7 @@
 #ifndef __SRC_MAT1E_HCORE_H
 #define __SRC_MAT1E_HCORE_H
 
+#include <src/wfn/hcoreinfo.h>
 #include <src/mat1e/matrix1e.h>
 #include <src/mat1e/hso.h>
 
@@ -46,7 +47,8 @@ class Hcore : public Matrix1e {
 
   public:
     Hcore() { }
-    Hcore(std::shared_ptr<const Molecule> mol, const bool nodkh = true, const bool dofmm = false);
+    Hcore(std::shared_ptr<const Molecule> mol) : Hcore(mol, std::make_shared<const HcoreInfo>()) { }
+    Hcore(std::shared_ptr<const Molecule> mol, std::shared_ptr<const HcoreInfo> hcoreinfo);
 
     std::shared_ptr<HSO> hso() const { return hso_; }
 };

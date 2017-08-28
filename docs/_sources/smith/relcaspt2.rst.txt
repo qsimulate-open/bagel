@@ -65,7 +65,7 @@ The default values are recommended unless mentioned otherwise.
 
    | **Description:** Overlap cutoff threshold for internally contracted basis.
    | **Datatype:** Double precision
-   | **Default:** 1.0-9
+   | **Default:** 1.0e-9
 
 .. topic:: ``frozen``
 

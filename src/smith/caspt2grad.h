@@ -30,6 +30,7 @@
 #include <src/ci/fci/distfci.h>
 #include <src/smith/tensor.h>
 #include <src/smith/smith.h>
+#include <src/grad/nacmtype.h>
 
 namespace bagel {
 
@@ -109,8 +110,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
     void compute() override;
-    void compute_grad(const int istate);
-    void compute_nacme(const int istate, const int jstate, const int nacmtype);
+    void compute_gradient(const int istate, const int jstate, std::shared_ptr<const NacmType> nacmtype = std::make_shared<const NacmType>("interstate"), const bool nocider = false);
 
     std::shared_ptr<const Matrix> d1() const { return d1_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
@@ -127,13 +127,10 @@ class CASPT2Grad : public Method {
 
     // function for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y_grad(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
+      compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj, const bool nacme);
 
-    // functions for nacme
+    // function for nacme
     void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj, const int istate, const int jstate, const double egap);
-
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
-      compute_Y_nacme(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj);
 };
 
 // Single point calc. (only for finite difference nacme)
@@ -144,8 +141,6 @@ class CASPT2Energy : public Method {
   protected:
     std::shared_ptr<const Matrix> coeff_;
     std::shared_ptr<const Matrix> msrot_;
-    std::shared_ptr<const Matrix> xmsrot_;
-    std::shared_ptr<const Matrix> heffrot_;
     std::vector<double> energy_;
     std::shared_ptr<FCI_base> fci_;
     std::shared_ptr<Matrix> vd1_;
@@ -162,12 +157,8 @@ class CASPT2Energy : public Method {
     void compute() override;
 
     const double& msrot(int i, int j) const { return msrot_->element(i, j); }
-    const double& heffrot(int i, int j) const { return heffrot_->element(i, j); }
-    const double& xmsrot(int i, int j) const { return xmsrot_->element(i, j); }
     std::shared_ptr<const Matrix> coeff() const { return coeff_; }
     std::shared_ptr<const Matrix> msrot() const { return msrot_; }
-    std::shared_ptr<const Matrix> xmsrot() const { return xmsrot_; }
-    std::shared_ptr<const Matrix> heffrot() const { return heffrot_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
     int target1() const { return target_state1_; }
     int target2() const { return target_state2_; }

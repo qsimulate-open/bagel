@@ -7,10 +7,10 @@ caspt2/CASPT2_deciq.cc caspt2/CASPT2_residualq.cc caspt2/CASPT2_densityq.cc \
 caspt2/CASPT2_tasks1.cc caspt2/CASPT2_tasks2.cc caspt2/CASPT2_tasks3.cc caspt2/CASPT2_tasks4.cc caspt2/CASPT2_tasks5.cc \
 caspt2/CASPT2_tasks6.cc caspt2/CASPT2_tasks7.cc caspt2/CASPT2_tasks8.cc caspt2/CASPT2_tasks9.cc caspt2/CASPT2_tasks10.cc \
 caspt2/CASPT2_tasks11.cc caspt2/CASPT2_tasks12.cc caspt2/CASPT2_tasks13.cc caspt2/CASPT2_tasks14.cc caspt2/CASPT2_tasks15.cc \
-caspt2/CASPT2_tasks16.cc caspt2/CASPT2_tasks17.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc caspt2/CASPT2_gen3.cc caspt2/CASPT2_gen4.cc \
+caspt2/CASPT2_tasks16.cc caspt2/CASPT2_gen1.cc caspt2/CASPT2_gen2.cc caspt2/CASPT2_gen3.cc caspt2/CASPT2_gen4.cc \
 caspt2/CASPT2_gen5.cc caspt2/CASPT2_gen6.cc caspt2/CASPT2_gen7.cc caspt2/CASPT2_gen8.cc \
 caspt2/CASPT2_gen9.cc caspt2/CASPT2_gen10.cc caspt2/CASPT2_gen11.cc caspt2/CASPT2_gen12.cc \
-caspt2/CASPT2_gen13.cc caspt2/CASPT2_gen14.cc caspt2/CASPT2_gen15.cc caspt2/CASPT2_gen16.cc caspt2/CASPT2_gen17.cc \
+caspt2/CASPT2_gen13.cc caspt2/CASPT2_gen14.cc caspt2/CASPT2_gen15.cc caspt2/CASPT2_gen16.cc \
 caspt2/CASPT2_contract.cc caspt2/CASPT2_contract_tasks.cc caspt2/CASPT2_contract_gen.cc \
 caspt2/SPCASPT2.cc caspt2/SPCASPT2_gamma.cc caspt2/SPCASPT2_densityq.cc caspt2/SPCASPT2_density1q.cc caspt2/SPCASPT2_gen1.cc \
 caspt2/SPCASPT2_gen2.cc caspt2/SPCASPT2_gen3.cc caspt2/SPCASPT2_gen4.cc caspt2/SPCASPT2_gen5.cc caspt2/SPCASPT2_gen6.cc \
@@ -21,10 +21,10 @@ caspt2/MSCASPT2.cc caspt2/MSCASPT2_gamma.cc caspt2/MSCASPT2_densityq.cc caspt2/M
 caspt2/MSCASPT2_deci2q.cc caspt2/MSCASPT2_deci3q.cc caspt2/MSCASPT2_deci4q.cc \
 caspt2/MSCASPT2_gen1.cc caspt2/MSCASPT2_gen2.cc caspt2/MSCASPT2_gen3.cc caspt2/MSCASPT2_gen4.cc caspt2/MSCASPT2_gen5.cc \
 caspt2/MSCASPT2_gen6.cc caspt2/MSCASPT2_gen7.cc caspt2/MSCASPT2_gen8.cc caspt2/MSCASPT2_gen9.cc caspt2/MSCASPT2_gen10.cc \
-caspt2/MSCASPT2_gen11.cc caspt2/MSCASPT2_gen12.cc caspt2/MSCASPT2_gen13.cc \
+caspt2/MSCASPT2_gen11.cc caspt2/MSCASPT2_gen12.cc \
 caspt2/MSCASPT2_tasks1.cc caspt2/MSCASPT2_tasks2.cc caspt2/MSCASPT2_tasks3.cc caspt2/MSCASPT2_tasks4.cc caspt2/MSCASPT2_tasks5.cc \
 caspt2/MSCASPT2_tasks6.cc caspt2/MSCASPT2_tasks7.cc caspt2/MSCASPT2_tasks8.cc caspt2/MSCASPT2_tasks9.cc caspt2/MSCASPT2_tasks10.cc \
-caspt2/MSCASPT2_tasks11.cc caspt2/MSCASPT2_tasks12.cc caspt2/MSCASPT2_tasks13.cc \
+caspt2/MSCASPT2_tasks11.cc caspt2/MSCASPT2_tasks12.cc \
 \
 caspt2/MSCASPT2_contract.cc caspt2/MSCASPT2_contract_tasks.cc caspt2/MSCASPT2_contract_gen.cc \
 mrci/MRCI.cc mrci/MRCI_gamma.cc mrci/MRCI_sourceq.cc mrci/MRCI_normq.cc \

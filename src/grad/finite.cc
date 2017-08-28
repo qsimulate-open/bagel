@@ -241,7 +241,7 @@ shared_ptr<GradFile> FiniteNacm<CASSCF>::compute() {
   gmo->allreduce();
   auto gfin = make_shared<Matrix>(*acoeff_ref * *gmo ^ *acoeff_ref);
   auto grad_basis = make_shared<GradFile>(natom);
-  grad_basis = contract_nacme(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
+  grad_basis = contract_gradient(nullptr, nullptr, nullptr, nullptr, gfin, /*numerical=*/true);
   *grad += *grad_basis;
 
   grad->print(": NACME calculated with finite difference", 0);

@@ -709,10 +709,6 @@ shared_ptr<const ZMatrix> Tree::compute_JK(shared_ptr<const Matrix> density, con
       [this, i, &out, &density, shells] () {
     int ish = 0;
     for (auto& sh : nodes_[i]->shellquads_) {
-      const int nsh = shells.size();
-      const int i01 = sh[0] * nsh + sh[1];
-      const int i23 = sh[2] * nsh + sh[3];
-
       shared_ptr<const Shell> b0 = shells[sh[0]];
       shared_ptr<const Shell> b1 = shells[sh[1]];
       shared_ptr<const Shell> b2 = shells[sh[2]];

@@ -103,10 +103,8 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm0deriv_;
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
-    std::shared_ptr<Tensor> rdm3deriv_;
     std::shared_ptr<Matrix> rdm2fderiv_;
     std::shared_ptr<Tensor> rdm3fderiv_;
-    std::shared_ptr<Tensor> rdm4deriv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
@@ -136,38 +134,6 @@ class MSCASPT2 {
     std::shared_ptr<FutureTensor> Gamma28_();
     std::shared_ptr<FutureTensor> Gamma29_();
     std::shared_ptr<FutureTensor> Gamma51_();
-    std::shared_ptr<FutureTensor> Gamma110_();
-    std::shared_ptr<FutureTensor> Gamma111_();
-    std::shared_ptr<FutureTensor> Gamma112_();
-    std::shared_ptr<FutureTensor> Gamma113_();
-    std::shared_ptr<FutureTensor> Gamma114_();
-    std::shared_ptr<FutureTensor> Gamma115_();
-    std::shared_ptr<FutureTensor> Gamma116_();
-    std::shared_ptr<FutureTensor> Gamma117_();
-    std::shared_ptr<FutureTensor> Gamma119_();
-    std::shared_ptr<FutureTensor> Gamma122_();
-    std::shared_ptr<FutureTensor> Gamma124_();
-    std::shared_ptr<FutureTensor> Gamma126_();
-    std::shared_ptr<FutureTensor> Gamma132_();
-    std::shared_ptr<FutureTensor> Gamma138_();
-    std::shared_ptr<FutureTensor> Gamma139_();
-    std::shared_ptr<FutureTensor> Gamma141_();
-    std::shared_ptr<FutureTensor> Gamma142_();
-    std::shared_ptr<FutureTensor> Gamma144_();
-    std::shared_ptr<FutureTensor> Gamma145_();
-    std::shared_ptr<FutureTensor> Gamma147_();
-    std::shared_ptr<FutureTensor> Gamma148_();
-    std::shared_ptr<FutureTensor> Gamma161_();
-    std::shared_ptr<FutureTensor> Gamma166_();
-    std::shared_ptr<FutureTensor> Gamma167_();
-    std::shared_ptr<FutureTensor> Gamma168_();
-    std::shared_ptr<FutureTensor> Gamma169_();
-    std::shared_ptr<FutureTensor> Gamma170_();
-    std::shared_ptr<FutureTensor> Gamma179_();
-    std::shared_ptr<FutureTensor> Gamma191_();
-    std::shared_ptr<FutureTensor> Gamma202_();
-    std::shared_ptr<FutureTensor> Gamma217_();
-    std::shared_ptr<FutureTensor> Gamma239_();
 
     std::shared_ptr<Queue> make_densityq(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_density1q(const bool reset = true, const bool diagonal = true);
@@ -195,8 +161,7 @@ class MSCASPT2 {
     MSCASPT2(const CASPT2::CASPT2& cas);
     ~MSCASPT2() {}
 
-    void solve_deriv(const int target);
-    void solve_nacme(const int targetJ, const int targetI);
+    void solve_gradient(const int targetJ, const int targetI, const bool nocider = false);
     void solve_dm(const int targetJ, const int targetI);
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }

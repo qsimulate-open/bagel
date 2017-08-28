@@ -24,7 +24,6 @@
 
 
 #include <src/mat1e/hcore.h>
-#include <src/mat1e/dkhcore.h>
 #include <src/integral/os/kineticbatch.h>
 #include <src/integral/os/mmbatch.h>
 #include <src/integral/rys/naibatch.h>
@@ -41,14 +40,13 @@ using namespace bagel;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Hcore)
 
-Hcore::Hcore(shared_ptr<const Molecule> mol, const bool nodkh, const bool dofmm) : Matrix1e(mol, dofmm), hso_(make_shared<HSO>(mol->nbasis())) {
-  assert(!(nodkh && !hso_));
-  if (nodkh) {
+Hcore::Hcore(shared_ptr<const Molecule> mol, shared_ptr<const HcoreInfo> hcoreinfo) : Matrix1e(mol), hso_(make_shared<HSO>(mol->nbasis())) {
+  if (hcoreinfo->standard() || hcoreinfo->ecp()) {
     init(mol);
     fill_upper();
   } else {
-    auto dkhcore = make_shared<DKHcore>(mol);
-    copy_n(dkhcore->data(), dkhcore->size(), data());
+    auto hcore = hcoreinfo->compute(mol);
+    copy_n(hcore->data(), hcore->size(), data());
   }
 }
 

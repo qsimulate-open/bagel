@@ -74,9 +74,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     }
   }
 
-  // DKH2 Hamiltonian
-  dkh_ = geominfo->get<bool>("dkh", false);
-
   // static external magnetic field
   magnetic_field_ = geominfo->get_array<double,3>("magnetic_field", {{0.0, 0.0, 0.0}});
   const bool tesla = geominfo->get<bool>("tesla", false);
@@ -88,6 +85,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   /* Set up atoms_ */
   basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
+
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -97,6 +95,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   } else {
 
     // read the default basis file
@@ -104,9 +103,9 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     for (auto& a : *atoms)
-      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite_));
+      atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
 
@@ -178,109 +177,8 @@ void Geometry::common_init2(const bool print, const double thresh, const bool no
 
 // suitable for geometry updates in optimization
 Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr<const PTree> geominfo, const bool rotate, const bool nodf)
-  : schwarz_thresh_(o.schwarz_thresh_), dkh_(o.dkh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_),
-    do_periodic_df_(o.do_periodic_df_) {
+  : Molecule(o, displ, rotate), schwarz_thresh_(o.schwarz_thresh_), magnetism_(false), london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
-  // Members of Molecule
-  spherical_ = o.spherical_;
-  aux_merged_ = o.aux_merged_;
-  basisfile_ = o.basisfile_;
-  auxfile_ = o.auxfile_;
-  external_ = o.external_;
-  magnetic_field_ = o.magnetic_field_;
-  fmm_ = o.fmm_;
-  skip_self_interaction_ = o.skip_self_interaction_;
-
-  // first construct atoms using displacements
-  int iat = 0;
-  for (auto i = o.atoms_.begin(), j = o.aux_atoms_.begin(); i != o.atoms_.end(); ++i, ++j, ++iat) {
-    array<double,3> cdispl = {{displ->element(0,iat), displ->element(1,iat), displ->element(2,iat)}};
-    atoms_.push_back(make_shared<Atom>(**i, cdispl));
-    aux_atoms_.push_back(make_shared<Atom>(**j, cdispl));
-  }
-
-  // second find the unique frame.
-  // (i) center of chages
-  if (rotate) {
-    Quatern<double> oc = o.charge_center();
-    Quatern<double> mc = charge_center();
-    // (2) direction of the first atom
-    int iatom = 0;
-    for ( ; iatom != natom(); ++iatom) {
-      Quatern<double> oa = o.atoms(iatom)->position();
-      Quatern<double> ma =   atoms(iatom)->position();
-      Quatern<double> od = oa - oc;
-      Quatern<double> md = ma - mc;
-      // if the charge center coincide with the location of the atom, skip
-      if (od.norm() < 0.1 || md.norm() < 0.1)
-        continue;
-      // Quaternion that maps md to od.
-      od.normalize();
-      md.normalize();
-      Quatern<double> op = md * od;
-      op[0] = 1.0 - op[0];
-      op.normalize();
-      Quatern<double> opd = op.dagger();
-
-      // first subtract mc, rotate, and then add oc
-      vector<shared_ptr<const Atom>> newatoms;
-      vector<shared_ptr<const Atom>> newauxatoms;
-      for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-        assert((*i)->position() == (*j)->position());
-        Quatern<double> source = (*i)->position();
-        Quatern<double> target = op * (source - mc) * opd + oc;
-        array<double,3> cdispl = (target - source).ijk();
-
-        newatoms.push_back(make_shared<Atom>(**i, cdispl));
-        newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-      }
-      atoms_ = newatoms;
-      aux_atoms_ = newauxatoms;
-      break;
-    }
-
-    // (3) plane of center of charges, first and second atoms.
-    if (natom() > 2) {
-      assert(natom() == o.natom());
-      for (int jatom = 0; jatom != natom(); ++jatom) {
-        if (iatom == jatom) continue;
-        Quatern<double> oa0 = o.atoms(iatom)->position();
-        Quatern<double> ma0 =   atoms(iatom)->position();
-        Quatern<double> oa1 = o.atoms(jatom)->position();
-        Quatern<double> ma1 =   atoms(jatom)->position();
-        Quatern<double> mc = charge_center();
-        Quatern<double> od = (oa0 - oc) * (oa1 - oc);
-        Quatern<double> md = (ma0 - mc) * (ma1 - mc);
-        od[0] = 0.0;
-        md[0] = 0.0;
-        if (od.norm() < 1.0e-5 || md.norm() < 1.0e-5)
-          continue;
-        od.normalize();
-        md.normalize();
-        Quatern<double> op = md * od;
-        op[0] = 1.0 - op[0];
-        op.normalize();
-        Quatern<double> opd = op.dagger();
-
-        vector<shared_ptr<const Atom>> newatoms;
-        vector<shared_ptr<const Atom>> newauxatoms;
-        for (auto i = atoms_.begin(), j = aux_atoms_.begin(); i != atoms_.end(); ++i, ++j) {
-          assert((*i)->position() == (*j)->position());
-          Quatern<double> source = (*i)->position();
-          Quatern<double> target = op * (source - mc) * opd + oc;
-          array<double,3> cdispl = (target - source).ijk();
-
-          newatoms.push_back(make_shared<Atom>(**i, cdispl));
-          newauxatoms.push_back(make_shared<Atom>(**j, cdispl));
-        }
-        atoms_ = newatoms;
-        aux_atoms_ = newauxatoms;
-        break;
-      }
-    }
-  }
-
-  common_init1();
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", 1.0e-8);
   set_london(geominfo);
   common_init2(false, overlap_thresh_, nodf);
@@ -288,9 +186,10 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const Matrix> displ, shared_ptr
     throw logic_error("Geometry optimization in a magnetic field has not been set up or verified; use caution.");
 }
 
+
 Geometry::Geometry(const Geometry& o, const array<double,3> displ)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_),  magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -320,7 +219,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
 // used when a new Geometry block is provided in input
 Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bool discard)
   : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_), fmm_(o.fmm_) {
 
   // members of Molecule
   spherical_ = o.spherical_;
@@ -331,15 +230,12 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
   magnetic_field_ = o.magnetic_field_;
-  fmm_ = o.fmm_;
-  dkh_ = o.dkh_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);
   overlap_thresh_ = geominfo->get<double>("thresh_overlap", overlap_thresh_);
 
   spherical_ = !geominfo->get<bool>("cartesian", !spherical_);
-  dkh_ = geominfo->get<bool>("dkh", dkh_);
 
   skip_self_interaction_ = geominfo->get<bool>("skip_self_interaction", o.skip_self_interaction_);
 
@@ -365,14 +261,14 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   use_finite_ = geominfo->get<bool>("finite_nucleus", use_finite_);
   // if so, construct atoms
   if (prevbasis != basisfile_ || atoms || newfield) {
-    use_ecp_basis_ = (basisfile_.find("ecp") != string::npos) ? true : false;
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, use_ecp_basis_, use_finite_));
+        atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
     } else {
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
@@ -416,14 +312,13 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
 *  supergeometry                                            *
 ************************************************************/
 Geometry::Geometry(vector<shared_ptr<const Geometry>> nmer, const bool nodf) :
-  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), dkh_(nmer.front()->dkh()), magnetism_(false), london_(nmer.front()->london_),
-  use_finite_(nmer.front()->use_finite_), use_ecp_basis_(nmer.front()->use_ecp_basis_),  do_periodic_df_(false) {
+  schwarz_thresh_(nmer.front()->schwarz_thresh_), overlap_thresh_(nmer.front()->overlap_thresh_), magnetism_(false), london_(nmer.front()->london_),
+  use_finite_(nmer.front()->use_finite_), do_periodic_df_(false), hcoreinfo_(nmer.front()->hcoreinfo()), fmm_(nmer.front()->fmm()) {
 
   // A member of Molecule
   spherical_ = nmer.front()->spherical_;
   external_ = nmer.front()->external_;
   magnetic_field_ = nmer.front()->magnetic_field_;
-  fmm_ = nmer.front()->fmm_;
   skip_self_interaction_ = nmer.front()->skip_self_interaction_;
 
   /************************************************************
@@ -518,7 +413,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   print_atoms();
 
-  dkh_ = geominfo->get<bool>("dkh", false);
+  hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
@@ -534,6 +429,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   common_init2(true, overlap_thresh_);
   get_electric_field(geominfo);
 }
+
 
 shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
   // the derivative of Vnuc
@@ -738,8 +634,8 @@ void Geometry::init_magnetism() {
 
 
 Geometry::Geometry(const Geometry& o, const string type)
-  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), dkh_(o.dkh_), magnetism_(false),
-    london_(o.london_), use_finite_(o.use_finite_), use_ecp_basis_(o.use_ecp_basis_), do_periodic_df_(o.do_periodic_df_) {
+  : schwarz_thresh_(o.schwarz_thresh_), overlap_thresh_(o.overlap_thresh_), magnetism_(false),
+    london_(o.london_), use_finite_(o.use_finite_), do_periodic_df_(o.do_periodic_df_), hcoreinfo_(o.hcoreinfo_) {
 
   if (!o.fmm_)
     throw logic_error("Geometry construction called during FMM only");
