@@ -74,9 +74,6 @@ shared_ptr<GradFile> Force::compute() {
   const bool export_single = idata_->get<bool>("export_single", false);
   const bool compute_dipole = idata_->get<bool>("dipole", false);
 
-  const string nacm = to_lower(idata_->get<string>("nacmtype", "full"));
-  shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(nacm);
-
   if (jobtitle == "forces") {
 
     // list of gradients (and NACMEs) to be evaluated. maxziter, nacmtype, target, target2 can be specified
@@ -93,6 +90,7 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
+        shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(to_lower(m->get<string>("nacmtype", "full")));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -110,6 +108,7 @@ shared_ptr<GradFile> Force::compute() {
         const int target  = m->get<int>("target", 0);
         const int target2 = m->get<int>("target2", 1);
         const int maxziter = m->get<int>("maxziter", 100);
+        shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(to_lower(m->get<string>("nacmtype", "full")));
         out = force->compute(mtitle, target, target2, maxziter, nacmtype);
 
         if (export_grad)
@@ -168,31 +167,33 @@ shared_ptr<GradFile> Force::compute() {
 
     } else if (method == "mp2") {
 
-      const int maxziter = idata_->get<int>("maxziter", 100);
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
+      const int maxziter = idata_->get<int>("maxziter", 100);
       out = force->compute(jobtitle, target, /*target2=*/0, maxziter);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "casscf") {
 
-      const int maxziter = idata_->get<int>("maxziter", 100);
       auto force = make_shared<GradEval<CASSCF>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole)
         force->compute_dipole();
+      const int maxziter = idata_->get<int>("maxziter", 100);
+      shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(to_lower(idata_->get<string>("nacmtype", "full")));
       out = force->compute(jobtitle, target, target2, maxziter, nacmtype);
       ref = force->ref();
       force_dipole_ = force->dipole();
 
     } else if (method == "caspt2") {
 
-      const int maxziter = idata_->get<int>("maxziter", 100);
       auto force = make_shared<GradEval<CASPT2Grad>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       if (compute_dipole)
         force->compute_dipole();
+      const int maxziter = idata_->get<int>("maxziter", 100);
+      shared_ptr<const NacmType> nacmtype = make_shared<const NacmType>(to_lower(idata_->get<string>("nacmtype", "full")));
       out = force->compute(jobtitle, target, target2, maxziter, nacmtype);
       ref = force->ref();
       force_dipole_ = force->dipole();
@@ -247,26 +248,31 @@ shared_ptr<GradFile> Force::compute() {
 
 void Force::force_export(const bool export_single, const int target, const int target2, const vector<double> energy, const string jobtitle, const shared_ptr<GradFile> out) {
   if (export_single) {
-    shared_ptr<Muffle> wholemuffle;
-    wholemuffle = make_shared<Muffle>("FORCE.out");
+    auto wholemuffle = make_shared<Muffle>("FORCE.out");
+
     wholemuffle->mute();
     cout << setw(20) << setprecision(10) << energy[target] << endl;
     out->print_export();
     wholemuffle->unmute();
   }
-  shared_ptr<Muffle> gradmuffle;
-  string mufflename = to_upper(jobtitle) + "_" + to_string(target);
-  if (jobtitle == "nacme") mufflename += ("_" + to_string(target2));
-  mufflename += ".out";
-  gradmuffle = make_shared<Muffle>(mufflename);
-  gradmuffle->mute();
-  out->print_export();
-  gradmuffle->unmute();
-  shared_ptr<Muffle> enermuffle;
-  enermuffle = make_shared<Muffle>("ENERGY.out");
-  enermuffle->mute();
-  for (auto i : energy)
-    cout << setw(20) << setprecision(10) << i << endl;
-  enermuffle->unmute();
 
+  {
+    string mufflename = to_upper(jobtitle) + "_" + to_string(target);
+    if (jobtitle == "nacme")
+      mufflename += ("_" + to_string(target2));
+    mufflename += ".out";
+    auto gradmuffle = make_shared<Muffle>(mufflename);
+
+    gradmuffle->mute();
+    out->print_export();
+    gradmuffle->unmute();
+  }
+
+  {
+    auto enermuffle = make_shared<Muffle>("ENERGY.out");
+    enermuffle->mute();
+    for (auto i : energy)
+      cout << setw(20) << setprecision(10) << i << endl;
+    enermuffle->unmute();
+  }
 }
