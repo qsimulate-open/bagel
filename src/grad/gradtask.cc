@@ -183,6 +183,18 @@ void GradTask1s::compute() {
   }
 }
 
+void GradTask1s2::compute() {
+  auto grad_local = make_shared<GradFile>(mol_->natom());
+  *grad_local += *compute_os<GOverBatch>(eden_);
+
+  for (int iatom = 0; iatom != mol_->natom(); ++iatom) {
+    lock_guard<mutex> lock(mut_[iatom]);
+    grad_->element(0, iatom) += grad_local->element(0, iatom);
+    grad_->element(1, iatom) += grad_local->element(1, iatom);
+    grad_->element(2, iatom) += grad_local->element(2, iatom);
+  }
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void GradTask3r::compute() {

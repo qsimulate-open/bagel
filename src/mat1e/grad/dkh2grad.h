@@ -27,20 +27,19 @@
 #define __SRC_MAT1E_GRAD_DKH2GRAD_H
 
 #include <src/util/constants.h>
-#include <src/util/math/matrix.h>
+#include <src/mat1e/grad/relgrad_base.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class DKH2grad : public Matrix {
-  protected:
-    std::shared_ptr<const Molecule> mol_;
-    void init(std::shared_ptr<const Molecule>);
+	class DKH2grad : public Relgrad_base {
+	protected:
+	    void init();
 
-  public:
-    DKH2grad() { }
-    DKH2grad(std::shared_ptr<const Molecule>);
-};
+	public:
+	    DKH2grad() { }
+	    DKH2grad(std::shared_ptr<const Molecule>);
+	};
 
 }
 
