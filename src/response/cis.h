@@ -56,7 +56,7 @@ class CIS : public Method {
     void compute();
     std::shared_ptr<const Reference> conv_to_ref() const { return ref_; } 
 
-    double energy() const { return energy_[0]; }
+    double energy() const { return energy_[0] + ref_->energy(0); }
     std::vector<double> excitation_energy() const { return energy_; }
 };
 
