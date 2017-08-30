@@ -40,12 +40,12 @@ CIS::CIS(shared_ptr<const PTree> idata, shared_ptr<const Geometry> geom, shared_
 
   // compute half-transformed integrals
   half_ = geom_->df()->compute_half_transform(ocoeff);
-  halfjj_ = half_->apply_JJ(); 
+  shared_ptr<const DFHalfDist> halfjj = half_->apply_JJ();
 
   Matrix fock(*ref_->hcore());
   {
     // exchange
-    fock += *half_->form_2index(halfjj_, -1.0);
+    fock += *half_->form_2index(halfjj, -1.0);
     // coulomb
     const Matrix oc(ocoeff);
     fock += *geom_->df()->compute_Jop(half_, make_shared<Matrix>(*oc.transpose()*2.0), false);
@@ -57,7 +57,7 @@ CIS::CIS(shared_ptr<const PTree> idata, shared_ptr<const Geometry> geom, shared_
 
   // re-compute half-transformed integrals
   half_ = geom_->df()->compute_half_transform(coeff_->slice(0, nocc_));
-  halfjj_ = half_->apply_JJ(); 
+  fulljj_ = half_->compute_second_transform(coeff_->slice(0, nocc_))->apply_JJ();
 
 }
 
@@ -103,8 +103,7 @@ void CIS::compute() {
         Matrix one_occ(*geom_->df()->compute_Jop(half_, make_shared<Matrix>(*ovcoeff.transpose()*2.0), false) * ocoeff);
         // K-type term
         auto chalf = geom_->df()->compute_half_transform(ovcoeff);
-        auto fulljj = halfjj_->compute_second_transform(ocoeff);
-        one_occ += *chalf->form_2index(fulljj, -1.0);
+        one_occ += *chalf->form_2index(fulljj_, -1.0);
         *tmp += vcoeff % one_occ;
         sigma.push_back(tmp);
       } else {
