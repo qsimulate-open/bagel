@@ -32,6 +32,7 @@
 #include <src/ci/fci/knowles.h>
 #include <src/ci/ras/rasci.h>
 #include <src/ci/zfci/zharrison.h>
+#include <src/response/cis.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2.h>
 #include <src/pt2/dmp2/dmp2.h>
@@ -78,6 +79,7 @@ get_energy(const string title, shared_ptr<const PTree> itree, shared_ptr<const G
     else if (title == "mp2")     { auto m = make_shared<MP2>(itree, geom, ref);       m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
     else if (title == "dhf")     { auto m = make_shared<Dirac>(itree, geom, ref);     m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
     else if (title == "dmp2")    { auto m = make_shared<DMP2>(itree, geom, ref);      m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
+    else if (title == "cis")     { auto m = make_shared<CIS>(itree, geom, ref);       m->compute();   out = m->energy();                 ref = m->conv_to_ref(); }
 #ifdef COMPILE_SMITH
     else if (title == "smith")   { auto m = make_shared<Smith>(itree, geom, ref);     m->compute();   out = m->algo()->energy(target);   ref = m->conv_to_ref(); }
     else if (title == "relsmith"){ auto m = make_shared<RelSmith>(itree, geom, ref);  m->compute();   out = m->algo()->energy(target);   ref = m->conv_to_ref(); }
