@@ -23,6 +23,7 @@
 //
 
 #include <src/response/cis.h>
+#include <src/prop/multipole.h>
 #include <src/util/math/davidson.h>
 
 using namespace std;
@@ -136,8 +137,18 @@ void CIS::compute() {
       cout << endl;
 
     if (all_of(conv.begin(), conv.end(), [](const bool i) { return i; })) {
-      cout << "    * CIS converged" << endl;
+      cout << "    * CIS converged" << endl << endl;
       break;
     }
+  }
+
+  // setting CI amplitudes. Also compute transition dipole moments
+  vector<shared_ptr<Matrix>> amp = davidson.civec();
+  for (int ist = 0; ist != nstate_; ++ist) {
+    amp_[ist] = amp[ist];
+    auto transao = make_shared<Matrix>(vcoeff * *amp_[ist] ^ ocoeff); 
+    stringstream ss; ss << "Transition 0 -> " << ist;
+    Dipole dipole(geom_, transao, ss.str());
+    dipole.compute();
   }
 }
