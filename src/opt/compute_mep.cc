@@ -41,13 +41,14 @@ using namespace bagel;
 void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   // performs second order MEP calculation in Cartesian or in internal coordinates (J. Chem. Phys. 1989, 90, 2154)
   cout << "    * Doing second order MEP calculation" << endl;
-  auto displ = make_shared<XYZFile>(current_->natom());
 
-  if (mep_direction_ < 0) mep_start->scale(-1.0);
-  else                    mep_start->scale(1.0);
+  if (optinfo()->mep_direction() < 0)
+    mep_start->scale(-1.0);
+  else
+    mep_start->scale(1.0);
 
-  if (internal_) {
-    if (redundant_)
+  if (optinfo()->internal()) {
+    if (optinfo()->redundant())
       mep_start = mep_start->transform(bmat_red_[1], true);
     else
       mep_start = mep_start->transform(bmat_[1], true);
@@ -63,32 +64,16 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   {
     shared_ptr<PTree> cinput;
     shared_ptr<const Reference> ref;
-    if (!prev_ref_ || scratch_) {
-      auto m = input_->begin();
-      for ( ; m != --input_->end(); ++m) {
-        const string title = to_lower((*m)->get<string>("title", ""));
-        if (title != "molecule") {
-          tie(ignore, ref) = get_energy(title, *m, current_, ref);
-        } else {
-          current_ = make_shared<const Geometry>(*current_, *m);
-          if (ref) ref = ref->project_coeff(current_);
-        }
-      }
-      cinput = make_shared<PTree>(**m);
-    } else {
-      ref = prev_ref_->project_coeff(current_);
-      cinput = make_shared<PTree>(**input_->rbegin());
-    }
-    cinput->put("_gradient", true);
+    tie(cinput, ref, current_) = get_grad_input();
 
     {
       grad_->zero();
       shared_ptr<GradFile> cgrad;
-      tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
+      tie(en_, ignore, prev_ref_, cgrad) = get_grad(cinput, ref);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
-      if (internal_) {
-        if (redundant_)
+      if (optinfo()->internal()) {
+        if (optinfo()->redundant())
           grad_ = grad_->transform(bmat_red_[1], true);
         else
           grad_ = grad_->transform(bmat_[1], true);
@@ -98,16 +83,18 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
   muffle_->unmute();
 
   // macroiteration
-  for (iter_ = 1; iter_ != maxiter_; ++iter_) {
+  auto displ = make_shared<XYZFile>(current_->natom());
+
+  for (int iter = 1; iter != optinfo()->maxiter(); ++iter) {
 
     prev_en_.push_back(en_);
     prev_xyz_.push_back(current_->xyz());
-    cout << endl << " ============================ MEP point # " << setw(4) << iter_ << " ============================" << endl;
+    cout << endl << " ============================ MEP point # " << setw(4) << iter << " ============================" << endl;
     current_->print_atoms();
-    cout << "    MEP energy at # " << setw(4) << iter_ << " : " << setprecision(10) << en_ << endl;
+    cout << "    MEP energy at # " << setw(4) << iter << " : " << setprecision(10) << en_ << endl;
     cout << " ===========================================================================" << endl << endl;
     muffle_->mute();
-    if (iter_ != 1) {
+    if (iter != 1) {
       copy_n(grad_->data(), size_, mep_start->data());
       mep_start->scale(maxstep_ / mep_start->norm());
       copy_n(mep_start->data(), size_, displ_->data());
@@ -117,8 +104,8 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
     // x_{k+1}^{\*} = x_k + 0.5 * p
     displ_->scale(0.5);
     displ = displ_;
-    if (internal_) {
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         displ = displ->transform(bmat_red_[1], false);
       else
         displ = iterate_displ();
@@ -126,11 +113,11 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
     current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
     current_->print_atoms();
-    if (internal_) {
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), false, false);
     }
 
     // microiteration with quasi-Newton search
@@ -138,14 +125,14 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
     auto pd = make_shared<XYZFile>(current_->natom());
     pd = displ_;
     bool flag = false;
-    for (int miciter = 1; miciter != maxiter_; ++miciter) {
+    for (int miciter = 1; miciter != optinfo()->maxiter(); ++miciter) {
       prev_grad_internal_ = make_shared<GradFile>(*grad_);
 
       // move geometry
       auto dx = make_shared<XYZFile>(current_->natom());
       dx = displ_;
-      if (internal_) {
-        if (redundant_)
+      if (optinfo()->internal()) {
+        if (optinfo()->redundant())
           dx = dx->transform(bmat_red_[1], false);
         else
           dx = iterate_displ();
@@ -153,42 +140,26 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
       current_ = make_shared<Geometry>(*current_, dx, make_shared<const PTree>());
       current_->print_atoms();
-      if (internal_) {
-        if (redundant_)
+      if (optinfo()->internal()) {
+        if (optinfo()->redundant())
           bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
         else
-          bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, false, false);
+          bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), false, false);
       }
 
       // compute gradient
       shared_ptr<PTree> cinput;
       shared_ptr<const Reference> ref;
-      if (!prev_ref_ || scratch_) {
-        auto m = input_->begin();
-        for ( ; m != --input_->end(); ++m) {
-          const string title = to_lower((*m)->get<string>("title", ""));
-          if (title != "molecule") {
-            tie(ignore, ref) = get_energy(title, *m, current_, ref);
-          } else {
-            current_ = make_shared<const Geometry>(*current_, *m);
-            if (ref) ref = ref->project_coeff(current_);
-          }
-        }
-        cinput = make_shared<PTree>(**m);
-      } else {
-        ref = prev_ref_->project_coeff(current_);
-        cinput = make_shared<PTree>(**input_->rbegin());
-      }
-      cinput->put("_gradient", true);
+      tie(cinput, ref, current_) = get_grad_input();
 
       {
         grad_->zero();
         shared_ptr<GradFile> cgrad;
-        tie(en_,ignore,prev_ref_,cgrad) = get_grad(cinput, ref);
+        tie(en_, ignore, prev_ref_, cgrad) = get_grad(cinput, ref);
         grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
 
-        if (internal_) {
-          if (redundant_)
+        if (optinfo()->internal()) {
+          if (optinfo()->redundant())
             grad_ = grad_->transform(bmat_red_[1], true);
           else
             grad_ = grad_->transform(bmat_[1], true);
@@ -197,11 +168,11 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
 
       {
         // Hessian updater
-        const double sfactor = (miciter==1) ? 2.0 : 1.0;
+        const double sfactor = (miciter == 1) ? 2.0 : 1.0;
         auto y  = make_shared<GradFile>(*grad_ - *prev_grad_internal_);
         auto s  = make_shared<GradFile>(*displ_ * sfactor);
         auto hs = make_shared<GradFile>(*(s->transform(hess_, /*transpose=*/false)));
-        hess_ = hessian_update_bfgs(y,s,hs);
+        hess_ = hessian_update_bfgs(y, s, hs);
       }
 
       {
@@ -235,8 +206,10 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
           fv -= 0.25 * maxstep_ * maxstep_;
           lambda -= fv / df;
           cout << setw(7) << iiter << setw(15) << setprecision(10) << fabs(fv) << endl;
-          if (fabs(lambda - lambda_prev) < 1.0e-8) break;
-          if (iiter==99) flag = true;
+          if (fabs(lambda - lambda_prev) < 1.0e-8)
+            break;
+          if (iiter == 99)
+            flag = true;
         }
         cout << endl << endl;
 
@@ -249,14 +222,16 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
         dx = dx->transform(hinv, /*transpose=*/false);
         dx->scale(-1.0);
       }
-      if (flag) break;
+      if (flag)
+        break;
 
       *pd = *pd + *dx;
       displ_ = dx;
 
       auto tangent_vec = make_shared<GradFile>(*grad_ - *pd * (pd->dot_product(*grad_) / (pd->norm() * pd->norm())));
       cout << "  * MEP microiteration " << miciter << " residual = " << setprecision(10) << tangent_vec->norm() << "  " << dx->norm() << endl;
-      if (tangent_vec->norm() < 1.0e-6 && dx->norm() < 1.0e-6) break;
+      if (tangent_vec->norm() < 1.0e-6 && dx->norm() < 1.0e-6)
+        break;
     }
     muffle_->unmute();
 

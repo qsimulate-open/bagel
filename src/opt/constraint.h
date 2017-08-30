@@ -22,30 +22,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <string>
-#include <array>
-#include <src/util/input/input.h>
-#include <src/util/constants.h>
 
 #ifndef __SRC_OPT_CONSTRAINT_H
 #define __SRC_OPT_CONSTRAINT_H
 
+#include <array>
+#include <src/util/input/input.h>
+
 namespace bagel  {
-  class OptConstraint {
-    protected:
-      std::string type_;
-      std::array<int,4> pair_;
-      double value_;
-
-    public:
-      OptConstraint(std::shared_ptr<const PTree> inp);
-
-      const std::string type() const { return type_; }
-      const std::array<int,4>& pair() const { return pair_; }
-      int pair(const unsigned int i) const { return pair_[i]; }
-      double value() const { return value_; }
-  };
-
   class OptExpBonds {
     protected:
       std::array<int,2> pair_;

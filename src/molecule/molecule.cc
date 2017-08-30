@@ -326,7 +326,7 @@ bool Molecule::operator==(const Molecule& o) const {
 }
 
 array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_ptr<const Matrix> prev,
-    vector<shared_ptr<const OptExpBonds>> explicit_bond, vector<shared_ptr<const OptConstraint>> cmat, bool negative_hessian,  bool verbose) const {
+    vector<shared_ptr<const OptExpBonds>> explicit_bond, bool negative_hessian,  bool verbose) const {
   if (verbose)
     cout << "    o Connectivitiy analysis" << endl;
 
@@ -528,50 +528,7 @@ array<shared_ptr<const Matrix>,3> Molecule::compute_internal_coordinate(shared_p
   const int primsize = out.size();
   const int cartsize = 3*natom();
 
-  bool constrained = cmat.size() ? true : false;
   vector<vector<double>> cvec;
-  if (constrained) {
-    for (auto c : cmat) {
-      if (c->type() == "bond") {
-        int count = 0;
-        for (auto p : prims[0]) {
-          if (((c->pair(0) == p[0]) && (c->pair(1) == p[1])) ||
-              ((c->pair(0) == p[1]) && (c->pair(1) == p[0]))) {
-            vector<double> current(primsize);
-            current[count] = 1.0;
-            cvec.push_back(current);
-          }
-          ++count;
-        }
-      } else if (c->type() == "angle") {
-        int count = 0;
-        for (auto p : prims[1]) {
-          if ((c->pair(1) == p[1]) &&
-              (((c->pair(0) == p[0]) && (c->pair(2) == p[2])) ||
-               ((c->pair(0) == p[2]) && (c->pair(2) == p[0])))) {
-            vector<double> current(primsize);
-            current[count+prims[0].size()] = 1.0;
-            cvec.push_back(current);
-          }
-          ++count;
-        }
-      } else if (c->type() == "torsion") {
-        int count = 0;
-        for (auto p : prims[2]) {
-          if ((((c->pair(1) == p[1]) && (c->pair(2) == p[2])) &&
-               ((c->pair(0) == p[0]) && (c->pair(3) == p[3]))) ||
-              (((c->pair(1) == p[2]) && (c->pair(2) == p[1])) &&
-               ((c->pair(0) == p[3]) && (c->pair(3) == p[0])))) {
-            vector<double> current(primsize);
-            current[count+prims[0].size()+prims[1].size()] = 1.0;
-            cvec.push_back(current);
-          }
-          ++count;
-        }
-      }
-    }
-  }
-
   // bdag = B^T
   Matrix bdag(cartsize, primsize);
   double* biter = bdag.data();
