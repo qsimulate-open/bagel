@@ -133,7 +133,7 @@ void ASD<VecType>::compute_rdm12_monomer() {
     {//MonomerA i.e. delta_JJ'
       auto dket = contract_I(A, adiabats_, ioff, nstA, nstB, kst);
       for (int j = 0; j != nstB; ++j) {
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, j);
+        std::tie(rdm1, rdm2) = compute_rdm12_monomer(dket, j);
         rdm1A[kst]->ax_plus_y(1.0, rdm1);
         rdm2A[kst]->ax_plus_y(1.0, rdm2);
       }
@@ -142,7 +142,7 @@ void ASD<VecType>::compute_rdm12_monomer() {
     {//MonomerB i.e. delta_II'
       auto dket = contract_J(B, adiabats_, ioff, nstA, nstB, kst);
       for (int i = 0; i != nstA; ++i) {
-        std::tie(rdm1,rdm2) = compute_rdm12_monomer(dket, i);
+        std::tie(rdm1, rdm2) = compute_rdm12_monomer(dket, i);
         rdm1B[kst]->ax_plus_y(1.0, rdm1);
         rdm2B[kst]->ax_plus_y(1.0, rdm2);
       }
