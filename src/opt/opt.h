@@ -38,69 +38,43 @@
 #include <src/opt/constraint.h>
 #include <src/util/muffle.h>
 #include <src/opt/qmmm.h>
+#include <src/opt/optinfo.h>
 
 namespace bagel {
 
 class Opt {
   protected:
+    // input and output
     // entire input
     const std::shared_ptr<const PTree> idata_;
-    // options for T
+
+    // options for method block
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Geometry> current_;
     std::shared_ptr<const Reference> prev_ref_;
-
-    int target_state_;
-    std::string opttype_;
-    int target_state2_;
-
-    int iter_;
-
-    mutable std::shared_ptr<Muffle> muffle_;
-
-    std::string algorithm_;
     std::string method_;
-    std::string hess_update_;
 
-    int maxiter_;
-    int maxziter_;
-    double thresh_grad_;
-    double thresh_displ_;
-    double thresh_echange_;
-    double maxstep_;
-    bool scratch_;
+    // input parameters kept constant
+    std::shared_ptr<const OptInfo> optinfo_;
 
-    bool numerical_;
-    bool qmmm_;
-    std::shared_ptr<QMMM> qmmm_driver_;
+    // QM/MM
+    std::shared_ptr<const QMMM> qmmm_driver_;
 
+    // output
+    mutable std::shared_ptr<Muffle> muffle_;
+    Timer timer_;
+
+    // global values that change during the optimization
+    // internal - Cartesian transformation
     std::array<std::shared_ptr<const Matrix>,3> bmat_;
     std::array<std::shared_ptr<const Matrix>,4> bmat_red_;
 
-    // constraints
-    bool constrained_;
-    std::vector<std::shared_ptr<const OptConstraint>> constraints_;
-    bool explicit_bond_;
-    std::vector<std::shared_ptr<const OptExpBonds>> bonds_;
-
-    // whether we use a delocalized internal coordinate or not
-    bool internal_;
-    bool redundant_;
+    // size of internals
     int dispsize_;
-    // whether we use adaptive stepsize or not
-    bool adaptive_;
-    // whether we use ab initio hessian or approximate hessian
-    bool hess_approx_;
     size_t size_;
-    // nonadiabatic coupling type used in conical
-    std::shared_ptr<NacmType> nacmtype_;
-    double thielc3_, thielc4_;
-    // MEP direction
-    int mep_direction_;
 
-    Timer timer_;
-
-    // some global values needed for quasi-newton optimizations
+    // some values for Newton-Raphson optimization
+    double maxstep_;
     double en_;
     double predictedchange_;
     double predictedchange_prev_;
@@ -126,6 +100,7 @@ class Opt {
     std::tuple<double,double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_mecigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
     std::tuple<double,double,std::shared_ptr<const Reference>,std::shared_ptr<GradFile>> get_mdcigrad(std::shared_ptr<PTree> cinput, std::shared_ptr<const Reference> ref) const;
     std::tuple<double,std::shared_ptr<GradFile>> get_euclidean_dist(std::shared_ptr<const XYZFile> a, std::shared_ptr<const XYZFile> refgeom) const;
+    std::tuple<std::shared_ptr<PTree>,std::shared_ptr<const Reference>,std::shared_ptr<const Geometry>> get_grad_input() const;
 
     std::tuple<double,double,std::shared_ptr<XYZFile>> get_step() const;
     std::shared_ptr<XYZFile> get_step_nr() const;
@@ -140,7 +115,7 @@ class Opt {
     std::shared_ptr<Matrix> hessian_update_sr1(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
     std::shared_ptr<Matrix> hessian_update_psb(std::shared_ptr<const GradFile> y, std::shared_ptr<const GradFile> s, std::shared_ptr<const GradFile> z) const;
 
-    double do_adaptive() const;
+    double do_adaptive(const int iter) const;
 
   public:
     Opt(std::shared_ptr<const PTree> idat, std::shared_ptr<const PTree> inp, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
@@ -155,13 +130,14 @@ class Opt {
     void print_header() const;
     void print_footer() const { std::cout << std::endl << std::endl; }
 
-    void print_iteration_energy(const double residual, const double time) const;
-    void print_iteration_conical(const double residual, const double param, const double time) const;
+    void print_iteration_energy(const int iter, const double residual, const double time) const;
+    void print_iteration_conical(const int iter, const double residual, const double param, const double time) const;
 
     void print_history_molden() const;
 
-    void print_iteration(const double residual, const double param, const double time) const;
+    void print_iteration(const int iter, const double residual, const double param, const double time) const;
 
+    std::shared_ptr<const OptInfo> optinfo() const { return optinfo_; }
     std::shared_ptr<const Geometry> geometry() const { return current_; }
     std::shared_ptr<const Reference> conv_to_ref() const { return prev_ref_; }
 

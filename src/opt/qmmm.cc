@@ -40,19 +40,19 @@ void QMMM_Tinker::edit_tinker_input(shared_ptr<const Geometry> current) const {
   ifstream fs_tinker_qmmm_old("tinkin.xyz.old");
   ofstream fs_tinker_qmmm("tinkin.xyz");
   string line;
-  getline(fs_tinker_qmmm_old,line);
+  getline(fs_tinker_qmmm_old, line);
   fs_tinker_qmmm << line << endl;
   {
     int i = 0;
-    while (getline(fs_tinker_qmmm_old,line)) {
+    while (getline(fs_tinker_qmmm_old, line)) {
       stringstream ss(line);
       int dum;
       string atomnm;
       double x,y,z;
       ss >> dum >> atomnm >> x >> y >> z;
-      fs_tinker_qmmm << setw(6) << dum << setw(3) << atomnm << setw(20) << setprecision(10) << current->xyz()->element(0,i) * au2angstrom__ <<
-        setw(20) << setprecision(10) << current->xyz()->element(1,i) * au2angstrom__ <<
-        setw(20) << setprecision(10) << current->xyz()->element(2,i) * au2angstrom__;
+      fs_tinker_qmmm << setw(6) << dum << setw(3) << atomnm << setw(20) << setprecision(10) << current->xyz()->element(0, i) * au2angstrom__ <<
+        setw(20) << setprecision(10) << current->xyz()->element(1, i) * au2angstrom__ <<
+        setw(20) << setprecision(10) << current->xyz()->element(2, i) * au2angstrom__;
       // get the rest dummies and print it to TINKER input
       while (ss >> dum)
         fs_tinker_qmmm << setw(6) << dum;
@@ -110,10 +110,11 @@ tuple<double,shared_ptr<GradFile>> QMMM_Tinker::do_grad(const int natom) const {
   double mmen_1;
   {
     ifstream fs_energy_qmmm("energy_qmmm");
-    if (!fs_energy_qmmm.is_open()) throw runtime_error("energy_qmmm cannot be opened");
+    if (!fs_energy_qmmm.is_open())
+      throw runtime_error("energy_qmmm cannot be opened");
     string line;
     {
-      getline(fs_energy_qmmm,line);
+      getline(fs_energy_qmmm, line);
       stringstream ss(line);
       ss >> mmen_1;
     }
@@ -122,10 +123,11 @@ tuple<double,shared_ptr<GradFile>> QMMM_Tinker::do_grad(const int natom) const {
   double mmen_2;
   {
     ifstream fs_energy_qm("energy_qm");
-    if (!fs_energy_qm.is_open()) throw runtime_error("energy_qm cannot be opened");
+    if (!fs_energy_qm.is_open())
+      throw runtime_error("energy_qm cannot be opened");
     string line;
     {
-      getline(fs_energy_qm,line);
+      getline(fs_energy_qm, line);
       stringstream ss(line);
       ss >> mmen_2;
     }
@@ -134,14 +136,15 @@ tuple<double,shared_ptr<GradFile>> QMMM_Tinker::do_grad(const int natom) const {
   auto grad_1 = make_shared<GradFile>(natom);
   {
     ifstream fs_grad_qmmm("grad_qmmm");
-    if (!fs_grad_qmmm.is_open()) throw runtime_error("grad_qmmm cannot be opened");
+    if (!fs_grad_qmmm.is_open())
+      throw runtime_error("grad_qmmm cannot be opened");
     string line;
     {
       int i = 0;
-      while (getline(fs_grad_qmmm,line)) {
+      while (getline(fs_grad_qmmm, line)) {
         int dum;
         stringstream ss(line);
-        ss >> dum >> grad_1->element(0,i) >> grad_1->element(1,i) >> grad_1->element(2,i);
+        ss >> dum >> grad_1->element(0, i) >> grad_1->element(1, i) >> grad_1->element(2, i);
         ++i;
       }
     }
@@ -150,14 +153,15 @@ tuple<double,shared_ptr<GradFile>> QMMM_Tinker::do_grad(const int natom) const {
   auto grad_2 = make_shared<GradFile>(natom);
   {
     ifstream fs_grad_qm("grad_qm");
-    if (!fs_grad_qm.is_open()) throw runtime_error("grad_qm cannot be opened");
+    if (!fs_grad_qm.is_open())
+      throw runtime_error("grad_qm cannot be opened");
     string line;
     {
       int i = 0;
-      while (getline(fs_grad_qm,line)) {
+      while (getline(fs_grad_qm, line)) {
         int dum;
         stringstream ss(line);
-        ss >> dum >> grad_2->element(0,i) >> grad_2->element(1,i) >> grad_2->element(2,i);
+        ss >> dum >> grad_2->element(0, i) >> grad_2->element(1, i) >> grad_2->element(2, i);
         ++i;
       }
     }
@@ -170,11 +174,11 @@ tuple<double,shared_ptr<GradFile>> QMMM_Tinker::do_grad(const int natom) const {
   timer.tick_print(ss.str());
 
   // gradient : kcal / mol / angstrom
-  grad_1->scale(kcal2kj__*au2angstrom__ / au2kjmol__);
-  grad_2->scale(kcal2kj__*au2angstrom__ / au2kjmol__);
+  grad_1->scale(kcal2kj__ * au2angstrom__ / au2kjmol__);
+  grad_2->scale(kcal2kj__ * au2angstrom__ / au2kjmol__);
 
   *out = *grad_1 - *grad_2;
 
   // return the energy and gradient
-  return tie(mmen,out);
+  return tie(mmen, out);
 }
