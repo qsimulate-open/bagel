@@ -81,8 +81,8 @@ void CIS::compute() {
 
   DavidsonDiag<Matrix> davidson(nstate_, maxiter_);
 
-  auto ocoeff = coeff_->slice(0, nocc_);
-  auto vcoeff = coeff_->slice(nocc_, nocc_+nvirt_);
+  const MatView ocoeff = coeff_->slice(0, nocc_);
+  const MatView vcoeff = coeff_->slice(nocc_, nocc_+nvirt_);
 
   vector<bool> conv(nstate_, false);
 
