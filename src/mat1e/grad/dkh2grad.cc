@@ -36,7 +36,7 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(DKH2grad)
 
 
-DKH2grad::DKH2grad(shared_ptr<const Molecule> mol) : Relgrad_base(mol->nbasis(), mol->nbasis()) {
+DKH2grad::DKH2grad(shared_ptr<const Geometry> mol) : Relgrad_base(mol->nbasis(), mol->nbasis()) {
   cout << "       - Using DKH2grad" << endl;
   init();
 }

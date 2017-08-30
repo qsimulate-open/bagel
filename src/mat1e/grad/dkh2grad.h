@@ -26,9 +26,8 @@
 #ifndef __SRC_MAT1E_GRAD_DKH2GRAD_H
 #define __SRC_MAT1E_GRAD_DKH2GRAD_H
 
-#include <src/util/constants.h>
 #include <src/mat1e/grad/relgrad_base.h>
-#include <src/molecule/molecule.h>
+#include <src/util/constants.h>
 
 namespace bagel {
 
@@ -38,7 +37,7 @@ namespace bagel {
 
 	public:
 	    DKH2grad() { }
-	    DKH2grad(std::shared_ptr<const Molecule>);
+	    DKH2grad(std::shared_ptr<const Geometry>);
 	};
 
 }

@@ -28,31 +28,32 @@
 
 #include <src/integral/os/overlapbatch.h>
 #include <src/mat1e/mixedbasis.h>
-#include <src/molecule/molecule.h>
 #include <src/util/math/matrix.h>
+#include <src/util/math/xyzfile.h>
+#include <src/wfn/geometry.h>
 
 namespace bagel {
 
 	class Relgrad_base : public Matrix {
 	protected:
+		int natom;
 		int nbasis;
 	  	int nunc;
-	    std::shared_ptr<const Molecule> mol;
+	    std::shared_ptr<const Geometry> mol;
 	    std::shared_ptr<const Molecule> molu;
 	    std::shared_ptr<const Overlap> s;
-	    std::shared_ptr<const MixedBasis<OverlapBatch>> U;
 	    std::shared_ptr<const MixedBasis<OverlapBatch>> U_T;
-	    // std::shared_ptr<const Matrix> id;
+	    std::shared_ptr<const Matrix> id;
 	    std::map<shared_ptr<VectorB>, shared_ptr<Matrix>> vec2mat;
 
 	public:
 	    Relgrad_base() { }
-	    Relgrad_base(std::shared_ptr<const Molecule>);
+	    Relgrad_base(std::shared_ptr<const Geometry>);
 	    void store_mat(shared_ptr<VectorB>);
-	    shared_ptr<std::vector<std::vector<const Matrix>>> overlapgrad();
-	    shared_ptr<std::vector<std::vector<const Matrix>>> kineticgrad();
-	    shared_ptr<std::vector<std::vector<const Matrix>>> naigrad();
-	    shared_ptr<std::vector<std::vector<const Matrix>>> smallnaigrad();
+	    shared_ptr<std::vector<std::vector<Matrix>>> overlapgrad();
+	    shared_ptr<std::vector<std::vector<Matrix>>> kineticgrad();
+	    shared_ptr<std::vector<std::vector<Matrix>>> naigrad();
+	    shared_ptr<std::vector<std::vector<Matrix>>> smallnaigrad();
 
 	};
 
