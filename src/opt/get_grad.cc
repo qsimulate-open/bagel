@@ -48,24 +48,24 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state(), optinfo()->maxziter()));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state2(), optinfo()->maxziter()));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()->target_state(), optinfo()->target_state2(), optinfo()->maxziter(), optinfo()->nacmtype()));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state(), optinfo()->maxziter()));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state2(), optinfo()->maxziter()));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()->target_state(), optinfo()->target_state2(), optinfo()->maxziter(), optinfo()->nacmtype()));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
@@ -286,24 +286,24 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state(), optinfo()->maxziter()));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state2(), optinfo()->maxziter()));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()->target_state(), optinfo()->target_state2(), optinfo()->maxziter(), optinfo()->nacmtype()));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state(), optinfo()->maxziter()));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", optinfo()->target_state2(), optinfo()->maxziter()));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()->target_state(), optinfo()->target_state2(), optinfo()->maxziter(), optinfo()->nacmtype()));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
@@ -375,56 +375,56 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
     if (method_ == "uhf") {
 
       GradEval<UHF> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "rohf") {
 
       GradEval<ROHF> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "hf") {
 
       GradEval<RHF> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "ks") {
 
       GradEval<KS> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "dhf") {
 
       GradEval<Dirac> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "mp2") {
 
       GradEval<MP2Grad> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state(), /*target_state2=*/-1, optinfo()->maxziter());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "casscf") {
 
       GradEval<CASSCF> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state(), /*target_state2=*/-1, optinfo()->maxziter());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "caspt2") {
 
       GradEval<CASPT2Grad> eval(cinput, current_, ref);
-      out = eval.compute("force", optinfo()->target_state(), /*target_state2=*/-1, optinfo()->maxziter());
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
