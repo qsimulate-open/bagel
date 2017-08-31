@@ -26,7 +26,7 @@
 #ifndef __SRC_OPT_OPTINFO_H
 #define __SRC_OPT_OPTINFO_H
 
-#include <src/grad/nacmtype.h>
+#include <src/grad/gradinfo.h>
 #include <src/opt/constraint.h>
 
 namespace bagel {
@@ -125,20 +125,15 @@ class OptType {
 };
 
 
-class OptInfo {
+class OptInfo : public GradInfo {
   protected:
     std::shared_ptr<OptType> opttype_;
     std::shared_ptr<OptAlgorithms> algorithm_;
     std::shared_ptr<HessUpdate> hessupdate_;
-    std::shared_ptr<NacmType> nacmtype_;
 
     bool qmmm_;
 
-    int target_state_;
-    int target_state2_;
-
     int maxiter_;
-    int maxziter_;
     double thresh_grad_;
     double thresh_displ_;
     double thresh_echange_;
@@ -160,17 +155,14 @@ class OptInfo {
     std::vector<std::shared_ptr<const OptExpBonds>> bonds_;
 
   public:
-    OptInfo(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom) {
+    OptInfo(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom) : GradInfo(idat, /*opt=*/true) {
       opttype_ = std::make_shared<OptType>(to_lower(idat->get<std::string>("opttype", "energy")));
       algorithm_ = std::make_shared<OptAlgorithms>(to_lower(idat->get<std::string>("algorithm", "ef")));
       hessupdate_ = std::make_shared<HessUpdate>(to_lower(idat->get<std::string>("hess_update", "flowchart")));
-      nacmtype_ = std::make_shared<NacmType>(to_lower(idat->get<std::string>("nacmtype", "noweight")));
 
-      target_state_ = idat->get<int>("target", 0);
       internal_ = idat->get<bool>("internal", true);
       redundant_ = idat->get<bool>("redundant", false);
       maxiter_ = idat->get<int>("maxiter", 100);
-      maxziter_ = idat->get<int>("maxziter", 100);
       scratch_ = idat->get<bool>("scratch", false);
       numerical_ = idat->get<bool>("numerical", false);
       hess_approx_ = idat->get<bool>("hess_approx", true);
@@ -204,7 +196,6 @@ class OptInfo {
 
       if (opttype_->conical()) {
         // parameters for CI optimizations (Bearpark, Robb, Schlegel)
-        target_state2_ = idat->get<int>("target2", 1);
         if (target_state2_ > target_state_) {
           const int tmpstate = target_state_;
           target_state_ = target_state2_;
@@ -216,7 +207,6 @@ class OptInfo {
         adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
       } else {
         // initialize the values
-        target_state2_ = -1;
         nacmtype_ = std::make_shared<NacmType>();
         thielc3_ = 2.0;
         thielc4_ = 0.5;
@@ -236,15 +226,10 @@ class OptInfo {
     std::shared_ptr<OptType> opttype() const { return opttype_; }
     std::shared_ptr<OptAlgorithms> algorithm() const { return algorithm_; }
     std::shared_ptr<HessUpdate> hessupdate() const { return hessupdate_; }
-    std::shared_ptr<NacmType> nacmtype() const { return nacmtype_; }
 
     bool qmmm() const { return qmmm_; }
 
-    int target_state() const { return target_state_; }
-    int target_state2() const { return target_state2_; }
-
     int maxiter() const { return maxiter_; }
-    int maxziter() const { return maxziter_; }
     double thresh_grad() const { return thresh_grad_; }
     double thresh_displ() const { return thresh_displ_; }
     double thresh_echange() const { return thresh_echange_; }
