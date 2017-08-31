@@ -464,9 +464,9 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_g
 
   shared_ptr<const Reference> prev_ref;
   double param1,param2;
-  if (optinfo()->opttype()->mdci()) {
+  if (optinfo()->opttype()->is_mdci()) {
     tie(param1, param2, prev_ref, out) = get_mdcigrad(cinput, ref);
-  } else if (optinfo()->opttype()->conical()) {
+  } else if (optinfo()->opttype()->is_conical()) {
     tie(param1, param2, prev_ref, out) = get_mecigrad(cinput, ref);
   } else {
     tie(param1, prev_ref, out) = get_grad_energy(cinput, ref);

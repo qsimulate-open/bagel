@@ -342,7 +342,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
 
-  if (jobtitle == "nacme" && (gradinfo->nacmtype()->full() || gradinfo->nacmtype()->etf()))
+  if (jobtitle == "nacme" && (gradinfo->nacmtype()->is_full() || gradinfo->nacmtype()->is_etf()))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -398,7 +398,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   if (jobtitle == "nacme") {
     auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
-    if (gradinfo->nacmtype()->full())
+    if (gradinfo->nacmtype()->is_full())
       qxmat->scale(egap);
     else
       qxmat->zero();
@@ -498,7 +498,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if ((jobtitle == "nacme") && !(gradinfo->nacmtype()->noweight()))
+  if ((jobtitle == "nacme") && !(gradinfo->nacmtype()->is_noweight()))
     gradient->scale(1.0/egap);
   gradient->print();
   timer.tick_print("Gradient integral contraction");

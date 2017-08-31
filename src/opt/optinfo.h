@@ -56,10 +56,10 @@ class HessUpdate {
       }
     }
 
-    bool flowchart() const { return type_ == HessUpdateType::flowchart; }
-    bool bfgs() const { return type_ == HessUpdateType::bfgs; }
-    bool psb() const { return type_ == HessUpdateType::psb; }
-    bool sr1() const { return type_ == HessUpdateType::sr1; }
+    bool is_flowchart() const { return type_ == HessUpdateType::flowchart; }
+    bool is_bfgs() const { return type_ == HessUpdateType::bfgs; }
+    bool is_psb() const { return type_ == HessUpdateType::psb; }
+    bool is_sr1() const { return type_ == HessUpdateType::sr1; }
 };
 
 
@@ -81,9 +81,9 @@ class OptAlgorithms {
       }
     }
 
-    bool ef() const { return type_ == OptAlgorithmType::ef; }
-    bool rfo() const { return type_ == OptAlgorithmType::rfo; }
-    bool nr() const { return type_ == OptAlgorithmType::nr; }
+    bool is_ef() const { return type_ == OptAlgorithmType::ef; }
+    bool is_rfo() const { return type_ == OptAlgorithmType::rfo; }
+    bool is_nr() const { return type_ == OptAlgorithmType::nr; }
 };
 
 
@@ -115,13 +115,13 @@ class OptType {
       }
     }
 
-    bool conical() const { return conical_; }
+    bool is_conical() const { return conical_; }
 
-    bool energy() const { return type_ == OptTargetType::energy; }
-    bool meci() const { return type_ == OptTargetType::meci; }
-    bool mdci() const { return type_ == OptTargetType::mdci; }
-    bool transition() const { return type_ == OptTargetType::transition; }
-    bool mep() const { return type_ == OptTargetType::mep; }
+    bool is_energy() const { return type_ == OptTargetType::energy; }
+    bool is_meci() const { return type_ == OptTargetType::meci; }
+    bool is_mdci() const { return type_ == OptTargetType::mdci; }
+    bool is_transition() const { return type_ == OptTargetType::transition; }
+    bool is_mep() const { return type_ == OptTargetType::mep; }
 };
 
 
@@ -182,7 +182,7 @@ class OptInfo : public GradInfo {
 
       // small molecule (atomno < 4) threshold : (1.0e-5, 4.0e-5, 1.0e-6)  (tight in GAUSSIAN and Q-Chem = normal / 30)
       // large molecule              threshold : (3.0e-4, 1.2e-3, 1.0e-6)  (normal in GAUSSIAN and Q-Chem)
-      if (geom->natom() < 4 && opttype_->energy()) {
+      if (geom->natom() < 4 && opttype_->is_energy()) {
         thresh_grad_ = idat->get<double>("maxgrad", 0.00001);
         thresh_displ_ = idat->get<double>("maxdisp", 0.00004);
         thresh_echange_ = idat->get<double>("maxchange", 0.000001);
@@ -192,9 +192,9 @@ class OptInfo : public GradInfo {
         thresh_echange_ = idat->get<double>("maxchange", 0.000001);
       }
 
-      adaptive_ = idat->get<bool>("adaptive", algorithm_->rfo() ? true : false);
+      adaptive_ = idat->get<bool>("adaptive", algorithm_->is_rfo() ? true : false);
 
-      if (opttype_->conical()) {
+      if (opttype_->is_conical()) {
         // parameters for CI optimizations (Bearpark, Robb, Schlegel)
         if (target_state2_ > target_state_) {
           const int tmpstate = target_state_;
@@ -202,7 +202,7 @@ class OptInfo : public GradInfo {
           target_state2_ = tmpstate;
         }
         nacmtype_ = std::make_shared<NacmType>(to_lower(idat->get<std::string>("nacmtype", "noweight")));
-        thielc3_  = idat->get<double>("thielc3", opttype_->mdci() ? 0.01 : 2.0);
+        thielc3_  = idat->get<double>("thielc3", opttype_->is_mdci() ? 0.01 : 2.0);
         thielc4_  = idat->get<double>("thielc4", 0.5);
         adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
       } else {
@@ -212,7 +212,7 @@ class OptInfo : public GradInfo {
         thielc4_ = 0.5;
       }
 
-      if (opttype_->mep()) {
+      if (opttype_->is_mep()) {
         // parameters for MEP calculations (Gonzalez, Schlegel)
         mep_direction_ = idat->get<int>("mep_direction", 1);
         if (hess_approx_)
