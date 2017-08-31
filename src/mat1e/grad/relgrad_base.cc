@@ -42,7 +42,7 @@ Relgrad_base::Relgrad_base(const shared_ptr<const Geometry> geom)
 
   molu = make_shared<Molecule>(*mol->uncontract());
   nunc = molu->nbasis();
-  U_T = make_shared<MixedBasis<OverlapBatch>>(mol, molu);
+  U_T = MixedBasis<OverlapBatch>(mol, molu);
 
   id = make_shared<Matrix>(nunc, nunc);
   for (int i = 0; i < nunc; i++) {

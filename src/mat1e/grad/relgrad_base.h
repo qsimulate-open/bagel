@@ -44,7 +44,7 @@ namespace bagel {
 	    std::shared_ptr<const Geometry> mol;
 	    std::shared_ptr<const Molecule> molu;
 
-	    const MixedBasis<OverlapBatch> U_T;
+	    const Matrix U_T;
 	    std::vector<std::vector<Matrix>> PU;
 
 	    std::vector<std::vector<Matrix>> S_X;
@@ -55,12 +55,12 @@ namespace bagel {
 	    const Matrix id;
 	    std::map<std::shared_ptr<VectorB>, std::shared_ptr<Matrix>> vec2mat;
 
-	    void store_mat(const shared_ptr<VectorB>);
-	    void contracts(const shared_ptr<Matrix>);
-	    void overlapgrad(const shared_ptr<Matrix>);
-	    void kineticgrad(const shared_ptr<Matrix>);
-	    void naigrad(const shared_ptr<Matrix>);
-	    void smallnaigrad(const shared_ptr<Matrix>);
+	    void store_mat(const std::shared_ptr<VectorB>);
+	    void contracts(const std::shared_ptr<Matrix>);
+	    void overlapgrad(const std::shared_ptr<Matrix>);
+	    void kineticgrad(const std::shared_ptr<Matrix>);
+	    void naigrad(const std::shared_ptr<Matrix>);
+	    void smallnaigrad(const std::shared_ptr<Matrix>);
 
 	public:
 	    Relgrad_base() { }
