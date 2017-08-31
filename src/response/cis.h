@@ -45,7 +45,7 @@ class CIS : public Method {
     std::vector<double> energy_;
 
     std::shared_ptr<const DFHalfDist> half_;
-    std::shared_ptr<const DFHalfDist> halfjj_;
+    std::shared_ptr<const DFFullDist> fulljj_;
     std::shared_ptr<const Matrix> coeff_; // coeff internally used
 
     std::vector<std::shared_ptr<const Matrix>> amp_;

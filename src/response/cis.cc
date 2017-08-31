@@ -24,6 +24,7 @@
 
 #include <src/response/cis.h>
 #include <src/prop/multipole.h>
+#include <src/scf/hf/fock.h>
 #include <src/util/math/davidson.h>
 
 using namespace std;
@@ -40,24 +41,16 @@ CIS::CIS(shared_ptr<const PTree> idata, shared_ptr<const Geometry> geom, shared_
 
   // compute half-transformed integrals
   half_ = geom_->df()->compute_half_transform(ocoeff);
-  halfjj_ = half_->apply_JJ(); 
+  shared_ptr<const DFHalfDist> halfjj = half_->apply_JJ();
 
-  Matrix fock(*ref_->hcore());
-  {
-    // exchange
-    fock += *half_->form_2index(halfjj_, -1.0);
-    // coulomb
-    const Matrix oc(ocoeff);
-    fock += *geom_->df()->compute_Jop(half_, make_shared<Matrix>(*oc.transpose()*2.0), false);
-  }
-
-  fock = *ref->coeff() % fock * *ref->coeff();
-  fock.diagonalize(eig_);
-  coeff_ = make_shared<Matrix>(*ref->coeff() * fock);
+  shared_ptr<Matrix> fock = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ocoeff, false/*dograd*/, true/*rhf*/);
+  *fock = *ref->coeff() % *fock * *ref->coeff();
+  fock->diagonalize(eig_);
+  coeff_ = make_shared<Matrix>(*ref->coeff() * *fock);
 
   // re-compute half-transformed integrals
   half_ = geom_->df()->compute_half_transform(coeff_->slice(0, nocc_));
-  halfjj_ = half_->apply_JJ(); 
+  fulljj_ = half_->compute_second_transform(coeff_->slice(0, nocc_))->apply_JJ();
 
 }
 
@@ -81,8 +74,8 @@ void CIS::compute() {
 
   DavidsonDiag<Matrix> davidson(nstate_, maxiter_);
 
-  auto ocoeff = coeff_->slice(0, nocc_);
-  auto vcoeff = coeff_->slice(nocc_, nocc_+nvirt_);
+  const MatView ocoeff = coeff_->slice(0, nocc_);
+  const MatView vcoeff = coeff_->slice(nocc_, nocc_+nvirt_);
 
   vector<bool> conv(nstate_, false);
 
@@ -103,8 +96,7 @@ void CIS::compute() {
         Matrix one_occ(*geom_->df()->compute_Jop(half_, make_shared<Matrix>(*ovcoeff.transpose()*2.0), false) * ocoeff);
         // K-type term
         auto chalf = geom_->df()->compute_half_transform(ovcoeff);
-        auto fulljj = halfjj_->compute_second_transform(ocoeff);
-        one_occ += *chalf->form_2index(fulljj, -1.0);
+        one_occ += *chalf->form_2index(fulljj_, -1.0);
         *tmp += vcoeff % one_occ;
         sigma.push_back(tmp);
       } else {
