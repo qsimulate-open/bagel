@@ -63,7 +63,7 @@ void Opt::compute_optimize() {
       if (optinfo()->redundant())
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), optinfo()->opttype()->transition(), false);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), false);
     }
 
     shared_ptr<PTree> cinput;

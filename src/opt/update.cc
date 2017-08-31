@@ -45,7 +45,7 @@ shared_ptr<Matrix> Opt::hessian_update() const {
   auto z  = make_shared<GradFile>(*y - *hs);
   shared_ptr<Matrix> hess;
 
-  if (optinfo()->hessupdate()->flowchart()) {
+  if (optinfo()->hessupdate()->is_flowchart()) {
 
     const double nzs = z->norm() * s->norm();
     const double nys = y->norm() * s->norm();
@@ -60,15 +60,15 @@ shared_ptr<Matrix> Opt::hessian_update() const {
       hess = hessian_update_psb(y, s, z);
     }
 
-  } else if (optinfo()->hessupdate()->bfgs()) {
+  } else if (optinfo()->hessupdate()->is_bfgs()) {
 
     hess = hessian_update_bfgs(y, s, hs);
 
-  } else if (optinfo()->hessupdate()->psb()) {
+  } else if (optinfo()->hessupdate()->is_psb()) {
 
     hess = hessian_update_psb(y, s, z);
 
-  } else if (optinfo()->hessupdate()->sr1()) {
+  } else if (optinfo()->hessupdate()->is_sr1()) {
 
     hess = hessian_update_sr1(y, s, z);
 
@@ -148,12 +148,12 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step() const {
   auto displ = make_shared<XYZFile>(dispsize_);
 
   double predictedchange = 0.0, predictedchange_prev = 0.0;
-  if (optinfo()->algorithm()->nr()) {
+  if (optinfo()->algorithm()->is_nr()) {
     displ = get_step_nr();
-  } else if (optinfo()->algorithm()->rfo()) {
+  } else if (optinfo()->algorithm()->is_rfo()) {
     tie(predictedchange, predictedchange_prev, displ) = get_step_rfo();
-  } else if (optinfo()->algorithm()->ef()) {
-    if (optinfo()->opttype()->transition())
+  } else if (optinfo()->algorithm()->is_ef()) {
+    if (optinfo()->opttype()->is_transition())
       displ = get_step_ef_pn();
     else
       displ = get_step_ef();
@@ -327,7 +327,7 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
       aughes->diagonalize(eigv);
       aughes->scale(lambda / aughes->element(0, 0));
 
-      if (!optinfo()->opttype()->transition())
+      if (!optinfo()->opttype()->is_transition())
         copy_n(aughes->element_ptr(1, 0), size_, displ->data());
       else
         copy_n(aughes->element_ptr(1, 1), size_, displ->data());
@@ -368,7 +368,7 @@ shared_ptr<XYZFile> Opt::iterate_displ() const {
   for (int i = 0; i != optinfo()->maxiter(); ++i) {
     displ = displ->transform(bmat[1], false);
     currentv = make_shared<Molecule>(*currentv, displ, true);
-    bmat = currentv->compute_internal_coordinate(bmat[0], optinfo()->bonds(), optinfo()->opttype()->transition(), /*verbose=*/false);
+    bmat = currentv->compute_internal_coordinate(bmat[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), /*verbose=*/false);
     shared_ptr<const XYZFile> qcurrent = currentv->xyz();
     qcurrent = qcurrent->transform(bmat[0], true);
     auto qdiff = make_shared<XYZFile>(currentv->natom());
@@ -397,7 +397,7 @@ shared_ptr<XYZFile> Opt::iterate_displ() const {
 double Opt::do_adaptive(const int iter) const {
   // Fletcher's adaptive stepsize algorithm, works with rfo
 
-  const bool flag = iter > 1 && optinfo()->algorithm()->rfo() && optinfo()->opttype()->energy();
+  const bool flag = iter > 1 && optinfo()->algorithm()->is_rfo() && optinfo()->opttype()->is_energy();
 
   double maxstep = maxstep_;
   if (flag) {

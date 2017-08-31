@@ -62,10 +62,10 @@ Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<c
     if (optinfo_->redundant())
       bmat_red_ = current_->compute_redundant_coordinate();
     else
-      bmat_ = current_->compute_internal_coordinate(nullptr, optinfo_->bonds(), (optinfo_->opttype()->transition()));
+      bmat_ = current_->compute_internal_coordinate(nullptr, optinfo_->bonds(), optinfo_->opttype()->is_transition());
   }
 
-  maxstep_ = idat->get<double>("maxstep", optinfo_->opttype()->energy() ? 0.3 : 0.1);
+  maxstep_ = idat->get<double>("maxstep", optinfo_->opttype()->is_energy() ? 0.3 : 0.1);
 
 }
 
@@ -106,7 +106,7 @@ void Opt::compute() {
     copy_n(hess->proj_hess()->element_ptr(0, abs(optinfo()->mep_direction()) - 1), current_->natom() * 3, mep_start->data());
   }
 
-  if (optinfo_->opttype()->mep()) {
+  if (optinfo_->opttype()->is_mep()) {
     compute_mep(mep_start);
   } else {
     compute_optimize();
@@ -115,15 +115,15 @@ void Opt::compute() {
 
 
 void Opt::print_header() const {
-  if (optinfo()->opttype()->energy() || optinfo()->opttype()->transition()) {
+  if (optinfo()->opttype()->is_energy() || optinfo()->opttype()->is_transition()) {
     cout << endl << "  *** Geometry optimization started ***" << endl <<
                               "     iter         energy               grad rms       time"
     << endl << endl;
-  } else if (optinfo()->opttype()->mdci()) {
+  } else if (optinfo()->opttype()->is_mdci()) {
     cout << endl << "  *** Conical intersection optimization started ***" << endl <<
                               "     iter       distance             gap energy            grad rms       time"
     << endl << endl;
-  } else if (optinfo()->opttype()->conical()) {
+  } else if (optinfo()->opttype()->is_conical()) {
     cout << endl << "  *** Conical intersection optimization started ***" << endl <<
                               "     iter         energy             gap energy            grad rms       time"
     << endl << endl;
@@ -132,7 +132,7 @@ void Opt::print_header() const {
 
 
 void Opt::print_iteration(const int iter, const double residual, const double param, const double time) const {
-  if (optinfo()->opttype()->conical()) {
+  if (optinfo()->opttype()->is_conical()) {
     print_iteration_conical(iter, residual, param, time);
   } else {
     print_iteration_energy(iter, residual, time);
