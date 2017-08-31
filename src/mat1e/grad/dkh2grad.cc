@@ -53,7 +53,6 @@ void DKH2grad::init() {
   s_inv.inverse_symmetric();
   const shared_ptr<Kinetic> T_p = make_shared<Kinetic>(molu);
   kineticgrad(T_p);
-  // const Matrix T = U_T % T_p * U_T;
   const Matrix T_pp = s_inv12 % *T_p * s_inv12;
   shared_ptr<VectorB> t = make_shared<VectorB>(nunc);
   store_mat(t);
@@ -86,9 +85,7 @@ void DKH2grad::init() {
 
     for (int j = 0; j < natom; j++) {
 
-      const Matrix T_pX = U_T * T_X[i][j] ^ U_T - PU[i][j] * *T_p + *T_p * PU[i][j];
-      const Matrix s_X = U_T * S_X[i][j] ^ U_T - PU[i][j] * *s + *s * PU[i][j];
-      const Matrix T_ppX = s_inv12 % T_pX * s_inv12 - 0.5 * (s_inv * s_X * T_pp + T_pp * s_inv * s_X);
+      const Matrix T_ppX = s_inv12 % T_pX[i][j] * s_inv12 - 0.5 * (s_inv * s_X[i][j] * T_pp + T_pp * s_inv * s_X[i][j]);
       const Matrix T_ppX_W = W % T_ppX * W;
       Matrix PW(nunc, nunc);
       for (int k = 0; k < nunc; ++k) {
@@ -132,25 +129,23 @@ void DKH2grad::init() {
       const Matrix T_rel = U_T % T_prel * U_T;
       const Matrix DW = W * PW ^ W;
       const Matrix T_pprelX = W * *vec2mat[Ep] ^ W + DW * T_pprel - T_pprel * DW;
-      const Matrix T_prelX = s_inv12 * T_pprelX ^ s_inv12 + 0.5 * (s_inv * s_X * T_prel + T_prel * s_inv * s_X);
+      const Matrix T_prelX = s_inv12 * T_pprelX ^ s_inv12 + 0.5 * (s_inv * s_X[i][j] * T_prel + T_prel * s_inv * s_X[i][j]);
       const Matrix DU = U_T % PU[i][j] * U_T;
       const Matrix T_relX = U_T % T_prelX * U_T + DU * T_rel - T_rel * DU;
 
-      const NAI V_p(molu);
-      // const Matrix V = U_T % V_p * U_T;
-      const Matrix V_pp = s_inv12 % V_p * s_inv12;
+      const shared_ptr<NAI> V_p = make_shared<NAI>(molu);
+      naigrad(V_p);
+      const Matrix V_pp = s_inv12 % *V_p * s_inv12;
       const Matrix V_ppp = W % V_pp * W;
-      const Matrix V_pX = U_T * V_X[i][j] ^ U_T - PU[i][j] * V_p + V_p * PU[i][j];
-      const Matrix V_ppX = s_inv12 % V_pX * s_inv12 - 0.5 * (s_inv * s_X * V_pp + V_pp * s_inv * s_X);
+      const Matrix V_ppX = s_inv12 % V_pX[i][j] * s_inv12 - 0.5 * (s_inv * s_X[i][j] * V_pp + V_pp * s_inv * s_X[i][j]);
       const Matrix V_pppX = W % V_ppX * W - PW * V_ppp + V_ppp * PW;
 
       const Small1e<NAIBatch> small1e(molu);
-      const Matrix O_p = small1e[0];
-      // const Matrix O = U_T % O_p * U_T;
-      const Matrix O_pp = s_inv12 % O_p * s_inv12;
+      const shared_ptr<Matrix> O_p = make_shared<Matrix>(small1e[0]);
+      smallnaigrad(O_p);
+      const Matrix O_pp = s_inv12 % *O_p * s_inv12;
       const Matrix O_ppp = W % O_pp * W;
-      const Matrix O_pX = U_T * O_X[i][j] ^ U_T - PU[i][j] * O_p + O_p * PU[i][j];
-      const Matrix O_ppX = s_inv12 % O_pX * s_inv12 - 0.5 * (s_inv * s_X * O_pp + O_pp * s_inv * s_X);
+      const Matrix O_ppX = s_inv12 % O_pX[i][j] * s_inv12 - 0.5 * (s_inv * s_X[i][j] * O_pp + O_pp * s_inv * s_X[i][j]);
       const Matrix O_pppX = W % O_ppX * W - PW * O_ppp + O_ppp * PW;
 
       Matrix V_ppprelX = *vec2mat[A] * V_pppX * *vec2mat[A] + *vec2mat[A_X] * V_ppp * *vec2mat[A] + *vec2mat[A] * V_ppp * *vec2mat[A_X]
@@ -208,7 +203,7 @@ void DKH2grad::init() {
       const Matrix V_prel = s_inv12 * V_pprel ^ s_inv12;
       const Matrix V_rel = U_T % V_prel * U_T;
       const Matrix V_pprelX = W * V_ppprelX ^ W + DW * V_pprel - V_pprel * DW;
-      const Matrix V_prelX = s_inv12 * V_pprelX ^ s_inv12 + 0.5 * (s_inv * s_X * V_prel + V_prel * s_inv * s_X);
+      const Matrix V_prelX = s_inv12 * V_pprelX ^ s_inv12 + 0.5 * (s_inv * s_X[i][j] * V_prel + V_prel * s_inv * s_X[i][j]);
       const Matrix V_relX = U_T % V_prelX * U_T + DU * V_rel - V_rel * DU;
 
       dkh2grad[i][j] = T_relX + V_relX;

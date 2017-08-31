@@ -35,10 +35,10 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Relgrad_base)
 Relgrad_base::Relgrad_base(const shared_ptr<const Geometry> geom)
   : Matrix(geom->nbasis(), geom->nbasis()), natom(geom->natom()) nbasis(geom->nbasis()), mol(geom),
     PU(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))),
-    S_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
-    T_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
-    V_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
-    O_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))) {
+    s_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))),
+    T_pX(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))),
+    V_pX(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))),
+    O_pX(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))) {
 
   molu = make_shared<Molecule>(*mol->uncontract());
   nunc = molu->nbasis();
@@ -91,40 +91,83 @@ void Relgrad_base::contracts(const shared_ptr<Matrix> s) {
 
 void Relgrad_base::overlapgrad(shared_ptr<Matrix> s) {
   const Matrix U = U_T % id;
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < natom; j++) {
-      for (int m = 0; m < nbasis; m++) {
-        for (int n = 0; n < nbasis; n++) {
-          for (int k = 0; k < nunc; k++) {
-            for (int l = 0; l < nunc; l++) {
-              S_X[i][j](m, n) += PU(k, l) * ((*s)(k, k) - (*s)(l, l)) * U(m, k) * U_T(l, n);
-            }
-          }
+  for (int k = 0; k < nunc; k++) {
+    for (int l = 0; l < nunc; l++) {
+      shared_ptr<GradFile> grad = make_shared<GradFile>(natom);
+      shared_ptr<Matrix> den = make_shared<Matrix>(nbasis, nbasis);
+      for (int m = 0; m < nbasis; k++) {
+        for (int n = 0; n < nbasis; l++) {
+          (*den)(m, n) = U_T(k, m) * U(n, l);
         }
       }
+      GradEval_base ge(mol);
+      grad = ge.contract_naigrad(den);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < natom; j++) {
+          s_X[i][j](k, l) = (*grad)(i, j);
+        }
+      }
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < natom; j++) {
+      s_X[i][j] -= PU[i][j] * s - s * PU[i][j];
     }
   }
 }
 
 void Relgrad_base::kineticgrad(const shared_ptr<Matrix> T_p) {
   const Matrix U = U_T % id;
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < natom; j++) {
-      for (int m = 0; m < nbasis; m++) {
-        for (int n = 0; n < nbasis; n++) {
-          for (int k = 0; k < nunc; k++) {
-            for (int l = 0; l < nunc; l++) {
-              T_X[i][j](m, n) += PU(k, l) * ((*T_p)(k, k) - (*T_p)(l, l)) * U(m, k) * U_T(l, n);
-            }
-          }
+  for (int k = 0; k < nunc; k++) {
+    for (int l = 0; l < nunc; l++) {
+      shared_ptr<GradFile> grad = make_shared<GradFile>(natom);
+      shared_ptr<Matrix> den = make_shared<Matrix>(nbasis, nbasis);
+      for (int m = 0; m < nbasis; k++) {
+        for (int n = 0; n < nbasis; l++) {
+          (*den)(m, n) = U_T(k, m) * U(n, l);
         }
       }
+      GradEval_base ge(mol);
+      grad = ge.contract_kineticgrad(den);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < natom; j++) {
+          T_pX[i][j](k, l) = (*grad)(i, j);
+        }
+      }
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < natom; j++) {
+      T_pX[i][j] -= PU[i][j] * T_p - T_p * PU[i][j];
     }
   }
 }
 
 void Relgrad_base::naigrad(const shared_ptr<Matrix> V_p) {
-  
+  const Matrix U = U_T % id;
+  for (int k = 0; k < nunc; k++) {
+    for (int l = 0; l < nunc; l++) {
+      shared_ptr<GradFile> grad = make_shared<GradFile>(natom);
+      shared_ptr<Matrix> den = make_shared<Matrix>(nbasis, nbasis);
+      for (int m = 0; m < nbasis; k++) {
+        for (int n = 0; n < nbasis; l++) {
+          (*den)(m, n) = U_T(k, m) * U(n, l);
+        }
+      }
+      GradEval_base ge(mol);
+      grad = ge.contract_naigrad(den);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < natom; j++) {
+          V_pX[i][j](k, l) = (*grad)(i, j);
+        }
+      }
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < natom; j++) {
+      V_pX[i][j] -= PU[i][j] * V_p - V_p * PU[i][j];
+    }
+  }
 }
 
 void Relgrad_base::smallnaigrad(const shared_ptr<Matrix> O_p) {

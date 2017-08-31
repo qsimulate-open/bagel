@@ -26,8 +26,6 @@
 #ifndef __SRC_MAT1E_GRAD_RELGRAD_BASE_H
 #define __SRC_MAT1E_GRAD_RELGRAD_BASE_H
 
-#include <src/integral/os/overlapbatch.h>
-#include <src/mat1e/mixedbasis.h>
 #include <src/util/math/matrix.h>
 #include <src/util/math/xyzfile.h>
 #include <src/wfn/geometry.h>
@@ -47,10 +45,10 @@ namespace bagel {
 	    const Matrix U_T;
 	    std::vector<std::vector<Matrix>> PU;
 
-	    std::vector<std::vector<Matrix>> S_X;
-	    std::vector<std::vector<Matrix>> T_X;
-	    std::vector<std::vector<Matrix>> V_X;
-	    std::vector<std::vector<Matrix>> O_X;
+	    std::vector<std::vector<Matrix>> s_X;
+	    std::vector<std::vector<Matrix>> T_pX;
+	    std::vector<std::vector<Matrix>> V_pX;
+	    std::vector<std::vector<Matrix>> O_pX;
 
 	    const Matrix id;
 	    std::map<std::shared_ptr<VectorB>, std::shared_ptr<Matrix>> vec2mat;
