@@ -79,7 +79,7 @@ class GradTask2 : public GradTask {
 
 /// 2-index 1-electron gradient integrals
 class GradTask1 : public GradTask {
-  private:
+  protected:
     std::array<std::shared_ptr<const Shell>, 2> shell_;
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Matrix> den3_;
@@ -171,60 +171,27 @@ class GradTask1rf : public GradTask {
     void compute();
 };
 
-class GradTask1overlap : public GradTask {
-  private:
-    std::array<std::shared_ptr<const Shell>, 2> shell_;
-    std::shared_ptr<const Matrix> eden_;
-    shared_ptr<const vector<mutex>> mut_;
-    shared_ptr<const GradFile> grad_;
-    shared_ptr<const Molecule> mol_;
-
-    // implemented in gradeval_base.h
-    template<typename TBatch>
-    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
-
+class GradTask1overlap : public GradTask1 {
   public:
     GradTask1overlap(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
               const std::shared_ptr<const Matrix> omat, GradEval_base* p)
-      : GradTask(a, o, p), shell_(s), eden_(omat) { }
+      : GradTask1(s, a, o, nullptr, nullptr, omat, p) { }
     void compute();
 };
 
-class GradTask1kinetic : public GradTask {
-  private:
-    std::array<std::shared_ptr<const Shell>, 2> shell_;
-    std::shared_ptr<const Matrix> eden_;
-    shared_ptr<const vector<mutex>> mut_;
-    shared_ptr<const GradFile> grad_;
-    shared_ptr<const Molecule> mol_;
-
-    // implemented in gradeval_base.h
-    template<typename TBatch>
-    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
-
+class GradTask1kinetic : public GradTask1 {
   public:
     GradTask1kinetic(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
               const std::shared_ptr<const Matrix> kmat, GradEval_base* p)
-      : GradTask(a, o, p), shell_(s), den3_(kmat) { }
+      : GradTask1(s, a, o, nullptr, kmat, nullptr, p) { }
     void compute();
 };
 
-class GradTask1nai : public GradTask {
-  private:
-    std::array<std::shared_ptr<const Shell>, 2> shell_;
-    std::shared_ptr<const Matrix> eden_;
-    shared_ptr<const vector<mutex>> mut_;
-    shared_ptr<const GradFile> grad_;
-    shared_ptr<const Molecule> mol_;
-
-    // implemented in gradeval_base.h
-    template<typename TBatch>
-    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
-
+class GradTask1nai : public GradTask1 {
   public:
     GradTask1nai(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
               const std::shared_ptr<const Matrix> nmat, GradEval_base* p)
-      : GradTask(a, o, p), shell_(s), den2_(nmat) { }
+      : GradTask1(s, a, o, nmat, nullptr, nullptr, p) { }
     void compute();
 };
 

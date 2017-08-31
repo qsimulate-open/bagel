@@ -281,37 +281,37 @@ shared_ptr<GradFile> GradTask1r::compute_smallnai() const {
 }
 
 void GradTask1overlap::compute() {
-  auto grad_local = make_shared<GradFile>(mol_->natom());
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   *grad_local += *compute_os<GOverlapBatch>(eden_);
 
-  for (int iatom = 0; iatom != mol_->natom(); ++iatom) {
-    lock_guard<mutex> lock(mut_[iatom]);
-    grad_->element(0, iatom) += grad_local->element(0, iatom);
-    grad_->element(1, iatom) += grad_local->element(1, iatom);
-    grad_->element(2, iatom) += grad_local->element(2, iatom);
+  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
   }
 }
 
 void GradTask1kinetic::compute() {
-  auto grad_local = make_shared<GradFile>(mol_->natom());
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   *grad_local += *compute_os<GKineticBatch>(den3_);
 
-  for (int iatom = 0; iatom != mol_->natom(); ++iatom) {
-    lock_guard<mutex> lock(mut_[iatom]);
-    grad_->element(0, iatom) += grad_local->element(0, iatom);
-    grad_->element(1, iatom) += grad_local->element(1, iatom);
-    grad_->element(2, iatom) += grad_local->element(2, iatom);
+  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
   }
 }
 
 void GradTask1nai::compute() {
-  auto grad_local = make_shared<GradFile>(mol_->natom());
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   *grad_local += *compute_nai();
 
-  for (int iatom = 0; iatom != mol_->natom(); ++iatom) {
-    lock_guard<mutex> lock(mut_[iatom]);
-    grad_->element(0, iatom) += grad_local->element(0, iatom);
-    grad_->element(1, iatom) += grad_local->element(1, iatom);
-    grad_->element(2, iatom) += grad_local->element(2, iatom);
+  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
   }
 }

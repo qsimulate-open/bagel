@@ -32,21 +32,24 @@ using namespace bagel;
 BOOST_CLASS_EXPORT_IMPLEMENT(Relgrad_base)
 
 
-Relgrad_base::Relgrad_base(shared_ptr<const Geometry> geom)
-  : Matrix(geom->nbasis(), geom->nbasis()), natom(geom->natom()) nbasis(geom->nbasis()), mol(geom) {
+Relgrad_base::Relgrad_base(const shared_ptr<const Geometry> geom)
+  : Matrix(geom->nbasis(), geom->nbasis()), natom(geom->natom()) nbasis(geom->nbasis()), mol(geom),
+    PU(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)))),
+    S_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
+    T_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
+    V_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))),
+    O_X(vector<vector<Matrix>>(3, vector<Matrix>(natom, Matrix(nbasis, nbasis)))) {
 
   molu = make_shared<Molecule>(*mol->uncontract());
   nunc = molu->nbasis();
   U_T = make_shared<MixedBasis<OverlapBatch>>(mol, molu);
-
-  s = make_shared<Overlap>(molu);
 
   id = make_shared<Matrix>(nunc, nunc);
   for (int i = 0; i < nunc; i++) {
     (*id)(i, i) = 1;
   }
 
-  void store_mat(shared_ptr<VectorB> vec) {
+  void store_mat(const shared_ptr<VectorB> vec) {
     shared_ptr<Matrix> mat = make_shared<Matrix>(nunc, nunc);
     for (int i = 0; i < nunc; i++) {
       (*mat)(i, i) = *vec(i);
@@ -55,15 +58,14 @@ Relgrad_base::Relgrad_base(shared_ptr<const Geometry> geom)
   }
 }
 
-shared_ptr<vector<vector<Matrix>>> Relgrad_base::overlapgrad() {
-  shared_ptr<const Matrix> U = make_shared<Matrix>(U_T % id);
-  shared_ptr<vector<vector<Matrix>>> PU = make_shared<vector<vector<Matrix>>>(3, vector<Matrix>(natom, Matrix(nunc, nunc)));
+void Relgrad_base::contracts(const shared_ptr<Matrix> s) {
+  const Matrix U = U_T % id;
   for (int k = 0; k < nunc; k++) {
     for (int l = 0; l < nunc; l++) {
       if (k == l) {
         for (int i = 0; i < 3; i++) {
           for (int j = 0; j < natom; j++) {
-            (*PU)[i][j](k, l) = 0;
+            PU[i][j](k, l) = 0;
           }
         }
       }
@@ -72,14 +74,14 @@ shared_ptr<vector<vector<Matrix>>> Relgrad_base::overlapgrad() {
         shared_ptr<Matrix> den = make_shared<Matrix>(nbasis, nbasis);
         for (int m = 0; m < nbasis; k++) {
           for (int n = 0; n < nbasis; l++) {
-            (*den)(m, n) = (*U_T)(k, m) * (*U)(n, l) / ((*s)(l, l) - (*s)(k, k));
+            (*den)(m, n) = U_T(k, m) * U(n, l) / ((*s)(k, k) - (*s)(l, l));
           }
         }
         GradEval_base ge(mol);
         grad = ge.contract_overlapgrad(den);
         for (int i = 0; i < 3; i++) {
           for (int j = 0; j < natom; j++) {
-            (*PU)[i][j](k, l) = grad(i, j);
+            PU[i][j](k, l) = (*grad)(i, j);
           }
         }
       }
@@ -87,17 +89,45 @@ shared_ptr<vector<vector<Matrix>>> Relgrad_base::overlapgrad() {
   }
 }
 
-shared_ptr<std::vector<std::vector<const Matrix>>> Relgrad_base::kineticgrad() {
-  shared_ptr<Matrix> K_X = make_shared<Matrix>(Matrix(1024, 1024));
-  return K_X;
+void Relgrad_base::overlapgrad(shared_ptr<Matrix> s) {
+  const Matrix U = U_T % id;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < natom; j++) {
+      for (int m = 0; m < nbasis; m++) {
+        for (int n = 0; n < nbasis; n++) {
+          for (int k = 0; k < nunc; k++) {
+            for (int l = 0; l < nunc; l++) {
+              S_X[i][j](m, n) += PU(k, l) * ((*s)(k, k) - (*s)(l, l)) * U(m, k) * U_T(l, n);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
-shared_ptr<std::vector<std::vector<const Matrix>>> Relgrad_base::naigrad() {
-  shared_ptr<Matrix> V_X = make_shared<Matrix>(Matrix(1024, 1024));
-  return V_X;
+void Relgrad_base::kineticgrad(const shared_ptr<Matrix> T_p) {
+  const Matrix U = U_T % id;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < natom; j++) {
+      for (int m = 0; m < nbasis; m++) {
+        for (int n = 0; n < nbasis; n++) {
+          for (int k = 0; k < nunc; k++) {
+            for (int l = 0; l < nunc; l++) {
+              T_X[i][j](m, n) += PU(k, l) * ((*T_p)(k, k) - (*T_p)(l, l)) * U(m, k) * U_T(l, n);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
-shared_ptr<std::vector<std::vector<const Matrix>>> Relgrad_base::smallnaigrad() {
-  shared_ptr<Matrix> O_X = make_shared<Matrix>(Matrix(1024, 1024));
-  return O_X;
+void Relgrad_base::naigrad(const shared_ptr<Matrix> V_p) {
+  
 }
+
+void Relgrad_base::smallnaigrad(const shared_ptr<Matrix> O_p) {
+  
+}
+

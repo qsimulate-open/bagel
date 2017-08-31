@@ -33,11 +33,13 @@ namespace bagel {
 
 	class DKH2grad : public Relgrad_base {
 	protected:
+		std::vector<std::vector<Matrix>> dkh2grad;
 	    void init();
 
 	public:
 	    DKH2grad() { }
 	    DKH2grad(std::shared_ptr<const Geometry>);
+	    std::shared_ptr<std::vector<std::vector<Matrix>>> result() const;
 	};
 
 }
