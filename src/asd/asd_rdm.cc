@@ -39,7 +39,7 @@ void ASD_base::compute_rdm12_dimer() {
   for (int i = 0; i != nstates_; ++i) {
     shared_ptr<RDM<1>> rdm1;
     shared_ptr<RDM<2>> rdm2;
-    tie(rdm1,rdm2) = compute_rdm12_dimer(i);
+    tie(rdm1, rdm2) = compute_rdm12_dimer(i);
     rdm1_[i] = rdm1;
     rdm2_[i] = rdm2;
   }
@@ -60,7 +60,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_rdm12_dimer(cons
   for (auto& subspace : subspaces) {
     shared_ptr<RDM<1>> r1;
     shared_ptr<RDM<2>> r2;
-    tie(r1,r2) = compute_diagonal_block(subspace, istate);
+    tie(r1, r2) = compute_diagonal_block(subspace, istate);
     if (r1) *rdm1 += *r1;
     if (r2) *rdm2 += *r2;
   }
@@ -70,7 +70,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> ASD_base::compute_rdm12_dimer(cons
     for (auto jAB = subspaces.begin(); jAB != iAB; ++jAB) {
       shared_ptr<RDM<1>> r1;
       shared_ptr<RDM<2>> r2;
-      tie(r1,r2) = couple_blocks(*jAB, *iAB, istate); //Lower-triangular (i<->j)
+      tie(r1, r2) = couple_blocks(*jAB, *iAB, istate); //Lower-triangular (i<->j)
       if (r1) *rdm1 += *r1;
       if (r2) *rdm2 += *r2;
     }

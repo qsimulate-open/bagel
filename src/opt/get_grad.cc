@@ -48,33 +48,33 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state_, target_state2_, maxziter_, nacmtype_));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state_, target_state2_, maxziter_, nacmtype_));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
-  if (qmmm_) {
+  if (optinfo()->qmmm()) {
     double mmen;
     shared_ptr<GradFile> mmgrad;
     qmmm_driver_->edit_input(current_);
-    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    tie(mmen, mmgrad) = qmmm_driver_->do_grad(current_->natom());
     *cgrad2 = *cgrad2 + *mmgrad;
     *cgrad1 = *cgrad1 + *mmgrad;
     en1 += mmen;
@@ -108,9 +108,9 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
   xg = xg->transform(proj, /*transpose=*/false);
-  *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
+  *out = optinfo()->thielc3() * (*xf * optinfo()->thielc4() + *xg * (1.0 - optinfo()->thielc4()));
 
-  return tie(en2,en,prev_ref,out);
+  return tie(en2, en, prev_ref, out);
 }
 
 
@@ -170,7 +170,8 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
     if (norm < 1.0e-8) {
       const double trac = hdiag0 + hdiag1 + hdiag2;
       const double det3 = (hdiag0+hdiag2)*hdiag1 + hdiag0*hdiag2 - fmat->element(1,0)*fmat->element(1,0) - fmat->element(2,1)*fmat->element(2,1) - fmat->element(2,0)*fmat->element(2,0);
-      if (deth < 1.0e-8 && trac < 0.0 && det3 > 0.0) break;         // reached convergence
+      if (deth < 1.0e-8 && trac < 0.0 && det3 > 0.0)
+        break;         // reached convergence
       // reached local minima
       fmat->element(0,0) = hdiag0;
       fmat->element(1,1) = hdiag1;
@@ -205,8 +206,10 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
         auto eig = make_shared<VectorB>(3);
         fmat->diagonalize(*eig);
         for (int i = 0; i != 3; ++i)
-          if (fabs((*eig)[i]) < 1.0e-8) (*eig)[i] = 0.0;
-          else (*eig)[i] = 1.0 / (*eig)[i];
+          if (fabs((*eig)[i]) < 1.0e-8)
+            (*eig)[i] = 0.0;
+          else
+            (*eig)[i] = 1.0 / (*eig)[i];
         for (int i = 0; i != 3; ++i)
           for (int j = 0; j <= i; j++)
             hinv->element(i,j) = fmat->element(i,0) * (*eig)[0] * fmat->element(j,0)
@@ -255,12 +258,15 @@ tuple<double,shared_ptr<GradFile>> Opt::get_euclidean_dist(shared_ptr<const XYZF
       dqdx->element(j,iatom) = 2.0 * (a->element(j,iatom) - q_eckt->element(j,iatom));
 
   double dist;
-  if (q2 < 1.0e-12) dist = 0.0;
-  else dist = sqrt(q2);
+  if (q2 < 1.0e-12)
+    dist = 0.0;
+  else
+    dist = sqrt(q2);
 
   // Scale dq/dx by (1.0 / (dist + 0.1) - 0.5 * dist / (dist + 0.1)^2) [differentiation of the first term in eq. 15 in JPCB 2008, 112, 405]
   if (dist > 1.0e-6)
     dqdx->scale(1.0 / (dist + 0.1/au2angstrom__) - 0.5 * dist / ((dist + 0.1/au2angstrom__) * (dist + 0.1/au2angstrom__)));
+
   return tie(dist, dqdx);
 }
 
@@ -280,33 +286,33 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   shared_ptr<const Reference> prev_ref;
   if (method_ == "casscf") {
     GradEval<CASSCF> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state_, target_state2_, maxziter_, nacmtype_));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else if (method_ == "caspt2") {
     GradEval<CASPT2Grad> eval1(cinput, current_, ref);
-    cgrad1 = make_shared<GradFile>(*eval1.compute("force", target_state_, maxziter_));
+    cgrad1 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state())));
     prev_ref = eval1.ref();
     en2 = eval1.energy();
 
-    cgrad2 = make_shared<GradFile>(*eval1.compute("force", target_state2_, maxziter_));
+    cgrad2 = make_shared<GradFile>(*eval1.compute("force", make_shared<GradInfo>(optinfo(), optinfo()->target_state2())));
     en1 = eval1.energy();
 
-    x2 = make_shared<GradFile>(*eval1.compute("nacme", target_state_, target_state2_, maxziter_, nacmtype_));
+    x2 = make_shared<GradFile>(*eval1.compute("nacme", optinfo()));
   } else {
     throw logic_error ("Conical intersection search currently only available for CASSCF or CASPT2");
   }
 
-  if (qmmm_) {
+  if (optinfo()->qmmm()) {
     double mmen;
     shared_ptr<GradFile> mmgrad;
     qmmm_driver_->edit_input(current_);
-    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    tie(mmen, mmgrad) = qmmm_driver_->do_grad(current_->natom());
     *cgrad2 = *cgrad2 + *mmgrad;
     *cgrad1 = *cgrad1 + *mmgrad;
     en1 += mmen;
@@ -333,7 +339,7 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   }
 
   double dist;
-  tie(dist,xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
+  tie(dist, xg) = get_euclidean_dist(current_->xyz(), ref_xyz);
   {
     const double x2norm = x2->norm();
     if (x2norm > 1.0e-8)
@@ -353,9 +359,9 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_m
   dger_(n3, n3, -1.0, x1->data(), 1, x1->data(), 1, proj->data(), n3);
   dger_(n3, n3, -1.0, x2->data(), 1, x2->data(), 1, proj->data(), n3);
   xg = xg->transform(proj, /*transpose=*/false);
-  *out = thielc3_ * (*xf * thielc4_ + *xg * (1.0 - thielc4_));
+  *out = optinfo()->thielc3() * (*xf * optinfo()->thielc4() + *xg * (1.0 - optinfo()->thielc4()));
 
-  return tie(dist,en,prev_ref,out);
+  return tie(dist, en, prev_ref, out);
 }
 
 
@@ -363,68 +369,68 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
   auto out = make_shared<GradFile>(current_->natom());
   shared_ptr<const Reference> prev_ref;
   double en;
-  bool numerical = numerical_;
+  bool numerical = optinfo()->numerical();
 
   if (!numerical) {
     if (method_ == "uhf") {
 
       GradEval<UHF> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "rohf") {
 
       GradEval<ROHF> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "hf") {
 
       GradEval<RHF> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "ks") {
 
       GradEval<KS> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "dhf") {
 
       GradEval<Dirac> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "mp2") {
 
       GradEval<MP2Grad> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_, /*target_state2=*/-1, maxziter_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "casscf") {
 
       GradEval<CASSCF> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_, /*target_state2=*/-1, maxziter_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else if (method_ == "caspt2") {
 
       GradEval<CASPT2Grad> eval(cinput, current_, ref);
-      out = eval.compute("force", target_state_, /*target_state2=*/-1, maxziter_);
+      out = eval.compute("force", optinfo());
       prev_ref = eval.ref();
       en = eval.energy();
 
     } else {
 
-      cout << "   * Seems like no analytical gradient is available. Move to numerical gradient." << endl;
+      cout << "   There is no analytical gradient available. Numerical gradient will be used." << endl;
       numerical = true;
 
     }
@@ -434,22 +440,22 @@ tuple<double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_grad_ene
     auto m = idata_->get_child("method");
     const int nproc = idata_->get<int>("nproc", 1);
     const double dx = idata_->get<double>("numerical_dx", 0.001);
-    FiniteGrad eval(m, current_, ref, target_state_, dx, nproc);
+    FiniteGrad eval(m, current_, ref, optinfo()->target_state(), dx, nproc);
     out = eval.compute();
     prev_ref = eval.ref();
     en = eval.energy();
   }
 
-  if (qmmm_) {
+  if (optinfo()->qmmm()) {
     double mmen;
     shared_ptr<GradFile> mmgrad;
     qmmm_driver_->edit_input(current_);
-    tie(mmen,mmgrad) = qmmm_driver_->do_grad(current_->natom());
+    tie(mmen, mmgrad) = qmmm_driver_->do_grad(current_->natom());
     *out = *out + *mmgrad;
     en += mmen;
   }
 
-  return tie(en,prev_ref,out);
+  return tie(en, prev_ref, out);
 }
 
 
@@ -458,10 +464,41 @@ tuple<double,double,shared_ptr<const Reference>,shared_ptr<GradFile>> Opt::get_g
 
   shared_ptr<const Reference> prev_ref;
   double param1,param2;
-  if (opttype_ == "conical" || opttype_ == "meci") tie(param1,param2,prev_ref,out) = get_mecigrad(cinput, ref);
-  else if (opttype_ == "mdci") tie(param1,param2,prev_ref,out) = get_mdcigrad(cinput, ref);
-  else tie(param1,prev_ref,out) = get_grad_energy(cinput, ref);
+  if (optinfo()->opttype()->is_mdci()) {
+    tie(param1, param2, prev_ref, out) = get_mdcigrad(cinput, ref);
+  } else if (optinfo()->opttype()->is_conical()) {
+    tie(param1, param2, prev_ref, out) = get_mecigrad(cinput, ref);
+  } else {
+    tie(param1, prev_ref, out) = get_grad_energy(cinput, ref);
+  }
 
-  return tie(param1,param2,prev_ref,out);
+  return tie(param1, param2, prev_ref, out);
 }
 
+
+tuple<shared_ptr<PTree>,shared_ptr<const Reference>,shared_ptr<const Geometry>> Opt::get_grad_input() const {
+  shared_ptr<PTree> cinput;
+  shared_ptr<const Reference> ref;
+  auto current = make_shared<const Geometry>(*current_);
+
+  if (!prev_ref_ || optinfo()->scratch()) {
+    auto m = input_->begin();
+    for ( ; m != --input_->end(); ++m) {
+      const string title = to_lower((*m)->get<string>("title", ""));
+      if (title != "molecule") {
+        tie(ignore, ref) = get_energy(title, *m, current, ref);
+      } else {
+        current = make_shared<const Geometry>(*current, *m);
+        if (ref)
+          ref = ref->project_coeff(current);
+      }
+    }
+    cinput = make_shared<PTree>(**m);
+  } else {
+    ref = prev_ref_->project_coeff(current);
+    cinput = make_shared<PTree>(**input_->rbegin());
+  }
+  cinput->put("_gradient", true);
+
+  return tie(cinput, ref, current);
+}

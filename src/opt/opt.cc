@@ -42,114 +42,49 @@ using namespace bagel;
 // TODO  Constrained optimization
 
 Opt::Opt(shared_ptr<const PTree> idat, shared_ptr<const PTree> inp, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
-  : idata_(idat), input_(inp), current_(geom), prev_ref_(ref), iter_(0) {
+  : idata_(idat), input_(inp), current_(geom), prev_ref_(ref) {
 
   auto lastmethod = *idat->get_child("method")->rbegin();
   method_ = to_lower(lastmethod->get<string>("title", ""));
 
-  target_state_ = idat->get<int>("target", 0);
-  internal_ = idat->get<bool>("internal", true);
-  redundant_ = idat->get<bool>("redundant", false);
-  maxiter_ = idat->get<int>("maxiter", 100);
-  maxziter_ = idat->get<int>("maxziter", 100);
-  scratch_ = idat->get<bool>("scratch", false);
-  numerical_ = idat->get<bool>("numerical", false);
-  hess_update_ = to_lower(idat->get<string>("hess_update", "flowchart"));
-  hess_approx_ = idat->get<bool>("hess_approx", true);
-  qmmm_ = idat->get<bool>("qmmm", false);
+  optinfo_ = make_shared<const OptInfo>(idat, geom);
 
-  constrained_ = idat->get<bool>("constrained", false);
-  if (constrained_) {
-    if (!internal_ || redundant_) throw runtime_error("Constrained optimization currently only for delocalized internals");
-    auto constraints = idat->get_child("constraint");
-    for (auto& c : *constraints) {
-      constraints_.push_back(make_shared<const OptConstraint>(c));
-    }
-    cout << "# constraints = " << constraints_.size() << endl;
-  }
-
-  explicit_bond_ = idat->get<bool>("explicitbond", false);
-  if (explicit_bond_) {
-    auto explicit_bonds = idat->get_child("explicit");
-    for (auto& e : *explicit_bonds) {
-      bonds_.push_back(make_shared<const OptExpBonds>(e));
-    }
-    cout << endl << "  * Added " << bonds_.size() << " bonds between the non-bonded atoms in overall" << endl;
-  }
-
-  if (qmmm_) {
+  if (optinfo_->qmmm()) {
     string qmmm_program = to_lower(idat->get<string>("qmmm_program", "tinker"));
     if (qmmm_program == "tinker") {
-      qmmm_driver_ = make_shared<QMMM_Tinker>();
+      qmmm_driver_ = make_shared<const QMMM_Tinker>();
     } else {
       throw runtime_error("QM/MM optimization is only supported with TINKER program");
     }
-    // QM/MM does not (and probably, should not) support the internal coordinates
-    internal_ = false;
   }
 
-  opttype_ = to_lower(idat->get<string>("opttype", "energy"));
-  if (internal_) {
-    if (redundant_)
+  if (optinfo_->internal()) {
+    if (optinfo_->redundant())
       bmat_red_ = current_->compute_redundant_coordinate();
     else
-      bmat_ = current_->compute_internal_coordinate(nullptr, bonds_, constraints_, (opttype_=="transition"));
+      bmat_ = current_->compute_internal_coordinate(nullptr, optinfo_->bonds(), optinfo_->opttype()->is_transition());
   }
 
-  // small molecule (atomno < 4) threshold : (1.0e-5, 4.0e-5, 1.0e-6)  (tight in GAUSSIAN and Q-Chem = normal / 30)
-  // large molecule              threshold : (3.0e-4, 1.2e-3, 1.0e-6)  (normal in GAUSSIAN and Q-Chem)
-  if (current_->natom() < 4 && opttype_ == "energy") {
-    thresh_grad_ = idat->get<double>("maxgrad", 0.00001);
-    thresh_displ_ = idat->get<double>("maxdisp", 0.00004);
-    thresh_echange_ = idat->get<double>("maxchange", 0.000001);
-  } else {
-    thresh_grad_ = idat->get<double>("maxgrad", 0.0003);
-    thresh_displ_ = idat->get<double>("maxdisp", 0.0012);
-    thresh_echange_ = idat->get<double>("maxchange", 0.000001);
-  }
-  maxstep_ = idat->get<double>("maxstep", opttype_ == "energy" ? 0.3 : 0.1);
-  algorithm_ = to_lower(idat->get<string>("algorithm", "ef"));
-  adaptive_ = idat->get<bool>("adaptive", algorithm_ == "rfo" ? true : false);
+  maxstep_ = idat->get<double>("maxstep", optinfo_->opttype()->is_energy() ? 0.3 : 0.1);
 
-  if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci") {
-    // parameters for CI optimizations (Bearpark, Robb, Schlegel)
-    target_state2_ = idat->get<int>("target2", 1);
-    if (target_state2_ > target_state_) {
-      const int tmpstate = target_state_;
-      target_state_ = target_state2_;
-      target_state2_ = tmpstate;
-    }
-    {
-      const string nacm = to_lower(idata_->get<string>("nacmtype", "noweight"));
-      nacmtype_ = make_shared<NacmType>(nacm);
-    }
-    thielc3_  = idat->get<double>("thielc3", opttype_=="mdci" ? 0.01 : 2.0);
-    thielc4_  = idat->get<double>("thielc4", 0.5);
-    adaptive_ = false;        // we cannot use it for conical intersection optimization because we do not have a target function
-  } else if (opttype_ == "mep") {
-    // parameters for MEP calculations (Gonzalez, Schlegel)
-    mep_direction_ = idat->get<int>("mep_direction", 1);
-    if (hess_approx_) throw runtime_error("MEP calculation should be started with Hessian eigenvectors");
-  } else if (opttype_ != "energy" && opttype_ != "transition") {
-    throw runtime_error("Optimization type should be: \"energy\", \"transition\", \"conical\" (\"meci\", \"mdci\"), or \"mep\"");
-  }
 }
 
 
 void Opt::compute() {
   auto displ = make_shared<XYZFile>(current_->natom());
-  size_ = internal_ ? (redundant_? bmat_red_[0]->ndim() : bmat_[0]->mdim()) : current_->natom()*3;
+  size_ = optinfo()->internal() ? (optinfo()->redundant()? bmat_red_[0]->ndim() : bmat_[0]->mdim()) : current_->natom()*3;
 
-  dispsize_ = max(current_->natom(),int(size_/3+1));
+  dispsize_ = max(current_->natom(), int(size_ / 3 + 1));
   displ_ = make_shared<XYZFile>(dispsize_);
   grad_ = make_shared<GradFile>(dispsize_);
 
   auto mep_start = make_shared<XYZFile>(current_->natom());
 
-  if (hess_approx_) {
+  if (optinfo()->hess_approx()) {
     cout << "    * Use approximate Hessian for optimization" << endl;
-    if (internal_ && !redundant_) hess_ = make_shared<Matrix>(*(bmat_[2]));
-    else {
+    if (optinfo()->internal() && !optinfo()->redundant()) {
+      hess_ = make_shared<Matrix>(*(bmat_[2]));
+    } else {
       hess_ = make_shared<Matrix>(size_, size_);
       hess_->unit();
     }
@@ -159,18 +94,19 @@ void Opt::compute() {
     hess->compute();
     // if internal, we should transform the Hessian according to Eq. (6) in Schlegel
     // dB/dX term currently omitted (reasonable approximation: Handbook of Computational Chemistry, pp. 323--324)
-    if (internal_)
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         hess_ = make_shared<Matrix>(*bmat_red_[1] % *(hess->hess()) * *bmat_red_[1]);
       else
         hess_ = make_shared<Matrix>(*bmat_[1] % *(hess->hess()) * *bmat_[1]);
-    else
+    } else {
       hess_ = hess->hess()->copy();
+    }
 
-    copy_n(hess->proj_hess()->element_ptr(0,abs(mep_direction_) - 1), current_->natom()*3, mep_start->data());
+    copy_n(hess->proj_hess()->element_ptr(0, abs(optinfo()->mep_direction()) - 1), current_->natom() * 3, mep_start->data());
   }
 
-  if (opttype_ == "mep") {
+  if (optinfo_->opttype()->is_mep()) {
     compute_mep(mep_start);
   } else {
     compute_optimize();
@@ -179,43 +115,44 @@ void Opt::compute() {
 
 
 void Opt::print_header() const {
-  if (opttype_ == "energy" || opttype_ == "transition") {
+  if (optinfo()->opttype()->is_energy() || optinfo()->opttype()->is_transition()) {
     cout << endl << "  *** Geometry optimization started ***" << endl <<
                               "     iter         energy               grad rms       time"
     << endl << endl;
-  } else if (opttype_ == "conical" || opttype_ == "meci") {
-    cout << endl << "  *** Conical intersection optimization started ***" << endl <<
-                              "     iter         energy             gap energy            grad rms       time"
-    << endl << endl;
-  } else if (opttype_ == "mdci") {
+  } else if (optinfo()->opttype()->is_mdci()) {
     cout << endl << "  *** Conical intersection optimization started ***" << endl <<
                               "     iter       distance             gap energy            grad rms       time"
+    << endl << endl;
+  } else if (optinfo()->opttype()->is_conical()) {
+    cout << endl << "  *** Conical intersection optimization started ***" << endl <<
+                              "     iter         energy             gap energy            grad rms       time"
     << endl << endl;
   }
 }
 
 
-void Opt::print_iteration(const double residual, const double param, const double time) const {
-  if (opttype_ == "energy" || opttype_ == "transition")
-    print_iteration_energy(residual, time);
-  else if (opttype_ == "conical" || opttype_ == "meci" || opttype_ == "mdci")
-    print_iteration_conical(residual, param, time);
+void Opt::print_iteration(const int iter, const double residual, const double param, const double time) const {
+  if (optinfo()->opttype()->is_conical()) {
+    print_iteration_conical(iter, residual, param, time);
+  } else {
+    print_iteration_energy(iter, residual, time);
+  }
   print_history_molden();
 }
 
 
-void Opt::print_iteration_energy(const double residual, const double time) const {
-  cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
-                           << setw(20) << setprecision(8) << fixed << residual
-                           << setw(12) << setprecision(2) << fixed << time << endl;
+void Opt::print_iteration_energy(const int iter, const double residual, const double time) const {
+  cout << setw(7) << iter << setw(20) << setprecision(8) << fixed << en_
+                          << setw(20) << setprecision(8) << fixed << residual
+                          << setw(12) << setprecision(2) << fixed << time << endl;
 }
 
 
-void Opt::print_iteration_conical(const double residual, const double param, const double time) const {
-  cout << setw(7) << iter_ << setw(20) << setprecision(8) << fixed << en_
-                           << setw(20) << setprecision(8) << fixed << param
-                           << setw(20) << setprecision(8) << fixed << residual
-                           << setw(12) << setprecision(2) << fixed << time << endl;
+void Opt::print_iteration_conical(const int iter, const double residual, const double param, const double time) const {
+  cout << setw(7) << iter << setw(20) << setprecision(8) << fixed << en_
+                          << setw(20) << setprecision(8) << fixed << param
+                          << setw(20) << setprecision(8) << fixed << residual
+                          << setw(12) << setprecision(2) << fixed << time << endl;
 }
 
 

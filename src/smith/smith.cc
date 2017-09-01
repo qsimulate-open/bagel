@@ -135,6 +135,7 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
     }
 
   } else {
+#ifndef DISABLE_SERIALIZATION
     // method == "continue" - so load SMITH_Info and T2 amplitudes from Archives
     Timer mtimer;
 
@@ -186,6 +187,9 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
       }
     }
     mtimer.tick_print("Load T-amplitude Archive (RelSMITH)");
+#else
+  throw logic_error("You must enable serialization to make \"continue\" to be available.");
+#endif
   }
 #else
   throw logic_error("You must enable SMITH during compilation for this method to be available.");

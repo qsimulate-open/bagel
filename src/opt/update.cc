@@ -45,28 +45,32 @@ shared_ptr<Matrix> Opt::hessian_update() const {
   auto z  = make_shared<GradFile>(*y - *hs);
   shared_ptr<Matrix> hess;
 
-  if (hess_update_=="flowchart") {
+  if (optinfo()->hessupdate()->is_flowchart()) {
 
     const double nzs = z->norm() * s->norm();
     const double nys = y->norm() * s->norm();
     const double zs = z->dot_product(s);
     const double ys = y->dot_product(s);
 
-    if ((zs / nzs) < -0.1) hess = hessian_update_sr1(y,s,z);
-    else if ((ys / nys) > 0.1) hess = hessian_update_bfgs(y,s,hs);
-    else hess = hessian_update_psb(y,s,z);
+    if ((zs / nzs) < -0.1) {
+      hess = hessian_update_sr1(y, s, z);
+    } else if ((ys / nys) > 0.1) {
+      hess = hessian_update_bfgs(y, s, hs);
+    } else {
+      hess = hessian_update_psb(y, s, z);
+    }
 
-  } else if (hess_update_=="bfgs") {
+  } else if (optinfo()->hessupdate()->is_bfgs()) {
 
-    hess = hessian_update_bfgs(y,s,hs);
+    hess = hessian_update_bfgs(y, s, hs);
 
-  } else if (hess_update_=="psb") {
+  } else if (optinfo()->hessupdate()->is_psb()) {
 
-    hess = hessian_update_psb(y,s,z);
+    hess = hessian_update_psb(y, s, z);
 
-  } else if (hess_update_=="sr1") {
+  } else if (optinfo()->hessupdate()->is_sr1()) {
 
-    hess = hessian_update_sr1(y,s,z);
+    hess = hessian_update_sr1(y, s, z);
 
   } else {
 
@@ -82,10 +86,11 @@ shared_ptr<Matrix> Opt::hessian_update_sr1(shared_ptr<const GradFile> y, shared_
   // Hessian update with SR1
 
   double  zs = z->dot_product(s);
-  if (fabs(zs)>1.0e-12) zs = 1.0 / zs;
+  if (fabs(zs) > 1.0e-12)
+    zs = 1.0 / zs;
 
-  auto zzt = make_shared<Matrix>(size_,size_);
-  dger_(size_,size_,zs,z->data(),1,z->data(),1,zzt->data(),size_);
+  auto zzt = make_shared<Matrix>(size_, size_);
+  dger_(size_, size_, zs, z->data(), 1, z->data(), 1, zzt->data(), size_);
 
   auto hess = make_shared<Matrix>(*hess_ + *zzt);
 
@@ -98,13 +103,15 @@ shared_ptr<Matrix> Opt::hessian_update_bfgs(shared_ptr<const GradFile> y, shared
   // Hessian update with BFGS
   double shs = hs->dot_product(s);
   double  ys = y->dot_product(s);
-  if (fabs(ys)>1.0e-12) ys = 1.0 / ys;
-  if (fabs(shs)>1.0e-12) shs = -1.0 / shs;
+  if (fabs(ys) > 1.0e-12)
+    ys = 1.0 / ys;
+  if (fabs(shs) > 1.0e-12)
+    shs = -1.0 / shs;
 
-  auto yyt = make_shared<Matrix>(size_,size_);
-  auto sst = make_shared<Matrix>(size_,size_);
-  dger_(size_,size_,shs,s->data(),1,s->data(),1,sst->data(),size_);
-  dger_(size_,size_,ys,y->data(),1,y->data(),1,yyt->data(),size_);
+  auto yyt = make_shared<Matrix>(size_, size_);
+  auto sst = make_shared<Matrix>(size_, size_);
+  dger_(size_, size_, shs, s->data(), 1, s->data(), 1, sst->data(), size_);
+  dger_(size_, size_, ys, y->data(), 1, y->data(), 1, yyt->data(), size_);
 
   auto bsst = make_shared<Matrix>(*hess_ * *sst * *hess_);
 
@@ -124,12 +131,12 @@ shared_ptr<Matrix> Opt::hessian_update_psb(shared_ptr<const GradFile> y, shared_
   ss = 1.0 / ss;
   ss2= -sz / ss2;
 
-  auto szt = make_shared<Matrix>(size_,size_);
-  auto zst = make_shared<Matrix>(size_,size_);
-  auto sst = make_shared<Matrix>(size_,size_);
-  dger_(size_,size_,ss,s->data(),1,z->data(),1,szt->data(),size_);
-  dger_(size_,size_,ss,z->data(),1,s->data(),1,zst->data(),size_);
-  dger_(size_,size_,ss2,s->data(),1,s->data(),1,sst->data(),size_);
+  auto szt = make_shared<Matrix>(size_, size_);
+  auto zst = make_shared<Matrix>(size_, size_);
+  auto sst = make_shared<Matrix>(size_, size_);
+  dger_(size_, size_, ss, s->data(), 1, z->data(), 1, szt->data(), size_);
+  dger_(size_, size_, ss, z->data(), 1, s->data(), 1, zst->data(), size_);
+  dger_(size_, size_, ss2, s->data(), 1, s->data(), 1, sst->data(), size_);
 
   auto hess = make_shared<Matrix>(*hess_ + *szt + *zst + *sst);
 
@@ -141,18 +148,18 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step() const {
   auto displ = make_shared<XYZFile>(dispsize_);
 
   double predictedchange = 0.0, predictedchange_prev = 0.0;
-  if (algorithm_ == "nr")
+  if (optinfo()->algorithm()->is_nr()) {
     displ = get_step_nr();
-  else if (algorithm_ == "rfo")
-    tie(predictedchange,predictedchange_prev,displ) = get_step_rfo();
-  else if (algorithm_ == "ef") {
-    if (opttype_ == "transition" || constrained_)
+  } else if (optinfo()->algorithm()->is_rfo()) {
+    tie(predictedchange, predictedchange_prev, displ) = get_step_rfo();
+  } else if (optinfo()->algorithm()->is_ef()) {
+    if (optinfo()->opttype()->is_transition())
       displ = get_step_ef_pn();
     else
       displ = get_step_ef();
   }
 
-  return tie(predictedchange,predictedchange_prev,displ);
+  return tie(predictedchange, predictedchange_prev, displ);
 }
 
 
@@ -171,7 +178,7 @@ shared_ptr<XYZFile> Opt::get_step_nr() const {
 
   const double stepnorm = displ->norm();
   if (stepnorm > (maxstep_))
-    displ->scale(maxstep_/stepnorm);
+    displ->scale(maxstep_ / stepnorm);
 
   return displ;
 }
@@ -191,7 +198,7 @@ shared_ptr<XYZFile> Opt::get_step_ef() const {
   VectorB f(size_);
 
   for (int i = 0; i != size_; ++i) {
-    copy_n(hess->element_ptr(0,i), size_, displ->data());
+    copy_n(hess->element_ptr(0, i), size_, displ->data());
     f[i] = -displ->dot_product(grad_);
   }
 
@@ -203,19 +210,21 @@ shared_ptr<XYZFile> Opt::get_step_ef() const {
     lambda = lambda_n;
 
     const double error = fabs(lambda_prev - lambda);
-    if (error < 1.0e-8) break;
+    if (error < 1.0e-8)
+      break;
   }
 
   displ->zero();
   for (int i = 0; i != size_; ++i) {
     auto dispb = make_shared<XYZFile>(dispsize_);
     const double fb = f[i] / (eigv[i] - lambda);
-    copy_n(hess->element_ptr(0,i), size_, dispb->data());
+    copy_n(hess->element_ptr(0, i), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
   }
 
-  if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
+  if (displ->norm() > maxstep_)
+    displ->scale(maxstep_ / displ->norm());
 
   return displ;
 }
@@ -234,18 +243,18 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   // partition lambda
   double lambda_p = 100.0;
   double lambda_n = 100.0;
-  const int size_p = constrained_? constraints_.size() : 1;
+  const int size_p = 1;
   const int size_n = size_ - size_p;
 
   VectorB f1(size_p);
   VectorB f2(size_n);
 
   for (int i = 0; i != size_p; ++i) {
-    copy_n(hess->element_ptr(0,i), size_, displ->data());
+    copy_n(hess->element_ptr(0, i), size_, displ->data());
     f1[i] = -displ->dot_product(grad_);
   }
   for (int j = 0; j != size_n; ++j) {
-    copy_n(hess->element_ptr(0,j+size_p), size_, displ->data());
+    copy_n(hess->element_ptr(0, j+size_p), size_, displ->data());
     f2[j] = -displ->dot_product(grad_);
   }
 
@@ -259,7 +268,8 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
     lambda_p = lambda_p_n;
 
     const double error = fabs(lambda_p_prev - lambda_p);
-    if (error < 1.0e-8) break;
+    if (error < 1.0e-8)
+      break;
   }
 
   for (int iiter = 0; iiter != 100; ++iiter) {
@@ -270,7 +280,8 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
     lambda_n = lambda_n_n;
 
     const double error = fabs(lambda_n_prev - lambda_n);
-    if (error < 1.0e-8) break;
+    if (error < 1.0e-8)
+      break;
   }
 
   displ->zero();
@@ -278,7 +289,7 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   for (int i = 0; i != size_p; ++i) {
     auto dispb = make_shared<XYZFile>(size_);
     const double fb = f1[i] / (eigv[i] - lambda_p);
-    copy_n(hess->element_ptr(0,i), size_, dispb->data());
+    copy_n(hess->element_ptr(0, i), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
   }
@@ -286,12 +297,13 @@ shared_ptr<XYZFile> Opt::get_step_ef_pn() const {
   for (int j = 0; j != size_n; ++j) {
     auto dispb = make_shared<XYZFile>(size_);
     const double fb = f2[j] / (eigv[j+size_p] - lambda_n);
-    copy_n(hess->element_ptr(0,j+size_p), size_, dispb->data());
+    copy_n(hess->element_ptr(0, j+size_p), size_, dispb->data());
     dispb->scale(fb);
     *displ += *dispb;
   }
 
-  if (displ->norm() > maxstep_) displ->scale(maxstep_ / displ->norm());
+  if (displ->norm() > maxstep_)
+    displ->scale(maxstep_ / displ->norm());
 
   return displ;
 }
@@ -303,7 +315,7 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
 
   auto displ = make_shared<XYZFile>(dispsize_);
   {
-    auto aughes = make_shared<Matrix>(size_+1,size_+1);
+    auto aughes = make_shared<Matrix>(size_ + 1,size_ + 1);
     VectorB eigv(size_+1);
     double lambda = 1.0;
     while (1) {
@@ -313,20 +325,22 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
       aughes->add_block(1.0, 0, 1, 1, size_, grad_->data());
 
       aughes->diagonalize(eigv);
-      aughes->scale(lambda / aughes->element(0,0));
+      aughes->scale(lambda / aughes->element(0, 0));
 
-      if (opttype_!="transition")
-        copy_n(aughes->element_ptr(1,0), size_, displ->data());
+      if (!optinfo()->opttype()->is_transition())
+        copy_n(aughes->element_ptr(1, 0), size_, displ->data());
       else
-        copy_n(aughes->element_ptr(1,1), size_, displ->data());
+        copy_n(aughes->element_ptr(1, 1), size_, displ->data());
 
-      if (displ->norm() < maxstep_) break;
-      else lambda /= 1.2;
+      if (displ->norm() < maxstep_)
+        break;
+      else
+        lambda /= 1.2;
     }
   }
 
   double predictedchange = 0.0, predictedchange_prev = 0.0;
-  if (adaptive_) {
+  if (optinfo()->adaptive()) {
     // When we use adaptive steplength, we should predict quadratic energy change
 
     const double qg  = displ->dot_product(grad_);
@@ -336,7 +350,7 @@ tuple<double,double,shared_ptr<XYZFile>> Opt::get_step_rfo() const {
     predictedchange = qg + 0.5 * qhq;
   }
 
-  return tie(predictedchange,predictedchange_prev,displ);
+  return tie(predictedchange, predictedchange_prev, displ);
 }
 
 
@@ -351,44 +365,51 @@ shared_ptr<XYZFile> Opt::iterate_displ() const {
   Timer timer;
 
   array<shared_ptr<const Matrix>,3> bmat = bmat_;
-  for (int i = 0; i != maxiter_; ++i) {
+  for (int i = 0; i != optinfo()->maxiter(); ++i) {
     displ = displ->transform(bmat[1], false);
     currentv = make_shared<Molecule>(*currentv, displ, true);
-    bmat = currentv->compute_internal_coordinate(bmat[0], bonds_, constraints_, (opttype_=="transition"), /*verbose=*/false);
+    bmat = currentv->compute_internal_coordinate(bmat[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), /*verbose=*/false);
     shared_ptr<const XYZFile> qcurrent = currentv->xyz();
     qcurrent = qcurrent->transform(bmat[0], true);
     auto qdiff = make_shared<XYZFile>(currentv->natom());
     *qdiff = *qcurrent - *qc;
     *displ = *dqc - *qdiff;
-    if (displ->norm() > 0.1 || i == (maxiter_ - 1)) {
+    if (displ->norm() > 0.1 || i == (optinfo()->maxiter() - 1)) {
       cout << "  * Calculated displacement too large, switching to first-order" << endl;
       flag = true;
       break;
     }
     cout << setw(7) << i << setprecision(10) << setw(15) << displ->norm() << setw(10) << setprecision(2) << timer.tick() << endl;
-    if (displ->norm() < 1.0e-8) break;
+    if (displ->norm() < 1.0e-8)
+      break;
   }
 
-  if (flag) displ = displ_->transform(bmat[1], false);
-  else     *displ = *(currentv->xyz()) - *(current_->xyz());
+  if (flag) {
+    displ = displ_->transform(bmat[1], false);
+  } else {
+    *displ = *(currentv->xyz()) - *(current_->xyz());
+  }
   cout << endl << endl;
   return displ;
 }
 
 
-double Opt::do_adaptive() const {
+double Opt::do_adaptive(const int iter) const {
   // Fletcher's adaptive stepsize algorithm, works with rfo
 
-  const bool algo = iter_ > 1 && (algorithm_ == "rfo" || algorithm_ == "rfos") && opttype_ == "energy";
+  const bool flag = iter > 1 && optinfo()->algorithm()->is_rfo() && optinfo()->opttype()->is_energy();
 
   double maxstep = maxstep_;
-  if (algo) {
+  if (flag) {
     const double realchange = en_ - prev_en_.back();
     double predreal_ratio = realchange / predictedchange_prev_;
-    if (predreal_ratio > 1.0) predreal_ratio = 1.0 / predreal_ratio;
+    if (predreal_ratio > 1.0)
+      predreal_ratio = 1.0 / predreal_ratio;
 
-    if (predreal_ratio > 0.75 && displ_->norm() > 0.80*maxstep) maxstep *= 2.0;
-    else if (predreal_ratio < 0.25) maxstep *= 0.25;
+    if (predreal_ratio > 0.75 && (displ_->norm() > (0.80 * maxstep)))
+      maxstep *= 2.0;
+    else if (predreal_ratio < 0.25)
+      maxstep *= 0.25;
   }
 
   return maxstep;

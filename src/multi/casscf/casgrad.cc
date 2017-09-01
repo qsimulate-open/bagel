@@ -115,7 +115,7 @@ void GradEval<CASSCF>::compute_dipole() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, shared_ptr<const GradInfo> gradinfo) {
   const int nclosed = ref_->nclosed();
   const int nocc = ref_->nocc();
   const int nact = ref_->nact();
@@ -126,6 +126,8 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
 
   Timer timer;
   shared_ptr<GradFile> gradient;
+  const int istate = gradinfo->target_state();
+  const int jstate = gradinfo->target_state2();
 
   // if single state calculation, we use specialized code
   if (ref_->nstate() == 1) {
@@ -217,7 +219,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     g0->add_block(2.0, 0, 0, nmobasis, nocc, *hmo ^ *rdms);
 
     // determinant term (1)
-    if (jobtitle == "nacme" && (nacmtype->full() || nacmtype->etf()))
+    if (jobtitle == "nacme" && (gradinfo->nacmtype()->is_full() || gradinfo->nacmtype()->is_etf()))
       g0->add_block(egap, 0, 0, nocc, nocc, *rdm1mat);
 
     // 2) two-electron contribution: RDM1 is symmetrized in apply_2rdm_tran (look for gamma)
@@ -260,7 +262,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     auto cp = make_shared<CPCASSCF>(grad, civ, half, ref_, task_->fci());
     shared_ptr<const Matrix> zmat, xmat, dummy;
     shared_ptr<const Dvec> zvec;
-    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), maxziter);
+    tie(zmat, zvec, xmat, dummy) = cp->solve(task_->thresh(), gradinfo->maxziter());
 
     // form Zd + dZ^+
     shared_ptr<const RDM<1>> rdm1_av = task_->fci()->rdm1_av();
@@ -297,7 +299,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     shared_ptr<Matrix> qxmatao;
     if (jobtitle == "nacme" || jobtitle == "dgrad") {
       shared_ptr<Matrix> qxmat = rdm1mat->copy();
-      if (nacmtype->full() && jobtitle == "nacme")
+      if (gradinfo->nacmtype()->is_full() && jobtitle == "nacme")
         qxmat->scale(egap);
       else
         qxmat->zero();
@@ -337,7 +339,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, const int 
     shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
     gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
-    if (jobtitle == "nacme" && !(nacmtype->noweight()))
+    if (jobtitle == "nacme" && !(gradinfo->nacmtype()->is_noweight()))
       gradient->scale(1.0/egap);
   }
   gradient->print();

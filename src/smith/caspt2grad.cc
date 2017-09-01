@@ -266,11 +266,13 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 
 
 template<>
-shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared_ptr<const GradInfo> gradinfo) {
 #ifdef COMPILE_SMITH
+  const int istate = gradinfo->target_state();
+  const int jstate = gradinfo->target_state2();
 
   if (jobtitle == "nacme")
-    task_->compute_gradient(istate, jstate, nacmtype);
+    task_->compute_gradient(istate, jstate, gradinfo->nacmtype());
   else
     task_->compute_gradient(istate, istate);
 
@@ -340,7 +342,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   shared_ptr<Matrix> g0 = yrs;
   shared_ptr<Dvec> g1 = nact ? cider->copy() : make_shared<Dvec>(make_shared<Determinants>(), 1);
 
-  if (jobtitle == "nacme" && (nacmtype->full() || nacmtype->etf()))
+  if (jobtitle == "nacme" && (gradinfo->nacmtype()->is_full() || gradinfo->nacmtype()->is_etf()))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
 
   timer.tick_print("Yrs non-Lagrangian terms");
@@ -358,7 +360,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), maxziter, task_->dcheck(), /*xms*/!!task_->dcheck());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
 
   timer.tick_print("Z-CASSCF solution");
 
@@ -396,7 +398,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   if (jobtitle == "nacme") {
     auto qxmat = task_->vd1()->resize(nmobasis, nmobasis);
 
-    if (nacmtype->full())
+    if (gradinfo->nacmtype()->is_full())
       qxmat->scale(egap);
     else
       qxmat->zero();
@@ -496,7 +498,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, const 
   // compute gradients
   shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
-  if ((jobtitle == "nacme") && !(nacmtype->noweight()))
+  if ((jobtitle == "nacme") && !(gradinfo->nacmtype()->is_noweight()))
     gradient->scale(1.0/egap);
   gradient->print();
   timer.tick_print("Gradient integral contraction");
