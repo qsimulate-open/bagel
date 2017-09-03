@@ -68,7 +68,7 @@ class LinearRM {
       auto citer = sigma_.begin();
       for (int i = 0; i != size_; ++i) {
         mat_->element(size_-1,i) = s->dot_product(**citer++);
-        mat_->element(i,size_-1) = std::conj(mat_->element(size_-1,i));
+        mat_->element(i,size_-1) = detail::conj(mat_->element(size_-1,i));
       }
       // NOTE THE MINUS SIGN HERE!!
       prod_->element(size_-1,0) = - s->dot_product(*grad_);
