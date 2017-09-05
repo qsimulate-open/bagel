@@ -43,14 +43,14 @@ void Opt::compute_optimize() {
   muffle_ = make_shared<Muffle>("opt.log");
   muffle_->unmute();
 
-  for (iter_ = 1; iter_ != maxiter_; ++iter_) {
+  for (int iter = 1; iter != optinfo()->maxiter(); ++iter) {
     shared_ptr<const XYZFile> xyz = current_->xyz();
     prev_xyz_.push_back(xyz);
 
     displ = displ_;
 
-    if (internal_) {
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         displ = displ->transform(bmat_red_[1], false);
       else
         displ = iterate_displ();
@@ -59,54 +59,40 @@ void Opt::compute_optimize() {
     prev_displ_.push_back(displ);
     current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
     current_->print_atoms();
-    if (internal_) {
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
       else
-        bmat_ = current_->compute_internal_coordinate(bmat_[0], bonds_, constraints_, (opttype_=="transition"), false);
+        bmat_ = current_->compute_internal_coordinate(bmat_[0], optinfo()->bonds(), optinfo()->opttype()->is_transition(), false);
     }
 
     shared_ptr<PTree> cinput;
     shared_ptr<const Reference> ref;
-    if (!prev_ref_ || scratch_) {
-      auto m = input_->begin();
-      for ( ; m != --input_->end(); ++m) {
-        const string title = to_lower((*m)->get<string>("title", ""));
-        if (title != "molecule") {
-          tie(ignore, ref) = get_energy(title, *m, current_, ref);
-        } else {
-          current_ = make_shared<const Geometry>(*current_, *m);
-          if (ref) ref = ref->project_coeff(current_);
-        }
-      }
-      cinput = make_shared<PTree>(**m);
-    } else {
-      ref = prev_ref_->project_coeff(current_);
-      cinput = make_shared<PTree>(**input_->rbegin());
-    }
-    cinput->put("_gradient", true);
+    tie(cinput, ref, current_) = get_grad_input();
 
     double rms;
     double maxgrad;
     double param;
     {
       grad_->zero();
+
       shared_ptr<GradFile> cgrad;
-      tie(en_,param,prev_ref_,cgrad) = get_grad(cinput, ref);
+      tie(en_, param, prev_ref_, cgrad) = get_grad(cinput, ref);
       prev_grad_.push_back(cgrad);
       grad_->add_block(1.0, 0, 0, 3, current_->natom(), cgrad);
-      rms = cgrad->rms();       // This is more appropriate
+
+      rms = cgrad->rms();
       maxgrad = cgrad->maximum(current_->natom());
 
-      if (internal_) {
-        if (redundant_)
+      if (optinfo()->internal()) {
+        if (optinfo()->redundant())
           grad_ = grad_->transform(bmat_red_[1], true);
         else
           grad_ = grad_->transform(bmat_[1], true);
       }
 
       // Update Hessian with Flowchart method
-      if (iter_ != 1)
+      if (iter != 1)
         hess_ = hessian_update();
 
       prev_grad_internal_ = make_shared<GradFile>(*grad_);
@@ -114,41 +100,47 @@ void Opt::compute_optimize() {
       MoldenOut mfs("opt.molden");
       mfs << current_;
 
-      tie(predictedchange_,predictedchange_prev_,displ_) = get_step();
+      tie(predictedchange_, predictedchange_prev_, displ_) = get_step();
     }
 
     displ = displ_;
 
     // check the size of (displ)
-    if (internal_) {
-      if (redundant_)
+    if (optinfo()->internal()) {
+      if (optinfo()->redundant())
         displ = displ->transform(bmat_red_[1], false);
       else
         displ = displ->transform(bmat_[1], false);
     }
 
-    if (adaptive_) maxstep_ = do_adaptive();
+    if (optinfo()->adaptive())
+      maxstep_ = do_adaptive(iter);
+
     const double maxdispl = displ->maximum(current_->natom());
     const double echange = en_ - (prev_en_.empty() ? 0.0 : prev_en_.back());
 
-    const bool convergegrad = maxgrad > thresh_grad_ ? false : true;
-    const bool convergedispl = maxdispl > thresh_displ_ ? false : true;
-    const bool convergeenergy = fabs(echange) > thresh_echange_ ? false : true;
+    const bool convergegrad = !(maxgrad > optinfo()->thresh_grad());
+    const bool convergedispl = !(maxdispl > optinfo()->thresh_displ());
+    const bool convergeenergy = !(fabs(echange) > optinfo()->thresh_echange());
+
     cout << endl << "  === Convergence status ===" << endl << endl;
     cout << "                         Maximum     Tolerance   Converged?" << endl;
-    cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << thresh_grad_ << setw(13) << (convergegrad? "Yes" : "No") << endl;
-    cout << "  * Displacement  " << setw(14) << setprecision(6) << maxdispl << setw(14) << thresh_displ_ << setw(13) << (convergedispl? "Yes" : "No") << endl;
-    cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << thresh_echange_ << setw(13) << (convergeenergy? "Yes" : "No") << endl << endl;
+    cout << "  * Gradient      " << setw(14) << setprecision(6) << maxgrad << setw(14) << optinfo()->thresh_grad() << setw(13) << (convergegrad? "Yes" : "No") << endl;
+    cout << "  * Displacement  " << setw(14) << setprecision(6) << maxdispl << setw(14) << optinfo()->thresh_displ() << setw(13) << (convergedispl? "Yes" : "No") << endl;
+    cout << "  * Energy change " << setw(14) << setprecision(6) << echange << setw(14) << optinfo()->thresh_echange() << setw(13) << (convergeenergy? "Yes" : "No") << endl << endl;
 
     muffle_->unmute();
-    if (iter_ == 1)
+
+    if (iter == 1)
       print_header();
+
     prev_en_.push_back(en_);
-    print_iteration(rms, param, timer_.tick());
+    print_iteration(iter, rms, param, timer_.tick());
 
     muffle_->mute();
 
-    if (convergegrad && (convergedispl || convergeenergy)) break;
+    if (convergegrad && (convergedispl || convergeenergy))
+      break;
   }
 
   muffle_->unmute();

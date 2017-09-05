@@ -29,7 +29,7 @@ using namespace std;
 using namespace bagel;
 
 template<>
-shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_ptr<const GradInfo> gradinfo) {
   assert(task_->dodf());
   Timer timer;
 
@@ -69,7 +69,7 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, const in
 
 
 template<>
-shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, shared_ptr<const GradInfo> gradinfo) {
   Timer timer;
 
   //- One ELECTRON PART -//
@@ -97,7 +97,7 @@ shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, const in
 
 
 template<>
-shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, shared_ptr<const GradInfo> gradinfo) {
   Timer timer;
 
   //- One ELECTRON PART -//
@@ -125,7 +125,7 @@ shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, const i
 
 
 template<>
-shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, const int istate, const int jstate, const int maxziter, shared_ptr<const NacmType> nacmtype) {
+shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, shared_ptr<const GradInfo> gradinfo) {
   Timer timer;
 
   //- One ELECTRON PART -//
