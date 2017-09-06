@@ -26,7 +26,7 @@
 #ifndef __SRC_WFN_HCOREINFO_H
 #define __SRC_WFN_HCOREINFO_H
 
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 
 // Contains info on Hcore.
 //
@@ -44,6 +44,8 @@ class HcoreInfo {
     HcoreType type_;
 
     // specify gradient type
+    // true = semi-numeric
+    // false = analytic
     bool gradtype_;
 
     // for semi-numerical gradients
@@ -58,32 +60,6 @@ class HcoreInfo {
       ar & type_ & mat1e_dx_;
     }
 
-    // analytic DKH specific
-    int natom;
-    int nbasis;
-    int nunc;
-
-    std::shared_ptr<const Molecule> molu;
-
-    const Matrix U_T;
-    std::vector<Matrix> PU;
-
-    std::vector<Matrix> s_X;
-    std::vector<Matrix> T_pX;
-    std::vector<Matrix> V_pX;
-    std::vector<Matrix> O_pX;
-
-    const Matrix id;
-    std::map<std::shared_ptr<VectorB>, std::shared_ptr<Matrix>> vec2mat;
-
-    void gradinit(std::shared_ptr<const Geometry>);
-    void contracts(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void overlapgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void kineticgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void naigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void smallnaigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void store_mat(std::shared_ptr<const VectorB>);
-
   public:
     HcoreInfo() : type_(HcoreType::standard), mat1e_dx_(0.001) { }
     HcoreInfo(std::shared_ptr<const PTree> idata);
@@ -95,8 +71,7 @@ class HcoreInfo {
     void print() const;
 
     // DKH specific
-    std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;
-    std::vector<std::shared_ptr<Matrix>> dkh_analyticgrad(std::shared_ptr<const Geometry> current);
+    virtual std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;
     std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_dkh(std::shared_ptr<const Molecule> current) const;
 

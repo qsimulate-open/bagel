@@ -528,6 +528,48 @@ shared_ptr<GradFile> GradEval_base::contract_naigrad(const shared_ptr<const Matr
   return grad_;
 }
 
+shared_ptr<GradFile> GradEval_base::contract_smallnaigrad(array<shared_ptr<const Matrix>,6> rmat) {
+  grad_->zero();
+
+  vector<shared_ptr<GradTask>> task;
+  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  task.reserve(nshell*nshell);
+
+  // TODO perhaps we could reduce operation by a factor of 2
+  int cnt = 0;
+  int iatom0 = 0;
+  auto oa0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = 0;
+    auto oa1 = geom_->offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
+
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = oa1->begin();
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+          // static distribution since this is cheap
+          if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+          vector<int> atom = {iatom0, iatom1};
+          vector<int> offset_ = {*o0, *o1};
+
+          task.push_back(make_shared<GradTask1r>(input, atom, offset_, rmat, this));
+        }
+      }
+    }
+  }
+
+  TaskQueue<shared_ptr<GradTask>> tq(move(task));
+  tq.compute();
+
+  grad_->allreduce();
+  return grad_;
+}
+
 // explicit instantiation of the template functions
 template
 std::vector<std::shared_ptr<GradTask>> GradEval_base::contract_grad1e<GradTask1>(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w);
