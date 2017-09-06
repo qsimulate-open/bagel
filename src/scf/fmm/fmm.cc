@@ -78,7 +78,7 @@ void FMM::init() {
     isp_.push_back(i);
     ++isp;
     for (int j = 0; j != 3; ++j) {
-      const double jco = geomdata_->shellpair(i)->centre(j);
+      const double jco = geomdata_->shellpair(i)->centre(j) - centre_[j];
       rad = max(rad, abs(jco));
     }
   }
