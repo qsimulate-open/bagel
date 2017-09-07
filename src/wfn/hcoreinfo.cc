@@ -37,7 +37,6 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
   if (dkh)
     type_ = HcoreType::dkh;
   mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
-  gradtype_ = idata->get<bool>("gradtype", false);
 
   // ECP
   const string basisfile = idata->get<string>("basis", "");

@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_WFN_HCOREINFO_H
-#define __SRC_WFN_HCOREINFO_H
+#ifndef __SRC_WFN_DKH2ANALYTIC_H
+#define __SRC_WFN_DKH2ANALYTIC_H
 
 #include <src/wfn/hcoreinfo.h>
 #include <src/wfn/geometry.h>

@@ -43,11 +43,6 @@ class HcoreInfo {
   protected:
     HcoreType type_;
 
-    // specify gradient type
-    // true = semi-numeric
-    // false = analytic
-    bool gradtype_;
-
     // for semi-numerical gradients
     double mat1e_dx_;
   

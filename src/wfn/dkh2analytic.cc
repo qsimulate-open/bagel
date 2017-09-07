@@ -334,13 +334,14 @@ void DKH2Analytic::smallnaigrad(shared_ptr<const Geometry> mol, shared_ptr<const
     for (int l = 0; l < data->nunc; l++) {
       auto grad = make_shared<GradFile>(data->natom);
       auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
+      auto zero = make_shared<Matrix>(*den);
       for (int m = 0; m < data->nbasis; k++) {
         for (int n = 0; n < data->nbasis; l++) {
           (*den)(m, n) = data->U_T(k, m) * U(n, l);
         }
       }
       GradEval_base ge(mol);
-      grad = ge.contract_smallnaigrad({den, den, den, den, den, den});
+      grad = ge.contract_smallnaigrad({den, zero, zero, den, zero, den});
       for (int i = 0; i < data->natom; i++) {
         for (int j = 0; j < 3; j++) {
           data->O_pX[3 * i + j](k, l) = (*grad)(i, j);

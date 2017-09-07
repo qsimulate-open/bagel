@@ -24,6 +24,7 @@
 
 
 #include <src/wfn/geometry.h>
+#include <src/wfn/dkh2analytic.h>
 #include <src/df/complexdf.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
@@ -95,7 +96,12 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
-    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+
+    // specify gradient type
+    // true = semi-numeric
+    // false = analytic
+    bool gradtype = geominfo->get<bool>("gradtype", false);
+    hcoreinfo_ = gradtype ? make_shared<const HcoreInfo>(geominfo) : make_shared<const DKH2Analytic>(geominfo);
   } else {
 
     // read the default basis file
