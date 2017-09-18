@@ -87,6 +87,11 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
 
+  // specify gradient type
+  // true = semi-numeric
+  // false = analytic
+  bool gradtype = geominfo->get<bool>("gradtype", false);
+
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -97,10 +102,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     mfs.read();
     mfs >> atoms_;
 
-    // specify gradient type
-    // true = semi-numeric
-    // false = analytic
-    bool gradtype = geominfo->get<bool>("gradtype", false);
     hcoreinfo_ = gradtype ? make_shared<const HcoreInfo>(geominfo) : make_shared<const DKH2Analytic>(geominfo);
   } else {
 
@@ -109,7 +110,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+    hcoreinfo_ = gradtype ? make_shared<const HcoreInfo>(geominfo) : make_shared<const DKH2Analytic>(geominfo);
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }

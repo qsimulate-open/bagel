@@ -199,6 +199,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
     const Matrix V_relX = data->U_T % V_prelX * data->U_T + DU * V_rel - V_rel * DU;
 
     *dkh2grad[i] = T_relX + V_relX;
+
   }
   return dkh2grad;
 }
@@ -236,8 +237,9 @@ void DKH2Analytic::contracts(shared_ptr<const Geometry> mol, shared_ptr<const Ma
       else {
         auto grad = make_shared<GradFile>(data->natom);
         auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
-        for (int m = 0; m < data->nbasis; k++) {
-          for (int n = 0; n < data->nbasis; l++) {
+
+        for (int m = 0; m < data->nbasis; m++) {
+          for (int n = 0; n < data->nbasis; n++) {
             (*den)(m, n) = data->U_T(k, m) * U(n, l) / ((*s)(k, k) - (*s)(l, l));
           }
         }
@@ -259,8 +261,8 @@ void DKH2Analytic::overlapgrad(shared_ptr<const Geometry> mol, shared_ptr<const 
     for (int l = 0; l < data->nunc; l++) {
       auto grad = make_shared<GradFile>(data->natom);
       auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
-      for (int m = 0; m < data->nbasis; k++) {
-        for (int n = 0; n < data->nbasis; l++) {
+      for (int m = 0; m < data->nbasis; m++) {
+        for (int n = 0; n < data->nbasis; n++) {
           (*den)(m, n) = data->U_T(k, m) * U(n, l);
         }
       }
@@ -284,8 +286,8 @@ void DKH2Analytic::kineticgrad(shared_ptr<const Geometry> mol, shared_ptr<const 
     for (int l = 0; l < data->nunc; l++) {
       auto grad = make_shared<GradFile>(data->natom);
       auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
-      for (int m = 0; m < data->nbasis; k++) {
-        for (int n = 0; n < data->nbasis; l++) {
+      for (int m = 0; m < data->nbasis; m++) {
+        for (int n = 0; n < data->nbasis; n++) {
           (*den)(m, n) = data->U_T(k, m) * U(n, l);
         }
       }
@@ -309,8 +311,8 @@ void DKH2Analytic::naigrad(shared_ptr<const Geometry> mol, shared_ptr<const Matr
     for (int l = 0; l < data->nunc; l++) {
       auto grad = make_shared<GradFile>(data->natom);
       auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
-      for (int m = 0; m < data->nbasis; k++) {
-        for (int n = 0; n < data->nbasis; l++) {
+      for (int m = 0; m < data->nbasis; m++) {
+        for (int n = 0; n < data->nbasis; n++) {
           (*den)(m, n) = data->U_T(k, m) * U(n, l);
         }
       }
@@ -335,8 +337,8 @@ void DKH2Analytic::smallnaigrad(shared_ptr<const Geometry> mol, shared_ptr<const
       auto grad = make_shared<GradFile>(data->natom);
       auto den = make_shared<Matrix>(data->nbasis, data->nbasis);
       auto zero = make_shared<Matrix>(*den);
-      for (int m = 0; m < data->nbasis; k++) {
-        for (int n = 0; n < data->nbasis; l++) {
+      for (int m = 0; m < data->nbasis; m++) {
+        for (int n = 0; n < data->nbasis; n++) {
           (*den)(m, n) = data->U_T(k, m) * U(n, l);
         }
       }
