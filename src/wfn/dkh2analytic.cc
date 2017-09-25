@@ -40,7 +40,27 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   shared_ptr<DKH2AnalyticData> data = gradinit(mol);
 
   vector<shared_ptr<Matrix>> dkh2grad(3 * data->natom);
+  Overlap S(mol);
+  Matrix tmpU = MixedBasis<OverlapBatch>(data->molu, mol);
+  cout << "MATRIX tmpU" << endl;
+  tmpU.print();
+  Matrix tmpU_other = data->U_T % data->id;
+  cout << "MATRIX tmpU_other" << endl;
+  tmpU_other.print();
+  cout << "MATRIX S" << endl;
+  S.print();
+  Matrix s_other = data->U_T * S ^ data->U_T;
+  cout << "MATRIX s_other" << endl;
+  s_other.print();
+  Matrix s_other2 = tmpU % S * tmpU;
+  cout << "MATRIX s_other2" << endl;
+  s_other2.print();
+  Matrix s_other3 = tmpU_other % S * tmpU_other;
+  cout << "MATRIX s_other3" << endl;
+  s_other3.print();
   auto s = make_shared<Overlap>(data->molu);
+  cout << "MATRIX s" << endl;
+  s->print();
   contracts(mol, s, data);
   overlapgrad(mol, s, data);
   const Matrix s_inv12 = *s->tildex();
@@ -53,6 +73,13 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   store_mat(t, data);
   Matrix W = T_pp;
   W.diagonalize(*t);
+
+  cout << "t" << endl;
+  cout << "SIZE " << t->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*t)(k) << " ";
+  }
+  cout << endl;
 
   const double c2 = c__ * c__;
   auto Ep = make_shared<VectorB>(data->nunc);
@@ -76,16 +103,76 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
     (*R_inv)(k) = 1 / (*R)(k);
   }
 
+  cout << "Ep" << endl;
+  cout << "SIZE " << Ep->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*Ep)(k) << " ";
+  }
+  cout << endl;
+  cout << "A" << endl;
+  cout << "SIZE " << A->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*A)(k) << " ";
+  }
+  cout << endl;
+  cout << "K" << endl;
+  cout << "SIZE " << K->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*K)(k) << " ";
+  }
+  cout << "B" << endl;
+  cout << "SIZE " << B->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*B)(k) << " ";
+  }
+  cout << endl;
+  cout << endl;
+  cout << "R" << endl;
+  cout << "SIZE " << R->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*R)(k) << " ";
+  }
+  cout << endl;
+  cout << "R_inv" << endl;
+  cout << "SIZE " << R_inv->size() << endl;
+  for (int k = 0; k < data->nunc; k++) {
+    cout << (*R_inv)(k) << " ";
+  }
+  cout << endl;
+
   for (int i = 0; i < 3; i++) {
     const Matrix T_ppX = s_inv12 % data->T_pX[i] * s_inv12 - 0.5 * (s_inv * data->s_X[i] * T_pp + T_pp * s_inv * data->s_X[i]);
+    cout << "MATRIX s_inv12" << endl;
+    s_inv12.print();
+    cout << "MATRIX T_pX" << endl;
+    data->T_pX[i].print();
+    cout << "MATRIX s_inv" << endl;
+    s_inv.print();
+    cout << "MATRIX s_X" << endl;
+    data->s_X[i].print();
+    cout << "MATRIX T_pp" << endl;
+    T_pp.print();
+    cout << "MATRIX T_ppX" << endl;
+    T_ppX.print();
     const Matrix T_ppX_W = W % T_ppX * W;
+    cout << "MATRIX T_ppX_W" << endl;
+    T_ppX_W.print();
     Matrix PW(data->nunc, data->nunc);
     for (int k = 0; k < data->nunc; ++k) {
       for (int l = 0; l < data->nunc; ++l) {
         PW(k, l) = k == l ? 0 : T_ppX_W(k, l) / ((*t)(k) - (*t)(l));
       }
     }
+    cout << "MATRIX PW" << endl;
+    PW.print();
     const Matrix t_X = T_ppX_W - PW * *data->vec2mat[t] + *data->vec2mat[t] * PW;
+
+    cout << "t_X" << endl;
+    cout << "SIZE " << t_X.ndim() << " " << t_X.mdim() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << t_X(k, k) << " ";
+    }
+    cout << endl;
 
     auto Ep_X = make_shared<VectorB>(data->nunc);
     store_mat(Ep_X, data);
@@ -110,6 +197,37 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
       (*R_X)(k) = 2 * t_X(k, k) * (pow((*K)(k), 2) - 2 * c2 / (pow((*Ep)(k) + c2, 2) * std::sqrt(2 * (*t)(k) + c2)));
       (*R_invX)(k) = -1 * (*R_X)(k) / pow((*R)(k), 2);
     }
+
+    cout << "Ep_X" << endl;
+    cout << "SIZE " << Ep_X->size() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << (*Ep_X)(k) << " ";
+    }
+    cout << endl;
+    cout << "A_X" << endl;
+    cout << "SIZE " << A_X->size() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << (*A_X)(k) << " ";
+    }
+    cout << endl;
+    cout << "B_X" << endl;
+    cout << "SIZE " << B_X->size() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << (*B_X)(k) << " ";
+    }
+    cout << endl;
+    cout << "R_X" << endl;
+    cout << "SIZE " << R_X->size() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << (*R_X)(k) << " ";
+    }
+    cout << endl;
+    cout << "R_invX" << endl;
+    cout << "SIZE " << R_invX->size() << endl;
+    for (int k = 0; k < data->nunc; k++) {
+      cout << (*R_invX)(k) << " ";
+    }
+    cout << endl;
     
     auto t_rel = make_shared<VectorB>(data->nunc);
     store_mat(t_rel, data);
@@ -160,7 +278,8 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
 
     auto EpR = make_shared<VectorB>(*Ep % *R);
     store_mat(EpR, data);
-    auto EpRX = make_shared<VectorB>(*Ep_X % *R + *Ep % *R_X);
+    VectorB tmpvec = *Ep_X % *R + *Ep % *R_X;
+    auto EpRX = make_shared<VectorB>(tmpvec);
     store_mat(EpRX, data);
     auto EpRinv = make_shared<VectorB>(*Ep % *R_inv);
     store_mat(EpRinv, data);
@@ -243,8 +362,15 @@ void DKH2Analytic::contracts(shared_ptr<const Geometry> mol, shared_ptr<const Ma
             (*den)(m, n) = data->U_T(k, m) * U(n, l) / ((*s)(k, k) - (*s)(l, l));
           }
         }
+        cout << "ELT s" << endl;
+        cout << (*s)(k, k) << " " << (*s)(l, l) << endl;
+        cout << "MATRIX den" << endl;
+        den->print();
         GradEval_base ge(mol);
         grad = ge.contract_overlapgrad(den);
+        cout << "GRADFILE PU" << endl;
+        cout << k << " " << l << endl;
+        grad->print();
         for (int i = 0; i < data->natom; i++) {
           for (int j = 0; j < 3; j++) {
             data->PU[3 * i + j](k, l) = (*grad)(i, j);
@@ -331,6 +457,7 @@ void DKH2Analytic::naigrad(shared_ptr<const Geometry> mol, shared_ptr<const Matr
 }
 
 void DKH2Analytic::smallnaigrad(shared_ptr<const Geometry> mol, shared_ptr<const Matrix> O_p, shared_ptr<DKH2AnalyticData> data) const {
+  mol = make_shared<Geometry>(*mol->relativistic(false));
   const Matrix U = data->U_T % data->id;
   for (int k = 0; k < data->nunc; k++) {
     for (int l = 0; l < data->nunc; l++) {
