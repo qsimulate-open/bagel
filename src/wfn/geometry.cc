@@ -102,7 +102,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     mfs.read();
     mfs >> atoms_;
 
-    hcoreinfo_ = gradtype ? make_shared<const HcoreInfo>(geominfo) : make_shared<const DKH2Analytic>(geominfo);
+    hcoreinfo_ = gradtype ? make_shared<HcoreInfo>(geominfo) : make_shared<DKH2Analytic>(geominfo);
   } else {
 
     // read the default basis file
@@ -110,7 +110,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    hcoreinfo_ = gradtype ? make_shared<const HcoreInfo>(geominfo) : make_shared<const DKH2Analytic>(geominfo);
+    hcoreinfo_ = gradtype ? make_shared<HcoreInfo>(geominfo) : make_shared<DKH2Analytic>(geominfo);
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
@@ -271,7 +271,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
-    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
@@ -420,7 +420,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   print_atoms();
 
-  hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+  hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));

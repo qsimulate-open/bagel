@@ -34,15 +34,13 @@
 
 namespace bagel {
 
-// metadata
-struct DKH2AnalyticData {
+class DKH2Analytic : public HcoreInfo {
+  private:
     int natom;
-    int nbasis;
     int nunc;
 
-    std::shared_ptr<const Molecule> molu;
-
-    Matrix U_T;
+    Matrix U;
+    std::shared_ptr<const VectorB> s;
     std::vector<Matrix> PU;
 
     std::vector<Matrix> s_X;
@@ -52,23 +50,20 @@ struct DKH2AnalyticData {
 
     Matrix id;
     std::map<std::shared_ptr<const VectorB>, std::shared_ptr<Matrix>> vec2mat;
-};
 
-class DKH2Analytic : public HcoreInfo {
-  private:
-    std::shared_ptr<DKH2AnalyticData> gradinit(std::shared_ptr<const Geometry>) const;
-    void contracts(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<DKH2AnalyticData>) const;
-    void overlapgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<DKH2AnalyticData>) const;
-    void kineticgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<DKH2AnalyticData>) const;
-    void naigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<DKH2AnalyticData>) const;
-    void smallnaigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>, std::shared_ptr<DKH2AnalyticData>) const;
-    void store_mat(std::shared_ptr<const VectorB>, std::shared_ptr<DKH2AnalyticData>) const;
+    void gradinit(std::shared_ptr<const Geometry>);
+    void contracts(std::shared_ptr<const Geometry>);
+    void overlapgrad(std::shared_ptr<const Geometry>);
+    void kineticgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
+    void naigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
+    void smallnaigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
+    void store_mat(std::shared_ptr<const VectorB>);
 
   public:
     DKH2Analytic() : HcoreInfo() { }
     DKH2Analytic(std::shared_ptr<const PTree> idata) : HcoreInfo(idata) { }
 
-    std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule>) const;
+    std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule>);
 };
 
 }

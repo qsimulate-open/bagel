@@ -49,7 +49,7 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
 } 
 
 
-vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {
+vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) {
   int natom = current->natom();
   vector<shared_ptr<Matrix>> dkhgrad;
 
@@ -86,7 +86,7 @@ vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> curren
 }
 
 
-shared_ptr<Matrix> HcoreInfo::compute_grad_dkh(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
+shared_ptr<Matrix> HcoreInfo::compute_grad_dkh(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) {
   int natom = current->natom();
   auto out = make_shared<Matrix>(3,natom);
   vector<shared_ptr<Matrix>> dkhg = dkh_grad(current);
@@ -99,7 +99,7 @@ shared_ptr<Matrix> HcoreInfo::compute_grad_dkh(shared_ptr<const Molecule> curren
 }
 
 
-shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
+shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) {
   int natom = current->natom();
   auto out = make_shared<Matrix>(3, natom);
 

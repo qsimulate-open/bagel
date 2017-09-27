@@ -64,7 +64,7 @@ class Geometry : public Molecule {
     std::vector<std::array<double, 3>> primitive_vectors_;
 
     // Hcore Information
-    std::shared_ptr<const HcoreInfo> hcoreinfo_;
+    std::shared_ptr<HcoreInfo> hcoreinfo_;
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm_;
@@ -159,7 +159,7 @@ class Geometry : public Molecule {
     std::shared_ptr<const Geometry> periodic(std::vector<std::shared_ptr<const Atom>> new_atoms) const;
 
     // Hcore Information
-    std::shared_ptr<const HcoreInfo> hcoreinfo() const { return hcoreinfo_; }
+    std::shared_ptr<HcoreInfo> hcoreinfo() const { return hcoreinfo_; }
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }
