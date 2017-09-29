@@ -31,7 +31,7 @@ using namespace std;
 using namespace bagel;
 
 
-HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard) {
+HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard), gradtype_(true) {
   // DKH
   const bool dkh = idata->get<bool>("dkh", false);
   if (dkh)
@@ -46,8 +46,12 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
       throw runtime_error("DKH and ECP cannot be used simultaneously");
     type_ = HcoreType::ecp;
   }
-} 
+}
 
+bool HcoreInfo::gradtype() const {
+  assert(dkh());
+  return gradtype_;
+}
 
 vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) {
   int natom = current->natom();

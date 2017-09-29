@@ -61,7 +61,7 @@ class DKH2Analytic : public HcoreInfo {
 
   public:
     DKH2Analytic() : HcoreInfo() { }
-    DKH2Analytic(std::shared_ptr<const PTree> idata) : HcoreInfo(idata) { }
+    DKH2Analytic(std::shared_ptr<const PTree> idata) : HcoreInfo(idata) { gradtype_ = false; }
 
     std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule>);
 };

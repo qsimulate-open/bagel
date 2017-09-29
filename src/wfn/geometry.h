@@ -163,6 +163,8 @@ class Geometry : public Molecule {
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }
+
+    std::shared_ptr<Geometry> unc_geom() const;
 };
 
 }

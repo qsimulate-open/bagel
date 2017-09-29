@@ -661,3 +661,12 @@ Geometry::Geometry(const Geometry& o, const string type)
   common_init2(false, overlap_thresh_, true);
   fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(type));
 }
+
+shared_ptr<Geometry> Geometry::unc_geom() const {
+  auto out = make_shared<Geometry>(*this);
+  for (auto& i : out->atoms_)
+    i = i->uncontract()->relativistic();
+  out->common_init1();
+  return out;
+}
+

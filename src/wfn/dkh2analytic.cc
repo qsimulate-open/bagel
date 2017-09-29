@@ -35,14 +35,18 @@ using namespace std;
 using namespace bagel;
 
 vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> current) {
-  shared_ptr<const Geometry> mol = dynamic_pointer_cast<const Geometry>(current->uncontract());
+  shared_ptr<const Geometry> mol = dynamic_pointer_cast<const Geometry>(current);
   assert(mol);
+  mol = mol->unc_geom();
   gradinit(mol);
-
+  
   vector<shared_ptr<Matrix>> dkh2grad(3 * natom);
   contracts(mol);
+  PU[0].print("PU[0]");
+  cout << "about to compute s_X" << endl;
   overlapgrad(mol);
 
+  cout << "now for s stuff" << endl;
   auto s_inv12 = make_shared<VectorB>(nunc);
   store_mat(s_inv12);
   auto s_inv = make_shared<VectorB>(nunc);
@@ -310,6 +314,15 @@ void DKH2Analytic::gradinit(shared_ptr<const Geometry> mol) {
 
 void DKH2Analytic::contracts(shared_ptr<const Geometry> mol) {
   const Matrix U_T = U % id;
+  U.print("U");
+  U_T.print("U_T");
+  cout << "s" << endl;
+  cout << "SIZE " << s->size() << endl;
+  for (int k = 0; k < nunc; k++) {
+    cout << (*s)(k) << " ";
+  }
+  cout << endl;
+  vec2mat[s]->print("s");
   for (int k = 0; k < nunc; k++) {
     for (int l = 0; l < nunc; l++) {
       if (k == l) {
@@ -326,6 +339,8 @@ void DKH2Analytic::contracts(shared_ptr<const Geometry> mol) {
             (*den)(m, n) = U_T(k, m) * U(n, l) / ((*s)(k) - (*s)(l));
           }
         }
+        cout << k << " " << l << endl;
+        den->print("den");
         GradEval_base ge(mol);
         grad = ge.contract_overlapgrad(den);
         for (int i = 0; i < natom; i++) {
