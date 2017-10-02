@@ -664,7 +664,7 @@ Geometry::Geometry(const Geometry& o, const string type)
 
 shared_ptr<Geometry> Geometry::unc_geom() const {
   auto out = make_shared<Geometry>(*this);
-  for (auto& i : out->atoms_)
+  for (shared_ptr<const Atom> &i : out->atoms_)
     i = i->uncontract()->relativistic();
   out->common_init1();
   return out;

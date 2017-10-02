@@ -39,45 +39,44 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   assert(mol);
   mol = mol->unc_geom();
   gradinit(mol);
+  vec2mat[s]->print("s");
   
   vector<shared_ptr<Matrix>> dkh2grad(3 * natom);
+  const MixedBasis<OverlapBatch> mix(current, mol);
   contracts(mol);
-  PU[0].print("PU[0]");
-  cout << "about to compute s_X" << endl;
   overlapgrad(mol);
 
-  cout << "now for s stuff" << endl;
   auto s_inv12 = make_shared<VectorB>(nunc);
-  store_mat(s_inv12);
   auto s_inv = make_shared<VectorB>(nunc);
-  store_mat(s_inv);
   for (int k = 0; k < nunc; ++k) {
     (*s_inv12)(k) = 1 / std::sqrt((*s)(k));
     (*s_inv)(k) = 1 / (*s)(k);
   }
+  store_mat(s_inv12);
+  store_mat(s_inv);
 
   const Kinetic T(mol);
   auto T_p = make_shared<Matrix>(U % T * U);
+  T_p->print("T_p");
   kineticgrad(mol, T_p);
   Matrix T_pp = *vec2mat[s_inv12] % *T_p * *vec2mat[s_inv12];
-  auto t = make_shared<VectorB>(nunc);
-  store_mat(t);
   Matrix W = T_pp;
+  auto t = make_shared<VectorB>(nunc);
   W.diagonalize(*t);
+  T_pp.print("T_pp");
+  W.print("W");
+  store_mat(t);
+  vec2mat[t]->print("t");
 
   const double c2 = c__ * c__;
   auto Ep = make_shared<VectorB>(nunc);
-  store_mat(Ep);
   auto A = make_shared<VectorB>(nunc);
-  store_mat(A);
   auto K = make_shared<VectorB>(nunc);
-  store_mat(K);
   auto B = make_shared<VectorB>(nunc);
-  store_mat(B);
   auto R = make_shared<VectorB>(nunc);
-  store_mat(R);
   auto R_inv = make_shared<VectorB>(nunc);
-  store_mat(R_inv);
+  auto EpR = make_shared<VectorB>(nunc);
+  auto EpRinv = make_shared<VectorB>(nunc);
   for (int k = 0; k < nunc; ++k) {
     (*Ep)(k) = c__ * std::sqrt(2 * (*t)(k) + c2);
     (*A)(k) = std::sqrt((c2 + (*Ep)(k)) / (2 * (*Ep)(k)));
@@ -85,61 +84,78 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
     (*B)(k) = (*A)(k) * (*K)(k);
     (*R)(k) = 2 * (*t)(k) * pow((*K)(k), 2);
     (*R_inv)(k) = 1 / (*R)(k);
+    (*EpR)(k) = (*Ep)(k) * (*R)(k);
+    (*EpRinv)(k) = (*Ep)(k) * (*R_inv)(k);
   }
+  store_mat(Ep);
+  store_mat(A);
+  store_mat(K);
+  store_mat(B);
+  store_mat(R);
+  store_mat(R_inv);
+  store_mat(EpR);
+  store_mat(EpRinv);
 
   cout << "Ep" << endl;
-  cout << "SIZE " << Ep->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*Ep)(k) << " ";
   }
   cout << endl;
   cout << "A" << endl;
-  cout << "SIZE " << A->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*A)(k) << " ";
   }
   cout << endl;
   cout << "K" << endl;
-  cout << "SIZE " << K->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*K)(k) << " ";
   }
+  cout << endl;
   cout << "B" << endl;
-  cout << "SIZE " << B->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*B)(k) << " ";
   }
   cout << endl;
-  cout << endl;
   cout << "R" << endl;
-  cout << "SIZE " << R->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*R)(k) << " ";
   }
   cout << endl;
   cout << "R_inv" << endl;
-  cout << "SIZE " << R_inv->size() << endl;
   for (int k = 0; k < nunc; k++) {
     cout << (*R_inv)(k) << " ";
   }
   cout << endl;
+  cout << "EpR" << endl;
+  for (int k = 0; k < nunc; k++) {
+    cout << (*EpR)(k) << " ";
+  }
+  cout << endl;
+  cout << "EpRinv" << endl;
+  for (int k = 0; k < nunc; k++) {
+    cout << (*EpRinv)(k) << " ";
+  }
+  cout << endl;
 
   auto t_rel = make_shared<VectorB>(nunc);
-  store_mat(t_rel);
   for (int k = 0; k < nunc; ++k) {
     (*t_rel)(k) = c__ * std::sqrt(2 * (*t)(k) + c2) - c2;
   }
+  store_mat(t_rel);
   const Matrix T_pprel = W * *vec2mat[t_rel] ^ W;
   const Matrix T_prel = *vec2mat[s_inv12] * T_pprel ^ *vec2mat[s_inv12];
   const Matrix T_rel = U * T_prel ^ U;
+  T_rel.print("T_rel");
 
   const NAI V(mol);
   auto V_p = make_shared<Matrix>(U % V * U);
+  V_p->print("V_p");
   naigrad(mol, V_p);
   const Matrix V_pp = *vec2mat[s_inv12] % *V_p * *vec2mat[s_inv12];
   const Matrix V_ppp = W % V_pp * W;
   const Small1e<NAIBatch> small1e(mol);
   auto O_p = make_shared<Matrix>(U % small1e[0] * U);
+  O_p->print("O_p");
   smallnaigrad(mol, O_p);
   const Matrix O_pp = *vec2mat[s_inv12] % *O_p * *vec2mat[s_inv12];
   const Matrix O_ppp = W % O_pp * W;
@@ -153,11 +169,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
       B_long(k, l) = (*B)(k) * O_long(k, l) * (*B)(l);
     }
   }
-
-  auto EpR = make_shared<VectorB>(*Ep % *R);
-  store_mat(EpR);
-  auto EpRinv = make_shared<VectorB>(*Ep % *R_inv);
-  store_mat(EpRinv);
+  
   Matrix V_ppprel = *vec2mat[A] * V_ppp * *vec2mat[A] + *vec2mat[B] * O_ppp * *vec2mat[B]
                   - B_long * *vec2mat[Ep] * A_long - A_long * *vec2mat[Ep] * B_long
                   + A_long * *vec2mat[EpR] * A_long + B_long * *vec2mat[EpRinv] * B_long
@@ -168,7 +180,8 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   const Matrix V_pprel = W * V_ppprel ^ W;
   const Matrix V_prel = *vec2mat[s_inv12] * V_pprel ^ *vec2mat[s_inv12];
   const Matrix V_rel = U * V_prel ^ U;
-
+  V_rel.print("V_rel");
+  
   for (int i = 0; i < 3 * natom; i++) {
     const Matrix T_ppX = *vec2mat[s_inv12] % T_pX[i] * *vec2mat[s_inv12] - 0.5 * (*vec2mat[s_inv] * s_X[i] * T_pp + T_pp * *vec2mat[s_inv] * s_X[i]);
     T_pX[i].print("MATRIX T_pX");
@@ -186,51 +199,62 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
     const Matrix t_X = T_ppX_W - PW * *vec2mat[t] + *vec2mat[t] * PW;
 
     auto Ep_X = make_shared<VectorB>(nunc);
-    store_mat(Ep_X);
     auto A_X = make_shared<VectorB>(nunc);
-    store_mat(A_X);
     auto B_X = make_shared<VectorB>(nunc);
-    store_mat(B_X);
     auto R_X = make_shared<VectorB>(nunc);
-    store_mat(R_X);
     auto R_invX = make_shared<VectorB>(nunc);
-    store_mat(R_invX);
+    auto EpRX = make_shared<VectorB>(nunc);
+    auto EpRinvX = make_shared<VectorB>(nunc);
     for (int k = 0; k < nunc; ++k) {
       (*Ep_X)(k) = c__ * t_X(k, k) / std::sqrt(2 * (*t)(k) + c2);
       (*A_X)(k) = c2 * (*Ep_X)(k) / (-4 * pow((*Ep)(k), 2) * (*A)(k));
       (*B_X)(k) = c__ * (*Ep_X)(k) * (c__ * (*K)(k) / (4 * pow((*Ep)(k), 2) * (*A)(k)) - (*A)(k) / pow((*Ep)(k) + c2, 2));
       (*R_X)(k) = 2 * t_X(k, k) * (pow((*K)(k), 2) - 2 * c2 / (pow((*Ep)(k) + c2, 2) * std::sqrt(2 * (*t)(k) + c2)));
       (*R_invX)(k) = -1 * (*R_X)(k) / pow((*R)(k), 2);
+      (*EpRX)(k) = (*Ep_X)(k) * (*R)(k) + (*Ep)(k) * (*R_X)(k);
+      (*EpRinvX)(k) = (*Ep_X)(k) * (*R_inv)(k) + (*Ep)(k) * (*R_invX)(k);
     }
+    store_mat(Ep_X);
+    store_mat(A_X);
+    store_mat(B_X);
+    store_mat(R_X);
+    store_mat(R_invX);
+    store_mat(EpRX);
+    store_mat(EpRinvX);
 
     cout << "Ep_X" << endl;
-    cout << "SIZE " << Ep_X->size() << endl;
     for (int k = 0; k < nunc; k++) {
       cout << (*Ep_X)(k) << " ";
     }
     cout << endl;
     cout << "A_X" << endl;
-    cout << "SIZE " << A_X->size() << endl;
     for (int k = 0; k < nunc; k++) {
       cout << (*A_X)(k) << " ";
     }
     cout << endl;
     cout << "B_X" << endl;
-    cout << "SIZE " << B_X->size() << endl;
     for (int k = 0; k < nunc; k++) {
       cout << (*B_X)(k) << " ";
     }
     cout << endl;
     cout << "R_X" << endl;
-    cout << "SIZE " << R_X->size() << endl;
     for (int k = 0; k < nunc; k++) {
       cout << (*R_X)(k) << " ";
     }
     cout << endl;
     cout << "R_invX" << endl;
-    cout << "SIZE " << R_invX->size() << endl;
     for (int k = 0; k < nunc; k++) {
       cout << (*R_invX)(k) << " ";
+    }
+    cout << endl;
+    cout << "EpRX" << endl;
+    for (int k = 0; k < nunc; k++) {
+      cout << (*EpRX)(k) << " ";
+    }
+    cout << endl;
+    cout << "EpRinvX" << endl;
+    for (int k = 0; k < nunc; k++) {
+      cout << (*EpRinvX)(k) << " ";
     }
     cout << endl;
     
@@ -258,10 +282,6 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
       }
     }
 
-    auto EpRX = make_shared<VectorB>(*Ep_X % *R + *Ep % *R_X);
-    store_mat(EpRX);
-    auto EpRinvX = make_shared<VectorB>(*Ep_X % *R_inv + *Ep % *R_invX);
-    store_mat(EpRinvX);
     V_ppprelX += -1 * B_longX * *vec2mat[Ep] * A_long - B_long * *vec2mat[Ep_X] * A_long - B_long * *vec2mat[Ep] * A_longX
               - A_longX *  *vec2mat[Ep] * B_long - A_long * *vec2mat[Ep_X] * B_long - A_long * *vec2mat[Ep] * B_longX
               + A_longX * *vec2mat[EpR] * A_long + A_long * *vec2mat[EpRX] * A_long + A_long * *vec2mat[EpR] * A_longX
@@ -283,10 +303,11 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
     const Matrix V_prelX = *vec2mat[s_inv12] * V_pprelX ^ *vec2mat[s_inv12] + 0.5 * (*vec2mat[s_inv] * s_X[i] * V_prel + V_prel * *vec2mat[s_inv] * s_X[i]);
     const Matrix V_relX = U * V_prelX ^ U + DU * V_rel - V_rel * DU;
 
-    const MixedBasis<OverlapBatch> mix(current, mol);
-    *dkh2grad[i] = mix % (T_relX + V_relX) * mix;
+    dkh2grad[i] = make_shared<Matrix>(mix % (T_relX + V_relX) * mix);
 
   }
+  const Matrix dkh = mix % (T_rel + V_rel) * mix;
+  dkh.print();
   return dkh2grad;
 }
 
@@ -295,10 +316,10 @@ void DKH2Analytic::gradinit(shared_ptr<const Geometry> mol) {
   nunc = mol->nbasis();
   
   const Overlap S(mol);
-  auto s = make_shared<VectorB>(nunc);
-  store_mat(s);
   U = S;
+  s = make_shared<VectorB>(nunc);
   U.diagonalize(*s);
+  store_mat(s);
 
   PU = vector<Matrix>(3 * natom, Matrix(nunc, nunc));
   s_X = vector<Matrix>(3 * natom, Matrix(nunc, nunc));
@@ -314,15 +335,6 @@ void DKH2Analytic::gradinit(shared_ptr<const Geometry> mol) {
 
 void DKH2Analytic::contracts(shared_ptr<const Geometry> mol) {
   const Matrix U_T = U % id;
-  U.print("U");
-  U_T.print("U_T");
-  cout << "s" << endl;
-  cout << "SIZE " << s->size() << endl;
-  for (int k = 0; k < nunc; k++) {
-    cout << (*s)(k) << " ";
-  }
-  cout << endl;
-  vec2mat[s]->print("s");
   for (int k = 0; k < nunc; k++) {
     for (int l = 0; l < nunc; l++) {
       if (k == l) {
@@ -339,13 +351,11 @@ void DKH2Analytic::contracts(shared_ptr<const Geometry> mol) {
             (*den)(m, n) = U_T(k, m) * U(n, l) / ((*s)(k) - (*s)(l));
           }
         }
-        cout << k << " " << l << endl;
-        den->print("den");
         GradEval_base ge(mol);
         grad = ge.contract_overlapgrad(den);
         for (int i = 0; i < natom; i++) {
           for (int j = 0; j < 3; j++) {
-            PU[3 * i + j](k, l) = (*grad)(i, j);
+            PU[3 * i + j](k, l) += (*grad)(i, j);
           }
         }
       }
@@ -368,7 +378,7 @@ void DKH2Analytic::overlapgrad(shared_ptr<const Geometry> mol) {
       grad = ge.contract_overlapgrad(den);
       for (int i = 0; i < natom; i++) {
         for (int j = 0; j < 3; j++) {
-          s_X[3 * i + j](k, l) = (*grad)(i, j);
+          s_X[3 * i + j](k, l) += (*grad)(i, j);
         }
       }
     }
@@ -393,7 +403,7 @@ void DKH2Analytic::kineticgrad(shared_ptr<const Geometry> mol, shared_ptr<const 
       grad = ge.contract_kineticgrad(den);
       for (int i = 0; i < natom; i++) {
         for (int j = 0; j < 3; j++) {
-          T_pX[3 * i + j](k, l) = (*grad)(i, j);
+          T_pX[3 * i + j](k, l) += (*grad)(i, j);
         }
       }
     }
@@ -418,7 +428,7 @@ void DKH2Analytic::naigrad(shared_ptr<const Geometry> mol, shared_ptr<const Matr
       grad = ge.contract_naigrad(den);
       for (int i = 0; i < natom; i++) {
         for (int j = 0; j < 3; j++) {
-          V_pX[3 * i + j](k, l) = (*grad)(i, j);
+          V_pX[3 * i + j](k, l) += (*grad)(i, j);
         }
       }
     }
@@ -445,7 +455,7 @@ void DKH2Analytic::smallnaigrad(shared_ptr<const Geometry> mol, shared_ptr<const
       grad = ge.contract_smallnaigrad({den, zero, zero, den, zero, den});
       for (int i = 0; i < natom; i++) {
         for (int j = 0; j < 3; j++) {
-          O_pX[3 * i + j](k, l) = (*grad)(i, j);
+          O_pX[3 * i + j](k, l) += (*grad)(i, j);
         }
       }
     }

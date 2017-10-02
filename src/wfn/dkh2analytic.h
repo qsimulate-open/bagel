@@ -40,7 +40,7 @@ class DKH2Analytic : public HcoreInfo {
     int nunc;
 
     Matrix U;
-    std::shared_ptr<const VectorB> s;
+    std::shared_ptr<VectorB> s;
     std::vector<Matrix> PU;
 
     std::vector<Matrix> s_X;
