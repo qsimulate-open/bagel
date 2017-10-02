@@ -90,9 +90,6 @@ void ZCASSCF::init() {
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
 
-  // Invoke Kramer's symmetry for any case without magnetic field
-  tsymm_ = !geom_->magnetism();
-
   nneg_ = geom_->nbasis()*2;
 
   // set hcore and overlap
@@ -163,7 +160,7 @@ void ZCASSCF::init() {
         c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
 
         scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
-        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
+        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, gaunt_, breit_);
 #ifndef NDEBUG
         ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
         assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
@@ -201,15 +198,14 @@ void ZCASSCF::init() {
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
   cout << "    * active space: " << geom_->nele() - charge_ - nclosed_*2 << " electrons in " << nact_ << " orbitals" << endl;
-  cout << "    * time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
   // initialize coefficient to enforce kramers symmetry
-  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
+  if (!relref->kramers() && external_rdm_.empty())
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
 
   // specify active orbitals and move into the active space
   set<int> active_indices;
@@ -218,7 +214,7 @@ void ZCASSCF::init() {
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     for (auto& i : *iactive)
       active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
+    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
   }
 
   coeff_ = scoeff->block_format();
@@ -279,7 +275,7 @@ void ZCASSCF::print_natocc(const VectorB& occup) const {
   assert(occup.size() > 0);
   cout << "  ========       state-averaged       ======== " << endl;
   cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = tsymm_ ? occup.size() / 2 : occup.size();
+  const int num = occup.size() / 2;
   for (int i = 0; i != num; ++i)
     cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
   cout << "  ============================================ " << endl;

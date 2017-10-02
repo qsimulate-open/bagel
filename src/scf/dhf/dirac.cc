@@ -192,9 +192,13 @@ void Dirac::compute() {
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
-    cout << "    * Printing out population analysis to dhf.log" << endl;
-    Muffle muf ("dhf.log");
-    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_, (geom_->magnetism() ? 0 : 1));
+    if (!geom_->magnetism()) {
+      cout << "    * Printing out population analysis to dhf.log" << endl;
+      Muffle muf ("dhf.log");
+      population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+    } else {
+      cout << "    * Population analysis is currently disabled when external magnetic fields are applied" << endl;
+    }
   }
 
 }

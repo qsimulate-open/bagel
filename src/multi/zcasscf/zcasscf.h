@@ -47,9 +47,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool breit_;
     bool natocc_;
 
-    // enforce time-reversal symmetry
-    bool tsymm_;
-
     // RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
 
@@ -121,7 +118,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
     double thresh_overlap() const { return thresh_overlap_; }
-    bool tsymm() const { return tsymm_; }
     double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 

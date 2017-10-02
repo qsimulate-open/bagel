@@ -265,10 +265,10 @@ shared_ptr<RelCoeff_Block> RelCoeff_Block::update_closed_act_positronic(shared_p
 
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
 shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
-                          shared_ptr<const ZMatrix> hcore, const int nele, const bool tsymm, const bool gaunt, const bool breit) const {
+                          shared_ptr<const ZMatrix> hcore, const int nele, const bool gaunt, const bool breit) const {
 
   // quaternion diagonalization has a bug for 2x2 case since there are no super-offdiagonals in a 2x2 and tridiagonalization is probably not possible
-  assert((nact_ != 1 || !tsymm));
+  assert(nact_ != 1);
   assert(nbasis_ == geom->nbasis());
 
   shared_ptr<const ZMatrix> orthog = overlap->tildex(1.0e-9);
@@ -278,7 +278,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
 
   // quaternion diagonalize a fock matrix in MO basis
   shared_ptr<ZMatrix> fock_tilde;
-  if (tsymm) {
+  {
     fock_tilde = make_shared<QuatMatrix>(*s12 % (*focktmp) * *s12);
 #ifndef NDEBUG
     auto quatfock = static_pointer_cast<const QuatMatrix>(fock_tilde);
@@ -288,12 +288,9 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
       cout << "   ** This may result in poor quality orbitals for ZFCI or the ZCASSCF initial guess." << endl;
     }
 #endif
-  } else {
-    fock_tilde = make_shared<ZMatrix>(*s12 % (*focktmp) * *s12);
   }
 
   fock_tilde->diagonalize(eig);
-  if (!tsymm) rearrange_eig(eig, fock_tilde);
 
   // move positronic orbitals to the end and transform to striped format
   auto out = make_shared<const RelCoeff_Kramers>(*s12 * *fock_tilde, nclosed_, nact_, nvirt_nr_, nneg_);
@@ -301,34 +298,28 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_p
 }
 
 
-shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_indices, const int nele, const bool paired) const {
-  const int pairfac = paired ? 1 : 2;
-  const int nmobasis = paired ? npos()/2 : npos();
+shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_indices, const int nele) const {
+  const int nmobasis = npos()/2;
 
   cout << " " << endl;
-  if (!paired) cout << "    * Selecting individual spin-orbitals for the active space." << endl;
   cout << "    ==== Active orbitals : ===== " << endl;
   for (auto& i : active_indices) cout << "         Orbital " << i+1 << endl;
   cout << "    ============================ " << endl << endl;
 
-  if (active_indices.size() != (nact_ * pairfac))
-    throw logic_error("RelCoeff_Striped::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(nact_ * pairfac) + " expected)");
+  if (active_indices.size() != nact_)
+    throw logic_error("RelCoeff_Striped::set_active - Number of active indices does not match number of active orbitals.  (" + to_string(nact_) + " expected)");
   if (any_of(active_indices.begin(), active_indices.end(), [nmobasis](int i){ return (i < 0 || i >= nmobasis); }) )
     throw runtime_error("RelCoeff_Striped::set_active - Invalid MO index provided.  (Should be from 1 to " + to_string(nmobasis) + ")");
 
   auto out = make_shared<RelCoeff_Striped>(ndim(), localized(), nclosed_, nact_, mdim()/4-nclosed_-nact_, nneg());
 
   int iclosed = 0;
-  int iactive = pairfac * nclosed_;
-  int ivirt   = pairfac * (nclosed_ + nact_);
+  int iactive = nclosed_;
+  int ivirt   = nclosed_ + nact_;
 
-  auto cp   = [&out, this, &paired] (const int i, int& pos) {
-    if (paired) {
-      copy_n(element_ptr(0,i*2), nbasis_rel(), out->element_ptr(0, pos*2));
-      copy_n(element_ptr(0,i*2+1), nbasis_rel(), out->element_ptr(0, pos*2+1));
-    } else {
-      copy_n(element_ptr(0,i), nbasis_rel(), out->element_ptr(0, pos));
-    }
+  auto cp = [&out, this] (const int i, int& pos) {
+    copy_n(element_ptr(0,i*2), nbasis_rel(), out->element_ptr(0, pos*2));
+    copy_n(element_ptr(0,i*2+1), nbasis_rel(), out->element_ptr(0, pos*2+1));
     ++pos;
   };
 
@@ -336,7 +327,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
   for (int i = 0; i < nmobasis; ++i) {
     if (active_indices.find(i) != active_indices.end()) {
       cp(i, iactive);
-    } else if (closed_count < (pairfac * nclosed_)) {
+    } else if (closed_count < nclosed_) {
       cp(i, iclosed);
       closed_count++;
     } else {
@@ -344,7 +335,7 @@ shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::set_active(set<int> active_
     }
   }
 
-  if (closed_count != (pairfac * nclosed_))
+  if (closed_count != nclosed_)
     throw runtime_error("Invalid combination of closed and active orbitals.");
 
   // copy positrons

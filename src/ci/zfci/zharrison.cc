@@ -67,8 +67,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   if (gaunt_ != rr->gaunt())
     geom_ = geom_->relativistic(gaunt_);
 
-  // Invoke Kramer's symmetry for any case without magnetic field
-  tsymm_ = !geom_->magnetism();
+  assert(!geom_->magnetism());
 
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
@@ -120,7 +119,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
     } else {
       // then compute Kramers adapated coefficient matrices
       scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
-      scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
+      scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
     }
 
     // Reorder as specified in the input so frontier orbitals contain the desired active space
@@ -130,7 +129,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
       // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
       for (auto& i : *iactive)
         active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
+      scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
     }
     coeff = scoeff->block_format();
   }
@@ -158,7 +157,6 @@ void ZHarrison::print_header() const {
   cout << "  Relativistic FCI calculation" << endl;
   cout << "  ----------------------------" << endl << endl;
   cout << "    * Correlation of " << nele_ << " active electrons in " << norb_ << " orbitals."  << endl;
-  cout << "    * Time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 }

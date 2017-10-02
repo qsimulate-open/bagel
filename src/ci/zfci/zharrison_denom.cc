@@ -35,7 +35,7 @@ using namespace bagel;
 
 void ZHarrison::update(shared_ptr<const RelCoeff_Block> coeff) {
   Timer timer;
-  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, tsymm_, store_half_ints_, store_gaunt_half_ints_);
+  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, store_half_ints_, store_gaunt_half_ints_);
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
   const_denom();
 }
@@ -59,7 +59,7 @@ void ZHarrison::const_denom() {
     }
     (*h)(i) = jop_->mo1e("00", i,i).real();
     // assert for Kramers and symmetry
-    assert((abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8) || !tsymm_);
+    assert(abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8);
     assert(abs(jop_->mo1e("00", i,i).imag()) < 1.0e-8);
   }
   denom_t.tick_print("jop, kop");

@@ -35,8 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const bool gaunt, const bool breit, const bool tsymm)
- : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit), tsymm_(tsymm) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const bool gaunt, const bool breit)
+ : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -102,17 +102,14 @@ void RelMOFile::compress_and_set(shared_ptr<Kramers<2,ZMatrix>> buf1e, shared_pt
 
 shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
   auto out = make_shared<Kramers<2,ZMatrix>>();
-  const int n = tsymm_ ? 3 : 4;
-  for (size_t i = 0; i != n; ++i)
+  for (size_t i = 0; i != 4; ++i)
     out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
-  if (tsymm_)
-    out->emplace({1,1}, out->at({0,0})->get_conjg());
 
   assert(out->size() == 4);
   // symmetry requirement
   assert((*out->at({1,0}) - *out->at({0,1})->transpose_conjg()).rms() < 1.0e-8);
   // Kramers requirement
-  assert((*make_shared<ZMatrix>(*coeff->at(1) % *core_fock_ * *coeff->at(1)) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8 || !tsymm_);
+  assert((*coeff->at(1) % *core_fock_ * *coeff->at(1) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8);
 
   return out;
 }
@@ -198,7 +195,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
         continue;
 
       // we will construct (1111, 1010, 1101, 0100) later
-      if ((tsymm_ && i == 15) || i == 10 || i == 13 || i == 4)
+      if (i == 15 || i == 10 || i == 13 || i == 4)
         continue;
 
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
@@ -222,8 +219,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
     compute(out, true, breit_);
 
   // Kramers and particle symmetry
-  if (tsymm_)
-    (*out)[{1,1,1,1}] = out->at({0,0,0,0})->get_conjg();
+  (*out)[{1,1,1,1}] = out->at({0,0,0,0})->get_conjg();
 
   (*out)[{1,0,1,0}] = out->at({0,1,0,1})->clone();
   shared_ptr<ZMatrix> m1010 = out->at({0,1,0,1})->get_conjg();

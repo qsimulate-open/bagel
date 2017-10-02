@@ -221,7 +221,7 @@ void ZCASSecond::compute() {
     cout << " " << endl;
     cout << "    * Printing out population analysis to casscf.log" << endl;
     muffle_->mute();
-    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_, tsymm_);
+    population_analysis(geom_, coeff_->striped_format()->slice(0, 2*(nclosed_+nact_+nvirtnr_)), overlap_);
     muffle_->unmute();
     pop_timer.tick_print("population analysis");
   }

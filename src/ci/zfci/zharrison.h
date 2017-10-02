@@ -58,9 +58,6 @@ class ZHarrison : public Method {
     bool gaunt_;
     bool breit_;
 
-    // enforce time-reversal symmetry
-    bool tsymm_;
-
     // number of states
     int nstate_;
     std::vector<int> states_;
@@ -109,7 +106,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
+      ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
       std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff();
@@ -118,7 +115,7 @@ class ZHarrison : public Method {
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
+      ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
       std::shared_ptr<const RelCoeff_Block> coeff;
       ar >> coeff;
