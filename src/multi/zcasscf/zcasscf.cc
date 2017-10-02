@@ -26,6 +26,7 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/ci/zfci/relfci.h>
 #include <src/multi/zcasscf/zcasscf.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
@@ -222,7 +223,7 @@ void ZCASSCF::init() {
   muffle_ = make_shared<Muffle>("casscf.log");
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_)
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
+    fci_ = make_shared<RelFCI>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
   muffle_->unmute();
   cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;

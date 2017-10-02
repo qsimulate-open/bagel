@@ -24,13 +24,8 @@
 
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/zfci/relspace.h>
-#include <src/util/exception.h>
 #include <src/util/math/comb.h>
 #include <src/util/math/quatmatrix.h>
-#include <src/mat1e/rel/relhcore.h>
-#include <src/mat1e/giao/relhcore_london.h>
-#include <src/mat1e/rel/reloverlap.h>
-#include <src/mat1e/giao/reloverlap_london.h>
 
 BOOST_CLASS_EXPORT_IMPLEMENT(bagel::ZHarrison)
 
@@ -40,10 +35,8 @@ using namespace bagel;
 ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb,
                      shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), store_half_ints_(store_c), store_gaunt_half_ints_(store_g), restarted_(false) {
-  if (!ref_) throw runtime_error("ZFCI requires a reference object");
 
-  auto rr = dynamic_pointer_cast<const RelReference>(ref_);
-  if (!rr) throw runtime_error("ZFCI currently requires a relativistic reference object");
+  if (!ref_) throw runtime_error("ZHarrison requires a reference object");
 
   const bool frozen = idata_->get<bool>("frozen", false);
   max_iter_ = idata_->get<int>("maxiter", 100);
@@ -55,24 +48,19 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   restart_ = idata_->get<bool>("restart", false);
 
   if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1)
-    throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  For relativistic calculations, use the \"state\" input to give a vector of how many of each spin multiplet to compute.  (e.g., [3, 0, 1] for three singlets and one triplet.)");
+    throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  \
+                        For relativistic calculations, use the \"state\" input to give a vector of how many of each spin multiplet to compute.\
+                        (e.g., [3, 0, 1] for three singlets and one triplet.)");
 
   states_ = idata_->get_vector<int>("state", 0);
   nstate_ = 0;
   for (int i = 0; i != states_.size(); ++i)
     nstate_ += states_[i] * (i+1); // 2S+1 for 0, 1/2, 1, ...
 
-  gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
-  breit_ = idata_->get<bool>("breit", rr->breit());
-  if (gaunt_ != rr->gaunt())
-    geom_ = geom_->relativistic(gaunt_);
-
-  assert(!geom_->magnetism());
-
   if (ncore_ < 0)
     ncore_ = idata_->get<int>("ncore", (frozen ? geom_->num_count_ncore_only()/2 : 0));
   if (norb_  < 0)
-    norb_ = idata_->get<int>("norb", (rr->relcoeff()->mdim()/2-ncore_));
+    norb_ = idata_->get<int>("norb", geom_->nbasis() - ncore_);
 
   // additional charge
   charge_ = idata_->get<int>("charge", 0);
@@ -86,79 +74,17 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
 
   energy_.resize(nstate_);
 
-  print_header();
+  cout << "  ------------------------------" << endl;
+  cout << "  Spin-nonconserving complex FCI" << endl;
+  cout << "  ------------------------------" << endl << endl;
   cout << "    * nstate   : " << setw(6) << nstate_ << endl;
   cout << "    * nclosed  : " << setw(6) << ncore_ << endl;
   cout << "    * nact     : " << setw(6) << norb_ << endl;
-  cout << "    * nvirt    : " << setw(6) << ((coeff_zcas ? coeff_zcas->mdim() : rr->relcoeff_full()->mdim())/2-ncore_-norb_) << endl;
-
-  if (!geom_->dfs())
-    geom_ = geom_->relativistic(gaunt_);
+  cout << "    * nvirt    : " << setw(6) << (coeff_zcas ? coeff_zcas->mdim() : geom_->nbasis()-ncore_-norb_) << endl << endl;
 
   space_ = make_shared<RelSpace>(norb_, nele_);
   int_space_ = make_shared<RelSpace>(norb_, nele_-2, /*mute*/true, /*link up*/true);
 
-  // obtain the coefficient matrix in striped format
-  shared_ptr<const RelCoeff_Block> coeff;
-  if (coeff_zcas) {
-    coeff = coeff_zcas;
-  } else {
-
-    shared_ptr<const ZMatrix> hcore, overlap;
-    if (!geom_->magnetism()) {
-      overlap = make_shared<RelOverlap>(geom_);
-      hcore = make_shared<RelHcore>(geom_);
-    } else {
-      overlap = make_shared<RelOverlap_London>(geom_);
-      hcore = make_shared<RelHcore_London>(geom_);
-    }
-
-    shared_ptr<const RelCoeff_Striped> scoeff;
-    if (rr->kramers()) {
-      scoeff = rr->relcoeff_full();
-    } else {
-      // then compute Kramers adapated coefficient matrices
-      scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
-      scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
-    }
-
-    // Reorder as specified in the input so frontier orbitals contain the desired active space
-    const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-    if (iactive) {
-      set<int> active_indices;
-      // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-      for (auto& i : *iactive)
-        active_indices.insert(lexical_cast<int>(i->data()) - 1);
-      scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
-    }
-    coeff = scoeff->block_format();
-  }
-
-  update(coeff);
-
-  // if integral dump is requested, do it here, and throw Termination
-  const bool only_ints = idata_->get<bool>("only_ints", false);
-  if (only_ints) {
-#ifndef DISABLE_SERIALIZATION
-    OArchive ar("relref");
-    auto rout = make_shared<RelReference>(geom_, coeff->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit());
-    ar << rout;
-    dump_ints();
-    throw Termination("Relativistic MO integrals are dumped on a file.");
-#else
-    throw runtime_error("You must compile with serialization in order to dump MO integrals into a file.");
-#endif
-  }
-}
-
-
-void ZHarrison::print_header() const {
-  cout << "  ----------------------------" << endl;
-  cout << "  Relativistic FCI calculation" << endl;
-  cout << "  ----------------------------" << endl << endl;
-  cout << "    * Correlation of " << nele_ << " active electrons in " << norb_ << " orbitals."  << endl;
-  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 }
 
 

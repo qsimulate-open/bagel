@@ -23,7 +23,7 @@
 //
 
 
-#include <src/ci/zfci/zharrison.h>
+#include <src/ci/zfci/relfci.h>
 
 std::vector<double> relfci_energy(std::string inp) {
 
@@ -48,7 +48,7 @@ std::vector<double> relfci_energy(std::string inp) {
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "zfci") {
-      auto fci = std::make_shared<ZHarrison>(itree, geom, ref);
+      auto fci = std::make_shared<RelFCI>(itree, geom, ref);
       fci->compute();
       std::cout.rdbuf(backup_stream);
       return fci->energy();
