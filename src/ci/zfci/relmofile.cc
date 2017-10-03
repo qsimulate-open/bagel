@@ -35,8 +35,8 @@
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co, const bool gaunt, const bool breit)
- : geom_(geom), coeff_(co), gaunt_(gaunt), breit_(breit) {
+RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co)
+ : geom_(geom), coeff_(co) {
   // density fitting is assumed
   assert(geom_->df());
 }
@@ -51,15 +51,11 @@ void RelMOFile::init(const int nstart, const int nfence, const bool store_c, con
   assert(geom_->dfs());
 
   // calculates the core fock matrix
-  shared_ptr<const ZMatrix> hcore;
-  if (!geom_->magnetism())
-    hcore = make_shared<RelHcore>(geom_);
-  else
-    hcore = make_shared<RelHcore_London>(geom_);
+  shared_ptr<const ZMatrix> hcore = compute_hcore(); 
 
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nstart), gaunt_, breit_, store_c, /*robust*/breit_, /*scale_J*/1.0, /*scale_K*/1.0, store_g);
+    core_fock_ = compute_fock(hcore, nstart, store_c, store_g);
     const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
@@ -115,8 +111,27 @@ shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,Z
 }
 
 
+//// RelJop functions ////
+
+RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const int nfence, shared_ptr<const RelCoeff_Block> coeff,
+               const bool gaunt, const bool breit, const bool store_c, const bool store_g)
+ : RelMOFile(geom, coeff), gaunt_(gaunt), breit_(breit) {
+  init(nstart, nfence, store_c, store_g);
+}
+
+
+shared_ptr<ZMatrix> RelJop::compute_hcore() const {
+  return make_shared<RelHcore>(geom_);
+}
+
+
+shared_ptr<ZMatrix> RelJop::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const {
+  return make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nclosed), gaunt_, breit_, store_c, /*robust*/breit_, /*scale_J*/1.0, /*scale_K*/1.0, store_g);
+}
+
+
 tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
-  RelMOFile::compute_half(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit) {
+  RelJop::compute_half(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit) {
 
   assert(!breit || gaunt);
   // (1) make DFDists
@@ -251,7 +266,7 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
 }
 
 
-shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
+shared_ptr<ListRelDFFull> RelJop::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<RelDFHalf>> half, const bool appj) {
   list<shared_ptr<const RelDFHalf>> halfc;
   for (auto& i : half)
     halfc.push_back(i);
@@ -259,7 +274,7 @@ shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coef
 }
 
 
-shared_ptr<ListRelDFFull> RelMOFile::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<const RelDFHalf>> half, const bool appj) {
+shared_ptr<ListRelDFFull> RelJop::compute_full(shared_ptr<const ZMatrix> coeff, list<shared_ptr<const RelDFHalf>> half, const bool appj) {
   // TODO remove once DFDistT class is fixed
   const bool transform_with_full = !(half.front()->nocc()*coeff->mdim() <= mpi__->size());
   if (!transform_with_full && appj) {

@@ -45,9 +45,6 @@ class RelMOFile {
     std::shared_ptr<const RelCoeff_Block> coeff_;
     std::shared_ptr<Kramers<1,ZMatrix>> kramers_coeff_;
 
-    bool gaunt_;
-    bool breit_;
-
     // creates integral files and returns the core energy.
     void init(const int nstart, const int nfence, const bool store_c, const bool store_g);
 
@@ -59,12 +56,13 @@ class RelMOFile {
     void compress_and_set(std::shared_ptr<Kramers<2,ZMatrix>> buf1e,
                           std::shared_ptr<Kramers<4,ZMatrix>> buf2e);
 
+    virtual std::shared_ptr<ZMatrix> compute_hcore() const = 0;
+    virtual std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const = 0;
     virtual std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
     virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
 
   public:
-    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>,
-              const bool gaunt, const bool breit);
+    RelMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -84,22 +82,27 @@ class RelMOFile {
 
     std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
 
-    static std::tuple<std::list<std::shared_ptr<RelDFHalf>>, std::list<std::shared_ptr<RelDFHalf>>>
-      compute_half(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit);
-    static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<RelDFHalf>> half, const bool appj);
-    static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<const RelDFHalf>> half, const bool appj);
 };
 
 
 class RelJop : public RelMOFile {
   protected:
+    bool gaunt_;
+    bool breit_;
+
+    std::shared_ptr<ZMatrix> compute_hcore() const override;
+    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const override;
     std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
 
   public:
     RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const RelCoeff_Block> coeff,
-      const bool gaunt, const bool breit, const bool store_c = false, const bool store_g = false)
-      : RelMOFile(geom, coeff, gaunt, breit) { init(nstart, nfence, store_c, store_g); }
+           const bool gaunt, const bool breit, const bool store_c = false, const bool store_g = false);
+
+    static std::tuple<std::list<std::shared_ptr<RelDFHalf>>, std::list<std::shared_ptr<RelDFHalf>>>
+      compute_half(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit);
+    static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<RelDFHalf>> half, const bool appj);
+    static std::shared_ptr<ListRelDFFull> compute_full(std::shared_ptr<const ZMatrix> coeff, std::list<std::shared_ptr<const RelDFHalf>> half, const bool appj);
 };
 
 }

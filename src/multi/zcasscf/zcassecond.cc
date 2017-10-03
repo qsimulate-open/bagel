@@ -102,7 +102,7 @@ void ZCASSecond::compute() {
     list<shared_ptr<const RelDFHalf>> halfac;
     {
       list<shared_ptr<RelDFHalf>> halfac_0j;
-      tie(halfac_0j, ignore) = RelMOFile::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
+      tie(halfac_0j, ignore) = RelJop::compute_half(geom_, coeff_->slice_copy(nclosed_*2, nocc_*2), false, false);
       for (auto& i : halfac_0j)
         halfac.push_back(i->apply_JJ());
     }
@@ -301,7 +301,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
       shared_ptr<const ZMatrix> ccoeff_slice = (nbatch == 1) ? ccoeff : make_shared<ZMatrix>(ccoeff->slice(itable.first, itable.first+itable.second));
 
       list<shared_ptr<RelDFHalf>> tmp;
-      tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff_slice, false, false);
+      tie(tmp, ignore) = RelJop::compute_half(geom_, tcoeff_slice, false, false);
       list<shared_ptr<const RelDFHalf>> halftc_slice;
       for (auto& i : tmp)
         halftc_slice.push_back(i);
@@ -324,7 +324,7 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   // g(t_va - t_ca)
   auto tcoeff = make_shared<ZMatrix>(nclosed_ ? (*vcoeff * *va - *ccoeff * *ca) : *vcoeff * *va);
   list<shared_ptr<RelDFHalf>> tmp;
-  tie(tmp, ignore) = RelMOFile::compute_half(geom_, tcoeff, false, false);
+  tie(tmp, ignore) = RelJop::compute_half(geom_, tcoeff, false, false);
   list<shared_ptr<const RelDFHalf>> halftac;
   for (auto& i : tmp)
     halftac.push_back(i);
@@ -358,23 +358,23 @@ shared_ptr<ZRotFile> ZCASSecond::compute_hess_trial(shared_ptr<const ZRotFile> t
   }
   // compute Q' and Q''
   {
-    shared_ptr<const ListRelDFFull> fullaa = RelMOFile::compute_full(acoeff, halfac,  /*apply_j*/false);
-    shared_ptr<      ListRelDFFull> fullta = RelMOFile::compute_full(acoeff, halftac, /*apply_j*/false);
+    shared_ptr<const ListRelDFFull> fullaa = RelJop::compute_full(acoeff, halfac,  /*apply_j*/false);
+    shared_ptr<      ListRelDFFull> fullta = RelJop::compute_full(acoeff, halftac, /*apply_j*/false);
     shared_ptr<const ListRelDFFull> fulltas = fullta->swap();
     fullta->ax_plus_y(1.0, fulltas);
 
     shared_ptr<const ListRelDFFull> fullaaD = fullaa->apply_2rdm(fci_->rdm2_av());
     shared_ptr<const ListRelDFFull> fulltaD = fullta->apply_2rdm(fci_->rdm2_av());
     {
-      shared_ptr<const ListRelDFFull> fullva  = RelMOFile::compute_full(vcoeff, halfac,  /*apply_j*/false);
-      shared_ptr<const ListRelDFFull> fullvta = RelMOFile::compute_full(vcoeff, halftac, /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullva  = RelJop::compute_full(vcoeff, halfac,  /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullvta = RelJop::compute_full(vcoeff, halftac, /*apply_j*/false);
       shared_ptr<const ZMatrix> qp  = fullva->form_2index(fulltaD, 1.0, false)->get_conjg();
       shared_ptr<const ZMatrix> qpp = fullvta->form_2index(fullaaD, 1.0, false)->get_conjg();
       sigma->ax_plus_y_va( 4.0, *qp + *qpp);
     }
     if (nclosed_) {
-      shared_ptr<const ListRelDFFull> fullca  = RelMOFile::compute_full(ccoeff, halfac,  /*apply_j*/false);
-      shared_ptr<const ListRelDFFull> fullcta = RelMOFile::compute_full(ccoeff, halftac, /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullca  = RelJop::compute_full(ccoeff, halfac,  /*apply_j*/false);
+      shared_ptr<const ListRelDFFull> fullcta = RelJop::compute_full(ccoeff, halftac, /*apply_j*/false);
       shared_ptr<const ZMatrix> qp  = fullca->form_2index(fulltaD, 1.0, false)->get_conjg();
       shared_ptr<const ZMatrix> qpp = fullcta->form_2index(fullaaD, 1.0, false)->get_conjg();
       sigma->ax_plus_y_ca(-4.0, *qp + *qpp);

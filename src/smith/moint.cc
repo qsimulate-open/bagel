@@ -95,14 +95,14 @@ void K2ext<complex<double>>::init() {
     for (auto& i0 : blocks_[0]) {
       shared_ptr<const ZMatrix> i0coeff = coeff_->slice_copy(i0.offset(), i0.offset()+i0.size());
       list<shared_ptr<RelDFHalf>> half, half2;
-      tie(half, half2) = RelMOFile::compute_half(info_->geom(), i0coeff, gaunt, breit);
+      tie(half, half2) = RelJop::compute_half(info_->geom(), i0coeff, gaunt, breit);
 
       for (auto& i1 : blocks_[1]) {
         shared_ptr<const ZMatrix> i1coeff = coeff_->slice_copy(i1.offset(), i1.offset()+i1.size());
         shared_ptr<const ListRelDFFull> full, full2;
-        full = RelMOFile::compute_full(i1coeff, half, true);
+        full = RelJop::compute_full(i1coeff, half, true);
         if (breit)
-          full2 = RelMOFile::compute_full(i1coeff, half2, false);
+          full2 = RelJop::compute_full(i1coeff, half2, false);
 
         for (auto& a : aux)
           if (a.offset() == astart) {
