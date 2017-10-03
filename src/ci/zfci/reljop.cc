@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: relmofile.cc
+// Filename: reljop.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Michael Caldwell <caldwell@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,100 +22,17 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <src/util/f77.h>
-#include <src/util/prim_op.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/mat1e/rel/relhcore.h>
-#include <src/mat1e/giao/relhcore_london.h>
 #include <src/scf/dhf/dfock.h>
 
 using namespace std;
 using namespace bagel;
 
-RelMOFile::RelMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co)
- : geom_(geom), coeff_(co) {
-  // density fitting is assumed
-  assert(geom_->df());
-}
-
-
-// nstart and nfence are based on the convention in Dirac calculations
-void RelMOFile::init(const int nstart, const int nfence, const bool store_c, const bool store_g) {
-  // first compute all the AO integrals in core
-  nbasis_ = geom_->nbasis();
-  nocc_ = (nfence - nstart)/2;
-  assert((nfence - nstart) % 2 == 0);
-  assert(geom_->dfs());
-
-  // calculates the core fock matrix
-  shared_ptr<const ZMatrix> hcore = compute_hcore(); 
-
-  if (nstart != 0) {
-    shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();
-    core_fock_ = compute_fock(hcore, nstart, store_c, store_g);
-    const complex<double> prod = (*den * (*hcore+*core_fock_)).trace();
-    if (fabs(prod.imag()) > 1.0e-12) {
-      stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
-      cout << ss.str() << endl;
-    }
-    core_energy_ = 0.5*prod.real();
-  } else {
-    core_fock_ = hcore;
-    core_energy_ = 0.0;
-  }
-
-  kramers_coeff_ = coeff_->kramers_active();
-
-  // calculate 1-e MO integrals
-  shared_ptr<Kramers<2,ZMatrix>> buf1e = compute_mo1e(kramers_coeff_);
-
-  // calculate 2-e MO integrals
-  shared_ptr<Kramers<4,ZMatrix>> buf2e = compute_mo2e(kramers_coeff_);
-
-  // compress and set mo1e_ and mo2e_
-  compress_and_set(buf1e, buf2e);
-}
-
-
-void RelMOFile::compress_and_set(shared_ptr<Kramers<2,ZMatrix>> buf1e, shared_ptr<Kramers<4,ZMatrix>> buf2e) {
-  mo1e_ = buf1e;
-  mo2e_ = make_shared<Kramers<4,ZMatrix>>();
-
-  // Harrison requires <ij|kl> = (ik|jl)
-  for (auto& mat : *buf2e) {
-    shared_ptr<ZMatrix> tmp = mat.second->clone();
-    sort_indices<0,2,1,3,0,1,1,1>(mat.second->data(), tmp->data(), nocc_, nocc_, nocc_, nocc_);
-    bitset<4> s = mat.first.tag();
-    s[2] = mat.first.tag()[1];
-    s[1] = mat.first.tag()[2];
-    mo2e_->emplace(s, tmp);
-  }
-}
-
-
-shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
-  auto out = make_shared<Kramers<2,ZMatrix>>();
-  for (size_t i = 0; i != 4; ++i)
-    out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
-
-  assert(out->size() == 4);
-  // symmetry requirement
-  assert((*out->at({1,0}) - *out->at({0,1})->transpose_conjg()).rms() < 1.0e-8);
-  // Kramers requirement
-  assert((*coeff->at(1) % *core_fock_ * *coeff->at(1) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8);
-
-  return out;
-}
-
-
-//// RelJop functions ////
 
 RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const int nfence, shared_ptr<const RelCoeff_Block> coeff,
                const bool gaunt, const bool breit, const bool store_c, const bool store_g)
- : RelMOFile(geom, coeff), gaunt_(gaunt), breit_(breit) {
+ : ZMOFile(geom, coeff), gaunt_(gaunt), breit_(breit) {
   init(nstart, nfence, store_c, store_g);
 }
 
@@ -180,6 +97,21 @@ tuple<list<shared_ptr<RelDFHalf>>,list<shared_ptr<RelDFHalf>>>
 }
 
 
+shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
+  auto out = make_shared<Kramers<2,ZMatrix>>();
+  for (size_t i = 0; i != 4; ++i)
+    out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
+
+  assert(out->size() == 4);
+  // symmetry requirement
+  assert((*out->at({1,0}) - *out->at({0,1})->transpose_conjg()).rms() < 1.0e-8);
+  // Kramers requirement
+  assert((*coeff->at(1) % *core_fock_ * *coeff->at(1) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8);
+
+  return out;
+}
+
+
 shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
 
   auto compute = [&coeff, this](shared_ptr<Kramers<4,ZMatrix>> out, const bool gaunt, const bool breit) {
@@ -227,7 +159,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
   };
 
   auto out = make_shared<Kramers<4,ZMatrix>>();
-  // Dirac-Coulomb term
   compute(out, false, false);
 
   if (gaunt_)

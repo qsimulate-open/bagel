@@ -32,8 +32,8 @@
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/wfn/relreference.h>
-#include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>

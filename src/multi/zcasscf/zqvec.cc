@@ -23,7 +23,7 @@
 //
 
 #include <src/multi/zcasscf/zqvec.h>
-#include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/reljop.h>
 
 using namespace std;
 using namespace bagel;

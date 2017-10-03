@@ -28,7 +28,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/zcasscf/zcassecond.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 

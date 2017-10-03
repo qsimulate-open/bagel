@@ -32,7 +32,7 @@
 #include <src/util/math/davidson.h>
 #include <src/wfn/method.h>
 #include <src/wfn/relreference.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/zmofile.h>
 #include <src/ci/zfci/reldvec.h>
 
 namespace bagel {
@@ -65,7 +65,7 @@ class ZHarrison : public Method {
     std::shared_ptr<RelZDvec> cc_;
 
     // MO integrals
-    std::shared_ptr<RelMOFile> jop_;
+    std::shared_ptr<ZMOFile> jop_;
 
     // Determinant space
     std::shared_ptr<const RelSpace> space_;
@@ -133,8 +133,8 @@ class ZHarrison : public Method {
 
     // run-time functions.
     // aaaa and bbbb
-    void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
+    void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop, const bool trans = false) const;
+    void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop, const bool trans = false) const;
 
     void sigma_1e_annih_a(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_1e_annih_b(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
@@ -145,20 +145,20 @@ class ZHarrison : public Method {
     void sigma_2e_create_bb(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2e_create_ab(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
-    void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop) const;
 
     template<int i, int j, int k, int l,
              class = typename std::enable_if<i/2 == 0 and j/2 == 0 and k/2 == 0 and l/2 == 0>::type
             >
-    void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
+    void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
       std::bitset<4> bit4((i<<3)+(j<<2)+(k<<1)+l);
       btas::contract(fac, *d, {0,1,2}, *jop->mo2e(trans ? ~bit4 : bit4), {3,2}, std::complex<double>(0.0), *e, {0,1,3});
     }
 
-    void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+    void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const ZMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
 #ifdef HAVE_MPI_H
-    int sigma_one_parallel(const int icnt, std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+    int sigma_one_parallel(const int icnt, std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const ZMOFile> jop,
                            const int istate, const bool diag, const bool trans) const;
 #endif
 
@@ -174,7 +174,7 @@ class ZHarrison : public Method {
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
               const int ncore, const int nocc, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g);
 
-    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
+    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const;
 
     virtual void update(std::shared_ptr<const RelCoeff_Block> coeff) = 0;
     virtual void compute() override;
@@ -193,7 +193,7 @@ class ZHarrison : public Method {
     double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
-    std::shared_ptr<const RelMOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMOFile> jop() const { return jop_; }
 
     // functions related to RDMs
     void compute_rdm12();

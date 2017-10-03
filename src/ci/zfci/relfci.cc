@@ -23,6 +23,7 @@
 //
 
 #include <src/ci/zfci/relfci.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/rel/reloverlap.h>
 #include <src/util/exception.h>

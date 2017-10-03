@@ -28,6 +28,7 @@
 #include <src/multi/zcasscf/zcassecond.h>
 #include <src/scf/dhf/population_analysis.h>
 #include <src/prop/pseudospin/pseudospin.h>
+#include <src/ci/zfci/reljop.h>
 
 using namespace std;
 using namespace bagel;

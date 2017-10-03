@@ -30,7 +30,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/df/reldffull.h>
 #include <src/scf/dhf/dfock.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/util/math/quatmatrix.h>
 
 using namespace std;
