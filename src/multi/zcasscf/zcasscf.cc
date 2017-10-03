@@ -130,7 +130,7 @@ void ZCASSCF::init() {
 
   // set coefficient
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
-  shared_ptr<const RelCoeff_Striped> scoeff;
+  shared_ptr<const ZCoeff_Striped> scoeff;
   if (hcore_guess) {
     auto s12 = overlap_->tildex(thresh_overlap_);
     if (s12->mdim() != s12->ndim())
@@ -139,7 +139,7 @@ void ZCASSCF::init() {
     auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
     VectorB eig(hctmp->ndim());
     hctmp->diagonalize(eig);
-    scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
+    scoeff = make_shared<const ZCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
   } else if (nr_coeff_ == nullptr) {
 
     // first set coefficient
@@ -160,7 +160,7 @@ void ZCASSCF::init() {
         shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
         c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
 
-        scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
+        scoeff = make_shared<ZCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
         scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, gaunt_, breit_);
 #ifndef NDEBUG
         ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
@@ -169,7 +169,7 @@ void ZCASSCF::init() {
       }
     }
 
-    scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
+    scoeff = make_shared<const ZCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
   } else {
     if (nr_coeff_->ndim() != nr_coeff_->mdim())
       remove_lindep(4*nr_coeff_->mdim());
@@ -253,9 +253,9 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 }
 
 
-shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
+shared_ptr<const ZCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const ZCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
-  auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
+  auto cnew = make_shared<ZCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
   cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, cold->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
   return cnew;
 }

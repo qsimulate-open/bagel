@@ -115,7 +115,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     unit.inverse_half();
     *c *= unit;
 
-    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    auto c2 = make_shared<ZCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
   } else {
 
@@ -132,7 +132,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     sold->sqrt();
     auto c = make_shared<ZMatrix>(*snew * *sold * *relcoeff_);
 
-    auto c2 = make_shared<RelCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
+    auto c2 = make_shared<ZCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
   }
   return out;

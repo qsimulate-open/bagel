@@ -28,7 +28,7 @@
 #include <src/util/kramers.h>
 #include <src/util/math/zmatrix.h>
 #include <src/wfn/geometry.h>
-#include <src/wfn/relcoeff.h>
+#include <src/wfn/zcoeff.h>
 
 namespace bagel {
 
@@ -40,7 +40,7 @@ class ZMOFile {
 
     std::shared_ptr<const Geometry> geom_;
     std::shared_ptr<const ZMatrix> core_fock_;
-    std::shared_ptr<const RelCoeff_Block> coeff_;
+    std::shared_ptr<const ZCoeff_Block> coeff_;
     std::shared_ptr<Kramers<1,ZMatrix>> kramers_coeff_;
 
     // creates integral files and returns the core energy.
@@ -60,7 +60,7 @@ class ZMOFile {
     virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
 
   public:
-    ZMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const RelCoeff_Block>);
+    ZMOFile(const std::shared_ptr<const Geometry>, std::shared_ptr<const ZCoeff_Block>);
 
     std::shared_ptr<const ZMatrix> core_fock() const { return core_fock_; }
 
@@ -78,7 +78,7 @@ class ZMOFile {
 
     double core_energy() const { return core_energy_; }
 
-    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
+    std::shared_ptr<const ZCoeff_Block> coeff() const { return coeff_; }
 
 };
 

@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-ZMOFile::ZMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const RelCoeff_Block> co)
+ZMOFile::ZMOFile(const shared_ptr<const Geometry> geom, shared_ptr<const ZCoeff_Block> co)
  : geom_(geom), coeff_(co) {
   // density fitting is assumed
   assert(geom_->df());

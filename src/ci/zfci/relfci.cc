@@ -32,7 +32,7 @@ using namespace std;
 using namespace bagel;
 
 RelFCI::RelFCI(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_ptr<const Reference> b,
-               const int ncore, const int nocc, shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
+               const int ncore, const int nocc, shared_ptr<const ZCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
  : ZHarrison(a, g, b, ncore, nocc, coeff_zcas, store_c, store_g) {
 
   cout << "    * Relativistic FCI" << endl;
@@ -47,7 +47,7 @@ RelFCI::RelFCI(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_p
   breit_ = idata_->get<bool>("breit", rr->breit());
   assert(!geom_->magnetism());
 
-  shared_ptr<const RelCoeff_Block> coeff = coeff_zcas;
+  shared_ptr<const ZCoeff_Block> coeff = coeff_zcas;
   if (!coeff)
     coeff = init_coeff();
   update(coeff);
@@ -75,7 +75,7 @@ void RelFCI::dump_integrals_and_exit() const {
 
 
 // obtain the coefficient matrix in striped format
-shared_ptr<const RelCoeff_Block> RelFCI::init_coeff() {
+shared_ptr<const ZCoeff_Block> RelFCI::init_coeff() {
   // in case reference is not relativistic...
   if (!geom_->dfs())
     geom_ = geom_->relativistic(gaunt_);
@@ -86,12 +86,12 @@ shared_ptr<const RelCoeff_Block> RelFCI::init_coeff() {
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   assert(rr);
 
-  shared_ptr<const RelCoeff_Striped> scoeff;
+  shared_ptr<const ZCoeff_Striped> scoeff;
   if (rr->kramers()) {
     scoeff = rr->relcoeff_full();
   } else {
     // then compute Kramers adapated coefficient matrices
-    scoeff = make_shared<const RelCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
+    scoeff = make_shared<const ZCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
     scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
   }
 
@@ -108,7 +108,7 @@ shared_ptr<const RelCoeff_Block> RelFCI::init_coeff() {
 }
 
 
-void RelFCI::update(shared_ptr<const RelCoeff_Block> coeff) {
+void RelFCI::update(shared_ptr<const ZCoeff_Block> coeff) {
   if (!geom_->dfs())
     geom_ = geom_->relativistic(gaunt_);
 

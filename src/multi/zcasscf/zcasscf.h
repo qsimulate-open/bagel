@@ -61,7 +61,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int max_iter_;
     int max_micro_iter_;
 
-    std::shared_ptr<const RelCoeff_Block> coeff_;
+    std::shared_ptr<const ZCoeff_Block> coeff_;
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
@@ -87,7 +87,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // used to zero out elements for positronic-electronic rotations
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
-    std::shared_ptr<RelCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
+    std::shared_ptr<ZCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
 
   public:
     ZCASSCF(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
@@ -96,7 +96,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     std::shared_ptr<const Reference> conv_to_ref() const override;
 
-    std::shared_ptr<const RelCoeff_Block> update_coeff(std::shared_ptr<const RelCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
+    std::shared_ptr<const ZCoeff_Block> update_coeff(std::shared_ptr<const ZCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
     // kramers adapt for RotFile is a static function!
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
@@ -122,7 +122,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
-    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
+    std::shared_ptr<const ZCoeff_Block> coeff() const { return coeff_; }
 };
 
 }

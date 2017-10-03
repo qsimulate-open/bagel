@@ -81,7 +81,7 @@ void ZCASSCF::kramers_adapt(shared_ptr<ZRotFile> o, const int nclosed, const int
 }
 
 
-shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
+shared_ptr<ZCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
   // constructs a relativistic coefficient for electronic components from a non-rel coefficient
   const int n = nr_coeff->ndim();
   const int m = nr_coeff->mdim();
@@ -104,7 +104,7 @@ shared_ptr<RelCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix
   *tcoeff = *t12 * (*shalf % *tcoeff);
 
   // build output coefficient matrix
-  auto out = make_shared<RelCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
+  auto out = make_shared<ZCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
   assert(out->mdim() == 4*tcoeff->mdim());
   out->copy_real_block(1.0, 0, 0, n, m, *nr_coeff);
   out->copy_real_block(1.0, n, 2*m, n, m, *nr_coeff);

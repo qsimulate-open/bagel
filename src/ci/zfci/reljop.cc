@@ -30,7 +30,7 @@ using namespace std;
 using namespace bagel;
 
 
-RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const int nfence, shared_ptr<const RelCoeff_Block> coeff,
+RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const int nfence, shared_ptr<const ZCoeff_Block> coeff,
                const bool gaunt, const bool breit, const bool store_c, const bool store_g)
  : ZMOFile(geom, coeff), gaunt_(gaunt), breit_(breit) {
   init(nstart, nfence, store_c, store_g);

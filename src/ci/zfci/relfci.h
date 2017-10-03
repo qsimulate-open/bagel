@@ -36,7 +36,7 @@ class RelFCI : public ZHarrison {
     bool breit_;
 
     void dump_integrals_and_exit() const override;
-    std::shared_ptr<const RelCoeff_Block> init_coeff() override;
+    std::shared_ptr<const ZCoeff_Block> init_coeff() override;
 
   private:
     friend class boost::serialization::access;
@@ -47,8 +47,8 @@ class RelFCI : public ZHarrison {
 
   public:
     RelFCI(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-           const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store_c = false, const bool store_g = false);
-    void update(std::shared_ptr<const RelCoeff_Block> coeff) override;
+           const int ncore = -1, const int nocc = -1, std::shared_ptr<const ZCoeff_Block> coeff_zcas = nullptr, const bool store_c = false, const bool store_g = false);
+    void update(std::shared_ptr<const ZCoeff_Block> coeff) override;
 };
 
 }

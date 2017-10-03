@@ -185,7 +185,7 @@ void ZCASSecond::compute() {
     }
     auto R = make_shared<ZMatrix>(*a ^ *atmp);
     kramers_adapt(R, nvirt_);
-    coeff_ = make_shared<RelCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
+    coeff_ = make_shared<ZCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
 
     if (iter == max_iter_-1) {
       if (external_rdm_.empty() && !conv_ignore_) {

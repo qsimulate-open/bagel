@@ -105,7 +105,7 @@ class ZHarrison : public Method {
       ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff();
+      std::shared_ptr<const ZCoeff_Block> coeff = jop_->coeff();
       ar << coeff;
     }
     template<class Archive>
@@ -113,7 +113,7 @@ class ZHarrison : public Method {
       ar >> boost::serialization::base_object<Method>(*this);
       ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
-      std::shared_ptr<const RelCoeff_Block> coeff;
+      std::shared_ptr<const ZCoeff_Block> coeff;
       ar >> coeff;
       update(coeff);
       restarted_ = true;
@@ -126,7 +126,7 @@ class ZHarrison : public Method {
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb) const;
 
     // pure virtual functions to be implemented by derived classes
-    virtual std::shared_ptr<const RelCoeff_Block> init_coeff() = 0; 
+    virtual std::shared_ptr<const ZCoeff_Block> init_coeff() = 0; 
     virtual void dump_integrals_and_exit() const = 0; 
 
     void const_denom();
@@ -172,11 +172,11 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore, const int nocc, std::shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g);
+              const int ncore, const int nocc, std::shared_ptr<const ZCoeff_Block> coeff_zcas, const bool store_c, const bool store_g);
 
     std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const;
 
-    virtual void update(std::shared_ptr<const RelCoeff_Block> coeff) = 0;
+    virtual void update(std::shared_ptr<const ZCoeff_Block> coeff) = 0;
     virtual void compute() override;
 
     // returns members
@@ -227,13 +227,13 @@ class ZHarrison : public Method {
 // only for RDM computation.
 class ZFCI_bare : public ZHarrison {
   protected:
-    std::shared_ptr<const RelCoeff_Block> init_coeff() override { assert(false); }
+    std::shared_ptr<const ZCoeff_Block> init_coeff() override { assert(false); }
     void dump_integrals_and_exit() const override { assert(false); }
 
   public:
     ZFCI_bare(std::shared_ptr<const RelCIWfn> ci);
     void compute() override { assert(false); }
-    void update(std::shared_ptr<const RelCoeff_Block>) override { assert(false); }
+    void update(std::shared_ptr<const ZCoeff_Block>) override { assert(false); }
 };
 
 }

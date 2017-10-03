@@ -33,7 +33,7 @@ using namespace std;
 using namespace bagel;
 
 ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g, shared_ptr<const Reference> r, const int ncore, const int norb,
-                     shared_ptr<const RelCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
+                     shared_ptr<const ZCoeff_Block> coeff_zcas, const bool store_c, const bool store_g)
  : Method(idat, g, r), ncore_(ncore), norb_(norb), store_half_ints_(store_c), store_gaunt_half_ints_(store_g), restarted_(false) {
 
   if (!ref_) throw runtime_error("ZHarrison requires a reference object");
