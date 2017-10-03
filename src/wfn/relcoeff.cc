@@ -227,42 +227,6 @@ shared_ptr<RelCoeff_Block> RelCoeff_Block::active_part() const {
 }
 
 
-shared_ptr<RelCoeff_Block> RelCoeff_Block::closed_act_positronic() const {
-  const int nneg2 = nneg_/2;
-  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, 0, nneg_);
-  out->copy_block(0, 0,              ndim(), 2*nocc(), slice(0,                  2*nocc()));
-  out->copy_block(0, 2*nocc(),       ndim(),    nneg2, slice(2*nocc()+nvirt_nr_, 2*nocc()+nvirt_rel()));
-  out->copy_block(0, 2*nocc()+nneg2, ndim(),    nneg2, slice(npos()+nneg2,       npos()+nneg_));
-  return out;
-}
-
-
-shared_ptr<RelCoeff_Block> RelCoeff_Block::update_electronic(shared_ptr<const ZMatrix> newcoeff) const {
-  assert(newcoeff->ndim() == ndim() && newcoeff->mdim() == npos());
-  const int nneg2 = nneg_/2;
-  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-  out->copy_block(0,        0,                   ndim(), 2*nocc(),  newcoeff->slice(0,                          2*nocc()));                   // closed and active
-  out->copy_block(0, 2*nocc(),                   ndim(), nvirt_nr_, newcoeff->slice(2*nocc(),                   2*nocc()+  nvirt_nr_));       // + virtuals
-  out->copy_block(0, 2*nocc()+  nvirt_nr_,       ndim(), nneg2,               slice(2*nocc()+  nvirt_nr_,       2*nocc()+  nvirt_nr_+nneg2)); // + positronic
-  out->copy_block(0, 2*nocc()+  nvirt_nr_+nneg2, ndim(), nvirt_nr_, newcoeff->slice(2*nocc()+  nvirt_nr_,       2*nocc()+2*nvirt_nr_));       // - virtuals
-  out->copy_block(0, 2*nocc()+2*nvirt_nr_+nneg2, ndim(), nneg2,               slice(2*nocc()+2*nvirt_nr_+nneg2, 2*nocc()+2*nvirt_nr_+nneg_)); // - positronic
-  return out;
-}
-
-
-shared_ptr<RelCoeff_Block> RelCoeff_Block::update_closed_act_positronic(shared_ptr<const ZMatrix> newcoeff) const {
-  assert(newcoeff->ndim() == ndim() && newcoeff->mdim() == nneg_+2*nocc());
-  const int nneg2 = nneg_/2;
-  auto out = make_shared<RelCoeff_Block>(ndim(), localized(), nclosed_, nact_, nvirt_nr_, nneg_);
-  out->copy_block(0,        0,                   ndim(), 2*nocc(),  newcoeff->slice(0,                        2*nocc()));                   // closed and active
-  out->copy_block(0, 2*nocc(),                   ndim(), nvirt_nr_,           slice(2*nocc(),                 2*nocc()+nvirt_nr_));         // + virtuals
-  out->copy_block(0, 2*nocc()+  nvirt_nr_,       ndim(), nneg2,     newcoeff->slice(2*nocc(),                 2*nocc()+nneg2));             // + positronic
-  out->copy_block(0, 2*nocc()+  nvirt_nr_+nneg2, ndim(), nvirt_nr_,           slice(2*nocc()+nvirt_nr_+nneg2, 2*nocc()+2*nvirt_nr_+nneg2)); // - virtuals
-  out->copy_block(0, 2*nocc()+2*nvirt_nr_+nneg2, ndim(), nneg2,     newcoeff->slice(2*nocc()+nneg2,           2*nocc()+nneg_));             // - positronic
-  return out;
-}
-
-
 // Kramers-adapted coefficient via quaternion diagonalization, assuming guess orbitals from Dirac--Hartree--Fock
 shared_ptr<const RelCoeff_Striped> RelCoeff_Striped::init_kramers_coeff(shared_ptr<const Geometry> geom, shared_ptr<const ZMatrix> overlap,
                           shared_ptr<const ZMatrix> hcore, const int nele, const bool gaunt, const bool breit) const {

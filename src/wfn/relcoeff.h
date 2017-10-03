@@ -147,9 +147,6 @@ class RelCoeff_Block : public RelCoeff {
     std::shared_ptr<RelCoeff_Block> closed_part() const;
     std::shared_ptr<RelCoeff_Block> active_part() const;
     std::shared_ptr<RelCoeff_Block> electronic_part() const;
-    std::shared_ptr<RelCoeff_Block> closed_act_positronic() const;
-    std::shared_ptr<RelCoeff_Block> update_electronic(std::shared_ptr<const ZMatrix> newcoeff) const;
-    std::shared_ptr<RelCoeff_Block> update_closed_act_positronic(std::shared_ptr<const ZMatrix> newcoeff) const;
 
     std::shared_ptr<RelCoeff_Striped> striped_format() const;
     std::shared_ptr<Kramers<1,ZMatrix>> kramers_active() const;
