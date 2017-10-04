@@ -95,10 +95,10 @@ class ZCoeff_Striped : public ZCoeff_base {
 
   public:
     // standard constructor; copy data directly from _coeff
-    ZCoeff_Striped(const ZMatView& _coeff, const int nclosed, const int nact, const int nvirt, const int nneg, const bool move_neg = false);
+    ZCoeff_Striped(const ZMatView& _coeff, const int nclosed, const int nact, const int nvirt, const int nneg = 0, const bool move_neg = false);
 
     // construct an empty ZCoeff_Striped
-    ZCoeff_Striped(const int ndim, const bool loc, const int nclosed, const int nact, const int nvirt, const int nneg)
+    ZCoeff_Striped(const int ndim, const bool loc, const int nclosed, const int nact, const int nvirt, const int nneg = 0)
      : ZCoeff_base(ndim, loc, nclosed, nact, nvirt, nneg) { }
 
     // copy construct
@@ -137,10 +137,10 @@ class ZCoeff_Block : public ZCoeff_base {
 
   public:
     // standard constructor; copy data directly from _coeff
-    ZCoeff_Block(const ZMatView& _coeff, const int nclosed, const int nact, const int nvirt, const int nneg);
+    ZCoeff_Block(const ZMatView& _coeff, const int nclosed, const int nact, const int nvirt, const int nneg = 0);
 
     // construct an empty ZCoeff_Block
-    ZCoeff_Block(const int ndim, const bool loc, const int nclosed, const int nact, const int nvirt, const int nneg)
+    ZCoeff_Block(const int ndim, const bool loc, const int nclosed, const int nact, const int nvirt, const int nneg = 0)
      : ZCoeff_base(ndim, loc, nclosed, nact, nvirt, nneg) { }
 
     // copy construct
