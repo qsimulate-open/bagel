@@ -46,8 +46,8 @@ vector<shared_ptr<const DFDist>> ComplexDFDist::split_blocks() const {
   assert(nindex1_ == nindex2_);
   assert(block_.size() % 2 == 0);
   vector<shared_ptr<const DFDist>> out;
-  for (int i=0; i<block_.size(); i+=2) {
-    array<shared_ptr<DFBlock>,2> in = {{ block_[i], block_[i+1] }};
+  for (int i = 0; i < block_.size(); i += 2) {
+    array<shared_ptr<DFBlock>,2> in = {{ block_[2*i], block_[2*i+1] }};
     out.push_back(make_shared<const ComplexDFDist>(nindex1_, naux_, in, df_, data2_));
   }
   return out;
@@ -59,9 +59,9 @@ array<shared_ptr<const DFDist>,2> ComplexDFDist::split_real_imag() const {
   assert(block_.size() % 2 == 0);
   auto outr = make_shared<DFDist>(nindex1_, naux_, nullptr, df_, data2_);
   auto outi = make_shared<DFDist>(nindex1_, naux_, nullptr, df_, data2_);
-  for (int i=0; i<block_.size(); i+=2) {
-    outr->add_block(block_[i]);
-    outi->add_block(block_[i+1]);
+  for (int i = 0; i < block_.size(); i += 2) {
+    outr->add_block(block_[2*i]);
+    outi->add_block(block_[2*i+1]);
   }
   array<shared_ptr<const DFDist>,2> out = {{outr, outi}};
   return out;
@@ -82,12 +82,12 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform(cons
   const int n = block_.size() / 2;
   assert(2*n == block_.size());
 
-  for (int i=0; i!=n; ++i) {
-    shared_ptr<DFBlock> blockri = block_[i]->copy();
-    *blockri += *block_[i+1];
+  for (int i = 0; i != n; ++i) {
+    shared_ptr<DFBlock> blockri = block_[2*i]->copy();
+    *blockri += *block_[2*i+1];
 
-    auto rpart = block_[i]->transform_second(*cr);
-    auto tmp = block_[i+1]->transform_second(*ci);
+    auto rpart = block_[2*i]->transform_second(*cr);
+    auto tmp = block_[2*i+1]->transform_second(*ci);
     auto ipart = blockri->transform_second(*cri);
 
     *ipart -= *rpart;
@@ -118,11 +118,11 @@ shared_ptr<ComplexDFHalfDist> ComplexDFDist::complex_compute_half_transform_swap
   assert(2*n == block_.size());
 
   for (int i = 0; i != n; ++i) {
-    shared_ptr<DFBlock> blockri = block_[i]->copy();
-    *blockri += *block_[i+1];
+    shared_ptr<DFBlock> blockri = block_[2*i]->copy();
+    *blockri += *block_[2*i+1];
 
-    auto rpart = block_[i]->transform_third(*cr);
-    auto tmp = block_[i+1]->transform_third(*ci);
+    auto rpart = block_[2*i]->transform_third(*cr);
+    auto tmp = block_[2*i+1]->transform_third(*ci);
     auto ipart = blockri->transform_third(*cri);
 
     *ipart -= *rpart;
@@ -247,12 +247,12 @@ shared_ptr<ComplexDFFullDist> ComplexDFHalfDist::complex_compute_second_transfor
   assert(2*n == block_.size());
 
   for (int i = 0; i != n; ++i) {
-    auto rpart =  block_[i]->transform_third(*cr);
-    *rpart    -= *block_[i+1]->transform_third(*ci);
+    auto rpart =  block_[2*i]->transform_third(*cr);
+    *rpart    -= *block_[2*i+1]->transform_third(*ci);
     out->add_block(rpart);
 
-    auto ipart =  block_[i+1]->transform_third(*cr);
-    *ipart    += *block_[i]->transform_third(*ci);
+    auto ipart =  block_[2*i+1]->transform_third(*cr);
+    *ipart    += *block_[2*i]->transform_third(*ci);
     out->add_block(ipart);
   }
 
