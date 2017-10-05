@@ -42,14 +42,20 @@ shared_ptr<ZMatrix> Jop_London::compute_hcore() const {
 
 
 shared_ptr<ZMatrix> Jop_London::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool) const {
-  return make_shared<Fock_London<1>>(geom_, hcore, nullptr, coeff_->slice(0, nclosed));
+  auto ocoeff = coeff_->slice_copy(0, nclosed);
+  ocoeff->scale(1.0/sqrt(2.0));
+  return make_shared<Fock_London<1>>(geom_, hcore, nullptr, ocoeff, false, true);
 }
 
 
 shared_ptr<Kramers<2,ZMatrix>> Jop_London::compute_mo1e(shared_ptr<const Kramers<1,ZMatrix>> coeff) {
   auto out = make_shared<Kramers<2,ZMatrix>>();
-  for (size_t i = 0; i != 4; ++i)
-    out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
+  for (size_t i = 0; i != 4; ++i) {
+    if (i/2 == i%2)
+      out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
+    else
+      out->emplace(i, out->at(0)->clone());
+  }
   return out;
 }
 
@@ -62,12 +68,10 @@ shared_ptr<Kramers<4,ZMatrix>> Jop_London::compute_mo2e(shared_ptr<const Kramers
 
   array<shared_ptr<ComplexDFHalfDist>,2> half_complex_exch;
   for (int k = 0; k != 2; ++k)
-    half_complex_exch[k] = df->complex_compute_half_transform(*coeff->at(k));
+    half_complex_exch[k] = df->complex_compute_half_transform(*coeff->at(k))->complex_apply_J();
 
   auto full = make_shared<Kramers<2,ComplexDFFullDist>>();
   full->emplace({0,0}, half_complex_exch[0]->complex_compute_second_transform(*coeff->at(0)));
-  full->emplace({1,0}, half_complex_exch[1]->complex_compute_second_transform(*coeff->at(0)));
-  full->emplace({0,1}, half_complex_exch[0]->complex_compute_second_transform(*coeff->at(1)));
   full->emplace({1,1}, half_complex_exch[1]->complex_compute_second_transform(*coeff->at(1)));
 
   // compute 4-index quantities
@@ -78,7 +82,10 @@ shared_ptr<Kramers<4,ZMatrix>> Jop_London::compute_mo2e(shared_ptr<const Kramers
 
     const int b2a = i/4;
     const int b2b = i%4;
-    out->add(i, full->at(b2a)->complex_form_4index(full->at(b2b), 1.0));
+    if (i == 0 || i == 3 || i == 12 || i == 15)
+      out->add(i, full->at(b2a)->complex_form_4index(full->at(b2b), 1.0));
+    else
+      out->add(i, out->at(0)->clone());
   }
 
   return out;

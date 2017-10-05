@@ -25,8 +25,6 @@
 #include <src/ci/zfci/fci_london.h>
 #include <src/ci/zfci/jop_london.h>
 #include <src/wfn/zreference.h>
-#include <src/mat1e/giao/zhcore.h>
-#include <src/mat1e/giao/zoverlap.h>
 
 using namespace std;
 using namespace bagel;
@@ -50,12 +48,17 @@ FCI_London::FCI_London(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, 
 
 // obtain the coefficient matrix in striped format
 shared_ptr<const ZCoeff_Block> FCI_London::init_coeff() {
-  auto overlap = make_shared<ZOverlap>(geom_);
-  auto hcore = make_shared<ZHcore>(geom_);
-
   auto rr = dynamic_pointer_cast<const ZReference>(ref_);
   assert(rr);
-  auto scoeff = make_shared<const ZCoeff_Striped>(*rr->zcoeff(), ncore_, norb_, rr->nvirt()); 
+
+  const int rndim = rr->zcoeff()->ndim();
+  const int rmdim = rr->zcoeff()->mdim();
+  ZMatrix coeff(rndim, 2*rmdim);
+  for (int i = 0; i != rmdim; ++i) {
+    copy_n(rr->zcoeff()->element_ptr(0,i), rndim, coeff.element_ptr(0,2*i));
+    copy_n(rr->zcoeff()->element_ptr(0,i), rndim, coeff.element_ptr(0,2*i+1));
+  }
+  auto scoeff = make_shared<const ZCoeff_Striped>(coeff, ncore_, norb_, rr->nvirt()); 
 
   // Reorder as specified in the input so frontier orbitals contain the desired active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
