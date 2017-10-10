@@ -26,12 +26,13 @@
 #define __BAGEL_CI_ZFCI_RELJOP_LONDON_H
 
 #include <src/ci/zfci/reljop.h>
+#include <src/mat1e/giao/relhcore_london.h>
 
 namespace bagel {
 
 class RelJop_London : public RelJop {
   protected:
-    std::shared_ptr<ZMatrix> compute_hcore() const override { return make_shared<RelHcore_London>(geom_); }
+    std::shared_ptr<ZMatrix> compute_hcore() const override { return std::make_shared<RelHcore_London>(geom_); }
 
   public:
     RelJop_London(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const ZCoeff_Block> coeff,
