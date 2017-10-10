@@ -101,13 +101,6 @@ shared_ptr<Kramers<2,ZMatrix>> RelJop::compute_mo1e(shared_ptr<const Kramers<1,Z
   auto out = make_shared<Kramers<2,ZMatrix>>();
   for (size_t i = 0; i != 4; ++i)
     out->emplace(i, make_shared<ZMatrix>(*coeff->at(i/2) % *core_fock_ * *coeff->at(i%2)));
-
-  assert(out->size() == 4);
-  // symmetry requirement
-  assert((*out->at({1,0}) - *out->at({0,1})->transpose_conjg()).rms() < 1.0e-8);
-  // Kramers requirement
-  assert((*coeff->at(1) % *core_fock_ * *coeff->at(1) - *out->at({0,0})->get_conjg()).rms() < 1.0e-8);
-
   return out;
 }
 
@@ -141,8 +134,8 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
       if (i == 8 || i == 7 || i == 14 || i == 1 || i == 12 || i == 6)
         continue;
 
-      // we will construct (1111, 1010, 1101, 0100) later
-      if (i == 15 || i == 10 || i == 13 || i == 4)
+      // we will construct (1010, 1101, 0100) later
+      if (i == 10 || i == 13 || i == 4)
         continue;
 
       // we compute: 0000, 0010, 1001, 0101, 0011, 1011
@@ -164,9 +157,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
   if (gaunt_)
     compute(out, true, breit_);
 
-  // Kramers and particle symmetry
-  (*out)[{1,1,1,1}] = out->at({0,0,0,0})->get_conjg();
-
   (*out)[{1,0,1,0}] = out->at({0,1,0,1})->clone();
   shared_ptr<ZMatrix> m1010 = out->at({0,1,0,1})->get_conjg();
   sort_indices<1,0,3,2,0,1,1,1>(m1010->data(), out->at({1,0,1,0})->data(), nocc_, nocc_, nocc_, nocc_);
@@ -178,20 +168,6 @@ shared_ptr<Kramers<4,ZMatrix>> RelJop::compute_mo2e(shared_ptr<const Kramers<1,Z
   (*out)[{0,1,0,0}] = out->at({0,0,1,0})->clone();
   shared_ptr<ZMatrix> m0100 = out->at({0,0,1,0})->get_conjg();
   sort_indices<3,2,1,0,0,1,1,1>(m0100->data(), out->at({0,1,0,0})->data(), nocc_, nocc_, nocc_, nocc_);
-
-#if 0
-  // for completeness we can compute the others too
-  vector<int> target{8, 7, 14, 1, 6};
-  for (auto& t : target) {
-    bitset<4> tb(t);
-    bitset<4> sb; sb[0] = tb[1]; sb[1] = tb[0]; sb[2] = tb[3]; sb[3] = tb[2];
-    assert(out.find(tb) == out.end());
-    out[tb] = out.at(sb)->clone();
-    sort_indices<1,0,3,2,0,1,1,1>(out.at(sb)->data(), out.at(tb)->data(), nocc_, nocc_, nocc_, nocc_);
-    transform(out.at(tb)->data(), out.at(tb)->data()+nocc_*nocc_*nocc_*nocc_, out.at(tb)->data(), [](complex<double> a) { return conj(a); });
-  }
-  out[bitset<4>("1100")] = out.at(bitset<4>("0011"))->transpose();
-#endif
 
   return out;
 }

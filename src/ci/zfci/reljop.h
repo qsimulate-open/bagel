@@ -35,7 +35,7 @@ class RelJop : public ZMOFile {
     bool gaunt_;
     bool breit_;
 
-    std::shared_ptr<ZMatrix> compute_hcore() const override;
+    virtual std::shared_ptr<ZMatrix> compute_hcore() const override;
     std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const override;
     std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
