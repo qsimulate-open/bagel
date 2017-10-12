@@ -33,6 +33,7 @@
 #include <src/ci/ras/rasci.h>
 #include <src/ci/zfci/relfci.h>
 #include <src/ci/zfci/fci_london.h>
+#include <src/ci/zfci/relfci_london.h>
 #include <src/response/cis.h>
 #include <src/pt2/nevpt2/nevpt2.h>
 #include <src/pt2/mp2/mp2.h>
@@ -143,7 +144,7 @@ get_energy(const string title, shared_ptr<const PTree> itree, shared_ptr<const G
     else if (title == "dhf")     { auto m = make_shared<Dirac>(itree, geom, ref);            m->compute();   out = m->energy();        ref = m->conv_to_ref(); }
     else if (title == "current") { auto m = make_shared<Current>(itree, geom, ref);          m->compute();                             ref = m->conv_to_ref(); }
     else if (title == "fci")     { auto m = make_shared<FCI_London>(itree, geom, ref);       m->compute();   out = m->energy(target);  ref = m->conv_to_ref(); }
-    else if (title == "zfci")    { auto m = make_shared<RelFCI>(itree, geom, ref);           m->compute();   out = m->energy(target);  ref = m->conv_to_ref(); }
+    else if (title == "zfci")    { auto m = make_shared<RelFCI_London>(itree, geom, ref);    m->compute();   out = m->energy(target);  ref = m->conv_to_ref(); }
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "second" || algorithm == "") {

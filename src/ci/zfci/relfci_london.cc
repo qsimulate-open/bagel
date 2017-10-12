@@ -23,8 +23,8 @@
 //
 
 #include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/ci/zfci/relfci_london.h>
-#include <src/ci/zfci/reljop_london.h>
 #include <src/mat1e/giao/relhcore_london.h>
 #include <src/mat1e/giao/reloverlap_london.h>
 
@@ -45,6 +45,10 @@ RelFCI_London::RelFCI_London(shared_ptr<const PTree> a, shared_ptr<const Geometr
   cout << "    * " << nele_ << " active electrons in " << norb_ << " orbitals."  << endl;
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
+
+  // in case reference is not relativistic...
+  if (!geom_->dfs())
+    geom_ = geom_->relativistic(gaunt_);
 
   shared_ptr<const ZCoeff_Block> coeff = coeff_zcas;
   if (!coeff)
@@ -96,7 +100,7 @@ shared_ptr<const ZCoeff_Block> RelFCI_London::init_coeff() {
 
 void RelFCI_London::update(shared_ptr<const ZCoeff_Block> coeff) {
   Timer timer;
-  jop_ = make_shared<RelJop_London>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, store_half_ints_, store_gaunt_half_ints_);
+  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, store_half_ints_, store_gaunt_half_ints_);
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
   const_denom();
 }

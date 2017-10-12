@@ -46,7 +46,7 @@ vector<shared_ptr<const DFDist>> ComplexDFDist::split_blocks() const {
   assert(nindex1_ == nindex2_);
   assert(block_.size() % 2 == 0);
   vector<shared_ptr<const DFDist>> out;
-  for (int i = 0; i < block_.size(); i += 2) {
+  for (int i = 0; i != block_.size()/2; ++i) {
     array<shared_ptr<DFBlock>,2> in = {{ block_[2*i], block_[2*i+1] }};
     out.push_back(make_shared<const ComplexDFDist>(nindex1_, naux_, in, df_, data2_));
   }
@@ -59,7 +59,7 @@ array<shared_ptr<const DFDist>,2> ComplexDFDist::split_real_imag() const {
   assert(block_.size() % 2 == 0);
   auto outr = make_shared<DFDist>(nindex1_, naux_, nullptr, df_, data2_);
   auto outi = make_shared<DFDist>(nindex1_, naux_, nullptr, df_, data2_);
-  for (int i = 0; i < block_.size(); i += 2) {
+  for (int i = 0; i != block_.size()/2; ++i) {
     outr->add_block(block_[2*i]);
     outi->add_block(block_[2*i+1]);
   }

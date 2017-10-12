@@ -47,6 +47,10 @@ RelFCI::RelFCI(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_p
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
 
+  // in case reference is not relativistic...
+  if (!geom_->dfs())
+    geom_ = geom_->relativistic(gaunt_);
+
   shared_ptr<const ZCoeff_Block> coeff = coeff_zcas;
   if (!coeff)
     coeff = init_coeff();

@@ -24,6 +24,7 @@
 
 #include <src/ci/zfci/reljop.h>
 #include <src/mat1e/rel/relhcore.h>
+#include <src/mat1e/giao/relhcore_london.h>
 #include <src/scf/dhf/dfock.h>
 
 using namespace std;
@@ -38,7 +39,8 @@ RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const in
 
 
 shared_ptr<ZMatrix> RelJop::compute_hcore() const {
-  return make_shared<RelHcore>(geom_);
+  return geom_->magnetism() ? static_pointer_cast<ZMatrix>(make_shared<RelHcore_London>(geom_))
+                            : static_pointer_cast<ZMatrix>(make_shared<RelHcore>(geom_));
 }
 
 

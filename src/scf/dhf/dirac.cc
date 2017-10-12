@@ -252,12 +252,11 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     auto zref = dynamic_pointer_cast<const ZReference>(ref_);
     assert(geom_->magnetism());
     const int nocc = ref_->nocc();
-    shared_ptr<ZMatrix> fock;
     assert(nocc*2 == nele_);
     auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
     ocoeff->add_block(1.0, 0,    0, n, nocc, zref->zcoeff()->slice(0,nocc));
     ocoeff->add_block(1.0, n, nocc, n, nocc, zref->zcoeff()->slice(0,nocc));
-    fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    auto fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
