@@ -81,9 +81,14 @@ shared_ptr<const ZCoeff_Block> RelFCI_London::init_coeff() {
 
   fock_tilde.diagonalize(eig);
 
-  const ZCoeff_Kramers coeff(*s12 * fock_tilde, ncore_, norb_, nvirt_nr, nneg);
-  shared_ptr<const ZCoeff_Striped> scoeff = coeff.move_positronic()->striped_format();
-
+  shared_ptr<const ZCoeff_Striped> scoeff;
+  {
+    const ZMatrix coeff(*s12 * fock_tilde);
+    auto ccoeff = make_shared<ZCoeff_Striped>(coeff.ndim(), coeff.localized(), ncore_, norb_, nvirt_nr, nneg);
+    ccoeff->copy_block(0, 0, coeff.ndim(), (ncore_+norb_+nvirt_nr)*2, coeff.slice(nneg, coeff.mdim()));
+    ccoeff->copy_block(0, (ncore_+norb_+nvirt_nr)*2, coeff.ndim(), nneg, coeff.slice(0, nneg));
+    scoeff = ccoeff;
+  }
 
   // Reorder as specified in the input so frontier orbitals contain the desired active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
