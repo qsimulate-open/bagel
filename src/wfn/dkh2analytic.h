@@ -26,6 +26,7 @@
 #ifndef __SRC_WFN_DKH2ANALYTIC_H
 #define __SRC_WFN_DKH2ANALYTIC_H
 
+#include <src/wfn/diagvec.h>
 #include <src/wfn/hcoreinfo.h>
 #include <src/wfn/geometry.h>
 
@@ -40,7 +41,7 @@ class DKH2Analytic : public HcoreInfo {
     int nunc;
 
     Matrix U;
-    std::shared_ptr<VectorB> s;
+    DiagVec s;
     std::vector<Matrix> PU;
 
     std::vector<Matrix> s_X;
@@ -49,7 +50,6 @@ class DKH2Analytic : public HcoreInfo {
     std::vector<Matrix> O_pX;
 
     Matrix id;
-    std::map<std::shared_ptr<const VectorB>, std::shared_ptr<Matrix>> vec2mat;
 
     void gradinit(std::shared_ptr<const Geometry>);
     void contracts(std::shared_ptr<const Geometry>);
@@ -57,7 +57,6 @@ class DKH2Analytic : public HcoreInfo {
     void kineticgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
     void naigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
     void smallnaigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void store_mat(std::shared_ptr<const VectorB>);
 
   public:
     DKH2Analytic() : HcoreInfo() { }
