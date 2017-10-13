@@ -67,20 +67,9 @@ shared_ptr<const ZCoeff_Block> RelFCI_London::init_coeff() {
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   assert(rr);
 
-  const RelOverlap_London overlap(geom_);
-  auto hcore = make_shared<const RelHcore_London>(geom_);
-
   const int nvirt_nr = rr->relcoeff_full()->mdim()/4-ncore_-norb_;
   const int nneg = rr->relcoeff_full()->mdim()/2;
-
-  shared_ptr<const ZMatrix> s12 = overlap.tildex(1.0e-9);
-  const DFock focktmp(geom_, hcore, rr->relcoeff_full()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, /*robust*/breit_);
-
-  VectorB eig(s12->mdim());
-  ZMatrix fock_tilde(*s12 % focktmp * *s12);
-  fock_tilde.diagonalize(eig);
-
-  auto scoeff = make_shared<const ZCoeff_Striped>(*s12 * fock_tilde, ncore_, norb_, nvirt_nr, nneg, true);
+  auto scoeff = make_shared<const ZCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, nvirt_nr, nneg, false);
 
   // Reorder as specified in the input so frontier orbitals contain the desired active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
