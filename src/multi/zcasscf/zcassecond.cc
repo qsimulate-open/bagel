@@ -74,9 +74,6 @@ void ZCASSecond::compute() {
       zero_positronic_elements(grad);
     kramers_adapt(grad, nclosed_, nact_, nvirt_);
 
-    shared_ptr<ZRotFile> gradele = grad->copy();
-    zero_positronic_elements(gradele);
-
     // check gradient and break if converged
     const double gradient = grad->rms();
     print_iteration(iter, energy_, gradient, timer.tick());
