@@ -93,15 +93,6 @@ void ZCASSCF::init() {
 
   nneg_ = geom_->nbasis()*2;
 
-  // set hcore and overlap
-  if (!geom_->magnetism()) {
-    hcore_   = make_shared<RelHcore>(geom_);
-    overlap_ = make_shared<RelOverlap>(geom_);
-  } else {
-    hcore_ = make_shared<RelHcore_London>(geom_);
-    overlap_ = make_shared<RelOverlap_London>(geom_);
-  }
-
   // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
   if (!nact_) energy_.resize(1);
@@ -128,7 +119,80 @@ void ZCASSCF::init() {
     throw runtime_error("too many closed orbitals in the input");
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
 
-  // set coefficient
+  // get maxiter from the input
+  max_iter_ = idata_->get<int>("maxiter", 100);
+  // get maxiter from the input
+  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
+
+  // whether or not to throw if the calculation does not converge
+  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
+
+  // to save binary archives with each iteration
+  restart_cas_ = idata_->get<bool>("restart_cas", false);
+
+  // get thresh (for macro iteration) from the input
+  thresh_ = idata_->get<double>("thresh", 1.0e-8);
+  // get thresh (for micro iteration) from the input
+  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_*0.5);
+
+  cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
+  cout << "    * nact     : " << setw(6) << nact_ << endl;
+  cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
+
+  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
+  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
+  cout << "    * active space: " << geom_->nele() - charge_ - nclosed_*2 << " electrons in " << nact_ << " orbitals" << endl;
+
+  const int idel = geom_->nbasis()*2 - nbasis_;
+  if (idel)
+    cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
+
+  // initialize coefficient
+  init_coeff();
+
+  // initialize hcore and overlap
+  init_mat1e();
+
+  muffle_ = make_shared<Muffle>("casscf.log");
+  // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
+  if (nact_)
+    fci_ = make_shared<RelFCI>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
+  nstate_ = nact_ ? fci_->nstate() : 1;
+  muffle_->unmute();
+  cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
+
+  cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
+
+}
+
+
+void ZCASSCF::print_header() const {
+  cout << "  ---------------------------" << endl;
+  cout << "      CASSCF calculation     " << endl;
+  cout << "  ---------------------------" << endl << endl;
+}
+
+
+void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
+  muffle_->unmute();
+  if (energy.size() != 1 && iter) cout << endl;
+  int i = 0;
+  for (auto& e : energy) {
+    cout << "     " << setw(5) << iter << setw(4) << i << " " << setw(19) << fixed << setprecision(8) << e << "   "
+                    << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
+    ++i;
+  }
+  muffle_->mute();
+}
+
+
+void ZCASSCF::init_mat1e() {
+  hcore_   = make_shared<RelHcore>(geom_);
+  overlap_ = make_shared<RelOverlap>(geom_);
+}
+
+
+void ZCASSCF::init_coeff() {
   const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
   shared_ptr<const ZCoeff_Striped> scoeff;
   if (hcore_guess) {
@@ -176,34 +240,6 @@ void ZCASSCF::init() {
     scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
   }
 
-  // get maxiter from the input
-  max_iter_ = idata_->get<int>("maxiter", 100);
-  // get maxiter from the input
-  max_micro_iter_ = idata_->get<int>("maxiter_micro", 20);
-
-  // whether or not to throw if the calculation does not converge
-  conv_ignore_ = idata_->get<bool>("conv_ignore", false);
-
-  // to save binary archives with each iteration
-  restart_cas_ = idata_->get<bool>("restart_cas", false);
-
-  // get thresh (for macro iteration) from the input
-  thresh_ = idata_->get<double>("thresh", 1.0e-8);
-  // get thresh (for micro iteration) from the input
-  thresh_micro_ = idata_->get<double>("thresh_micro", thresh_*0.5);
-
-  cout << "    * nclosed  : " << setw(6) << nclosed_ << endl;
-  cout << "    * nact     : " << setw(6) << nact_ << endl;
-  cout << "    * nvirt    : " << setw(6) << nvirt_ << endl;
-
-  cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
-  cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
-  cout << "    * active space: " << geom_->nele() - charge_ - nclosed_*2 << " electrons in " << nact_ << " orbitals" << endl;
-
-  const int idel = geom_->nbasis()*2 - nbasis_;
-  if (idel)
-    cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
-
   // initialize coefficient to enforce kramers symmetry
   if (!relref->kramers() && external_rdm_.empty())
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
@@ -217,39 +253,7 @@ void ZCASSCF::init() {
       active_indices.insert(lexical_cast<int>(i->data()) - 1);
     scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
   }
-
   coeff_ = scoeff->block_format();
-
-  muffle_ = make_shared<Muffle>("casscf.log");
-  // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
-  if (nact_)
-    fci_ = make_shared<RelFCI>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
-  nstate_ = nact_ ? fci_->nstate() : 1;
-  muffle_->unmute();
-  cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
-
-  cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
-
-}
-
-
-void ZCASSCF::print_header() const {
-  cout << "  ---------------------------" << endl;
-  cout << "      CASSCF calculation     " << endl;
-  cout << "  ---------------------------" << endl << endl;
-}
-
-
-void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, const double error, const double time) const {
-  muffle_->unmute();
-  if (energy.size() != 1 && iter) cout << endl;
-  int i = 0;
-  for (auto& e : energy) {
-    cout << "     " << setw(5) << iter << setw(4) << i << " " << setw(19) << fixed << setprecision(8) << e << "   "
-                    << setw(10) << scientific << setprecision(2) << (i==0 ? error : 0.0) << fixed << setw(10) << setprecision(2) << time << endl;
-    ++i;
-  }
-  muffle_->mute();
 }
 
 

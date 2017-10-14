@@ -47,7 +47,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool breit_;
     bool natocc_;
 
-    // RDMs are given externally (e.g., FCIQMC)
+    // set if RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
 
     double thresh_;
@@ -70,6 +70,8 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
 
     void init();
+    void init_coeff();
+    void init_mat1e();
 
     // hides some outputs
     mutable std::shared_ptr<Muffle> muffle_;
