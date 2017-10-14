@@ -282,8 +282,8 @@ Using the keyword ``forces``, you can run multiple gradient or derivative coupli
 Sample input: Printing relaxed density
 --------------------------------------
 
-You can print relaxed density from the MP2, SA-CASSCF, CASPT2 gradient calculations by setting the keyword ``density_print`` to true.
-The example below prints the XMS-CASPT2 relaxed density of the ground state in the Gaussian Cube format (``density.cub`` file).
+The relaxed density in MP2, SA-CASSCF, and CASPT2 gradient calculations can be printed in the Gaussian Cube format (``density.cub`` file) by setting the keyword ``density_print`` to true
+(see the example below).
 
 .. code-block:: javascript
 
@@ -313,9 +313,9 @@ The example below prints the XMS-CASPT2 relaxed density of the ground state in t
         "shift" : 0.2,
         "frozen" : true
       },
-    "nstate" : 4,
-    "nact" : 4,
-    "nclosed" : 3
+      "nstate" : 4,
+      "nact" : 4,
+      "nclosed" : 3
     } ]
   }
 

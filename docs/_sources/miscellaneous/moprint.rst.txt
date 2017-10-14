@@ -121,9 +121,9 @@ Write relaxed density from the XMS-CASPT2 force calculation:
         "shift" : 0.2,
         "frozen" : true
       },
-    "nstate" : 4,
-    "nact" : 4,
-    "nclosed" : 3
+      "nstate" : 4,
+      "nact" : 4,
+      "nclosed" : 3
     } ]
   }
 

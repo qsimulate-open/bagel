@@ -356,8 +356,8 @@ The CASSCF orbitals are state-averaged over two states.</p>
 </div>
 <div class="section" id="sample-input-printing-relaxed-density">
 <h3>Sample input: Printing relaxed density<a class="headerlink" href="#sample-input-printing-relaxed-density" title="Permalink to this headline">¶</a></h3>
-<p>You can print relaxed density from the MP2, SA-CASSCF, CASPT2 gradient calculations by setting the keyword <code class="docutils literal"><span class="pre">density_print</span></code> to true.
-The example below prints the XMS-CASPT2 relaxed density of the ground state in the Gaussian Cube format (<code class="docutils literal"><span class="pre">density.cub</span></code> file).</p>
+<p>The relaxed density in MP2, SA-CASSCF, and CASPT2 gradient calculations can be printed in the Gaussian Cube format (<code class="docutils literal"><span class="pre">density.cub</span></code> file) by setting the keyword <code class="docutils literal"><span class="pre">density_print</span></code> to true
+(see the example below).</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
@@ -384,9 +384,9 @@ The example below prints the XMS-CASPT2 relaxed density of the ground state in t
       <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
       <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
     <span class="p">},</span>
-  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
-  <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
-  <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">3</span>
+    <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">3</span>
   <span class="p">}</span> <span class="p">]</span>
 <span class="p">}</span>
 
