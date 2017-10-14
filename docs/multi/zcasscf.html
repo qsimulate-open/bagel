@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Relativistic complete active space self-consistent field (RelCASSCF) &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Perturbation theory" href="../pt2/pt2.html" />
     <link rel="prev" title="Complete active space self-consistent field (CASSCF)" href="casscf.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -125,7 +122,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Turns on the full Breit interaction in the Hamiltonian.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
-<div class="line"><strong>Default</strong>: value copied from &#8220;gaunt&#8221; (if gaunt is true, breit is true)</div>
+<div class="line"><strong>Default</strong>: value copied from “gaunt” (if gaunt is true, breit is true)</div>
 <div class="line"><strong>Recommendation</strong>: Usually the Breit contribution is not important for molecular properties.</div>
 </div>
 </div>
@@ -140,7 +137,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: If set to &#8220;true,&#8221; occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
+<div class="line"><strong>Description</strong>: If set to “true,” occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: false</div>
 </div>
@@ -196,7 +193,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong>  If set to &#8220;true,&#8221; BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
+<div class="line"><strong>Description:</strong>  If set to “true,” BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
@@ -204,8 +201,8 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong>  If set to &#8220;true&#8221;, after each macroiteration the orbitals will be written to a binary archive with filename &#8220;zcasscf_&lt;iter&gt;.archive&#8221;.
-They can be read back in using the &#8220;load_ref&#8221; module.</div>
+<div class="line"><strong>Description:</strong>  If set to “true”, after each macroiteration the orbitals will be written to a binary archive with filename “zcasscf_&lt;iter&gt;.archive”.
+They can be read back in using the “load_ref” module.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
@@ -241,7 +238,7 @@ They can be read back in using the &#8220;load_ref&#8221; module.</div>
 <div class="line"><strong>Description</strong>: Spin-adapt the starting guess.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: true</div>
-<div class="line"><strong>Recommendation</strong>: Use false if the error &#8220;generate_guess produced an invalid determinant&#8221; is generated.</div>
+<div class="line"><strong>Recommendation</strong>: Use false if the error “generate_guess produced an invalid determinant” is generated.</div>
 </div>
 </div>
 <div class="topic">

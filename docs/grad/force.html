@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Nuclear gradient and derivative coupling &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Molecular geometry optimization" href="../opt/optimize.html" />
     <link rel="prev" title="Description of input structure" href="methods.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -54,7 +51,8 @@
 <span id="force"></span><h1>Nuclear gradient and derivative coupling<a class="headerlink" href="#nuclear-gradient-and-derivative-coupling" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2). For CASSCF and CASPT2, it is also possible to perform multiple evaluations of the gradients without repeating the energy calculations.</p>
+<p>The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2). For CASSCF and CASPT2, it is also possible to perform multiple evaluations of the gradients without repeating the energy calculations.
+In addition, the relaxed density in MP2, SA-CASSCF, and CASPT2 calculations can be printed in the Gaussian Cube format.</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
@@ -210,6 +208,14 @@
 <div class="line"><strong>Default:</strong> 1</div>
 </div>
 </div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">density_print</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Print relaxed densities in the Gaussian Cube format. Applies to SA-CASSCF, CASPT2, and MP2 calculations. The options for density printing can be specified in <code class="docutils literal"><span class="pre">moprint</span></code> block (see below for example and <a class="reference internal" href="../miscellaneous/moprint.html#moprint"><span class="std std-ref">here</span></a> for the keywords).</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false</div>
+</div>
+</div>
 </div>
 </div>
 <div class="section" id="example">
@@ -345,6 +351,46 @@ The CASSCF orbitals are state-averaged over two states.</p>
      <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">44</span>
    <span class="p">}</span> <span class="p">]</span>
  <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sample-input-printing-relaxed-density">
+<h3>Sample input: Printing relaxed density<a class="headerlink" href="#sample-input-printing-relaxed-density" title="Permalink to this headline">¶</a></h3>
+<p>You can print relaxed density from the MP2, SA-CASSCF, CASPT2 gradient calculations by setting the keyword <code class="docutils literal"><span class="pre">density_print</span></code> to true.
+The example below prints the XMS-CASPT2 relaxed density of the ground state in the Gaussian Cube format (<code class="docutils literal"><span class="pre">density.cub</span></code> file).</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;geometry&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;Li&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">6.000000</span><span class="p">]</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;F&quot;</span><span class="p">,</span>  <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">]</span> <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">},</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span>
+    <span class="s2">&quot;ngrid&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+      <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+      <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+  <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+  <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+  <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">3</span>
+  <span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
 </pre></div>
 </div>
 </div>
