@@ -70,8 +70,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
 
     void init();
-    void init_coeff();
-    void init_mat1e();
+    virtual void init_mat1e() = 0;
+    virtual void init_coeff() = 0;
+    void select_active();
 
     // hides some outputs
     mutable std::shared_ptr<Muffle> muffle_;
@@ -103,8 +104,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
     void print_natocc(const VectorB& ocup) const;
-    // just updates nvirt_, etc. if we have a linearly dependent basis set
-    void remove_lindep(const int nspinor);
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }

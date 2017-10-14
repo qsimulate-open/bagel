@@ -47,12 +47,12 @@ class ZCASSecond : public ZCASSCF {
     // apply denominator in microiterations
     std::shared_ptr<ZRotFile> apply_denom(std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> denom, const double shift, const double scale) const;
 
+    // init functions
+    virtual void init_mat1e() override; 
+    virtual void init_coeff() override; 
+
   public:
-    ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-       : ZCASSCF(idat, geom, ref) {
-      std::cout << "   * Using the second-order algorithm" << std::endl << std::endl;
-      thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
-    }
+    ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     void compute() override;
 
