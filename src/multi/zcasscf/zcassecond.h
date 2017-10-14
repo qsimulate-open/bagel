@@ -55,7 +55,7 @@ class ZCASSecond : public ZCASSCF {
     ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     void compute() override;
-
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(true); }
 };
 
 }

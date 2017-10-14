@@ -35,7 +35,6 @@ RelFCI::RelFCI(shared_ptr<const PTree> a, shared_ptr<const Geometry> g, shared_p
 
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   if (!rr) throw runtime_error("RelFCI requires a relativistic reference object");
-  assert(!geom_->magnetism());
 
   gaunt_ = idata_->get<bool>("gaunt", rr->gaunt());
   breit_ = idata_->get<bool>("breit", rr->breit());

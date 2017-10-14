@@ -33,6 +33,7 @@ class ZCASNoopt_base : public ZCASSCF {
   protected:
     virtual void init_mat1e() override final { /*do nothing*/ }
 
+  protected:
     ZCASNoopt_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
       : ZCASSCF(idat, geom, ref) { }
 
@@ -47,6 +48,7 @@ class ZCASNoopt : public ZCASNoopt_base {
 
   public:
     ZCASNoopt(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(true); }
 };
 
 
@@ -56,6 +58,7 @@ class ZCASNoopt_London : public ZCASNoopt_base {
 
   public:
     ZCASNoopt_London(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(false); }
 };
 
 }

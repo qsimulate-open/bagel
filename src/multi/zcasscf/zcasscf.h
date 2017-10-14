@@ -91,13 +91,14 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
     std::shared_ptr<ZCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
+    std::shared_ptr<const Reference> conv_to_ref_(const bool kramers) const;
 
   public:
     ZCASSCF(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     virtual void compute() override = 0;
 
-    std::shared_ptr<const Reference> conv_to_ref() const override;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     std::shared_ptr<const ZCoeff_Block> update_coeff(std::shared_ptr<const ZCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
     // kramers adapt for RotFile is a static function!

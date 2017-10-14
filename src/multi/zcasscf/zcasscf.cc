@@ -207,9 +207,9 @@ shared_ptr<const ZCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const ZCoeff_Blo
 }
 
 
-shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-  return !nact_ ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true)
-                : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
+shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
+  return !nact_ ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
+                : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
                                             fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
 
