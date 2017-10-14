@@ -13,7 +13,10 @@ It can be used to view the shape and extent of relativistic or gauge-including m
 be viewed in Molden due to the use of complex basis functions or the four-component framework.  
 
 A separate .cub file is generated for each printed orbital, plus one for the total electron density.  
-The axis vectors are simply the Cartesian *x*, *y*, and *z* axes.  
+The axis vectors are simply the Cartesian *x*, *y*, and *z* axes.
+
+In addition, one can print the relaxed electron density in MP2, SA-CASSCF, and CASPT2 force calculations as well.
+See :ref:`nuclear gradient and derivative coupling <force>` and the example below.
 
 Command: ``moprint``
 
@@ -66,8 +69,8 @@ Keywords
 Example
 =======
 
-Sample input
-------------
+Sample input: Print MO
+----------------------
 
 Write molecular orbitals:
 
@@ -85,3 +88,43 @@ Write molecular orbitals:
 
    ]}
 
+Sample input: Print relaxed density
+-----------------------------------
+
+Write relaxed density from the XMS-CASPT2 force calculation:
+
+.. code-block:: javascript
+
+  { "bagel" : [
+
+  {
+    "title" : "molecule",
+    "basis" : "svp",
+    "df_basis" : "svp-jkfit",
+    "geometry" : [
+      { "atom" : "Li", "xyz" : [ 0.000000, 0.000000, 6.000000] },
+      { "atom" : "F",  "xyz" : [ 0.000000, 0.000000, 0.000000] }
+    ]
+  },
+
+  {
+    "title" : "force",
+    "target" : 0,
+    "density_print" : true,
+    "moprint" : {
+      "ngrid" : [ 41, 41, 41]
+    },
+    "method" : [ {
+      "title" : "caspt2",
+      "smith" : {
+        "method" : "caspt2",
+        "shift" : 0.2,
+        "frozen" : true
+      },
+      "nstate" : 4,
+      "nact" : 4,
+      "nclosed" : 3
+    } ]
+  }
+
+  ]}

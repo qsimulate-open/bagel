@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Molecular geometry optimization &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Interface to dynamics codes" href="../grad/dynamics.html" />
     <link rel="prev" title="Nuclear gradient and derivative coupling" href="../grad/force.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -179,10 +176,10 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line-block">
 <div class="line"><code class="docutils literal"><span class="pre">ef</span></code>: Eigenvector-following (EF) algorithm.</div>
 <div class="line"><code class="docutils literal"><span class="pre">rfo</span></code>: Rational functional optimization algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">nr</span></code>: Newton&#8211;Raphson algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">nr</span></code>: Newton–Raphson algorithm.</div>
 </div>
 <div class="line"><strong>Default:</strong> ef.</div>
-<div class="line"><strong>Recommendation:</strong> use either &#8220;ef&#8221; or &#8220;rfo&#8221;.</div>
+<div class="line"><strong>Recommendation:</strong> use either “ef” or “rfo”.</div>
 </div>
 </div>
 <div class="topic">
@@ -204,7 +201,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use Cartesian coordinates.</div>
 </div>
 <div class="line"><strong>Default:</strong> true.</div>
-<div class="line"><strong>Recommendation:</strong> use default when you have a single molecule. If bond-breaking process is in consideration, use &#8220;false&#8221;.</div>
+<div class="line"><strong>Recommendation:</strong> use default when you have a single molecule. If bond-breaking process is in consideration, use “false”.</div>
 </div>
 </div>
 <div class="topic">
@@ -321,7 +318,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">thielc3</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Thiel&#8217;s C_3 parameter, which is multiplied to the full gradient.</div>
+<div class="line"><strong>Description:</strong> Thiel’s C_3 parameter, which is multiplied to the full gradient.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
 <div class="line"><strong>Default:</strong> 2.0 (MECI) or 0.01 (MDCI).</div>
 </div>
@@ -329,7 +326,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">thielc4</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Thiel&#8217;s C_4 parameter, which is multiplied to the gradient difference.</div>
+<div class="line"><strong>Description:</strong> Thiel’s C_4 parameter, which is multiplied to the gradient difference.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
 <div class="line"><strong>Default:</strong> 0.5</div>
 </div>
@@ -367,7 +364,7 @@ and can be read by <code class="docutils literal"><span class="pre">MOLDEN</span
 <div class="line"><code class="docutils literal"><span class="pre">-1</span></code>: use the opposite direction of the lowest eigenvector.</div>
 </div>
 <div class="line"><strong>Default:</strong> 1</div>
-<div class="line"><strong>Recommendation:</strong> run two calculations with &#8220;1&#8221; and &#8220;-1&#8221; to get the full path.</div>
+<div class="line"><strong>Recommendation:</strong> run two calculations with “1” and “-1” to get the full path.</div>
 </div>
 </div>
 </div>
@@ -522,7 +519,7 @@ In this example, we optimize the ground state.</p>
 <tr class="row-odd"><td>ETF in nonadiabatic coupling</td>
 <td>S. Fatehi and J. E. Subotnik, J. Phys. Chem. Lett. <strong>3</strong>, 2039 (2012).</td>
 </tr>
-<tr class="row-even"><td>Thiel&#8217;s conical intersection parameters</td>
+<tr class="row-even"><td>Thiel’s conical intersection parameters</td>
 <td>T. W. Keal, A. Koslowski, and W. Thiel, Theor. Chem. Acc. <strong>118</strong>, 837 (2007).</td>
 </tr>
 </tbody>

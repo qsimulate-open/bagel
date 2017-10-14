@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Required keywords &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Self-consistent field" href="../scf/scf.html" />
     <link rel="prev" title="Molecule specification" href="molecule-toc.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -126,7 +123,7 @@ basis set other than the default for each atom (see example for <a class="refere
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">cfmm</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: Turn on RHF-FMM; for more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> section.</div>
+<div class="line"><strong>Description</strong>: Turn on RHF-FMM; for more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> section.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: false</div>
 <div class="line"><strong>Recommendation</strong>: Use for calculations on very large systems.</div>
@@ -136,7 +133,7 @@ basis set other than the default for each atom (see example for <a class="refere
 <p class="topic-title first"><code class="docutils literal"><span class="pre">schwarz_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Schwarz screening integral threshold, only used in RHF-FMM <code class="docutils literal"><span class="pre">&quot;cfmm&quot;</span> <span class="pre">:</span> <span class="pre">&quot;true&quot;</span></code>.
-For more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> section.</div>
+For more details, refer to <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> section.</div>
 <div class="line"><strong>Datatype</strong>: double</div>
 <div class="line"><strong>Default</strong>: <span class="math">\(1.0\times 10^{-12}\)</span></div>
 <div class="line"><strong>Recommendation</strong>: Default, looser thresholds reduce accuracy but potentially increase speed.</div>
@@ -145,7 +142,7 @@ For more details, refer to <a class="reference internal" href="../scf/hf.html#hf
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">dkh</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: Option to use the second-order Douglas&#8211;Kroll&#8211;Hess Hamiltonian (DKH2).</div>
+<div class="line"><strong>Description</strong>: Option to use the second-order Douglas–Kroll–Hess Hamiltonian (DKH2).</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
 <div class="line"><strong>Default</strong>: false</div>
 </div>
@@ -153,7 +150,7 @@ For more details, refer to <a class="reference internal" href="../scf/hf.html#hf
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">magnetic_field</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: External magnetic field.  External magnetic fields are available only for the <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree&#8211;Fock</span></a> and <a class="reference internal" href="../scf/dhf.html#dhf"><span class="std std-ref">Dirac&#8211;Hartree&#8211;Fock</span></a> modules.</div>
+<div class="line"><strong>Description</strong>: External magnetic field.  External magnetic fields are available only for the <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> and <a class="reference internal" href="../scf/dhf.html#dhf"><span class="std std-ref">Dirac–Hartree–Fock</span></a> modules.</div>
 <div class="line"><strong>Datatype</strong>: Array of three doubles (x, y, z)</div>
 <div class="line"><strong>Default</strong>: (0.0, 0.0, 0.0)</div>
 </div>
@@ -347,7 +344,7 @@ and providing a value for <code class="docutils literal"><span class="pre">&quot
 <div class="section" id="auxiliary-basis-sets">
 <h2>Auxiliary basis sets<a class="headerlink" href="#auxiliary-basis-sets" title="Permalink to this headline">¶</a></h2>
 <p>The following MP2-fit basis sets are available in BAGEL. The basis set name can be used with the <code class="docutils literal"><span class="pre">aux_basis</span></code> keyword
-in the method block (refer to <a class="reference internal" href="../pt2/mp2.html#mp2"><span class="std std-ref">Møller&#8211;Plesset perturbation theory (MP2)</span></a> for more details).</p>
+in the method block (refer to <a class="reference internal" href="../pt2/mp2.html#mp2"><span class="std std-ref">Møller–Plesset perturbation theory (MP2)</span></a> for more details).</p>
 <ul class="simple">
 <li>cc-pvdz-ri</li>
 <li>cc-pvtz-ri</li>
@@ -411,7 +408,7 @@ in the method block (refer to <a class="reference internal" href="../pt2/mp2.htm
 </td></tr></table>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">User-defined ECP basis sets need to contain the keyword &#8220;ecp&#8221; in the names.
+<p class="last">User-defined ECP basis sets need to contain the keyword “ecp” in the names.
 Refer to <a class="reference internal" href="#user-defined-basis-sets">User defined basis sets</a> for more details.</p>
 </div>
 <div class="section" id="id1">
@@ -477,7 +474,7 @@ The basis set for associated with each element is then made up of further arrays
 of a single basis function.</p>
 <blockquote>
 <div><ul class="simple">
-<li><code class="docutils literal"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f...) .</li>
+<li><code class="docutils literal"><span class="pre">angular</span></code> defines the kind of orbital (s,p,d,f…) .</li>
 <li><code class="docutils literal"><span class="pre">prim</span></code> is a array containing the exponents of the primitive orbitals from which the basis function is composed.</li>
 <li><code class="docutils literal"><span class="pre">cont</span></code> is an array containing the coefficients associated with each of these primitive orbitals.</li>
 </ul>
@@ -485,7 +482,7 @@ of a single basis function.</p>
 <p>The user can specify their own basis set using the above format, or use one of the predefined basis sets listed in <a class="reference internal" href="#basis-sets">Basis sets</a>.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Not all of the the basis sets are defined for all atoms;  an error message of form &#8220;No such node(X)&#8221;, where X is the element, typically means that the relevant element was not found in the basis set file. Refer to the EMSL Basis set exchange library for more basis sets (<a class="reference external" href="https://bse.pnl.gov/bse/portal">https://bse.pnl.gov/bse/portal</a>).</p>
+<p class="last">Not all of the the basis sets are defined for all atoms;  an error message of form “No such node(X)”, where X is the element, typically means that the relevant element was not found in the basis set file. Refer to the EMSL Basis set exchange library for more basis sets (<a class="reference external" href="https://bse.pnl.gov/bse/portal">https://bse.pnl.gov/bse/portal</a>).</p>
 </div>
 <p>To use a user specified basis the explicit path to the basis set file must be specified in the basis set block.</p>
 <div class="section" id="id2">
@@ -520,10 +517,10 @@ of a single basis function.</p>
 <h2>Dummy atoms<a class="headerlink" href="#dummy-atoms" title="Permalink to this headline">¶</a></h2>
 <p>Artificial point charges can be included in the calculation.
 They introduce a user specified charge into the system, but  have no associated basis functions.
-Introduction of such a charge is accomplished by inclusion of an additional line in the geometry block for an atom of  element &#8220;Q&#8221;.</p>
+Introduction of such a charge is accomplished by inclusion of an additional line in the geometry block for an atom of  element “Q”.</p>
 <div class="section" id="id3">
 <h3>Example<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
-<p>A dihydrogen molecule with a nearby dummy charge of +0.2. Note that the charge specified in the &#8220;hf&#8221; block does not include the charge associated with the dummy atom.</p>
+<p>A dihydrogen molecule with a nearby dummy charge of +0.2. Note that the charge specified in the “hf” block does not include the charge associated with the dummy atom.</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>

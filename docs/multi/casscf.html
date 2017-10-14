@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Complete active space self-consistent field (CASSCF) &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Relativistic complete active space self-consistent field (RelCASSCF)" href="zcasscf.html" />
     <link rel="prev" title="Multiconfiguration self-consistent field" href="multi.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -56,7 +53,7 @@
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
 <p>CASSCF simultaneously optimizes the orbital coefficients and the CI coefficients of all the possible determinants generated from the active space.
 The state-averaging scheme can be used for calculating excited states. When reference wavefunctions are given as a input to a CASSCF calculation,
-a Hartree&#8211;Fock calculation is performed by default prior to CASSCF. For the Hartree&#8211;Fock options, see the SCF section.</p>
+a Hartree–Fock calculation is performed by default prior to CASSCF. For the Hartree–Fock options, see the SCF section.</p>
 <p>A two-step second-order algorithm is implemented in BAGEL. At each macroiteration,
 the CI coefficient is optimized by FCI calculations and the orbitals are updated. Microiterations are used for iteratively solving augmented Hessian problems for orbital updates.</p>
 <p>The CASSCF algorithm in BAGEL is very robust. If it fails to converge, it is highly likely that your active space is wrong, or your guess orbitals are wrong.</p>
@@ -120,8 +117,8 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">knowles</span></code>, <code class="docutils literal"><span class="pre">handy</span></code>, <code class="docutils literal"><span class="pre">kh</span></code>: Knowles&#8211;Handy Algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">harrison</span></code>, <code class="docutils literal"><span class="pre">zarrabian</span></code>, <code class="docutils literal"><span class="pre">hz</span></code>: Harrison&#8211;Zarrabian Algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">knowles</span></code>, <code class="docutils literal"><span class="pre">handy</span></code>, <code class="docutils literal"><span class="pre">kh</span></code>: Knowles–Handy Algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">harrison</span></code>, <code class="docutils literal"><span class="pre">zarrabian</span></code>, <code class="docutils literal"><span class="pre">hz</span></code>: Harrison–Zarrabian Algorithm.</div>
 <div class="line"><code class="docutils literal"><span class="pre">parallel</span></code>, <code class="docutils literal"><span class="pre">dist</span></code>: Parallel FCI algorithm.</div>
 </div>
 <div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">parallel</span></code> (when the number of active orbital is larger than 9 and number of process is larger than 8), <code class="docutils literal"><span class="pre">knowles</span></code> (otherwise)</div>
@@ -146,7 +143,7 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">conv_ignore</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong>  If set to &#8220;true,&#8221; BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
+<div class="line"><strong>Description:</strong>  If set to “true,” BAGEL will continue running even if the maximum iterations is reached without convergence.  Normally an error is thrown and the program terminates.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
@@ -154,8 +151,8 @@ the CI coefficient is optimized by FCI calculations and the orbitals are updated
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">restart_cas</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong>  If set to &#8220;true&#8221;, after each macroiteration the orbitals will be written to a binary archive with filename &#8220;casscf_&lt;iter&gt;.archive&#8221;.
-They can be read back in using the &#8220;load_ref&#8221; module.</div>
+<div class="line"><strong>Description:</strong>  If set to “true”, after each macroiteration the orbitals will be written to a binary archive with filename “casscf_&lt;iter&gt;.archive”.
+They can be read back in using the “load_ref” module.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
@@ -163,7 +160,7 @@ They can be read back in using the &#8220;load_ref&#8221; module.</div>
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">natocc</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: If set to &#8220;true,&#8221; occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
+<div class="line"><strong>Description</strong>: If set to “true,” occupation numbers of natural orbitals within the active space will be printed to casscf.log after each macroiteration.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>

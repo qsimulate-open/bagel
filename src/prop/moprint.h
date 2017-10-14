@@ -35,6 +35,7 @@ class MOPrint : public Method {
   friend class MOPrintTask;
 
   protected:
+    bool is_density_;
     bool relativistic_;
     bool paired_;
     bool cubefile_;
@@ -57,9 +58,11 @@ class MOPrint : public Method {
     void print() const;
 
   public:
-    MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re);
+    MOPrint(const std::shared_ptr<const PTree> idata, const std::shared_ptr<const Geometry> geom, const std::shared_ptr<const Reference> re,
+        const bool is_density = false, std::shared_ptr<const ZMatrix> total_density = std::make_shared<const ZMatrix>());
 
     void compute() override;
+    bool is_density() const { return is_density_; };
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; };
 

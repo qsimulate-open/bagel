@@ -35,27 +35,36 @@ class GradInfo {
     int target_state_;
     int target_state2_;
     int maxziter_;
+    bool density_print_;
     std::shared_ptr<NacmType> nacmtype_;
+    std::shared_ptr<PTree> moprint_info_;
 
   public:
-    GradInfo() : target_state_(0), target_state2_(1), maxziter_(100), nacmtype_(std::make_shared<NacmType>("full")) { }
+    GradInfo() : target_state_(0), target_state2_(1), maxziter_(100), density_print_(false), nacmtype_(std::make_shared<NacmType>("full")), moprint_info_(std::make_shared<PTree>()) { }
     GradInfo(std::shared_ptr<const GradInfo> o, const int target) {
       target_state_ = target;
       target_state2_ = -1;
       maxziter_ = o->maxziter();
+      density_print_ = o->density_print();
       nacmtype_ = o->nacmtype();
+      moprint_info_ = o->moprint_info();
     }
     GradInfo(std::shared_ptr<const PTree> idat, const bool opt = false) {
       nacmtype_ = std::make_shared<NacmType>(to_lower(idat->get<std::string>("nacmtype", opt ? "noweight" : "full")));
       target_state_ = idat->get<int>("target", 0);
       target_state2_ = idat->get<int>("target2", 1);
       maxziter_ = idat->get<int>("maxziter", 100);
+      density_print_ = idat->get<bool>("density_print", false);
+      moprint_info_ = idat->get_child_optional("moprint");
+      if (!moprint_info_) moprint_info_ = std::make_shared<PTree>();
     }
 
     int target_state() const { return target_state_; }
     int target_state2() const { return target_state2_; }
     int maxziter() const { return maxziter_; }
+    bool density_print() const { return density_print_; }
     std::shared_ptr<NacmType> nacmtype() const { return nacmtype_; }
+    std::shared_ptr<PTree> moprint_info() const { return moprint_info_; }
 
 };
 
