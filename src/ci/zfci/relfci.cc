@@ -24,8 +24,6 @@
 
 #include <src/ci/zfci/relfci.h>
 #include <src/ci/zfci/reljop.h>
-#include <src/mat1e/rel/relhcore.h>
-#include <src/mat1e/rel/reloverlap.h>
 #include <src/util/exception.h>
 
 using namespace std;
@@ -80,20 +78,10 @@ void RelFCI::dump_integrals_and_exit() const {
 
 // obtain the coefficient matrix in striped format
 shared_ptr<const ZCoeff_Block> RelFCI::init_coeff() {
-  auto overlap = make_shared<RelOverlap>(geom_);
-  auto hcore = make_shared<RelHcore>(geom_);
-
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   assert(rr);
 
-  shared_ptr<const ZCoeff_Striped> scoeff;
-  if (rr->kramers()) {
-    scoeff = rr->relcoeff_full();
-  } else {
-    // then compute Kramers adapated coefficient matrices
-    scoeff = make_shared<const ZCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
-  }
+  auto scoeff = make_shared<const ZCoeff_Striped>(*rr->relcoeff_full(), ncore_, norb_, rr->relcoeff_full()->mdim()/4-ncore_-norb_, rr->relcoeff_full()->mdim()/2);
 
   // Reorder as specified in the input so frontier orbitals contain the desired active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
@@ -104,7 +92,7 @@ shared_ptr<const ZCoeff_Block> RelFCI::init_coeff() {
       active_indices.insert(lexical_cast<int>(i->data()) - 1);
     scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
   }
-  return  scoeff->block_format();
+  return scoeff->block_format();
 }
 
 
