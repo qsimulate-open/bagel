@@ -35,8 +35,8 @@ using namespace std;
 using namespace bagel;
 
 
-MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom,
-                 const shared_ptr<const Reference> re) : Method(idata, geom, re) {
+MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geometry> geom, const shared_ptr<const Reference> re,
+                 const bool is_density, const shared_ptr<const ZMatrix> total_density) : Method(idata, geom, re), is_density_(is_density) {
 
   // Assumes striped (or non-relativistic) coefficient matrix
   auto ref_rel = dynamic_pointer_cast<const RelReference>(ref_);
@@ -55,28 +55,34 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
     throw runtime_error("Individual spin-orbitals can only be visualized for 4-component methods.");
 
   // Determine which MOs to get
-  const shared_ptr<const PTree> iorb = idata_->get_child_optional("orbitals");
+  if (!is_density_) {
+    const shared_ptr<const PTree> iorb = idata_->get_child_optional("orbitals");
 
-  if (iorb) {
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iorb)
-      orbitals_.push_back(lexical_cast<int>(i->data()) - 1);
-  } else {
-    const int mult = paired_ ? 1 : 2;
-    const int nclosed = !ref_rel ? ref_->nclosed() : ref_rel->relcoeff_full()->nclosed();
-
-    if (ref_->nact() == 0) {
-      // For Hartree--Fock, print frontier orbitals by default
-      const int nprint2 = 6;
-      for (int i = 0; i != mult*2*nprint2; ++i)
-        orbitals_.push_back(mult*(nclosed - nprint2) + i);
+    if (iorb) {
+      // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+      for (auto& i : *iorb)
+        orbitals_.push_back(lexical_cast<int>(i->data()) - 1);
     } else {
-      // For CASSCF, print active orbitals by default
-      for (int i = 0; i != mult*ref_->nact(); ++i)
-        orbitals_.push_back(mult*nclosed + i);
+      const int mult = paired_ ? 1 : 2;
+      const int nclosed = !ref_rel ? ref_->nclosed() : ref_rel->relcoeff_full()->nclosed();
+
+      if (ref_->nact() == 0) {
+        // For Hartree--Fock, print frontier orbitals by default
+        const int nprint2 = 6;
+        for (int i = 0; i != mult*2*nprint2; ++i)
+          orbitals_.push_back(mult*(nclosed - nprint2) + i);
+      } else {
+        // For CASSCF, print active orbitals by default
+        for (int i = 0; i != mult*ref_->nact(); ++i)
+          orbitals_.push_back(mult*nclosed + i);
+      }
     }
   }
-  norb_ = orbitals_.size();
+
+  if (is_density_)
+    norb_ = 0;
+  else
+    norb_ = orbitals_.size();
 
 
   // Determine gridpoints where density will be computed
@@ -125,35 +131,45 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
 
   // TODO Reduce redundancy
   // Form density matrices
-  if (ref_rel) {
-    // 4-component wavefunction (with or without GIAO)
-    const int ncol = paired_ ? 2 : 1;
-
-    for (int i = 0; i != norb_; ++i) {
-      density_.push_back(ref_rel->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], 1.0));
-    }
-    // TODO really this should use the number of electrons, but charge is not available
-    density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->relcoeff()->nclosed(), 0, 1.0));
-
-  } else if (ref_nr) {
-    // GIAO non-relativistic wavefunction
-    for (int i = 0; i != norb_; ++i) {
-      density_.push_back(ref_nr->zcoeff()->form_density_rhf(1, orbitals_[i], 2.0));
-    }
-    density_.push_back(ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0));
+  if (is_density_) {
+    density_.push_back(total_density);
   } else {
-    // Conventional non-relativistic wavefunction
-    // TODO This could be optimized, since we are storing real matrices as complex.  I guess it would require templating...
-    for (int i = 0; i != norb_; ++i) {
-      density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
+    if (ref_rel) {
+    // 4-component wavefunction (with or without GIAO)
+      const int ncol = paired_ ? 2 : 1;
+
+      for (int i = 0; i != norb_; ++i) {
+        density_.push_back(ref_rel->relcoeff()->form_density_rhf(ncol, ncol*orbitals_[i], 1.0));
+      }
+      // TODO really this should use the number of electrons, but charge is not available
+      density_.push_back(ref_rel->relcoeff()->form_density_rhf(2*ref_rel->relcoeff()->nclosed(), 0, 1.0));
+
+    } else if (ref_nr) {
+      // GIAO non-relativistic wavefunction
+      for (int i = 0; i != norb_; ++i) {
+        density_.push_back(ref_nr->zcoeff()->form_density_rhf(1, orbitals_[i], 2.0));
+      }
+      density_.push_back(ref_nr->zcoeff()->form_density_rhf(ref_nr->nclosed(), 0, 2.0));
+    } else {
+      // Conventional non-relativistic wavefunction
+      // TODO This could be optimized, since we are storing real matrices as complex.  I guess it would require templating...
+      for (int i = 0; i != norb_; ++i) {
+        density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(1, orbitals_[i]), 1.0));
+      }
+      density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
     }
-    density_.push_back(make_shared<const ZMatrix>(*ref_->coeff()->form_density_rhf(ref_->nclosed(), 0), 1.0));
   }
 
   const string mtype = relativistic_ ? "relativistic" : "non-relativistic";
   const string stype = paired_ ? "spatial orbital" : "spin-orbital";
-  cout << "Printing " << norb_+1 << " " << mtype << " " << stype << " densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
-  if (relativistic_) cout << "Note that orbital printing ignores the small components of relativistic MOs."  << endl;
+
+  if (is_density_)
+    cout << "Printing relaxed densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << "." << endl;
+  else
+    cout << "Printing " << norb_+1 << " " << mtype << " " << stype << " densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
+
+  if (relativistic_)
+    cout << "Note that orbital printing ignores the small components of relativistic MOs."  << endl;
 
   cout << endl;
 
@@ -176,7 +192,7 @@ namespace bagel {
 
 void MOPrint::compute() {
 
-  assert(density_.size() == orbitals_.size()+1 && density_.size() == norb_+1);
+  assert(!is_density_ && (density_.size() == orbitals_.size()+1 && density_.size() == norb_+1));
   // The last Task will compute integrated total charge
   TaskQueue<MOPrintTask> task(ngrid_);
   points_.resize((ngrid_+1)*(norb_+1), 0.0);

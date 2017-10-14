@@ -32,6 +32,7 @@
 #include <src/util/prim_op.h>
 #include <src/prop/multipole.h>
 #include <src/grad/gradeval.h>
+#include <src/prop/moprint.h>
 
 using namespace std;
 using namespace bagel;
@@ -283,6 +284,12 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, shared_pt
   {
     Dipole dipole(geom_, dtotao, "MP2 relaxed");
     dipole_ = dipole.compute();
+  }
+
+  // print relaxed density if requested
+  if (gradinfo->density_print()) {
+    auto density_print = make_shared<MOPrint>(gradinfo->moprint_info(), geom_, ref_, /*is_density=*/true, make_shared<const ZMatrix>(*dtotao, 1.0));
+    density_print->compute();
   }
 
   ////////////////////////////////////////////////////////////////////////////

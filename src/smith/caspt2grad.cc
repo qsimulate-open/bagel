@@ -34,6 +34,7 @@
 #include <src/smith/caspt2grad.h>
 #include <src/prop/multipole.h>
 #include <src/prop/hyperfine.h>
+#include <src/prop/moprint.h>
 
 
 using namespace std;
@@ -390,6 +391,12 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   {
     Dipole dipole(geom_, dtotao, "CASPT2 relaxed");
     dipole_ = dipole.compute();
+  }
+
+  // print relaxed density if requested
+  if (gradinfo->density_print()) {
+    auto density_print = make_shared<MOPrint>(gradinfo->moprint_info(), geom_, ref_, /*is_density=*/true, make_shared<const ZMatrix>(*dtotao, 1.0));
+    density_print->compute();
   }
 
   // xmat in the AO basis
