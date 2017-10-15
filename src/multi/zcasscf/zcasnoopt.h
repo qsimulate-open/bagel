@@ -32,6 +32,8 @@ namespace bagel {
 class ZCASNoopt_base : public ZCASSCF {
   protected:
     virtual void init_mat1e() override final { /*do nothing*/ }
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final { }
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final { }
 
   protected:
     ZCASNoopt_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)

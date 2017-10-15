@@ -85,8 +85,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::vector<double> energy_;
 
     // internal functions
-    // force time-reversal symmetry for a zmatrix with given number of virtual orbitals
-    void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix> o) const = 0;
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile> o) const = 0;
+
     // used to zero out elements for positronic-electronic rotations
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
@@ -101,8 +102,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     std::shared_ptr<const ZCoeff_Block> update_coeff(std::shared_ptr<const ZCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
-    // kramers adapt for RotFile is a static function!
-    static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
     // print natural orbital occupation numbers
     void print_natocc(const VectorB& ocup) const;
 

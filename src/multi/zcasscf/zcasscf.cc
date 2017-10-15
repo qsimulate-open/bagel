@@ -234,3 +234,53 @@ shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_pt
   return make_shared<DFock>(geom_, hcore_->clone(), coeff * *s.get_conjg(), do_gaunt, do_breit, /*store half*/false, /*robust*/do_breit);
 }
 
+
+shared_ptr<ZCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
+  // constructs a relativistic coefficient for electronic components from a non-rel coefficient
+  const int n = nr_coeff->ndim();
+  const int m = nr_coeff->mdim();
+  assert(nvirt_ - nneg_/2 == nvirtnr_);
+
+  // compute T^(-1/2)
+  shared_ptr<ZMatrix> t12 = overlap_->get_submatrix(n*2, n*2, n, n);
+  t12 = t12->tildex(thresh_overlap_);
+
+  // compute S^(1/2)
+  shared_ptr<ZMatrix> shalf = overlap_->get_submatrix(0, 0, n, n);
+  shalf = shalf->tildex(thresh_overlap_);
+
+  if (t12->mdim() != shalf->mdim())
+    throw runtime_error("Different linear dependency for the overlap and kinetic matrices in conversion to relativistic coefficients.");
+
+  // compute positronic orbital coefficients
+  auto tcoeff = make_shared<ZMatrix>(n, m);
+  tcoeff->add_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  *tcoeff = *t12 * (*shalf % *tcoeff);
+
+  // build output coefficient matrix
+  auto out = make_shared<ZCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
+  assert(out->mdim() == 4*tcoeff->mdim());
+  out->copy_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  out->copy_real_block(1.0, n, 2*m, n, m, *nr_coeff);
+  out->copy_block(2*n, m, n, m, *tcoeff);
+  out->copy_block(3*n, 3*m, n, m, *tcoeff);
+  return out;
+}
+
+
+// Eliminates the positronic entries for the given rot file
+void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
+  int nr_nvirt = nvirt_ - nneg_/2;
+  for (int i = 0; i != nclosed_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_vc(j + nr_nvirt, i) = 0.0;
+      rot->ele_vc(j + nr_nvirt + nvirt_, i) = 0.0;
+    }
+  }
+  for (int i = 0; i != nact_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_va(j + nr_nvirt, i) = 0.0;
+      rot->ele_va(j + nr_nvirt + nvirt_, i) = 0.0;
+    }
+  }
+}
