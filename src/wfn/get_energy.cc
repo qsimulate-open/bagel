@@ -147,7 +147,7 @@ get_energy(const string title, shared_ptr<const PTree> itree, shared_ptr<const G
     else if (title == "zcasscf") {
       string algorithm = itree->get<string>("algorithm", "");
       if (algorithm == "second" || algorithm == "") {
-        auto m = make_shared<ZCASSecond>(itree, geom, ref);          m->compute();   out = m->energy(target);   ref = m->conv_to_ref();
+        auto m = make_shared<ZCASSecond_London>(itree, geom, ref);   m->compute();   out = m->energy(target);   ref = m->conv_to_ref();
       } else if (algorithm == "noopt") {
         auto m = make_shared<ZCASNoopt_London>(itree, geom, ref);    m->compute();   out = m->energy(target);   ref = m->conv_to_ref();
       } else

@@ -48,7 +48,8 @@ ZCASSecond::ZCASSecond(shared_ptr<const PTree> idat, shared_ptr<const Geometry> 
 ZCASSecond_London::ZCASSecond_London(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
  : ZCASSecond_base(idat, geom, ref) {
   init();
-  cout << "   * Using the second-order algorithm" << endl << endl;
+  cout << "   * Using the second-order algorithm" << endl;
+  cout << "   * A magnetic field is applied" << endl << endl;
 }
 
 
@@ -142,7 +143,46 @@ void ZCASSecond::init_coeff() {
 
 
 void ZCASSecond_London::init_coeff() {
-  // TODO
+  auto relref = dynamic_pointer_cast<const RelReference>(ref_);
+
+  // TODO this function is not as robust as it should be
+  if (nr_coeff_)
+    throw runtime_error("ZCASSecond_London requires a relativistic reference");
+
+  // local function
+  auto remove_lindep = [this](const int ndel) {
+    assert(ndel > 0);
+    nbasis_ -= 2*ndel;
+    nneg_   -= 2*ndel;
+    nvirt_  -= 2*ndel;
+    nvirtnr_ -= ndel;
+  };
+
+  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
+  shared_ptr<const ZCoeff_Striped> scoeff;
+  if (hcore_guess) {
+    auto s12 = overlap_->tildex(thresh_overlap_);
+    if (s12->mdim() != s12->ndim())
+      remove_lindep(geom_->nbasis() - s12->mdim()/4);
+    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
+    VectorB eig(hctmp->ndim());
+    hctmp->diagonalize(eig);
+    scoeff = make_shared<const ZCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
+  } else {
+    scoeff = relref->relcoeff_full();
+    scoeff = make_shared<const ZCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
+  }
+
+  // specify active orbitals and move into the active space
+  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    set<int> active_indices;
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    for (auto& i : *iactive)
+      active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
+  }
+  coeff_ = scoeff->block_format();
 }
 
 

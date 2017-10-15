@@ -510,8 +510,7 @@ void ZCASSecond::trans_natorb() {
   if (natocc_) {
     cout << "  ========       state-averaged       ======== " << endl;
     cout << "  ======== natural occupation numbers ======== " << endl;
-    const int num = occup.size();
-    for (int i = 0; i != num; ++i)
+    for (int i = 0; i != occup.size(); ++i)
       cout << setprecision(4) << "   Orbital " << i << " : " << (occup[i] < numerical_zero__ ? 0.0 : occup[i]) << endl;
     cout << "  ============================================ " << endl;
   }
@@ -524,4 +523,29 @@ void ZCASSecond::trans_natorb() {
 
 
 void ZCASSecond_London::trans_natorb() {
+  // first make natural orbitals
+  shared_ptr<ZMatrix> natorb = fci_->rdm1_av();
+  natorb->scale(-1.0);
+  natorb->add_diag(1.0);
+
+  VectorB occup(nact_*2);
+  natorb->diagonalize(occup);
+  for (int i = 0; i != nact_*2; ++i)
+    occup[i] = 1.0-occup[i];
+
+  // rotate RDMs stored in FCI object
+  fci_->rotate_rdms(natorb);
+
+  if (natocc_) {
+    cout << "  ========       state-averaged       ======== " << endl;
+    cout << "  ======== natural occupation numbers ======== " << endl;
+    for (int i = 0; i != occup.size(); ++i)
+      cout << setprecision(4) << "   Orbital " << i << " : " << (occup[i] < numerical_zero__ ? 0.0 : occup[i]) << endl;
+    cout << "  ============================================ " << endl;
+  }
+
+  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
+  auto cnew = make_shared<ZCoeff_Block>(*coeff_, nclosed_, nact_, nvirtnr_, nneg_);
+  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, coeff_->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
+  coeff_ = cnew;
 }
