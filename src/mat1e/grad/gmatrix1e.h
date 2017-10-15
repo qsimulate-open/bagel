@@ -75,8 +75,8 @@ class GMatrix1eTask {
   protected:
     GMatrix1e<MatType>* parent_;
     std::array<std::shared_ptr<const Shell>, 2> shell_;
-    std::array<int,4> atomindex_;
-    std::array<int,4> offset_;
+    std::vector<int> atomindex_;
+    std::vector<int> offset_;
     std::shared_ptr<const Molecule> mol_;
   public:
     GMatrix1eTask<MatType>(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o, std::shared_ptr<const Molecule> m, GMatrix1e<MatType>* p)
@@ -86,5 +86,7 @@ class GMatrix1eTask {
 };
 
 }
+
+extern template class bagel::GMatrix1e<bagel::Matrix>;
 
 #endif

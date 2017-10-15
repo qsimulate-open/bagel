@@ -26,9 +26,9 @@
 #ifndef __SRC_WFN_DKH2ANALYTIC_H
 #define __SRC_WFN_DKH2ANALYTIC_H
 
+#include <src/molecule/molecule.h>
 #include <src/wfn/diagvec.h>
 #include <src/wfn/hcoreinfo.h>
-#include <src/wfn/geometry.h>
 
 // Contains info on DKH2 analytic gradient.
 //
@@ -42,21 +42,14 @@ class DKH2Analytic : public HcoreInfo {
 
     Matrix U;
     DiagVec s;
-    std::vector<Matrix> PU;
 
-    std::vector<Matrix> s_X;
-    std::vector<Matrix> T_pX;
-    std::vector<Matrix> V_pX;
+    std::vector<Matrix> PU;
     std::vector<Matrix> O_pX;
 
     Matrix id;
 
-    void gradinit(std::shared_ptr<const Geometry>);
-    void contracts(std::shared_ptr<const Geometry>);
-    void overlapgrad(std::shared_ptr<const Geometry>);
-    void kineticgrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void naigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
-    void smallnaigrad(std::shared_ptr<const Geometry>, std::shared_ptr<const Matrix>);
+    void gradinit(std::shared_ptr<const Molecule>);
+    void smallnaigrad(std::shared_ptr<const Molecule>, std::shared_ptr<const Matrix>);
 
   public:
     DKH2Analytic() : HcoreInfo() { }

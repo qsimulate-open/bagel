@@ -46,7 +46,7 @@ void GNAI::computebatch(const array<shared_ptr<const Shell>,2>& s, const vector<
   GNAIBatch batch(s, m, tie(a[1], a[0]));
   batch.compute();
 
-  const int dimb1 = s[0]->nbasis(), dimb0 = s[1]->nbasis();
+  const int dimb0 = s[0]->nbasis(), dimb1 = s[1]->nbasis();
   const int natom = m->natom();
   const int offsetb0 = o[0], offsetb1 = o[1];
 

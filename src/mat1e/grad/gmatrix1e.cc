@@ -57,7 +57,7 @@ void GMatrix1e<MatType>::print(const string name, const int len) const {
 template <typename MatType>
 void GMatrix1e<MatType>::init(shared_ptr<const Molecule> mol) {
 
-  vector<shared_ptr<GMatrix1eTask<Matrix>>> task;
+  vector<shared_ptr<GMatrix1eTask<MatType>>> task;
   const size_t nshell  = accumulate(mol->atoms().begin(), mol->atoms().end(), 0,
                                           [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   task.reserve(nshell*nshell);
@@ -83,16 +83,18 @@ void GMatrix1e<MatType>::init(shared_ptr<const Molecule> mol) {
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset = {*o0, *o1};
 
-          task.push_back(make_shared<GMatrix1eTask<Matrix>>(input, atom, offset, mol, this));
+          task.push_back(make_shared<GMatrix1eTask<MatType>>(input, atom, offset, mol, this));
         }
       }
     }
   }
 
-  TaskQueue<shared_ptr<GMatrix1eTask<Matrix>>> tq(move(task));
+  TaskQueue<shared_ptr<GMatrix1eTask<MatType>>> tq(move(task));
   tq.compute();
 
   for (auto& i : matrices_) i->allreduce();
 
 }
+
+template class GMatrix1e<Matrix>;
 

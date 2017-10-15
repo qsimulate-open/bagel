@@ -45,7 +45,7 @@ void GOverlap::computebatch(const array<shared_ptr<const Shell>,2>& s, const vec
 	GOverlapBatch batch(s);
 	batch.compute();
 
-	const int dimb1 = s[0]->nbasis(), dimb0 = s[1]->nbasis();
+	const int dimb0 = s[0]->nbasis(), dimb1 = s[1]->nbasis();
 	const int iatom0 = a[0], iatom1 = a[1], natom = m->natom();
 	const int offsetb0 = o[0], offsetb1 = o[1];
 	const int jatom0 = batch.swap01() ? iatom1 : iatom0, jatom1 = batch.swap01() ? iatom0 : iatom1;
