@@ -221,16 +221,6 @@ std::shared_ptr<Matrix> CASSCF::compute_active_fock(const MatView acoeff, shared
 }
 
 
-shared_ptr<const Coeff> CASSCF::update_coeff(const shared_ptr<const Matrix> cold, shared_ptr<const Matrix> mat) const {
-  auto cnew = make_shared<Coeff>(*cold);
-  int nbas = cold->ndim();
-  assert(nbas == geom_->nbasis());
-  dgemm_("N", "N", nbas, nact_, nact_, 1.0, cold->data()+nbas*nclosed_, nbas, mat->data(), nact_,
-                   0.0, cnew->data()+nbas*nclosed_, nbas);
-  return cnew;
-}
-
-
 shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
   auto rdm1mat = make_shared<Matrix>(nact_, nact_);
   if (nact_) {
@@ -285,15 +275,4 @@ shared_ptr<const Reference> CASSCF::conv_to_ref() const {
   return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
                                         fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
                : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
-}
-
-
-void CASSCF::print_natocc(const VectorB& occup) const {
-  assert(occup.size() > 0);
-  cout << " " << endl;
-  cout << "  ========       state-averaged       ======== " << endl;
-  cout << "  ======== natural occupation numbers ======== " << endl;
-  for (int i=0; i!=occup.size(); ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
-  cout << "  ============================================ " << endl;
 }

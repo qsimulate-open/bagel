@@ -59,6 +59,8 @@ class CASSecond : public CASSCF {
     }
 
     void compute() override;
+
+    void trans_natorb();
 };
 
 }
