@@ -101,10 +101,6 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
 
     virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
-    std::shared_ptr<const ZCoeff_Block> update_coeff(std::shared_ptr<const ZCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
-    // print natural orbital occupation numbers
-    void print_natocc(const VectorB& ocup) const;
-
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
     int nclosed() const { return nclosed_; }

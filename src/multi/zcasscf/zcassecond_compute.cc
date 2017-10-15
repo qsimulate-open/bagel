@@ -29,6 +29,7 @@
 #include <src/scf/dhf/population_analysis.h>
 #include <src/prop/pseudospin/pseudospin.h>
 #include <src/ci/zfci/reljop.h>
+#include <src/util/math/quatmatrix.h>
 
 using namespace std;
 using namespace bagel;
@@ -56,9 +57,8 @@ void ZCASSecond_base::compute() {
         if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
         fci_->read_external_rdm12_av(external_rdm_);
       }
-      auto natorb = fci_->natorb_convert();
-      coeff_ = update_coeff(coeff_, natorb.first);
-      if (natocc_) print_natocc(natorb.second);
+      // natural orbitals will be used in microiteration
+      trans_natorb();
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -489,4 +489,40 @@ shared_ptr<ZRotFile> ZCASSecond_base::compute_denom(shared_ptr<const ZMatrix> cf
     if (abs(out->data(i)) < thresh)
       out->data(i) = 1.0;
   return out;
+}
+
+
+void ZCASSecond::trans_natorb() {
+  // first make natural orbitals
+  shared_ptr<ZMatrix> rdm1 = fci_->rdm1_av();
+  rdm1->scale(-1.0);
+  for (int i = 0; i != nact_*2; ++i)
+    rdm1->element(i,i) += 1.0;
+
+  VectorB occup(nact_*2);
+  auto natorb = make_shared<QuatMatrix>(*rdm1);
+  natorb->diagonalize(occup);
+  for (int i = 0; i != nact_; ++i)
+    occup[i] = 1.0-occup[i];
+
+  // rotate RDMs stored in FCI object
+  fci_->rotate_rdms(natorb);
+
+  if (natocc_) {
+    cout << "  ========       state-averaged       ======== " << endl;
+    cout << "  ======== natural occupation numbers ======== " << endl;
+    const int num = occup.size();
+    for (int i = 0; i != num; ++i)
+      cout << setprecision(4) << "   Orbital " << i << " : " << (occup[i] < numerical_zero__ ? 0.0 : occup[i]) << endl;
+    cout << "  ============================================ " << endl;
+  }
+
+  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
+  auto cnew = make_shared<ZCoeff_Block>(*coeff_, nclosed_, nact_, nvirtnr_, nneg_);
+  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, coeff_->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
+  coeff_ = cnew;
+}
+
+
+void ZCASSecond_London::trans_natorb() {
 }

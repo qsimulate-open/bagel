@@ -203,8 +203,8 @@ class ZHarrison : public Method {
     std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
 
     std::vector<std::shared_ptr<const ZMatrix>> rdm1_matrix() const;
-    std::shared_ptr<const ZMatrix> rdm1_av() const;
-    std::shared_ptr<const ZMatrix> rdm2_av() const;
+    std::shared_ptr<ZMatrix> rdm1_av() const;
+    std::shared_ptr<ZMatrix> rdm2_av() const;
     std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1_av_kramers() const { return rdm1_av_; }
     std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2_av_kramers() const { return rdm2_av_; }
     template<typename T>
@@ -212,7 +212,7 @@ class ZHarrison : public Method {
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
-    std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
+    void rotate_rdms(std::shared_ptr<const ZMatrix> trans);
 
     // interface functions
     void dump_ints() const;

@@ -199,29 +199,10 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 }
 
 
-shared_ptr<const ZCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const ZCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
-  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
-  auto cnew = make_shared<ZCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
-  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, cold->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
-  return cnew;
-}
-
-
 shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
   return !nact_ ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
                 : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
                                             fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
-}
-
-
-void ZCASSCF::print_natocc(const VectorB& occup) const {
-  assert(occup.size() > 0);
-  cout << "  ========       state-averaged       ======== " << endl;
-  cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = occup.size() / 2;
-  for (int i = 0; i != num; ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
-  cout << "  ============================================ " << endl;
 }
 
 
