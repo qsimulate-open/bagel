@@ -496,8 +496,7 @@ void ZCASSecond::trans_natorb() {
   // first make natural orbitals
   shared_ptr<ZMatrix> rdm1 = fci_->rdm1_av();
   rdm1->scale(-1.0);
-  for (int i = 0; i != nact_*2; ++i)
-    rdm1->element(i,i) += 1.0;
+  rdm1->add_diag(1.0);
 
   VectorB occup(nact_*2);
   auto natorb = make_shared<QuatMatrix>(*rdm1);
