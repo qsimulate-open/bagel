@@ -533,19 +533,29 @@ void ZCASSecond_London::trans_natorb() {
   for (int i = 0; i != nact_*2; ++i)
     occup[i] = 1.0-occup[i];
 
+  // reorder the orbitals into the block format 
+  shared_ptr<ZMatrix> trans = natorb->clone();
+  VectorB roccup(nact_*2);
+  for (int i = 0; i != nact_; ++i) {
+    copy_n(natorb->element_ptr(0, 2*i), nact_*2, trans->element_ptr(0, i)); 
+    copy_n(natorb->element_ptr(0, 2*i+1), nact_*2, trans->element_ptr(0, nact_+i)); 
+    roccup[i] = occup[2*i];
+    roccup[nact_+i] = occup[2*i+1];
+  }
+
   // rotate RDMs stored in FCI object
-  fci_->rotate_rdms(natorb);
+  fci_->rotate_rdms(trans);
 
   if (natocc_) {
     cout << "  ========       state-averaged       ======== " << endl;
     cout << "  ======== natural occupation numbers ======== " << endl;
-    for (int i = 0; i != occup.size(); ++i)
-      cout << setprecision(4) << "   Orbital " << i << " : " << (occup[i] < numerical_zero__ ? 0.0 : occup[i]) << endl;
+    for (int i = 0; i != roccup.size(); ++i)
+      cout << setprecision(4) << "   Orbital " << i << " : " << (roccup[i] < numerical_zero__ ? 0.0 : roccup[i]) << endl;
     cout << "  ============================================ " << endl;
   }
 
   // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
   auto cnew = make_shared<ZCoeff_Block>(*coeff_, nclosed_, nact_, nvirtnr_, nneg_);
-  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, coeff_->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
+  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, coeff_->slice(nclosed_*2, nocc_*2) * *trans->get_conjg());
   coeff_ = cnew;
 }
