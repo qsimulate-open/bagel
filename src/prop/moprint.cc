@@ -87,8 +87,6 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
 
   // Determine gridpoints where density will be computed
   const bool angstrom = idata->get<bool>("angstrom", false);
-  ngrid_dim_ = idata->get_array<size_t,3>("ngrid", {{61, 61, 61}});
-  ngrid_ = ngrid_dim_[0]*ngrid_dim_[1]*ngrid_dim_[2];
   array<double,3> start_pos = idata->get_array<double,3>("start_pos", {{-99.0, -99.0, -99.0}});
   inc_size_ = idata->get_array<double,3>("inc_size", {{0.25, 0.25, 0.25}});
 
@@ -104,18 +102,21 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
     array<double,3> max_pos = geom_->atoms(0)->position();
     array<double,3> min_pos = geom_->atoms(0)->position();
     for (auto& i : geom_->atoms()) {
-      for (int j = 0; j != 3; ++j) {
-        if (i->position(j) > max_pos[j])
-          max_pos[j] = i->position(j);
-        if (i->position(j) < min_pos[j])
-          min_pos[j] = i->position(j);
+      if (!i->dummy()) {
+        for (int j = 0; j != 3; ++j) {
+          if (i->position(j) > max_pos[j])
+            max_pos[j] = i->position(j);
+          if (i->position(j) < min_pos[j])
+            min_pos[j] = i->position(j);
+        }
       }
     }
     for (int i = 0; i != 3; ++i) {
       start_pos[i] = min_pos[i] - 4.0;
-      inc_size_[i] = (max_pos[i] - min_pos[i] + 8.0) / (ngrid_dim_[i] - 1);
+      ngrid_dim_[i] = static_cast<size_t>((max_pos[i] - min_pos[i] + 8.0) / inc_size_[i]) + 1;
     }
   }
+  ngrid_ = ngrid_dim_[0] * ngrid_dim_[1] * ngrid_dim_[2];
 
   for (int i = 0; i != ngrid_dim_[0]; ++i) {
     for (int j = 0; j != ngrid_dim_[1]; ++j) {
@@ -162,11 +163,12 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
 
   const string mtype = relativistic_ ? "relativistic" : "non-relativistic";
   const string stype = paired_ ? "spatial orbital" : "spin-orbital";
+  const string griddim = to_string(ngrid_dim_[0]) + " x " + to_string(ngrid_dim_[1]) + " x " + to_string(ngrid_dim_[2]);
 
   if (is_density_)
-    cout << "Printing relaxed densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << "." << endl;
+    cout << "Printing relaxed densities at " << griddim << " = " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << "." << endl;
   else
-    cout << "Printing " << norb_+1 << " " << mtype << " " << stype << " densities at " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
+    cout << "Printing " << norb_+1 << " " << mtype << " " << stype << " densities at " << griddim << " = " << ngrid_ << " gridpoint" << ((ngrid_ > 1) ? "s" : "") << ". " << endl;
 
   if (relativistic_)
     cout << "Note that orbital printing ignores the small components of relativistic MOs."  << endl;
@@ -288,9 +290,12 @@ void MOPrint::print() const {
   density_sum.resize(norb_+1);
   const bool cube_format = idata_->get<bool>("cube", true);
 
+  const string mo_filename = idata_->get<string>("mo_filename", "mo");
+  const string density_filename = idata_->get<string>("density_filename", "density");
+
   if (cube_format) {
     for (int i = 0; i <= norb_; ++i) {
-      const string title = (i == norb_) ? "density" : "mo_" + to_string(orbitals_[i]+1);
+      const string title = (i == norb_) ? density_filename : mo_filename + "_" + to_string(orbitals_[i]+1);
       Muffle muffle(title + ".cub");
       cout << "BAGEL generated cube file." << endl;
       if (i == norb_)
