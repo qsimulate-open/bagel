@@ -288,9 +288,12 @@ void MOPrint::print() const {
   density_sum.resize(norb_+1);
   const bool cube_format = idata_->get<bool>("cube", true);
 
+  string mo_filename = idata_->get<string>("mo_filename", "mo");
+  string density_filename = idata_->get<string>("density_filename", "density");
+
   if (cube_format) {
     for (int i = 0; i <= norb_; ++i) {
-      const string title = (i == norb_) ? "density" : "mo_" + to_string(orbitals_[i]+1);
+      const string title = (i == norb_) ? density_filename : mo_filename + "_" + to_string(orbitals_[i]+1);
       Muffle muffle(title + ".cub");
       cout << "BAGEL generated cube file." << endl;
       if (i == norb_)
