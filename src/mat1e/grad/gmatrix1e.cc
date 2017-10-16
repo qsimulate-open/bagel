@@ -82,6 +82,7 @@ void GMatrix1e<MatType>::init(shared_ptr<const Molecule> mol) {
           array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset = {*o0, *o1};
+          cout << "offsetb1 " << *o1 << endl << "offsetb0 " << *o0 << endl << "dimb1 " << (*b1)->nbasis() << endl << "dimb0 " << (*b0)->nbasis() << endl << "iatom1 " << iatom1 << endl << "iatom0 " << iatom0 << endl << endl;
 
           task.push_back(make_shared<GMatrix1eTask<MatType>>(input, atom, offset, mol, this));
         }

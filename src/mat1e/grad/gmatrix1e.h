@@ -66,7 +66,7 @@ class GMatrix1e {
 
     size_t size() const { return matrices_.size(); }
 
-    virtual void print(const std::string name = "", const int len = 10) const;
+    virtual void print(const std::string name = "", const int len = 0) const;
 
 };
 

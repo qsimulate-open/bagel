@@ -44,7 +44,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   vector<shared_ptr<Matrix>> dkh2grad(3 * natom);
   const MixedBasis<OverlapBatch> mix(current, mol);
   const GOverlap S_X(mol);
-  S_X[0].print("S_X");
+  S_X.print("S_X");
   // contracts(mol);
   // overlapgrad(mol);
 
@@ -58,7 +58,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   const Kinetic T(mol);
   auto T_p = make_shared<const Matrix>(U % T * U);
   const GKinetic T_X(mol);
-  T_X[0].print("T_X");
+  T_X.print("T_X");
   // kineticgrad(mol, T_p);
   Matrix T_pp = s_inv12 * *T_p * s_inv12;
   Matrix W = T_pp;
@@ -93,7 +93,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   const NAI V(mol);
   auto V_p = make_shared<const Matrix>(U % V * U);
   const GNAI V_X(mol);
-  V_X[0].print("V_X");
+  V_X.print("V_X");
   // naigrad(mol, V_p);
   V_p->print("V_p");
   s_inv12.print("s_inv12");
@@ -102,7 +102,7 @@ vector<shared_ptr<Matrix>> DKH2Analytic::dkh_grad(shared_ptr<const Molecule> cur
   const Matrix V_ppp = W % V_pp * W;
   const Small1e<NAIBatch> small1e(mol);
   auto O_p = make_shared<const Matrix>(U % small1e[0] * U);
-  smallnaigrad(mol, O_p);
+  // smallnaigrad(mol, O_p);
   const Matrix O_pp = s_inv12 * *O_p * s_inv12;
   const Matrix O_ppp = W % O_pp * W;
 
