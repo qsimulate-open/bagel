@@ -375,7 +375,7 @@ The CASSCF orbitals are state-averaged over two states.</p>
   <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
   <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;ngrid&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">]</span>
+    <span class="s2">&quot;inc_size&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">]</span>
   <span class="p">},</span>
   <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
@@ -391,6 +391,33 @@ The CASSCF orbitals are state-averaged over two states.</p>
 <span class="p">}</span>
 
 <span class="p">]}</span>
+</pre></div>
+</div>
+<p>Using the keyword <code class="docutils literal"><span class="pre">forces</span></code>, you can print multiple relaxed densities without repeating the energy calculations.
+The example below prints all the XMS-CASPT2 relaxed densities.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;forces&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;grads&quot;</span> <span class="o">:</span> <span class="p">[</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;density_filename&quot;</span> <span class="o">:</span> <span class="s2">&quot;density_0&quot;</span> <span class="p">}</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;density_filename&quot;</span> <span class="o">:</span> <span class="s2">&quot;density_1&quot;</span> <span class="p">}</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;density_filename&quot;</span> <span class="o">:</span> <span class="s2">&quot;density_2&quot;</span> <span class="p">}</span> <span class="p">},</span>
+    <span class="p">{</span> <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;force&quot;</span><span class="p">,</span> <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span> <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;density_filename&quot;</span> <span class="o">:</span> <span class="s2">&quot;density_3&quot;</span> <span class="p">}</span> <span class="p">}</span>
+  <span class="p">],</span>
+  <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
+    <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;smith&quot;</span> <span class="o">:</span> <span class="p">{</span>
+      <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;ms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;xms&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;sssr&quot;</span> <span class="o">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;shift&quot;</span> <span class="o">:</span> <span class="mf">0.2</span><span class="p">,</span>
+      <span class="s2">&quot;frozen&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;nstate&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nact&quot;</span> <span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">&quot;nclosed&quot;</span> <span class="o">:</span> <span class="mi">3</span>
+  <span class="p">}</span> <span class="p">]</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 </div>
