@@ -288,8 +288,8 @@ void MOPrint::print() const {
   density_sum.resize(norb_+1);
   const bool cube_format = idata_->get<bool>("cube", true);
 
-  string mo_filename = idata_->get<string>("mo_filename", "mo");
-  string density_filename = idata_->get<string>("density_filename", "density");
+  const string mo_filename = idata_->get<string>("mo_filename", "mo");
+  const string density_filename = idata_->get<string>("density_filename", "density");
 
   if (cube_format) {
     for (int i = 0; i <= norb_; ++i) {
