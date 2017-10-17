@@ -197,8 +197,7 @@ void ZCASSecond_base::compute() {
     if (restart_cas_) {
       stringstream ss; ss << "zcasscf_" << iter;
       OArchive archive(ss.str());
-      shared_ptr<const Reference> ref = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_,
-        nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
+      shared_ptr<const Reference> ref = conv_to_ref(); 
       archive << ref;
     }
 #endif
