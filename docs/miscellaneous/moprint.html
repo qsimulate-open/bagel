@@ -80,20 +80,11 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ngrid</span></code></p>
-<div class="line-block">
-<div class="line"><strong>Description:</strong> Number of gridpoints in each dimension</div>
-<div class="line"><strong>Datatype:</strong> Array of 3 integers</div>
-<div class="line"><strong>Default:</strong> 61 gridpoints in each direction</div>
-<div class="line"><strong>Recommendation:</strong> It is often reasonable to reduce this parameter, perhaps to [41, 41, 41], in order to lower the time needed to write and read cube files.</div>
-</div>
-</div>
-<div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">start_pos</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Coordinates for one corner of the box within which densities are printed.</div>
 <div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
-<div class="line"><strong>Default:</strong> A position is chosen so that all atoms are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
+<div class="line"><strong>Default:</strong> A position is chosen so that all atoms (except the dummy atoms) are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
 <div class="line"><strong>Recommendation:</strong> Use the default.</div>
 </div>
 </div>
@@ -102,10 +93,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Distances between adjacent gridpoints in each of the three dimensions.</div>
 <div class="line"><strong>Datatype:</strong> Array of 3 doubles</div>
-<div class="line"><strong>Default:</strong> If “start_pos” is not specified, an increment is chosen so that all atoms are at least <span class="math">\(4 a_0\)</span> from the edges of the box.</div>
-<div class="line-block">
-<div class="line">Otherwise, the default is <span class="math">\(0.25 a_0\)</span> in each direction.</div>
-</div>
+<div class="line"><strong>Default:</strong> <span class="math">\(0.25 a_0\)</span> in each direction.</div>
 <div class="line"><strong>Recommendation:</strong> Use the default.</div>
 </div>
 </div>
@@ -115,6 +103,22 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 <div class="line"><strong>Description:</strong> Unit of the “inc_size” parameter</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> False (meaning Bohr; set to true for angstrom)</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">mo_filename</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Name of the MO cube file</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Default:</strong> “mo”</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">density_filename</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Name of the density cube file</div>
+<div class="line"><strong>Datatype:</strong> string</div>
+<div class="line"><strong>Default:</strong> “density”</div>
 </div>
 </div>
 </div>
@@ -129,7 +133,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;moprint&quot;</span><span class="p">,</span>
-  <span class="s2">&quot;ngrid&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span> <span class="p">],</span>
+  <span class="s2">&quot;inc_size&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span> <span class="p">],</span>
   <span class="s2">&quot;orbitals&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">22</span> <span class="p">]</span>
 <span class="p">}</span>
 
@@ -139,7 +143,7 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
 </div>
 <div class="section" id="sample-input-print-relaxed-density">
 <h3>Sample input: Print relaxed density<a class="headerlink" href="#sample-input-print-relaxed-density" title="Permalink to this headline">¶</a></h3>
-<p>Write relaxed density from the XMS-CASPT2 force calculation:</p>
+<p>Write relaxed density to the file <code class="docutils literal"><span class="pre">density_0.cub</span></code> from the XMS-CASPT2 force calculation:</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
@@ -157,7 +161,8 @@ See <a class="reference internal" href="../grad/force.html#force"><span class="s
   <span class="s2">&quot;target&quot;</span> <span class="o">:</span> <span class="mi">0</span><span class="p">,</span>
   <span class="s2">&quot;density_print&quot;</span> <span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
   <span class="s2">&quot;moprint&quot;</span> <span class="o">:</span> <span class="p">{</span>
-    <span class="s2">&quot;ngrid&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">41</span><span class="p">]</span>
+    <span class="s2">&quot;density_filename&quot;</span> <span class="o">:</span> <span class="s2">&quot;density_0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inc_size&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span><span class="p">,</span> <span class="mf">0.20</span> <span class="p">]</span>
   <span class="p">},</span>
   <span class="s2">&quot;method&quot;</span> <span class="o">:</span> <span class="p">[</span> <span class="p">{</span>
     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;caspt2&quot;</span><span class="p">,</span>
