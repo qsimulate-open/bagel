@@ -52,9 +52,6 @@ void GNAI::computebatch(const array<shared_ptr<const Shell>,2>& s, const vector<
 
   for (int l = 0; l != natom; ++l) {
     for (int k = 0; k != 3; ++k) {
-      // for (int i = offsetb0, j = 0; i != offsetb0 + dimb0 ; ++i, ++j) {
-      //   blas::ax_plus_y_n(1, batch.data(k + 3 * l) + j * dimb1, dimb1, matrices_[k + 3 * l]->element_ptr(offsetb1, i));
-      // }
       matrices_[k + 3 * l]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data(k + 3 * l));
     }
   }

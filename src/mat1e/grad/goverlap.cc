@@ -51,11 +51,7 @@ void GOverlap::computebatch(const array<shared_ptr<const Shell>,2>& s, const vec
 	const int jatom0 = batch.swap01() ? iatom1 : iatom0, jatom1 = batch.swap01() ? iatom0 : iatom1;
 
 	for (int k = 0; k != 3; ++k) {
-		// for (int i = offsetb0, j = 0; i != offsetb0 + dimb0 ; ++i, ++j) {
-		// 	// blas::ax_plus_y_n(1, batch.data() + k * batch.size_block() + j * dimb1, dimb1, matrices_[jatom1]->element_ptr(offsetb1, i));
-		// 	// blas::ax_plus_y_n(1, batch.data() + (k + 3) * batch.size_block() + j * dimb1, dimb1, matrices_[jatom0]->element_ptr(offsetb1, i));
-		// }
-		matrices_[jatom1]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data() + k * batch.size_block());
-		matrices_[jatom0]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data() + (k + 3) * batch.size_block());
+		matrices_[k + 3 * jatom1]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data() + k * batch.size_block());
+		matrices_[k + 3 * jatom0]->copy_block(offsetb1, offsetb0, dimb1, dimb0, batch.data() + (k + 3) * batch.size_block());
 	}
 }
