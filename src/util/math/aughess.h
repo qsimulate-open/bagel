@@ -132,7 +132,7 @@ class AugHess {
         mat(size_-1,i) = 0.5*(s->dot_product(**citer) + c->dot_product(**siter));
         mat(i,size_-1) = detail::conj(mat(size_-1,i));
       }
-      prod_(size_-1) = c->dot_product(*grad_);
+      prod_(size_-1) = grad_->dot_product(*c);
     }
 
     std::tuple<double,double> compute_lambda() const {
