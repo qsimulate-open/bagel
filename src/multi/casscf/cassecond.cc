@@ -49,9 +49,7 @@ void CASSecond::compute() {
         if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
         fci_->read_external_rdm12_av(external_rdm_);
       }
-      auto natorb = fci_->natorb_convert();
-      coeff_ = update_coeff(coeff_, natorb.first);
-      if (natocc_) print_natocc(natorb.second);
+      trans_natorb();
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -420,4 +418,30 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
   }
   sigma->scale(0.5);
   return sigma;
+}
+
+
+void CASSecond::trans_natorb() {
+  auto trans = make_shared<Matrix>(nact_, nact_);
+  trans->add_diag(2.0);
+  blas::ax_plus_y_n(-1.0, fci_->rdm1_av()->data(), nact_*nact_, trans->data());
+
+  VectorB occup(nact_);
+  trans->diagonalize(occup);
+
+  if (natocc_) {
+    cout << " " << endl;
+    cout << "  ========       state-averaged       ======== " << endl;
+    cout << "  ======== natural occupation numbers ======== " << endl;
+    int cnt = 0;
+    for (auto& i : occup)
+      cout << setprecision(4) << "   Orbital " << cnt++ << " : " << (i < 2.0 ? 2.0 - i : 0.0) << endl;
+    cout << "  ============================================ " << endl;
+  }
+
+  fci_->rotate_rdms(trans);
+
+  auto cnew = make_shared<Coeff>(*coeff_); 
+  cnew->copy_block(0, nclosed_, cnew->ndim(), nact_, coeff_->slice(nclosed_, nocc_) * *trans);
+  coeff_ = cnew;
 }

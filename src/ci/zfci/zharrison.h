@@ -32,7 +32,7 @@
 #include <src/util/math/davidson.h>
 #include <src/wfn/method.h>
 #include <src/wfn/relreference.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/zmofile.h>
 #include <src/ci/zfci/reldvec.h>
 
 namespace bagel {
@@ -54,13 +54,6 @@ class ZHarrison : public Method {
     int norb_;
     int charge_;
 
-    // breit and gaunt
-    bool gaunt_;
-    bool breit_;
-
-    // enforce time-reversal symmetry
-    bool tsymm_;
-
     // number of states
     int nstate_;
     std::vector<int> states_;
@@ -72,7 +65,7 @@ class ZHarrison : public Method {
     std::shared_ptr<RelZDvec> cc_;
 
     // MO integrals
-    std::shared_ptr<RelMOFile> jop_;
+    std::shared_ptr<ZMOFile> jop_;
 
     // Determinant space
     std::shared_ptr<const RelSpace> space_;
@@ -109,18 +102,18 @@ class ZHarrison : public Method {
     template<class Archive>
     void save(Archive& ar, const unsigned int) const {
       ar << boost::serialization::base_object<Method>(*this);
-      ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_ << gaunt_ << breit_ << tsymm_
+      ar << max_iter_ << davidson_subspace_ << thresh_ << print_thresh_ << nele_ << ncore_ << norb_ << charge_
          << nstate_ << states_ << energy_ << cc_ << space_ << int_space_ << denom_ << rdm1_ << rdm2_ << rdm1_av_ << rdm2_av_ << davidson_ << restart_ << restarted_;
       // for jop_
-      std::shared_ptr<const RelCoeff_Block> coeff = jop_->coeff();
+      std::shared_ptr<const ZCoeff_Block> coeff = jop_->coeff();
       ar << coeff;
     }
     template<class Archive>
     void load(Archive& ar, const unsigned int) {
       ar >> boost::serialization::base_object<Method>(*this);
-      ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_ >> gaunt_ >> breit_ >> tsymm_
+      ar >> max_iter_ >> davidson_subspace_ >> thresh_ >> print_thresh_ >> nele_ >> ncore_ >> norb_ >> charge_
          >> nstate_ >> states_ >> energy_ >> cc_ >> space_ >> int_space_ >> denom_ >> rdm1_ >> rdm2_ >> rdm1_av_ >> rdm2_av_ >> davidson_ >> restart_ >> restarted_;
-      std::shared_ptr<const RelCoeff_Block> coeff;
+      std::shared_ptr<const ZCoeff_Block> coeff;
       ar >> coeff;
       update(coeff);
       restarted_ = true;
@@ -132,15 +125,16 @@ class ZHarrison : public Method {
     // generate spin-adapted guess configurations
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb) const;
 
-    // print functions
-    void print_header() const;
+    // pure virtual functions to be implemented by derived classes
+    virtual std::shared_ptr<const ZCoeff_Block> init_coeff() = 0; 
+    virtual void dump_integrals_and_exit() const = 0; 
 
     void const_denom();
 
     // run-time functions.
     // aaaa and bbbb
-    void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
-    void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const RelMOFile> jop, const bool trans = false) const;
+    void sigma_aa(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop, const bool trans = false) const;
+    void sigma_1e_ab(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZMOFile> jop, const bool trans = false) const;
 
     void sigma_1e_annih_a(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
     void sigma_1e_annih_b(std::shared_ptr<const ZCivec> cc, std::shared_ptr<ZDvec> d) const;
@@ -151,20 +145,20 @@ class ZHarrison : public Method {
     void sigma_2e_create_bb(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
     void sigma_2e_create_ab(std::shared_ptr<ZCivec> sigma, std::shared_ptr<const ZDvec> e) const;
 
-    void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop) const;
+    void sigma_2e_h0101_h1001(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop) const;
 
     template<int i, int j, int k, int l,
              class = typename std::enable_if<i/2 == 0 and j/2 == 0 and k/2 == 0 and l/2 == 0>::type
             >
-    void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const RelMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
+    void sigma_2e_h(std::shared_ptr<const ZDvec> d, std::shared_ptr<ZDvec> e, std::shared_ptr<const ZMOFile> jop, const bool trans, const std::complex<double> fac = 1.0) const {
       std::bitset<4> bit4((i<<3)+(j<<2)+(k<<1)+l);
       btas::contract(fac, *d, {0,1,2}, *jop->mo2e(trans ? ~bit4 : bit4), {3,2}, std::complex<double>(0.0), *e, {0,1,3});
     }
 
-    void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+    void sigma_one(std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const ZMOFile> jop,
                    const int istate, const bool diag, const bool trans) const;
 #ifdef HAVE_MPI_H
-    int sigma_one_parallel(const int icnt, std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const RelMOFile> jop,
+    int sigma_one_parallel(const int icnt, std::shared_ptr<const ZCivec> cc, std::shared_ptr<RelZDvec> sigmavec, std::shared_ptr<const ZMOFile> jop,
                            const int istate, const bool diag, const bool trans) const;
 #endif
 
@@ -178,12 +172,11 @@ class ZHarrison : public Method {
     ZHarrison() { }
     // this constructor is ugly... to be fixed some day...
     ZHarrison(std::shared_ptr<const PTree> a, std::shared_ptr<const Geometry> g, std::shared_ptr<const Reference> b,
-              const int ncore = -1, const int nocc = -1, std::shared_ptr<const RelCoeff_Block> coeff_zcas = nullptr, const bool store_c = false, const bool store_g = false);
+              const int ncore, const int nocc, std::shared_ptr<const ZCoeff_Block> coeff_zcas, const bool store_c, const bool store_g);
 
-    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const RelMOFile> jop, const std::vector<int>& conv) const;
+    std::shared_ptr<RelZDvec> form_sigma(std::shared_ptr<const RelZDvec> c, std::shared_ptr<const ZMOFile> jop, const std::vector<int>& conv) const;
 
-    void update(std::shared_ptr<const RelCoeff_Block> coeff);
-
+    virtual void update(std::shared_ptr<const ZCoeff_Block> coeff) = 0;
     virtual void compute() override;
 
     // returns members
@@ -200,7 +193,7 @@ class ZHarrison : public Method {
     double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
-    std::shared_ptr<const RelMOFile> jop() const { return jop_; }
+    std::shared_ptr<const ZMOFile> jop() const { return jop_; }
 
     // functions related to RDMs
     void compute_rdm12();
@@ -210,8 +203,8 @@ class ZHarrison : public Method {
     std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
 
     std::vector<std::shared_ptr<const ZMatrix>> rdm1_matrix() const;
-    std::shared_ptr<const ZMatrix> rdm1_av() const;
-    std::shared_ptr<const ZMatrix> rdm2_av() const;
+    std::shared_ptr<ZMatrix> rdm1_av() const;
+    std::shared_ptr<ZMatrix> rdm2_av() const;
     std::shared_ptr<const Kramers<2,ZRDM<1>>> rdm1_av_kramers() const { return rdm1_av_; }
     std::shared_ptr<const Kramers<4,ZRDM<2>>> rdm2_av_kramers() const { return rdm2_av_; }
     template<typename T>
@@ -219,7 +212,7 @@ class ZHarrison : public Method {
     template<typename T>
     std::shared_ptr<const ZRDM<2>> rdm2_av_kramers(const T& b) const { KTag<4> t(b); return rdm2_av_->at(t); }
 
-    std::pair<std::shared_ptr<ZMatrix>, VectorB> natorb_convert();
+    void rotate_rdms(std::shared_ptr<const ZMatrix> trans);
 
     // interface functions
     void dump_ints() const;
@@ -233,9 +226,14 @@ class ZHarrison : public Method {
 
 // only for RDM computation.
 class ZFCI_bare : public ZHarrison {
+  protected:
+    std::shared_ptr<const ZCoeff_Block> init_coeff() override { assert(false); }
+    void dump_integrals_and_exit() const override { assert(false); }
+
   public:
     ZFCI_bare(std::shared_ptr<const RelCIWfn> ci);
     void compute() override { assert(false); }
+    void update(std::shared_ptr<const ZCoeff_Block>) override { assert(false); }
 };
 
 }

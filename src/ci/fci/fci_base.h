@@ -150,7 +150,7 @@ class FCI_base : public Method {
     std::shared_ptr<const RDM<1>> rdm1_av() const { return rdm1_av_; }
     std::shared_ptr<const RDM<2>> rdm2_av() const { return rdm2_av_; }
 
-    virtual std::pair<std::shared_ptr<Matrix>, VectorB> natorb_convert();
+    void rotate_rdms(std::shared_ptr<const Matrix> trans);
 
     virtual std::shared_ptr<const CIWfn> conv_to_ciwfn() const = 0;
     virtual std::shared_ptr<const Reference> conv_to_ref() const = 0;

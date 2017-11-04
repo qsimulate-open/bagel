@@ -26,10 +26,9 @@
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/ci/zfci/relfci.h>
 #include <src/multi/zcasscf/zcasscf.h>
-#include <src/mat1e/rel/relhcore.h>
 #include <src/mat1e/giao/relhcore_london.h>
-#include <src/mat1e/rel/reloverlap.h>
 #include <src/mat1e/giao/reloverlap_london.h>
 #include <src/util/atommap.h>
 
@@ -74,8 +73,6 @@ ZCASSCF::ZCASSCF(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, 
     ref_ = scf->conv_to_ref();
   }
 
-  init();
-
 }
 
 
@@ -90,19 +87,7 @@ void ZCASSCF::init() {
   if (!geom_->dfs() || (gaunt_ != relref->gaunt()))
     geom_ = geom_->relativistic(gaunt_);
 
-  // Invoke Kramer's symmetry for any case without magnetic field
-  tsymm_ = !geom_->magnetism();
-
   nneg_ = geom_->nbasis()*2;
-
-  // set hcore and overlap
-  if (!geom_->magnetism()) {
-    hcore_   = make_shared<RelHcore>(geom_);
-    overlap_ = make_shared<RelOverlap>(geom_);
-  } else {
-    hcore_ = make_shared<RelHcore_London>(geom_);
-    overlap_ = make_shared<RelOverlap_London>(geom_);
-  }
 
   // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
@@ -130,54 +115,6 @@ void ZCASSCF::init() {
     throw runtime_error("too many closed orbitals in the input");
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
 
-  // set coefficient
-  const bool hcore_guess = idata_->get<bool>("hcore_guess", false);
-  shared_ptr<const RelCoeff_Striped> scoeff;
-  if (hcore_guess) {
-    auto s12 = overlap_->tildex(thresh_overlap_);
-    if (s12->mdim() != s12->ndim())
-      remove_lindep(s12->mdim());
-
-    auto hctmp = make_shared<ZMatrix>(*s12 % *hcore_ * *s12);
-    VectorB eig(hctmp->ndim());
-    hctmp->diagonalize(eig);
-    scoeff = make_shared<const RelCoeff_Striped>(*s12 * *hctmp, nclosed_, nact_, nvirtnr_, nneg_, /*move_neg*/true);
-  } else if (nr_coeff_ == nullptr) {
-
-    // first set coefficient
-    scoeff = relref->relcoeff_full();
-
-    // If we have fewer MOs than AOs (linearly dependent basis set and/or coefficient projection)
-    if (4 * geom_->nbasis() != scoeff->mdim()) {
-      shared_ptr<const ZMatrix> tildex = overlap_->tildex(thresh_overlap_);
-      if (tildex->mdim() != tildex->ndim())
-        remove_lindep(tildex->mdim());
-
-      // Still not enough MOs (such as after coefficient projection)
-      if (scoeff->mdim() != 2 * nbasis_) {
-        ZMatrix c(scoeff->ndim(), tildex->mdim());
-        c.copy_block(0, 0, scoeff->ndim(), scoeff->npos(), scoeff->slice(0, scoeff->npos()));
-        c.copy_block(0, tildex->mdim() - scoeff->nneg(), scoeff->ndim(), scoeff->nneg(), scoeff->slice(scoeff->npos(), scoeff->mdim()));
-
-        shared_ptr<const ZMatrix> trans = get<0>((*tildex % *overlap_ * *scoeff).svd());
-        c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
-
-        scoeff = make_shared<RelCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
-        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, tsymm_, gaunt_, breit_);
-#ifndef NDEBUG
-        ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
-        assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
-#endif
-      }
-    }
-
-    scoeff = make_shared<const RelCoeff_Striped>(*scoeff, nclosed_, nact_, nvirtnr_, nneg_);
-  } else {
-    if (nr_coeff_->ndim() != nr_coeff_->mdim())
-      remove_lindep(4*nr_coeff_->mdim());
-    scoeff = nonrel_to_relcoeff(nr_coeff_)->striped_format();
-  }
-
   // get maxiter from the input
   max_iter_ = idata_->get<int>("maxiter", 100);
   // get maxiter from the input
@@ -201,38 +138,44 @@ void ZCASSCF::init() {
   cout << "    * gaunt    : " << (gaunt_ ? "true" : "false") << endl;
   cout << "    * breit    : " << (breit_ ? "true" : "false") << endl;
   cout << "    * active space: " << geom_->nele() - charge_ - nclosed_*2 << " electrons in " << nact_ << " orbitals" << endl;
-  cout << "    * time-reversal symmetry " << (tsymm_ ? "will be assumed." : "violation will be permitted.") << endl;
+
+  // initialize hcore and overlap
+  init_mat1e();
+
+  // initialize coefficient
+  init_coeff();
+  // select active orbitals if "active" is set
+  select_active();
 
   const int idel = geom_->nbasis()*2 - nbasis_;
   if (idel)
     cout << "      Due to linear dependency, " << idel << (idel==1 ? " function is" : " functions are") << " omitted" << endl;
 
-  // initialize coefficient to enforce kramers symmetry
-  if (!relref->kramers() && tsymm_ && external_rdm_.empty())
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), tsymm_, gaunt_, breit_);
-
-  // specify active orbitals and move into the active space
-  set<int> active_indices;
-  const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
-  if (iactive) {
-    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
-    for (auto& i : *iactive)
-      active_indices.insert(lexical_cast<int>(i->data()) - 1);
-    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_, tsymm_);
-  }
-
-  coeff_ = scoeff->block_format();
-
   muffle_ = make_shared<Muffle>("casscf.log");
   // CASSCF methods should have FCI member. Inserting "ncore" and "norb" keyword for closed and active orbitals.
   if (nact_)
-    fci_ = make_shared<ZHarrison>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
+    fci_ = make_shared<RelFCI>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
   muffle_->unmute();
   cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
 
   cout <<  "  === Dirac CASSCF iteration (" + geom_->basisfile() + ") ===" << endl << endl;
 
+}
+
+
+void ZCASSCF::select_active() {
+  // specify active orbitals and move into the active space
+  shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
+  if (iactive) {
+    shared_ptr<const ZCoeff_Striped> scoeff = coeff_->striped_format(); 
+    // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
+    set<int> active_indices;
+    for (auto& i : *iactive)
+      active_indices.insert(lexical_cast<int>(i->data()) - 1);
+    scoeff = scoeff->set_active(active_indices, geom_->nele()-charge_);
+    coeff_ = scoeff->block_format();
+  }
 }
 
 
@@ -256,33 +199,10 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 }
 
 
-shared_ptr<const RelCoeff_Block> ZCASSCF::update_coeff(shared_ptr<const RelCoeff_Block> cold, shared_ptr<const ZMatrix> natorb) const {
-  // D_rs = C*_ri D_ij (C*_rj)^+. Dij = U_ik L_k (U_jk)^+. So, C'_ri = C_ri * U*_ik ; hence conjugation needed
-  auto cnew = make_shared<RelCoeff_Block>(*cold, cold->nclosed(), cold->nact(), cold->nvirt_nr(), cold->nneg());
-  cnew->copy_block(0, nclosed_*2, cnew->ndim(), nact_*2, cold->slice(nclosed_*2, nocc_*2) * *natorb->get_conjg());
-  return cnew;
-}
-
-
-shared_ptr<const Reference> ZCASSCF::conv_to_ref() const {
-  shared_ptr<RelReference> out;
-  if (nact_)
-    out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true,
-                                    fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
-  else
-    out = make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, /*kramers*/true);
-  return out;
-}
-
-
-void ZCASSCF::print_natocc(const VectorB& occup) const {
-  assert(occup.size() > 0);
-  cout << "  ========       state-averaged       ======== " << endl;
-  cout << "  ======== natural occupation numbers ======== " << endl;
-  const int num = tsymm_ ? occup.size() / 2 : occup.size();
-  for (int i = 0; i != num; ++i)
-    cout << setprecision(4) << "   Orbital " << i << " : " << occup[i] << endl;
-  cout << "  ============================================ " << endl;
+shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
+  return !nact_ ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
+                : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
+                                            fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
 
 
@@ -296,12 +216,52 @@ shared_ptr<ZMatrix> ZCASSCF::compute_active_fock(const ZMatView coeff, shared_pt
 }
 
 
-void ZCASSCF::remove_lindep(const int nspinor) {
-  assert(nspinor < (4 * geom_->nbasis()));
-  assert(nspinor % 4 == 0);
-  const int ndel = (4*geom_->nbasis() - nspinor) / 4;
-  nbasis_ -= 2*ndel;
-  nneg_ -= 2*ndel;
-  nvirt_ -= 2*ndel;
-  nvirtnr_ -= ndel;
+shared_ptr<ZCoeff_Kramers> ZCASSCF::nonrel_to_relcoeff(shared_ptr<const Matrix> nr_coeff) const {
+  // constructs a relativistic coefficient for electronic components from a non-rel coefficient
+  const int n = nr_coeff->ndim();
+  const int m = nr_coeff->mdim();
+  assert(nvirt_ - nneg_/2 == nvirtnr_);
+
+  // compute T^(-1/2)
+  shared_ptr<ZMatrix> t12 = overlap_->get_submatrix(n*2, n*2, n, n);
+  t12 = t12->tildex(thresh_overlap_);
+
+  // compute S^(1/2)
+  shared_ptr<ZMatrix> shalf = overlap_->get_submatrix(0, 0, n, n);
+  shalf = shalf->tildex(thresh_overlap_);
+
+  if (t12->mdim() != shalf->mdim())
+    throw runtime_error("Different linear dependency for the overlap and kinetic matrices in conversion to relativistic coefficients.");
+
+  // compute positronic orbital coefficients
+  auto tcoeff = make_shared<ZMatrix>(n, m);
+  tcoeff->add_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  *tcoeff = *t12 * (*shalf % *tcoeff);
+
+  // build output coefficient matrix
+  auto out = make_shared<ZCoeff_Kramers>(4*n, nr_coeff->localized(), nclosed_, nact_, nvirtnr_, nneg_);
+  assert(out->mdim() == 4*tcoeff->mdim());
+  out->copy_real_block(1.0, 0, 0, n, m, *nr_coeff);
+  out->copy_real_block(1.0, n, 2*m, n, m, *nr_coeff);
+  out->copy_block(2*n, m, n, m, *tcoeff);
+  out->copy_block(3*n, 3*m, n, m, *tcoeff);
+  return out;
+}
+
+
+// Eliminates the positronic entries for the given rot file
+void ZCASSCF::zero_positronic_elements(shared_ptr<ZRotFile> rot) {
+  int nr_nvirt = nvirt_ - nneg_/2;
+  for (int i = 0; i != nclosed_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_vc(j + nr_nvirt, i) = 0.0;
+      rot->ele_vc(j + nr_nvirt + nvirt_, i) = 0.0;
+    }
+  }
+  for (int i = 0; i != nact_*2; ++i) {
+    for (int j = 0; j != nneg_/2; ++j) {
+      rot->ele_va(j + nr_nvirt, i) = 0.0;
+      rot->ele_va(j + nr_nvirt + nvirt_, i) = 0.0;
+    }
+  }
 }

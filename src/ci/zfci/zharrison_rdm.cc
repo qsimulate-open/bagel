@@ -491,14 +491,14 @@ vector<shared_ptr<const ZMatrix>> ZHarrison::rdm1_matrix() const {
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::rdm1_av() const {
+shared_ptr<ZMatrix> ZHarrison::rdm1_av() const {
   auto out = make_shared<ZMatrix>(norb_*2, norb_*2);
   copy_n(rdm1_av_expanded_->data(), out->size(), out->data());
   return out;
 }
 
 
-shared_ptr<const ZMatrix> ZHarrison::rdm2_av() const {
+shared_ptr<ZMatrix> ZHarrison::rdm2_av() const {
   auto out  = make_shared<ZMatrix>(4*norb_*norb_, 4*norb_*norb_);
   copy_n(rdm2_av_expanded_->data(), out->size(), out->data());
   return out;

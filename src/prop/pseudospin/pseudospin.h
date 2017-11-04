@@ -110,7 +110,7 @@ class Pseudospin {
   public:
     Pseudospin(const int nspin, std::shared_ptr<const Geometry> geom, std::shared_ptr<const RelCIWfn> ciwfn, std::shared_ptr<const PTree> idata);
 
-    void compute(const std::vector<double> energy, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void compute(const std::vector<double> energy, std::shared_ptr<const ZCoeff_Block> active_coeff);
 
     // return symbolic spin matrices
     std::shared_ptr<ZMatrix> spin_xyz(const int i) const { return spin_xyz_[i]; }
@@ -128,7 +128,7 @@ class Pseudospin {
 
     // setup functions
     std::vector<Stevens_Operator> build_extended_stevens_operators(const std::vector<int> ranks) const;
-    void compute_numerical_hamiltonian(const std::vector<double> energy_in, std::shared_ptr<const RelCoeff_Block> active_coeff);
+    void compute_numerical_hamiltonian(const std::vector<double> energy_in, std::shared_ptr<const ZCoeff_Block> active_coeff);
     std::pair<std::shared_ptr<const Matrix>, std::array<double,3>> identify_magnetic_axes() const;
 
     // to extract D-tensor

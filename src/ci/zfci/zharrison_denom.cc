@@ -22,24 +22,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <iomanip>
-#include <stdexcept>
 #include <src/ci/zfci/zharrison.h>
 #include <src/ci/fci/hzdenomtask.h>
-#include <src/util/combination.hpp>
-#include <src/util/constants.h>
 
 using namespace std;
 using namespace bagel;
-
-
-void ZHarrison::update(shared_ptr<const RelCoeff_Block> coeff) {
-  Timer timer;
-  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, tsymm_, store_half_ints_, store_gaunt_half_ints_);
-  cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
-  const_denom();
-}
-
 
 void ZHarrison::const_denom() {
   Timer denom_t;
@@ -49,18 +36,13 @@ void ZHarrison::const_denom() {
 
   for (int i = 0; i != norb_; ++i) {
     for (int j = 0; j != norb_; ++j) {
-      jop->element(j, i) = 0.5*jop_->mo2e("0000", j, i, j, i).real();
-      kop->element(j, i) = 0.5*jop_->mo2e("1111", j, i, i, j).real();
-      // assert for Kramers and symmetry
-      // TODO why do none of these three fail with magnetic field?
-      assert(fabs(jop_->mo2e("0000", j, i, j, i).imag()) < 1.0e-8);
-      assert(fabs(jop_->mo2e("1111", j, i, i, j).imag()) < 1.0e-8);
-      assert(fabs(jop_->mo2e("0101", j, i, j, i).imag()) < 1.0e-8);
+      jop->element(j, i) = 0.25*jop_->mo2e("0000", j, i, j, i).real()
+                         + 0.25*jop_->mo2e("1111", j, i, j, i).real();
+      kop->element(j, i) = 0.25*jop_->mo2e("0000", j, i, i, j).real()
+                         + 0.25*jop_->mo2e("1111", j, i, i, j).real();
     }
-    (*h)(i) = jop_->mo1e("00", i,i).real();
-    // assert for Kramers and symmetry
-    assert((abs(jop_->mo1e("00", i,i) - jop_->mo1e("11", i,i)) < 1.0e-8) || !tsymm_);
-    assert(abs(jop_->mo1e("00", i,i).imag()) < 1.0e-8);
+    (*h)(i) = 0.5*jop_->mo1e("00", i,i).real()
+            + 0.5*jop_->mo1e("11", i,i).real();
   }
   denom_t.tick_print("jop, kop");
 

@@ -22,14 +22,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_ZCASSCF_ZCASSecond_H
-#define __SRC_ZCASSCF_ZCASSecond_H
+#ifndef __SRC_ZCASSCF_ZCASSECOND_H
+#define __SRC_ZCASSCF_ZCASSECOND_H
 
 #include <src/multi/zcasscf/zcasscf.h>
+#include <src/df/reldfhalf.h>
 
 namespace bagel {
 
-class ZCASSecond : public ZCASSCF {
+class ZCASSecond_base : public ZCASSCF {
   protected:
     // convergence threshold for micro iteration relative to stepsize
     double thresh_microstep_;
@@ -47,15 +48,49 @@ class ZCASSecond : public ZCASSCF {
     // apply denominator in microiterations
     std::shared_ptr<ZRotFile> apply_denom(std::shared_ptr<const ZRotFile> grad, std::shared_ptr<const ZRotFile> denom, const double shift, const double scale) const;
 
+    // init functions
+    virtual void init_mat1e() override = 0;
+    virtual void init_coeff() override = 0;
+
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override = 0;
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override = 0;
+
+    virtual void trans_natorb() = 0;
+
+  protected:
+    ZCASSecond_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+
   public:
-    ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr)
-       : ZCASSCF(idat, geom, ref) {
-      std::cout << "   * Using the second-order algorithm" << std::endl << std::endl;
-      thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
-    }
-
     void compute() override;
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0; 
+};
 
+
+class ZCASSecond : public ZCASSecond_base {
+  protected:
+    virtual void init_mat1e() override final;
+    virtual void init_coeff() override final;
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final;
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final;
+    virtual void trans_natorb() override final;
+
+  public:
+    ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(true); }
+};
+
+
+class ZCASSecond_London : public ZCASSecond_base {
+  protected:
+    virtual void init_mat1e() override final;
+    virtual void init_coeff() override final;
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final { /*do nothing*/ }
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final { /*do nothing*/ }
+    virtual void trans_natorb() override final;
+
+  public:
+    ZCASSecond_London(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(false); }
 };
 
 }
