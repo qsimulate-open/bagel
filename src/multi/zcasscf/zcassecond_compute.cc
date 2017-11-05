@@ -393,8 +393,7 @@ shared_ptr<ZRotFile> ZCASSecond_base::compute_hess_trial(shared_ptr<const ZRotFi
       sigma->ax_plus_y_ca(-4.0, (*fccc + *facc) * *ca);
       sigma->ax_plus_y_va( 2.0, (*fcvc + *favc) * *ca);
       sigma->ax_plus_y_ca( 2.0, (*fcvc + *favc) % *va);
-      sigma->ax_plus_y_vc( 2.0, (*fcva + *fava) ^ *ca);
-      sigma->ax_plus_y_vc( 2.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
       sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
       sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
       sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
