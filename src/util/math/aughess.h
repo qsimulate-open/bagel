@@ -133,10 +133,8 @@ class AugHess {
       Matrix scr1(size_+1, size_+1);
       const Matrix scr2 = *mat_->get_submatrix(0, 0, size_+1, size_+1);
       // adding (1,0) vector as an additional basis function
-      for (int i = 0; i != size_; ++i) {
-        scr1(size_, i) = prod_(i);
-        scr1(i, size_) = detail::conj(prod_(i));
-      }
+      for (int i = 0; i != size_; ++i)
+        scr1(size_, i) = scr1(i, size_) = prod_(i);
       return compute_lambda_(scr1, scr2);
     }
 
@@ -152,10 +150,8 @@ class AugHess {
       Matrix scr1(size_+1, size_+1);
       const Matrix scr2 = *mat_->get_submatrix(0, 0, size_+1, size_+1);
       // adding (1,0) vector as an additional basis function
-      for (int i = 0; i != size_; ++i) {
-        scr1(size_, i) = prod_(i);
-        scr1(i, size_) = detail::conj(prod_(i));
-      }
+      for (int i = 0; i != size_; ++i)
+        scr1(size_, i) = scr1(i, size_) = prod_(i);
 
       Matrix scr = scr1 + scr2 * (1.0/lambda);
       scr.diagonalize(eig_);
