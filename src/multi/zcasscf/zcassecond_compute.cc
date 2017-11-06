@@ -294,8 +294,8 @@ shared_ptr<ZRotFile> ZCASSecond_base::compute_hess_trial(shared_ptr<const ZRotFi
     vector<pair<size_t, size_t>> table = dist.atable();
 
     for (auto& itable : table) {
-      shared_ptr<const ZMatrix> tcoeff_slice = (nbatch == 1) ? tcoeff : make_shared<ZMatrix>(tcoeff->slice(itable.first, itable.first+itable.second));
-      shared_ptr<const ZMatrix> ccoeff_slice = (nbatch == 1) ? ccoeff : make_shared<ZMatrix>(ccoeff->slice(itable.first, itable.first+itable.second));
+      shared_ptr<const ZMatrix> tcoeff_slice = (nbatch == 1) ? tcoeff : tcoeff->slice_copy(itable.first, itable.first+itable.second);
+      shared_ptr<const ZMatrix> ccoeff_slice = (nbatch == 1) ? ccoeff : ccoeff->slice_copy(itable.first, itable.first+itable.second);
 
       list<shared_ptr<RelDFHalf>> tmp;
       tie(tmp, ignore) = RelJop::compute_half(geom_, tcoeff_slice, false, false);
