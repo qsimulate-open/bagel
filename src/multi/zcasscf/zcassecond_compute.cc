@@ -121,8 +121,6 @@ void ZCASSecond_base::compute() {
 
     // augmented Hessian solver
     AugHess<ZRotFile> solver(max_micro_iter_, grad);
-    // dummy solver to computer lamda
-    AugHess<ZRotFile> solverele(max_micro_iter_, grad);
     // initial trial vector
     shared_ptr<ZRotFile> trot = apply_denom(grad, denom, 0.001, 1.0);
     impose_symmetry(trot);
@@ -135,18 +133,9 @@ void ZCASSecond_base::compute() {
         zero_positronic_elements(sigma);
       impose_symmetry(sigma);
 
-      shared_ptr<ZRotFile> trotele = trot->copy();
-      shared_ptr<ZRotFile> sigmaele = sigma->copy();
-      zero_positronic_elements(trotele);
-      zero_positronic_elements(sigmaele);
-      const double scal = trotele->normalize();
-      sigmaele->scale(1.0/scal);
-
-      solverele.update(trotele, sigmaele);
-      tuple<double,double> lam = solverele.compute_lambda();
       shared_ptr<ZRotFile> residual;
       double lambda, epsilon, stepsize;
-      tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma, lam);
+      tie(residual, lambda, epsilon, stepsize) = solver.compute_residual(trot, sigma);
       impose_symmetry(residual);
       const double err = residual->norm() / lambda;
       muffle_->unmute();
