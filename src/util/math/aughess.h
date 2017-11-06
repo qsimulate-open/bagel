@@ -71,14 +71,21 @@ class AugHess {
         Matrix scr = mat1 + mat2 * (1.0/lambda_test);
         scr.diagonalize(v);
 
-        if (std::abs(scr(nlast-1,0)) < 0.1)
-          std::cout << "*** [aughess.cc] warning : you may have convergence issue due to very small : " << scr(nlast-1,0) << std::endl;
+        // find the best vector ((c) Yanatech)
+        int ivec = -1;
+        for (int j = 0; j != nlast; ++j)
+          if (std::abs(scr.element(nlast-1,j)) <= 1.1 && std::abs(scr.element(nlast-1,j)) > 0.1) {
+            ivec = j;
+            break;
+          }
+        if (ivec < 0)
+          throw std::logic_error("logical error in AugHess");
 
-        blas::scale_n(1.0/scr(nlast-1,0), scr.data(), nlast-1);
+        blas::scale_n(1.0/scr(nlast-1,ivec), scr.data(), nlast-1);
         std::shared_ptr<T> x = c_.front()->clone();
         auto citer = c_.begin();
         for (int ii = 0; ii != nlast-1; ++ii)
-          x->ax_plus_y(scr(ii,0), *citer++);
+          x->ax_plus_y(scr(ii,ivec), *citer++);
 
         stepsize = x->norm() / std::fabs(lambda_test);
 
@@ -164,7 +171,9 @@ class AugHess {
           break;
         }
       if (ivec < 0)
-       throw std::logic_error("logical error in AugHess");
+        throw std::logic_error("logical error in AugHess");
+      else if (ivec != 0)
+        std::cout << " ... the vector found in AugHess was not the lowest eigenvector ..." << std::endl;
 
       // scale eigenfunction
       for (int i = 0; i != size_; ++i)
