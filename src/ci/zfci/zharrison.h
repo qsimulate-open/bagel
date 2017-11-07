@@ -227,7 +227,7 @@ class ZHarrison : public Method {
 // only for RDM computation.
 class ZFCI_bare : public ZHarrison {
   protected:
-    std::shared_ptr<const ZCoeff_Block> init_coeff() override { assert(false); }
+    std::shared_ptr<const ZCoeff_Block> init_coeff() override { assert(false); return nullptr; }
     void dump_integrals_and_exit() const override { assert(false); }
 
   public:
