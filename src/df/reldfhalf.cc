@@ -147,16 +147,16 @@ void RelDFHalf::ax_plus_y(complex<double> a, shared_ptr<const RelDFHalf> o) {
 }
 
 
-void RelDFHalf::rotate_occ(shared_ptr<const ZMatrix> rdm1) {
+void RelDFHalf::transform_occ(shared_ptr<const ZMatrix> rdm1) {
   shared_ptr<const Matrix> rdm1r = rdm1->get_real_part();
   shared_ptr<const Matrix> rdm1i = rdm1->get_imag_part();
 
   auto real = dfhalf_[0]->copy();
   auto imag = dfhalf_[1]->copy();
-  dfhalf_[0]->rotate_occ(rdm1r);
-  dfhalf_[1]->rotate_occ(rdm1r);
-  real->rotate_occ(rdm1i);
-  imag->rotate_occ(rdm1i);
+  dfhalf_[0] = dfhalf_[0]->transform_occ(rdm1r);
+  dfhalf_[1] = dfhalf_[1]->transform_occ(rdm1r);
+  real = real->transform_occ(rdm1i);
+  imag = imag->transform_occ(rdm1i);
   dfhalf_[0]->ax_plus_y(-1.0, imag);
   dfhalf_[1]->ax_plus_y( 1.0, real);
 }

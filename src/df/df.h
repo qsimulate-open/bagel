@@ -189,7 +189,7 @@ class DFHalfDist : public ParallelDF {
     std::shared_ptr<DFHalfDist> merge_b1(std::shared_ptr<DFHalfDist> o) const;
     std::shared_ptr<DFHalfDist> slice_b1(const int slice_start, const int slice_size) const;
 
-    void rotate_occ(const std::shared_ptr<const Matrix> d);
+    std::shared_ptr<DFHalfDist> transform_occ(const std::shared_ptr<const Matrix> d) const;
     std::shared_ptr<DFHalfDist> apply_density(const std::shared_ptr<const Matrix> d) const;
 
     std::shared_ptr<Matrix> compute_Kop_1occ(const std::shared_ptr<const Matrix> den, const double a) const;
@@ -220,7 +220,7 @@ class DFFullDist : public ParallelDF {
     template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
     std::shared_ptr<DFHalfDist> back_transform(std::shared_ptr<T> c) const { return back_transform(*c); }
 
-    void rotate_occ1(const std::shared_ptr<const Matrix> d);
+    std::shared_ptr<DFFullDist> transform_occ1(const std::shared_ptr<const Matrix> d) const;
 
     // 2RDM contractions
     // special function for RHF
