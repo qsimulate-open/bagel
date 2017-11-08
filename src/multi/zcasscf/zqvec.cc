@@ -70,4 +70,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   *this = *compute(false, false);
   if (gaunt)
     *this += *compute(gaunt, breit);
+
+  // complex conjugation due to bra-ket conjugation
+  blas::conj_n(this->data(), this->size());
 }
