@@ -123,7 +123,7 @@ void MOFile::compress_and_set(shared_ptr<const Matrix> buf1e, shared_ptr<const M
 void MOFile::update_1ext_ints(const shared_ptr<const Matrix>& coeff) {
   assert(mo2e_1ext_->nocc() == nocc_);
   assert(coeff->ndim() == nocc_);
-  mo2e_1ext_->rotate_occ(coeff);
+  mo2e_1ext_ = mo2e_1ext_->transform_occ(coeff);
 }
 
 

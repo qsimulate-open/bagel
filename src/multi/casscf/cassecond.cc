@@ -286,7 +286,7 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
     if (nclosed_) {
       Matrix tmp(nao, nao);
       shared_ptr<DFFullDist> vgaa = vaa->copy();
-      vgaa->rotate_occ1(make_shared<Matrix>(rdm1));
+      vgaa = vgaa->transform_occ1(make_shared<Matrix>(rdm1));
       vgaa->ax_plus_y(-1.0, vaa);
       for (int i = 0; i != nact_; ++i) {
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
@@ -353,7 +353,7 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
   shared_ptr<const DFHalfDist> halfta = geom_->df()->compute_half_transform(tcoeff);
   if (nclosed_) {
     shared_ptr<DFHalfDist> halftad = halfta->copy();
-    halftad->rotate_occ(make_shared<Matrix>(rdm1));
+    halftad = halftad->transform_occ(make_shared<Matrix>(rdm1));
     const Matrix gt = *compute_gd(halftad, halfa, acoeff);
     sigma->ax_plus_y_ca(16.0, ccoeff % gt * acoeff);
     sigma->ax_plus_y_vc(16.0, vcoeff % gt * ccoeff);

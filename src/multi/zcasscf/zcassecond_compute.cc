@@ -319,7 +319,7 @@ shared_ptr<ZRotFile> ZCASSecond_base::compute_hess_trial(shared_ptr<const ZRotFi
     shared_ptr<const ZMatrix> rdm1p = rdm1.get_conjg();
     for (auto& i : halftac) {
        shared_ptr<RelDFHalf> tmp = i->copy();
-       tmp->rotate_occ(rdm1p);
+       tmp = tmp->transform_occ(rdm1p);
        halftacd.push_back(tmp);
     }
     const ZMatrix gt = *compute_gd(halftacd, halfac, acoeff, make_shared<ZMatrix>(*tcoeff * rdm1));

@@ -456,7 +456,7 @@ shared_ptr<Matrix> CPCASSCF::compute_amat(shared_ptr<const Dvec> zvec, shared_pt
     Matrix fockz(*geom_->df()->compute_Jop(half, adenj, /*only once*/false) * ocoeff);
     // exchange
     shared_ptr<DFFullDist> halfd = half->compute_second_transform(ocoeff);
-    halfd->rotate_occ1(rdm1mat);
+    halfd = halfd->transform_occ1(rdm1mat);
     fockz += *half->form_2index(halfd->apply_JJ(), -0.5);
     // add to amat
     amat->add_block(4.0, 0, 0, nmobasis, nclosed, *coeff_ % fockz);
