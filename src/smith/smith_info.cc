@@ -26,7 +26,7 @@
 #ifdef COMPILE_SMITH
 
 #include <src/smith/smith_info.h>
-#include <src/wfn/relcoeff.h>
+#include <src/wfn/zcoeff.h>
 #include <src/ci/fci/fci.h>
 #include <src/ci/zfci/zharrison.h>
 
@@ -218,7 +218,7 @@ shared_ptr<const Matrix> SMITH_Info<double>::coeff() const {
 
 template<>
 shared_ptr<const ZMatrix> SMITH_Info<complex<double>>::coeff() const {
-  shared_ptr<const RelCoeff_Striped> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
+  shared_ptr<const ZCoeff_Striped> c = dynamic_pointer_cast<const RelReference>(ref_)->relcoeff();
   return c->block_format(nclosed(), nact(), nvirt()+nfrozenvirt(), 0);
 }
 

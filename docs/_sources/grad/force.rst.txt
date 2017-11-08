@@ -7,6 +7,7 @@ Nuclear gradient and derivative coupling
 Description
 ===========
 The force section can be used to compute the analytical gradient (force), the numerical gradient by finite difference, or the non-adiabatic coupling matrix elements (NACME). Analytical gradients are implemented for unrestricted Hartree–Fock (UHF), restricted open-shell Hartree–Fock (ROHF), restricted Hartree–Fock (RHF), Dirac–Hartree–Fock (DHF), Møller–Plesset perturbation theory (MP2), complete active space self consistent field (CASSCF), and multireference perturbation theory (CASPT2). For CASSCF and CASPT2, it is also possible to perform multiple evaluations of the gradients without repeating the energy calculations.
+In addition, the relaxed density in MP2, SA-CASSCF, and CASPT2 calculations can be printed in the Gaussian Cube format.
 
 Keywords
 ========
@@ -123,6 +124,12 @@ Optional Keywords
    | **Description:** The numerical gradient code is embarrassingly parallelized so that the displacements in the finite difference calculations can be run at the same time. The nproc keyword allows the user to specify the number of MPI processes to be used for each energy calculation.
    | **Datatype:** int
    | **Default:** 1
+
+.. topic:: ``density_print``
+
+   | **Description:** Print relaxed densities in the Gaussian Cube format. Applies to SA-CASSCF, CASPT2, and MP2 calculations. The options for density printing can be specified in ``moprint`` block (see below for example and :ref:`here <moprint>` for the keywords).
+   | **Datatype:** bool
+   | **Default:** false
 
 Example
 =======
@@ -271,6 +278,79 @@ Using the keyword ``forces``, you can run multiple gradient or derivative coupli
        "nclosed" : 44
      } ]
    }
+
+Sample input: Printing relaxed density
+--------------------------------------
+
+The relaxed density in MP2, SA-CASSCF, and CASPT2 gradient calculations can be printed in the Gaussian Cube format (``density.cub`` file) by setting the keyword ``density_print`` to true
+(see the example below).
+
+.. code-block:: javascript
+
+  { "bagel" : [
+
+  {
+    "title" : "molecule",
+    "basis" : "svp",
+    "df_basis" : "svp-jkfit",
+    "geometry" : [
+      { "atom" : "Li", "xyz" : [ 0.000000, 0.000000, 6.000000] },
+      { "atom" : "F",  "xyz" : [ 0.000000, 0.000000, 0.000000] }
+    ]
+  },
+
+  {
+    "title" : "force",
+    "target" : 0,
+    "density_print" : true,
+    "moprint" : {
+      "inc_size" : [ 0.20, 0.20, 0.20]
+    },
+    "method" : [ {
+      "title" : "caspt2",
+      "smith" : {
+        "method" : "caspt2",
+        "shift" : 0.2,
+        "frozen" : true
+      },
+      "nstate" : 4,
+      "nact" : 4,
+      "nclosed" : 3
+    } ]
+  }
+
+  ]}
+
+Using the keyword ``forces``, you can print multiple relaxed densities without repeating the energy calculations.
+The example below prints all the XMS-CASPT2 relaxed densities.
+
+
+.. code-block:: javascript
+
+  {
+    "title" : "forces",
+    "grads" : [
+      { "title" : "force", "target" : 0, "density_print" : true, "moprint" : { "density_filename" : "density_0" } },
+      { "title" : "force", "target" : 1, "density_print" : true, "moprint" : { "density_filename" : "density_1" } },
+      { "title" : "force", "target" : 2, "density_print" : true, "moprint" : { "density_filename" : "density_2" } },
+      { "title" : "force", "target" : 3, "density_print" : true, "moprint" : { "density_filename" : "density_3" } }
+    ],
+    "method" : [ {
+      "title" : "caspt2",
+      "smith" : {
+        "method" : "caspt2",
+        "ms" : "true",
+        "xms" : "true",
+        "sssr" : "true",
+        "shift" : 0.2,
+        "frozen" : true
+      },
+      "nstate" : 4,
+      "nact" : 4,
+      "nclosed" : 3
+    } ]
+  }
+
 
 References
 ==========

@@ -26,43 +26,41 @@
 #define __SRC_MULTI_ZCASSCF_ZCASNOOPT_H
 
 #include <src/multi/zcasscf/zcasscf.h>
-#include <src/prop/pseudospin/pseudospin.h>
 
 namespace bagel {
 
-class ZCASNoopt : public ZCASSCF {
+class ZCASNoopt_base : public ZCASSCF {
   protected:
-    void common_init() {
-      std::cout << "    * No orbital optimization will be performed!" << std::endl << std::endl;
-    }
+    virtual void init_mat1e() override final { /*do nothing*/ }
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final { }
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final { }
+
+  protected:
+    ZCASNoopt_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
+      : ZCASSCF(idat, geom, ref) { }
 
   public:
-    ZCASNoopt(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
-     : ZCASSCF(idat, geom, ref) { common_init(); }
+    void compute() override final;
+};
 
-    void compute() override {
-      if (external_rdm_.empty()) {
-        std::cout << " Computing RDMs from FCI calculation " << std::endl;
-        fci_->compute();
-        fci_->compute_rdm12();
-      } else {
-        fci_->read_external_rdm12_av(external_rdm_);
-      }
-      energy_ = fci_->energy();
 
-      // TODO When the Property class is implemented, this should be one
-      std::shared_ptr<const PTree> aniso_data = idata_->get_child_optional("aniso");
-      if (aniso_data) {
-        if (geom_->magnetism()) {
-          std::cout << "  ** Magnetic anisotropy analysis is currently only available for zero-field calculations; sorry." << std::endl;
-        } else {
-          const int nspin = aniso_data->get<int>("nspin", (idata_->get_vector<int>("state", 0)).size()-1);
-          Pseudospin ps(nspin, geom_, fci_->conv_to_ciwfn(), aniso_data);
-          ps.compute(energy_, coeff_->active_part());
-        }
-      }
-    }
+class ZCASNoopt : public ZCASNoopt_base {
+  protected:
+    virtual void init_coeff() override;
 
+  public:
+    ZCASNoopt(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(true); }
+};
+
+
+class ZCASNoopt_London : public ZCASNoopt_base {
+  protected:
+    virtual void init_coeff() override;
+
+  public:
+    ZCASNoopt_London(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
+    std::shared_ptr<const Reference> conv_to_ref() const override { return conv_to_ref_(false); }
 };
 
 }

@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Installation &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="How to run BAGEL" href="how_to_run_bagel.html" />
     <link rel="prev" title="First steps with BAGEL" href="quickstart.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -142,7 +139,7 @@ $ ../configure &#39;--enable-mkl&#39; &#39;LDFLAGS=-L$BOOST_ROOT/lib&#39; &#39;-
 <dl class="docutils">
 <dt>Configure options:</dt>
 <dd><div class="first last line-block">
-<div class="line"><code class="docutils literal"><span class="pre">--with-mpi=value</span></code>  turns on MPI, where &#8220;value&#8221; can be &#8220;mvapich&#8221;, &#8220;intel&#8221;, or &#8220;openmpi&#8221;.
+<div class="line"><code class="docutils literal"><span class="pre">--with-mpi=value</span></code>  turns on MPI, where “value” can be “mvapich”, “intel”, or “openmpi”.
 However, Open MPI is not recommended.</div>
 <div class="line"><code class="docutils literal"><span class="pre">--enable-mkl</span></code>  turns on MKL extensions, such as efficient matrix transposition. MKL libraries are automatically detected.</div>
 <div class="line"><code class="docutils literal"><span class="pre">--disable-scalapack</span></code>  will disable the use of ScaLapack (parallel Lapack) which is not recommended.</div>
@@ -154,7 +151,7 @@ However, Open MPI is not recommended.</div>
 </div>
 </dd>
 </dl>
-<p>Example (Release build on the Shiozaki group&#8217;s cluster)</p>
+<p>Example (Release build on the Shiozaki group’s cluster)</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ export LD_LIBRARY_PATH=/usr/local/boost/boost_1_62_0_gcc-6.2.0/lib:$LD_LIBRARY_PATH
 
 $ ../configure &#39;LDFLAGS=-L/usr/local/boost/boost_1_62_0_gcc-6.2.0/lib&#39; &#39;CXXFLAGS=-DNDEBUG -O3 -mavx&#39;
@@ -187,7 +184,7 @@ $ ./TestSuite --log_level=all
 <li><p class="first">Configuring without MKL</p>
 <div class="line-block">
 <div class="line">If MKL is not available, the path to cblas headers may need to be included as a configure option
-     (e.g., &#8216;&#8211;with-include=-I/usr/path/to/cblas&#8217;).
+     (e.g., ‘–with-include=-I/usr/path/to/cblas’).
 Furthermore, if relativistic calculations fail without MKL, users may consider reconfiguring and recompiling with -DZDOT_RETURN in CXXFLAGS.</div>
 </div>
 </li>

@@ -1,16 +1,13 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
     <title>Full configuration interaction (FCI) &#8212; BAGEL Manual</title>
-    
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -24,12 +21,12 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Relativistic full configuration interaction (RelFCI)" href="zfci.html" />
     <link rel="prev" title="Configuration interaction" href="ci_methods.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -86,8 +83,8 @@ This FCI section is closely related to that for the <a class="reference internal
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">KH,</span> <span class="pre">Knowles,</span> <span class="pre">Handy</span></code>: Use the Knowles&#8211;Handy algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">HZ,</span> <span class="pre">Harrison,</span> <span class="pre">Zarrabian</span></code>: Use the Harrison&#8211;Zarrabian algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">KH,</span> <span class="pre">Knowles,</span> <span class="pre">Handy</span></code>: Use the Knowles–Handy algorithm.</div>
+<div class="line"><code class="docutils literal"><span class="pre">HZ,</span> <span class="pre">Harrison,</span> <span class="pre">Zarrabian</span></code>: Use the Harrison–Zarrabian algorithm.</div>
 <div class="line"><code class="docutils literal"><span class="pre">Dist,</span> <span class="pre">parallel</span></code>: Use a parallel algorithm based on HZ.</div>
 </div>
 <div class="line"><strong>Default:</strong> KH or Dist depending on the size of the calculation and the number of MPI processes.</div>
@@ -201,7 +198,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>A Hartree&#8211;Fock and FCI calculation on an oxygen molecule with an elongated bond. The HF calculation is a references for the FCI calculation. Please refer to <span class="xref std std-ref">molden</span> for more information on the print input block.</p>
+<p>A Hartree–Fock and FCI calculation on an oxygen molecule with an elongated bond. The HF calculation is a references for the FCI calculation. Please refer to <a class="reference internal" href="../miscellaneous/molden.html#molden"><span class="std std-ref">MOLDEN</span></a> for more information on the print input block.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>

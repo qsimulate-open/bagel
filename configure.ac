@@ -171,6 +171,7 @@ AC_CONFIG_FILES([Makefile
                  src/ci/fci/Makefile
                  src/ci/zfci/Makefile
                  src/ci/ras/Makefile
+                 src/response/Makefile
                  src/multi/Makefile
                  src/multi/casscf/Makefile
                  src/multi/zcasscf/Makefile

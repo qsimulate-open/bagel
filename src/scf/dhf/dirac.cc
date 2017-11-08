@@ -192,9 +192,13 @@ void Dirac::compute() {
 
   // print out orbital populations, if needed
   if (idata_->get<bool>("pop", false)) {
-    cout << "    * Printing out population analysis to dhf.log" << endl;
-    Muffle muf ("dhf.log");
-    population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_, (geom_->magnetism() ? 0 : 1));
+    if (!geom_->magnetism()) {
+      cout << "    * Printing out population analysis to dhf.log" << endl;
+      Muffle muf ("dhf.log");
+      population_analysis(geom_, coeff_->slice(nneg_, nneg_*2), overlap_);
+    } else {
+      cout << "    * Population analysis is currently disabled when external magnetic fields are applied" << endl;
+    }
   }
 
 }
@@ -212,7 +216,7 @@ shared_ptr<const Reference> Dirac::conv_to_ref() const {
   const size_t npos = coeff_->mdim() - nneg_;
   assert(npos % 2 == 0);
   // coeff is occ, virt, nneg
-  auto c = make_shared<RelCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
+  auto c = make_shared<ZCoeff_Striped>(*coeff_, nele_/2, nele_%2, (npos-nele_)/2, nneg_, /*move_neg*/true);
   auto out = make_shared<RelReference>(geom_, c, energy_, nneg_, nele_/2, nele_%2, (npos-nele_)/2, gaunt_, breit_);
   vector<double> eigp(eig_.begin()+nneg_, eig_.end());
   vector<double> eigm(eig_.begin(), eig_.begin()+nneg_);
@@ -248,12 +252,11 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     auto zref = dynamic_pointer_cast<const ZReference>(ref_);
     assert(geom_->magnetism());
     const int nocc = ref_->nocc();
-    shared_ptr<ZMatrix> fock;
     assert(nocc*2 == nele_);
     auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
     ocoeff->add_block(1.0, 0,    0, n, nocc, zref->zcoeff()->slice(0,nocc));
     ocoeff->add_block(1.0, n, nocc, n, nocc, zref->zcoeff()->slice(0,nocc));
-    fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
+    auto fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
