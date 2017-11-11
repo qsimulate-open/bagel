@@ -181,16 +181,15 @@ from which one obtains
 
 .. code-block:: javascript
 
-
     * freezing 6 orbitals
     * SS-SR internal contraction is used
-       - MO integral evaluation                    0.16
+       - MO integral evaluation                    0.17
 
   ++ State-averaged Fock matrix over basis states ++
 
                          0                   1
      0       -2.0342653161       -0.0001122518
-     1       -0.0001122518       -1.5807049807
+     1       -0.0001122518       -1.5807049808
 
 
     * Extended multi-state CASPT2 (XMS-CASPT2)
@@ -202,60 +201,62 @@ from which one obtains
   ++ Reference energies in XMS basis ++
 
                          0                   1
-     0     -230.6050217540        0.0000451863
-     1        0.0000451863     -230.4224437280
+     0     -230.6050217539        0.0000451863
+     1        0.0000451863     -230.4224437279
 
-    - linear dependency detected:    2 /  144    min eigenvalue:    -1.4365e-15    max eigenvalue:    -2.7849e-16
-    - linear dependency detected:   17 /  432    min eigenvalue:    -2.0066e-15    max eigenvalue:     4.8064e-10
-    - linear dependency detected:   17 /  432    min eigenvalue:    -3.7436e-16    max eigenvalue:     2.6360e-10
-       - RDM + denominator evaluation              0.68
+    - linear dependency detected:    2 /  144    min eigenvalue:     6.1865e-16    max eigenvalue:     2.4045e-15
+    - linear dependency detected:   17 /  432    min eigenvalue:    -3.1714e-15    max eigenvalue:     4.8064e-10
+    - linear dependency detected:   17 /  432    min eigenvalue:    -1.2669e-15    max eigenvalue:     2.6360e-10
+       - RDM + denominator evaluation              0.66
 
     * Zeroth order energy : state  0       -2.0342653439
-    * Zeroth order energy : state  1       -1.5807049529
+    * Zeroth order energy : state  1       -1.5807049530
 
       ---- iteration ----
 
-        0    -0.66979449     0.00004693      0.38
-        1    -0.67020074     0.00000237      0.39
-        2    -0.67020211     0.00000012      0.40
+        0    -0.66979449     0.00181235      0.38
+        1    -0.67020074     0.00009168      0.40
+        2    -0.67020211     0.00000478      0.40
+        3    -0.67020211     0.00000040      0.41
 
-        0    -0.66833574     0.00003953      0.39
-        1    -0.66872419     0.00000200      0.38
-        2    -0.66872593     0.00000012      0.40
+        0    -0.66833574     0.00152666      0.40
+        1    -0.66872419     0.00007727      0.38
+        2    -0.66872593     0.00000453      0.39
+        3    -0.66872594     0.00000033      0.40
 
       -------------------
 
-       - CASPT2 energy evaluation                  2.44
+       - CASPT2 energy evaluation                  3.27
 
-    * CASPT2 energy : state  0     -231.3177897496
-        w/o shift correction       -231.2752238636
-        reference weight              0.8245182506
+    * CASPT2 energy : state  0     -231.3177899925
+        w/o shift correction       -231.2752238675
+        reference weight              0.8245174383
 
-    * CASPT2 energy : state  1     -231.1349872864
-        w/o shift correction       -231.0911696588
-        reference weight              0.8202852351
+    * CASPT2 energy : state  1     -231.1349876522
+        w/o shift correction       -231.0911696633
+        reference weight              0.8202840199
 
 
     * MS-CASPT2 Heff
-           -231.3177897496        0.0000232715
-              0.0000232715     -231.1349872864
+           -231.3177899925        0.0000232719
+              0.0000232719     -231.1349876522
 
 
     * MS-CASPT2 rotation matrix
-             -0.9999999919       -0.0001273042
-              0.0001273042       -0.9999999919
+             -0.9999999919       -0.0001273065
+              0.0001273065       -0.9999999919
 
 
     * XMS-CASPT2 rotation matrix
-              0.9999999928       -0.0001201861
-              0.0001201861        0.9999999928
+              0.9999999928       -0.0001201838
+              0.0001201838        0.9999999928
 
-    * MS-CASPT2 energy : state  0     -231.3177897526
-    * MS-CASPT2 energy : state  1     -231.1349872834
+    * MS-CASPT2 energy : state  0     -231.3177899955
+    * MS-CASPT2 energy : state  1     -231.1349876492
 
 
 
-    * METHOD: SMITH                                3.54
+    * METHOD: SMITH                                4.40
 
 
 ==========
