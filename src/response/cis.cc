@@ -61,7 +61,7 @@ void CIS::compute() {
     Matrix ebj(nvirt_, nocc_);
     for (int i = 0; i != nocc_; ++i)
       for (int j = 0; j != nvirt_; ++j)
-        ebj(j, i) = eig_[nocc_+j] - eig_[i]; 
+        ebj(j, i) = eig_[nocc_+j] - eig_[i];
 
     for (int i = 0; i != nstate_; ++i) {
       auto min = min_element(ebj.begin(), ebj.end());
@@ -88,10 +88,10 @@ void CIS::compute() {
       if (!conv[ist]) {
         shared_ptr<Matrix> tmp = amp_[ist]->copy();
         // one body part
-        for (int i = 0; i != nocc_; ++i) 
-          for (int j = 0; j != nvirt_; ++j) 
+        for (int i = 0; i != nocc_; ++i)
+          for (int j = 0; j != nvirt_; ++j)
             (*tmp)(j, i) *= eig_[nocc_+j] - eig_[i];
-        const Matrix ovcoeff(vcoeff * *amp_[ist]); 
+        const Matrix ovcoeff(vcoeff * *amp_[ist]);
         // J-type term
         Matrix one_occ(*geom_->df()->compute_Jop(half_, make_shared<Matrix>(*ovcoeff.transpose()*2.0), false) * ocoeff);
         // K-type term
@@ -138,7 +138,7 @@ void CIS::compute() {
   vector<shared_ptr<Matrix>> amp = davidson.civec();
   for (int ist = 0; ist != nstate_; ++ist) {
     amp_[ist] = amp[ist];
-    auto transao = make_shared<Matrix>(vcoeff * *amp_[ist] ^ ocoeff); 
+    auto transao = make_shared<Matrix>(vcoeff * *amp_[ist] ^ ocoeff);
     stringstream ss; ss << "Transition 0 -> " << ist;
     Dipole dipole(geom_, transao, ss.str());
     dipole.compute();

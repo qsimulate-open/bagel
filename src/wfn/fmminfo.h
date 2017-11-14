@@ -45,7 +45,7 @@ class FMMInfo {
 
   public:
     FMMInfo() { }
-    FMMInfo(const std::vector<std::shared_ptr<const Atom>>& atoms, 
+    FMMInfo(const std::vector<std::shared_ptr<const Atom>>& atoms,
             const std::vector<std::vector<int>>& offsets, const std::string extent_type = "yang");
     ~FMMInfo() { }
 
