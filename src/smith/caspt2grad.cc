@@ -265,8 +265,7 @@ vector<double> GradEval<CASPT2Grad>::energyvec() const {
 #ifdef COMPILE_SMITH
   return task_->smith()->algo()->energyvec();
 #else
-  vector<double> vec;
-  return vec;
+  return vector<double>();
 #endif
 }
 
