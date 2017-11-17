@@ -32,8 +32,8 @@
 #include <src/pt2/dmp2/dmp2.h>
 #include <src/scf/dhf/dirac.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/wfn/relreference.h>
-#include <src/ci/zfci/relmofile.h>
 #include <src/util/prim_op.h>
 #include <src/util/f77.h>
 #include <src/util/parallel/resources.h>
@@ -98,14 +98,14 @@ void DMP2::compute() {
   shared_ptr<const ListRelDFFull> fullc, fullg, fullg2;
   {
     list<shared_ptr<RelDFHalf>> half_coulomb;
-    tie(half_coulomb, ignore) = RelMOFile::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), false, false);
-    fullc = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_coulomb, true);
+    tie(half_coulomb, ignore) = RelJop::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), false, false);
+    fullc = RelJop::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_coulomb, true);
   }
   if (gaunt_) {
     list<shared_ptr<RelDFHalf>> half_gaunt, half_gaunt2;
-    tie(half_gaunt, half_gaunt2) = RelMOFile::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), gaunt_, breit_);
-    fullg = RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt, true);
-    fullg2 = !breit_ ? fullg : RelMOFile::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt2, false);
+    tie(half_gaunt, half_gaunt2) = RelJop::compute_half(cgeom, coeff->slice_copy(ncore_, ncore_+nocc), gaunt_, breit_);
+    fullg = RelJop::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt, true);
+    fullg2 = !breit_ ? fullg : RelJop::compute_full(coeff->slice_copy(ncore_+nocc, ncore_+nocc+nvirt), half_gaunt2, false);
   }
 
   cout << "    * 3-index integral transformation done" << endl;

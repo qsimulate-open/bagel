@@ -26,7 +26,7 @@
 #define __SRC_WFN_RELREFERENCE_H
 
 #include <src/wfn/reference.h>
-#include <src/wfn/relcoeff.h>
+#include <src/wfn/zcoeff.h>
 #include <src/util/kramers.h>
 
 namespace bagel {
@@ -36,7 +36,7 @@ class RelReference : public Reference {
     bool gaunt_;
     bool breit_;
     int nneg_;
-    std::shared_ptr<const RelCoeff_Striped> relcoeff_;
+    std::shared_ptr<const ZCoeff_Striped> relcoeff_;
     bool kramers_;  // Indicates whether or not relcoeff_ has been kramers-adapted
 
     // RDM things
@@ -54,7 +54,7 @@ class RelReference : public Reference {
 
   public:
     RelReference() { }
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const std::vector<double> en,
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff_Striped> c, const std::vector<double> en,
                  const int nneg, const int nclo, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
 //               std::shared_ptr<const VecRDM<1>> rdm1 = std::make_shared<VecRDM<1>>(),
 //               std::shared_ptr<const VecRDM<2>> rdm2 = std::make_shared<VecRDM<2>>(),
@@ -66,7 +66,7 @@ class RelReference : public Reference {
     }
 
     // if only given one energy
-    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const RelCoeff_Striped> c, const double en, const int nneg,
+    RelReference(std::shared_ptr<const Geometry> g, std::shared_ptr<const ZCoeff_Striped> c, const double en, const int nneg,
                  const int nclo, const int nact, const int nvirt, const bool ga, const bool br, const bool kram = false,
                  std::shared_ptr<const ZMatrix> rdm1_av = nullptr,
                  std::shared_ptr<const ZMatrix> rdm2_av = nullptr,
@@ -74,8 +74,8 @@ class RelReference : public Reference {
      : RelReference(g, c, std::vector<double>(1, en), nneg, nclo, nact, nvirt, ga, br, kram, rdm1_av, rdm2_av, ci) { }
 
     std::shared_ptr<const Coeff> coeff() const override { throw std::logic_error("RelReference::coeff() should not be called"); }
-    std::shared_ptr<const RelCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }
-    std::shared_ptr<const RelCoeff_Striped> relcoeff_full() const { return relcoeff_; }
+    std::shared_ptr<const ZCoeff_Striped> relcoeff() const { return relcoeff_->electronic_part(); }
+    std::shared_ptr<const ZCoeff_Striped> relcoeff_full() const { return relcoeff_; }
 
     bool gaunt() const { return gaunt_; }
     bool breit() const { return breit_; }

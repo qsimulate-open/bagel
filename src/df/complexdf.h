@@ -37,6 +37,7 @@
 namespace bagel {
 
 class ComplexDFHalfDist;
+class ComplexDFFullDist;
 
 class ComplexDFDist : public DFDist, public ComplexDF_base {
   public:
@@ -164,6 +165,19 @@ class ComplexDFHalfDist : public DFHalfDist, public ComplexDF_base {
     std::shared_ptr<ZMatrix> complex_form_2index(std::shared_ptr<const ComplexDFHalfDist> o, const double a, const bool swap = false) const;
     std::shared_ptr<ComplexDFHalfDist> complex_apply_J() const { return complex_apply_J(df_->data2()); }
     std::shared_ptr<ComplexDFHalfDist> complex_apply_J(const std::shared_ptr<const Matrix> o) const;
+
+    std::shared_ptr<ComplexDFFullDist> complex_compute_second_transform(const ZMatView c) const;
+    template<typename T, class = typename std::enable_if<btas::is_boxtensor<T>::value>::type>
+    std::shared_ptr<ComplexDFFullDist> complex_compute_second_transform(std::shared_ptr<T> c) const { return compute_second_transform(*c); }
+
+};
+
+
+class ComplexDFFullDist : public DFFullDist, public ComplexDF_base {
+  public:
+    ComplexDFFullDist(const std::shared_ptr<const ParallelDF> df, const int nocc, const int nocc2) : DFFullDist(df, nocc, nocc2), ComplexDF_base() { }
+
+    std::shared_ptr<ZMatrix> complex_form_4index(std::shared_ptr<const ComplexDFFullDist> o, const double a) const;
 };
 
 }

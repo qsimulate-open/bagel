@@ -32,7 +32,7 @@ using namespace bagel;
 
 #ifdef HAVE_MPI_H
 
-int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const RelMOFile> jop,
+int ZHarrison::sigma_one_parallel(const int icnt,   shared_ptr<const ZCivec> cc, shared_ptr<RelZDvec> sigmavec, shared_ptr<const ZMOFile> jop,
                                   const int istate, const bool diag, const bool trans) const {
 
   const int ij = norb_*norb_;

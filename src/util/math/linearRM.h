@@ -48,52 +48,95 @@ class LinearRM {
 
     // contains
     std::shared_ptr<MatType> mat_;
+    std::shared_ptr<MatType> overlap_;
     std::shared_ptr<MatType> vec_;
     std::shared_ptr<MatType> prod_;
 
   public:
-    LinearRM(const int ndim, const std::shared_ptr<const T> grad) : max_(ndim), size_(0), grad_(grad) {
-      mat_ = std::make_shared<MatType>(max_, max_);
+    LinearRM(const int max, const std::shared_ptr<const T> grad) : max_(max), size_(0), grad_(grad) {
+      if (max_ < 3)
+        throw std::runtime_error("LinearRM works only if max >= 3");
+      mat_     = std::make_shared<MatType>(max_, max_);
+      overlap_ = std::make_shared<MatType>(max_, max_);
       prod_ = std::make_shared<MatType>(max_, 1);
     }
 
     std::shared_ptr<T> compute_residual(const std::shared_ptr<const T> c, const std::shared_ptr<const T> s) {
 
-      if (size_ == max_) throw std::runtime_error("max size reached in Linear");
+      // drop the oldest vector (second element)
+      if (size_ == max_) {
+        c_.erase(++c_.begin());
+        sigma_.erase(++sigma_.begin());
+
+        MatType trans(size_, size_-1);
+        trans(0,0) = 1.0;
+        for (int i = 1; i != size_-1; ++i)
+          trans(i+1,i) = 1.0;
+
+        mat_->copy_block(0, 0, size_-1, size_-1, trans % *mat_->get_submatrix(0, 0, size_, size_) * trans);
+        overlap_->copy_block(0, 0, size_-1, size_-1, trans % *overlap_->get_submatrix(0, 0, size_, size_) * trans);
+        prod_->copy_block(0, 0, size_-1, 1, trans % *prod_->get_submatrix(0, 0, size_, 1));
+        --size_;
+      }
+
       // register new vectors
       c_.push_back(c);
       sigma_.push_back(s);
       // first set mat (=x(i)A^dag Ax(j)) and prod (= x(i)A^dag *y)
       ++size_;
-      auto citer = sigma_.begin();
+      auto citer = c_.begin();
+      auto siter = sigma_.begin();
       for (int i = 0; i != size_; ++i) {
-        mat_->element(size_-1,i) = s->dot_product(**citer++);
+        mat_->element(size_-1,i) = s->dot_product(**siter++);
         mat_->element(i,size_-1) = detail::conj(mat_->element(size_-1,i));
+        overlap_->element(size_-1,i) = c->dot_product(**citer++);
+        overlap_->element(i,size_-1) = detail::conj(overlap_->element(size_-1,i)); 
       }
       // NOTE THE MINUS SIGN HERE!!
       prod_->element(size_-1,0) = - s->dot_product(*grad_);
 
+      // temp areas
+      std::shared_ptr<MatType> mat = mat_->get_submatrix(0,0,size_,size_);
+      std::shared_ptr<MatType> ov = overlap_->get_submatrix(0,0,size_,size_);
+      std::shared_ptr<MatType> prod = prod_->get_submatrix(0,0,size_,1);
+
+      // canonical orthogonalization
+      std::shared_ptr<const MatType> ovlp_scr = ov->tildex();
+
+      // diagonalize matrix to get
+      mat = std::make_shared<MatType>(*ovlp_scr % *mat * *ovlp_scr);
+      prod = std::make_shared<MatType>(*ovlp_scr % *prod);
+
       // set to scr_
-      vec_ = prod_->solve(mat_, size_);
+      vec_ = prod->solve(mat, size_);
+      vec_ = std::make_shared<MatType>(*ovlp_scr * *vec_);
+
+      // overwrite the first vector with the optimal vector
+      {
+        auto overwrite = [this](std::list<std::shared_ptr<const T>>& list) {
+          int cnt = 0;
+          std::shared_ptr<T> cn = list.front()->clone();
+          for (auto& i : list)
+            cn->ax_plus_y(vec_->element(cnt++, 0), i);
+          list.front() = cn;
+        };
+        overwrite(c_);
+        overwrite(sigma_);
+        // matrix elements should be updated as well.
+        MatType trans(size_, size_); 
+        trans.unit();
+        std::copy_n(vec_->element_ptr(0,0), size_, trans.element_ptr(0,0));
+        mat_->copy_block(0, 0, size_, size_, trans % *mat_->get_submatrix(0, 0, size_, size_) * trans);
+        overlap_->copy_block(0, 0, size_, size_, trans % *overlap_->get_submatrix(0, 0, size_, size_) * trans);
+        prod_->copy_block(0, 0, size_, 1, trans % *prod_->get_submatrix(0, 0, size_, 1));
+      }
 
       std::shared_ptr<T> out = grad_->copy();
-      int cnt = 0;
-      for (auto& j : sigma_)
-        out->ax_plus_y(vec_->element(cnt++, 0), j);
-      assert(cnt == size_);
+      out->ax_plus_y(1.0, sigma_.front());
       return out;
     }
 
-    std::shared_ptr<T> civec() const {
-      std::shared_ptr<T> out = c_.front()->clone();
-      int cnt = 0;
-      for (auto& i : c_)
-        out->ax_plus_y(vec_->element(cnt++, 0), i);
-      return out;
-    }
-
-    // make cc orthogonal to cc_ vectors
-    double orthog(std::shared_ptr<T>& cc) const { return cc->orthog(c_); }
+    std::shared_ptr<T> civec() const { return c_.front()->copy(); }
 
 };
 

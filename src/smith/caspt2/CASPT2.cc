@@ -288,7 +288,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor>>(info_->davidson_subspace(), s[i]);
     for (int iter = 0; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
 
@@ -581,7 +581,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     auto out = make_shared<Matrix>(acoeff % (add ? (*ref->hcore() + *jop) : *jop) * acoeff);
     shared_ptr<const DFFullDist> full = ref->geom()->df()->compute_half_transform(acoeff)->apply_J()->compute_second_transform(coeff)->swap();
     shared_ptr<DFFullDist> full2 = full->copy();
-    full2->rotate_occ1(moden);
+    full2 = full2->transform_occ1(moden);
     *out += *full->form_2index(full2, -0.5);
     return out;
   };

@@ -215,7 +215,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   // construct Reference
   shared_ptr<const RelCIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
   auto relref = dynamic_pointer_cast<const RelReference>(info_->ref());
-  auto relcoeff = dynamic_pointer_cast<const RelCoeff_Block>(info_->coeff());
+  auto relcoeff = dynamic_pointer_cast<const ZCoeff_Block>(info_->coeff());
   assert(relref && relcoeff);
   auto new_ref = make_shared<RelReference>(info_->geom(), relcoeff->striped_format(), relref->energy(),
                                            relref->nneg(), info_->nclosed(), info_->nact(), info_->nvirt() + info_->nfrozenvirt(),

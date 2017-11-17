@@ -211,10 +211,12 @@ shared_ptr<DFDist> DFHalfDist::back_transform(const MatView c) const{
 }
 
 
-void DFHalfDist::rotate_occ(const shared_ptr<const Matrix> d) {
-  assert(nindex1_ == d->mdim());
+shared_ptr<DFHalfDist> DFHalfDist::transform_occ(const shared_ptr<const Matrix> d) const {
+  assert(nindex1_ == d->ndim());
+  auto out = make_shared<DFHalfDist>(df_, d->mdim());
   for (auto& i : block_)
-    i = i->transform_second(*d);
+    out->add_block(i->transform_second(*d));
+  return out;
 }
 
 
@@ -251,10 +253,12 @@ shared_ptr<DFFullDist> DFFullDist::clone() const {
 }
 
 
-void DFFullDist::rotate_occ1(const shared_ptr<const Matrix> d) {
-  assert(nindex1_ == d->mdim());
+shared_ptr<DFFullDist> DFFullDist::transform_occ1(const shared_ptr<const Matrix> d) const {
+  assert(nindex1_ == d->ndim());
+  auto out = make_shared<DFFullDist>(df_, d->mdim(), nindex2_);
   for (auto& i : block_)
-    i = i->transform_second(*d);
+    out->add_block(i->transform_second(*d));
+  return out;
 }
 
 

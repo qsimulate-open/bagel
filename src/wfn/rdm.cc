@@ -47,21 +47,6 @@ vector<double> RDM<1>::diag() const {
 
 
 template<>
-pair<shared_ptr<Matrix>, VectorB> RDM<1>::generate_natural_orbitals() const {
-  auto buf = make_shared<Matrix>(norb(), norb());
-  buf->add_diag(2.0);
-  blas::ax_plus_y_n(-1.0, data(), norb()*norb(), buf->data());
-
-  VectorB vec(norb());
-  buf->diagonalize(vec);
-
-  for (auto& i : vec)
-    i = i<2.0 ? 2.0-i : 0.0;
-  return {buf, vec};
-}
-
-
-template<>
 void RDM<1>::transform(shared_ptr<const Matrix> coeff) {
   auto buf = clone();
   btas::contract(1.0, *this, {0,1}, *coeff, {1,2}, 0.0, *buf, {0,2});

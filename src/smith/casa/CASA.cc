@@ -182,7 +182,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASA::CASA::solve_linear(vector<shared_
       update_amplitude_casa(t[i], s[i], i);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor>>(info_->maxiter(), s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor>>(info_->davidson_subspace(), s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();

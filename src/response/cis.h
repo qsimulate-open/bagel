@@ -54,7 +54,7 @@ class CIS : public Method {
     CIS(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
 
     void compute();
-    std::shared_ptr<const Reference> conv_to_ref() const { return ref_; } 
+    std::shared_ptr<const Reference> conv_to_ref() const { return ref_; }
 
     double energy() const { return energy_[0] + ref_->energy(0); }
     std::vector<double> excitation_energy() const { return energy_; }

@@ -26,14 +26,12 @@
 #ifndef __SRC_GRAD_CPHF_H
 #define __SRC_GRAD_CPHF_H
 
-#include <src/util/math/linearRM.h>
 #include <src/wfn/reference.h>
 
 namespace bagel {
 
 class CPHF {
   protected:
-    std::shared_ptr<LinearRM<Matrix>> solver_;
     std::shared_ptr<const Matrix> grad_;
     VectorB eig_;
     std::shared_ptr<const DFHalfDist> halfjj_;

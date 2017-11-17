@@ -84,7 +84,7 @@ Pseudospin::Pseudospin(const int _nspin, shared_ptr<const Geometry> _geom, share
 }
 
 
-void Pseudospin::compute(const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
+void Pseudospin::compute(const vector<double> energy_in, shared_ptr<const ZCoeff_Block> active_coeff) {
 
   // Which ranks of extended Stevens operators to use
   // Default should grab the nonzero time-reversal symmetric orders, but can be specified in input
@@ -234,7 +234,7 @@ void Pseudospin::update_spin_matrices(VectorB spinvals) {
 
 
 // Compute numerical pseudospin Hamiltonian by diagonalizing S_z matrix
-void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, shared_ptr<const RelCoeff_Block> active_coeff) {
+void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, shared_ptr<const ZCoeff_Block> active_coeff) {
   const complex<double> imag(0.0, 1.0);
 
   // First, we create matrices of the magnetic moment in atomic orbital basis

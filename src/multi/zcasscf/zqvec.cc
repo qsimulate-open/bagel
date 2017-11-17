@@ -23,7 +23,7 @@
 //
 
 #include <src/multi/zcasscf/zqvec.h>
-#include <src/scf/dhf/dfock.h>
+#include <src/ci/zfci/reljop.h>
 
 using namespace std;
 using namespace bagel;
@@ -38,13 +38,13 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
 
   auto compute = [&acoeff, &rcoeff, &geom, &fci, &nact] (const bool gaunt, const bool breit) {
     list<shared_ptr<RelDFHalf>> half, half2;
-    tie(half, half2) = RelMOFile::compute_half(geom, acoeff, gaunt, breit);
+    tie(half, half2) = RelJop::compute_half(geom, acoeff, gaunt, breit);
 
-    shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(acoeff, half, true);
-    shared_ptr<ListRelDFFull> full2 = !breit ? full : RelMOFile::compute_full(acoeff, half2, false);
+    shared_ptr<ListRelDFFull> full = RelJop::compute_full(acoeff, half, true);
+    shared_ptr<ListRelDFFull> full2 = !breit ? full : RelJop::compute_full(acoeff, half2, false);
 
-    shared_ptr<ListRelDFFull> fullr = RelMOFile::compute_full(rcoeff, half, true);
-    shared_ptr<ListRelDFFull> fullr2 = !breit ? fullr : RelMOFile::compute_full(rcoeff, half2, false);
+    shared_ptr<ListRelDFFull> fullr = RelJop::compute_full(rcoeff, half, true);
+    shared_ptr<ListRelDFFull> fullr2 = !breit ? fullr : RelJop::compute_full(rcoeff, half2, false);
 
     // form (rs|tu)*G(vs,tu) where r runs fastest
     shared_ptr<const ZMatrix> rdm2_av = fci->rdm2_av();
@@ -70,4 +70,7 @@ ZQvec::ZQvec(const int nbasis, const int nact, shared_ptr<const Geometry> geom, 
   *this = *compute(false, false);
   if (gaunt)
     *this += *compute(gaunt, breit);
+
+  // complex conjugation due to bra-ket conjugation
+  blas::conj_n(this->data(), this->size());
 }

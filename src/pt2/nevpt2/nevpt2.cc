@@ -28,7 +28,7 @@
 #include <src/mat1e/rel/relhcore.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/zcasscf/zcassecond.h>
-#include <src/ci/zfci/relmofile.h>
+#include <src/ci/zfci/reljop.h>
 #include <src/util/prim_op.h>
 #include <src/util/parallel/resources.h>
 
@@ -215,15 +215,15 @@ tuple<shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>, shared_ptr<ListRel
   if (nclosed_) {
     // this is now (naux, nvirt_, nclosed_), distributed by nvirt_*nclosed_. Always naux*nvirt_ block is localized to one node
     list<shared_ptr<RelDFHalf>> half, half2;
-    tie(half, half2) = RelMOFile::compute_half(cgeom, ccoeff, gaunt, breit);
+    tie(half, half2) = RelJop::compute_half(cgeom, ccoeff, gaunt, breit);
     {
-      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(vcoeff, half, /*appj*/true)->swap();
+      shared_ptr<ListRelDFFull> full = RelJop::compute_full(vcoeff, half, /*appj*/true)->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullvi = make_shared<ListRelDFFullT>(full, dist);
       fullvi->discard_df();
     }
     if (breit) {
-      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(vcoeff, half2, /*appj*/false)->swap();
+      shared_ptr<ListRelDFFull> full = RelJop::compute_full(vcoeff, half2, /*appj*/false)->swap();
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size(), full->nocc1());
       fullvi2 = make_shared<ListRelDFFullT>(full, dist);
       fullvi2->discard_df();
@@ -231,15 +231,15 @@ tuple<shared_ptr<ListRelDFFullT>, shared_ptr<ListRelDFFullT>, shared_ptr<ListRel
   }
   {
     list<shared_ptr<RelDFHalf>> half, half2;
-    tie(half, half2) = RelMOFile::compute_half(cgeom, acoeff, gaunt, breit);
+    tie(half, half2) = RelJop::compute_half(cgeom, acoeff, gaunt, breit);
     {
-      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(coeffall, half, /*appj*/true);
+      shared_ptr<ListRelDFFull> full = RelJop::compute_full(coeffall, half, /*appj*/true);
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
       fullax = make_shared<ListRelDFFullT>(full, dist);
       fullax->discard_df();
     }
     if (breit) {
-      shared_ptr<ListRelDFFull> full = RelMOFile::compute_full(coeffall, half2, /*appj*/false);
+      shared_ptr<ListRelDFFull> full = RelJop::compute_full(coeffall, half2, /*appj*/false);
       auto dist = make_shared<StaticDist>(full->nocc1()*full->nocc2(), mpi__->size());
       fullax2 = make_shared<ListRelDFFullT>(full, dist);
       fullax2->discard_df();

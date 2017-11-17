@@ -49,9 +49,7 @@ void CASSecond::compute() {
         if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
         fci_->read_external_rdm12_av(external_rdm_);
       }
-      auto natorb = fci_->natorb_convert();
-      coeff_ = update_coeff(coeff_, natorb.first);
-      if (natocc_) print_natocc(natorb.second);
+      trans_natorb();
       fci_time.tick_print("FCI and RDMs");
       energy_ = fci_->energy();
     }
@@ -288,7 +286,7 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
     if (nclosed_) {
       Matrix tmp(nao, nao);
       shared_ptr<DFFullDist> vgaa = vaa->copy();
-      vgaa->rotate_occ1(make_shared<Matrix>(rdm1));
+      vgaa = vgaa->transform_occ1(make_shared<Matrix>(rdm1));
       vgaa->ax_plus_y(-1.0, vaa);
       for (int i = 0; i != nact_; ++i) {
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
@@ -355,7 +353,7 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
   shared_ptr<const DFHalfDist> halfta = geom_->df()->compute_half_transform(tcoeff);
   if (nclosed_) {
     shared_ptr<DFHalfDist> halftad = halfta->copy();
-    halftad->rotate_occ(make_shared<Matrix>(rdm1));
+    halftad = halftad->transform_occ(make_shared<Matrix>(rdm1));
     const Matrix gt = *compute_gd(halftad, halfa, acoeff);
     sigma->ax_plus_y_ca(16.0, ccoeff % gt * acoeff);
     sigma->ax_plus_y_vc(16.0, vcoeff % gt * ccoeff);
@@ -407,8 +405,7 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
       sigma->ax_plus_y_ca(-8.0, (*fccc + *facc) * *ca);
       sigma->ax_plus_y_va( 4.0, (*fcvc + *favc) * *ca);
       sigma->ax_plus_y_ca( 4.0, (*fcvc + *favc) % *va);
-      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
-      sigma->ax_plus_y_vc( 4.0, (*fcva + *fava) ^ *ca);
+      sigma->ax_plus_y_vc( 8.0, (*fcva + *fava) ^ *ca);
       sigma->ax_plus_y_ca( 4.0, *fccc * *ca * rdm1);
       sigma->ax_plus_y_ca(-4.0, *fcvc % *va * rdm1);
       sigma->ax_plus_y_va(-4.0, *fcvc * *ca * rdm1);
@@ -420,4 +417,30 @@ shared_ptr<RotFile> CASSecond::compute_hess_trial(shared_ptr<const RotFile> trot
   }
   sigma->scale(0.5);
   return sigma;
+}
+
+
+void CASSecond::trans_natorb() {
+  auto trans = make_shared<Matrix>(nact_, nact_);
+  trans->add_diag(2.0);
+  blas::ax_plus_y_n(-1.0, fci_->rdm1_av()->data(), nact_*nact_, trans->data());
+
+  VectorB occup(nact_);
+  trans->diagonalize(occup);
+
+  if (natocc_) {
+    cout << " " << endl;
+    cout << "  ========       state-averaged       ======== " << endl;
+    cout << "  ======== natural occupation numbers ======== " << endl;
+    int cnt = 0;
+    for (auto& i : occup)
+      cout << setprecision(4) << "   Orbital " << cnt++ << " : " << (i < 2.0 ? 2.0 - i : 0.0) << endl;
+    cout << "  ============================================ " << endl;
+  }
+
+  fci_->rotate_rdms(trans);
+
+  auto cnew = make_shared<Coeff>(*coeff_); 
+  cnew->copy_block(0, nclosed_, cnew->ndim(), nact_, coeff_->slice(nclosed_, nocc_) * *trans);
+  coeff_ = cnew;
 }

@@ -23,7 +23,7 @@
 //
 
 
-#include <src/ci/zfci/zharrison.h>
+#include <src/ci/zfci/relfci.h>
 
 std::vector<double> relfci_energy(std::string inp) {
 
@@ -48,7 +48,7 @@ std::vector<double> relfci_energy(std::string inp) {
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "zfci") {
-      auto fci = std::make_shared<ZHarrison>(itree, geom, ref);
+      auto fci = std::make_shared<RelFCI>(itree, geom, ref);
       fci->compute();
       std::cout.rdbuf(backup_stream);
       return fci->energy();
@@ -108,9 +108,6 @@ BOOST_AUTO_TEST_CASE(ZHARRISON) {
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_coulomb"), reference_relfci_energy()));
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_gaunt"), reference_relfci_energy2()));
   BOOST_CHECK(compare(relfci_energy("hf_sto3g_relfci_breit"), reference_relfci_energy3()));
-  BOOST_CHECK(compare(relfci_energy("i_london_relfci_coulomb"), reference_relfci_energy4(), 1.0e-7));
-  BOOST_CHECK(compare(relfci_energy("h2_tzvpp_london_relfci_coulomb"), reference_relfci_energy5()));
-  BOOST_CHECK(compare(relfci_energy("ca_london_relfci_coulomb"), reference_relfci_energy6()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -245,7 +245,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASPT2::RelCASPT2::solve_li
         update_amplitude(t[i], s[i]);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->davidson_subspace(), s[i]);
     for (int iter = 0; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
       const double norm = t[i]->norm();

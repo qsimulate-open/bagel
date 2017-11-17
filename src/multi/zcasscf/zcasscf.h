@@ -47,10 +47,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool breit_;
     bool natocc_;
 
-    // enforce time-reversal symmetry
-    bool tsymm_;
-
-    // RDMs are given externally (e.g., FCIQMC)
+    // set if RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
 
     double thresh_;
@@ -64,7 +61,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     int max_iter_;
     int max_micro_iter_;
 
-    std::shared_ptr<const RelCoeff_Block> coeff_;
+    std::shared_ptr<const ZCoeff_Block> coeff_;
     std::shared_ptr<const Matrix>  nr_coeff_;
     std::shared_ptr<const ZMatrix> hcore_;
     std::shared_ptr<const ZMatrix> overlap_;
@@ -73,6 +70,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;
 
     void init();
+    virtual void init_mat1e() = 0;
+    virtual void init_coeff() = 0;
+    void select_active();
 
     // hides some outputs
     mutable std::shared_ptr<Muffle> muffle_;
@@ -85,27 +85,21 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     std::vector<double> energy_;
 
     // internal functions
-    // force time-reversal symmetry for a zmatrix with given number of virtual orbitals
-    void kramers_adapt(std::shared_ptr<ZMatrix> o, const int nvirt) const;
+    virtual void impose_symmetry(std::shared_ptr<ZMatrix> o) const = 0;
+    virtual void impose_symmetry(std::shared_ptr<ZRotFile> o) const = 0;
+
     // used to zero out elements for positronic-electronic rotations
     void zero_positronic_elements(std::shared_ptr<ZRotFile> rot);
 
-    std::shared_ptr<RelCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
+    std::shared_ptr<ZCoeff_Kramers> nonrel_to_relcoeff(std::shared_ptr<const Matrix> nr_coeff) const;
+    std::shared_ptr<const Reference> conv_to_ref_(const bool kramers) const;
 
   public:
     ZCASSCF(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
 
     virtual void compute() override = 0;
 
-    std::shared_ptr<const Reference> conv_to_ref() const override;
-
-    std::shared_ptr<const RelCoeff_Block> update_coeff(std::shared_ptr<const RelCoeff_Block> cold, std::shared_ptr<const ZMatrix> natorb) const;
-    // kramers adapt for RotFile is a static function!
-    static void kramers_adapt(std::shared_ptr<ZRotFile> o, const int nclosed, const int nact, const int nvirt);
-    // print natural orbital occupation numbers
-    void print_natocc(const VectorB& ocup) const;
-    // just updates nvirt_, etc. if we have a linearly dependent basis set
-    void remove_lindep(const int nspinor);
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 
     // functions to retrieve protected members
     int nocc() const { return nocc_; }
@@ -121,12 +115,11 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     double thresh() const { return thresh_; }
     double thresh_micro() const { return thresh_micro_; }
     double thresh_overlap() const { return thresh_overlap_; }
-    bool tsymm() const { return tsymm_; }
     double energy(const int i) const { return energy_.at(i); }
     std::vector<double> energy() const { return energy_; }
 
     std::shared_ptr<const ZHarrison> fci() const { return fci_; }
-    std::shared_ptr<const RelCoeff_Block> coeff() const { return coeff_; }
+    std::shared_ptr<const ZCoeff_Block> coeff() const { return coeff_; }
 };
 
 }

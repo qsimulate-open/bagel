@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: fmminfo.h
+// Filename: jop_london.h
 // Copyright (C) 2017 Toru Shiozaki
 //
-// Author: Hai-Anh Le <anh@u.northwestern.edu>
+// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,36 +22,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef __BAGEL_CI_ZFCI_JOP_LONDON_H
+#define __BAGEL_CI_ZFCI_JOP_LONDON_H
 
-#ifndef __SRC_WFN_FMMINFO_H
-#define __SRC_WFN_FMMINFO_H
-
-#include <src/molecule/shellpair.h>
-#include <src/molecule/atom.h>
+#include <src/ci/zfci/zmofile.h>
 
 namespace bagel {
 
-class FMMInfo {
-
+class Jop_London : public ZMOFile {
   protected:
-    std::vector<std::shared_ptr<const ShellPair>> shellpairs_;
-
-  private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int) {
-      ar & shellpairs_;
-    }
+    std::shared_ptr<ZMatrix> compute_hcore() const override;
+    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool) const override;
+    std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
+    std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
 
   public:
-    FMMInfo() { }
-    FMMInfo(const std::vector<std::shared_ptr<const Atom>>& atoms,
-            const std::vector<std::vector<int>>& offsets, const std::string extent_type = "yang");
-    ~FMMInfo() { }
-
-    std::vector<std::shared_ptr<const ShellPair>> shellpairs() const { return shellpairs_; }
-    std::shared_ptr<const ShellPair> shellpair(const int i) const { return shellpairs_[i]; }
-    int nshellpair() const { return shellpairs_.size(); }
+    Jop_London(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const ZCoeff_Block> coeff);
 };
 
 }

@@ -212,7 +212,7 @@ vector<shared_ptr<MultiTensor_<complex<double>>>> RelCASA::RelCASA::solve_linear
         update_amplitude_casa(t[i], s[i], i);
     }
 
-    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->maxiter(), s[i]);
+    auto solver = make_shared<LinearRM<MultiTensor, ZMatrix>>(info_->davidson_subspace(), s[i]);
     int iter = 0;
     for ( ; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
