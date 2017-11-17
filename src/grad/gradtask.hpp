@@ -97,6 +97,17 @@ class GradTask1 : public GradTask {
     void compute();
 };
 
+class GradTask1dkh0 : public GradTask1 {
+  protected:
+    std::shared_ptr<const GKinetic> tgrad_;
+
+  public:
+    GradTask1dkh0(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
+              const std::shared_ptr<const Matrix> nmat, const std::shared_ptr<const Matrix> kmat, const std::shared_ptr<const Matrix> omat, const std::shared_ptr<const GKinetic> tgrad, GradEval_base* p)
+      : GradTask1(s, a, o, nmat, nullptr, nullptr, p), tgrad_(tgrad) { }
+    void compute();
+};
+
 /// 2-index 1-electron derivative overlap
 class GradTask1s : public GradTask {
   private:

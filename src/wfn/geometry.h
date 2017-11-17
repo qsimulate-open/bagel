@@ -69,6 +69,10 @@ class Geometry : public Molecule {
     // FMM
     std::shared_ptr<const FMMInfo> fmm_;
 
+    // for gradient calculations
+    // specify DKH order (maximum is 2)
+    int dkh_level_;
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -163,6 +167,8 @@ class Geometry : public Molecule {
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }
+
+    int dkh_level() const { return dkh_level_; }
 
     std::shared_ptr<Geometry> unc_geom() const;
 };

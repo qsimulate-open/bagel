@@ -161,6 +161,22 @@ void GradTask1::compute() {
 }
 
 
+void GradTask1dkh0::compute() {
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
+  *grad_local += *compute_nai();
+  // this part is different
+  // *grad_local += *compute_os<GKineticBatch>(den3_);
+  *grad_local -= *compute_os<GOverlapBatch>(eden_);
+
+  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
+  }
+}
+
+
 shared_ptr<GradFile> GradTask1::compute_nai() const {
   const int dimb1 = shell_[0]->nbasis();
   const int dimb0 = shell_[1]->nbasis();

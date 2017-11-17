@@ -92,6 +92,8 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   // false = analytic
   bool gradtype = geominfo->get<bool>("gradtype", false);
 
+  dkh_level_ = geominfo->get<int>("dkh_level", -1);
+
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
