@@ -26,7 +26,6 @@
 #define __SRC_GRAD_GRADEVAL_BASE_H
 
 #include <mutex>
-#include <src/mat1e/grad/gkinetic.h>
 #include <src/util/math/xyzfile.h>
 #include <src/wfn/geometry.h>
 
@@ -50,7 +49,6 @@ class GradEval_base {
     /// same as above, but one can specify density matrices to each integral kernel
     template<typename TaskType>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
-    std::vector<std::shared_ptr<GradTask>> contract_grad1e_dkh(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o, const std::shared_ptr<const GKinetic> tgrad);
     /// contract small NAI gradient integrals with an array of densities
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
     /// contract finite-nucleus NAI gradient

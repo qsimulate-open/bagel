@@ -29,6 +29,7 @@
 #include <src/df/df.h>
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
+#include <src/wfn/dkhcoreinfo.h>
 #include <src/wfn/hcoreinfo.h>
 #include <src/wfn/fmminfo.h>
 
@@ -68,10 +69,9 @@ class Geometry : public Molecule {
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm_;
-
-    // for gradient calculations
-    // specify DKH order (maximum is 2)
-    int dkh_level_;
+    
+    // DKHcore Information
+    std::shared_ptr<DKHcoreInfo> hcoreinfo_;
 
   private:
     // serialization
@@ -168,7 +168,8 @@ class Geometry : public Molecule {
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }
 
-    int dkh_level() const { return dkh_level_; }
+    // DKHcore Information
+    std::shared_ptr<DKHcoreInfo> dkhcoreinfo() const { return dkhcoreinfo_; }
 
     std::shared_ptr<Geometry> unc_geom() const;
 };

@@ -92,7 +92,13 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   // false = analytic
   bool gradtype = geominfo->get<bool>("gradtype", false);
 
-  dkh_level_ = geominfo->get<int>("dkh_level", -1);
+  // for gradient calculations
+  // specify DKH order (maximum is 2)
+  int dkh_level = geominfo->get<int>("dkh_level", -1);
+  dkhcoreinfo_ = nullptr;
+  if (dkh_level >= 0) {
+    dkhcoreinfo_ = make_shared<DKHcoreInfo>(this, dkh_level);
+  }
 
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");

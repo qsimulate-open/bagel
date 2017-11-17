@@ -148,24 +148,22 @@ void GradTask2::compute() {
 
 void GradTask1::compute() {
   auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
-  *grad_local += *compute_nai();
-  *grad_local += *compute_os<GKineticBatch>(den3_);
-  *grad_local -= *compute_os<GOverlapBatch>(eden_);
-
-  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
-    lock_guard<mutex> lock(ge_->mutex_[iatom]);
-    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
-    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
-    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
+  if (ge_->geom_->dkhcoreinfo()) {
+    *grad_local += ge_->geom_->dkhcoreinfo()->compute_t(shell_, atomindex_, offset_, den3_);
+    if (ge_->geom_->dkhcoreinfo()->v_grad()) {
+      *grad_local += ge_->geom_->dkhcoreinfo()->compute_v(shell_, atomindex_, offset_, den3_);
+      if (ge_->geom_->dkhcoreinfo()->dkh2()) {
+        *grad_local += ge_->geom_->dkhcoreinfo()->compute_v2(shell_, atomindex_, offset_, den3_);
+      }
+    }
+    else {
+      *grad_local += *compute_nai();
+    }
   }
-}
-
-
-void GradTask1dkh0::compute() {
-  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
-  *grad_local += *compute_nai();
-  // this part is different
-  // *grad_local += *compute_os<GKineticBatch>(den3_);
+  else {
+    *grad_local += *compute_os<GKineticBatch>(den3_);
+    *grad_local += *compute_nai();
+  }
   *grad_local -= *compute_os<GOverlapBatch>(eden_);
 
   for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
