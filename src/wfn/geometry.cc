@@ -97,7 +97,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   int dkh_level = geominfo->get<int>("dkh_level", -1);
   dkhcoreinfo_ = nullptr;
   if (dkh_level >= 0) {
-    dkhcoreinfo_ = make_shared<DKHcoreInfo>(this, dkh_level);
+    dkhcoreinfo_ = make_shared<DKHcoreInfo>(make_shared<const Molecule>(*this), dkh_level);
   }
 
   if (basisfile_ == "") {

@@ -71,7 +71,7 @@ class Geometry : public Molecule {
     std::shared_ptr<const FMMInfo> fmm_;
     
     // DKHcore Information
-    std::shared_ptr<DKHcoreInfo> hcoreinfo_;
+    std::shared_ptr<DKHcoreInfo> dkhcoreinfo_;
 
   private:
     // serialization

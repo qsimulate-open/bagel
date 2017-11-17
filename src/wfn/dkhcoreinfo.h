@@ -36,9 +36,9 @@ namespace bagel {
 class DKHcoreInfo {
 
   private:
+    std::shared_ptr<const Matrix> transfer_;
     std::shared_ptr<const GKinetic> tgrad_;
     std::shared_ptr<const GNAI> vgrad_;
-    std::shared_ptr<const Matrix> transfer_;
     bool dkh2_;
     int natom_;
     int nbasis_;
@@ -46,9 +46,9 @@ class DKHcoreInfo {
     std::vector<Matrix> vrelgrad_;
     std::vector<Matrix> v2relgrad_;
 
-    void init_t(const shared_ptr<const Molecule>);
-    void init_v(const shared_ptr<const Molecule>);
-    void init_v2(const shared_ptr<const Molecule>);
+    void init_t(const std::shared_ptr<const Molecule>);
+    void init_v(const std::shared_ptr<const Molecule>);
+    void init_v2(const std::shared_ptr<const Molecule>);
 
   public:
     DKHcoreInfo() { }
