@@ -87,14 +87,17 @@ DKHcoreInfo::DKHcoreInfo(const shared_ptr<const Molecule> current, const int dkh
   
 }
 
+// Free particle FW term
 void DKHcoreInfo::init_t(const shared_ptr<const Molecule> current) {
   trelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
+// First order FW transformation of nuclear potential
 void DKHcoreInfo::init_v(const shared_ptr<const Molecule> current) {
   vrelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
+// Second order contributions
 void DKHcoreInfo::init_v2(const shared_ptr<const Molecule> current) {
   v2relgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
@@ -116,6 +119,7 @@ shared_ptr<GradFile> DKHcoreInfo::compute_t(const array<shared_ptr<const Shell>,
 }
 
 shared_ptr<GradFile> DKHcoreInfo::compute_v(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> den) const {
+  assert(vgrad());
   const int dimb1 = s[0]->nbasis();
   const int dimb0 = s[1]->nbasis();
   std::shared_ptr<const Matrix> cden = den->get_submatrix(o[1], o[0], dimb1, dimb0);
@@ -132,6 +136,7 @@ shared_ptr<GradFile> DKHcoreInfo::compute_v(const array<shared_ptr<const Shell>,
 }
 
 shared_ptr<GradFile> DKHcoreInfo::compute_v2(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> den) const {
+  assert(dkh2());
   const int dimb1 = s[0]->nbasis();
   const int dimb0 = s[1]->nbasis();
   std::shared_ptr<const Matrix> cden = den->get_submatrix(o[1], o[0], dimb1, dimb0);

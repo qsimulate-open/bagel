@@ -61,7 +61,7 @@ class DKHcoreInfo {
 
     std::shared_ptr<const GKinetic> tgrad() const { return tgrad_; }
     std::shared_ptr<const GNAI> vgrad() const { return vgrad_; }
-    bool dkh2() const { return dkh2_; }
+    bool dkh2() const { assert(vgrad()); return dkh2_; }
 };
 
 }
