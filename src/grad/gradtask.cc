@@ -150,10 +150,10 @@ void GradTask1::compute() {
   auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   if (ge_->geom_->dkhcoreinfo()) {
     *grad_local += ge_->geom_->dkhcoreinfo()->compute_t(shell_, atomindex_, offset_, den3_);
-    if (ge_->geom_->dkhcoreinfo()->v_grad()) {
-      *grad_local += ge_->geom_->dkhcoreinfo()->compute_v(shell_, atomindex_, offset_, den3_);
+    if (ge_->geom_->dkhcoreinfo()->vgrad()) {
+      *grad_local += ge_->geom_->dkhcoreinfo()->compute_v(shell_, atomindex_, offset_, den2_);
       if (ge_->geom_->dkhcoreinfo()->dkh2()) {
-        *grad_local += ge_->geom_->dkhcoreinfo()->compute_v2(shell_, atomindex_, offset_, den3_);
+        *grad_local += ge_->geom_->dkhcoreinfo()->compute_v2(shell_, atomindex_, offset_, den2_);
       }
     }
     else {

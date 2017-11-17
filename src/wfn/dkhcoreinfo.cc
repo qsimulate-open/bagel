@@ -23,18 +23,31 @@
 //
 
 #include <src/wfn/dkhcoreinfo.h>
+#include <src/mat1e/kinetic.h>
+#include <src/mat1e/nai.h>
+#include <src/mat1e/rel/small1e.h>
+#include <src/mat1e/overlap.h>
+#include <src/integral/os/overlapbatch.h>
+#include <src/mat1e/mixedbasis.h>
 
 using namespace std;
 using namespace bagel;
 
 DKHcoreInfo::DKHcoreInfo(const shared_ptr<const Molecule> current, const int dkh_level)
-  : dkh2(false), tgrad_(make_shared<const GKinetic>(current)), vgrad_(nullptr) {
+  : dkh2(false), tgrad_(make_shared<const GKinetic>(current)), vgrad_(nullptr), natom_(current->natom()), nbasis_(current->nbasis()) {
   switch (dkh_level) {
   case 2:
+    vgrad_ = make_shared<const GNAI>(current);
     dkh2 = true;
+    init_t(current);
+    init_v(current);
+    init_v2(current);
+    break;
   case 1:
     vgrad_ = make_shared<const GNAI>(current);
+    init_v(current);
   case 0:
+    init_t(current);
     break;
   default:
     throw runtime_error("Only order 0-2 allowed for DKH.");
@@ -74,15 +87,63 @@ DKHcoreInfo::DKHcoreInfo(const shared_ptr<const Molecule> current, const int dkh
   
 }
 
-shared_ptr<GradFile> DKHcoreInfo::compute_t(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> mat) {
-
+void DKHcoreInfo::init_t(const shared_ptr<const Molecule> current) {
+  trelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
-shared_ptr<GradFile> DKHcoreInfo::compute_v(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> mat) {
-
+void DKHcoreInfo::init_v(const shared_ptr<const Molecule> current) {
+  vrelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
-shared_ptr<GradFile> DKHcoreInfo::compute_v2(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> mat) {
+void DKHcoreInfo::init_v2(const shared_ptr<const Molecule> current) {
+  v2relgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
+}
 
+shared_ptr<GradFile> DKHcoreInfo::compute_t(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> den) const {
+  const int dimb1 = s[0]->nbasis();
+  const int dimb0 = s[1]->nbasis();
+  std::shared_ptr<const Matrix> cden = den->get_submatrix(o[1], o[0], dimb1, dimb0);
+  
+  auto out = make_shared<GradFile>(natom);
+
+  for (int k = 0; k < 3; k++) {
+    std::shared_ptr<const Matrix> ct0 = trelgrad_[3 * a[0] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    std::shared_ptr<const Matrix> ct1 = trelgrad_[3 * a[1] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    out->element(k, jatom0) += ddot_(cden->size(), cden->data(), 1, ct0->data(), 1);
+    out->element(k, jatom1) += ddot_(cden->size(), cden->data(), 1, ct1->data(), 1);
+  }
+  return out;
+}
+
+shared_ptr<GradFile> DKHcoreInfo::compute_v(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> den) const {
+  const int dimb1 = s[0]->nbasis();
+  const int dimb0 = s[1]->nbasis();
+  std::shared_ptr<const Matrix> cden = den->get_submatrix(o[1], o[0], dimb1, dimb0);
+  
+  auto out = make_shared<GradFile>(natom);
+
+  for (int k = 0; k < 3; k++) {
+    std::shared_ptr<const Matrix> cv0 = vrelgrad_[3 * a[0] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    std::shared_ptr<const Matrix> cv1 = vrelgrad_[3 * a[1] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    out->element(k, jatom0) += ddot_(cden->size(), cden->data(), 1, cv0->data(), 1);
+    out->element(k, jatom1) += ddot_(cden->size(), cden->data(), 1, cv1->data(), 1);
+  }
+  return out;
+}
+
+shared_ptr<GradFile> DKHcoreInfo::compute_v2(const array<shared_ptr<const Shell>,2>& s, const array<int,4>& a, const array<int,4>& o, const shared_ptr<const Matrix> den) const {
+  const int dimb1 = s[0]->nbasis();
+  const int dimb0 = s[1]->nbasis();
+  std::shared_ptr<const Matrix> cden = den->get_submatrix(o[1], o[0], dimb1, dimb0);
+  
+  auto out = make_shared<GradFile>(natom);
+
+  for (int k = 0; k < 3; k++) {
+    std::shared_ptr<const Matrix> cv20 = v2relgrad_[3 * a[0] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    std::shared_ptr<const Matrix> cv21 = v2relgrad_[3 * a[1] + k]->get_submatrix(o[1], o[0], dimb1, dimb0);
+    out->element(k, jatom0) += ddot_(cden->size(), cden->data(), 1, cv20->data(), 1);
+    out->element(k, jatom1) += ddot_(cden->size(), cden->data(), 1, cv21->data(), 1);
+  }
+  return out;
 }
 

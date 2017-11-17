@@ -39,20 +39,29 @@ class DKHcoreInfo {
     std::shared_ptr<const GKinetic> tgrad_;
     std::shared_ptr<const GNAI> vgrad_;
     std::shared_ptr<const Matrix> transfer_;
-    bool dkh2;
+    bool dkh2_;
+    int natom_;
+    int nbasis_;
+    std::vector<Matrix> trelgrad_;
+    std::vector<Matrix> vrelgrad_;
+    std::vector<Matrix> v2relgrad_;
+
+    void init_t(const shared_ptr<const Molecule>);
+    void init_v(const shared_ptr<const Molecule>);
+    void init_v2(const shared_ptr<const Molecule>);
 
   public:
     DKHcoreInfo() { }
     DKHcoreInfo(const std::shared_ptr<const Molecule>, const int);
     ~DKHcoreInfo() { }
 
-    std::shared_ptr<GradFile> compute_t(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>);
-    std::shared_ptr<GradFile> compute_v(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>);
-    std::shared_ptr<GradFile> compute_v2(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>);
+    std::shared_ptr<GradFile> compute_t(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<GradFile> compute_v(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>) const;
+    std::shared_ptr<GradFile> compute_v2(const std::array<std::shared_ptr<const Shell>,2>&, const std::array<int,4>&, const std::array<int,4>&, const std::shared_ptr<const Matrix>) const;
 
     std::shared_ptr<const GKinetic> tgrad() const { return tgrad_; }
     std::shared_ptr<const GNAI> vgrad() const { return vgrad_; }
-    std::shared_ptr<const Matrix> transfer() const { return transfer_; }
+    bool dkh2() const { return dkh2_; }
 };
 
 }
