@@ -87,19 +87,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   basisfile_ = geominfo->get<string>("basis", "");
   use_finite_ = geominfo->get<bool>("finite_nucleus", false);
 
-  // specify gradient type
-  // true = semi-numeric
-  // false = analytic
-  bool gradtype = geominfo->get<bool>("gradtype", false);
-
-  // for gradient calculations
-  // specify DKH order (maximum is 2)
-  int dkh_level = geominfo->get<int>("dkh_level", -1);
-  dkhcoreinfo_ = nullptr;
-  if (dkh_level >= 0) {
-    dkhcoreinfo_ = make_shared<DKHcoreInfo>(make_shared<const Molecule>(*this), dkh_level);
-  }
-
   if (basisfile_ == "") {
     throw runtime_error("There is no basis specification");
   } else if (basisfile_ == "molden") {
@@ -110,7 +97,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     mfs.read();
     mfs >> atoms_;
 
-    hcoreinfo_ = gradtype ? make_shared<HcoreInfo>(geominfo) : make_shared<DKH2Analytic>(geominfo);
+    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
   } else {
 
     // read the default basis file
@@ -118,7 +105,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    hcoreinfo_ = gradtype ? make_shared<HcoreInfo>(geominfo) : make_shared<DKH2Analytic>(geominfo);
+    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
@@ -161,6 +148,14 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
+
+  // for gradient calculations
+  // specify DKH order (maximum is 2)
+  int dkh_level = geominfo->get<int>("dkh_level", -1);
+  dkhcoreinfo_ = nullptr;
+  if (dkh_level >= 0) {
+    dkhcoreinfo_ = make_shared<DKHcoreInfo>(make_shared<Molecule>(*this), dkh_level);
+  }
 }
 
 

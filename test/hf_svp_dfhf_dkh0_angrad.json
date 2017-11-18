@@ -5,7 +5,6 @@
   "basis" : "svp",
   "df_basis" : "svp-jkfit",
   "angstrom" : "false",
-  "dkh" : "true",
   "dkh_level" : 0,
   "gradtype" : true,
   "geometry" : [

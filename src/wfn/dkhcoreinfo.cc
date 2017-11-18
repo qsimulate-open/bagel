@@ -34,52 +34,52 @@ using namespace std;
 using namespace bagel;
 
 DKHcoreInfo::DKHcoreInfo(const shared_ptr<const Molecule> current, const int dkh_level)
-  : dkh2_(false), tgrad_(make_shared<const GKinetic>(current)), vgrad_(nullptr), natom_(current->natom()), nbasis_(current->nbasis()) {
-  auto mol = make_shared<Molecule>(*current);
-  mol = mol->uncontract();
-  const MixedBasis<OverlapBatch> mix(mol, current);
+  : dkh2_(false), vgrad_(nullptr), natom_(current->natom()), nbasis_(current->nbasis()) {
+  mol_ = current->uncontract();
+  mix_ = make_shared<MixedBasis<OverlapBatch>>(current, mol_);
 
   VectorB eig;
-  const Overlap overlap(mol);
+  const Overlap overlap(mol_);
   shared_ptr<const Matrix> tildex = overlap.tildex();
-  const Kinetic kinetic(mol);
+  const Kinetic kinetic(mol_);
   auto tmp = make_shared<Matrix>(*tildex % kinetic * *tildex);
   int nunc = tmp->ndim();
   eig = VectorB(nunc);
   tmp->diagonalize(eig);
-  transfer_ = make_shared<Matrix>(mix * *tildex * *tmp);
+  transfer_ = make_shared<Matrix>(*tildex * *tmp);
 
   // check if conditions are satisfied
-  const Overlap s(current);
-  const Matrix s_p = *transfer_ % s * *transfer_;
-  const Kinetic t(current);
-  const Matrix t_p = *transfer_ % t * *transfer_;
+  const Matrix s_p = *transfer_ % overlap * *transfer_;
+  const Matrix t_p = *transfer_ % kinetic * *transfer_;
+  s_p.print("s_p");
+  t_p.print("t_p");
   for (int k = 0; k < nunc; k++) {
     for (int l = 0; l < nunc; l++) {
       if (k == l) {
-        assert(s_p(k, l) == 1);
-        assert(t_p(k, l) != 0);
+        assert(fabs(s_p(k, l) - 1) < 1.0e-8);
+        assert(fabs(t_p(k, l)) > 1.0e-8);
       }
       else {
-        assert(s_p(k, l) == 0);
-        assert(t_p(k, l) == 0);
+        assert(fabs(s_p(k, l)) < 1.0e-8);
+        assert(fabs(t_p(k, l)) < 1.0e-8);
       }
     }
   }
 
+  tgrad_ = make_shared<const GKinetic>(mol_);
   switch (dkh_level) {
   case 2:
-    vgrad_ = make_shared<const GNAI>(current);
+    vgrad_ = make_shared<const GNAI>(mol_);
     dkh2_ = true;
-    init_t(current);
-    init_v(current);
-    init_v2(current);
+    init_t();
+    init_v();
+    init_v2();
     break;
   case 1:
-    vgrad_ = make_shared<const GNAI>(current);
-    init_v(current);
+    vgrad_ = make_shared<const GNAI>(mol_);
+    init_v();
   case 0:
-    init_t(current);
+    init_t();
     break;
   default:
     throw runtime_error("Only order 0-2 allowed for DKH.");
@@ -88,17 +88,26 @@ DKHcoreInfo::DKHcoreInfo(const shared_ptr<const Molecule> current, const int dkh
 }
 
 // Free particle FW term
-void DKHcoreInfo::init_t(const shared_ptr<const Molecule> current) {
+void DKHcoreInfo::init_t() {
+  cout << "  Analytical gradient will involve DKH0 corrections to the 1e Hamiltonian." << endl;
+
   trelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
+  for (int i = 0; i < 3 * natom_; i++) {
+    trelgrad_[i] = *mix_ % (*tgrad_)[i] * *mix_;
+  }
 }
 
 // First order FW transformation of nuclear potential
-void DKHcoreInfo::init_v(const shared_ptr<const Molecule> current) {
+void DKHcoreInfo::init_v() {
+  cout << "  Analytical gradient will involve DKH1 corrections to the 1e Hamiltonian." << endl;
+
   vrelgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
 // Second order contributions
-void DKHcoreInfo::init_v2(const shared_ptr<const Molecule> current) {
+void DKHcoreInfo::init_v2() {
+  cout << "  Analytical gradient will involve DKH2 corrections to the 1e Hamiltonian." << endl;
+
   v2relgrad_ = vector<Matrix>(3 * natom_, Matrix(nbasis_, nbasis_));
 }
 
