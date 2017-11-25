@@ -45,9 +45,9 @@ class Atom {
     std::shared_ptr<const ECP> ecp_parameters_;
     std::shared_ptr<const SOECP> so_parameters_;
     int atom_number_;
-    double averaged_mass_;
     double atom_charge_;
     double atom_exponent_;
+    double mass_;
     int nbasis_;
     int lmax_;
 
@@ -77,7 +77,7 @@ class Atom {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & spherical_ & name_ & position_ & vector_potential_ & shells_ & use_ecp_basis_ & ecp_parameters_ & so_parameters_
-         & atom_number_ & averaged_mass_ & atom_charge_ & atom_exponent_ & nbasis_ & lmax_ & basis_;
+         & atom_number_ & atom_charge_ & atom_exponent_ & mass_ & nbasis_ & lmax_ & basis_;
     }
 
   public:
@@ -102,10 +102,9 @@ class Atom {
 
     const std::string name() const { return name_; }
     int atom_number() const { return atom_number_;}
-    double averaged_mass() const { return averaged_mass_;}
     double atom_charge() const { return atom_charge_;}
-
     double atom_exponent() const { return atom_exponent_; }
+    double mass() const { return mass_; }
     bool finite_nucleus() const { return atom_exponent_ != 0.0; }
 
     double radius() const;

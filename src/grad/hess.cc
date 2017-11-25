@@ -36,6 +36,8 @@
 using namespace std;
 using namespace bagel;
 
+static const AtomMap atommap_;
+
 Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
   numhess_ = idata_->get<bool>("numhess", true);
   numforce_ = idata_->get<bool>("numforce", false);
@@ -88,7 +90,16 @@ void Hess::compute() {
   hess_->print("Hessian");
   mw_hess_->print("Mass Weighted Hessian", ndispl);
   mw_hess_->symmetrize();
-  cout << "    (masses averaged over the natural occurance of isotopes)" << endl << endl;
+
+  // check if all of the mass are equal to the averaged mass
+  bool averaged = true;
+  for (auto& i : geom_->atoms())
+    averaged &= fabs(i->mass() - atommap_.averaged_mass(i->name())) < 1.0e-8;
+  if (averaged)
+    cout << "    (masses averaged over the natural occurance of isotopes)" << endl << endl;
+  else
+    cout << "    (custom masses were specified in the input)" << endl << endl;
+
   mw_hess_->print("Symmetrized Mass Weighted Hessian", ndispl);
 
   // compute projected Hessian
@@ -112,7 +123,7 @@ void Hess::compute() {
     for (int j = 0; j != 3; ++j, ++counter)
       for (int k = 0, step = 0; k != natom; ++k)
         for (int l = 0; l != 3; ++l, ++step)
-          eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->averaged_mass());
+          eigvec_cart_->element(step, counter) =  proj_hess_->element(step,counter) / sqrt(geom_->atoms(k)->mass());
 
   // calculate IR intensities:
   auto normal = make_shared<Matrix>(*cartesian_ * *eigvec_cart_); // dipole derivatives for the normal modes dmu/dQ; units (e bohr / bohr) * 1/sqrt(amu)
@@ -190,7 +201,7 @@ void Hess::compute_finite_diff_() {
           for (int k = 0, step = 0; k != natom; ++k) { // atom j
             for (int l = 0; l != 3; ++l, ++step) { //xyz
               (*hess_)(counter,step) = (outplus->element(l,k) - outminus->element(l,k)) / (2*dx_);
-              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->averaged_mass() * geom_->atoms(k)->averaged_mass());
+              (*mw_hess_)(counter,step) =  (*hess_)(counter,step) / sqrt(geom_->atoms(i)->mass() * geom_->atoms(k)->mass());
               (*cartesian_)(l,counter) = (dipole_plus[l] - dipole_minus[l]) / (2*dx_);
             }
           }
@@ -219,15 +230,15 @@ void Hess::project_zero_freq_() {
   // compute center of mass
   for (auto& atom : geom_->atoms()) {
     for (int i = 0; i != 3; ++i)
-      cmass(i) += atom->averaged_mass() * atom->position(i);
-    total_mass += atom->averaged_mass();
+      cmass(i) += atom->mass() * atom->position(i);
+    total_mass += atom->mass();
   }
   blas::scale_n(1.0/total_mass, cmass.data(), 3);
   cout << "    * Projecting out translational and rotational degrees of freedom " << endl;
 
   Matrix proj(6, ndispl);
   for (int i = 0; i != natom; ++i) {
-    const double imass = sqrt(geom_->atoms(i)->averaged_mass());
+    const double imass = sqrt(geom_->atoms(i)->mass());
     const array<double,3> pos {{geom_->atoms(i)->position(0) - cmass(0),
                                 geom_->atoms(i)->position(1) - cmass(1),
                                 geom_->atoms(i)->position(2) - cmass(2)}};
