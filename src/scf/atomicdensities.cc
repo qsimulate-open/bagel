@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-const static AtomMap atommap_;
+const static AtomMap atommap;
 
 AtomicDensities::AtomicDensities(shared_ptr<const Geometry> g) : Matrix(g->nbasis(), g->nbasis()), geom_(g) {
   // first make a list of unique atoms
@@ -114,8 +114,8 @@ shared_ptr<const Matrix> AtomicDensities::compute_atomic(shared_ptr<const Geomet
     coeff = make_shared<const Matrix>(*tildex * ints);
   }
 
-  tuple<int,int,int,int> nclosed = atommap_.num_closed(ga->atoms().front()->name());
-  tuple<int,int,int,int> nopen   = atommap_.num_open(ga->atoms().front()->name());
+  tuple<int,int,int,int> nclosed = atommap.num_closed(ga->atoms().front()->name());
+  tuple<int,int,int,int> nopen   = atommap.num_open(ga->atoms().front()->name());
   const array<int,4> nclo {{get<0>(nclosed)/2, get<1>(nclosed)/2, get<2>(nclosed)/2, get<3>(nclosed)/2}};
   const array<int,4> nope {{get<0>(nopen),     get<1>(nopen),     get<2>(nopen),     get<3>(nopen)}};
   const int sclosed = (!ga->atoms().front()->use_ecp_basis()) ? get<0>(nclosed)+get<1>(nclosed)+get<2>(nclosed)+get<3>(nclosed)
