@@ -51,7 +51,7 @@
 <span id="hess"></span><h1>Molecular Hessian and frequency analysis<a class="headerlink" href="#molecular-hessian-and-frequency-analysis" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h2>
-<p>The Hessian section can be used to compute the numerical Hessian by central gradient differences. The Hessian, mass weighted Hessian, and symmetrized mass weighted Hessian are printed in the output by default. The rotational and translational degrees of freedom have been projected out. Vibrational frequencies, infrared intensities, and the Cartesian eigenvectors of each normal mode are also computed. The masses are averaged over the natural occurrence of isotopes.</p>
+<p>The Hessian section can be used to compute the numerical Hessian by central gradient differences. The Hessian, mass weighted Hessian, and symmetrized mass weighted Hessian are printed in the output by default. The rotational and translational degrees of freedom have been projected out. Vibrational frequencies, infrared intensities, and the Cartesian eigenvectors of each normal mode are also computed. The masses are averaged over the natural occurrence of isotopes unless otherwise specified (see other keywords below).</p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
@@ -86,6 +86,17 @@
 <div class="line"><strong>Description:</strong> The Hessian code is embarrassingly parallelized so that the displacements in the central gradient difference calculations can be run at the same time. The nproc keyword allows the user to specify the number of MPI processes to be used for each gradient calculation.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
 <div class="line"><strong>Default:</strong> 1</div>
+</div>
+</div>
+</div>
+<div class="section" id="other-keywords">
+<h3>Other Keywords<a class="headerlink" href="#other-keywords" title="Permalink to this headline">¶</a></h3>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">mass</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Atomic masses can be specified by the users in the atom line in the molecule block.</div>
+<div class="line"><strong>Datatype:</strong> double</div>
+<div class="line"><strong>Default:</strong> averaged over the natural occurrence of isotopes</div>
 </div>
 </div>
 </div>
@@ -152,7 +163,8 @@
 <span class="p">]}</span>
 </pre></div>
 </div>
-<p>If you are running a Hessian calculation using the embarassingly parallel implementation, it is recommended to only have the Hessian calculation in your input. A molden file generated from a previous calculation can be read at the start of the calculation.</p>
+<p>If you are running a Hessian calculation using the embarassingly parallel implementation, it is recommended to only have the Hessian calculation in your input.
+A molden file generated from a previous calculation can be read at the start of the calculation.</p>
 <div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
@@ -182,6 +194,10 @@
 <span class="p">}</span>
 
 <span class="p">]}</span>
+</pre></div>
+</div>
+<p>The atomic masses can be specified as shown below.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;atom&quot;</span> <span class="o">:</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;xyz&quot;</span> <span class="o">:</span> <span class="p">[</span>     <span class="o">-</span><span class="mf">0.072972</span><span class="p">,</span>      <span class="mf">2.554311</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.000005</span> <span class="p">],</span>  <span class="s2">&quot;mass&quot;</span> <span class="o">:</span> <span class="mf">12.0</span> <span class="p">},</span>
 </pre></div>
 </div>
 </div>
