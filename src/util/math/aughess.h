@@ -81,7 +81,7 @@ class AugHess {
         if (ivec < 0)
           throw std::logic_error("logical error in AugHess");
 
-        blas::scale_n(1.0/scr(nlast-1,ivec), scr.data(), nlast-1);
+        blas::scale_n(1.0/scr(nlast-1,ivec), scr.element_ptr(0,ivec), nlast-1);
         std::shared_ptr<T> x = c_.front()->clone();
         auto citer = c_.begin();
         for (int ii = 0; ii != nlast-1; ++ii)
