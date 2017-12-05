@@ -61,7 +61,7 @@ class MultiSite {
 
     // Utility functions
     void set_active();
-    void canonicalize();
+    void canonicalize(std::shared_ptr<const Matrix> fock);
 
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
 

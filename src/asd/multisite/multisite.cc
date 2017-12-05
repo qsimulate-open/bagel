@@ -52,11 +52,15 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 }
 
 void MultiSite::compute() {
-  // reorder coefficient for ASD-DMRG
+  // construct Fock Matrix for canonicalization before setting active
+  shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(sref_->nclosed());
+  const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
+  auto fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
 
+  // reorder coefficient for ASD-DMRG
   set_active();
 
-  canonicalize();
+  canonicalize(fock);
 
   run_fci();
 }
@@ -103,14 +107,9 @@ void MultiSite::set_active() {
 }
 
 
-void MultiSite::canonicalize() {
+void MultiSite::canonicalize(shared_ptr<const Matrix> fock) {
   //canonicalize active orbitals within subspace
   const int nclosed = sref_->nclosed();
-  
-  // construct Fock Matrix
-  shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
-  const MatView ccoeff = sref_->coeff()->slice(0, nclosed);
-  auto fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
   
   // rotate within each active subspace
   MatView active_mos = sref_->coeff()->slice(nclosed, nclosed+sref_->nact());
