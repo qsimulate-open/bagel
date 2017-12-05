@@ -46,6 +46,7 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 }
 
 
+#include <src/util/io/moldenout.h>
 void MultiSite::compute() {
   // construct Fock Matrix 
   shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(hf_ref_->nclosed());
@@ -57,6 +58,11 @@ void MultiSite::compute() {
   if (!localize_data) localize_data = make_shared<const PTree>();
   localize(localize_data, fock);
 
+#if 1
+  MoldenOut mout("localized.molden");
+  mout << sref_->geom();
+  mout << sref_;
+#endif
   // reorder coefficient for ASD-DMRG
   set_active();
 
@@ -198,19 +204,19 @@ void MultiSite::set_active() {
   int virt_position = nclosed + nactive;
   const int multisitebasis = hf_ref_->geom()->nbasis();
 
-  auto hf_coeff = hf_ref_->coeff();
-  auto out_coeff = hf_coeff->clone();
-  assert(hf_coeff->ndim() == multisitebasis);
+  auto in_coeff = sref_->coeff();
+  auto out_coeff = in_coeff->clone();
+  assert(in_coeff->ndim() == multisitebasis);
 
   for (auto site : active_orbitals) {
     for (int aorb : site)
-      copy_n(hf_coeff->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
+      copy_n(in_coeff->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
   }
-  for (int i = 0; i != hf_coeff->mdim(); ++i) {
+  for (int i = 0; i != in_coeff->mdim(); ++i) {
     if (active_set.count(i) == 0)
-      copy_n(hf_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
+      copy_n(in_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
   }
-  assert(virt_position == hf_coeff->mdim());
+  assert(virt_position == in_coeff->mdim());
 
   sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
 }
@@ -264,7 +270,6 @@ shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bo
 }
 
 
-#include <src/util/muffle.h>
 #include <src/ci/fci/knowles.h>
 void MultiSite::run_fci() const {
   auto fci_info = input_->get_child_optional("fci");
@@ -274,8 +279,6 @@ void MultiSite::run_fci() const {
   }
 
   auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
-  Muffle hide_cout("fci.log");
   fci->compute();
-  hide_cout.unmute();
   cout << " * FCI energy : " << setprecision(12) << fci->energy(0) << endl;
 }
