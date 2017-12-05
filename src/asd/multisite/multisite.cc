@@ -57,6 +57,8 @@ void MultiSite::compute() {
   set_active();
 
   canonicalize();
+
+  run_fci();
 }
 
 
@@ -154,3 +156,18 @@ shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bo
 }
 
 
+#include <src/util/muffle.h>
+#include <src/ci/fci/knowles.h>
+void MultiSite::run_fci() const {
+  auto fci_info = input_->get_child_optional("fci");
+  if(!fci_info) {
+    cout << "No FCI info provided, skipping MultiSite debugging.." << endl;
+    return;
+  }
+
+  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
+  Muffle hide_cout("fci.log");
+  fci->compute();
+  hide_cout.unmute();
+  cout << " * FCI energy : " << setprecision(12) << fci->energy(0) << endl;
+}
