@@ -42,8 +42,6 @@ class MultiSite {
     const int nsites_;
     int charge_;
     int nspin_;
-    int nclosed_;
-    int nactive_;
     std::vector<int> active_electrons_;
     std::vector<int> active_sizes_;
 
@@ -59,6 +57,7 @@ class MultiSite {
 
     // Utility functions
     void set_active();
+    void canonicalize();
 //    void localize(std::shared_ptr<const Matrix> fock);
 
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;

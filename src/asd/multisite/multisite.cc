@@ -23,8 +23,7 @@
 //
 
 #include <src/asd/multisite/multisite.h>
-#include <src/mat1e/overlap.h>
-#include <src/util/muffle.h>
+#include <src/scf/hf/fock.h>
 
 using namespace std;
 using namespace bagel;
@@ -42,14 +41,20 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   active_sizes_ = input_->get_vector<int>("active_sizes");
 
   const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
-  nclosed_ = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
+  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
   assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
 
-  nactive_ = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  
+  const int nvirt = hf_ref_->geom()->nbasis() - nclosed - nactive;
+
+  sref_ = make_shared<Reference>(hf_ref_->geom(), nullptr, nclosed, nactive, nvirt);
 }
 
 void MultiSite::compute() {
   set_active();
+
+  canonicalize();
 }
 
 
@@ -69,9 +74,11 @@ void MultiSite::set_active() {
     active_set.insert(active_orbs.begin(), active_orbs.end());
   }
   
+  const int nclosed = sref_->nclosed();
+  const int nactive = sref_->nact();
   int closed_position = 0;
-  int active_position = nclosed_;
-  int virt_position = nclosed_ + nactive_;
+  int active_position = nclosed;
+  int virt_position = nclosed + nactive;
   const int multisitebasis = hf_ref_->geom()->nbasis();
 
   auto hf_coeff = hf_ref_->coeff();
@@ -84,11 +91,33 @@ void MultiSite::set_active() {
   }
   for (int i = 0; i != hf_coeff->mdim(); ++i) {
     if (active_set.count(i) == 0)
-      copy_n(hf_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed_ ? closed_position++ : virt_position++)));
+      copy_n(hf_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
   }
   assert(virt_position == hf_coeff->mdim());
 
-  const int nvirt = multisitebasis - nclosed_ - nactive_;
-
-  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed_, nactive_, nvirt);
+  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
 }
+
+
+void MultiSite::canonicalize() {
+  //canonicalize active orbitals within subspace
+  const int nclosed = sref_->nclosed();
+  
+  // construct Fock Matrix
+  shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
+  const MatView ccoeff = sref_->coeff()->slice(0, nclosed);
+  auto fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
+  
+  // rotate within each active subspace
+  MatView active_mos = sref_->coeff()->slice(nclosed, nclosed+sref_->nact());
+  Matrix fock_mo(active_mos % *fock * active_mos);
+  VectorB eigs(active_mos.mdim());
+  shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_sizes_);
+  Matrix transformed_mos(active_mos * *active_transformation);
+  shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
+  scoeff->copy_block(0, nclosed, scoeff->ndim(), transformed_mos.mdim(), transformed_mos);
+
+  sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
+}
+
+
