@@ -36,8 +36,16 @@ namespace bagel {
 class MultiSite {
   protected:
     std::shared_ptr<const PTree> input_;
-    const int nsites_;
+    std::shared_ptr<const Reference> hf_ref_;
     std::shared_ptr<const Reference> sref_;
+
+    const int nsites_;
+    int charge_;
+    int nspin_;
+    int nclosed_;
+    int nactive_;
+    std::vector<int> active_electrons_;
+    std::vector<int> active_sizes_;
 
   public:
     // Constructors
@@ -50,7 +58,7 @@ class MultiSite {
     void compute();
 
     // Utility functions
-//    void set_active();
+    void set_active();
 //    void localize(std::shared_ptr<const Matrix> fock);
 
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
