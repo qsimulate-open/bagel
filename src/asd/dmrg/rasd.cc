@@ -32,8 +32,6 @@
 #include <src/ci/ras/rasci.h>
 #include <src/util/muffle.h>
 
-//#define DEBUG
-
 using namespace std;
 using namespace bagel;
 
@@ -446,7 +444,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
         if ((nele_block*nele_ci)%2==1) {
           auto tmp = isec.second->copy();
           tmp->scale(-1.0);
-          outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+          outer_products[isec.first].emplace_back(weights_[ist], tmp);
         }
         else {
           outer_products[isec.first].emplace_back(weights_[ist], isec.second);
@@ -604,7 +602,7 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
   else {
     const int na = sdet->nelea() + dele.first;
     const int nb = sdet->neleb() + dele.second;
-    if (na >= 0 && na < sdet->norb() && nb >= 0 && nb < sdet->norb()) {
+    if (na >= 0 && na <= sdet->norb() && nb >= 0 && nb <= sdet->norb()) {
       tdet = sdet->clone(na, nb);
       detmap[Tkey] = tdet;
     }
