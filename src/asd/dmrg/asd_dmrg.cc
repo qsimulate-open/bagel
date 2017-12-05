@@ -68,6 +68,13 @@ string ASD_DMRG::print_progress(const int position, const string left_symbol, co
 vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const {
   vector<shared_ptr<PTree>> out;
 
+  shared_ptr<PTree> base_input = input_->get_child_optional("ras");
+  if (!base_input) base_input = make_shared<PTree>();
+
+  base_input->erase("charge");
+  base_input->erase("nspin");
+  base_input->erase("nstate");
+
   auto space = input_->get_child("spaces");
   if ( !(space->size()==1 || space->size()==nsites_) )
     throw runtime_error("Must specify either one \"space\" object or one per site");
@@ -80,7 +87,7 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
   auto space_input = make_shared<PTree>(**space_iter);
 
   for (auto& siter : *space_input) {
-    auto tmp = make_shared<PTree>();
+    auto tmp = make_shared<PTree>(*base_input);
     tmp->put("charge", siter->get<string>("charge"));
     tmp->put("nspin", siter->get<string>("nspin"));
     tmp->put("nstate", siter->get<string>("nstate"));
@@ -91,11 +98,12 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
 }
 
 shared_ptr<PTree> ASD_DMRG::prepare_sweeping_input(const int site) const {
-  auto out = make_shared<PTree>();
+  shared_ptr<PTree> out = input_->get_child_optional("ras");
+  if (!out) out = make_shared<PTree>();
 
-  out->put("charge", multisite_->charge());
-  out->put("nspin", multisite_->nspin());
-  out->put("nstate", input_->get<string>("nstate", "1"));
+  out->erase("charge"); out->put("charge", multisite_->charge());
+  out->erase("nspin");  out->put("nspin", multisite_->nspin());
+  out->erase("nstate"); out->put("nstate", input_->get<string>("nstate", "1"));
 
   return out;
 }

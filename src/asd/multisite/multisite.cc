@@ -28,7 +28,6 @@
 using namespace std;
 using namespace bagel;
 
-///> this constructor takes localized HF orbitals with a clear definition of active subspaces
 MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref, const int nsites) : input_(input), hf_ref_(ref), nsites_(nsites) {
   cout << string(60, '=') << endl;
   cout << string(15, ' ') << "Construct MultiSite" << endl;
@@ -38,15 +37,13 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   nspin_ = input_->get<int>("spin", 0);
 
   active_electrons_ = input_->get_vector<int>("active_electrons");
+  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
   active_sizes_ = input_->get_vector<int>("active_sizes");
 
-  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
   const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
   assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
-
   const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
-  
-  const int nvirt = hf_ref_->geom()->nbasis() - nclosed - nactive;
+  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
 
   sref_ = make_shared<Reference>(hf_ref_->geom(), nullptr, nclosed, nactive, nvirt);
 }
