@@ -164,22 +164,22 @@ int main(int argc, char** argv) {
         geom = dimer->sgeom();
         ref = dimer->sref();
       } else if (title == "asd") {
-          auto asd = construct_ASD(itree, dimer);
-          asd->compute();
+        auto asd = construct_ASD(itree, dimer);
+        asd->compute();
       } else if (title == "asd_orbitaloptimize" || title == "asd_orbopt") {
-          auto asd = construct_ASD_OrbOpt(itree, dimer);
-          asd->compute();
-          ref = dimer->sref();
+        auto asd = construct_ASD_OrbOpt(itree, dimer);
+        asd->compute();
+        ref = dimer->sref();
       } else if (title == "multisite") {
-          vector<shared_ptr<const Reference>> site_refs;
-          auto sitenames = itree->get_vector<string>("refs");
-          for (auto& s : sitenames)
-            site_refs.push_back(static_pointer_cast<const Reference>(saved.at(s)));
-          auto ms = make_shared<MultiSite>(itree, site_refs);
-          ms->scf(itree);
-          multisite = ms;
-          ref = ms->conv_to_ref();
-          geom = ref->geom();
+        const bool projection = itree->get<bool>("projection", false);
+        const int nsites = itree->get<int>("nsites");
+        if (!projection)
+          multisite = make_shared<MultiSite>(itree, ref, nsites);
+        else {}
+        
+        multisite->compute();
+        ref = multisite->sref();
+        geom = ref->geom();
       } else if (title == "asd_dmrg") {
           if (!multisite)
             throw runtime_error("multisite must be called before asd_dmrg");
