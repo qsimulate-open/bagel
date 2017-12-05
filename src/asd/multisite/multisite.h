@@ -44,6 +44,7 @@ class MultiSite {
     int nspin_;
     std::vector<int> active_electrons_;
     std::vector<int> active_sizes_;
+    std::vector<int> region_sizes_;
 
   public:
     // Constructors
@@ -60,6 +61,7 @@ class MultiSite {
     void compute();
 
     // Utility functions
+    void localize(std::shared_ptr<const PTree> ldata, std::shared_ptr<const Matrix> fock);
     void set_active();
     void canonicalize(std::shared_ptr<const Matrix> fock);
 

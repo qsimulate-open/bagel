@@ -24,10 +24,13 @@
 
 #include <src/asd/multisite/multisite.h>
 #include <src/scf/hf/fock.h>
+#include <src/mat1e/overlap.h>
+#include <src/wfn/localization.h>
 
 using namespace std;
 using namespace bagel;
 
+// constructor
 MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref, const int nsites) : input_(input), hf_ref_(ref), nsites_(nsites) {
   cout << string(60, '=') << endl;
   cout << string(15, ' ') << "Construct MultiSite" << endl;
@@ -37,22 +40,22 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   nspin_ = input_->get<int>("spin", 0);
 
   active_electrons_ = input_->get_vector<int>("active_electrons");
-  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
   active_sizes_ = input_->get_vector<int>("active_sizes");
-
-  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
-  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
-  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
-  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
-
-  sref_ = make_shared<Reference>(hf_ref_->geom(), nullptr, nclosed, nactive, nvirt);
+  region_sizes_ = input_->get_vector<int>("region_sizes");
+  assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == hf_ref_->geom()->natom());
 }
 
+
 void MultiSite::compute() {
-  // construct Fock Matrix for canonicalization before setting active
-  shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(sref_->nclosed());
+  // construct Fock Matrix 
+  shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(hf_ref_->nclosed());
   const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
   auto fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
+
+  // localize orbitals (closed as well as virtual orbitals)
+  shared_ptr<const PTree> localize_data = input_->get_child_optional("localization");
+  if (!localize_data) localize_data = make_shared<const PTree>();
+  localize(localize_data, fock);
 
   // reorder coefficient for ASD-DMRG
   set_active();
@@ -60,6 +63,115 @@ void MultiSite::compute() {
   canonicalize(fock);
 
   run_fci();
+}
+
+
+void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const Matrix> fock) {
+  string localizemethod = localize_data->get<string>("algorithm", "pm");
+
+  shared_ptr<OrbitalLocalization> localization;
+  auto input_data = make_shared<PTree>(*localize_data);
+  input_data->erase("virtual"); input_data->put("virtual", true);
+  if (input_data->get_child_optional("region_sizes")) {
+    cout << "WARNING : The region_sizes keyword in localization input will be overwritten by that from MultiSite input." << endl;
+    input_data->erase("region_sizes");
+  }
+  
+  if (localizemethod == "region") {
+    localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes_);
+  } else if (localizemethod == "pm" || localizemethod == "pipek-mezey") {
+    input_data->erase("type"); input_data->put("type", "region");
+    localization = make_shared<PMLocalization>(input_data, hf_ref_, region_sizes_);
+  } else throw runtime_error("Unrecognized orbital localization method");
+
+  shared_ptr<const Matrix> local_coeff = localization->localize();
+  vector<pair<int, int>> orbital_subspaces = localization->orbital_subspaces();
+  assert(orbital_subspaces.size() == 2); // closed and active only
+
+  vector<pair<int, int>> region_bounds;
+  {
+    int atom_start = 0;
+    int current = 0;
+    for (int natom : region_sizes_) {
+      const int bound_start = current;
+      for (int iatom = 0; iatom != natom; ++iatom)
+        current += hf_ref_->geom()->atoms(atom_start+iatom)->nbasis();
+      region_bounds.emplace_back(bound_start, current);
+      atom_start += natom;
+    }
+  }
+  assert(region_bounds.size() == nsites_);
+
+  vector<vector<pair<int, int>>> site_bounds;
+
+  assert(hf_ref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
+                               [] (int o, const pair<int, int>& p) { return o + p.second - p.first; }));
+
+  Matrix ShalfC = static_cast<Matrix>(Overlap(hf_ref_->geom()));
+  ShalfC.sqrt();
+  ShalfC *= *local_coeff;
+
+  auto out_coeff = local_coeff->clone();
+  
+  for (const pair<int, int>& subspace : orbital_subspaces) {
+    vector<set<int>> orbital_sets(nsites_);
+    const int nsuborbs = subspace.second - subspace.first;
+
+    vector<pair<int, int>> subspace_site_bounds;
+
+    vector<vector<double>> lowdin_populations(nsuborbs);
+    for (auto& p : lowdin_populations)
+      p.resize(nsites_);
+
+    Matrix Q(nsuborbs, nsuborbs);
+    for (int site = 0; site != nsites_; ++site) {
+      const pair<int, int> bounds = region_bounds[site];
+      const int nregbasis = bounds.second - bounds.first;
+      dgemm_("T", "N", nsuborbs, nsuborbs, nregbasis, 1.0, ShalfC.element_ptr(bounds.first, subspace.first), ShalfC.ndim(),
+                                                           ShalfC.element_ptr(bounds.first, subspace.first), ShalfC.ndim(), 
+                                                      0.0, Q.data(), Q.ndim());
+      for (int orb = 0; orb != nsuborbs; ++orb)
+        lowdin_populations[orb][site] = Q(orb, orb) * Q(orb, orb);
+    }
+
+    for (int orb = 0; orb != nsuborbs; ++orb) {
+      //pick the largest value to assign it to sites
+      vector<double>& pops = lowdin_populations[orb];
+      auto maxiter = max_element(pops.begin(), pops.end());
+      const int maxsite = maxiter - pops.begin();
+      orbital_sets[maxsite].insert(orb + subspace.first);
+    }
+
+    size_t imo = subspace.first;
+
+    for (auto& subset : orbital_sets) {
+      if (subset.empty()) continue;
+      Matrix subspace(out_coeff->ndim(), subset.size());
+      int pos = 0;
+      for (const int& i : subset)
+        copy_n(local_coeff->element_ptr(0, i), local_coeff->ndim(), subspace.element_ptr(0, pos++));
+
+      Matrix subfock(subspace % *fock * subspace);
+      VectorB eigs(subspace.ndim());
+      subfock.diagonalize(eigs);
+      subspace *= subfock;
+
+      copy_n(subspace.data(), subspace.size(), out_coeff->element_ptr(0, imo));
+      subspace_site_bounds.emplace_back(imo, imo+subset.size());
+      imo += subset.size();
+    }
+    site_bounds.emplace_back(move(subspace_site_bounds));
+  }
+
+  assert(site_bounds.front().front().first < site_bounds.back().front().first);
+  
+  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
+  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
+  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
+  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
+
+  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
 }
 
 
