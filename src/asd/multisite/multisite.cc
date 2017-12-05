@@ -52,6 +52,8 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 }
 
 void MultiSite::compute() {
+  // reorder coefficient for ASD-DMRG
+
   set_active();
 
   canonicalize();
@@ -118,6 +120,37 @@ void MultiSite::canonicalize() {
   scoeff->copy_block(0, nclosed, scoeff->ndim(), transformed_mos.mdim(), transformed_mos);
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
+}
+
+
+shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bool> meanfield) const {
+  assert(meanfield.size() == nsites_ && site < nsites_ && site >=0);
+
+  vector<shared_ptr<const MatView>> closed_orbitals = { make_shared<MatView>(sref_->coeff()->slice(0, sref_->nclosed())) };
+  const int act_start = accumulate(active_sizes_.begin(), active_sizes_.begin()+site, sref_->nclosed());
+  const int act_fence = act_start + active_sizes_.at(site);
+  const MatView active_orbitals = sref_->coeff()->slice(act_start, act_fence);
+
+  int current = sref_->nclosed();
+  for (int i = 0; i != nsites_; ++i) {
+    if (meanfield[i] && i != site)
+      closed_orbitals.push_back(make_shared<const MatView>(sref_->coeff()->slice(current, current+(active_electrons_.at(i)+1)/2)));
+    current += active_sizes_.at(i);
+  }
+
+  const int nclosed = accumulate(closed_orbitals.begin(), closed_orbitals.end(), 0, [](int x, shared_ptr<const MatView>m) { return x + m->mdim(); });
+  const int nact = active_orbitals.mdim();
+
+  auto out = make_shared<Matrix>(sref_->geom()->nbasis(), nclosed+nact);
+
+  current = 0;
+  closed_orbitals.push_back(make_shared<MatView>(active_orbitals));
+  for (auto& orbitals : closed_orbitals) {
+    copy_n(orbitals->data(), orbitals->size(), out->element_ptr(0, current));
+    current += orbitals->mdim();
+  }
+
+  return make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out)), nclosed, nact, 0);
 }
 
 

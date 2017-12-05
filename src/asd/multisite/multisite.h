@@ -50,6 +50,10 @@ class MultiSite {
     MultiSite(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref, const int nsites);
 
     int nsites() const { return nsites_; }
+    int charge() const { return charge_; }
+    int nspin() const { return nspin_; }
+    std::vector<int> active_electrons() const { return active_electrons_; }
+    std::vector<int> active_sizes() const { return active_sizes_; }
 
     std::shared_ptr<const Reference> sref() const { return sref_; }
 
@@ -58,9 +62,10 @@ class MultiSite {
     // Utility functions
     void set_active();
     void canonicalize();
-//    void localize(std::shared_ptr<const Matrix> fock);
 
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
+
+    void run_fci() const;
 };
 
 }

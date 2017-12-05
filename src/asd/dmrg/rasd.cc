@@ -154,10 +154,12 @@ shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inpu
 
   for (auto& inp : inputs) {
     // finish preparing the input
-    inp->put("nclosed", ref->nclosed());
-    read_restricted(inp, 0);
     const int spin = inp->get<int>("nspin");
     const int charge = inp->get<int>("charge");
+    inp->put("nclosed", ref->nclosed());
+    inp->put("extern_nactele", true);
+    inp->put("nactele", multisite_->active_electrons().at(0));
+    read_restricted(inp, 0);
     {
       Muffle hide_cout("asd_dmrg.log", append);
       append = true;
@@ -240,6 +242,10 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
     const int charge = inp->get<int>("charge");
     const int spin = inp->get<int>("nspin");
     inp->put("nclosed", ref->nclosed());
+    inp->put("extern_nactele", true);
+    vector<int> active_electrons = multisite_->active_electrons();
+    const int nactele = accumulate(active_electrons.begin(), active_electrons.begin()+site+1, 0);
+    inp->put("nactele", nactele);
     read_restricted(inp, site);
     {
       Muffle hide_cout("asd_dmrg.log", true);
@@ -318,6 +324,10 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
   Timer decimatetime(2);
   // assume the input is already fully formed, this may be revisited later
   input->put("nclosed", ref->nclosed());
+  input->put("extern_nactele", true);
+  vector<int> active_electrons = multisite_->active_electrons();
+  const int nactele = accumulate(active_electrons.begin(), active_electrons.end(), input->get<int>("charge"));
+  input->put("nactele", nactele);
   read_restricted(input, site);
   {
     Muffle hide_cout("asd_dmrg.log", true);
