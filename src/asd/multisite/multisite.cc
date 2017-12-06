@@ -190,6 +190,61 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 }
 
 
+void MultiSite::set_active_orbitals() {
+  auto assign_active = input_->get_child_optional("actorb_subspaces");
+  auto out_coeff = sref_->coeff()->clone();
+  
+  const int nclosed = sref_->nclosed();
+  const int nactive = sref_->nact();
+  const int multisitebasis = hf_ref_->geom()->nbasis();
+
+  if (assign_active) {
+    ///> active subspaces info is provided, just reorder the orbitals
+    if (assign_active->size() != nsites_)
+      throw logic_error("Must specify active spaces for all of the sites");
+
+    vector<set<int>> active_orbitals;
+    set<int> active_set;
+    for (auto site : *assign_active) {
+      vector<int> active_orbs = site->get_vector<int>("");
+      for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { x--; });
+      active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
+      active_set.insert(active_orbs.begin(), active_orbs.end());
+    }
+    assert(active_set.size() == sref_->nact());
+    
+    int closed_position = 0;
+    int active_position = nclosed;
+    int virt_position = nclosed + nactive;
+  
+    auto in_coeff = sref_->coeff();
+    assert(in_coeff->ndim() == multisitebasis);
+  
+    for (auto site : active_orbitals) {
+      for (int aorb : site)
+        copy_n(in_coeff->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
+    }
+    for (int i = 0; i != in_coeff->mdim(); ++i) {
+      if (active_set.count(i) == 0)
+        copy_n(in_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
+    }
+    
+    assert(virt_position == in_coeff->mdim());
+  } else {
+    ///> if no manually assigned active orbital subspaces, do projection
+    shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
+    if (!projection_data) throw runtime_error("Missing input information : \"projection\"");
+    cout << "Doing projection" << endl;
+    project_active(projection_data);
+    MoldenOut mfile("projected.molden");
+    mfile << sref_->geom();
+    mfile << sref_;
+  }
+  
+  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
+}
+
+
 void MultiSite::project_active(shared_ptr<const PTree> input) {
   vector<int> active_set = input->get_vector<int>("active_set");
 
@@ -237,59 +292,6 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
   }
 
   // project coeff
-    
-}
-
-
-void MultiSite::set_active() {
-  auto active = input_->get_child("actorb_subspaces");
-  if (!active)
-    throw logic_error("\"active\" keyword must be specified for multisite construction");
-  if (active->size() != nsites_)
-    throw logic_error("Must specify active spaces for all of the sites");
-
-  vector<set<int>> active_orbitals;
-  set<int> active_set;
-  for (auto site : *active) {
-    vector<int> active_orbs = site->get_vector<int>("");
-    for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { x--; });
-    active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
-    active_set.insert(active_orbs.begin(), active_orbs.end());
-  }
-  assert(active_set.size() == sref_->nact());
-  
-  const int nclosed = sref_->nclosed();
-  const int nactive = sref_->nact();
-  int closed_position = 0;
-  int active_position = nclosed;
-  int virt_position = nclosed + nactive;
-  const int multisitebasis = hf_ref_->geom()->nbasis();
-
-  auto in_coeff = sref_->coeff();
-  auto out_coeff = in_coeff->clone();
-  assert(in_coeff->ndim() == multisitebasis);
-
-  for (auto site : active_orbitals) {
-    for (int aorb : site)
-      copy_n(in_coeff->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
-  }
-  for (int i = 0; i != in_coeff->mdim(); ++i) {
-    if (active_set.count(i) == 0)
-      copy_n(in_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
-  }
-  assert(virt_position == in_coeff->mdim());
-
-  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
-  
-  // projection (optional)
-  shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
-  if (projection_data) {
-    cout << "Doing projection" << endl;
-    project_active(projection_data);
-    MoldenOut mfile("projected.molden");
-    mfile << sref_->geom();
-    mfile << sref_;
-  }
 }
 
 
