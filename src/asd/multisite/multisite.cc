@@ -24,6 +24,7 @@
 
 #include <src/asd/multisite/multisite.h>
 #include <src/scf/hf/fock.h>
+#include <src/scf/hf/rhf.h>
 #include <src/mat1e/overlap.h>
 #include <src/wfn/localization.h>
 #include <src/util/io/moldenout.h>
@@ -200,8 +201,41 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 }
 
 
-void MultiSite::project_active(shared_ptr<const PTree> projection_data) {
+void MultiSite::project_active(shared_ptr<const PTree> input) {
+  vector<int> active_set = input->get_vector<int>("active_set");
 
+  // construct fragments and pick active orbitals within each fragment
+  {
+    // collect fragment geoms
+    auto geom_info = input->get_child_optional("fragment_geominfo");
+    vector<shared_ptr<const Geometry>> geom_vec;
+    int atomstart = 0;
+    for (int isize : region_sizes_) {
+      vector<shared_ptr<const Atom>> atoms;
+      for (int iatom = atomstart; iatom != atomstart+isize; ++iatom)
+        atoms.push_back(sref_->geom()->atoms(iatom));
+      atomstart += isize;
+      geom_vec.push_back(make_shared<const Geometry>(atoms, geom_info));
+    }
+    
+    vector<shared_ptr<const Reference>> fragment_refs;
+    // RHF for each fragment
+    {
+      shared_ptr<PTree> hf_info = input->get_child_optional("hf_info");
+      if (!hf_info) hf_info = make_shared<PTree>();
+      vector<int> fragment_charge = input->get_vector<int>("fragment_charge");
+      assert(fragment_charge.size() == nsites_);
+      for (int isite = 0; isite != nsites_; ++isite) {
+        hf_info->erase("charge"); hf_info->put("charge", fragment_charge.at(isite));
+        auto hf = make_shared<RHF>(hf_info, geom_vec.at(isite));
+        hf->compute();
+        fragment_refs.push_back(hf->conv_to_ref());
+      }
+    }
+  
+    // project coeff
+  }
+    
 }
 
 
