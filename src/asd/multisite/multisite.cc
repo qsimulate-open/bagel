@@ -192,16 +192,13 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 
 void MultiSite::set_active_orbitals() {
   auto assign_active = input_->get_child_optional("actorb_subspaces");
-  auto out_coeff = sref_->coeff()->clone();
   
-  const int nclosed = sref_->nclosed();
-  const int nactive = sref_->nact();
-  const int multisitebasis = hf_ref_->geom()->nbasis();
-
   if (assign_active) {
     ///> active subspaces info is provided, just reorder the orbitals
     if (assign_active->size() != nsites_)
       throw logic_error("Must specify active spaces for all of the sites");
+    
+    auto out_coeff = sref_->coeff()->clone();
 
     vector<set<int>> active_orbitals;
     set<int> active_set;
@@ -213,6 +210,9 @@ void MultiSite::set_active_orbitals() {
     }
     assert(active_set.size() == sref_->nact());
     
+    const int nclosed = sref_->nclosed();
+    const int nactive = sref_->nact();
+    const int multisitebasis = hf_ref_->geom()->nbasis();
     int closed_position = 0;
     int active_position = nclosed;
     int virt_position = nclosed + nactive;
@@ -228,31 +228,57 @@ void MultiSite::set_active_orbitals() {
       if (active_set.count(i) == 0)
         copy_n(in_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
     }
-    
     assert(virt_position == in_coeff->mdim());
+    
+    sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), sref_->nclosed(), sref_->nact(), sref_->nvirt());
   } else {
     ///> if no manually assigned active orbital subspaces, do projection
     shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
     if (!projection_data) throw runtime_error("Missing input information : \"projection\"");
     cout << "Doing projection" << endl;
+
     project_active(projection_data);
+    
     MoldenOut mfile("projected.molden");
     mfile << sref_->geom();
     mfile << sref_;
   }
-  
-  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
 }
 
 
 void MultiSite::project_active(shared_ptr<const PTree> input) {
-  vector<int> active_set = input->get_vector<int>("active_set");
+  auto out_coeff = sref_->coeff()->clone();
+
+  const int nclosed = sref_->nclosed();
+  const int nactive = sref_->nact();
+  const int multisitebasis = hf_ref_->geom()->nbasis();
+
+  // reorder coeff to closed-active-virtual
+  vector<int> active_vec = input->get_vector<int>("active_set");
+  set<int> active_set;  active_set.insert(active_vec.begin(), active_vec.end());
+  assert(active_set.size() == nactive);
+  int closed_position = 0;
+  int active_position = nclosed;
+  int virt_position = nclosed + nactive;
+  for (auto& aorb : active_set)
+    copy_n(sref_->coeff()->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
+  assert(active_position == virt_position);
+  for (int iorb = 0; iorb != out_coeff->mdim(); ++iorb)
+    if (active_set.count(iorb) == 0)
+      copy_n(sref_->coeff()->element_ptr(0, iorb), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
+  assert(closed_position == nclosed);
+  assert(virt_position == out_coeff->mdim());
+
+  // delocalized active orbital set
+  auto act_orbs = make_shared<Matrix>(multisitebasis, nactive);
+  copy_n(sref_->coeff()->element_ptr(0, nclosed), multisitebasis*nactive, act_orbs->data());
 
   // construct fragments and pick active orbitals within each fragment
+  vector<shared_ptr<const Matrix>> sub_act_orbs;
   {
     // collect fragment geoms
-    shared_ptr<PTree> geom_info;
-    geom_info= input->get_child_optional("fragment_geominfo");
+    auto geom_info = make_shared<PTree>();
+    if(input->get_child_optional("fragment_geominfo")) geom_info = input->get_child("fragmrnt_geominfo");
     if (geom_info->get<string>("df_basis", "") == "") geom_info->put("df_basis", sref_->geom()->auxfile());
     vector<shared_ptr<const Geometry>> geom_vec;
     int atomstart = 0;
@@ -289,9 +315,32 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
         mfile << iref;
       }
     }
+
+    // collect active orbitals from each site
+    auto fragment_active = input->get_child("fragment_active");
+    assert(fragment_active->size() == nsites_);
+    int isite = 0;
+    for (auto& ifrag : *fragment_active) {
+      auto iref = fragment_refs.at(isite);
+      vector<int> iactive = ifrag->get_vector<int>("");
+      auto sub_matrix = make_shared<Matrix>(multisitebasis, iactive.size());
+      int pos = 0;
+      for (auto& aorb : iactive)
+        copy_n(iref->coeff()->element_ptr(0, aorb), multisitebasis, sub_matrix->element_ptr(0, pos++));
+      sub_act_orbs.push_back(sub_matrix);
+      ++isite;
+    }
   }
 
-  // project coeff
+  // do SVD and project coeff
+  const Overlap S(sref_->geom());
+  for (int isite = 0; isite != nsites_; ++isite) {
+  cout << string(16, '=') << endl;
+    auto overlapmat = make_shared<Matrix>(*sub_act_orbs[isite] % S * *act_orbs);
+    overlapmat->print();
+  }
+
+  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
 }
 
 
