@@ -76,24 +76,13 @@ void MultiSite::compute() {
     mfile << sref_;
   }
 
-  // projection (optional)
-  shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
-  if (projection_data) {
-    cout << "Doing projection" << endl;
-    project_active(projection_data);
-    MoldenOut mfile("projected.molden");
-    mfile << sref_->geom();
-    mfile << sref_;
-  }
+  // two options : 1) manually assign active orbitals to subspaces  2) use projection to assign automatically
+  set_active_orbitals();
 
-  ///> P.S. now you should have already got coefficient with well-defined active orbital sets (either by localization or projection),
-  ///>        manually pick these active orbitals and reorder the coefficient into closed-active-virtual.
-
-  // reorder coefficient for ASD-DMRG
-  set_active();
-
+  // canonicalize active orbitals within each subspace
   canonicalize(fock);
 
+  // tmp function, only for debugging
   run_fci();
 }
 
@@ -231,7 +220,7 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
         hf_info->erase("charge"); hf_info->put("charge", fragment_charge.at(isite));
         auto hf = make_shared<RHF>(hf_info, geom_vec.at(isite));
         hf->compute();
-        fragment_refs.push_back(hf->conv_to_ref());
+        fragment_refs.push_back(hf->conv_to_ref()->project_coeff(sref_->geom(), false));
       }
     }
 
@@ -291,6 +280,16 @@ void MultiSite::set_active() {
   assert(virt_position == in_coeff->mdim());
 
   sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
+  
+  // projection (optional)
+  shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
+  if (projection_data) {
+    cout << "Doing projection" << endl;
+    project_active(projection_data);
+    MoldenOut mfile("projected.molden");
+    mfile << sref_->geom();
+    mfile << sref_;
+  }
 }
 
 
