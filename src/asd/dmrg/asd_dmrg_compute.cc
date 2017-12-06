@@ -95,6 +95,10 @@ void ASD_DMRG::compute() {
       auto mnmx = minmax_element(sweep_energies_[i].begin(), sweep_energies_[i].end());
       const double sweep_average = accumulate(sweep_energies_[i].begin(), sweep_energies_[i].end(), 0.0)/static_cast<double>(sweep_energies_[i].size());
       const double sweep_range = *mnmx.second - *mnmx.first;
+      cout << "sweep energy : " << endl;
+      for (auto i : sweep_energies_[i])
+        cout << setprecision(12) << i << endl;
+      cout << "end of print" << endl;
 
       if (iter != 0)
         cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(12) << sweep_average << setw(12) << setprecision(8) << sweep_range
@@ -189,6 +193,10 @@ void ASD_DMRG::down_sweep() {
         auto mnmx = minmax_element(sweep_energies_[i].begin(), sweep_energies_[i].end());
         const double sweep_average = accumulate(sweep_energies_[i].begin(), sweep_energies_[i].end(), 0.0)/static_cast<double>(sweep_energies_[i].size());
         const double sweep_range = *mnmx.second - *mnmx.first;
+        cout << "sweep energy : " << endl;
+        for (auto i : sweep_energies_[i])
+          cout << setprecision(12) << i << endl;
+        cout << "end of print" << endl;
 
         if (iter != 0)
           cout << setw(6) << iter << setw(6) << i << setw(18) << setprecision(12) << sweep_average << setw(12) << setprecision(8) << sweep_range

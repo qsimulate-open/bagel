@@ -26,6 +26,7 @@
 #include <src/scf/hf/fock.h>
 #include <src/mat1e/overlap.h>
 #include <src/wfn/localization.h>
+#include <src/util/io/moldenout.h>
 
 using namespace std;
 using namespace bagel;
@@ -37,32 +38,56 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   cout << string(60, '=') << endl;
 
   charge_ = input_->get<int>("charge", 0);
-  nspin_ = input_->get<int>("spin", 0);
+  nspin_ = input_->get<int>("nspin", 0);
 
   active_electrons_ = input_->get_vector<int>("active_electrons");
   active_sizes_ = input_->get_vector<int>("active_sizes");
   region_sizes_ = input_->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == hf_ref_->geom()->natom());
+  
+  // collect orbital subspaces info
+  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
+  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
+  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
+  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
+
+  sref_ = make_shared<Reference>(hf_ref_->geom(), hf_ref_->coeff(), nclosed, nactive, nvirt);
 }
 
 
-#include <src/util/io/moldenout.h>
 void MultiSite::compute() {
   // construct Fock Matrix 
-  shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(hf_ref_->nclosed());
-  const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
-  auto fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
+  shared_ptr<const Fock<1>> fock;
+  {
+    shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(hf_ref_->nclosed());
+    const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
+    fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
+  }
 
-  // localize orbitals (closed as well as virtual orbitals)
-  shared_ptr<const PTree> localize_data = input_->get_child_optional("localization");
-  if (!localize_data) localize_data = make_shared<const PTree>();
-  localize(localize_data, fock);
+  // localize closed and virtual orbitals (optional)
+  shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
+  if (localization_data) {
+    cout << "Doing localization" << endl;
+    localize(localization_data, fock);
+    MoldenOut mfile("localized.molden");
+    mfile << sref_->geom();
+    mfile << sref_;
+  }
 
-#if 1
-  MoldenOut mout("localized.molden");
-  mout << sref_->geom();
-  mout << sref_;
-#endif
+  // projection (optional)
+  shared_ptr<const PTree> projection_data = input_->get_child_optional("projection");
+  if (projection_data) {
+    cout << "Doing projection" << endl;
+    project_active(projection_data);
+    MoldenOut mfile("projected.molden");
+    mfile << sref_->geom();
+    mfile << sref_;
+  }
+
+  ///> P.S. now you should have already got coefficient with well-defined active orbital sets (either by localization or projection),
+  ///>        manually pick these active orbitals and reorder the coefficient into closed-active-virtual.
+
   // reorder coefficient for ASD-DMRG
   set_active();
 
@@ -171,18 +196,17 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 
   assert(site_bounds.front().front().first < site_bounds.back().front().first);
   
-  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
-  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
-  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
-  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
-  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
+  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), sref_->nclosed(), sref_->nact(), sref_->nvirt());
+}
 
-  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
+
+void MultiSite::project_active(shared_ptr<const PTree> projection_data) {
+
 }
 
 
 void MultiSite::set_active() {
-  auto active = input_->get_child("active");
+  auto active = input_->get_child("actorb_subspaces");
   if (!active)
     throw logic_error("\"active\" keyword must be specified for multisite construction");
   if (active->size() != nsites_)
@@ -196,6 +220,7 @@ void MultiSite::set_active() {
     active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
     active_set.insert(active_orbs.begin(), active_orbs.end());
   }
+  assert(active_set.size() == sref_->nact());
   
   const int nclosed = sref_->nclosed();
   const int nactive = sref_->nact();
