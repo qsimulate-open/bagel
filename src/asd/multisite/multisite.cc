@@ -207,7 +207,9 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
   // construct fragments and pick active orbitals within each fragment
   {
     // collect fragment geoms
-    auto geom_info = input->get_child_optional("fragment_geominfo");
+    shared_ptr<PTree> geom_info;
+    geom_info= input->get_child_optional("fragment_geominfo");
+    if (geom_info->get<string>("df_basis", "") == "") geom_info->put("df_basis", sref_->geom()->auxfile());
     vector<shared_ptr<const Geometry>> geom_vec;
     int atomstart = 0;
     for (int isize : region_sizes_) {
@@ -221,7 +223,7 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
     vector<shared_ptr<const Reference>> fragment_refs;
     // RHF for each fragment
     {
-      shared_ptr<PTree> hf_info = input->get_child_optional("hf_info");
+      shared_ptr<PTree> hf_info = input->get_child_optional("fragment_hfinfo");
       if (!hf_info) hf_info = make_shared<PTree>();
       vector<int> fragment_charge = input->get_vector<int>("fragment_charge");
       assert(fragment_charge.size() == nsites_);
@@ -232,9 +234,20 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
         fragment_refs.push_back(hf->conv_to_ref());
       }
     }
-  
-    // project coeff
+
+    // visualize fragment orbitals
+    {
+      int cnt = 0;
+      for (auto iref : fragment_refs) {
+        string str = std::to_string(++cnt);
+        MoldenOut mfile("ref"+str+".molden");
+        mfile << iref->geom();
+        mfile << iref;
+      }
+    }
   }
+
+  // project coeff
     
 }
 
