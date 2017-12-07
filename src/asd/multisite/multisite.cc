@@ -57,16 +57,6 @@ void MultiSite::compute() {
     const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
     fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
   }
-#if 1
-{
-  Muffle m1("ignore", false);
-  auto fci_info = input_->get_child("fci");
-  auto fci = make_shared<KnowlesHandy>(fci_info, hf_ref_->geom(), hf_ref_);
-  fci->compute();
-  m1.unmute();
-  cout << setprecision(12) << "HF reference FCI energy : " << fci->energy(0) << endl;
-}
-#endif
 
   // localize closed and virtual orbitals (optional)
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
@@ -83,31 +73,11 @@ void MultiSite::compute() {
   // two options : 1) manually assign active orbitals to subspaces  2) use projection to assign automatically
   set_active_orbitals();
 
-#if 1
-{
-  Muffle m1("ignore", true);
-  auto fci_info = input_->get_child("fci");
-  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
-  fci->compute();
-  m1.unmute();
-  cout << setprecision(12) << "ACTIVE reference FCI energy : " << fci->energy(0) << endl;
-}
-#endif
   // canonicalize active orbitals within each subspace
   canonicalize(fock);
-#if 1
-{
-  Muffle m1("ignore", true);
-  auto fci_info = input_->get_child("fci");
-  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
-  fci->compute();
-  m1.unmute();
-  cout << setprecision(12) << "CANON reference FCI energy : " << fci->energy(0) << endl;
-}
-#endif
 
   // tmp function, only for debugging
-//  run_fci();
+  run_fci();
 }
 
 
@@ -281,26 +251,31 @@ void MultiSite::set_active_orbitals() {
       basis_start += nbasis;
     }
   
-#if 1
-    // do SVD and project coeff
-    pos = nclosed;
+    // do SVD and find transformation matrix
+    vector<shared_ptr<Matrix>> matvec;
+    Matrix trans(nactive, nactive);
+    pos = 0;
     for (int isite = 0; isite != nsites_; ++isite) {
       pair<int, int> bounds = region_bounds[isite];
-      const int ntot = act_orbs->mdim();
+      const int ntot = nactive;
       const int nsub = active_sizes_[isite];
-      const int nbasis = bounds.second - bounds.first;
-      auto actorb = act_orbs->get_submatrix(bounds.first, 0, nbasis, ntot);
+      auto actorb = act_orbs->get_submatrix(bounds.first, 0, bounds.second-bounds.first, ntot);
       Matrix SVD(*actorb % *actorb);
       VectorB eigs(SVD.ndim());
       SVD.diagonalize(eigs);
-      const MatView trans_mat = SVD.slice(ntot-nsub, ntot);
-      const Matrix subcoeff(*act_orbs * trans_mat);
-      copy_n(subcoeff.data(), subcoeff.size(), out_coeff->element_ptr(0, pos));
+      const MatView sub_trans = SVD.slice(ntot-nsub, ntot);
+      copy_n(sub_trans.data(), sub_trans.size(), trans.element_ptr(0, pos));
       pos += nsub;
     }
-#else
-    copy_n(act_orbs->data(), act_orbs->size(), out_coeff->element_ptr(0, nclosed));
-#endif
+    assert(pos == nactive);
+    // Lowdin orthonormalization
+    Matrix inv_hf(trans % trans);
+    inv_hf.inverse_half();
+    trans *= inv_hf;
+    
+    // project coeff
+    Matrix projected(*act_orbs * trans);
+    copy_n(projected.data(), projected.size(), out_coeff->element_ptr(0, nclosed));
 
   } else {
     throw runtime_error("Must either provide one total active orbital list or assign active orbitals for each fragment");
@@ -373,7 +348,9 @@ void MultiSite::run_fci() const {
     return;
   }
 
+  Muffle hide_cout("ignore", false);
   auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
   fci->compute();
+  hide_cout.unmute();
   cout << " * FCI energy : " << setprecision(12) << fci->energy(0) << endl;
 }
