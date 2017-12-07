@@ -76,8 +76,6 @@ void MultiSite::compute() {
   // canonicalize active orbitals within each subspace
   canonicalize(fock);
 
-  // tmp function, only for debugging
-  run_fci();
 }
 
 
@@ -222,7 +220,6 @@ void MultiSite::set_active_orbitals() {
     
   } else if (active_subspace->size() == 1){
     ///> if no manually assigned active orbital subspaces, do projection
-    cout << "DOING PROJECTION" << endl;
 
     // reorder coeff to closed-active-virtual
     for (auto site : *active_subspace) {
@@ -272,6 +269,7 @@ void MultiSite::set_active_orbitals() {
     Matrix inv_hf(trans % trans);
     inv_hf.inverse_half();
     trans *= inv_hf;
+    cout << endl << string(6, '*') << "  If linear dependency is detected, you have to find better active orbitals to do projection  " << string(6, '*') << endl << endl;
     
     // project coeff
     Matrix projected(*act_orbs * trans);
@@ -341,16 +339,3 @@ shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bo
 }
 
 
-void MultiSite::run_fci() const {
-  auto fci_info = input_->get_child_optional("fci");
-  if(!fci_info) {
-    cout << "No FCI info provided, skipping MultiSite debugging.." << endl;
-    return;
-  }
-
-  Muffle hide_cout("ignore", false);
-  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
-  fci->compute();
-  hide_cout.unmute();
-  cout << " * FCI energy : " << setprecision(12) << fci->energy(0) << endl;
-}

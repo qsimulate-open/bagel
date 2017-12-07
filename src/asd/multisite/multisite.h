@@ -67,7 +67,6 @@ class MultiSite {
 
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
 
-    void run_fci() const;
 };
 
 }

@@ -394,7 +394,6 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
   // cartesian or not. Look in the atoms info to find out
   spherical_ = atoms.front()->spherical();
   // basis
-  basisfile_ = atoms.front()->basis();
   auxfile_ = geominfo->get<string>("df_basis", "");
   if (!auxfile_.empty()) {
     // read the default basis file
