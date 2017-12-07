@@ -230,10 +230,14 @@ void MultiSite::set_active_orbitals() {
     
   } else if (active_subspace->size() == 1){
     ///> if no manually assigned active orbital subspaces, do projection
+    cout << "DOING PROJECTION" << endl;
 
     // reorder coeff to closed-active-virtual
-    vector<int> active_vec = active_subspace->get_vector<int>("");
-    set<int> active_set;  active_set.insert(active_vec.begin(), active_vec.end());
+    set<int> active_set;
+    for (auto site : *active_subspace) {
+      vector<int> active_vec = site->get_vector<int>("");
+      active_set.insert(active_vec.begin(), active_vec.end());
+    }
     assert(active_set.size() == nactive);
 
     int closed_position = 0;
