@@ -62,7 +62,6 @@ class MultiSite {
 
     // Utility functions
     void localize(std::shared_ptr<const PTree> ldata, std::shared_ptr<const Matrix> fock);
-    void project_active(std::shared_ptr<const PTree> pdata);
     void set_active_orbitals();
     void canonicalize(std::shared_ptr<const Matrix> fock);
 
