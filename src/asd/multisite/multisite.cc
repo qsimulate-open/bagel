@@ -24,7 +24,6 @@
 
 #include <src/asd/multisite/multisite.h>
 #include <src/scf/hf/fock.h>
-#include <src/scf/hf/rhf.h>
 #include <src/mat1e/overlap.h>
 #include <src/wfn/localization.h>
 #include <src/util/io/moldenout.h>
@@ -273,78 +272,33 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
   auto act_orbs = make_shared<Matrix>(multisitebasis, nactive);
   copy_n(sref_->coeff()->element_ptr(0, nclosed), multisitebasis*nactive, act_orbs->data());
 
-  // construct fragments and pick active orbitals within each fragment
-  vector<shared_ptr<const Matrix>> sub_act_orbs;
-  {
-    // collect fragment geoms
-    auto geom_info = make_shared<PTree>();
-    if(input->get_child_optional("fragment_geominfo")) geom_info = input->get_child("fragmrnt_geominfo");
-    if (geom_info->get<string>("df_basis", "") == "") geom_info->put("df_basis", sref_->geom()->auxfile());
-    vector<shared_ptr<const Geometry>> geom_vec;
-    int atomstart = 0;
-    for (int isize : region_sizes_) {
-      vector<shared_ptr<const Atom>> atoms;
-      for (int iatom = atomstart; iatom != atomstart+isize; ++iatom)
-        atoms.push_back(sref_->geom()->atoms(iatom));
-      atomstart += isize;
-      geom_vec.push_back(make_shared<const Geometry>(atoms, geom_info));
-    }
-    
-    vector<shared_ptr<const Reference>> fragment_refs;
-    // RHF for each fragment
-    {
-      shared_ptr<PTree> hf_info = input->get_child_optional("fragment_hfinfo");
-      if (!hf_info) hf_info = make_shared<PTree>();
-      vector<int> fragment_charge = input->get_vector<int>("fragment_charge");
-      assert(fragment_charge.size() == nsites_);
-      for (int isite = 0; isite != nsites_; ++isite) {
-        hf_info->erase("charge"); hf_info->put("charge", fragment_charge.at(isite));
-        auto hf = make_shared<RHF>(hf_info, geom_vec.at(isite));
-        hf->compute();
-        fragment_refs.push_back(hf->conv_to_ref()->project_coeff(sref_->geom(), false));
-      }
-    }
-
-    // visualize fragment orbitals
-    {
-      int cnt = 0;
-      for (auto iref : fragment_refs) {
-        string str = std::to_string(++cnt);
-        MoldenOut mfile("ref"+str+".molden");
-        mfile << iref->geom();
-        mfile << iref;
-      }
-    }
-
-    // collect active orbitals from each site
-    auto fragment_active = input->get_child("fragment_active");
-    assert(fragment_active->size() == nsites_);
-    int isite = 0;
-    for (auto& ifrag : *fragment_active) {
-      auto iref = fragment_refs.at(isite);
-      vector<int> iactive = ifrag->get_vector<int>("");
-      auto sub_matrix = make_shared<Matrix>(multisitebasis, iactive.size());
-      int pos = 0;
-      for (auto& aorb : iactive)
-        copy_n(iref->coeff()->element_ptr(0, aorb), multisitebasis, sub_matrix->element_ptr(0, pos++));
-      sub_act_orbs.push_back(sub_matrix);
-      ++isite;
-    }
+  // region bound info
+  vector<pair<int, int>> region_bounds;
+  int atomstart = 0; int basis_start = 0;
+  for (int isize : region_sizes_) {
+    int nbasis = 0;
+    for (int iatom = atomstart; iatom != atomstart+isize; ++iatom)
+      nbasis += sref_->geom()->atoms(iatom)->nbasis();
+    region_bounds.emplace_back(basis_start, basis_start+nbasis);
+    atomstart += isize;
+    basis_start += nbasis;
   }
 
   // do SVD and project coeff
-  const Overlap S(sref_->geom());
   int pos = nclosed;
   for (int isite = 0; isite != nsites_; ++isite) {
+    pair<int, int> bounds = region_bounds[isite];
     const int ntot = act_orbs->mdim();
-    const int nsub = sub_act_orbs[isite]->mdim();
-    auto overlapmat = make_shared<const Matrix>(*sub_act_orbs[isite] % S * *act_orbs);
-    auto SVD = make_shared<Matrix>(*overlapmat % *overlapmat);
-    VectorB eigs(overlapmat->mdim());
-    SVD->diagonalize(eigs);
-    auto trans = SVD->get_submatrix(0, ntot-nsub, ntot, nsub);
-    auto test = make_shared<const Matrix>(*act_orbs * *trans);
-    copy_n(test->data(), test->size(), out_coeff->element_ptr(0, pos));
+    const int nsub = active_sizes_[isite];
+    const int nbasis = bounds.second - bounds.first;
+    auto actorb = act_orbs->get_submatrix(bounds.first, 0, nbasis, ntot);
+    Matrix SVD(*actorb % *actorb);
+    VectorB eigs(SVD.ndim());
+    SVD.diagonalize(eigs);
+    for (auto& e : eigs) cout << e << endl;
+    const MatView trans_mat(SVD.slice(ntot-nsub, nsub));
+    const MatView subcoeff(*act_orbs * trans_mat);
+    copy_n(subcoeff.data(), subcoeff.size(), out_coeff->element_ptr(0, pos));
     pos += nsub;
   }
 
