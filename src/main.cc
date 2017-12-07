@@ -171,12 +171,8 @@ int main(int argc, char** argv) {
         asd->compute();
         ref = dimer->sref();
       } else if (title == "multisite") {
-        const bool projection = itree->get<bool>("projection", false);
         const int nsites = itree->get<int>("nsites");
-        if (!projection)
-          multisite = make_shared<MultiSite>(itree, ref, nsites);
-        else {}
-        
+        multisite = make_shared<MultiSite>(itree, ref, nsites);
         multisite->compute();
         ref = multisite->sref();
         geom = ref->geom();

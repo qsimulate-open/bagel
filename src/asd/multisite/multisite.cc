@@ -27,6 +27,8 @@
 #include <src/mat1e/overlap.h>
 #include <src/wfn/localization.h>
 #include <src/util/io/moldenout.h>
+#include <src/util/muffle.h>
+#include <src/ci/fci/knowles.h>
 
 using namespace std;
 using namespace bagel;
@@ -44,15 +46,6 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   active_sizes_ = input_->get_vector<int>("active_sizes");
   region_sizes_ = input_->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == hf_ref_->geom()->natom());
-  
-  // collect orbital subspaces info
-  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
-  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
-  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
-  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
-  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
-
-  sref_ = make_shared<Reference>(hf_ref_->geom(), hf_ref_->coeff(), nclosed, nactive, nvirt);
 }
 
 
@@ -64,6 +57,16 @@ void MultiSite::compute() {
     const MatView ccoeff = hf_ref_->coeff()->slice(0, hf_ref_->nclosed());
     fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
   }
+#if 1
+{
+  Muffle m1("ignore", false);
+  auto fci_info = input_->get_child("fci");
+  auto fci = make_shared<KnowlesHandy>(fci_info, hf_ref_->geom(), hf_ref_);
+  fci->compute();
+  m1.unmute();
+  cout << setprecision(12) << "HF reference FCI energy : " << fci->energy(0) << endl;
+}
+#endif
 
   // localize closed and virtual orbitals (optional)
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
@@ -73,16 +76,38 @@ void MultiSite::compute() {
     MoldenOut mfile("localized.molden");
     mfile << sref_->geom();
     mfile << sref_;
+  } else {
+    sref_ = make_shared<Reference>(*hf_ref_);
   }
 
   // two options : 1) manually assign active orbitals to subspaces  2) use projection to assign automatically
   set_active_orbitals();
 
+#if 1
+{
+  Muffle m1("ignore", true);
+  auto fci_info = input_->get_child("fci");
+  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
+  fci->compute();
+  m1.unmute();
+  cout << setprecision(12) << "ACTIVE reference FCI energy : " << fci->energy(0) << endl;
+}
+#endif
   // canonicalize active orbitals within each subspace
   canonicalize(fock);
+#if 1
+{
+  Muffle m1("ignore", true);
+  auto fci_info = input_->get_child("fci");
+  auto fci = make_shared<KnowlesHandy>(fci_info, sref_->geom(), sref_);
+  fci->compute();
+  m1.unmute();
+  cout << setprecision(12) << "CANON reference FCI energy : " << fci->energy(0) << endl;
+}
+#endif
 
   // tmp function, only for debugging
-  run_fci();
+//  run_fci();
 }
 
 
@@ -185,76 +210,64 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 
   assert(site_bounds.front().front().first < site_bounds.back().front().first);
   
-  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), sref_->nclosed(), sref_->nact(), sref_->nvirt());
+  sref_ = make_shared<Reference>(hf_ref_->geom(), make_shared<Coeff>(move(*out_coeff)), hf_ref_->nclosed(), hf_ref_->nact(), hf_ref_->nvirt());
 }
 
 
 void MultiSite::set_active_orbitals() {
-  auto active_subspace = input_->get_child("active_subspace");
-  
   auto out_coeff = sref_->coeff()->clone();
   
-  const int nclosed = sref_->nclosed();
-  const int nactive = sref_->nact();
+  // collect orbital subspaces info
+  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
+  const int nclosed = (hf_ref_->geom()->nele() - charge_ - nactele) / 2;
+  assert((hf_ref_->geom()->nele() - charge_ - nactele) % 2 == 0);
+  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
   const int multisitebasis = hf_ref_->geom()->nbasis();
+
+  auto active_subspace = input_->get_child("active_subspace");
+  set<int> active_set;
 
   if (active_subspace->size() == nsites_) {
     ///> active subspaces info is provided, just reorder the orbitals
     
     vector<set<int>> active_orbitals;
-    set<int> active_set;
     for (auto site : *active_subspace) {
       vector<int> active_orbs = site->get_vector<int>("");
-      for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { x--; });
+      for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { --x; });
       active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
       active_set.insert(active_orbs.begin(), active_orbs.end());
     }
-    assert(active_set.size() == sref_->nact());
+    assert(active_set.size() == nactive);
     
-    int closed_position = 0;
-    int active_position = nclosed;
-    int virt_position = nclosed + nactive;
-  
     auto in_coeff = sref_->coeff();
     assert(in_coeff->ndim() == multisitebasis);
   
+    int active_position = nclosed;
     for (auto site : active_orbitals) {
       for (int aorb : site)
         copy_n(in_coeff->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
     }
-    for (int i = 0; i != in_coeff->mdim(); ++i) {
-      if (active_set.count(i) == 0)
-        copy_n(in_coeff->element_ptr(0, i), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
-    }
-    assert(virt_position == in_coeff->mdim());
+    assert(active_position == nclosed + nactive);
     
   } else if (active_subspace->size() == 1){
     ///> if no manually assigned active orbital subspaces, do projection
     cout << "DOING PROJECTION" << endl;
 
     // reorder coeff to closed-active-virtual
-    set<int> active_set;
     for (auto site : *active_subspace) {
       vector<int> active_vec = site->get_vector<int>("");
+      for_each(active_vec.begin(), active_vec.end(), [](int& x) { --x; });
       active_set.insert(active_vec.begin(), active_vec.end());
     }
     assert(active_set.size() == nactive);
 
-    int closed_position = 0;
-    int active_position = nclosed;
-    int virt_position = nclosed + nactive;
-    for (auto& aorb : active_set)
-      copy_n(sref_->coeff()->element_ptr(0, aorb), multisitebasis, out_coeff->element_ptr(0, active_position++));
-    assert(active_position == virt_position);
-    for (int iorb = 0; iorb != out_coeff->mdim(); ++iorb)
-      if (active_set.count(iorb) == 0)
-        copy_n(sref_->coeff()->element_ptr(0, iorb), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
-    assert(closed_position == nclosed);
-    assert(virt_position == out_coeff->mdim());
-  
     // delocalized active orbital set
     auto act_orbs = make_shared<Matrix>(multisitebasis, nactive);
-    copy_n(sref_->coeff()->element_ptr(0, nclosed), multisitebasis*nactive, act_orbs->data());
+    int pos = 0;
+    for (auto iorb : active_set) {
+      copy_n(sref_->coeff()->element_ptr(0, iorb), multisitebasis, act_orbs->element_ptr(0, pos++));
+    }
   
     // region bound info
     vector<pair<int, int>> region_bounds;
@@ -268,8 +281,9 @@ void MultiSite::set_active_orbitals() {
       basis_start += nbasis;
     }
   
+#if 1
     // do SVD and project coeff
-    int pos = nclosed;
+    pos = nclosed;
     for (int isite = 0; isite != nsites_; ++isite) {
       pair<int, int> bounds = region_bounds[isite];
       const int ntot = act_orbs->mdim();
@@ -284,11 +298,23 @@ void MultiSite::set_active_orbitals() {
       copy_n(subcoeff.data(), subcoeff.size(), out_coeff->element_ptr(0, pos));
       pos += nsub;
     }
+#else
+    copy_n(act_orbs->data(), act_orbs->size(), out_coeff->element_ptr(0, nclosed));
+#endif
+
   } else {
     throw runtime_error("Must either provide one total active orbital list or assign active orbitals for each fragment");
   }
+
+  int closed_position = 0;
+  int virt_position = nclosed + nactive;
+  for (int iorb = 0; iorb != out_coeff->mdim(); ++iorb)
+    if (active_set.count(iorb) == 0)
+      copy_n(sref_->coeff()->element_ptr(0, iorb), multisitebasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
+  assert(closed_position == nclosed);
+  assert(virt_position == out_coeff->mdim());
   
-  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), sref_->nclosed(), sref_->nact(), sref_->nvirt());
+  sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
 }
 
 
@@ -297,13 +323,13 @@ void MultiSite::canonicalize(shared_ptr<const Matrix> fock) {
   const int nclosed = sref_->nclosed();
   
   // rotate within each active subspace
-  MatView active_mos = sref_->coeff()->slice(nclosed, nclosed+sref_->nact());
+  const MatView active_mos = sref_->coeff()->slice(nclosed, nclosed+sref_->nact());
   Matrix fock_mo(active_mos % *fock * active_mos);
   VectorB eigs(active_mos.mdim());
-  shared_ptr<Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_sizes_);
-  Matrix transformed_mos(active_mos * *active_transformation);
+  shared_ptr<const Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_sizes_);
+  const Matrix transformed_mos(active_mos * *active_transformation);
   shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
-  scoeff->copy_block(0, nclosed, scoeff->ndim(), transformed_mos.mdim(), transformed_mos);
+  copy_n(transformed_mos.data(), transformed_mos.size(), scoeff->element_ptr(0, sref_->nclosed()));
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
 }
@@ -340,7 +366,6 @@ shared_ptr<Reference> MultiSite::build_reference(const int site, const vector<bo
 }
 
 
-#include <src/ci/fci/knowles.h>
 void MultiSite::run_fci() const {
   auto fci_info = input_->get_child_optional("fci");
   if(!fci_info) {
