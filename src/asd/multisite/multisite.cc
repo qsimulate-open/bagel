@@ -334,10 +334,18 @@ void MultiSite::project_active(shared_ptr<const PTree> input) {
 
   // do SVD and project coeff
   const Overlap S(sref_->geom());
+  int pos = nclosed;
   for (int isite = 0; isite != nsites_; ++isite) {
-  cout << string(16, '=') << endl;
-    auto overlapmat = make_shared<Matrix>(*sub_act_orbs[isite] % S * *act_orbs);
-    overlapmat->print();
+    const int ntot = act_orbs->mdim();
+    const int nsub = sub_act_orbs[isite]->mdim();
+    auto overlapmat = make_shared<const Matrix>(*sub_act_orbs[isite] % S * *act_orbs);
+    auto SVD = make_shared<Matrix>(*overlapmat % *overlapmat);
+    VectorB eigs(overlapmat->mdim());
+    SVD->diagonalize(eigs);
+    auto trans = SVD->get_submatrix(0, ntot-nsub, ntot, nsub);
+    auto test = make_shared<const Matrix>(*act_orbs * *trans);
+    copy_n(test->data(), test->size(), out_coeff->element_ptr(0, pos));
+    pos += nsub;
   }
 
   sref_ = make_shared<Reference>(sref_->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, sref_->nvirt());
