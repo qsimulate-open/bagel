@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
         const int nsites = itree->get<int>("nsites");
         multisite = make_shared<MultiSite>(itree, ref, nsites);
         multisite->compute();
-        ref = multisite->sref();
+        ref = multisite->conv_to_ref();
         geom = ref->geom();
       } else if (title == "asd_dmrg") {
           if (!multisite)
