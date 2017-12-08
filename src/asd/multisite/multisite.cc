@@ -27,8 +27,6 @@
 #include <src/mat1e/overlap.h>
 #include <src/wfn/localization.h>
 #include <src/util/io/moldenout.h>
-#include <src/util/muffle.h>
-#include <src/ci/fci/knowles.h>
 
 using namespace std;
 using namespace bagel;
