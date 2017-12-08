@@ -77,13 +77,13 @@ ProductRASCI::ProductRASCI(shared_ptr<const PTree> input, shared_ptr<const Refer
   const int nspin = input_->get<int>("nspin", 0);
   const bool extern_nactele = input_->get<bool>("extern_nactele", false);
   if (!extern_nactele) {
-    if ((ref_->geom()->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
+    if ((ref_->geom()->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified in ProductRASCI");
     nelea_ = (ref_->geom()->nele()+nspin-charge)/2 - ncore_;
     neleb_ = (ref_->geom()->nele()-nspin-charge)/2 - ncore_;
   } else {
     const int nactele = input_->get<int>("nactele");
     nelea_ = (nactele+nspin-charge) / 2;
-    assert((nactele+nspin-charge) % 2 == 0);
+    if ((nactele+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified in ProductRASCI");
     neleb_ = nactele - charge - nelea_;
     assert(neleb_ == (nactele-nspin-charge)/2);
   }

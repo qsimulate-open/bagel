@@ -4,7 +4,7 @@
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //

@@ -4,7 +4,7 @@
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //
@@ -75,8 +75,9 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
   base_input->erase("nspin");
   base_input->erase("nstate");
 
-  auto space = input_->get_child("spaces");
-  if ( !(space->size()==1 || space->size()==nsites_) )
+  auto space = input_->get_child_optional("spaces");
+  if (!space) throw runtime_error("spaces must be specified");
+  else if ( !(space->size()==1 || space->size()==nsites_) )
     throw runtime_error("Must specify either one \"space\" object or one per site");
 
   auto space_iter = space->begin();
