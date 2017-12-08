@@ -41,7 +41,6 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 
   charge_ = input_->get<int>("charge", 0);
   nspin_ = input_->get<int>("nspin", 0);
-
   active_electrons_ = input_->get_vector<int>("active_electrons");
   active_sizes_ = input_->get_vector<int>("active_sizes");
   region_sizes_ = input_->get_vector<int>("region_sizes");
@@ -50,7 +49,7 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 
 
 void MultiSite::compute() {
-  // construct Fock Matrix 
+  // construct Fock matrix for localization and canonicalization
   shared_ptr<const Fock<1>> fock;
   {
     shared_ptr<const Matrix> density = hf_ref_->coeff()->form_density_rhf(hf_ref_->nclosed());
@@ -69,7 +68,7 @@ void MultiSite::compute() {
     sref_ = make_shared<Reference>(*hf_ref_);
   }
 
-  // two options : 1) manually assign active orbitals to subspaces  2) use projection to assign automatically
+  // two options : 1) manually assign active orbitals to subspaces  2) use projection to do it automatically
   set_active_orbitals();
 
   // canonicalize active orbitals within each subspace
@@ -85,10 +84,10 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
   auto input_data = make_shared<PTree>(*localize_data);
   input_data->erase("virtual"); input_data->put("virtual", true);
   if (input_data->get_child_optional("region_sizes")) {
-    cout << "WARNING : The region_sizes keyword in localization input will be overwritten by that from MultiSite input." << endl;
+    cout << "WARNING : The region_sizes keyword in localization input will be overwritten by that from MultiSite." << endl;
     input_data->erase("region_sizes");
   }
-  
+
   if (localizemethod == "region") {
     localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes_);
   } else if (localizemethod == "pm" || localizemethod == "pipek-mezey") {
@@ -157,7 +156,8 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
     size_t imo = subspace.first;
 
     for (auto& subset : orbital_sets) {
-      if (subset.empty()) continue;
+      if (subset.empty()) 
+        throw runtime_error("one of the active subspaces has bad definition, no matching active orbitals are localized on it, please redefine subspaces");
       Matrix subspace(out_coeff->ndim(), subset.size());
       int pos = 0;
       for (const int& i : subset)
@@ -182,7 +182,6 @@ void MultiSite::localize(shared_ptr<const PTree> localize_data, shared_ptr<const
 
 
 void MultiSite::set_active_orbitals() {
-  auto out_coeff = sref_->coeff()->clone();
   
   // collect orbital subspaces info
   const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
@@ -195,8 +194,10 @@ void MultiSite::set_active_orbitals() {
   auto active_subspace = input_->get_child("active_subspace");
   set<int> active_set;
 
+  auto out_coeff = sref_->coeff()->clone();
+
   if (active_subspace->size() == nsites_) {
-    ///> active subspaces info is provided, just reorder the orbitals
+    // active subspaces info is provided, just reorder the orbitals
     
     vector<set<int>> active_orbitals;
     for (auto site : *active_subspace) {
@@ -218,7 +219,7 @@ void MultiSite::set_active_orbitals() {
     assert(active_position == nclosed + nactive);
     
   } else if (active_subspace->size() == 1){
-    ///> if no manually assigned active orbital subspaces, do projection
+    // if no manually assigned active orbital subspaces, do projection
 
     for (auto site : *active_subspace) {
       vector<int> active_vec = site->get_vector<int>("");
@@ -246,27 +247,28 @@ void MultiSite::set_active_orbitals() {
     }
   
     // do SVD and find transformation matrix
-    vector<shared_ptr<Matrix>> matvec;
-    Matrix trans(nactive, nactive);
-    pos = 0;
-    for (int isite = 0; isite != nsites_; ++isite) {
-      pair<int, int> bounds = region_bounds[isite];
-      const int ntot = nactive;
-      const int nsub = active_sizes_[isite];
-      auto actorb = act_orbs->get_submatrix(bounds.first, 0, bounds.second-bounds.first, ntot);
-      Matrix SVD(*actorb % *actorb);
-      VectorB eigs(SVD.ndim());
-      SVD.diagonalize(eigs);
-      const MatView sub_trans = SVD.slice(ntot-nsub, ntot);
-      copy_n(sub_trans.data(), sub_trans.size(), trans.element_ptr(0, pos));
-      pos += nsub;
+    Matrix transform(nactive, nactive);
+    {
+      int ipos = 0;
+      for (int isite = 0; isite != nsites_; ++isite) {
+        pair<int, int> bounds = region_bounds[isite];
+        const int ntot = nactive;
+        const int nsub = active_sizes_[isite];
+        auto actorb = act_orbs->get_submatrix(bounds.first, 0, bounds.second-bounds.first, ntot);
+        Matrix SVD(*actorb % *actorb);
+        VectorB eigs(SVD.ndim());
+        SVD.diagonalize(eigs);
+        const MatView sub_trans = SVD.slice(ntot-nsub, ntot);
+        copy_n(sub_trans.data(), sub_trans.size(), transform.element_ptr(0, ipos));
+        ipos += nsub;
+      }
+      assert(ipos == nactive);
+      // Lowdin orthonormalization
+      Matrix inv_hf(transform % transform);
+      inv_hf.inverse_half();
+      transform *= inv_hf;
+      cout << endl << string(6, '*') << "  If linear dependency is detected, you have to find better active orbitals to do projection  " << string(6, '*') << endl << endl;
     }
-    assert(pos == nactive);
-    // Lowdin orthonormalization
-    Matrix inv_hf(trans % trans);
-    inv_hf.inverse_half();
-    trans *= inv_hf;
-    cout << endl << string(6, '*') << "  If linear dependency is detected, you have to find better active orbitals to do projection  " << string(6, '*') << endl << endl;
     
     // project coeff
     Matrix projected(*act_orbs * trans);
@@ -299,7 +301,7 @@ void MultiSite::canonicalize(shared_ptr<const Matrix> fock) {
   shared_ptr<const Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_sizes_);
   const Matrix transformed_mos(active_mos * *active_transformation);
   shared_ptr<Matrix> scoeff = sref_->coeff()->copy();
-  copy_n(transformed_mos.data(), transformed_mos.size(), scoeff->element_ptr(0, sref_->nclosed()));
+  copy_n(transformed_mos.data(), transformed_mos.size(), scoeff->element_ptr(0, nclosed));
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*scoeff)));
 }

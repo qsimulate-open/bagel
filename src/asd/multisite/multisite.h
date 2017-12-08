@@ -32,41 +32,41 @@
 
 namespace bagel {
 
-/// Contains references for isolated sites in the ASD_DMRG algorithm.
+// MultiSite provides system information for ASD-DMRG solver
 class MultiSite {
   protected:
     std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Reference> hf_ref_;
     std::shared_ptr<const Reference> sref_;
 
+    // system info
     const int nsites_;
     int charge_;
     int nspin_;
-    std::vector<int> active_electrons_;
-    std::vector<int> active_sizes_;
-    std::vector<int> region_sizes_;
+    std::vector<int> active_electrons_; // specify number of electrons on each site as initial guess
+    std::vector<int> active_sizes_;     // number of active orbitals localized on each site
+    std::vector<int> region_sizes_;     // number of atoms on each site; atoms should be ordered by sites in molecular geometry
 
   public:
-    // Constructors
+    // constructor
     MultiSite(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref, const int nsites);
 
+    void compute();
+
+    // utility functions
+    void localize(std::shared_ptr<const PTree> ldata, std::shared_ptr<const Matrix> fock);
+    void set_active_orbitals();
+    void canonicalize(std::shared_ptr<const Matrix> fock);
+
+    // return functions
     int nsites() const { return nsites_; }
     int charge() const { return charge_; }
     int nspin() const { return nspin_; }
     std::vector<int> active_electrons() const { return active_electrons_; }
     std::vector<int> active_sizes() const { return active_sizes_; }
-
-    std::shared_ptr<const Reference> sref() const { return sref_; }
-
-    void compute();
-
-    // Utility functions
-    void localize(std::shared_ptr<const PTree> ldata, std::shared_ptr<const Matrix> fock);
-    void set_active_orbitals();
-    void canonicalize(std::shared_ptr<const Matrix> fock);
-
+    
+    // prepare input reference for ASD-DMRG
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
-
 };
 
 }
