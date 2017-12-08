@@ -271,7 +271,7 @@ void MultiSite::set_active_orbitals() {
     }
     
     // project coeff
-    Matrix projected(*act_orbs * trans);
+    Matrix projected(*act_orbs * transform);
     copy_n(projected.data(), projected.size(), out_coeff->element_ptr(0, nclosed));
 
   } else {
