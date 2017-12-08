@@ -61,7 +61,6 @@ void MultiSite::compute() {
   // localize closed and virtual orbitals (optional)
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
   if (localization_data) {
-    cout << "Doing localization" << endl;
     localize(localization_data, fock);
     MoldenOut mfile("localized.molden");
     mfile << sref_->geom();
@@ -221,7 +220,6 @@ void MultiSite::set_active_orbitals() {
   } else if (active_subspace->size() == 1){
     ///> if no manually assigned active orbital subspaces, do projection
 
-    // reorder coeff to closed-active-virtual
     for (auto site : *active_subspace) {
       vector<int> active_vec = site->get_vector<int>("");
       for_each(active_vec.begin(), active_vec.end(), [](int& x) { --x; });
@@ -232,9 +230,8 @@ void MultiSite::set_active_orbitals() {
     // delocalized active orbital set
     auto act_orbs = make_shared<Matrix>(multisitebasis, nactive);
     int pos = 0;
-    for (auto iorb : active_set) {
+    for (auto iorb : active_set)
       copy_n(sref_->coeff()->element_ptr(0, iorb), multisitebasis, act_orbs->element_ptr(0, pos++));
-    }
   
     // region bound info
     vector<pair<int, int>> region_bounds;
