@@ -189,16 +189,16 @@ void MultiSite::set_active_orbitals() {
   const int nvirt = hf_ref_->coeff()->mdim() - nclosed - nactive;
   const int multisitebasis = hf_ref_->geom()->nbasis();
 
-  auto active_subspace = input_->get_child("active_subspace");
+  auto active_subspaces = input_->get_child("active_subspaces");
   set<int> active_set;
 
   auto out_coeff = sref_->coeff()->clone();
 
-  if (active_subspace->size() == nsites_) {
+  if (active_subspaces->size() == nsites_) {
     // active subspaces info is provided, just reorder the orbitals
     
     vector<set<int>> active_orbitals;
-    for (auto site : *active_subspace) {
+    for (auto site : *active_subspaces) {
       vector<int> active_orbs = site->get_vector<int>("");
       for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { --x; });
       active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
@@ -216,10 +216,10 @@ void MultiSite::set_active_orbitals() {
     }
     assert(active_position == nclosed + nactive);
     
-  } else if (active_subspace->size() == 1){
+  } else if (active_subspaces->size() == 1){
     // if no manually assigned active orbital subspaces, do projection
 
-    for (auto site : *active_subspace) {
+    for (auto site : *active_subspaces) {
       vector<int> active_vec = site->get_vector<int>("");
       for_each(active_vec.begin(), active_vec.end(), [](int& x) { --x; });
       active_set.insert(active_vec.begin(), active_vec.end());
