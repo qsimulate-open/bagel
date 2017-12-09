@@ -70,7 +70,7 @@ void MultiSite::compute() {
   set_active_orbitals();
 
   // canonicalize active orbitals within each subspace
-  canonicalize(fock);
+  //canonicalize(fock);
 
 }
 
@@ -244,19 +244,20 @@ void MultiSite::set_active_orbitals() {
       basis_start += nbasis;
     }
   
-    // do SVD and find transformation matrix
+    Overlap ovlp(sref_->geom());
     Matrix transform(nactive, nactive);
     {
       int ipos = 0;
       for (int isite = 0; isite != nsites_; ++isite) {
         pair<int, int> bounds = region_bounds[isite];
-        const int ntot = nactive;
         const int nsub = active_sizes_[isite];
-        auto actorb = act_orbs->get_submatrix(bounds.first, 0, bounds.second-bounds.first, ntot);
-        Matrix SVD(*actorb % *actorb);
-        VectorB eigs(SVD.ndim());
+        const int nbasis = bounds.second - bounds.first;
+        shared_ptr<const Matrix> sub_ovlp = ovlp.get_submatrix(bounds.first, bounds.first, nbasis, nbasis);
+        shared_ptr<const Matrix> sub_actorb = act_orbs->get_submatrix(bounds.first, 0, nbasis, nactive);
+        Matrix SVD(*sub_actorb % *sub_ovlp * *sub_actorb);
+        VectorB eigs(nactive);
         SVD.diagonalize(eigs);
-        const MatView sub_trans = SVD.slice(ntot-nsub, ntot);
+        const MatView sub_trans = SVD.slice(nactive-nsub, nactive);
         copy_n(sub_trans.data(), sub_trans.size(), transform.element_ptr(0, ipos));
         ipos += nsub;
       }
