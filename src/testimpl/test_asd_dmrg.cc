@@ -22,7 +22,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <src/asd/multisite/multisite.h>
 #include <src/asd/dmrg/rasd.h>
 
 
@@ -51,14 +50,10 @@ double asd_dmrg_energy(std::string inp) {
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "multisite") {
-      std::vector<std::shared_ptr<const Reference>> site_refs;
-      auto sitenames = itree->get_vector<std::string>("refs");
-      for (auto& s : sitenames)
-        site_refs.push_back(saved.at(s));
-      auto ms = std::make_shared<MultiSite>(itree, site_refs);
-      ms->scf(itree);
-      multisite = ms;
-      ref = ms->conv_to_ref();
+      const int nsites = itree->get<int>("nsites");
+      multisite = std::make_shared<MultiSite>(itree, ref, nsites);
+      multisite->compute();
+      ref = multisite->conv_to_ref();
       *geom = *ref->geom();
     } else if (method == "asd_dmrg") {
         if (!multisite)
@@ -67,9 +62,6 @@ double asd_dmrg_energy(std::string inp) {
         asd->compute();
         return asd->energies(0);
     }
-
-    std::string saveref = itree->get<std::string>("saveref", "");
-    if (saveref != "") { saved.emplace(saveref, ref); }
   }
   assert(false);
   return 0.0;
@@ -77,8 +69,8 @@ double asd_dmrg_energy(std::string inp) {
 
 BOOST_AUTO_TEST_SUITE(TEST_ASD_DMRG)
 
-BOOST_AUTO_TEST_CASE(RAS) {
-    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_rasd-dmrg"), -8.53974980, 1.0e-8));
+BOOST_AUTO_TEST_CASE(RASD_DMRG) {
+    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.53974980, 1.0e-8));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

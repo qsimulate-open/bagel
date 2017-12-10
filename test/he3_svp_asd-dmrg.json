@@ -7,8 +7,8 @@
   "angstrom" : "false",
   "geometry" : [
     { "atom" : "He", "xyz" : [     0.0000000000,    0.0000000000,   0.0000000000] },
-    { "atom" : "He", "xyz" : [     0.0000000000,    0.0000000000,   8.0000000000] },
-    { "atom" : "He", "xyz" : [     0.0000000000,    0.0000000000,  16.0000000000] }
+    { "atom" : "He", "xyz" : [     0.0000000000,    0.0000000000,   3.0000000000] },
+    { "atom" : "He", "xyz" : [     0.0000000000,    0.0000000000,   6.0000000000] }
   ]
 },
 
@@ -34,16 +34,16 @@
 {
   "title" : "asd_dmrg",
   "nstate" : 1,
-  "ntrunc" : 8,
+  "ntrunc" : 12,
   "thresh" : 1.0e-8,
   "perturb" : 1.0e-4,
   "perturb_min" : 1.0e-5,
-  "perturb_thresh" : 1.0e-5,
+  "perturb_thresh" : 1.0e-4,
   "maxiter" : 50,
   "ras" : {
-    "nguess" : 2,
+    "nguess" : 5,
     "maxiter" : 50,
-    "thresh" : 1.0e-8
+    "thresh" : 1.0e-7
   },
   "spaces" : [ [ {"charge" : 0, "nspin" : 0, "nstate" : 1},
                  {"charge" : 0, "nspin" : 2, "nstate" : 1},
