@@ -70,7 +70,7 @@ void MultiSite::compute() {
   set_active_orbitals();
 
   // canonicalize active orbitals within each subspace
-  //canonicalize(fock);
+  canonicalize(fock);
 
 }
 
