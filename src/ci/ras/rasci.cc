@@ -78,9 +78,18 @@ void RASCI::common_init() {
 
   // nspin is #unpaired electron 0:singlet, 1:doublet, 2:triplet, ... (i.e., Molpro convention).
   const int nspin = idata_->get<int>("nspin", 0);
-  if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified");
-  nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
-  neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
+  const bool extern_nactele = idata_->get<bool>("extern_nactele", false);
+  if (!extern_nactele) {
+    if ((geom_->nele()+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified in RASCI");
+    nelea_ = (geom_->nele()+nspin-charge)/2 - ncore_;
+    neleb_ = (geom_->nele()-nspin-charge)/2 - ncore_;
+  } else {
+    const int nactele = idata_->get<int>("nactele");
+    nelea_ = (nactele+nspin-charge) / 2;
+    if ((nactele+nspin-charge) % 2 != 0) throw runtime_error("Invalid nspin specified in RASCI");
+    neleb_ = nactele - charge - nelea_;
+    assert(neleb_ == (nactele-nspin-charge)/2);
+  }
 
   // TODO allow for zero electron (quick return)
   if (nelea_ < 0 || neleb_ < 0) throw runtime_error("#electrons cannot be negative in RASCI");
