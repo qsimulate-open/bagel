@@ -69,14 +69,8 @@ double asd_dmrg_energy(std::string inp) {
 
 BOOST_AUTO_TEST_SUITE(TEST_ASD_DMRG)
 
-#ifdef HAVE_MPI_H
 BOOST_AUTO_TEST_CASE(RASD_DMRG) {
-    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.53974943, 1.0e-8));
+    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.56338715, 1.0e-8));
 }
-#else
-BOOST_AUTO_TEST_CASE(RASD_DMRG) {
-    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.53974980, 1.0e-8));
-}
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()
