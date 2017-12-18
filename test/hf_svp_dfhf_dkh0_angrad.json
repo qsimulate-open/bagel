@@ -5,7 +5,7 @@
   "basis" : "svp",
   "df_basis" : "svp-jkfit",
   "angstrom" : "false",
-  "dkh" : true,
+  "dkh_level" : 0,
   "gradtype" : true,
   "geometry" : [
     { "atom" : "F",  "xyz" : [ -0.000000,     -0.000000,      2.720616]},
