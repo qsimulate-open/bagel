@@ -46,12 +46,6 @@ class HcoreInfo {
     // for semi-numerical gradients
     double mat1e_dx_;
 
-    // gradient type
-    // specify gradient type
-    // true = semi-numeric
-    // false = analytic
-    bool gradtype_;
-  
   private:
     // serialization
     friend class boost::serialization::access;
@@ -72,13 +66,12 @@ class HcoreInfo {
     void print() const;
 
     // DKH specific
-    bool gradtype() const;
-    virtual std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current);
-    std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den);
+    std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;
+    std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_dkh(std::shared_ptr<const Molecule> current) const;
 
     // general function
-    std::shared_ptr<Matrix> compute_grad(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den);
+    std::shared_ptr<Matrix> compute_grad(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute(std::shared_ptr<const Molecule> current) const;
 };
 

@@ -77,10 +77,6 @@ class GradEval_base {
                                                 const std::shared_ptr<const DFDist> g2o = nullptr,
                                                 const std::shared_ptr<const Matrix> g2o2 = nullptr);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return nullptr; }
-    std::shared_ptr<GradFile> contract_overlapgrad(const std::shared_ptr<const Matrix>);
-    std::shared_ptr<GradFile> contract_kineticgrad(const std::shared_ptr<const Matrix>);
-    std::shared_ptr<GradFile> contract_naigrad(const std::shared_ptr<const Matrix>);
-    std::shared_ptr<GradFile> contract_smallnaigrad(std::array<std::shared_ptr<const Matrix>,6>);
 
     friend class GradTask1;
     friend class GradTask1s;
@@ -90,9 +86,6 @@ class GradEval_base {
     friend class GradTask1f;
     friend class GradTask3r;
     friend class GradTask1rf;
-    friend class GradTask1overlap;
-    friend class GradTask1kinetic;
-    friend class GradTask1nai;
 };
 
 template<typename TBatch>

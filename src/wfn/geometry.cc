@@ -24,7 +24,6 @@
 
 
 #include <src/wfn/geometry.h>
-#include <src/wfn/dkh2analytic.h>
 #include <src/df/complexdf.h>
 #include <src/integral/rys/eribatch.h>
 #include <src/integral/rys/smalleribatch.h>
@@ -96,8 +95,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     MoldenIn mfs(molden_file, spherical_);
     mfs.read();
     mfs >> atoms_;
-
-    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   } else {
 
     // read the default basis file
@@ -105,7 +103,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
 
     auto atoms = geominfo->get_child("geometry");
-    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }
@@ -148,14 +146,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
-
-  // for gradient calculations
-  // specify DKH order (maximum is 2)
-  int dkh_level = geominfo->get<int>("dkh_level", -1);
-  dkhcoreinfo_ = nullptr;
-  if (dkh_level >= 0) {
-    dkhcoreinfo_ = make_shared<DKHcoreInfo>(make_shared<Molecule>(*this), dkh_level);
-  }
 }
 
 
@@ -274,7 +264,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     atoms_.clear();
     shared_ptr<const PTree> bdata = PTree::read_basis(basisfile_);
     shared_ptr<const PTree> elem = geominfo->get_child_optional("_basis");
-    hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
+    hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
@@ -423,7 +413,7 @@ Geometry::Geometry(const vector<shared_ptr<const Atom>> atoms, shared_ptr<const 
 
   print_atoms();
 
-  hcoreinfo_ = make_shared<HcoreInfo>(geominfo);
+  hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
@@ -664,12 +654,3 @@ Geometry::Geometry(const Geometry& o, const string type)
   common_init2(false, overlap_thresh_, true);
   fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(type));
 }
-
-shared_ptr<Geometry> Geometry::unc_geom() const {
-  auto out = make_shared<Geometry>(*this);
-  for (shared_ptr<const Atom> &i : out->atoms_)
-    i = i->uncontract()->relativistic();
-  out->common_init1();
-  return out;
-}
-
