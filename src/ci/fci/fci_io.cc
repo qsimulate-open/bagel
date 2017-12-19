@@ -105,8 +105,8 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
     ss >> i >> j >> k >> o >> l >> m >> n >> p >> dat;
     assert(i <= norb_ && j <= norb_ && k <= norb_ && l <= norb_ && m <= norb_ && n <= norb_ && o <= norb_ && p <= norb_);
-    map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}, {2,o-1}};
-    map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}, {2,p-1}};
+    map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}, {3,o-1}};
+    map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}, {3,p-1}};
     for (auto& eij : elem) {
       out->element(mij[eij.first[0]], mkl[eij.first[0]], mij[eij.first[1]], mkl[eij.first[1]], mij[eij.first[2]], mkl[eij.first[2]], mij[eij.first[3]], mkl[eij.first[3]]) = dat;
       if (ist == jst)

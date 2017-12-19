@@ -125,8 +125,8 @@ std::shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::read_external_rdm4(const int ist,
     // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
     ss >> i >> j >> k >> o >> l >> m >> n >> p >> re >> im;
     assert(i <= norb_*2 && j <= norb_*2 && k <= norb_*2 && l <= norb_*2 && m <= norb_*2 && n <= norb_*2 && o <= norb_*2 && p <= norb_*2);
-    map<int,pair<int,int>> mij{{0,{(i-1)/2,(i-1)%2}}, {1,{(j-1)/2,(j-1)%2}}, {2,{(k-1)/2,(k-1)%2}}, {2,{(o-1)/2,(o-1)%2}}};
-    map<int,pair<int,int>> mkl{{0,{(l-1)/2,(l-1)%2}}, {1,{(m-1)/2,(m-1)%2}}, {2,{(n-1)/2,(n-1)%2}}, {2,{(p-1)/2,(p-1)%2}}};
+    map<int,pair<int,int>> mij{{0,{(i-1)/2,(i-1)%2}}, {1,{(j-1)/2,(j-1)%2}}, {2,{(k-1)/2,(k-1)%2}}, {3,{(o-1)/2,(o-1)%2}}};
+    map<int,pair<int,int>> mkl{{0,{(l-1)/2,(l-1)%2}}, {1,{(m-1)/2,(m-1)%2}}, {2,{(n-1)/2,(n-1)%2}}, {3,{(p-1)/2,(p-1)%2}}};
     const complex<double> dat(re, im);
     for (auto& eij : elem) {
       for (auto& ekl : elem) {
