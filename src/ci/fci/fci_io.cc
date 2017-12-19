@@ -85,14 +85,14 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
   auto out = make_shared<RDM<4>>(norb_);
 
   map<array<int,4>,double> elem;
-  elem.emplace(array<int,4>{{0,1,2,3}},  1.0); elem.emplace(array<int,4>{{0,1,3,2}}, -1.0); elem.emplace(array<int,4>{{0,2,1,3}}, -1.0);
-  elem.emplace(array<int,4>{{0,2,3,1}},  1.0); elem.emplace(array<int,4>{{0,3,1,2}},  1.0); elem.emplace(array<int,4>{{0,3,2,1}}, -1.0);
-  elem.emplace(array<int,4>{{1,0,2,3}}, -1.0); elem.emplace(array<int,4>{{1,0,3,2}},  1.0); elem.emplace(array<int,4>{{1,2,0,3}},  1.0);
-  elem.emplace(array<int,4>{{1,2,3,0}}, -1.0); elem.emplace(array<int,4>{{1,3,0,2}}, -1.0); elem.emplace(array<int,4>{{1,3,2,0}},  1.0);
-  elem.emplace(array<int,4>{{2,0,1,3}},  1.0); elem.emplace(array<int,4>{{2,0,3,1}}, -1.0); elem.emplace(array<int,4>{{2,1,0,3}}, -1.0);
-  elem.emplace(array<int,4>{{2,1,3,0}},  1.0); elem.emplace(array<int,4>{{2,3,0,1}},  1.0); elem.emplace(array<int,4>{{2,3,1,0}}, -1.0);
-  elem.emplace(array<int,4>{{3,0,1,2}}, -1.0); elem.emplace(array<int,4>{{3,0,2,1}},  1.0); elem.emplace(array<int,4>{{3,1,0,2}},  1.0);
-  elem.emplace(array<int,4>{{3,1,2,0}}, -1.0); elem.emplace(array<int,4>{{3,2,0,1}}, -1.0); elem.emplace(array<int,4>{{3,2,1,0}},  1.0);
+  elem.emplace(array<int,4>{{0,1,2,3}}, 1.0); elem.emplace(array<int,4>{{0,1,3,2}}, 1.0); elem.emplace(array<int,4>{{0,2,1,3}}, 1.0);
+  elem.emplace(array<int,4>{{0,2,3,1}}, 1.0); elem.emplace(array<int,4>{{0,3,1,2}}, 1.0); elem.emplace(array<int,4>{{0,3,2,1}}, 1.0);
+  elem.emplace(array<int,4>{{1,0,2,3}}, 1.0); elem.emplace(array<int,4>{{1,0,3,2}}, 1.0); elem.emplace(array<int,4>{{1,2,0,3}}, 1.0);
+  elem.emplace(array<int,4>{{1,2,3,0}}, 1.0); elem.emplace(array<int,4>{{1,3,0,2}}, 1.0); elem.emplace(array<int,4>{{1,3,2,0}}, 1.0);
+  elem.emplace(array<int,4>{{2,0,1,3}}, 1.0); elem.emplace(array<int,4>{{2,0,3,1}}, 1.0); elem.emplace(array<int,4>{{2,1,0,3}}, 1.0);
+  elem.emplace(array<int,4>{{2,1,3,0}}, 1.0); elem.emplace(array<int,4>{{2,3,0,1}}, 1.0); elem.emplace(array<int,4>{{2,3,1,0}}, 1.0);
+  elem.emplace(array<int,4>{{3,0,1,2}}, 1.0); elem.emplace(array<int,4>{{3,0,2,1}}, 1.0); elem.emplace(array<int,4>{{3,1,0,2}}, 1.0);
+  elem.emplace(array<int,4>{{3,1,2,0}}, 1.0); elem.emplace(array<int,4>{{3,2,0,1}}, 1.0); elem.emplace(array<int,4>{{3,2,1,0}}, 1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm4";
   ifstream fs(ss.str());
@@ -108,13 +108,9 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
     map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}, {2,o-1}};
     map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}, {2,p-1}};
     for (auto& eij : elem) {
-      for (auto& ekl : elem) {
-        out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]], mij[eij.first[3]], mkl[ekl.first[3]])
-          = eij.second * ekl.second * dat;
-        if (ist == jst)
-          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]], mkl[ekl.first[3]], mij[eij.first[3]])
-            = eij.second * ekl.second * dat;
-      }
+      out->element(mij[eij.first[0]], mkl[eij.first[0]], mij[eij.first[1]], mkl[eij.first[1]], mij[eij.first[2]], mkl[eij.first[2]], mij[eij.first[3]], mkl[eij.first[3]]) = dat;
+      if (ist == jst)
+        out->element(mkl[eij.first[0]], mij[eij.first[0]], mkl[eij.first[1]], mij[eij.first[1]], mkl[eij.first[2]], mij[eij.first[2]], mkl[eij.first[3]], mij[eij.first[3]]) = dat;
     }
   }
   return out;
@@ -125,8 +121,8 @@ std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, co
   auto out = make_shared<RDM<3>>(norb_);
 
   map<array<int,3>,double> elem;
-  elem.emplace(array<int,3>{{0,1,2}},  1.0); elem.emplace(array<int,3>{{0,2,1}}, -1.0); elem.emplace(array<int,3>{{1,0,2}}, -1.0);
-  elem.emplace(array<int,3>{{1,2,0}},  1.0); elem.emplace(array<int,3>{{2,0,1}},  1.0); elem.emplace(array<int,3>{{2,1,0}}, -1.0);
+  elem.emplace(array<int,3>{{0,1,2}}, 1.0); elem.emplace(array<int,3>{{0,2,1}}, 1.0); elem.emplace(array<int,3>{{1,0,2}}, 1.0);
+  elem.emplace(array<int,3>{{1,2,0}}, 1.0); elem.emplace(array<int,3>{{2,0,1}}, 1.0); elem.emplace(array<int,3>{{2,1,0}}, 1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
   ifstream fs(ss.str());
@@ -142,13 +138,9 @@ std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, co
     map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}};
     map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}};
     for (auto& eij : elem) {
-      for (auto& ekl : elem) {
-        out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]], mij[eij.first[2]], mkl[ekl.first[2]])
-          = eij.second * ekl.second * dat;
-        if (ist == jst)
-          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]], mkl[ekl.first[2]], mij[eij.first[2]])
-            = eij.second * ekl.second * dat;
-      }
+      out->element(mij[eij.first[0]], mkl[eij.first[0]], mij[eij.first[1]], mkl[eij.first[1]], mij[eij.first[2]], mkl[eij.first[2]]) = dat;
+      if (ist == jst)
+        out->element(mkl[eij.first[0]], mij[eij.first[0]], mkl[eij.first[1]], mij[eij.first[1]], mkl[eij.first[2]], mij[eij.first[2]]) = dat;
     }
   }
   return out;
@@ -159,7 +151,7 @@ std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, co
   auto out = make_shared<RDM<2>>(norb_);
 
   map<array<int,2>,double> elem;
-  elem.emplace(array<int,2>{{0,1}},  1.0); elem.emplace(array<int,2>{{1,0}}, -1.0);
+  elem.emplace(array<int,2>{{0,1}},  1.0); elem.emplace(array<int,2>{{1,0}}, 1.0);
 
   stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm2";
   ifstream fs(ss.str());
@@ -175,13 +167,9 @@ std::shared_ptr<RDM<2>> FCI::read_external_rdm2(const int ist, const int jst, co
     map<int,int> mij{{0,i-1}, {1,j-1}};
     map<int,int> mkl{{0,k-1}, {1,l-1}};
     for (auto& eij : elem) {
-      for (auto& ekl : elem) {
-        out->element(mij[eij.first[0]], mkl[ekl.first[0]], mij[eij.first[1]], mkl[ekl.first[1]])
-          = eij.second * ekl.second * dat;
-        if (ist == jst)
-          out->element(mkl[ekl.first[0]], mij[eij.first[0]], mkl[ekl.first[1]], mij[eij.first[1]])
-            = eij.second * ekl.second * dat;
-      }
+      out->element(mij[eij.first[0]], mkl[eij.first[0]], mij[eij.first[1]], mkl[eij.first[1]]) = dat;
+      if (ist == jst)
+        out->element(mkl[eij.first[0]], mij[eij.first[0]], mkl[eij.first[1]], mij[eij.first[1]]) = dat;
     }
   }
   return out;
