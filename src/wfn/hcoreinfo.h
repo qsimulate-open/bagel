@@ -44,6 +44,7 @@ class HcoreInfo {
     HcoreType type_;
 
     // for semi-numerical gradients
+    bool seminum_;
     double mat1e_dx_;
 
   private:
@@ -62,6 +63,7 @@ class HcoreInfo {
     bool dkh() const { return type_ == HcoreType::dkh; }
     bool ecp() const { return type_ == HcoreType::ecp; }
     bool standard() const { return type_ == HcoreType::standard; }
+    bool seminum() const { return seminum_; }
     double mat1e_dx() const { return mat1e_dx_; }
     void print() const;
 

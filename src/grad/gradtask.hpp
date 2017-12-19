@@ -174,5 +174,29 @@ class GradTask1rf : public GradTask {
 };
 
 
+/// 1-electron DKH gradient integrals
+class GradTask1d : public GradTask {
+  private:
+    std::array<std::shared_ptr<const Shell>, 2> shell_;
+    std::shared_ptr<const Matrix> tden_;
+    std::shared_ptr<const Matrix> vden_;
+    std::shared_ptr<const Matrix> pvpden_;
+    std::shared_ptr<const Matrix> sden_;
+
+    std::shared_ptr<GradFile> compute_nai() const;
+    std::shared_ptr<GradFile> compute_smallnai() const;
+    // implemented in gradeval_base.h
+    template<typename TBatch>
+    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
+
+  public:
+    GradTask1d(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
+              const std::shared_ptr<const Matrix> tden, const std::shared_ptr<const Matrix> vden, const std::shared_ptr<const Matrix> pvpden,
+              const std::shared_ptr<const Matrix> sden, GradEval_base* p)
+      : GradTask(a, o, p), shell_(s), tden_(tden), vden_(vden), pvpden_(pvpden), sden_(sden) { }
+    void compute();
+};
+
+
 #endif
 #endif

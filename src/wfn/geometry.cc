@@ -96,6 +96,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
     mfs.read();
     mfs >> atoms_;
     hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+    dkhcoreinfo_ = geominfo->get<bool>("dkh", false) && !geominfo->get<bool>("seminum", false) ? make_shared<const DKHcoreInfo>(make_shared<Molecule>(*this)) : nullptr;
   } else {
 
     // read the default basis file
@@ -104,6 +105,7 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
 
     auto atoms = geominfo->get_child("geometry");
     hcoreinfo_ = make_shared<const HcoreInfo>(geominfo);
+    dkhcoreinfo_ = geominfo->get<bool>("dkh", false) && !geominfo->get<bool>("seminum", false) ? make_shared<const DKHcoreInfo>(make_shared<Molecule>(*this)) : nullptr;
     for (auto& a : *atoms)
       atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(basisfile_, bdata), elem, false, hcoreinfo_->ecp(), use_finite_));
   }

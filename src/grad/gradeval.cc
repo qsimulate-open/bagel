@@ -55,7 +55,16 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
   shared_ptr<const DFHalfDist> qrs_1 = qijd->back_transform(coeff_occ);
   shared_ptr<const DFDist> qrs = qrs_1->back_transform(coeff_occ);
 
-  shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  shared_ptr<GradFile> grad;
+  if (geom_->dkhcoreinfo()) {
+    shared_ptr<const Matrix> tden = geom_->dkhcoreinfo()->compute_tden(rdm1);
+    shared_ptr<const Matrix> vden = geom_->dkhcoreinfo()->compute_vden(rdm1);
+    shared_ptr<const Matrix> pvpden = geom_->dkhcoreinfo()->compute_pvpden(rdm1);
+    shared_ptr<const Matrix> sden = geom_->dkhcoreinfo()->compute_sden(erdm1);
+    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
+  } else {
+    grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  }
   grad->print();
 
   dipole_ = task_->scf_dipole();

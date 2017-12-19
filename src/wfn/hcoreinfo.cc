@@ -34,6 +34,7 @@ using namespace bagel;
 HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard) {
   // DKH
   const bool dkh = idata->get<bool>("dkh", false);
+  seminum_ = idata->get<bool>("seminum", false);
   if (dkh)
     type_ = HcoreType::dkh;
   mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
@@ -103,7 +104,7 @@ shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, s
   int natom = current->natom();
   auto out = make_shared<Matrix>(3, natom);
 
-  if (dkh())
+  if (dkh() && seminum())
     out = compute_grad_dkh(current, den);
 
   return out;
