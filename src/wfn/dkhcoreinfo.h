@@ -32,20 +32,26 @@ namespace bagel {
 
 class DKHcoreInfo {
   private:
+    int nbasis_;
+
     Matrix wtrans_;
     Matrix ptrans_;
-    VectorB tp_;
+
+    VectorB kinetic_;
     Matrix nai_;
     Matrix smallnai_;
+
     Matrix zmult_;
+    Matrix ederiv_;
 
   public:
     DKHcoreInfo() { }
     DKHcoreInfo(std::shared_ptr<const Molecule>);
-    std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>) const;
-    std::shared_ptr<const Matrix> compute_vden(std::shared_ptr<const Matrix>) const;
-    std::shared_ptr<const Matrix> compute_pvpden(std::shared_ptr<const Matrix>) const;
-    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>) const;
+
+    std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_vden(std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_pvpden(std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>);
 };
 
 }

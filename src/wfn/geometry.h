@@ -67,9 +67,6 @@ class Geometry : public Molecule {
     // Hcore Information
     std::shared_ptr<const HcoreInfo> hcoreinfo_;
 
-    // DKHcore Information
-    std::shared_ptr<const DKHcoreInfo> dkhcoreinfo_;
-
     // FMM
     std::shared_ptr<const FMMInfo> fmm_;
 
@@ -164,9 +161,6 @@ class Geometry : public Molecule {
 
     // Hcore Information
     std::shared_ptr<const HcoreInfo> hcoreinfo() const { return hcoreinfo_; }
-
-    // DKHcore Information
-    std::shared_ptr<const DKHcoreInfo> dkhcoreinfo() const { return dkhcoreinfo_; }
 
     // FMM
     std::shared_ptr<const FMMInfo> fmm() const { return fmm_; }

@@ -140,7 +140,8 @@ shared_ptr<GradFile> Force::compute() {
 
     } else if (method == "hf") {
 
-      auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_);
+      auto dkh = idata_->get<bool>("dkh", false) && !idata_->get<bool>("seminum", false) ? make_shared<DKHcoreInfo>(geom_) : nullptr;
+      auto force = make_shared<GradEval<RHF>>(cinput, geom_, ref_, dkh);
       energyvec = force->energyvec();
       out = force->compute(jobtitle, gradinfo);
       ref = force->ref();

@@ -42,6 +42,7 @@ class GradEval_base;
 class GradEval_base {
   protected:
     std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<DKHcoreInfo> dkh_;
 
     /// contract 1-electron gradient integrals with density matrix "d" and energy weighted density matrix (or equivalent) "w"
     template<typename TaskType>
@@ -69,7 +70,7 @@ class GradEval_base {
     std::vector<std::mutex> mutex_;
 
   public:
-    GradEval_base(const std::shared_ptr<const Geometry> g) : geom_(g), grad_(std::make_shared<GradFile>(g->natom())), mutex_(g->natom()) { }
+    GradEval_base(const std::shared_ptr<const Geometry> g, std::shared_ptr<DKHcoreInfo> dkh = nullptr) : geom_(g), dkh_(dkh), grad_(std::make_shared<GradFile>(g->natom())), mutex_(g->natom()) { }
 
     /// compute gradient given density matrices
     std::shared_ptr<GradFile> contract_gradient(const std::shared_ptr<const Matrix> d, const std::shared_ptr<const Matrix> w,
