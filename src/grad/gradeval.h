@@ -66,8 +66,8 @@ class GradEval : public GradEval_base {
   public:
 
     // Constructor performs energy calculation
-    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref, std::shared_ptr<DKHcoreInfo> dkh = nullptr)
-      : GradEval_base(geom, dkh), idata_(idata), ref_(ref) {
+    GradEval(std::shared_ptr<const PTree> idata, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
+      : GradEval_base(geom), idata_(idata), ref_(ref) {
       init();
     }
 

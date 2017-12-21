@@ -107,6 +107,9 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
       }
     }
   }
+  ederiv_.print("Y_pq");
+  zmult_.print("z_pq");
+  den->print("d_tilde");
   return den;
 }
 
@@ -129,6 +132,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1
       }
     }
   }
+  den->print("d_bar");
   return den;
 }
 
@@ -153,6 +157,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_pvpden(shared_ptr<const Matrix> rd
       }
     }
   }
+  den->print("d_check");
   return den;
 }
 
@@ -171,5 +176,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> erdm
     }
   }
 
-  return make_shared<const Matrix>(ptrans_ * *erdm1 ^ ptrans_ + wtrans_ * xb ^ wtrans_);
+  at.print("a_tilde");
+  xb.print("X_bar");
+  return make_shared<const Matrix>((ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_));
 }

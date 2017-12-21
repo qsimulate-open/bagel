@@ -42,7 +42,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
   if (!numerical) {
     vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
-    vector<shared_ptr<GradTask>> task2 = dkh_ ? contract_graddkh1e(d, vd, pvpd, w) : contract_grad1e<GradTask1>(d, w);
+    vector<shared_ptr<GradTask>> task2 = geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum() ? contract_graddkh1e(d, vd, pvpd, w) : contract_grad1e<GradTask1>(d, w);
     vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);
     task.insert(task.end(), task2.begin(), task2.end());
     task.insert(task.end(), task3.begin(), task3.end());

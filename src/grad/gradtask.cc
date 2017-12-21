@@ -315,9 +315,10 @@ shared_ptr<GradFile> GradTask1d::compute_smallnai() const {
   batch.compute();
 
   array<shared_ptr<const Matrix>,6> dmat;
-  shared_ptr<Matrix> cden = pvpden_->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  shared_ptr<Matrix> cden = pvpden_->get_submatrix(offset_[1], offset_[0], dimb1, dimb0), zero = make_shared<Matrix>(dimb1, dimb0);
   cden->localize();
+  zero->localize();
   dmat[0] = dmat[3] = dmat[5] = cden;
-  dmat[1] = dmat[2] = dmat[4] = make_shared<Matrix>(dimb1, dimb0);
+  dmat[1] = dmat[2] = dmat[4] = zero;
   return batch.compute_gradient(dmat);
 }

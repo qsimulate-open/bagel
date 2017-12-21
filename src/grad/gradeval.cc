@@ -56,11 +56,12 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
   shared_ptr<const DFDist> qrs = qrs_1->back_transform(coeff_occ);
 
   shared_ptr<GradFile> grad;
-  if (dkh_) {
-    shared_ptr<const Matrix> tden = dkh_->compute_tden(rdm1);
-    shared_ptr<const Matrix> vden = dkh_->compute_vden(rdm1);
-    shared_ptr<const Matrix> pvpden = dkh_->compute_pvpden(rdm1);
-    shared_ptr<const Matrix> sden = dkh_->compute_sden(erdm1);
+  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+    auto dkh = make_shared<DKHcoreInfo>(geom_);
+    shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
+    shared_ptr<const Matrix> vden = dkh->compute_vden(rdm1);
+    shared_ptr<const Matrix> pvpden = dkh->compute_pvpden(rdm1);
+    shared_ptr<const Matrix> sden = dkh->compute_sden(erdm1);
     grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
   } else {
     grad = contract_gradient(rdm1, erdm1, qrs, qq);
