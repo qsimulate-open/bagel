@@ -41,7 +41,7 @@ FMM::FMM(std::shared_ptr<const PTree> idata, shared_ptr<const Geometry> geom, co
   lmax_ = idata->get<int>("lmax", 10);
   const int batchsize = idata->get<int>("batch_size", -1);
   if (batchsize < 0)
-    xbatchsize_ = (int) ceil(0.5*geom->nele()/mpi__->size());
+    xbatchsize_ = static_cast<int>(ceil(0.5*geom->nele()/mpi__->size()));
   debug_ = idata->get<bool>("debug", false);
 
   if (kbuild) {
@@ -118,7 +118,7 @@ void FMM::get_boxes() {
     array<int, 3> idxbox;
     for (int i = 0; i != 3; ++i) {
       const double coi = coordinates_[isp][i]-centre_[i];
-      idxbox[i] = (int) floor(coi/unitsize_) + ns2/2 + 1;
+      idxbox[i] = static_cast<int>(floor(coi/unitsize_)) + ns2/2 + 1;
       assert(idxbox[i] <= ns2 && idxbox[i] > 0);
     }
 
@@ -176,9 +176,9 @@ void FMM::get_boxes() {
         for (int k = 1; k != nss2+1; ++k) {
           vector<shared_ptr<const ShellPair>> sp;
           array<int, 3> idxp;
-          idxp[0] = (int) floor(0.5*(i+1)) + icntp;
-          idxp[1] = (int) floor(0.5*(j+1)) + icntp;
-          idxp[2] = (int) floor(0.5*(k+1)) + icntp;
+          idxp[0] = static_cast<int>(floor(0.5*(i+1))) + icntp;
+          idxp[1] = static_cast<int>(floor(0.5*(j+1))) + icntp;
+          idxp[2] = static_cast<int>(floor(0.5*(k+1))) + icntp;
 
           array<int, 3> idxc = {{i+icntc, j+icntc, k+icntc}};
           map<array<int, 3>,int>::iterator child = treemap.find(idxc);
