@@ -402,10 +402,10 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 }
 
 
-#if 0
 // computes 3 and 4RDM
 // TODO duplicate code to be cleaned up
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+  // Should be improved much
   auto rdm3 = make_shared<RDM<3>>(norb_);
   auto frdm4 = make_shared<RDM<3>>(norb_);
 
@@ -531,4 +531,3 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
 
   return make_tuple(rdm3, frdm4);
 }
-#endif

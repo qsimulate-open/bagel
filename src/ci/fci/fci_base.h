@@ -116,6 +116,7 @@ class FCI_base : public Method {
     virtual void compute_rdm12(const int ist, const int jst) = 0;
     // compute 3 and 4 RDMs
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const = 0;
+    virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const = 0;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
     virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const = 0;
     // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...

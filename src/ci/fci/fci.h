@@ -102,6 +102,7 @@ class FCI : public FCI_base {
 
     // compute 3 and 4 RDMs
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const override;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
     // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...

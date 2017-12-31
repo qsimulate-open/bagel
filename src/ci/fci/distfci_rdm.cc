@@ -85,6 +85,11 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> DistFCI::rdm34(const int ist, cons
 }
 
 
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> DistFCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+  return tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>>();
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> DistFCI::rdm12_alpha(const int ist, const int jst) const {
   return tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>();
 }
