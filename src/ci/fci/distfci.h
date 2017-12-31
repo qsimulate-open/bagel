@@ -137,6 +137,7 @@ class DistFCI : public FCI_base {
     std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<RDM<3>> read_external_rdm4f(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
     void dump_ints() const;
 };

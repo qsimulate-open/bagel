@@ -117,6 +117,36 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
 }
 
 
+std::shared_ptr<RDM<3>> FCI::read_external_rdm4f(const int ist, const int jst, const string& file) const {
+  auto out = make_shared<RDM<3>>(norb_);
+
+  map<array<int,3>,double> elem;
+  elem.emplace(array<int,3>{{0,1,2}}, 1.0); elem.emplace(array<int,3>{{0,2,1}}, 1.0); elem.emplace(array<int,3>{{1,0,2}}, 1.0);
+  elem.emplace(array<int,3>{{1,2,0}}, 1.0); elem.emplace(array<int,3>{{2,0,1}}, 1.0); elem.emplace(array<int,3>{{2,1,0}}, 1.0);
+
+  stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm4f";
+  ifstream fs(ss.str());
+  if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
+  string line;
+  while (getline(fs, line)) {
+    stringstream ss(line);
+    int i, j, k, l, m, n;
+    double dat;
+    // assuming that the 2RDM is dumped as i+ j+ k+ l m n -> i l j m k n
+    ss >> i >> j >> k >> l >> m >> n >> dat;
+    assert(i <= norb_ && j <= norb_ && k <= norb_ && l <= norb_ && m <= norb_ && n <= norb_);
+    map<int,int> mij{{0,i-1}, {1,j-1}, {2,k-1}};
+    map<int,int> mkl{{0,l-1}, {1,m-1}, {2,n-1}};
+    for (auto& eij : elem) {
+      out->element(mij[eij.first[0]], mkl[eij.first[0]], mij[eij.first[1]], mkl[eij.first[1]], mij[eij.first[2]], mkl[eij.first[2]]) = dat;
+      if (ist == jst)
+        out->element(mkl[eij.first[0]], mij[eij.first[0]], mkl[eij.first[1]], mij[eij.first[1]], mkl[eij.first[2]], mij[eij.first[2]]) = dat;
+    }
+  }
+  return out;
+}
+
+
 std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, const string& file) const {
   auto out = make_shared<RDM<3>>(norb_);
 

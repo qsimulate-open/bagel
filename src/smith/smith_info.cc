@@ -151,6 +151,22 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rd
 
 
 template<>
+tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<3>>> SMITH_Info<double>::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+  FCI_bare fci(ciwfn());
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<const RDM<3>> r4f;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4f) = fci.rdm34f(ist, jst, fock);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4f = fci.read_external_rdm4f(ist, jst, external_rdm_);
+  }
+  return make_tuple(r3, r4f);
+}
+
+
+template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
@@ -165,6 +181,21 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
     rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
   }
   return make_tuple(rdm1, rdm2);
+}
+
+
+template<>
+tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<const Kramers<6,ZRDM<3>>>>
+  SMITH_Info<complex<double>>::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+
+  ZFCI_bare fci(ciwfn());
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm4f;
+
+  // should implement
+
+  return make_tuple(rdm3, rdm4f);
+
 }
 
 
