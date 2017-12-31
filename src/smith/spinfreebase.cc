@@ -239,6 +239,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   rdm1all_ = make_shared<Vec<Tensor_<double>>>();
   rdm2all_ = make_shared<Vec<Tensor_<double>>>();
   rdm3all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm4fall_ = make_shared<Vec<Tensor_<double>>>();
   rdm4all_ = make_shared<Vec<Tensor_<double>>>();
 
   assert(fockact_);
@@ -251,13 +252,22 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<1>> rdm1;
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
-      shared_ptr<const RDM<4>> rdm4; // TODO to be removed
+      shared_ptr<RDM<3>> rdm4f;
+      shared_ptr<const RDM<4>> rdm4;
+
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
-      shared_ptr<RDM<3>> rdm4f = rdm3->clone();
-      auto rdm4v = group(group(*rdm4, 6,8), 0,6);
-      auto rdm4fv = group(*rdm4f, 0, 6);
-      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, rdm4fv, {0});
+      // CASPT2 energy need only rdm4f. Others (including caspt2 grad) reqs rdm4
+      const bool rdm4_eval = (info_->grad() || info_->method()!="caspt2");
+      if (rdm4_eval) {
+        tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+        rdm4f = rdm3->clone();
+
+        auto rdm4v = group(group(*rdm4, 6,8), 0,6);
+        auto rdm4fv = group(*rdm4f, 0, 6);
+        contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, rdm4fv, {0});
+      } else {
+        tie(rdm3, rdm4f) = info_->rdm34f(jst, ist, fockact_);
+      }
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
@@ -268,13 +278,17 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       auto rdm1t = fill_block<2,double>(rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,double>(rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,double>(rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-      auto rdm4t = fill_block<8,double>(rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+      auto rdm4ft = fill_block<6,double>(rdm4f, vector<int>(6,nclo), vector<IndexRange>(6,active_));
 
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
       rdm2all_->emplace(jst, ist, rdm2t);
       rdm3all_->emplace(jst, ist, rdm3t);
-      rdm4all_->emplace(jst, ist, rdm4t);
+      rdm4fall_->emplace(jst, ist, rdm4ft);
+      if (rdm4_eval) {
+        auto rdm4t = fill_block<8,double>(rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+        rdm4all_->emplace(jst, ist, rdm4t);
+      }
 
       if (!info_->sssr() || jst == ist)
         denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4f);
