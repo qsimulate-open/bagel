@@ -115,6 +115,7 @@ class SMITH_Info {
     bool block_diag_fock() const { return block_diag_fock_; }
     bool restart() const { return restart_; }
     bool restart_each_iter() const { return restart_each_iter_; }
+    bool rdm4_eval() const { return (grad_ || method_!="caspt2"); }
 
     double thresh_overlap() const { return thresh_overlap_; }
 

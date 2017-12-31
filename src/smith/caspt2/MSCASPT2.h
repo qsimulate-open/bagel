@@ -155,8 +155,8 @@ class MSCASPT2 {
       rdm1_ = rdm1all_->at(jst, ist);
       rdm2_ = rdm2all_->at(jst, ist);
       rdm3_ = rdm3all_->at(jst, ist);
-      rdm4_ = rdm4all_->at(jst, ist);
       rdm4f_ = rdm4fall_->at(jst, ist);
+      rdm4_ = rdm4all_->at(jst, ist);
       mpi__->barrier();
     }
 

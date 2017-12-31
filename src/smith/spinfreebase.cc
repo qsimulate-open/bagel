@@ -256,9 +256,8 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<4>> rdm4;
 
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      // CASPT2 energy need only rdm4f. Others (including caspt2 grad) reqs rdm4
-      const bool rdm4_eval = (info_->grad() || info_->method()!="caspt2");
-      if (rdm4_eval) {
+      // CASPT2 energy needs only rdm4f. Others (including caspt2 grad) req rdm4
+      if (info_->rdm4_eval()) {
         tie(rdm3, rdm4) = info_->rdm34(jst, ist);
         rdm4f = rdm3->clone();
 
@@ -285,7 +284,7 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       rdm2all_->emplace(jst, ist, rdm2t);
       rdm3all_->emplace(jst, ist, rdm3t);
       rdm4fall_->emplace(jst, ist, rdm4ft);
-      if (rdm4_eval) {
+      if (info_->rdm4_eval()) {
         auto rdm4t = fill_block<8,double>(rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
         rdm4all_->emplace(jst, ist, rdm4t);
       }
@@ -524,7 +523,9 @@ void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
     rdm1_ = rdm1all_->at(jst, ist);
     rdm2_ = rdm2all_->at(jst, ist);
     rdm3_ = rdm3all_->at(jst, ist);
-    rdm4_ = rdm4all_->at(jst, ist);
+    rdm4f_ = rdm4fall_->at(jst, ist);
+    if (info_->rdm4_eval())
+      rdm4_ = rdm4all_->at(jst, ist);
 
     // ensure that get_block calls are done after RDMs are set in every node
     mpi__->barrier();
