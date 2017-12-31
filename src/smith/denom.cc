@@ -70,13 +70,13 @@ template<typename DataType>
 void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
   // computes fock-weighted 4RDM
-  shared_ptr<RDM<3,DataType>> frdm4 = rdm3->clone();
-  auto frdm4gr = group(*frdm4, 0,6);
+  shared_ptr<RDM<3,DataType>> rdm4f = rdm3->clone();
+  auto rdm4fgr = group(*rdm4f, 0,6);
   auto rdm4gr = group(group(*rdm4, 6,8),0,6);
   auto fgr = group(*fock_, 0,2);
-  btas::contract(1.0, rdm4gr, {0,1}, fgr, {1}, 0.0, frdm4gr, {0});
+  btas::contract(1.0, rdm4gr, {0,1}, fgr, {1}, 0.0, rdm4fgr, {0});
   // then call the standard routine
-  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  append(jst, ist, rdm1, rdm2, rdm3, rdm4f);
 }
 
 
@@ -91,7 +91,7 @@ template<>
 void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<const ZRDM<1>> rdm1, shared_ptr<const ZRDM<2>> rdm2,
                                                                   shared_ptr<const ZRDM<3>> rdm3, shared_ptr<const Kramers<8,ZRDM<4>>> rdm4) {
 
-  shared_ptr<ZRDM<3>> frdm4 = rdm3->clone();
+  shared_ptr<ZRDM<3>> rdm4f = rdm3->clone();
 
   assert(fock_->ndim()%2 == 0);
   const int n = fock_->ndim()/2;
@@ -125,24 +125,24 @@ void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<con
           for (int c = 0; c != n; ++c)
             for (int d = 0; d != n; ++d)
               for (int e = 0; e != n; ++e) {
-                blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, frdm4->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
+                blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, rdm4f->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
               }
     }
   }
-  append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+  append(jst, ist, rdm1, rdm2, rdm3, rdm4f);
 }
 
 
 template<typename DataType>
 void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                           shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
-  init_x_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_h_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_xx_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_hh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_xh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_xxh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
-  init_xhh_(jst, ist, rdm1, rdm2, rdm3, frdm4);
+                                                           shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
+  init_x_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_h_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_xx_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_hh_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_xh_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_xxh_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+  init_xhh_(jst, ist, rdm1, rdm2, rdm3, rdm4f);
 }
 
 
@@ -196,7 +196,7 @@ void Denom<DataType>::compute() {
 
 template<typename DataType>
 void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim = nact;
 
@@ -212,7 +212,7 @@ void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM
 
 template<typename DataType>
 void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact;
   auto shalf = make_shared<MatType>(dim, dim);
@@ -251,7 +251,7 @@ void Denom<DataType>::init_h_(const int jst, const int ist, shared_ptr<const RDM
 
 template<typename DataType>
 void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim, dim);
@@ -270,7 +270,7 @@ void Denom<DataType>::init_xx_(const int jst, const int ist, shared_ptr<const RD
 
 template<typename DataType>
 void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   shared_ptr<RDM<2,DataType>> shalf = rdm2->clone();
@@ -340,7 +340,7 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
 
 template<typename DataType>
 void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                             shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact;
   auto shalf = make_shared<MatType>(dim*2, dim*2);
@@ -425,7 +425,7 @@ void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RD
 
 template<typename DataType>
 void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
   shared_ptr<RDM<3,DataType>> ovl = rdm3->copy();
@@ -439,7 +439,7 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
   shalf_xxh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
   // TODO a littile of duplication. Maybe should merge with xhh below
-  shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
+  shared_ptr<RDM<3,DataType>> fr4 = rdm4f->copy();
   for (int i4 = 0; i4 != nact; ++i4)
     for (int i3 = 0; i3 != nact; ++i3) {
       const DataType f = fock_->element(i3, i4);
@@ -482,7 +482,7 @@ void Denom<DataType>::init_xxh_(const int jst, const int ist, shared_ptr<const R
 
 template<typename DataType>
 void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> frdm4) {
+                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
   const size_t nact = rdm1->norb();
   const size_t dim  = nact*nact*nact;
   shared_ptr<RDM<3,DataType>> ovl = rdm3->copy();
@@ -505,7 +505,7 @@ void Denom<DataType>::init_xhh_(const int jst, const int ist, shared_ptr<const R
   sort_indices<0,2,4,3,1,0,1,1,1>(ovl->data(), shalf->data(), nact*nact, nact, nact, nact, nact);
   shalf_xhh_->copy_block(dim*jst, dim*ist, dim, dim, shalf);
 
-  shared_ptr<RDM<3,DataType>> fr4 = frdm4->copy();
+  shared_ptr<RDM<3,DataType>> fr4 = rdm4f->copy();
   fr4->scale(-1.0);
 
   // terms with 1 or 2RDM intermediates

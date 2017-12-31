@@ -407,7 +407,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> FCI::rdm34(const int ist, const in
 tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
   // Should be improved much
   auto rdm3 = make_shared<RDM<3>>(norb_);
-  auto frdm4 = make_shared<RDM<3>>(norb_);
+  auto rdm4f = make_shared<RDM<3>>(norb_);
 
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
@@ -508,26 +508,26 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
     auto feket = dket->clone();
     dgemv_("N", nri*norb_*norb_, norb_*norb_, 1.0, eket->data(), nri*norb_*norb_, fock->data(), 1, 0.0, feket->data(), 1);
     contract(1.0, group(*ebra, 0,2), {0,1}, group(*feket, 0,2), {0,2}, 0.0, tmpv, {1,2});
-    sort_indices<1,0,3,2,4,0,1,1,1>(tmp->data(), frdm4->data(), norb_, norb_, norb_, norb_, norb_*norb_);
+    sort_indices<1,0,3,2,4,0,1,1,1>(tmp->data(), rdm4f->data(), norb_, norb_, norb_, norb_, norb_*norb_);
 
-    sort_indices<2,0,1,1,1,-1,1>(prdm3->data(), frdm4->data(), norb_*norb_, norb_*norb_, norb_*norb_);
-    sort_indices<0,2,1,1,1,-1,1>(prdm3->data(), frdm4->data(), norb_*norb_, norb_*norb_, norb_*norb_);
+    sort_indices<2,0,1,1,1,-1,1>(prdm3->data(), rdm4f->data(), norb_*norb_, norb_*norb_, norb_*norb_);
+    sort_indices<0,2,1,1,1,-1,1>(prdm3->data(), rdm4f->data(), norb_*norb_, norb_*norb_, norb_*norb_);
 
     auto prdm2t = prdm2->clone();
     sort_indices<1,0,0,1,1,1>(prdm2->data(), prdm2t->data(), norb_*norb_, norb_*norb_);
     for (int p = 0; p != norb_; ++p)
       for (int l = 0; l != norb_; ++l) {
-        blas::ax_plus_y_n(-1.0, prdm2t->element_ptr(0,0,0,p), norb_*norb_*norb_, frdm4->element_ptr(0,0,0,l,l,p));
-        blas::ax_plus_y_n(-1.0, frdm3->element_ptr(0,0,0,p),  norb_*norb_*norb_, frdm4->element_ptr(0,0,0,l,l,p));
+        blas::ax_plus_y_n(-1.0, prdm2t->element_ptr(0,0,0,p), norb_*norb_*norb_, rdm4f->element_ptr(0,0,0,l,l,p));
+        blas::ax_plus_y_n(-1.0, frdm3->element_ptr(0,0,0,p),  norb_*norb_*norb_, rdm4f->element_ptr(0,0,0,l,l,p));
         for (int k = 0; k != norb_; ++k)
           for (int j = 0; j != norb_; ++j) {
-            blas::ax_plus_y_n(-1.0, prdm2->element_ptr(0,p,j,l), norb_, frdm4->element_ptr(0,k,j,l,k,p));
-            blas::ax_plus_y_n(-1.0, frdm3->element_ptr(0,p,j,l), norb_, frdm4->element_ptr(0,k,j,l,k,p));
+            blas::ax_plus_y_n(-1.0, prdm2->element_ptr(0,p,j,l), norb_, rdm4f->element_ptr(0,k,j,l,k,p));
+            blas::ax_plus_y_n(-1.0, frdm3->element_ptr(0,p,j,l), norb_, rdm4f->element_ptr(0,k,j,l,k,p));
           }
       }
   }
 
   cc_->set_det(det_);
 
-  return make_tuple(rdm3, frdm4);
+  return make_tuple(rdm3, rdm4f);
 }
