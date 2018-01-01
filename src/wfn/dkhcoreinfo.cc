@@ -122,8 +122,8 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   }
 
   const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int q = 0; q != nbasis_; ++q) {
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
       ederiv_(p, q) = 2.0 * CPW(p, q) * (E(q) - c2);
       if (p == q) {
         ederiv_(p, q) += 2.0 * CPW(p, p) * dE(p) * kinetic_(p);
@@ -131,15 +131,15 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
     }
   }
 
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int q = 0; q != nbasis_; ++q) {
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
       zmult_(p, q) = p == q ? 0.0 : -0.5 * (ederiv_(p, q) - ederiv_(q, p)) / (kinetic_(p) - kinetic_(q));
     }
   }
 
   shared_ptr<Matrix> den = make_shared<Matrix>(wtrans_ * zmult_ ^ wtrans_);
-  for (int a = 0; a != nbasis_; ++a) {
-    for (int b = 0; b != nbasis_; ++b) {
+  for (int b = 0; b != nbasis_; ++b) {
+    for (int a = 0; a != nbasis_; ++a) {
       for (int p = 0; p != nbasis_; ++p) {
         (*den)(a, b) += dE(p) * wtrans_(a, p) * wtrans_(b, p) * CPW(p, p);
       }
@@ -205,15 +205,15 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_pvpden(shared_ptr<const Matrix> rd
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> erdm1) {
   Matrix at(nbasis_, nbasis_);
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int q = 0; q != nbasis_; ++q) {
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
       at(p, q) = (zmult_(p, q) + zmult_(q, p)) * kinetic_(p);
     }
   }
 
   Matrix xb(nbasis_, nbasis_);
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int q = 0; q != nbasis_; ++q) {
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
       xb(p, q) = 0.25 * (ederiv_(p, q) + ederiv_(q, p) + at(p, q) + at(q, p));
     }
   }
