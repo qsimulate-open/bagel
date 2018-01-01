@@ -83,7 +83,7 @@ void Box::init() {
     }
   }
 
-  ws_ = (int) ceil(extent_/boxsize_);
+  ws_ = static_cast<int>(ceil(extent_/boxsize_));
   nmult_ = (lmax_ + 1) * (lmax_ + 1);
   olm_ = make_shared<ZVectorB>(nmult_);
   mlm_ = make_shared<ZVectorB>(nmult_);
