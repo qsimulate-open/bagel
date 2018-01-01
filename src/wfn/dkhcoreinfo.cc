@@ -59,76 +59,32 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
 }
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1) {
-  const double c2 = c__ * c__, c3 = c2 * c__;
-  VectorB E(nbasis_), A(nbasis_), B(nbasis_), K(nbasis_), dE(nbasis_), dA(nbasis_), dB(nbasis_);
-  for (int p = 0; p != nbasis_; ++p) {
-    E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
-    A(p) = sqrt(0.5 * (E(p) + c2) / E(p));
-    K(p) = c__ / (E(p) + c2);
-    B(p) = A(p) * K(p);
-    dE(p) = c__ / sqrt(2.0 * kinetic_(p) + c2);
-    dA(p) = -c3 / (4.0 * E(p) * E(p) * A(p) * sqrt(2.0 * kinetic_(p) + c2));
-    dB(p) = (c__ * K(p) / (4.0 * E(p) * E(p) * A(p)) - A(p) / pow(E(p) + c2, 2)) * c2 / sqrt(2.0 * kinetic_(p) + c2);
-  }
-
-  const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
-  for (int q = 0; q != nbasis_; ++q) {
-    for (int p = 0; p != nbasis_; ++p) {
-      ederiv_(p, q) += 2.0 * CPW(p, q) * (E(q) - c2);
-      if (p == q) {
-        ederiv_(p, q) += 2.0 * CPW(p, p) * dE(p) * kinetic_(p);
-      }
-      for (int r = 0; r != nbasis_; ++r) {
-        ederiv_(p, q) += 2.0 * CPW(r, p) * (A(q) * A(r) * nai_(r, q) + B(q) * B(r) * smallnai_(r, q));
-        ederiv_(p, q) += 2.0 * CPW(r, q) * (A(q) * A(r) * nai_(r, p) + B(q) * B(r) * smallnai_(r, p));
-        if (p == q) {
-          ederiv_(p, q) += 2.0 * CPW(r, p) * (dA(p) * kinetic_(p) * A(r) * nai_(r, q) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, q));
-          ederiv_(p, q) += 2.0 * CPW(r, q) * (dA(p) * kinetic_(p) * A(r) * nai_(r, p) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, p));
-        }
-      }
-    }
-  }
-
-  for (int q = 0; q != nbasis_; ++q) {
-    for (int p = 0; p != nbasis_; ++p) {
-      zmult_(p, q) = p == q ? 0.0 : -0.5 * (ederiv_(p, q) - ederiv_(q, p)) / (kinetic_(p) - kinetic_(q));
-    }
-  }
-
-  shared_ptr<Matrix> den = make_shared<Matrix>(wtrans_ * zmult_ ^ wtrans_);
-  for (int b = 0; b != nbasis_; ++b) {
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int p = 0; p != nbasis_; ++p) {
-        (*den)(a, b) += dE(p) * wtrans_(a, p) * wtrans_(b, p) * CPW(p, p);
-      }
-      for (int q = 0; q != nbasis_; ++q) {
-        for (int p = 0; p != nbasis_; ++p) {
-          (*den)(a, b) += (nai_(p, q) * (A(q) * dA(p) * wtrans_(a, p) * wtrans_(b, p) + A(p) * dA(q) * wtrans_(a, q) * wtrans_(b, q))
-                      + smallnai_(p, q) * (B(q) * dB(p) * wtrans_(a, p) * wtrans_(b, p) + B(p) * dB(q) * wtrans_(a, q) * wtrans_(b, q))) * CPW(p, q);
-        }
-      }
-    }
-  }
-  ederiv_.print("Y_pq");
-  zmult_.print("z_pq");
-  den->print("d_tilde");
-  return den;
-
-  // return make_shared<Matrix>(ptrans_ * *rdm1 ^ ptrans_);
-
   // const double c2 = c__ * c__, c3 = c2 * c__;
   // VectorB E(nbasis_), A(nbasis_), B(nbasis_), K(nbasis_), dE(nbasis_), dA(nbasis_), dB(nbasis_);
   // for (int p = 0; p != nbasis_; ++p) {
   //   E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
+  //   A(p) = sqrt(0.5 * (E(p) + c2) / E(p));
+  //   K(p) = c__ / (E(p) + c2);
+  //   B(p) = A(p) * K(p);
   //   dE(p) = c__ / sqrt(2.0 * kinetic_(p) + c2);
+  //   dA(p) = -c3 / (4.0 * E(p) * E(p) * A(p) * sqrt(2.0 * kinetic_(p) + c2));
+  //   dB(p) = (c__ * K(p) / (4.0 * E(p) * E(p) * A(p)) - A(p) / pow(E(p) + c2, 2)) * c2 / sqrt(2.0 * kinetic_(p) + c2);
   // }
 
   // const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
   // for (int q = 0; q != nbasis_; ++q) {
   //   for (int p = 0; p != nbasis_; ++p) {
-  //     ederiv_(p, q) = 2.0 * CPW(p, q) * (E(q) - c2);
+  //     ederiv_(p, q) += 2.0 * CPW(p, q) * (E(q) - c2);
   //     if (p == q) {
   //       ederiv_(p, q) += 2.0 * CPW(p, p) * dE(p) * kinetic_(p);
+  //     }
+  //     for (int r = 0; r != nbasis_; ++r) {
+  //       ederiv_(p, q) += 2.0 * CPW(r, p) * (A(q) * A(r) * nai_(r, q) + B(q) * B(r) * smallnai_(r, q));
+  //       ederiv_(p, q) += 2.0 * CPW(r, q) * (A(q) * A(r) * nai_(r, p) + B(q) * B(r) * smallnai_(r, p));
+  //       if (p == q) {
+  //         ederiv_(p, q) += 2.0 * CPW(r, p) * (dA(p) * kinetic_(p) * A(r) * nai_(r, q) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, q));
+  //         ederiv_(p, q) += 2.0 * CPW(r, q) * (dA(p) * kinetic_(p) * A(r) * nai_(r, p) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, p));
+  //       }
   //     }
   //   }
   // }
@@ -145,37 +101,83 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   //     for (int p = 0; p != nbasis_; ++p) {
   //       (*den)(a, b) += dE(p) * wtrans_(a, p) * wtrans_(b, p) * CPW(p, p);
   //     }
+  //     for (int q = 0; q != nbasis_; ++q) {
+  //       for (int p = 0; p != nbasis_; ++p) {
+  //         (*den)(a, b) += (nai_(p, q) * (A(q) * dA(p) * wtrans_(a, p) * wtrans_(b, p) + A(p) * dA(q) * wtrans_(a, q) * wtrans_(b, q))
+  //                     + smallnai_(p, q) * (B(q) * dB(p) * wtrans_(a, p) * wtrans_(b, p) + B(p) * dB(q) * wtrans_(a, q) * wtrans_(b, q))) * CPW(p, q);
+  //       }
+  //     }
   //   }
   // }
   // ederiv_.print("Y_pq");
   // zmult_.print("z_pq");
   // den->print("d_tilde");
   // return den;
-}
+  // return make_shared<const Matrix>(ptrans_ % *den * ptrans_);
 
-shared_ptr<const Matrix> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1) {
-  const double c2 = c__ * c__;
-  VectorB E(nbasis_), A(nbasis_);
+  // return make_shared<Matrix>(ptrans_ * *rdm1 ^ ptrans_);
+  // return rdm1;
+
+  const double c2 = c__ * c__, c3 = c2 * c__;
+  VectorB E(nbasis_), A(nbasis_), B(nbasis_), K(nbasis_), dE(nbasis_), dA(nbasis_), dB(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
-    A(p) = sqrt(0.5 * (E(p) + c2) / E(p));
+    dE(p) = c__ / sqrt(2.0 * kinetic_(p) + c2);
   }
 
   const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
-  shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
-  for (int b = 0; b != nbasis_; ++b) {
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int q = 0; q != nbasis_; ++q) {
-        for (int p = 0; p != nbasis_; ++p) {
-          (*den)(a, b) += A(p) * A(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
-        }
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      ederiv_(p, q) = 2.0 * CPW(p, q) * (E(q) - c2);
+      if (p == q) {
+        ederiv_(p, q) += 2.0 * CPW(p, p) * dE(p) * kinetic_(p);
       }
     }
   }
-  den->print("d_bar");
+
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      zmult_(p, q) = p == q ? 0.0 : -0.5 * (ederiv_(p, q) - ederiv_(q, p)) / (kinetic_(p) - kinetic_(q));
+    }
+  }
+
+  const Matrix PW = ptrans_ % wtrans_;
+  shared_ptr<Matrix> den = make_shared<Matrix>(PW * zmult_ ^ PW);
+  for (int n = 0; n != ptrans_.mdim(); ++n) {
+    for (int m = 0; m != ptrans_.mdim(); ++m) {
+      for (int p = 0; p != nbasis_; ++p) {
+        (*den)(m, n) += dE(p) * PW(m, p) * PW(n, p) * CPW(p, p);
+      }
+    }
+  }
   return den;
+}
+
+shared_ptr<const Matrix> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1) {
+  // const double c2 = c__ * c__;
+  // VectorB E(nbasis_), A(nbasis_);
+  // for (int p = 0; p != nbasis_; ++p) {
+  //   E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
+  //   A(p) = sqrt(0.5 * (E(p) + c2) / E(p));
+  // }
+
+  // const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
+  // shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
+  // for (int b = 0; b != nbasis_; ++b) {
+  //   for (int a = 0; a != nbasis_; ++a) {
+  //     for (int q = 0; q != nbasis_; ++q) {
+  //       for (int p = 0; p != nbasis_; ++p) {
+  //         (*den)(a, b) += A(p) * A(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
+  //       }
+  //     }
+  //   }
+  // }
+  // den->print("d_bar");
+  // return den;
+  // return make_shared<const Matrix>(ptrans_ % *den * ptrans_);
 
   // return make_shared<Matrix>(ptrans_ * *rdm1 ^ ptrans_);
+  return rdm1;
 }
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_pvpden(shared_ptr<const Matrix> rdm1) {
@@ -200,7 +202,8 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_pvpden(shared_ptr<const Matrix> rd
     }
   }
   den->print("d_check");
-  return den;
+  // return den;
+  return make_shared<const Matrix>(ptrans_ % *den * ptrans_);
 
   // return make_shared<Matrix>(nbasis_, nbasis_);
 }
@@ -220,11 +223,13 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> erdm
     }
   }
 
-  at.print("a_tilde");
-  xb.print("X_bar");
-  Matrix dldu = ederiv_ + at - 2.0 * xb;
-  dldu.print("dL/dU_pq");
-  return make_shared<const Matrix>((ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_));
+  // at.print("a_tilde");
+  // xb.print("X_bar");
+  // Matrix dldu = ederiv_ + at - 2.0 * xb;
+  // dldu.print("dL/dU_pq");
+  // return make_shared<const Matrix>((ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_));
+  return make_shared<const Matrix>(*erdm1 + ((ptrans_ % wtrans_) * xb ^ (ptrans_ % wtrans_)));
 
   // return make_shared<Matrix>(ptrans_ * *erdm1 ^ ptrans_);
+  // return erdm1;
 }
