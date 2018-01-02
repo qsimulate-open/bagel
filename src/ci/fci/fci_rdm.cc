@@ -502,29 +502,29 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
     const size_t halfsize = norb2 * (norb2 + 1) / 2;
     auto eket_half = make_shared<Matrix>(isize, halfsize, /*local=*/true);
     make_evec_half(dket, eket_half, isize, ioffset);
-    shared_ptr<Matrix> ebra_half = eket_half;
-    if (cbra != cket) {
-      ebra_half = eket_half->clone();
-      make_evec_half(dbra, ebra_half, isize, ioffset);
-    }
-
-    // make feket
-    auto feket = make_shared<Matrix>(isize, norb2, /*local=*/true);
-    feket->zero();
+    // make febra
+    auto febra = make_shared<Matrix>(isize, norb2, /*local=*/true);
+    febra->zero();
     {
-      auto eket_full = make_shared<Matrix>(isize, norb2 * norb2, /*local=*/true);
+      shared_ptr<Matrix> ebra_half = eket_half;
+      if (cbra != cket) {
+        ebra_half = eket_half->clone();
+        make_evec_half(dbra, ebra_half, isize, ioffset);
+      }
+
+      auto ebra_full = make_shared<Matrix>(isize, norb2 * norb2, /*local=*/true);
       size_t no = 0;
       for (size_t kl = 0; kl != norb2; ++kl)
         for (size_t ij = kl; ij != norb2; ++ij) {
           size_t ijkl = ij + kl*norb2;
           size_t klij = kl + ij*norb2;
           for (size_t iI = 0; iI != isize; ++iI) {
-            eket_full->element(iI, ijkl) = eket_half->element(iI, no);
-            eket_full->element(iI, klij) = eket_half->element(iI, no);
+            ebra_full->element(iI, ijkl) = ebra_half->element(iI, no);
+            ebra_full->element(iI, klij) = ebra_half->element(iI, no);
           }
           ++no;
         }
-      dgemv_("N", isize*norb_*norb_, norb_*norb_, 1.0, eket_full->data(), isize*norb_*norb_, fock->data(), 1, 0.0, feket->data(), 1);
+      dgemv_("N", isize*norb_*norb_, norb_*norb_, 1.0, ebra_full->data(), isize*norb_*norb_, fock->data(), 1, 0.0, febra->data(), 1);
     }
 
     auto dbram = make_shared<Matrix>(isize, norb2, /*local=*/true);
@@ -534,9 +534,9 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
     // put in third-order RDM: <0|E_mn|I><I|E_ij < kl|0>
     auto tmp3 = make_shared<Matrix>(*dbram % *eket_half);
     auto tmp3_full = make_shared<Matrix>(norb2, norb2 * norb2, /*local=*/true);
-    // put in Fock-weighted forth-order RDM: <0|E_ij > kl|I>[I|E_mn|0]
-    auto tmp4 = make_shared<Matrix>(*ebra_half % *feket);
-    auto tmp4_full = make_shared<Matrix>(norb2 * norb2, norb2, /*local=*/true);
+    // put in Fock-weighted forth-order RDM: [0|E_mn|I]<I|E_ij < kl|0>
+    auto tmp4 = make_shared<Matrix>(*febra % *eket_half);
+    auto tmp4_full = make_shared<Matrix>(norb2, norb2 * norb2, /*local=*/true);
 
     for (size_t mn = 0; mn != norb2; ++mn) {
       size_t no = 0;
@@ -546,14 +546,14 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
           size_t klij = kl + ij*norb2;
           tmp3_full->element(mn, ijkl) = tmp3->element(mn, no);
           tmp3_full->element(mn, klij) = tmp3->element(mn, no);
-          tmp4_full->element(ijkl, mn) = tmp4->element(no, mn);
-          tmp4_full->element(klij, mn) = tmp4->element(no, mn);
+          tmp4_full->element(mn, ijkl) = tmp4->element(mn, no);
+          tmp4_full->element(mn, klij) = tmp4->element(mn, no);
           ++no;
         }
       }
     }
     sort_indices<1,0,2,1,1,1,1>(tmp3_full->data(), rdm3->data(), norb_, norb_, norb2*norb2);
-    sort_indices<1,0,3,2,4,0,1,1,1>(tmp4_full->data(), rdm4f->data(), norb_, norb_, norb_, norb_, norb2);
+    sort_indices<2,1,4,3,0,1,1,1,1>(tmp4_full->data(), rdm4f->data(), norb2, norb_, norb_, norb_, norb_);
   }
 
   rdm3->allreduce();
@@ -585,7 +585,7 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> FCI::rdm34f(const int ist, const i
     // <0|E_ip,jn|0>f_nl (in this order)
     auto prdm2 = make_shared<RDM<2>>(norb_);
     auto prdm2v = group(*prdm2, 0,3);
-    contract(1.0, group(*rdm2_->at(ist,jst), 0,3), {0,1}, *fock, {1,2}, 0.0, prdm2v, {0,2});
+    contract(1.0, group(*rdm2_->at(ist, jst), 0,3), {0,1}, *fock, {1,2}, 0.0, prdm2v, {0,2});
 
     // <0|E_ik,jl,on|0>f_np (in this order)
     auto prdm3 = make_shared<RDM<3>>(norb_);
