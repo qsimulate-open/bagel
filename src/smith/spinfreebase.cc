@@ -306,6 +306,7 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   rdm1all_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm2all_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm3all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm4fall_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
 
   assert(fockact_);
@@ -379,10 +380,53 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
       auto rdm4t = fill_block<8,complex<double>>(rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
 #endif
 
+      // make rdm4f here... (just to test if the smith generated code is sane)
+      shared_ptr<ZRDM<3>> rdm4f = rdm3ex->clone();
+
+      {
+        const int n = fockact_->ndim()/2;
+        Kramers<2,ZMatrix> fock;
+        fock.emplace({0,0}, fockact_->get_submatrix(0, 0, n, n));
+        fock.emplace({1,0}, fockact_->get_submatrix(n, 0, n, n));
+        fock.emplace({0,1}, fockact_->get_submatrix(0, n, n, n));
+        fock.emplace({1,1}, fockact_->get_submatrix(n, n, n, n));
+
+        // TODO if this step is time consuming, there are many ways to speed it up.
+        auto work = make_shared<ZRDM<3>>(n);
+        for (int i = 0; i != 64; ++i) {
+          const int aoff = ((i   )&1)*n;
+          const int boff = ((i>>1)&1)*n;
+          const int coff = ((i>>2)&1)*n;
+          const int doff = ((i>>3)&1)*n;
+          const int eoff = ((i>>4)&1)*n;
+          const int foff = ((i>>5)&1)*n;
+          for (int j = 0; j != 4; ++j) {
+            // computes fock-weighted 4RDM
+            shared_ptr<const ZMatrix> cfock = fock.at(j);
+            shared_ptr<const ZRDM<4>> crdm = rdm4->get_data((i << 2) + j);
+            if (!crdm) continue;
+
+          auto crdmgr = group(group(*crdm, 6,8),0,6);
+          auto wgr = group(*work, 0,6);
+          btas::contract(1.0, crdmgr, {0,1}, group(*cfock, 0,2), {1}, 0.0, wgr, {0});
+
+            for (int a = 0; a != n; ++a)
+              for (int b = 0; b != n; ++b)
+                for (int c = 0; c != n; ++c)
+                  for (int d = 0; d != n; ++d)
+                    for (int e = 0; e != n; ++e) {
+                      blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, rdm4f->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
+                    }
+          }
+        }
+      }
+      auto rdm4ft = fill_block<6,complex<double>>(rdm4f, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+
       rdm0all_->emplace(ist, jst, rdm0t);
       rdm1all_->emplace(ist, jst, rdm1t);
       rdm2all_->emplace(ist, jst, rdm2t);
       rdm3all_->emplace(ist, jst, rdm3t);
+      rdm4fall_->emplace(ist, jst, rdm4ft);
       rdm4all_->emplace(ist, jst, rdm4t);
     }
   }
