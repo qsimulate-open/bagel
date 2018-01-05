@@ -36,7 +36,7 @@
 using namespace std;
 using namespace bagel;
 
-static const AtomMap atommap_;
+static const AtomMap atommap;
 
 Hess::Hess(shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : idata_(idata), geom_(g), ref_(r) {
   numhess_ = idata_->get<bool>("numhess", true);
@@ -94,7 +94,7 @@ void Hess::compute() {
   // check if all of the mass are equal to the averaged mass
   bool averaged = true;
   for (auto& i : geom_->atoms())
-    averaged &= fabs(i->mass() - atommap_.averaged_mass(i->name())) < 1.0e-8;
+    averaged &= fabs(i->mass() - atommap.averaged_mass(i->name())) < 1.0e-8;
   if (averaged)
     cout << "    (masses averaged over the natural occurance of isotopes)" << endl << endl;
   else

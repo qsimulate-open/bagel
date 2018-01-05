@@ -108,7 +108,7 @@ class LinearRM {
       prod = std::make_shared<MatType>(*ovlp_scr % *prod);
 
       // set to scr_
-      vec_ = prod->solve(mat, size_);
+      vec_ = prod->solve(mat, prod->ndim());
       vec_ = std::make_shared<MatType>(*ovlp_scr * *vec_);
 
       // overwrite the first vector with the optimal vector

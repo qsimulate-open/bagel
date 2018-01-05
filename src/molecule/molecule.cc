@@ -33,7 +33,7 @@ using namespace bagel;
 using molecule_details::Node;
 using molecule_details::adf_rho;
 
-const static AtomMap atommap_;
+const static AtomMap atommap;
 
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Molecule)
@@ -243,7 +243,7 @@ void Molecule::common_init1() {
   nfrc_ = 0;
 
   for (auto& catom : atoms_) {
-    nele_ += atommap_.atom_number(catom->name());
+    nele_ += atommap.atom_number(catom->name());
     if (catom->use_ecp_basis()) nele_ -= catom->ecp_parameters()->ecp_ncore(); // valence electrons only
 
     int cc = 0;

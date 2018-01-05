@@ -33,7 +33,7 @@
 using namespace bagel;
 using namespace std;
 
-static const AtomMap atommap_;
+static const AtomMap atommap;
 static const double pisq__ = pi__ * pi__;
 const static Legendre plm;
 
@@ -97,7 +97,7 @@ void Tree::contract_vertex() {
     if (cont_vertex[i] < 0) {
       const bool is_singly_valent_atom = svalence.find(geom_->atoms(i)->name()) != svalence.end();
       if (is_singly_valent_atom) {
-        const double rad_i = pm2au * atommap_.cov_radius(geom_->atoms(i)->name());
+        const double rad_i = pm2au * atommap.cov_radius(geom_->atoms(i)->name());
 
         vector<shared_ptr<const Atom>> tmpatom;
         vector<int> tmporder;
@@ -113,7 +113,7 @@ void Tree::contract_vertex() {
             v12[1] = geom_->atoms(i)->position(1) - geom_->atoms(j)->position(1);
             v12[2] = geom_->atoms(i)->position(2) - geom_->atoms(j)->position(2);
             const double bondlength = sqrt(v12[0]*v12[0] + v12[1]*v12[1] + v12[2]*v12[2]);
-            const double rad_j = pm2au * atommap_.cov_radius(geom_->atoms(j)->name());
+            const double rad_j = pm2au * atommap.cov_radius(geom_->atoms(j)->name());
             if (bondlength <= (1.0 + tol) * (rad_i + rad_j)) {
               const int ivertex = cont_vertex[j];
               is_found = true;
