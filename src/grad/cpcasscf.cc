@@ -243,6 +243,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<PairFile<Matrix, Dvec>> z = source->copy();
   *z /= *denom;
   project_out(z->second(), civector_);
+  z->scale(1.0/z->norm());
 
   // inverse matrix of C
   auto ovl = make_shared<const Overlap>(geom_);
@@ -252,8 +253,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   Timer timer;
   for (int iter = 0; iter != zmaxiter; ++iter) {
-    solver->orthog(z);
-
     // given z, computes sigma (before anti-symmetrization)
     shared_ptr<PairFile<Matrix, Dvec>> sigma = form_sigma(z, fullb, detex, cinv, /*antisym*/true, lambda);
     sigma->first()->antisymmetrize();
@@ -268,6 +267,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     *z /= *denom;
     project_out(z->second(), civector_);
+    z->scale(1.0/z->norm());
   }
 
   shared_ptr<PairFile<Matrix, Dvec>> result = solver->civec();

@@ -25,4 +25,4 @@ Please cite the package as: ::
 
 A reivew can be found at: ::
 
-    WIREs Comput. Mol. Sci, e1331 (2017). DOI: 10.1002/wcms.1331
+    WIREs Comput. Mol. Sci 8, e1331 (2018). DOI: 10.1002/wcms.1331

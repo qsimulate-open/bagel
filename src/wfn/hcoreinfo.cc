@@ -46,7 +46,7 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
       throw runtime_error("DKH and ECP cannot be used simultaneously");
     type_ = HcoreType::ecp;
   }
-} 
+}
 
 
 vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {

@@ -4,7 +4,7 @@
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //
@@ -31,8 +31,6 @@
 #include <src/ci/ras/apply_operator.h>
 #include <src/ci/ras/rasci.h>
 #include <src/util/muffle.h>
-
-//#define DEBUG
 
 using namespace std;
 using namespace bagel;
@@ -153,15 +151,17 @@ shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inpu
   bool append = false;
 
   for (auto& inp : inputs) {
-    // finish preparing the input
-    inp->put("nclosed", ref->nclosed());
-    read_restricted(inp, 0);
     const int spin = inp->get<int>("nspin");
     const int charge = inp->get<int>("charge");
-    {
+    { // prepare the input
+      inp->put("nclosed", ref->nclosed());
+      inp->put("extern_nactele", true);
+      inp->put("nactele", multisite_->active_electrons().at(0));
+      read_restricted(inp, 0);
+    }
+    { // RAS calculations
       Muffle hide_cout("asd_dmrg.log", append);
       append = true;
-      // RAS calculations
       auto ras = make_shared<RASCI>(inp, ref->geom(), ref);
       ras->compute();
       shared_ptr<const RASDvec> civecs = ras->civectors();
@@ -236,14 +236,18 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
 
   Timer growtime(2);
   for (auto& inp : inputs) {
-    // finish preparing the input
     const int charge = inp->get<int>("charge");
     const int spin = inp->get<int>("nspin");
-    inp->put("nclosed", ref->nclosed());
-    read_restricted(inp, site);
-    {
+    { // prepare input
+      inp->put("nclosed", ref->nclosed());
+      inp->put("extern_nactele", true);
+      vector<int> active_electrons = multisite_->active_electrons();
+      const int nactele = accumulate(active_electrons.begin(), active_electrons.begin()+site+1, 0);
+      inp->put("nactele", nactele);
+      read_restricted(inp, site);
+    }
+    { // ProductRAS calculations
       Muffle hide_cout("asd_dmrg.log", true);
-      // ProductRAS calculations
       auto prod_ras = make_shared<ProductRASCI>(inp, ref, left);
       prod_ras->compute();
       vector<shared_ptr<ProductRASCivec>> civecs = prod_ras->civectors();
@@ -316,12 +320,16 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
 
 shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr<const Reference> ref, shared_ptr<DMRG_Block1> system, shared_ptr<DMRG_Block1> environment, const int site) {
   Timer decimatetime(2);
-  // assume the input is already fully formed, this may be revisited later
-  input->put("nclosed", ref->nclosed());
-  read_restricted(input, site);
-  {
+  { // prepare input
+    input->put("nclosed", ref->nclosed());
+    input->put("extern_nactele", true);
+    vector<int> active_electrons = multisite_->active_electrons();
+    const int nactele = accumulate(active_electrons.begin(), active_electrons.end(), input->get<int>("charge"));
+    input->put("nactele", nactele);
+    read_restricted(input, site);
+  }
+  { // ProductRAS calculations
     Muffle hide_cout("asd_dmrg.log", true);
-    // ProductRAS calculations
     if (!system) {
       auto prod_ras = make_shared<ProductRASCI>(input, ref, environment);
       prod_ras->compute();
@@ -436,7 +444,7 @@ map<BlockKey, shared_ptr<const RASDvec>> RASD::diagonalize_site_RDM(const vector
         if ((nele_block*nele_ci)%2==1) {
           auto tmp = isec.second->copy();
           tmp->scale(-1.0);
-          outer_products[isec.first].emplace_back(weights_[ist], isec.second);
+          outer_products[isec.first].emplace_back(weights_[ist], tmp);
         }
         else {
           outer_products[isec.first].emplace_back(weights_[ist], isec.second);
@@ -594,7 +602,7 @@ void RASD::apply_perturbation(shared_ptr<const RASBlockVectors> cc, vector<Gamma
   else {
     const int na = sdet->nelea() + dele.first;
     const int nb = sdet->neleb() + dele.second;
-    if (na >= 0 && na < sdet->norb() && nb >= 0 && nb < sdet->norb()) {
+    if (na >= 0 && na <= sdet->norb() && nb >= 0 && nb <= sdet->norb()) {
       tdet = sdet->clone(na, nb);
       detmap[Tkey] = tdet;
     }

@@ -76,7 +76,7 @@ Optional keywords
 
 .. topic:: ``magnetic_field``
 
-   | **Description**: External magnetic field.  External magnetic fields are available only for the :ref:`hf` and :ref:`dhf` modules.
+   | **Description**: External magnetic field.  External magnetic fields are available only for the :ref:`hf`, :ref:`dhf`, and :ref:`zcasscf` modules.
    | **Datatype**: Array of three doubles (x, y, z)
    | **Default**: (0.0, 0.0, 0.0)
 

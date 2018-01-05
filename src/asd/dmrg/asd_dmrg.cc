@@ -4,7 +4,7 @@
 // Copyright (C) 2014 Shane Parker
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
-// Maintainer: NU theory
+// Maintainer: Shiozaki Group
 //
 // This file is part of the BAGEL package.
 //
@@ -68,7 +68,7 @@ string ASD_DMRG::print_progress(const int position, const string left_symbol, co
 vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const {
   vector<shared_ptr<PTree>> out;
 
-  shared_ptr<PTree> base_input = input_->get_child_optional(input_->get<string>("method"));
+  shared_ptr<PTree> base_input = input_->get_child_optional("ras");
   if (!base_input) base_input = make_shared<PTree>();
 
   base_input->erase("charge");
@@ -76,8 +76,7 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
   base_input->erase("nstate");
 
   auto space = input_->get_child_optional("spaces");
-  if (!space)
-    throw runtime_error("spaces must be speciified");
+  if (!space) throw runtime_error("spaces must be specified");
   else if ( !(space->size()==1 || space->size()==nsites_) )
     throw runtime_error("Must specify either one \"space\" object or one per site");
 
@@ -100,11 +99,11 @@ vector<shared_ptr<PTree>> ASD_DMRG::prepare_growing_input(const int site) const 
 }
 
 shared_ptr<PTree> ASD_DMRG::prepare_sweeping_input(const int site) const {
-  shared_ptr<PTree> out = input_->get_child_optional(input_->get<string>("method"));
+  shared_ptr<PTree> out = input_->get_child_optional("ras");
   if (!out) out = make_shared<PTree>();
 
-  out->erase("charge"); out->put("charge", input_->get<string>("charge", "0"));
-  out->erase("nspin"); out->put("nspin", input_->get<string>("nspin", "0"));
+  out->erase("charge"); out->put("charge", multisite_->charge());
+  out->erase("nspin");  out->put("nspin", multisite_->nspin());
   out->erase("nstate"); out->put("nstate", input_->get<string>("nstate", "1"));
 
   return out;

@@ -457,7 +457,7 @@ shared_ptr<const Matrix> Geometry::compute_grad_vnuc() const {
 
 
 vector<double> Geometry::schwarz() const {
-  
+
   vector<double> schwarz;
   if (!fmm_) {
     vector<int> offsets;
@@ -475,7 +475,7 @@ vector<double> Geometry::schwarz() const {
       shared_ptr<const Shell> b0 = basis[i0];
       for (int i1 = i0; i1 != size; ++i1) {
         shared_ptr<const Shell> b1 = basis[i1];
-  
+
         array<shared_ptr<const Shell>,4> input = {{b1, b0, b1, b0}};
  #ifdef LIBINT_INTERFACE
         Libint eribatch(input);

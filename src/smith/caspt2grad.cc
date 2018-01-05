@@ -262,7 +262,11 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, shared_ptr
 
 template<>
 vector<double> GradEval<CASPT2Grad>::energyvec() const {
+#ifdef COMPILE_SMITH
   return task_->smith()->algo()->energyvec();
+#else
+  return vector<double>();
+#endif
 }
 
 

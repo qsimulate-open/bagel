@@ -23,6 +23,7 @@
 //
 
 #include <src/grad/cphf.h>
+#include <src/util/math/linearRM.h>
 
 using namespace std;
 using namespace bagel;
@@ -36,7 +37,7 @@ CPHF::CPHF(const shared_ptr<const Matrix> grad, const VectorB& eig, const shared
 
 shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
 
-  solver_ = make_shared<LinearRM<Matrix>>(zmaxiter, grad_);
+  LinearRM<Matrix> solver(zmaxiter, grad_);
 
   const size_t nmobasis = ref_->coeff()->mdim();
   const size_t nocca = ref_->nocc();
@@ -49,12 +50,12 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
   for (int i = 0; i != nocca; ++i)
     for (int a = nocca; a != nvirt+nocca; ++a)
       t->element(a,i) = grad_->element(a,i) / (eig_(a)-eig_(i));
+  t->scale(1.0/t->norm());
 
   cout << "  === Z-vector iteration ===" << endl << endl;
 
   Timer timer;
   for (int iter = 0; iter != zmaxiter; ++iter) {
-    solver_->orthog(t);
 
     auto sigma = make_shared<Matrix>(nmobasis, nmobasis);
     // one electron part
@@ -78,7 +79,7 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
       for (int a = 0; a != nvirt; ++a)
         (*sigma)(a+nocca,i) += jai(a,i) + kia(i,a);
 
-    t = solver_->compute_residual(t, sigma);
+    t = solver.compute_residual(t, sigma);
 
     cout << setw(7) << iter << " " << setw(20) << setprecision(14) << t->rms() << setw(15) << setprecision(2) << timer.tick() << endl;
     if (t->rms() < zthresh) break;
@@ -86,10 +87,11 @@ shared_ptr<Matrix> CPHF::solve(const double zthresh, const int zmaxiter) {
     for (int i = 0; i != nocca; ++i)
       for (int a = nocca; a != nvirt+nocca; ++a)
         t->element(a,i) /= (eig_(a)-eig_(i));
+    t->scale(1.0/t->norm());
   }
 
   cout << endl;
-  t = solver_->civec();
+  t = solver.civec();
   t->fill_upper();
   return t;
 

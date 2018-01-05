@@ -45,7 +45,7 @@ class HcoreInfo {
 
     // for semi-numerical gradients
     double mat1e_dx_;
-  
+
   private:
     // serialization
     friend class boost::serialization::access;

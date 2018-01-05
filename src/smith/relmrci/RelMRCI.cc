@@ -80,7 +80,7 @@ void RelMRCI::RelMRCI::solve() {
     }
   }
 
-  DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, 10);
+  DavidsonDiag_<Amplitude<std::complex<double>>, Residual<std::complex<double>>, ZMatrix> davidson(nstates_, info_->davidson_subspace());
 
   // first iteration is trivial
   {

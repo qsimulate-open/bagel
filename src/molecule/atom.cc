@@ -31,7 +31,7 @@
 using namespace std;
 using namespace bagel;
 
-static const AtomMap atommap_;
+static const AtomMap atommap;
 
 Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstrom, const pair<string, shared_ptr<const PTree>> defbas,
            shared_ptr<const PTree> elem, const bool aux, const bool ecp, const bool default_finite)
@@ -44,8 +44,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
       const string key = to_lower(i->key());
       if (name_ == key) basis_ = i->data();
     }
-  atom_number_ = atommap_.atom_number(name_);
-  averaged_mass_ = atommap_.averaged_mass(name_);
+  atom_number_ = atommap.atom_number(name_);
 
   position_ = inp->get_array<double,3>("xyz");
 
@@ -66,15 +65,17 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
       use_ecp_basis_ = true;
     }
   }
-  atom_exponent_ = inp->get<double>("exponent", default_finite ? atommap_.nuclear_exponent(name_) : 0.0);
+  atom_exponent_ = inp->get<double>("exponent", default_finite ? atommap.nuclear_exponent(name_) : 0.0);
+
+  mass_ = inp->get<double>("mass", atommap.averaged_mass(name_)); 
 }
 
 
 // constructor that uses the old atom and basis
 Atom::Atom(const Atom& old, const bool spherical, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
  : spherical_(spherical), name_(old.name_), position_(old.position_), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_),
-   so_parameters_(old.so_parameters_), atom_number_(old.atom_number_), averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge_),
-   atom_exponent_(old.atom_exponent_), basis_(bas) {
+   so_parameters_(old.so_parameters_), atom_number_(old.atom_number_), atom_charge_(old.atom_charge_),
+   atom_exponent_(old.atom_exponent_), mass_(old.mass_), basis_(bas) {
 
   if (basis_.find("ecp") != string::npos) use_ecp_basis_ = true;
   if (name_ == "q") {
@@ -205,8 +206,8 @@ void Atom::basis_init_ECP(shared_ptr<const PTree> basis) {
 
 Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 : spherical_(old.spherical_), name_(old.name()), use_ecp_basis_(old.use_ecp_basis_), ecp_parameters_(old.ecp_parameters_),
-  so_parameters_(old.so_parameters_),  atom_number_(old.atom_number()), averaged_mass_(old.averaged_mass_), atom_charge_(old.atom_charge()),
-  atom_exponent_(old.atom_exponent()), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
+  so_parameters_(old.so_parameters_),  atom_number_(old.atom_number()), atom_charge_(old.atom_charge()),
+  atom_exponent_(old.atom_exponent()), mass_(old.mass_), nbasis_(old.nbasis()), lmax_(old.lmax()), basis_(old.basis_) {
 
   assert(displacement.size() == 3 && old.position().size() == 3);
   const array<double,3> opos = old.position();
@@ -219,36 +220,39 @@ Atom::Atom(const Atom& old, const array<double, 3>& displacement)
 
 Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell,
                                               const vector<shared_ptr<const Shell_ECP>> shell_ECP, const int ncore, const int maxl)
-: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(make_shared<const ECP>(ncore, maxl, shell_ECP)), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(make_shared<const ECP>(ncore, maxl, shell_ECP)), atom_number_(atommap.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
   common_init();
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 Atom::Atom(const string nm, const string bas, const vector<shared_ptr<const Shell>> shell, const shared_ptr<const ECP> ecp_param)
-: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(ecp_param), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(true), ecp_parameters_(ecp_param), atom_number_(atommap.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
   common_init();
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 
 Atom::Atom(const string nm, const string bas, vector<shared_ptr<const Shell>> shell)
-: name_(nm), shells_(shell), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+: name_(nm), shells_(shell), use_ecp_basis_(false), atom_number_(atommap.atom_number(nm)), basis_(bas) {
   spherical_ = shells_.front()->spherical();
   position_ = shells_.front()->position();
 
   common_init();
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const string bas, const pair<string, shared_ptr<const PTree>> defbas, shared_ptr<const PTree> elem)
- : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap.atom_number(nm)), basis_(bas) {
 
   if (elem)
     for (auto& i : *elem) {
@@ -263,11 +267,12 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const stri
   (!use_ecp_basis_) ? basis_init(basisset->get_child(na)) : basis_init_ECP(basisset->get_child(na));
 
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tuple<string, vector<double>, vector<double>>> in, const string bas)
- : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), basis_(bas) {
+ : spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap.atom_number(nm)), basis_(bas) {
 
   // tuple
   vector<tuple<string, vector<double>, vector<vector<double>>>> basis_info;
@@ -280,12 +285,14 @@ Atom::Atom(const bool sph, const string nm, const array<double,3>& p, vector<tup
   construct_shells(basis_info);
   common_init();
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 
 Atom::Atom(const bool sph, const string nm, const array<double,3>& p, const double charge)
-: spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap_.atom_number(nm)), averaged_mass_(atommap_.averaged_mass(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
+: spherical_(sph), name_(nm), position_(p), use_ecp_basis_(false), atom_number_(atommap.atom_number(nm)), atom_charge_(charge), nbasis_(0), lmax_(0), basis_("") {
   atom_exponent_ = 0.0;
+  mass_ = atommap.averaged_mass(name_);
 }
 
 
@@ -323,7 +330,7 @@ which was the reason why the third argument was a vector of a vector.
 // convert basis_info to vector<Shell>
 void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<double>>>> in) {
 
-  for (int i = 0; i <= atommap_.max_angular_number(); ++i) {
+  for (int i = 0; i <= atommap.max_angular_number(); ++i) {
     vector<vector<double>> contractions;
     vector<pair<int, int>> contranges;
     vector<double> exponents;
@@ -332,7 +339,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
     for (auto biter = in.begin(); biter != in.end(); ++biter) {
 
       // check the angular number
-      if (atommap_.angular_number(get<0>(*biter)) != i) continue;
+      if (atommap.angular_number(get<0>(*biter)) != i) continue;
 
       // contraction coefficient matrix
       const vector<vector<double>> conts = get<2>(*biter);
@@ -361,7 +368,7 @@ void Atom::construct_shells(vector<tuple<string, vector<double>, vector<vector<d
         assert(offset + zerostart <= offset + current.size() - zeroend);
       }
       const vector<double> exp = get<1>(*biter);
-      if (biter+1 == in.end() || exp != get<1>(*(biter+1)) || atommap_.angular_number(get<0>(*(biter+1))) != i) {
+      if (biter+1 == in.end() || exp != get<1>(*(biter+1)) || atommap.angular_number(get<0>(*(biter+1))) != i) {
         exponents.insert(exponents.end(), exp.begin(), exp.end());
         offset += exp.size();
       }
@@ -406,7 +413,7 @@ void Atom::construct_shells_ECP(const int ncore, vector<tuple<string, vector<dou
 
   int maxl = 0;
   for (auto& biter : in) {
-    const int l = atommap_.angular_number(get<0>(biter));
+    const int l = atommap.angular_number(get<0>(biter));
     if (l > maxl) maxl = l;
     vector<double> exponents = get<1>(biter);
     const vector<double> coefficients = get<2>(biter);
@@ -437,7 +444,7 @@ void Atom::construct_shells_SOECP(vector<tuple<string, vector<double>, vector<do
   vector<shared_ptr<const Shell_ECP>> shells_SO;
 
   for (auto& biter : in) {
-    const int l = atommap_.angular_number(get<0>(biter));
+    const int l = atommap.angular_number(get<0>(biter));
     vector<double> exponents = get<1>(biter);
     const vector<double> coefficients = get<2>(biter);
     vector<int> r_power = get<3>(biter);
@@ -615,8 +622,8 @@ shared_ptr<const Atom> Atom::apply_magnetic_field(const array<double,3>& magneti
 }
 
 
-double Atom::radius() const { return atommap_.radius(name_); }
-double Atom::cov_radius() const { return atommap_.cov_radius(name_); }
+double Atom::radius() const { return atommap.radius(name_); }
+double Atom::cov_radius() const { return atommap.cov_radius(name_); }
 
 
 shared_ptr<const Atom> Atom::uncontract() const {
