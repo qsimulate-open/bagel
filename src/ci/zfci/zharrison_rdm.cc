@@ -330,6 +330,52 @@ shared_ptr<Kramers<8,ZRDM<4>>> ZHarrison::rdm4(const int jst, const int ist) con
 }
 
 
+tuple<shared_ptr<Kramers<6,ZRDM<3>>>,shared_ptr<ZRDM<3>>> ZHarrison::rdm34f(const int jst, const int ist, shared_ptr<const ZMatrix> fock) const {
+  shared_ptr<Kramers<6,ZRDM<3>>> rdm3t = rdm3(jst, ist);
+  shared_ptr<Kramers<8,ZRDM<4>>> rdm4t = rdm4(jst, ist);
+  auto rdm4f = make_shared<ZRDM<3>>(2*norb_);
+
+  {
+    const int n = norb_;
+    Kramers<2,ZMatrix> fockt;
+    fockt.emplace({0,0}, fock->get_submatrix(0, 0, n, n));
+    fockt.emplace({1,0}, fock->get_submatrix(n, 0, n, n));
+    fockt.emplace({0,1}, fock->get_submatrix(0, n, n, n));
+    fockt.emplace({1,1}, fock->get_submatrix(n, n, n, n));
+
+    auto work = make_shared<ZRDM<3>>(n);
+    for (int i = 0; i != 64; ++i) {
+      const int aoff = ((i/1)%2)*n;
+      const int boff = ((i/2)%2)*n;
+      const int coff = ((i/4)%2)*n;
+      const int doff = ((i/8)%2)*n;
+      const int eoff = ((i/16)%2)*n;
+      const int foff = (i/32)*n;
+      for (int j = 0; j != 4; ++j) {
+        // computes fock-weighted 4RDM
+        shared_ptr<const ZMatrix> cfock = fockt.at(j);
+        shared_ptr<const ZRDM<4>> crdm = rdm4t->get_data(i * 4 + j);
+        if (!crdm) continue;
+
+        auto crdmgr = group(group(*crdm, 6,8),0,6);
+        auto wgr = group(*work, 0,6);
+        btas::contract(1.0, crdmgr, {0,1}, group(*cfock, 0,2), {1}, 0.0, wgr, {0});
+
+        for (int a = 0; a != n; ++a)
+          for (int b = 0; b != n; ++b)
+            for (int c = 0; c != n; ++c)
+              for (int d = 0; d != n; ++d)
+                for (int e = 0; e != n; ++e) {
+                  blas::ax_plus_y_n(1.0, work->element_ptr(0, e, d, c, b, a), n, rdm4f->element_ptr(foff, e+eoff, d+doff, c+coff, b+boff, a+aoff));
+                }
+      }
+    }
+  }
+
+  return make_tuple(rdm3t, rdm4f);
+}
+
+
 shared_ptr<Kramers<6,ZRDM<3>>> ZHarrison::rdm3(const int jst, const int ist) const {
   // loop over n-3 determinant spaces
   auto rdm3 = make_shared<Kramers<6,ZRDM<3>>>();

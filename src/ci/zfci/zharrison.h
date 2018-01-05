@@ -200,6 +200,7 @@ class ZHarrison : public Method {
     std::shared_ptr<Kramers<2,ZRDM<1>>> rdm1(const int jst, const int ist) const;
     std::shared_ptr<Kramers<4,ZRDM<2>>> rdm2(const int jst, const int ist) const;
     std::shared_ptr<Kramers<6,ZRDM<3>>> rdm3(const int jst, const int ist) const;
+    std::tuple<std::shared_ptr<Kramers<6,ZRDM<3>>>,std::shared_ptr<ZRDM<3>>> rdm34f(const int jst, const int ist, std::shared_ptr<const ZMatrix> fock) const;
     std::shared_ptr<Kramers<8,ZRDM<4>>> rdm4(const int jst, const int ist) const;
 
     std::vector<std::shared_ptr<const ZMatrix>> rdm1_matrix() const;
@@ -219,7 +220,7 @@ class ZHarrison : public Method {
     void read_external_rdm12_av(const std::string& file);
     std::shared_ptr<Kramers<2,ZRDM<1>>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
     std::shared_ptr<Kramers<4,ZRDM<2>>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
-    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
+    std::shared_ptr<Kramers<6,ZRDM<3>>> read_external_rdm3(const int ist, const int jst, const std::string& file, const bool fock_contracted = false) const;
     std::shared_ptr<Kramers<8,ZRDM<4>>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
 };
 
