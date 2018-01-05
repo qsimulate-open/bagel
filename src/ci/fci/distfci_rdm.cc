@@ -242,8 +242,3 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>
 DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
   return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>();
 }
-
-tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
-DistFCI::rdm34deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
-  return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>();
-}
