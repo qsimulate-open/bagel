@@ -41,7 +41,7 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
   if (localization_data)
     localize(localization_data);
   else
-    sref_ = make_shared<Reference>(*hf_ref_);
+    mref_ = make_shared<Reference>(*hf_ref_);
 }
 
 
@@ -62,10 +62,10 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
   }
 
   if (localizemethod == "region") {
-    localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes_);
+    localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes);
   } else if (localizemethod == "pm" || localizemethod == "pipek-mezey") {
     input_data->erase("type"); input_data->put("type", "region");
-    localization = make_shared<PMLocalization>(input_data, hf_ref_, region_sizes_);
+    localization = make_shared<PMLocalization>(input_data, hf_ref_, region_sizes);
   } else throw runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
@@ -76,7 +76,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
   {
     int atom_start = 0;
     int current = 0;
-    for (int natom : region_sizes_) {
+    for (int natom : region_sizes) {
       const int bound_start = current;
       for (int iatom = 0; iatom != natom; ++iatom)
         current += hf_ref_->geom()->atoms(atom_start+iatom)->nbasis();
@@ -101,7 +101,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
     fock = make_shared<const Fock<1>>(hf_ref_->geom(), hf_ref_->hcore(), density, ccoeff);
   }
 
-  const int nsites = region_sizes_.size();
+  const int nsites = region_sizes.size();
   auto out_coeff = local_coeff->clone();
   
   for (const pair<int, int>& subspace : orbital_subspaces) {
@@ -157,7 +157,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
 
   assert(site_bounds.front().front().first < site_bounds.back().front().first);
   
-  sref_ = make_shared<Reference>(*hf_ref_, make_shared<Coeff>(move(*out_coeff)));
+  mref_ = make_shared<Reference>(*hf_ref_, make_shared<Coeff>(move(*out_coeff)));
 }
 
 

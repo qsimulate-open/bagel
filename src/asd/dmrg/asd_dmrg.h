@@ -76,9 +76,10 @@ class ASD_DMRG {
 
     const std::vector<double>& energies() const { return energies_; }
     double energies(const int i) const { return energies_.at(i); }
+    std::shared_ptr<const Reference> sref() const { return sref_; }
 
   private:
-    void set_active_orbitals(std::shared_ptr<const Reference> iref);
+    void rearrange_orbitals(std::shared_ptr<const Reference> iref);
     std::shared_ptr<Reference> build_reference(const int site, const std::vector<bool> meanfield) const;
     std::vector<std::shared_ptr<PTree>> prepare_growing_input(const int site) const;
     std::shared_ptr<PTree> prepare_sweeping_input(const int site) const;

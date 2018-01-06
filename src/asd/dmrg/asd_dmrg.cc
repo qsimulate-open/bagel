@@ -65,13 +65,45 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const Reference> ir
   energies_.resize(nstate_);
   sweep_energies_.resize(nstate_);
 
-  // two options : 1) manually assign active orbitals to subspaces  2) use projection to do it automatically
-  set_active_orbitals(iref);
+  // reorder coeff to closed-active-virtual
+  rearrange_orbitals(iref);
 }
 
 
-void ASD_DMRG::set_active_orbitals(shared_ptr<const Reference> iref) {
+void ASD_DMRG::rearrange_orbitals(shared_ptr<const Reference> iref) {
+  auto out_coeff = iref->coeff()->clone();
+
+  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
+  const int nclosed = (iref->geom()->nele() - charge_ - nactele) / 2;
+  assert((iref->geom()->nele() - charge_ - nactele) % 2 == 0);
+  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
+  const int nvirt = iref->coeff()->mdim() - nclosed - nactive;
+  const int nbasis = iref->geom()->nbasis();
+
+  set<int> active_set;
+  {
+    vector<int> act_vec = input_->get_vector<int>("active_orbitals");
+    for_each(act_vec.begin(), act_vec.end(), [](int& x) { --x; });
+    active_set.insert(act_vec.begin(), act_vec.end());
+  }
+
+  int pos = nclosed;
+  for (const int& aorb : active_set)
+    copy_n(iref->coeff()->element_ptr(0, aorb), nbasis, out_coeff->element_ptr(0, pos++));
+
+  int closed_position = 0;
+  int virt_position = nclosed + nactive;
+  for (int iorb = 0; iorb != out_coeff->mdim(); ++iorb)
+    if (active_set.count(iorb) == 0)
+      copy_n(iref->coeff()->element_ptr(0, iorb), nbasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
+  assert(closed_position == nclosed);
+  assert(virt_position == out_coeff->mdim());
   
+  sref_ = make_shared<Reference>(iref->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
+}
+
+
+/*
   // collect orbital subspaces info
   const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
   const int nclosed = (iref->geom()->nele() - charge_ - nactele) / 2;
@@ -192,6 +224,7 @@ void ASD_DMRG::set_active_orbitals(shared_ptr<const Reference> iref) {
 
   sref_ = make_shared<Reference>(iref->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
 }
+*/
 
 
 shared_ptr<Reference> ASD_DMRG::build_reference(const int site, const vector<bool> meanfield) const {

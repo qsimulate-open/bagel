@@ -36,7 +36,7 @@ namespace bagel {
 class MultiSite {
   protected:
     std::shared_ptr<const Reference> hf_ref_;
-    std::shared_ptr<const Reference> sref_;
+    std::shared_ptr<const Reference> mref_;
 
     // system info
     std::vector<int> region_sizes_;     // number of atoms on each site; atoms should be ordered by sites in molecular geometry
@@ -48,7 +48,7 @@ class MultiSite {
     MultiSite(std::shared_ptr<const PTree> input, std::shared_ptr<const Reference> ref);
 
     // return functions
-    std::shared_ptr<const Reference> sref() const { return sref_; }
+    std::shared_ptr<const Reference> mref() const { return mref_; }
 };
 
 }

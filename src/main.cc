@@ -171,10 +171,11 @@ int main(int argc, char** argv) {
         ref = dimer->sref();
       } else if (title == "multisite") {
         auto multisite = make_shared<MultiSite>(itree, ref);
-        ref = multisite->sref();
+        ref = multisite->mref();
       } else if (title == "asd_dmrg") {
           auto asd_dmrg = make_shared<RASD>(itree, ref);
-          asd_dmrg->compute();
+          //asd_dmrg->compute();
+          ref = asd_dmrg->sref();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
