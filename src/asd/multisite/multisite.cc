@@ -32,21 +32,14 @@ using namespace std;
 using namespace bagel;
 
 // constructor
-MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref, const int nsites) : input_(input), hf_ref_(ref), nsites_(nsites) {
+MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref) : input_(input), hf_ref_(ref) {
   cout << string(60, '=') << endl;
   cout << string(15, ' ') << "Construct MultiSite" << endl;
   cout << string(60, '=') << endl;
 
-  charge_ = input_->get<int>("charge", 0);
-  nspin_ = input_->get<int>("nspin", 0);
-  active_electrons_ = input_->get_vector<int>("active_electrons");
-  active_sizes_ = input_->get_vector<int>("active_sizes");
   region_sizes_ = input_->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == hf_ref_->geom()->natom());
-}
 
-
-void MultiSite::compute() {
   // construct Fock matrix for localization and canonicalization
   shared_ptr<const Fock<1>> fock;
   {
@@ -57,21 +50,16 @@ void MultiSite::compute() {
 
   // localize closed and virtual orbitals (optional)
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
-  if (localization_data) {
+  if (localization_data)
     localize(localization_data, fock);
-    MoldenOut mfile("localized.molden");
-    mfile << sref_->geom();
-    mfile << sref_;
-  } else {
+  else
     sref_ = make_shared<Reference>(*hf_ref_);
-  }
 
   // two options : 1) manually assign active orbitals to subspaces  2) use projection to do it automatically
   set_active_orbitals();
 
   // canonicalize active orbitals within each subspace
   canonicalize(fock);
-
 }
 
 

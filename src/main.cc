@@ -57,7 +57,6 @@ int main(int argc, char** argv) {
     shared_ptr<const Geometry> geom;
     shared_ptr<const Reference> ref;
     shared_ptr<Dimer> dimer;
-    shared_ptr<MultiSite> multisite;
 
     map<string, shared_ptr<const void>> saved;
     bool dodf = true;
@@ -171,16 +170,11 @@ int main(int argc, char** argv) {
         asd->compute();
         ref = dimer->sref();
       } else if (title == "multisite") {
-        const int nsites = itree->get<int>("nsites");
-        multisite = make_shared<MultiSite>(itree, ref, nsites);
-        multisite->compute();
-        ref = multisite->conv_to_ref();
-        geom = ref->geom();
+        multisite = make_shared<MultiSite>(itree, ref);
+        ref = multisite->sref();
       } else if (title == "asd_dmrg") {
-          if (!multisite)
-            throw runtime_error("multisite must be called before asd_dmrg");
-          auto asd = make_shared<RASD>(itree, multisite);
-          asd->compute();
+          auto asd_dmrg = make_shared<RASD>(itree, ref);
+          asd_dmrg->compute();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
 
