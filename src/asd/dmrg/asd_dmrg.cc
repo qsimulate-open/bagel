@@ -196,6 +196,8 @@ void ASD_DMRG::project_active() {
         imo += subset.size();
       }
     }
+
+    sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
   } else {
     // do projection
   }
