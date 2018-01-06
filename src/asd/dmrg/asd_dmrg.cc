@@ -106,6 +106,33 @@ void ASD_DMRG::rearrange_orbitals(shared_ptr<const Reference> iref) {
 
 void ASD_DMRG::project_active() {
 
+  auto out_coeff = sref_->coeff()->copy();
+
+  vector<pair<int, int>> region_bounds;
+  {
+    int atom_start = 0;
+    int current = 0;
+    for (int natom : region_sizes_) {
+      const int bound_start = current;
+      for (int iatom = 0; iatom != natom; ++iatom)
+        current += sref_->geom()->atoms(atom_start+iatom)->nbasis();
+      region_bounds.emplace_back(bound_start, current);
+      atom_start += natom;
+    }
+  }
+  assert(region_bounds.size() == nsites_);
+
+  const Matrix ovlp = static_cast<Matrix>(Overlap(sref_->geom()));
+  
+  shared_ptr<const Fock<1>> fock;
+  {// construct Fock
+    shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(sref_->nclosed());
+    const MatView ccoeff = sref_->coeff()->slice(0, sref_->nclosed());
+    fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
+  }
+  
+  const int nactive = sref_->nact();
+
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
   if (localization_data) {
     // do localization
@@ -122,28 +149,11 @@ void ASD_DMRG::project_active() {
       localization = make_shared<PMLocalization>(input_data, sref_, region_sizes_);
     } else throw runtime_error("Unrecognized orbital localization method");
     
-    const int nactive = sref_->nact();
     shared_ptr<const Matrix> active_coeff = localization->localize()->get_submatrix(0, sref_->nclosed(), sref_->geom()->nbasis(), nactive);
 
-    vector<pair<int, int>> region_bounds;
-    {
-      int atom_start = 0;
-      int current = 0;
-      for (int natom : region_sizes_) {
-        const int bound_start = current;
-        for (int iatom = 0; iatom != natom; ++iatom)
-          current += sref_->geom()->atoms(atom_start+iatom)->nbasis();
-        region_bounds.emplace_back(bound_start, current);
-        atom_start += natom;
-      }
-    }
-    assert(region_bounds.size() == nsites_);
-
-    Matrix ShalfC = static_cast<Matrix>(Overlap(sref_->geom()));
+    Matrix ShalfC(ovlp);
     ShalfC.sqrt();
     ShalfC *= *active_coeff;
-
-    auto out_coeff = sref_->coeff()->copy();
 
     { // assign localized active orbitals to site by their lowdin population
       vector<set<int>> orbital_sets(nsites_);
@@ -169,11 +179,13 @@ void ASD_DMRG::project_active() {
         orbital_sets[maxsite].insert(orb);
       }
 
-      shared_ptr<const Fock<1>> fock;
-      {// construct Fock
-        shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(sref_->nclosed());
-        const MatView ccoeff = sref_->coeff()->slice(0, sref_->nclosed());
-        fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
+      // check if orbital_sets agree with input active_sizes
+      vector<int> orb_set;
+      for (auto iset : orbital_sets) orb_set.push_back(iset.size());
+      if (orb_set != active_sizes_) {
+        cout << "active_sizes : "; for (auto& e : active_sizes_) cout << e << " ";
+        cout << "localized active sizes : "; for (auto& e : orb_set) cout<< e << " ";
+        throw runtime_error("Localized active orbital partition does not agree with input active_sizes, redefine active subspaces");
       }
       
       int imo = sref_->nclosed();
@@ -196,43 +208,10 @@ void ASD_DMRG::project_active() {
         imo += subset.size();
       }
     }
-
-    sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
   } else {
     // do projection
-  }
-}
+    auto active_coeff = sref_->coeff()->get_submatrix(0, sref_->nclosed(), sref_->geom()->nbasis(), nactive);
 
-/*
-  } else if (active_subspaces->size() == 1){
-    // if no manually assigned active orbital subspaces, do projection
-
-    for (auto site : *active_subspaces) {
-      vector<int> active_vec = site->get_vector<int>("");
-      for_each(active_vec.begin(), active_vec.end(), [](int& x) { --x; });
-      active_set.insert(active_vec.begin(), active_vec.end());
-    }
-    assert(active_set.size() == nactive);
-
-    // delocalized active orbital set
-    auto act_orbs = make_shared<Matrix>(nbasis, nactive);
-    int pos = 0;
-    for (auto iorb : active_set)
-      copy_n(iref->coeff()->element_ptr(0, iorb), nbasis, act_orbs->element_ptr(0, pos++));
-  
-    // region bound info
-    vector<pair<int, int>> region_bounds;
-    int atomstart = 0; int basis_start = 0;
-    for (int isize : region_sizes_) {
-      int nbasis = 0;
-      for (int iatom = atomstart; iatom != atomstart+isize; ++iatom)
-        nbasis += iref->geom()->atoms(iatom)->nbasis();
-      region_bounds.emplace_back(basis_start, basis_start+nbasis);
-      atomstart += isize;
-      basis_start += nbasis;
-    }
-  
-    Overlap ovlp(iref->geom());
     Matrix transform(nactive, nactive);
     {
       int ipos = 0;
@@ -241,7 +220,7 @@ void ASD_DMRG::project_active() {
         const int nsub = active_sizes_[isite];
         const int nbasis = bounds.second - bounds.first;
         shared_ptr<const Matrix> sub_ovlp = ovlp.get_submatrix(bounds.first, bounds.first, nbasis, nbasis);
-        shared_ptr<const Matrix> sub_actorb = act_orbs->get_submatrix(bounds.first, 0, nbasis, nactive);
+        shared_ptr<const Matrix> sub_actorb = active_coeff->get_submatrix(bounds.first, 0, nbasis, nactive);
         Matrix SVD(*sub_actorb % *sub_ovlp * *sub_actorb);
         VectorB eigs(nactive);
         SVD.diagonalize(eigs);
@@ -256,40 +235,20 @@ void ASD_DMRG::project_active() {
       transform *= inv_hf;
       cout << endl << string(6, '*') << "  If linear dependency is detected, you have to find better active orbitals to do projection  " << string(6, '*') << endl << endl;
     }
-    
-    // project coeff
-    Matrix projected(*act_orbs * transform);
-    copy_n(projected.data(), projected.size(), out_coeff->element_ptr(0, nclosed));
 
-  } else {
-    throw runtime_error("Must either provide one total active orbital list or assign active orbitals for each fragment");
+    // projected coeff
+    Matrix projected(*active_coeff * transform);
+    // canonicalization
+    Matrix fockmo(projected % *fock * projected);
+    VectorB eigs(projected.mdim());
+    shared_ptr<const Matrix> active_transformation = fockmo.diagonalize_blocks(eigs, active_sizes_);
+    const Matrix transformed_mos(projected * *active_transformation);
+
+    copy_n(transformed_mos.data(), transformed_mos.size(), out_coeff->element_ptr(0, sref_->nclosed()));
   }
 
-  int closed_position = 0;
-  int virt_position = nclosed + nactive;
-  for (int iorb = 0; iorb != out_coeff->mdim(); ++iorb)
-    if (active_set.count(iorb) == 0)
-      copy_n(iref->coeff()->element_ptr(0, iorb), nbasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
-  assert(closed_position == nclosed);
-  assert(virt_position == out_coeff->mdim());
-  
-  // canonicalization
-  shared_ptr<const Fock<1>> fock;
-  {
-    shared_ptr<const Matrix> density = iref->coeff()->form_density_rhf(iref->nclosed());
-    const MatView ccoeff = iref->coeff()->slice(0, iref->nclosed());
-    fock = make_shared<const Fock<1>>(iref->geom(), iref->hcore(), density, ccoeff);
-  }
-  const MatView active_mos = out_coeff->slice(nclosed, nclosed+nactive);
-  Matrix fock_mo(active_mos % *fock * active_mos);
-  VectorB eigs(active_mos.mdim());
-  shared_ptr<const Matrix> active_transformation = fock_mo.diagonalize_blocks(eigs, active_sizes_);
-  const Matrix transformed_mos(active_mos * *active_transformation);
-  copy_n(transformed_mos.data(), transformed_mos.size(), out_coeff->element_ptr(0, nclosed));
-
-  sref_ = make_shared<Reference>(iref->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
+  sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
 }
-*/
 
 
 shared_ptr<Reference> ASD_DMRG::build_reference(const int site, const vector<bool> meanfield) const {
