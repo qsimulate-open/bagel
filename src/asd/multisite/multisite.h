@@ -35,7 +35,6 @@ namespace bagel {
 // MultiSite prepares coefficient for ASD-DMRG solver
 class MultiSite {
   protected:
-    std::shared_ptr<const PTree> input_;
     std::shared_ptr<const Reference> hf_ref_;
     std::shared_ptr<const Reference> sref_;
 

@@ -31,16 +31,13 @@ using namespace std;
 using namespace bagel;
 
 // constructor
-MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref) : input_(input), hf_ref_(ref) {
+MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> ref) : hf_ref_(ref) {
   cout << string(60, '=') << endl;
-  cout << string(15, ' ') << "Construct MultiSite" << endl;
+  cout << string(15, ' ') << "Constructing MultiSite" << endl;
   cout << string(60, '=') << endl;
-
-  region_sizes_ = input_->get_vector<int>("region_sizes");
-  assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == hf_ref_->geom()->natom());
 
   // localize closed and virtual orbitals (optional)
-  shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
+  shared_ptr<const PTree> localization_data = input->get_child_optional("localization");
   if (localization_data)
     localize(localization_data);
   else
@@ -48,11 +45,16 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 }
 
 
-void MultiSite::localize(shared_ptr<const PTree> localize_data) {
-  string localizemethod = localize_data->get<string>("algorithm", "pm");
+void MultiSite::localize(shared_ptr<const PTree> localization_data) {
+  
+  if (!localization_data->get_child_optional("region_sizes")) throw runtime_error("region_sizes has to be provided to do localization");
+  vector<int> region_sizes = localization_data->get_vector<int>("region_sizes");
+  assert(accumulate(region_sizes.begin(), region_sizes.end(), 0) == hf_ref_->geom()->natom());
 
+  string localizemethod = localization_data->get<string>("algorithm", "pm");
+  
   shared_ptr<OrbitalLocalization> localization;
-  auto input_data = make_shared<PTree>(*localize_data);
+  auto input_data = make_shared<PTree>(*localization_data);
   input_data->erase("virtual"); input_data->put("virtual", true);
   if (input_data->get_child_optional("region_sizes")) {
     cout << "WARNING : The region_sizes keyword in localization input will be overwritten by that from MultiSite." << endl;
