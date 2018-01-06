@@ -35,7 +35,7 @@
 using namespace std;
 using namespace bagel;
 
-RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<MultiSite> multisite) : ASD_DMRG(input, multisite) { }
+RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<const Reference> ref) : ASD_DMRG(input, ref) { }
 
 void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
   auto restricted = input_->get_child("restricted");
@@ -156,7 +156,7 @@ shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inpu
     { // prepare the input
       inp->put("nclosed", ref->nclosed());
       inp->put("extern_nactele", true);
-      inp->put("nactele", multisite_->active_electrons().at(0));
+      inp->put("nactele", active_electrons_.at(0));
       read_restricted(inp, 0);
     }
     { // RAS calculations
@@ -241,8 +241,7 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
     { // prepare input
       inp->put("nclosed", ref->nclosed());
       inp->put("extern_nactele", true);
-      vector<int> active_electrons = multisite_->active_electrons();
-      const int nactele = accumulate(active_electrons.begin(), active_electrons.begin()+site+1, 0);
+      const int nactele = accumulate(active_electrons_.begin(), active_electrons_.begin()+site+1, 0);
       inp->put("nactele", nactele);
       read_restricted(inp, site);
     }
@@ -323,8 +322,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
   { // prepare input
     input->put("nclosed", ref->nclosed());
     input->put("extern_nactele", true);
-    vector<int> active_electrons = multisite_->active_electrons();
-    const int nactele = accumulate(active_electrons.begin(), active_electrons.end(), input->get<int>("charge"));
+    const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), input->get<int>("charge"));
     input->put("nactele", nactele);
     read_restricted(input, site);
   }

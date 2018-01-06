@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
         asd->compute();
         ref = dimer->sref();
       } else if (title == "multisite") {
-        multisite = make_shared<MultiSite>(itree, ref);
+        auto multisite = make_shared<MultiSite>(itree, ref);
         ref = multisite->sref();
       } else if (title == "asd_dmrg") {
           auto asd_dmrg = make_shared<RASD>(itree, ref);

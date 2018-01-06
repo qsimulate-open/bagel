@@ -36,15 +36,13 @@ namespace bagel {
 class MultiSite {
   protected:
     std::shared_ptr<const PTree> input_;
-    std::shared_ptr<const PTree> hf_ref_;
+    std::shared_ptr<const Reference> hf_ref_;
     std::shared_ptr<const Reference> sref_;
 
     // system info
     std::vector<int> region_sizes_;     // number of atoms on each site; atoms should be ordered by sites in molecular geometry
 
-    void localize(std::shared_ptr<const PTree> ldata, std::shared_ptr<const Matrix> fock);
-    void set_active_orbitals();
-    void canonicalize(std::shared_ptr<const Matrix> fock);
+    void localize(std::shared_ptr<const PTree> ldata);
 
   public:
     // constructor
