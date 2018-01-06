@@ -25,6 +25,7 @@
 #include <src/asd/dmrg/asd_dmrg.h>
 #include <src/scf/hf/fock.h>
 #include <src/mat1e/overlap.h>
+#include <src/wfn/localization.h>
 
 using namespace std;
 using namespace bagel;
@@ -105,44 +106,102 @@ void ASD_DMRG::rearrange_orbitals(shared_ptr<const Reference> iref) {
 
 void ASD_DMRG::project_active() {
 
+  shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
+  if (localization_data) {
+    // do localization
+    string localizemethod = localization_data->get<string>("algorithm", "pm");
+    shared_ptr<OrbitalLocalization> localization;
+    auto input_data = make_shared<PTree>(*localization_data);
+    input_data->erase("occupied");input_data->put("occupied", false);
+    input_data->erase("active");  input_data->put("active", true);
+    input_data->erase("virtual"); input_data->put("virtual", false);
+    if (localizemethod == "region") {
+      localization = make_shared<RegionLocalization>(input_data, sref_, region_sizes_);
+    } else if (localizemethod == "pm" || localizemethod == "pipek-mezey") {
+      input_data->erase("type"); input_data->put("type", "region");
+      localization = make_shared<PMLocalization>(input_data, sref_, region_sizes_);
+    } else throw runtime_error("Unrecognized orbital localization method");
+    
+    const int nactive = sref_->nact();
+    shared_ptr<const Matrix> active_coeff = localization->localize()->get_submatrix(0, sref_->nclosed(), sref_->geom()->nbasis(), nactive);
+
+    vector<pair<int, int>> region_bounds;
+    {
+      int atom_start = 0;
+      int current = 0;
+      for (int natom : region_sizes_) {
+        const int bound_start = current;
+        for (int iatom = 0; iatom != natom; ++iatom)
+          current += sref_->geom()->atoms(atom_start+iatom)->nbasis();
+        region_bounds.emplace_back(bound_start, current);
+        atom_start += natom;
+      }
+    }
+    assert(region_bounds.size() == nsites_);
+
+    Matrix ShalfC = static_cast<Matrix>(Overlap(sref_->geom()));
+    ShalfC.sqrt();
+    ShalfC *= *active_coeff;
+
+    auto out_coeff = sref_->coeff()->copy();
+
+    { // assign localized active orbitals to site by their lowdin population
+      vector<set<int>> orbital_sets(nsites_);
+
+      vector<vector<double>> lowdin_populations(nactive);
+      for (auto& p : lowdin_populations) { p.resize(nsites_); }
+      Matrix Q(nactive, nactive);
+      for (int site = 0; site != nsites_; ++site) {
+        const pair<int, int> bounds = region_bounds[site];
+        const int nregion_basis = bounds.second - bounds.first;
+        dgemm_("T", "N", nactive, nactive, nregion_basis, 1.0, ShalfC.element_ptr(bounds.first, 0), ShalfC.ndim(),
+                                                               ShalfC.element_ptr(bounds.first, 0), ShalfC.ndim(),
+                                                          0.0, Q.data(), Q.ndim());
+        for (int orb = 0; orb != nactive; ++orb)
+          lowdin_populations[orb][site] = Q(orb, orb) * Q(orb, orb);
+      }
+
+      for (int orb = 0; orb != nactive; ++orb) {
+        //pick the largest value to assign it to sites
+        vector<double>& pops = lowdin_populations[orb];
+        auto maxiter = max_element(pops.begin(), pops.end());
+        const int maxsite = maxiter - pops.begin();
+        orbital_sets[maxsite].insert(orb);
+      }
+
+      shared_ptr<const Fock<1>> fock;
+      {// construct Fock
+        shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(sref_->nclosed());
+        const MatView ccoeff = sref_->coeff()->slice(0, sref_->nclosed());
+        fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
+      }
+      
+      int imo = sref_->nclosed();
+      for (auto& subset : orbital_sets) {
+        if (subset.empty())
+          throw runtime_error("one of the active subspaces has bad definition, no matching active orbitals are localized on it, please redefine subspaces");
+        
+        Matrix subspace(out_coeff->ndim(), subset.size());
+        int pos = 0;
+        for (const int& i : subset)
+          copy_n(active_coeff->element_ptr(0, i), active_coeff->ndim(), subspace.element_ptr(0, pos++));
+        
+        // canonicalize within active subspaces
+        Matrix subfock(subspace % *fock * subspace);
+        VectorB eigs(subspace.ndim());
+        subfock.diagonalize(eigs);
+        subspace *= subfock;
+
+        copy_n(subspace.data(), subspace.size(), out_coeff->element_ptr(0, imo));
+        imo += subset.size();
+      }
+    }
+  } else {
+    // do projection
+  }
 }
 
 /*
-  // collect orbital subspaces info
-  const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);
-  const int nclosed = (iref->geom()->nele() - charge_ - nactele) / 2;
-  assert((iref->geom()->nele() - charge_ - nactele) % 2 == 0);
-  const int nactive = accumulate(active_sizes_.begin(), active_sizes_.end(), 0);
-  const int nvirt = iref->coeff()->mdim() - nclosed - nactive;
-  const int nbasis = iref->geom()->nbasis();
-
-  auto active_subspaces = input_->get_child("active_subspaces");
-  set<int> active_set;
-
-  auto out_coeff = iref->coeff()->clone();
-
-  if (active_subspaces->size() == nsites_) {
-    // active subspaces info is provided, just reorder the orbitals
-    
-    vector<set<int>> active_orbitals;
-    for (auto site : *active_subspaces) {
-      vector<int> active_orbs = site->get_vector<int>("");
-      for_each(active_orbs.begin(), active_orbs.end(), [](int& x) { --x; });
-      active_orbitals.emplace_back(active_orbs.begin(), active_orbs.end());
-      active_set.insert(active_orbs.begin(), active_orbs.end());
-    }
-    assert(active_set.size() == nactive);
-    
-    auto in_coeff = iref->coeff();
-    assert(in_coeff->ndim() == nbasis);
-  
-    int active_position = nclosed;
-    for (auto site : active_orbitals) {
-      for (int aorb : site)
-        copy_n(in_coeff->element_ptr(0, aorb), nbasis, out_coeff->element_ptr(0, active_position++));
-    }
-    assert(active_position == nclosed + nactive);
-    
   } else if (active_subspaces->size() == 1){
     // if no manually assigned active orbital subspaces, do projection
 

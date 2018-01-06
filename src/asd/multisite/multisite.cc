@@ -85,8 +85,6 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
     }
   }
 
-  vector<vector<pair<int, int>>> site_bounds;
-
   assert(hf_ref_->coeff()->mdim() == accumulate(orbital_subspaces.begin(), orbital_subspaces.end(), 0ull,
                                [] (int o, const pair<int, int>& p) { return o + p.second - p.first; }));
 
@@ -107,8 +105,6 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
   for (const pair<int, int>& subspace : orbital_subspaces) {
     vector<set<int>> orbital_sets(nsites);
     const int nsuborbs = subspace.second - subspace.first;
-
-    vector<pair<int, int>> subspace_site_bounds;
 
     vector<vector<double>> lowdin_populations(nsuborbs);
     for (auto& p : lowdin_populations)
@@ -149,14 +145,10 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
       subspace *= subfock;
 
       copy_n(subspace.data(), subspace.size(), out_coeff->element_ptr(0, imo));
-      subspace_site_bounds.emplace_back(imo, imo+subset.size());
       imo += subset.size();
     }
-    site_bounds.emplace_back(move(subspace_site_bounds));
   }
 
-  assert(site_bounds.front().front().first < site_bounds.back().front().first);
-  
   mref_ = make_shared<Reference>(*hf_ref_, make_shared<Coeff>(move(*out_coeff)));
 }
 
