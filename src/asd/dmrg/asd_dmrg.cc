@@ -36,6 +36,7 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const Reference> ir
   nstate_ = input_->get<int>("nstate", 1);
   charge_ = input_->get<int>("charge", 0);
   nspin_ = input_->get<int>("nspin", 0);
+  active_sizes_ = input_->get_vector<int>("active_sizes");
   active_electrons_ = input_->get_vector<int>("active_electrons");
   region_sizes_ = input_->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == iref->geom()->natom());
