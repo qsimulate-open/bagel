@@ -103,6 +103,10 @@ void ASD_DMRG::rearrange_orbitals(shared_ptr<const Reference> iref) {
 }
 
 
+void ASD_DMRG::project_active() {
+
+}
+
 /*
   // collect orbital subspaces info
   const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), 0);

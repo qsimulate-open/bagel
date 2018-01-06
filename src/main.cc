@@ -174,7 +174,8 @@ int main(int argc, char** argv) {
         ref = multisite->mref();
       } else if (title == "asd_dmrg") {
           auto asd_dmrg = make_shared<RASD>(itree, ref);
-          //asd_dmrg->compute();
+          asd_dmrg->project_active();
+          asd_dmrg->sweep();
           ref = asd_dmrg->sref();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");

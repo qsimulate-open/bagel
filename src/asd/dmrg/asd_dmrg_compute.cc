@@ -30,7 +30,7 @@
 using namespace std;
 using namespace bagel;
 
-void ASD_DMRG::compute() {
+void ASD_DMRG::sweep() {
   Timer dmrg_timer;
 
   shared_ptr<DMRG_Block1> left_block, right_block;
