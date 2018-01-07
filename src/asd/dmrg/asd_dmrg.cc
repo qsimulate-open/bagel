@@ -123,11 +123,13 @@ void ASD_DMRG::project_active() {
   assert(region_bounds.size() == nsites_);
 
   const Matrix ovlp = static_cast<Matrix>(Overlap(sref_->geom()));
+
+  const int nclosed = sref_->nclosed();
   
   shared_ptr<const Fock<1>> fock;
   {// construct Fock
-    shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(sref_->nclosed());
-    const MatView ccoeff = sref_->coeff()->slice(0, sref_->nclosed());
+    shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
+    const MatView ccoeff = sref_->coeff()->slice(0, nclosed);
     fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
   }
   
@@ -149,7 +151,7 @@ void ASD_DMRG::project_active() {
       localization = make_shared<PMLocalization>(input_data, sref_, region_sizes_);
     } else throw runtime_error("Unrecognized orbital localization method");
     
-    shared_ptr<const Matrix> active_coeff = localization->localize()->get_submatrix(0, sref_->nclosed(), sref_->geom()->nbasis(), nactive);
+    shared_ptr<const Matrix> active_coeff = localization->localize()->get_submatrix(0, nclosed, sref_->geom()->nbasis(), nactive);
 
     Matrix ShalfC(ovlp);
     ShalfC.sqrt();
@@ -188,7 +190,7 @@ void ASD_DMRG::project_active() {
         throw runtime_error("Localized active orbital partition does not agree with input active_sizes, redefine active subspaces");
       }
       
-      int imo = sref_->nclosed();
+      int imo = nclosed;
       for (auto& subset : orbital_sets) {
         if (subset.empty())
           throw runtime_error("one of the active subspaces has bad definition, no matching active orbitals are localized on it, please redefine subspaces");
@@ -210,7 +212,7 @@ void ASD_DMRG::project_active() {
     }
   } else {
     // do projection
-    auto active_coeff = sref_->coeff()->get_submatrix(0, sref_->nclosed(), sref_->geom()->nbasis(), nactive);
+    auto active_coeff = sref_->coeff()->get_submatrix(0, nclosed, sref_->geom()->nbasis(), nactive);
 
     Matrix transform(nactive, nactive);
     {
@@ -244,7 +246,7 @@ void ASD_DMRG::project_active() {
     shared_ptr<const Matrix> active_transformation = fockmo.diagonalize_blocks(eigs, active_sizes_);
     const Matrix transformed_mos(projected * *active_transformation);
 
-    copy_n(transformed_mos.data(), transformed_mos.size(), out_coeff->element_ptr(0, sref_->nclosed()));
+    copy_n(transformed_mos.data(), transformed_mos.size(), out_coeff->element_ptr(0, nclosed));
   }
 
   sref_ = make_shared<Reference>(*sref_, make_shared<Coeff>(move(*out_coeff)));
