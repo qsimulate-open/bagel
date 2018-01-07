@@ -56,10 +56,6 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
   shared_ptr<OrbitalLocalization> localization;
   auto input_data = make_shared<PTree>(*localization_data);
   input_data->erase("virtual"); input_data->put("virtual", true);
-  if (input_data->get_child_optional("region_sizes")) {
-    cout << "WARNING : The region_sizes keyword in localization input will be overwritten by that from MultiSite." << endl;
-    input_data->erase("region_sizes");
-  }
 
   if (localizemethod == "region") {
     localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes);
