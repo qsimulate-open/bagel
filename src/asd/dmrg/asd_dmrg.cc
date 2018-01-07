@@ -126,11 +126,13 @@ void ASD_DMRG::project_active() {
 
   const int nclosed = sref_->nclosed();
   
-  shared_ptr<const Fock<1>> fock;
-  {// construct Fock
+  shared_ptr<const Matrix> fock;
+  if (nclosed) {// construct Fock
     shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
     const MatView ccoeff = sref_->coeff()->slice(0, nclosed);
     fock = make_shared<const Fock<1>>(sref_->geom(), sref_->hcore(), density, ccoeff);
+  } else {
+    fock = sref_->hcore();
   }
   
   const int nactive = sref_->nact();
