@@ -58,10 +58,10 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
   input_data->erase("virtual"); input_data->put("virtual", true);
 
   if (localizemethod == "region") {
-    localization = make_shared<RegionLocalization>(input_data, hf_ref_, region_sizes);
+    localization = make_shared<RegionLocalization>(input_data, hf_ref_);
   } else if (localizemethod == "pm" || localizemethod == "pipek-mezey") {
     input_data->erase("type"); input_data->put("type", "region");
-    localization = make_shared<PMLocalization>(input_data, hf_ref_, region_sizes);
+    localization = make_shared<PMLocalization>(input_data, hf_ref_);
   } else throw runtime_error("Unrecognized orbital localization method");
 
   shared_ptr<const Matrix> local_coeff = localization->localize();
