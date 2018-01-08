@@ -35,7 +35,7 @@
 using namespace std;
 using namespace bagel;
 
-RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<MultiSite> multisite) : ASD_DMRG(input, multisite) { }
+RASD::RASD(const shared_ptr<const PTree> input, shared_ptr<const Reference> ref) : ASD_DMRG(input, ref) { }
 
 void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
   auto restricted = input_->get_child("restricted");
@@ -55,9 +55,6 @@ void RASD::read_restricted(shared_ptr<PTree> input, const int site) const {
       parent->push_back(tmp);
     }
     input->add_child("active", parent);
-#ifdef DEBUG
-    //cout << "RAS[" << nras[0] << "," << nras[1] << "," << nras[2] << "](" << input->get<int>("max_holes") << "h" << input->get<int>("max_particles") << "p)" << endl;
-#endif
   };
 
   if (restricted->size() == 1)
@@ -156,7 +153,7 @@ shared_ptr<DMRG_Block1> RASD::compute_first_block(vector<shared_ptr<PTree>> inpu
     { // prepare the input
       inp->put("nclosed", ref->nclosed());
       inp->put("extern_nactele", true);
-      inp->put("nactele", multisite_->active_electrons().at(0));
+      inp->put("nactele", active_electrons_.at(0));
       read_restricted(inp, 0);
     }
     { // RAS calculations
@@ -241,8 +238,7 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
     { // prepare input
       inp->put("nclosed", ref->nclosed());
       inp->put("extern_nactele", true);
-      vector<int> active_electrons = multisite_->active_electrons();
-      const int nactele = accumulate(active_electrons.begin(), active_electrons.begin()+site+1, 0);
+      const int nactele = accumulate(active_electrons_.begin(), active_electrons_.begin()+site+1, 0);
       inp->put("nactele", nactele);
       read_restricted(inp, site);
     }
@@ -307,9 +303,9 @@ shared_ptr<DMRG_Block1> RASD::grow_block(vector<shared_ptr<PTree>> inputs, share
   growtime.tick_print("orthonormalize and collect individual states");
 
   GammaForestProdASD forest(ortho_states);
-  growtime.tick_print("construct forest");
+  growtime.tick_print("construct GammaForestProdASD");
   forest.compute();
-  growtime.tick_print("renormalize states");
+  growtime.tick_print("compute forest");
 
   shared_ptr<Matrix> coeff = ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact())->merge(left->coeff());
   auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, coeff);
@@ -323,8 +319,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
   { // prepare input
     input->put("nclosed", ref->nclosed());
     input->put("extern_nactele", true);
-    vector<int> active_electrons = multisite_->active_electrons();
-    const int nactele = accumulate(active_electrons.begin(), active_electrons.end(), input->get<int>("charge"));
+    const int nactele = accumulate(active_electrons_.begin(), active_electrons_.end(), input->get<int>("charge"));
     input->put("nactele", nactele);
     read_restricted(input, site);
   }
@@ -354,7 +349,7 @@ shared_ptr<DMRG_Block1> RASD::decimate_block(shared_ptr<PTree> input, shared_ptr
       decimatetime.tick_print("construct GammaForestASD");
 
       forest.compute();
-      decimatetime.tick_print("renormalize");
+      decimatetime.tick_print("compute forest");
 
       auto out = make_shared<DMRG_Block1>(move(forest), hmap, spinmap, ref->coeff()->slice_copy(ref->nclosed(), ref->nclosed()+ref->nact()));
       decimatetime.tick_print("dmrg block");
@@ -748,12 +743,13 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
 #endif
 
     Matrix orthonormalize(*overlap.tildex(1.0e-11));
-#ifdef HAVE_MPI_H
-    orthonormalize.synchronize();
-#endif
-    rdmtime.tick_print("ortho built");
-
+    
     if (orthonormalize.mdim() > 0) {
+#ifdef HAVE_MPI_H
+      orthonormalize.synchronize();
+#endif
+      rdmtime.tick_print("ortho built");
+
       auto best_states = make_shared<Matrix>(orthonormalize % rdm * orthonormalize);
 #ifdef HAVE_MPI_H
       best_states->synchronize();

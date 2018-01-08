@@ -23,6 +23,7 @@
 //
 
 #include <src/asd/dmrg/rasd.h>
+#include <src/asd/multisite/multisite.h>
 
 
 double asd_dmrg_energy(std::string inp) {
@@ -50,17 +51,14 @@ double asd_dmrg_energy(std::string inp) {
       scf->compute();
       ref = scf->conv_to_ref();
     } else if (method == "multisite") {
-      const int nsites = itree->get<int>("nsites");
-      multisite = std::make_shared<MultiSite>(itree, ref, nsites);
-      multisite->compute();
-      ref = multisite->conv_to_ref();
+      multisite = std::make_shared<MultiSite>(itree, ref);
+      ref = multisite->mref();
       *geom = *ref->geom();
     } else if (method == "asd_dmrg") {
-        if (!multisite)
-          throw std::runtime_error("multisite must be called before asd_dmrg");
-        auto asd = std::make_shared<RASD>(itree, multisite);
-        asd->compute();
-        return asd->energies(0);
+        auto asd_dmrg = std::make_shared<RASD>(itree, ref);
+        asd_dmrg->project_active();
+        asd_dmrg->sweep();
+        return asd_dmrg->energies(0);
     }
   }
   assert(false);
@@ -70,7 +68,7 @@ double asd_dmrg_energy(std::string inp) {
 BOOST_AUTO_TEST_SUITE(TEST_ASD_DMRG)
 
 BOOST_AUTO_TEST_CASE(RASD_DMRG) {
-    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.56338715, 1.0e-8));
+    BOOST_CHECK(compare(asd_dmrg_energy("he3_svp_asd-dmrg"), -8.59391356, 1.0e-8));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
