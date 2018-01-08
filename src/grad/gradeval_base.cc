@@ -132,7 +132,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
 
 vector<shared_ptr<GradTask>> GradEval_base::contract_graddkh1e(shared_ptr<const Matrix> tden, shared_ptr<const Matrix> vden, shared_ptr<const Matrix> pvpden, shared_ptr<const Matrix> sden) {
   auto geom = make_shared<Molecule>(*geom_);
-  // geom = geom->uncontract();
+  geom = geom->uncontract();
   vector<shared_ptr<GradTask>> out;
   const size_t nshell  = std::accumulate(geom->atoms().begin(), geom->atoms().end(), 0,
                                           [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });

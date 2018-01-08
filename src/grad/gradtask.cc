@@ -284,7 +284,7 @@ shared_ptr<GradFile> GradTask1r::compute_smallnai() const {
 void GradTask1d::compute() {
   auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
   *grad_local += *compute_nai();
-  // *grad_local += *compute_smallnai();
+  *grad_local += *compute_smallnai();
   *grad_local += *compute_os<GKineticBatch>(tden_);
   *grad_local -= *compute_os<GOverlapBatch>(sden_);
 
