@@ -150,6 +150,7 @@ class Geometry : public Molecule {
 
     // initialize relativistic components
     std::shared_ptr<const Geometry> relativistic(const bool do_gaunt, const bool do_coulomb = true) const;
+    void uncontract_rel();
     void compute_relativistic_integrals(const bool do_gaunt);
     void discard_relativistic() const;
 

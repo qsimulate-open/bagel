@@ -63,7 +63,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
   };
 
   auto mol = make_shared<Molecule>(*mol0);
-  mol = mol->uncontract();
+  // mol = mol->uncontract();
 
   // build DKH Hamiltonian in uncontracted basis
   shared_ptr<const Matrix> transfer;
@@ -123,9 +123,10 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
        + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)
        + BVBE * *pre_scale(RI_inv, BVB)             - 0.5 * AVA * BVBE;                   // DKH2
 
-  const MixedBasis<OverlapBatch> mix(mol0, mol);
-  const Matrix transfer2 = *transfer % mix;
-  Matrix_base<double>::operator=(transfer2 % dkh * transfer2);
+  // const MixedBasis<OverlapBatch> mix(mol0, mol);
+  // const Matrix transfer2 = *transfer % mix;
+  // Matrix_base<double>::operator=(transfer2 % dkh * transfer2);
+  Matrix_base<double>::operator=(*transfer * dkh ^ *transfer);
 }
 
 
