@@ -66,20 +66,6 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
 }
 
 
-template<typename DataType>
-void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
-                                                           shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<4,DataType>> rdm4) {
-  // computes fock-weighted 4RDM
-  shared_ptr<RDM<3,DataType>> rdm4f = rdm3->clone();
-  auto rdm4fgr = group(*rdm4f, 0,6);
-  auto rdm4gr = group(group(*rdm4, 6,8),0,6);
-  auto fgr = group(*fock_, 0,2);
-  btas::contract(1.0, rdm4gr, {0,1}, fgr, {1}, 0.0, rdm4fgr, {0});
-  // then call the standard routine
-  append(jst, ist, rdm1, rdm2, rdm3, rdm4f);
-}
-
-
 template<>
 void Denom<double>::append(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1, shared_ptr<const RDM<2>> rdm2,
                                                          shared_ptr<const RDM<3>> rdm3, shared_ptr<const Kramers<8,RDM<4>>> rdm4) {

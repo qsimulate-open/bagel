@@ -86,9 +86,6 @@ class Denom {
     // add RDMs (using fock-multiplied 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                               std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<3,DataType>>);
-    // add RDMs (using original 4RDM)
-    void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
-                                              std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const RDM<4,DataType>>);
     // add RDMs (using Kramers-reduced 4RDM)
     void append(const int jst, const int ist, std::shared_ptr<const RDM<1,DataType>>, std::shared_ptr<const RDM<2,DataType>>,
                                               std::shared_ptr<const RDM<3,DataType>>, std::shared_ptr<const Kramers<8,RDM<4,DataType>>>);
