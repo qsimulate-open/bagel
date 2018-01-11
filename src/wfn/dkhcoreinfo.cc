@@ -168,8 +168,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
 }
 
 array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1) {
-  array<shared_ptr<const Matrix>, 2> out;
-
   // const double c2 = c__ * c__;
   // VectorB E(nbasis_), A(nbasis_);
   // for (int p = 0; p != nbasis_; ++p) {
@@ -191,9 +189,7 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
   // den->print("d_bar");
   // return den;
 
-  out[0] = make_shared<Matrix>(ptrans_ * *rdm1 ^ ptrans_);
-  out[1] = make_shared<Matrix>(nbasis_, nbasis_);
-  return out;
+  return { make_shared<Matrix>(ptrans_ * *rdm1 ^ ptrans_), make_shared<Matrix>(nbasis_, nbasis_) };
 }
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> erdm1) {
