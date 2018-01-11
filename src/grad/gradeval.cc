@@ -59,8 +59,9 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
   if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
     auto dkh = make_shared<DKHcoreInfo>(geom_);
     shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
-    shared_ptr<const Matrix> vden = dkh->compute_vden(rdm1);
-    shared_ptr<const Matrix> pvpden = dkh->compute_pvpden(rdm1);
+    array<shared_ptr<const Matrix>, 2> nai_dkh;
+    shared_ptr<const Matrix> vden = nai_dkh[0];
+    shared_ptr<const Matrix> pvpden = nai_dkh[1];
     shared_ptr<const Matrix> sden = dkh->compute_sden(erdm1);
     grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
   } else {

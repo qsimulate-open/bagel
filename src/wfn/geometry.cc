@@ -109,10 +109,6 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   }
   if (atoms_.empty()) throw runtime_error("No atoms specified at all");
 
-  if (hcoreinfo_->dkh()) {
-    uncontract_rel();
-  }
-
   /* Set up aux_atoms_ */
   auxfile_ = geominfo->get<string>("df_basis", "");  // default value for non-DF HF.
   if (!auxfile_.empty()) {
@@ -278,9 +274,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
     }
 
-    if (hcoreinfo_->dkh()) {
-      uncontract_rel();
-    }
   }
   const string prevaux = auxfile_;
   auxfile_ = geominfo->get<string>("df_basis", auxfile_);
@@ -576,7 +569,6 @@ void Geometry::uncontract_rel() {
     atom.push_back(i->uncontract()->relativistic());
 
   atoms_ = atom;
-  common_init1();
 }
 
 

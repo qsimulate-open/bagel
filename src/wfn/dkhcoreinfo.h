@@ -49,8 +49,7 @@ class DKHcoreInfo {
     DKHcoreInfo(std::shared_ptr<const Molecule>);
 
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
-    std::shared_ptr<const Matrix> compute_vden(std::shared_ptr<const Matrix>);
-    std::shared_ptr<const Matrix> compute_pvpden(std::shared_ptr<const Matrix>);
+    std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
     std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>);
 };
 
