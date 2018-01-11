@@ -83,18 +83,19 @@ void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<con
   fock.emplace(1, fock_->get_submatrix(n, 0, n, n));
   fock.emplace(2, fock_->get_submatrix(0, n, n, n));
   fock.emplace(3, fock_->get_submatrix(n, n, n, n));
-  auto work = make_shared<ZRDM<3>>(n);
   for (int i = 0; i != 64; ++i) {
     for (int j = 0; j != 4; ++j) {
       // computes fock-weighted 4RDM
+      auto work = make_shared<ZRDM<3>>(n);
       shared_ptr<const ZMatrix> cfock = fock.at(j);
-      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data(i + j*64);
+      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data(i * 4 + j);
       if (!crdm) continue;
 
-      auto crdmgr = group(group(*crdm, 6,8),0,6);
       auto wgr = group(*work, 0,6);
-      btas::contract(1.0, crdmgr, {0,1}, group(*cfock, 0,2), {1}, 0.0, wgr, {0});
-      rdm4f->emplace(i, work);
+      auto crdmgr = group(group(*crdm, 6,8),0,6);
+      auto fgr = group(*cfock, 0,2);
+      btas::contract(1.0, crdmgr, {0,1}, fgr, {1}, 0.0, wgr, {0});
+      rdm4f->add(i, work);
     }
   }
   shared_ptr<const Kramers<6,ZRDM<3>>> rdm4fe = rdm4f->copy();
