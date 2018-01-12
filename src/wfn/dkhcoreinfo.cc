@@ -28,8 +28,7 @@
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
 #include <src/mat1e/overlap.h>
-#include <src/integral/os/overlapbatch.h>
-#include <src/mat1e/mixedbasis.h>
+#include <src/mat1e/contrcoeff.h>
 
 using namespace std;
 using namespace bagel;
@@ -53,7 +52,8 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
   const Small1e<NAIBatch> small1e(mol);
   smallnai_ = wtrans_ % small1e[0] * wtrans_;
 
-  ptrans_ = MixedBasis<OverlapBatch>(current, mol);
+  ptrans_ = ContrCoeff(current, mol->nbasis());
+  ptrans_.print("P");
 
   const Kinetic contrt(current);
   contrt.print("T");
@@ -137,7 +137,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   }
 
   const Matrix CPW = (ptrans_ % wtrans_) % *rdm1 * (ptrans_ % wtrans_);
-  CPW.print("W+ P C C+ P+ W");
   for (int q = 0; q != nbasis_; ++q) {
     for (int p = 0; p != nbasis_; ++p) {
       ederiv_(p, q) = 2.0 * CPW(p, q) * (E(q) - c2);

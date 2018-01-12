@@ -24,6 +24,7 @@
 
 #include <src/grad/gradeval.h>
 #include <src/util/timer.h>
+#include <src/mat1e/contrcoeff.h>
 
 using namespace std;
 using namespace bagel;
@@ -58,14 +59,16 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
   shared_ptr<GradFile> grad;
   if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
     auto dkh = make_shared<DKHcoreInfo>(geom_);
-    shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
+    shared_ptr<const Matrix> kinetic_dkh = dkh->compute_tden(rdm1);
     array<shared_ptr<const Matrix>, 2> nai_dkh = dkh->compute_vden(rdm1);
-    shared_ptr<const Matrix> vden = nai_dkh[0];
-    shared_ptr<const Matrix> pvpden = nai_dkh[1];
-    shared_ptr<const Matrix> sden = dkh->compute_sden(erdm1);
-    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
+    shared_ptr<const Matrix> overlap_dkh = dkh->compute_sden(erdm1);
+    grad = contract_gradient(kinetic_dkh, overlap_dkh, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, nai_dkh[0], nai_dkh[1]);
   } else {
-    grad = contract_gradient(rdm1, erdm1, qrs, qq);
+    // grad = contract_gradient(rdm1, erdm1, qrs, qq);
+    auto mol = make_shared<Molecule>(*geom_);
+    mol = mol->uncontract();
+    auto p = make_shared<ContrCoeff>(geom_, mol->nbasis());
+    grad = contract_gradient(make_shared<const Matrix>(*p * *rdm1 ^ *p), make_shared<const Matrix>(*p * *erdm1 ^ *p), qrs, qq);
   }
   grad->print();
 
