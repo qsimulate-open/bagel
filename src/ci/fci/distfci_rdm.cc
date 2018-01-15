@@ -228,13 +228,13 @@ shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
 }
 
 
-shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel) const {
+shared_ptr<Matrix> DistFCI::rdm2deriv_offset(shared_ptr<const Matrix> dmat, const int istate, const size_t dsize, const size_t offset, const bool parallel) const {
   return nullptr;
 }
 
 
 tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>
-DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
+DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> dbra_in, shared_ptr<const Matrix> fock_ebra_in) const {
   return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>();
 }
 

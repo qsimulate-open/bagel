@@ -391,6 +391,8 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   auto rdm0d = make_shared<VectorB>(size);
   copy_n(info->ref()->civectors()->data(istate)->data() + offset, size, rdm0d->data());
 
+  const int ndet = info->ref()->civectors()->data(istate)->size();
+  auto rdm1d_full = make_shared<Matrix>(ndet, nact*nact);
   auto rdm1d = make_shared<Matrix>(size, nact*nact);
   {
     shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
@@ -400,6 +402,9 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
         copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
     };
     fill2(rdm1a, rdm1d);
+
+    for (int i = 0; i != nact*nact; ++i)
+      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0,i));
   }
 
   shared_ptr<Matrix> rdm2d;
@@ -408,9 +413,9 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
 
   // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn.
   if (reset)
-    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, nullptr);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm1d_full, nullptr);
   else
-    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm2fd_in);
+    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm1d_full, rdm2fd_in);
 
   vector<IndexRange> o1 = {ci};
   vector<IndexRange> o3 = {ci, active, active};

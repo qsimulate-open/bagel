@@ -47,7 +47,7 @@ class SMITH_Info {
     int maxiter_;
     int maxtile_;
     int cimaxtile_;
-    int cimaxchunk_;
+    size_t cimaxchunk_;
     int davidson_subspace_;
 
     bool grad_;

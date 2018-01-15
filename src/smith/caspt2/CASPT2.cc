@@ -97,7 +97,8 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t nact  = info_->nact();
   const size_t norb2 = nact*nact;
-  const size_t ijmax = info_->cimaxchunk();
+  const size_t ijmax = mpi__->size() >= 4 ? info_->cimaxchunk() * static_cast<size_t>(mpi__->size()) / 4 : info_->cimaxchunk();
+
   const size_t ijnum = ndet * norb2 * norb2;
   const size_t npass = (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
