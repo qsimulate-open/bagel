@@ -379,10 +379,26 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
 
 
 template<>
+shared_ptr<Matrix> SpinFreeMethod<double>::feed_rdm_2fderiv(shared_ptr<const SMITH_Info<double>> info, shared_ptr<const Matrix> fockact, const int istate) {
+  const int nact = info->nact();
+  const int ndet = info->ref()->civectors()->data(istate)->size();
+  auto rdm1d_full = make_shared<Matrix>(ndet, nact*nact);
+  {
+    shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
+    for (int i = 0; i != nact*nact; ++i)
+      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0,i));
+  }
+  shared_ptr<Matrix> rdm2fd = info->ref()->rdm2fderiv(istate, fockact, rdm1d_full);
+
+  return rdm2fd;
+}
+
+
+template<>
 tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>,
-                   shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>, shared_ptr<Matrix>>
+                   shared_ptr<Tensor_<double>>, shared_ptr<Tensor_<double>>>
   SpinFreeMethod<double>::feed_rdm_deriv(shared_ptr<const SMITH_Info<double>> info, const IndexRange& active,
-                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const Matrix> rdm2fd_in) {
+                   shared_ptr<const Matrix> fockact, const int istate, const size_t offset, const size_t size, shared_ptr<const Matrix> rdm2fd_in) {
 
   auto ci = IndexRange(size, info->cimaxtile());
   auto rci = make_shared<const IndexRange>(ci);
@@ -408,14 +424,10 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   }
 
   shared_ptr<Matrix> rdm2d;
-  shared_ptr<Matrix> rdm2fd;
   shared_ptr<Matrix> rdm3fd;
 
   // Recycle [J|k+l|0] = <J|m+k+ln|0> f_mn.
-  if (reset)
-    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm1d_full, nullptr);
-  else
-    tie(rdm2d, rdm2fd, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm1d_full, rdm2fd_in);
+  tie(rdm2d, rdm3fd) = info->ref()->rdm3deriv(istate, fockact, offset, size, rdm1d_full, rdm2fd_in);
 
   vector<IndexRange> o1 = {ci};
   vector<IndexRange> o3 = {ci, active, active};
@@ -439,7 +451,7 @@ tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<double>>, sha
   auto rdm2deriv = fill_block<5,double>(rdm2d, inpoff5, o5);
   auto rdm3fderiv = fill_block<5,double>(rdm3fd, inpoff5, o5);
 
-  return tie(ci, rci, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, rdm2fd);
+  return tie(ci, rci, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv);
 }
 
 
@@ -493,16 +505,23 @@ std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std
 
 
 template<>
+shared_ptr<ZMatrix> SpinFreeMethod<complex<double>>::feed_rdm_2fderiv(shared_ptr<const SMITH_Info<complex<double>>> info, shared_ptr<const ZMatrix> fockact, const int istate) {
+  throw logic_error("SpinFreeMethod::feed_rdm_2fderiv is not implemented for relativistic cases.");
+  shared_ptr<ZMatrix> dum;
+  return dum;
+}
+
+
+template<>
 tuple<IndexRange, shared_ptr<const IndexRange>, shared_ptr<Tensor_<complex<double>>>,
-          shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<ZMatrix>>
+          shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>, shared_ptr<Tensor_<complex<double>>>>
   SpinFreeMethod<complex<double>>::feed_rdm_deriv(shared_ptr<const SMITH_Info<complex<double>>> info, const IndexRange& active,
-          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, const bool reset, shared_ptr<const ZMatrix> rdm2fd_in) {
+          shared_ptr<const ZMatrix> fockact, const int istate, const size_t offset, const size_t size, shared_ptr<const ZMatrix> rdm2fd_in) {
   throw logic_error("SpinFreeMethod::feed_rdm_deriv is not implemented for relativistic cases.");
   IndexRange d;
   shared_ptr<IndexRange> du;
   shared_ptr<Tensor_<complex<double>>> dum;
-  shared_ptr<ZMatrix> dumm;
-  return tie(d, du, dum, dum, dum, dum, dumm);
+  return tie(d, du, dum, dum, dum, dum);
 }
 
 

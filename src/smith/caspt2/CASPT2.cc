@@ -105,11 +105,17 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   if (npass > 1)
     cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
 
+  // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
+  rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, 0);
+
+  if (npass > 1)
+    timer.tick_print("Fock-weighted 2RDM derivative");
+
   for (int ipass = 0; ipass != npass; ++ipass) {
     const size_t ioffset = ipass * nsize;
     const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_, rdm2fderiv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, 0, ioffset, isize, /*reset=*/(ipass==0), rdm2fderiv_);
+    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
+      = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, 0, ioffset, isize, rdm2fderiv_);
     den0cit = den0ci;
     den1cit = den1ci;
     den2cit = den2ci;
