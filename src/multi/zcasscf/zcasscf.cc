@@ -39,7 +39,7 @@ ZCASSCF::ZCASSCF(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, 
   : Method(idat, geom, ref) {
   // check if RDMs are supplied externally
   external_rdm_ = idata_->get<string>("external_rdm", "");
-  if (!external_rdm_.empty()) {
+  if (!external_rdm_.empty() && external_rdm_ != "noref") {
     IArchive ar("relref");
     shared_ptr<RelReference> r;
     ar >> r;
@@ -156,6 +156,7 @@ void ZCASSCF::init() {
   if (nact_)
     fci_ = make_shared<RelFCI>(idata_, geom_, ref_, nclosed_, nact_, coeff_, /*store*/true);
   nstate_ = nact_ ? fci_->nstate() : 1;
+  energy_.resize(nstate_);
   muffle_->unmute();
   cout << "    * nstate   : " << setw(6) << nstate_ << endl << endl;
 
@@ -200,9 +201,10 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
-  return !nact_ ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
-                : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
-                                            fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
+  const bool noci = !nact_ || external_rdm_ == "noref"; 
+  return noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
+              : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
+                                          fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
 
 
