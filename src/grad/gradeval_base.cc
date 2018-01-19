@@ -88,21 +88,19 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
 
 template<typename TaskType>
 vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<const Matrix> nmat, const shared_ptr<const Matrix> kmat, const shared_ptr<const Matrix> omat) {
-  auto geom = make_shared<Molecule>(*geom_);
-  geom = geom->uncontract();
   vector<shared_ptr<GradTask>> out;
-  const size_t nshell  = std::accumulate(geom->atoms().begin(), geom->atoms().end(), 0,
+  const size_t nshell  = std::accumulate(geom_->atoms().begin(), geom_->atoms().end(), 0,
                                           [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
   out.reserve(nshell*nshell);
 
   // TODO perhaps we could reduce operation by a factor of 2
   int cnt = 0;
   int iatom0 = 0;
-  auto oa0 = geom->offsets().begin();
-  for (auto a0 = geom->atoms().begin(); a0 != geom->atoms().end(); ++a0, ++oa0, ++iatom0) {
+  auto oa0 = geom_->offsets().begin();
+  for (auto a0 = geom_->atoms().begin(); a0 != geom_->atoms().end(); ++a0, ++oa0, ++iatom0) {
     int iatom1 = 0;
-    auto oa1 = geom->offsets().begin();
-    for (auto a1 = geom->atoms().begin(); a1 != geom->atoms().end(); ++a1, ++oa1, ++iatom1) {
+    auto oa1 = geom_->offsets().begin();
+    for (auto a1 = geom_->atoms().begin(); a1 != geom_->atoms().end(); ++a1, ++oa1, ++iatom1) {
 
       auto o0 = oa0->begin();
       for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {

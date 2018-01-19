@@ -53,20 +53,6 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
   smallnai_ = wtrans_ % small1e[0] * wtrans_;
 
   ptrans_ = ContrCoeff(current, mol->nbasis());
-  ptrans_.print("P");
-
-  const Kinetic contrt(current);
-  contrt.print("T");
-  Matrix transt = ptrans_ % kinetic * ptrans_;
-  transt.print("P+ T^unc P");
-  const NAI contrv(current);
-  contrv.print("V");
-  Matrix transv = ptrans_ % nai * ptrans_;
-  transv.print("P+ V^unc P");
-  const Overlap contrs(current);
-  contrs.print("S");
-  Matrix transs = ptrans_ % overlap * ptrans_;
-  transs.print("P+ S^unc P");
 
   zmult_ = ederiv_ = Matrix(nbasis_, nbasis_);
 }
@@ -160,9 +146,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
       }
     }
   }
-  ederiv_.print("Y_pq");
-  zmult_.print("z_pq");
-  den->print("d_tilde");
   return den;
 }
 
@@ -206,10 +189,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> erdm
     }
   }
 
-  at.print("a_tilde");
-  xb.print("X_bar");
-  Matrix dldu = ederiv_ + at - 2.0 * xb;
-  dldu.print("dL/dU_pq");
   return make_shared<const Matrix>((ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_));
 
   // return make_shared<Matrix>(ptrans_ * *erdm1 ^ ptrans_);

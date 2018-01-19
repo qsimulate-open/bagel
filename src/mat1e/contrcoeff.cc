@@ -38,76 +38,37 @@ ContrCoeff::ContrCoeff(shared_ptr<const Molecule> mol, int nunc) : Matrix(nunc, 
 
 
 void ContrCoeff::init(shared_ptr<const Molecule> mol) {
-  // int npos = 0, mpos = 0 nsize = 0, msize = 0;
-  // auto oa = mol->offsets().begin();
-  // for (auto a = mol->atoms().begin(); a != mol->atoms().end(); ++a, ++oa) {
-  //   auto ob = oa->begin();
-  //   for (auto b = (*a)->shells().begin(); b != (*a)->shells().end(); ++b, ++ob) {
-  //     const vector<vector<double>> contractions = (*b)->contractions();
-  //     msize = contractions.size();
-  //     nsize = contractions[msize - 1].size();
-  //     for (int a = 0; a != 2 * (*b)->angular_number() + 1; ++a) {
-  //       for (int i = 0; i != msize; ++i) {
-  //         for (int j = 0; j != nsize; ++j) {
-  //           assert(npos + j < ndim() && mpos + i < mdim());
-  //           element(npos + j, mpos + i) = contractions[i][j];
-  //         }
-  //       }
-  //       npos += nsize;
-  //       mpos += msize;
-  //     }
-  //   }
-  // }
-
   int npos = 0, mpos = 0, nsize = 0, msize = 0;
   auto oa = mol->offsets().begin();
   for (auto a = mol->atoms().begin(); a != mol->atoms().end(); ++a, ++oa) {
     auto ob = oa->begin();
     for (auto b = (*a)->shells().begin(); b != (*a)->shells().end(); ++b, ++ob) {
-
-      // const vector<vector<double>> contractions = (*b)->contractions();
+      int duplicates = (*b)->spherical() ? 2 * (*b)->angular_number() + 1 : ((*b)->angular_number() + 1) * ((*b)->angular_number() + 2) / 2;
       vector<vector<double>> contractions((*b)->contractions().size());
-      auto uiter = contractions.begin();
-      const vector<pair<int, int>> contraction_ranges = (*b)->contraction_ranges();
-      auto citer = (*b)->contraction_ranges().begin();
-      for (auto iter = (*b)->contractions().begin(); iter != (*b)->contractions().end(); ++iter, ++uiter, ++citer) {
-
+      auto citer = contractions.begin();
+      for (auto iter = (*b)->contractions().begin(); iter != (*b)->contractions().end(); ++iter, ++citer) {
         auto eiter = (*b)->exponents().begin();
         double denom = 1.0;
         for (int ii = 2; ii <= (*b)->angular_number(); ++ii) denom *= 2 * ii - 1;
         for (auto diter = iter->begin(); diter != iter->end(); ++diter, ++eiter) {
-          uiter->push_back(*diter * std::sqrt(denom) / (pow(2.0 * *eiter / pi__, 0.75) * pow(std::sqrt(4.0 * *eiter), (*b)->angular_number())));
+          citer->push_back(*diter * std::sqrt(denom) / (pow(2.0 * *eiter / pi__, 0.75) * pow(std::sqrt(4.0 * *eiter), (*b)->angular_number())));
         }
-
-        // if ((*a)->basis() != "molden") {
-        //   vector<vector<double>> cont {*iter};
-        //   vector<pair<int, int>> cran {*citer};
-        //   auto current = make_shared<const Shell>((*b)->spherical(), (*b)->position(), (*b)->angular_number(), (*b)->exponents(), cont, cran);
-        //   array<shared_ptr<const Shell>,2> cinp {{ current, current }};
-        //   OverlapBatch coverlap(cinp);
-        //   coverlap.compute();
-        //   const double scal = 1.0 / std::sqrt((coverlap.data())[0]);
-        //   for (auto& d : *iter) {
-        //     cout << "d " << d << " scal " << scal << endl;
-        //     uiter->push_back(d / scal);
-        //   }
-        // }
       }
-
+      const vector<pair<int, int>> contraction_ranges = (*b)->contraction_ranges();
       for (int r = 0; r != contraction_ranges.size(); r += msize) {
         msize = 0;
         for (int i = r; i != contraction_ranges.size() && contraction_ranges[i].first == contraction_ranges[r].first; ++i) ++msize;
         nsize = contraction_ranges[r].second - contraction_ranges[r].first;
-        for (int a = 0; a != 2 * (*b)->angular_number() + 1; ++a) {
-          for (int i = 0; i != msize; ++i) {
-            for (int j = 0; j != nsize; ++j) {
-              assert(npos + j < ndim() && mpos + i < mdim());
-              element(npos + j, mpos + i) = contractions[r + i][contraction_ranges[r].first + j];
+        for (int i = 0; i != msize; ++i) {
+          for (int j = 0; j != nsize; ++j) {
+            for (int a = 0; a != duplicates; ++a) {
+              assert(npos + a < ndim() && mpos + i + a < mdim());
+              element(npos + a, mpos + i + a) = contractions[r + i][contraction_ranges[r].first + j];
             }
+            npos += duplicates;
           }
-          npos += nsize;
-          mpos += msize;
         }
+        mpos += msize * duplicates;
       }
     }
   }
