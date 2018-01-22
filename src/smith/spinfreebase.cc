@@ -365,8 +365,8 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
       auto rdm2t = fill_block<4,complex<double>>(rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,complex<double>>(rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
 #endif
-      const double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
-      rdm4fex->scale(den4factor);
+      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      rdm4fex->scale(rdm4factor);
       auto rdm4fx = rdm4fex->clone();
       sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm4fex->data(), rdm4fx->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
       auto rdm4ft = fill_block<6,complex<double>>(rdm4fx, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
