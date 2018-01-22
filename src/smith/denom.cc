@@ -66,44 +66,6 @@ Denom<DataType>::Denom(shared_ptr<const MatType> fock, const int nstates, const 
 }
 
 
-template<>
-void Denom<double>::append(const int jst, const int ist, shared_ptr<const RDM<1>> rdm1, shared_ptr<const RDM<2>> rdm2,
-                                                         shared_ptr<const RDM<3>> rdm3, shared_ptr<const Kramers<8,RDM<4>>> rdm4) {
-  throw logic_error("Denom<double>::append with Kramers should not be called");
-}
-
-
-template<>
-void Denom<complex<double>>::append(const int jst, const int ist, shared_ptr<const ZRDM<1>> rdm1, shared_ptr<const ZRDM<2>> rdm2,
-                                                                  shared_ptr<const ZRDM<3>> rdm3, shared_ptr<const Kramers<8,ZRDM<4>>> rdm4) {
-  auto rdm4f = make_shared<Kramers<6,ZRDM<3>>>();
-  const int n = fock_->ndim()/2;
-  Kramers<2,ZMatrix> fock;
-  fock.emplace(0, fock_->get_submatrix(0, 0, n, n));
-  fock.emplace(1, fock_->get_submatrix(n, 0, n, n));
-  fock.emplace(2, fock_->get_submatrix(0, n, n, n));
-  fock.emplace(3, fock_->get_submatrix(n, n, n, n));
-  for (int i = 0; i != 64; ++i) {
-    for (int j = 0; j != 4; ++j) {
-      // computes fock-weighted 4RDM
-      auto work = make_shared<ZRDM<3>>(n);
-      shared_ptr<const ZMatrix> cfock = fock.at(j);
-      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data(i * 4 + j);
-      if (!crdm) continue;
-
-      auto wgr = group(*work, 0,6);
-      auto crdmgr = group(group(*crdm, 6,8),0,6);
-      auto fgr = group(*cfock, 0,2);
-      btas::contract(1.0, crdmgr, {0,1}, fgr, {1}, 0.0, wgr, {0});
-      rdm4f->add(i, work);
-    }
-  }
-  shared_ptr<const Kramers<6,ZRDM<3>>> rdm4fe = rdm4f->copy();
-  auto rdm4fex = expand_kramers(rdm4fe, n);
-  append(jst, ist, rdm1, rdm2, rdm3, rdm4fex);
-}
-
-
 template<typename DataType>
 void Denom<DataType>::append(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                            shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {
