@@ -62,7 +62,7 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
     array<shared_ptr<const Matrix>, 2> nai_dkh = dkh->compute_vden(rdm1);
     shared_ptr<const Matrix> vden = nai_dkh[0];
     shared_ptr<const Matrix> pvpden = nai_dkh[1];
-    shared_ptr<const Matrix> sden = dkh->compute_sden(erdm1);
+    shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
     grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
   } else {
     grad = contract_gradient(rdm1, erdm1, qrs, qq);

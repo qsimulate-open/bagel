@@ -35,6 +35,7 @@ class DKHcoreInfo {
     int nbasis_;
 
     Matrix wtrans_;
+    Matrix wtrans_rev_;
     Matrix ptrans_;
 
     VectorB kinetic_;
@@ -50,7 +51,7 @@ class DKHcoreInfo {
 
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
     std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
-    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
 };
 
 }
