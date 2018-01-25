@@ -345,31 +345,35 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
       shared_ptr<Kramers<2,ZRDM<1>>> rdm1x = rdm1->copy();
       shared_ptr<Kramers<4,ZRDM<2>>> rdm2x = rdm2->copy();
       shared_ptr<Kramers<6,ZRDM<3>>> rdm3x = rdm3->copy();
+      shared_ptr<Kramers<6,ZRDM<3>>> rdm4fx = rdm3->copy();
       auto j1 = rdm1x->begin();
       auto j2 = rdm2x->begin();
       auto j3 = rdm3x->begin();
+      auto j4 = rdm4fx->begin();
       for (auto& i : *rdm1) sort_indices<1,0,0,1,1,1>        (i.second->data(), (*j1++).second->data(), n, n);
       for (auto& i : *rdm2) sort_indices<1,0,3,2,0,1,1,1>    (i.second->data(), (*j2++).second->data(), n, n, n, n);
       for (auto& i : *rdm3) sort_indices<1,0,3,2,5,4,0,1,1,1>(i.second->data(), (*j3++).second->data(), n, n, n, n, n, n);
+      for (auto& i : *rdm4f) sort_indices<1,0,3,2,5,4,0,1,1,1>(i.second->data(), (*j4++).second->data(), n, n, n, n, n, n);
       auto rdm1t = fill_block<2,complex<double>,ZRDM<1>>(rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,complex<double>,ZRDM<2>>(rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,complex<double>,ZRDM<3>>(rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      auto rdm4ft = fill_block<6,complex<double>,ZRDM<3>>(rdm4fx, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
 #else
       auto rdm1x = rdm1ex->clone();
       auto rdm2x = rdm2ex->clone();
       auto rdm3x = rdm3ex->clone();
+      auto rdm4fx = rdm4fex->clone();
+      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      rdm4fex->scale(rdm4factor);
       sort_indices<1,0,0,1,1,1>        (rdm1ex->data(), rdm1x->data(), 2*n, 2*n);
       sort_indices<1,0,3,2,0,1,1,1>    (rdm2ex->data(), rdm2x->data(), 2*n, 2*n, 2*n, 2*n);
       sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm3ex->data(), rdm3x->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
+      sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm4fex->data(), rdm4fx->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
       auto rdm1t = fill_block<2,complex<double>>(rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,complex<double>>(rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,complex<double>>(rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
-#endif
-      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
-      rdm4fex->scale(rdm4factor);
-      auto rdm4fx = rdm4fex->clone();
-      sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm4fex->data(), rdm4fx->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
       auto rdm4ft = fill_block<6,complex<double>>(rdm4fx, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+#endif
       rdm0all_->emplace(ist, jst, rdm0t);
       rdm1all_->emplace(ist, jst, rdm1t);
       rdm2all_->emplace(ist, jst, rdm2t);
