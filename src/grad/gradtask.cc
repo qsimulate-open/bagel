@@ -286,7 +286,7 @@ void GradTask1d::compute() {
   *grad_local += *compute_nai();
   *grad_local += *compute_smallnai();
   *grad_local += *compute_os<GKineticBatch>(tden_);
-  *grad_local -= *compute_os<GOverlapBatch>(sden_);
+  *grad_local += *compute_os<GOverlapBatch>(sden_);
 
   for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
     lock_guard<mutex> lock(ge_->mutex_[iatom]);
