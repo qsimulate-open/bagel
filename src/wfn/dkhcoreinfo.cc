@@ -176,7 +176,8 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
         H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p);
         dF(p) = dA(p);
         dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = 4 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + 2 * pow(A(p) * K(p), 2) + 4 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
+        dH(p) = 4 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + 2 * pow(A(p) * K(p), 2)
+              + 4 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
       }
       N = O = nai_;
       break;
@@ -187,7 +188,8 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
         H(p) = pow(B(p) / K(p), 2) / (2 * kinetic_(p));
         dF(p) = dB(p);
         dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p) + pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (2 * pow(kinetic_(p) * K(p), 2) * K(p));
+        dH(p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
+              + pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (2 * pow(kinetic_(p) * K(p), 2) * K(p));
       }
       N = O = smallnai_;
       break;
@@ -287,7 +289,7 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
           (*pvpden)(a, b) += B(p) * B(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
           for (int r = 0; r != nbasis_; ++r) {
             (*den)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                        + B(q) * A(p) * smallnai_(r, q) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
+                        + B(q) * A(p) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
             (*pvpden)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
                             + B(q) * A(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
             (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
@@ -367,7 +369,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
         for (int p = 0; p != nbasis_; ++p) {
           (*den)(a, b) += (A(p) * nai_(p, q) * A(q) + B(p) * smallnai_(p, q) * B(q)) * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
           for (int r = 0; r != nbasis_; ++r) {
-            (*den)(a, b) += (1 / ((E(p) + E(r)) * (E(q) + E(r)))) * (-B(p) * smallnai_(r, p) * B(r) * E(r) * A(r) * nai_(r, q) * A(q)
+            (*den)(a, b) += (1 / ((E(p) + E(r)) * (E(q) + E(r)))) * (-B(p) * smallnai_(p, r) * B(r) * E(r) * A(r) * nai_(r, q) * A(q)
                         - A(p) * nai_(r, p) * A(r) * E(r) * B(r) * smallnai_(r, q) * B(q)
                         + 2 * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) * nai_(r, q) * A(q)
                         + 0.5 * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) * E(p) / kinetic_(r)) * smallnai_(r, q) * B(q)
