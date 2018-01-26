@@ -111,21 +111,33 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
 
   Matrix N(nbasis_, nbasis_), O(nbasis_, nbasis_);
   VectorB F(nbasis_), G(nbasis_), H(nbasis_), dF(nbasis_), dG(nbasis_), dH(nbasis_);
-  for (int i = 0; i != 7; ++i) {
+  for (int i = 0; i != 12; ++i) {
     switch (i) {
     case 0:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = A(p);
-        H(p) = -2 * B(p) * E(p) * A(p);
+        H(p) = -B(p) * E(p) * A(p);
         dF(p) = dB(p);
         dG(p) = dA(p);
-        dH(p) = -2 * dB(p) * E(p) * A(p) - 2 * B(p) * dE(p) * A(p) - 2 * B(p) * E(p) * dA(p);
+        dH(p) = -dB(p) * E(p) * A(p) - B(p) * dE(p) * A(p) - B(p) * E(p) * dA(p);
       }
       N = smallnai_;
       O = nai_;
       break;
     case 1:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = A(p);
+        G(p) = B(p);
+        H(p) = -A(p) * E(p) * B(p);
+        dF(p) = dA(p);
+        dG(p) = dB(p);
+        dH(p) = -dA(p) * E(p) * B(p) - A(p) * dE(p) * B(p) - A(p) * E(p) * dB(p);
+      }
+      N = nai_;
+      O = smallnai_;
+      break;
+    case 2:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = A(p);
         H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
@@ -135,7 +147,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
       }
       N = O = nai_;
       break;
-    case 2:
+    case 3:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = B(p);
         H(p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
@@ -145,51 +157,99 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
       }
       N = O = smallnai_;
       break;
-    case 3:
+    case 4:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p);
+        H(p) = -B(p) * A(p) / 2;
         dF(p) = dB(p);
         dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = -dB(p) * A(p) - B(p) * dA(p);
+        dH(p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
       }
       N = smallnai_;
       O = nai_;
       break;
-    case 4:
+    case 5:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = A(p);
         G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p);
+        H(p) = -A(p) * B(p) / 2;
         dF(p) = dA(p);
         dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = -dA(p) * B(p) - A(p) * dB(p);
+        dH(p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
       }
       N = nai_;
       O = smallnai_;
       break;
-    case 5:
+    case 6:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = A(p);
         G(p) = A(p) * E(p);
-        H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p);
+        H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
         dF(p) = dA(p);
         dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = 4 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + 2 * pow(A(p) * K(p), 2)
-              + 4 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
+        dH(p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+              + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
       }
       N = O = nai_;
       break;
-    case 6:
+    case 7:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (2 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
         dF(p) = dB(p);
         dG(p) = dB(p) * E(p) + B(p) * dE(p);
         dH(p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
-              + pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (2 * pow(kinetic_(p) * K(p), 2) * K(p));
+              + pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (4 * pow(kinetic_(p) * K(p), 2) * K(p));
+      }
+      N = O = smallnai_;
+      break;
+    case 8:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * B(p);
+        G(p) = A(p);
+        H(p) = -B(p) * A(p) / 2;
+        dF(p) = dE(p) * B(p) + E(p) * dB(p);
+        dG(p) = dA(p);
+        dH(p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
+      }
+      N = smallnai_;
+      O = nai_;
+      break;
+    case 9:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * A(p);
+        G(p) = B(p);
+        H(p) = -A(p) * B(p) / 2;
+        dF(p) = dE(p) * A(p) + E(p) * dA(p);
+        dG(p) = dB(p);
+        dH(p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
+      }
+      N = nai_;
+      O = smallnai_;
+      break;
+    case 10:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * A(p);
+        G(p) = A(p);
+        H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
+        dF(p) = dE(p) * A(p) + E(p) * dA(p);
+        dG(p) = dA(p);
+        dH(p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+              + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
+      }
+      N = O = nai_;
+      break;
+    case 11:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * B(p);
+        G(p) = B(p);
+        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        dF(p) = dE(p) * B(p) + E(p) * dB(p);
+        dG(p) = dB(p);
+        dH(p) = (4 * B(p) * dB(p) * kinetic_(p) * K(p)
+              + pow(B(p), 2) * (K(p) + 4 * kinetic_(p) * dK(p))) / (16 * pow(kinetic_(p) * K(p), 2) * K(p));
       }
       N = O = smallnai_;
       break;
@@ -241,14 +301,14 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
         for (int r = 0; r != nbasis_; ++r) {
           for (int q = 0; q != nbasis_; ++q) {
             for (int p = 0; p != nbasis_; ++p) {
-              (*den)(a, b) += (N(p, r) * O(q, r) / ((2 * E(p) + E(r)) * (E(q) + E(r)))) * ((G(q) * dF(p) - F(p) * G(q) * dE(p) / (E(p)
+              (*den)(a, b) += (N(p, r) * O(q, r) / ((E(p) + E(r)) * (E(q) + E(r)))) * ((G(q) * dF(p) - F(p) * G(q) * dE(p) / (E(p)
                           + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (F(p) * dG(q) - F(p) * G(q) * dE(q) / (E(q)
                           + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(p) * G(q) * dH(r) - F(p) * G(q) * H(r) * dE(r) / (E(p) + E(r))
                           - F(p) * G(q) * H(r) * dE(r) / (E(q) + E(r))) * wtrans_(a, r) * wtrans_(b, r)) * CPW(p, q);
-              (*den)(a, b) += (N(q, r) * O(p, r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * ((F(q) * dG(p) - F(q) * G(p) * dE(p) / (E(p)
-                          + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (G(p) * dF(q) - F(q) * G(p) * dE(q) / (E(q)
-                          + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(q) * G(p) * dH(r) - F(q) * G(p) * H(r) * dE(r) / (E(p) + E(r))
-                          - F(q) * G(p) * H(r) * dE(r) / (E(q) + E(r))) * wtrans_(a, r) * wtrans_(b, r)) * CPW(p, q);
+              // (*den)(a, b) += (N(q, r) * O(p, r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * ((F(q) * dG(p) - F(q) * G(p) * dE(p) / (E(p)
+              //             + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (G(p) * dF(q) - F(q) * G(p) * dE(q) / (E(q)
+              //             + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(q) * G(p) * dH(r) - F(q) * G(p) * H(r) * dE(r) / (E(p) + E(r))
+              //             - F(q) * G(p) * H(r) * dE(r) / (E(q) + E(r))) * wtrans_(a, r) * wtrans_(b, r)) * CPW(p, q);
             }
           }
         }

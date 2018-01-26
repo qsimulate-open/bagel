@@ -121,7 +121,7 @@ void DKHcore::init(shared_ptr<const Molecule> mol0) {
        - BVB * (EAVA - 0.5 * (*pre_scale(RI_inv, BVBE)- AVAE))
        - (AVAE + 0.5 * EAVA) * BVB                  + 0.5 * (*post_scale(EAVA, RI) - EBVB) * AVA
        + 0.5 * EBVB * *pre_scale(RI_inv, BVB)       + AVARI * (EAVA + 0.5 * AVAE)
-       + BVBE * *pre_scale(RI_inv, BVB)             - 0.5 * AVA * BVBE;                   // DKH2z
+       + BVBE * *pre_scale(RI_inv, BVB)             - 0.5 * AVA * BVBE;                   // DKH2
 
   const MixedBasis<OverlapBatch> mix(mol0, mol);
   const Matrix transfer2 = *transfer % mix;
