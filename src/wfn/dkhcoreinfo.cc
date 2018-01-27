@@ -305,10 +305,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
                           + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (F(p) * dG(q) - F(p) * G(q) * dE(q) / (E(q)
                           + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(p) * G(q) * dH(r) - F(p) * G(q) * H(r) * dE(r) / (E(p) + E(r))
                           - F(p) * G(q) * H(r) * dE(r) / (E(q) + E(r))) * wtrans_(a, r) * wtrans_(b, r)) * CPW(p, q);
-              // (*den)(a, b) += (N(q, r) * O(p, r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * ((F(q) * dG(p) - F(q) * G(p) * dE(p) / (E(p)
-              //             + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (G(p) * dF(q) - F(q) * G(p) * dE(q) / (E(q)
-              //             + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(q) * G(p) * dH(r) - F(q) * G(p) * H(r) * dE(r) / (E(p) + E(r))
-              //             - F(q) * G(p) * H(r) * dE(r) / (E(q) + E(r))) * wtrans_(a, r) * wtrans_(b, r)) * CPW(p, q);
             }
           }
         }
@@ -348,42 +344,54 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
           (*den)(a, b) += A(p) * A(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
           (*pvpden)(a, b) += B(p) * B(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
           for (int r = 0; r != nbasis_; ++r) {
-            (*den)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                        + B(q) * A(p) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
-            (*pvpden)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                            + B(q) * A(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * (A(p) * A(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                        + A(q) * A(p) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * (A(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                        + A(q) * A(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * (B(p) * B(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                            + B(q) * B(p) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * (B(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                            + B(q) * B(p) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
-            (*den)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                        + B(q) * A(p) * E(p) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
-            (*pvpden)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * (B(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                            + B(q) * A(p) * E(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
-            (*pvpden)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * (A(p) * B(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                            + A(q) * B(p) * E(p) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
-            (*den)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q) + E(r)))) * (A(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                        + A(q) * B(p) * E(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
+            (*den)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
+                            + E(r)))) * B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (A(r) * E(r) * B(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * A(p) * B(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) -= (A(r) * E(r) * B(r) / ((E(p) + E(r)) * (E(q)
+                            + E(r)))) * A(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) += (2 * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * A(p) * A(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) += (2 * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * A(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * B(p) * B(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * B(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
+                        + E(r)))) * B(p) * A(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * B(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * A(p) * B(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
+                        + E(r)))) * A(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
             (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * (A(p) * A(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                        + A(q) * A(p) * E(p) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
+                        + E(r)))) * A(p) * A(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
             (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * (A(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                        + A(q) * A(p) * E(p) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
+                        + E(r)))) * A(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
             (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * (B(p) * B(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)
-                            + B(q) * B(p) * E(p) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)) * CPW(p, q);
+                            + E(r)))) * B(p) * B(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
             (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * (B(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r)
-                            + B(q) * B(p) * E(p) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r)) * CPW(p, q);
+                            + E(r)))) * B(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
+                        + E(r)))) * E(p) * B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * E(p) * B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * E(p) * A(p) * B(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
+                        + E(r)))) * E(p) * A(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * E(p) * A(p) * A(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
+                        + E(r)))) * E(p) * A(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * E(p) * B(p) * B(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
+                            + E(r)))) * E(p) * B(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
           }
         }
       }
@@ -442,7 +450,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
                         + E(p) * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * nai_(r, q) * A(q)
                         + 0.25 * E(p) * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) / kinetic_(r)) * smallnai_(r, q) * B(q))
                         * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
-          }
+          }     
         }
       }
     }
