@@ -18,28 +18,37 @@
 
 {
   "title" : "multisite",
-  "nsites" : 3,
-  "charge" : 0,
-  "nspin" : 0,
-  "region_sizes" : [1, 1, 1],
-  "active_electrons" : [2, 2, 2],
-  "active_sizes" : [5, 5, 5],
   "localization" : {
+    "region_sizes" : [1, 1, 1],
     "max_iter" : 50,
     "thresh" : 1.0e-12
-  },
-  "active_subspaces" : [[1, 4, 5, 6, 7], [2, 8, 9, 10, 11], [3, 12, 13, 14, 15]]
+  }
 },
 
 {
   "title" : "asd_dmrg",
+
+  "nsites" : 3,
   "nstate" : 1,
+  "charge" : 0,
+  "nspin" : 0,
+  "active_sizes" : [5, 5, 5],
+  "active_electrons" : [2, 2, 2],
+  "region_sizes" : [1, 1, 1],
+
+  "active_orbitals" : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+  "localization" : {
+    "max_iter" : 50,
+    "thresh" : 1.0e-12
+  },
+
   "ntrunc" : 13,
   "thresh" : 1.0e-8,
   "perturb" : 1.0e-3,
-  "perturb_min" : 1.0e-4,
   "perturb_thresh" : 1.0e-4,
+  "perturb_min" : 1.0e-4,
   "maxiter" : 50,
+  
   "ras" : {
     "nguess" : 5,
     "maxiter" : 50,

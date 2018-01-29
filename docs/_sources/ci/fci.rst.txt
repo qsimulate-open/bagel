@@ -76,7 +76,7 @@ Keywords
 
 .. topic:: ``nspin``
 
-   | **Description:** The spin multiplicity of the wavefunction (2S+1). 
+   | **Description:** The number associated with the spin states: 0 for singlet, 1 for doublet, 2 for triplet, etc. 
    | **Datatype:** int
    | **Default:** 0
 
