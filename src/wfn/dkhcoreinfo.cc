@@ -55,9 +55,9 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
 
   ptrans_ = ContrCoeff(current, nbasis_);
 
-  wtrans_.print("W");
-  wtrans_rev_.print("S^unc W");
-  ptrans_.print("P");
+  // wtrans_.print("W");
+  // wtrans_rev_.print("S^unc W");
+  // ptrans_.print("P");
 
   zmult_ = ederiv_ = Matrix(nbasis_, nbasis_);
 }
@@ -95,13 +95,18 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   }
 
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
-  for (int b = 0; b != nbasis_; ++b) {
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int p = 0; p != nbasis_; ++p) {
+  
+  for (int p = 0; p != nbasis_; ++p) {
+    for (int b = 0; b != nbasis_; ++b) {
+      for (int a = 0; a != nbasis_; ++a) {
         (*den)(a, b) += dE(p) * wtrans_(a, p) * wtrans_(b, p) * CPW(p, p);
       }
-      for (int q = 0; q != nbasis_; ++q) {
-        for (int p = 0; p != nbasis_; ++p) {
+    }
+  }
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int b = 0; b != nbasis_; ++b) {
+        for (int a = 0; a != nbasis_; ++a) {
           (*den)(a, b) += (nai_(p, q) * (A(q) * dA(p) * wtrans_(a, p) * wtrans_(b, p) + A(p) * dA(q) * wtrans_(a, q) * wtrans_(b, q))
                       + smallnai_(p, q) * (B(q) * dB(p) * wtrans_(a, p) * wtrans_(b, p) + B(p) * dB(q) * wtrans_(a, q) * wtrans_(b, q))) * CPW(p, q);
         }
@@ -296,11 +301,12 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
       }
     }
 
-    for (int b = 0; b != nbasis_; ++b) {
-      for (int a = 0; a != nbasis_; ++a) {
-        for (int r = 0; r != nbasis_; ++r) {
-          for (int q = 0; q != nbasis_; ++q) {
-            for (int p = 0; p != nbasis_; ++p) {
+    
+    for (int r = 0; r != nbasis_; ++r) {
+      for (int q = 0; q != nbasis_; ++q) {
+        for (int p = 0; p != nbasis_; ++p) {
+          for (int b = 0; b != nbasis_; ++b) {
+            for (int a = 0; a != nbasis_; ++a) {
               (*den)(a, b) += (N(p, r) * O(q, r) / ((E(p) + E(r)) * (E(q) + E(r)))) * ((G(q) * dF(p) - F(p) * G(q) * dE(p) / (E(p)
                           + E(r))) * H(r) * wtrans_(a, p) * wtrans_(b, p) + (F(p) * dG(q) - F(p) * G(q) * dE(q) / (E(q)
                           + E(r))) * H(r) * wtrans_(a, q) * wtrans_(b, q) + (F(p) * G(q) * dH(r) - F(p) * G(q) * H(r) * dE(r) / (E(p) + E(r))
@@ -310,6 +316,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
         }
       }
     }
+      
   }
 
   for (int q = 0; q != nbasis_; ++q) {
@@ -319,9 +326,9 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   }
 
   *den += wtrans_ * zmult_ ^ wtrans_;
-  ederiv_.print("Y_pq");
-  zmult_.print("z_pq");
-  den->print("d_tilde");
+  // ederiv_.print("Y_pq");
+  // zmult_.print("z_pq");
+  // den->print("d_tilde");
   return den;
 }
 
@@ -337,13 +344,18 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
 
   const Matrix CPW = (ptrans_ % wtrans_rev_) % *rdm1 * (ptrans_ % wtrans_rev_);
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_), pvpden = make_shared<Matrix>(nbasis_, nbasis_);
-  for (int b = 0; b != nbasis_; ++b) {
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int q = 0; q != nbasis_; ++q) {
-        for (int p = 0; p != nbasis_; ++p) {
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int b = 0; b != nbasis_; ++b) {
+        for (int a = 0; a != nbasis_; ++a) {
           (*den)(a, b) += A(p) * A(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
           (*pvpden)(a, b) += B(p) * B(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
-          for (int r = 0; r != nbasis_; ++r) {
+        }
+      }
+
+      for (int r = 0; r != nbasis_; ++r) {
+        for (int b = 0; b != nbasis_; ++b) {
+          for (int a = 0; a != nbasis_; ++a) {
             (*den)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
                         + E(r)))) * B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
             (*pvpden)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
@@ -397,8 +409,8 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
       }
     }
   }
-  den->print("d_bar");
-  pvpden->print("d_check");
+  // den->print("d_bar");
+  // pvpden->print("d_check");
   return { den, pvpden };
 }
 
@@ -428,15 +440,24 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
 
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
   const Matrix CPW = ptrans_ * *rdm1 ^ (wtrans_rev_ % ptrans_);
-  for (int b = 0; b != nbasis_; ++b) {
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int p = 0; p != nbasis_; ++p) {
+  for (int p = 0; p != nbasis_; ++p) {
+    for (int b = 0; b != nbasis_; ++b) {
+      for (int a = 0; a != nbasis_; ++a) {
         (*den)(a, b) += 2 * (E(p) - c2) * wtrans_(b, p) * CPW(a, p);
       }
-      for (int q = 0; q != nbasis_; ++q) {
-        for (int p = 0; p != nbasis_; ++p) {
+    }
+  }
+  for (int q = 0; q != nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int b = 0; b != nbasis_; ++b) {
+        for (int a = 0; a != nbasis_; ++a) {
           (*den)(a, b) += (A(p) * nai_(p, q) * A(q) + B(p) * smallnai_(p, q) * B(q)) * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
-          for (int r = 0; r != nbasis_; ++r) {
+        }
+      }
+
+      for (int r = 0; r != nbasis_; ++r) {
+        for (int b = 0; b != nbasis_; ++b) {
+          for (int a = 0; a != nbasis_; ++a) {
             (*den)(a, b) += (1 / ((E(p) + E(r)) * (E(q) + E(r)))) * (-B(p) * smallnai_(r, p) * B(r) * E(r) * A(r) * nai_(r, q) * A(q)
                         - A(p) * nai_(r, p) * A(r) * E(r) * B(r) * smallnai_(r, q) * B(q)
                         + 2 * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) * nai_(r, q) * A(q)
@@ -450,15 +471,15 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
                         + E(p) * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * nai_(r, q) * A(q)
                         + 0.25 * E(p) * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) / kinetic_(r)) * smallnai_(r, q) * B(q))
                         * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
-          }     
+          }
         }
-      }
+      }     
     }
   }
 
   *den -= (ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_);
-  at.print("a_tilde");
-  xb.print("X_bar");
-  den->print("X_tilde");
+  // at.print("a_tilde");
+  // xb.print("X_bar");
+  // den->print("X_tilde");
   return den;
 }
