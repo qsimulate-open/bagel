@@ -126,7 +126,7 @@ void ZCASSecond::init_coeff() {
   }
 
   // initialize coefficient to enforce kramers symmetry
-  if (!relref->kramers() && external_rdm_.empty())
+  if (!relref->kramers() && (external_rdm_.empty() || external_rdm_ == "noref"))
     scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
 
   // specify active orbitals and move into the active space

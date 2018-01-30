@@ -37,7 +37,7 @@ CASSCF::CASSCF(shared_ptr<const PTree> idat, const shared_ptr<const Geometry> ge
 
   // check if RDMs are supplied externally
   external_rdm_ = idata_->get<string>("external_rdm", "");
-  if (!external_rdm_.empty()) {
+  if (!external_rdm_.empty() && external_rdm_ != "noref") {
     IArchive ar("ref");
     ar >> ref_;
   }
@@ -99,6 +99,7 @@ void CASSCF::common_init() {
   max_micro_iter_ = idata_->get<int>("maxiter_micro", 100);
   // get nstate from the input
   nstate_ = idata_->get<int>("nstate", 1);
+  energy_.resize(nstate_);
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
@@ -272,7 +273,8 @@ shared_ptr<const Matrix> CASSCF::spin_density() const {
 
 
 shared_ptr<const Reference> CASSCF::conv_to_ref() const {
-  return nact_ ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
-                                        fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn())
-               : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_);
+  const bool noci = !nact_ || external_rdm_ == "noref";
+  return noci ? make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_)
+              : make_shared<Reference>(geom_, coeff_, nclosed_, nact_, nvirt_, energy_,
+                                       fci_->rdm1(), fci_->rdm2(), fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
