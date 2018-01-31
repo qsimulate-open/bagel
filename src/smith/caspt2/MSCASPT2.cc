@@ -131,11 +131,197 @@ void MSCASPT2::MSCASPT2::zero_total() {
 }
 
 
+tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>> MSCASPT2::MSCASPT2::feed_denci() {
+  const int nstates = info_->ciwfn()->nstates();
+  const size_t nact  = info_->nact();
+
+  auto den0cirdm = make_shared<Vec<double>>();
+  auto den1cirdm = make_shared<VecRDM<1>>();
+  auto den2cirdm = make_shared<VecRDM<2>>();
+  auto den3cirdm = make_shared<VecRDM<3>>();
+  auto den4cirdm = make_shared<VecRDM<3>>();
+
+  for (int nst = 0; nst != nstates; ++nst) {
+    for (int mst = 0; mst != nstates; ++mst) {
+        den0cit = den0ciall->at(nst, mst);
+        den1cit = den1ciall->at(nst, mst);
+        den2cit = den2ciall->at(nst, mst);
+        den3cit = den3ciall->at(nst, mst);
+        den4cit = den4ciall->at(nst, mst);
+        mpi__->barrier();
+
+        // collect den0ci
+        {
+          unique_ptr<double[]> d0data = den0cit->get_block();
+          auto d0 = make_shared<double>(d0data[0]);
+          den0cirdm->emplace(nst, mst, d0);
+        }
+
+        // collect den1ci
+        {
+          // let me test
+          vector<IndexRange> o = den1cit->indexrange();
+          const int off0 = o[0].front().offset();
+          const int off1 = o[1].front().offset();
+          auto d1 = make_shared<RDM<1>>(nact);
+          for (auto& i1 : o[1].range())
+            for (auto& i0 : o[0].range()) {
+              auto input = den1cit->get_block(i0, i1);
+              for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                copy_n(&input[0+i0.size()*io1], i0.size(), d1->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1));
+            }
+          den1cirdm->emplace(nst, mst, d1);
+        }
+
+        // collect den2ci
+        {
+          vector<IndexRange>o = den2cit->indexrange();
+          const int off0 = o[0].front().offset();
+          const int off1 = o[1].front().offset();
+          const int off2 = o[2].front().offset();
+          const int off3 = o[3].front().offset();
+          auto d2 = make_shared<RDM<2>>(nact);
+          for (auto& i3 : o[3].range())
+            for (auto& i2 : o[2].range())
+              for (auto& i1 : o[1].range())
+                for (auto& i0 : o[0].range()) {
+                  auto input = den2cit->get_block(i0, i1, i2, i3);
+                  for (size_t io3 = 0; io3 != i3.size(); ++io3)
+                    for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                      for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                        copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*io3))], i0.size(), d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
+                }
+          den2cirdm->emplace(nst, mst, d2);
+        }
+
+        // collect den3ci
+        {
+          vector<IndexRange>o = den3cit->indexrange();
+          const int off0 = o[0].front().offset();
+          const int off1 = o[1].front().offset();
+          const int off2 = o[2].front().offset();
+          const int off3 = o[3].front().offset();
+          const int off4 = o[4].front().offset();
+          const int off5 = o[5].front().offset();
+          auto d3 = make_shared<RDM<3>>(nact);
+          for (auto& i5 : o[5].range())
+            for (auto& i4 : o[4].range())
+              for (auto& i3 : o[3].range())
+                for (auto& i2 : o[2].range())
+                  for (auto& i1 : o[1].range())
+                    for (auto& i0 : o[0].range()) {
+                      auto input = den3cit->get_block(i0, i1, i2, i3, i4, i5);
+                      for (size_t io5 = 0; io5 != i5.size(); ++io5)
+                        for (size_t io4 = 0; io4 != i4.size(); ++io4)
+                          for (size_t io3 = 0; io3 != i3.size(); ++io3)
+                            for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                              for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                                copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*(io3+i3.size()*(io4+i4.size()*io5))))],
+                                    i0.size(), d3->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
+                    }
+          den3cirdm->emplace(nst, mst, d3);
+        }
+
+        // collect den4ci
+        {
+          vector<IndexRange>o = den4cit->indexrange();
+          const int off0 = o[0].front().offset();
+          const int off1 = o[1].front().offset();
+          const int off2 = o[2].front().offset();
+          const int off3 = o[3].front().offset();
+          const int off4 = o[4].front().offset();
+          const int off5 = o[5].front().offset();
+          auto d4 = make_shared<RDM<3>>(nact);
+          for (auto& i5 : o[5].range())
+            for (auto& i4 : o[4].range())
+              for (auto& i3 : o[3].range())
+                for (auto& i2 : o[2].range())
+                  for (auto& i1 : o[1].range())
+                    for (auto& i0 : o[0].range()) {
+                      auto input = den4cit->get_block(i0, i1, i2, i3, i4, i5);
+                      for (size_t io5 = 0; io5 != i5.size(); ++io5)
+                        for (size_t io4 = 0; io4 != i4.size(); ++io4)
+                          for (size_t io3 = 0; io3 != i3.size(); ++io3)
+                            for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                              for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                                copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*(io3+i3.size()*(io4+i4.size()*io5))))],
+                                    i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
+                    }
+          den4cirdm->emplace(nst, mst, d4);
+        }
+    }
+  }
+
+  return tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
+}
+
+
 void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const int nstates = info_->ciwfn()->nstates();
+  const size_t ndet = ci_deriv_->data(0)->size();
   Timer timer(1);
+  // first, make vec
+  std::shared_ptr<Vec<double>> den0cirdm;
+  std::shared_ptr<VecRDM<1>> den1cirdm;
+  std::shared_ptr<VecRDM<2>> den2cirdm;
+  std::shared_ptr<VecRDM<3>> den3cirdm;
+  std::shared_ptr<VecRDM<3>> den4cirdm;
+
+  tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
+#if 0
   for (int nst = 0; nst != nstates; ++nst) {
-    const size_t ndet = ci_deriv_->data(nst)->size();
+    const size_t nact  = info_->nact();
+    const size_t norb2 = nact*nact;
+    const size_t ijmax = mpi__->size() >= 4 ? info_->cimaxchunk() * static_cast<size_t>(mpi__->size()) / 4 : info_->cimaxchunk();
+
+    const size_t ijnum = ndet * norb2 * norb2;
+    const size_t npass = (ijnum-1) / ijmax + 1;
+    const size_t nsize = (ndet-1) / npass + 1;
+    if (npass > 1)
+      cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
+
+    // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
+    rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, nst);
+
+    if (npass > 1)
+      timer.tick_print("Fock-weighted 2RDM derivative");
+
+    // should be connected to the input
+    const int nproc = 1;
+
+    const int ncomm = mpi__->world_size() / nproc;
+    const int icomm = mpi__->world_rank() / nproc;
+
+    mpi__->split(nproc);
+
+    for (int ipass = 0; ipass != npass; ++ipass) {
+      if (ipass % ncomm == icomm && ncomm != icomm) {
+        const size_t ioffset = ipass * nsize;
+        const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+        tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
+          = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
+        for (int mst = 0; mst != nstates; ++mst) {
+          auto den0cirdmt = den0cirdm->at(nst, mst);
+          auto den1cirdmt = den1cirdm->at(nst, mst);
+          auto den2cirdmt = den2cirdm->at(nst, mst);
+          auto den3cirdmt = den3cirdm->at(nst, mst);
+          auto den4cirdmt = den4cirdm->at(nst, mst);
+
+          shared_ptr<VectorB> bdata;
+
+          bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize);
+
+          blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
+        }
+      }
+    }
+    mpi__->merge();
+  }
+
+  for (int mst = 0; mst != nstates; ++mst)
+    mpi__->allreduce(ci_deriv_->data(mst), ndet);
+#else
+  for (int nst = 0; nst != nstates; ++nst) {
     const size_t nact  = info_->nact();
     const size_t norb2 = nact*nact;
     const size_t ijmax = mpi__->size() >= 4 ? info_->cimaxchunk() * static_cast<size_t>(mpi__->size()) / 4 : info_->cimaxchunk();
@@ -181,6 +367,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
       }
     }
   }
+#endif
 }
 
 
