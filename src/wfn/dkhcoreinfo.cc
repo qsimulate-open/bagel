@@ -43,8 +43,9 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
   shared_ptr<const Matrix> gamma = overlap.tildex();
   const Kinetic kinetic(mol);
   auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
-  kinetic_ = VectorB(nbasis_);
-  lambda->diagonalize(kinetic_);
+  VectorB kinetic0(nbasis_);
+  lambda->diagonalize(kinetic0);
+  kinetic_ = DiagVec(kinetic0);
   wtrans_ = *gamma * *lambda;
   wtrans_rev_ = overlap * wtrans_;
 
@@ -64,7 +65,7 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1) {
   const double c2 = c__ * c__;
-  VectorB E(nbasis_), A(nbasis_), B(nbasis_), K(nbasis_), dE(nbasis_), dA(nbasis_), dK(nbasis_), dB(nbasis_);
+  DiagVec E(nbasis_), A(nbasis_), B(nbasis_), K(nbasis_), dE(nbasis_), dA(nbasis_), dK(nbasis_), dB(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
     A(p) = sqrt((c2 + E(p)) / (2 * E(p)));
@@ -77,45 +78,23 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   }
 
   const Matrix CPW = (ptrans_ % wtrans_rev_) % *rdm1 * (ptrans_ % wtrans_rev_);
-  for (int q = 0; q != nbasis_; ++q) {
-    for (int p = 0; p != nbasis_; ++p) {
-      ederiv_(p, q) += 2 * CPW(p, q) * (E(q) - c2);
-      if (p == q) {
-        ederiv_(p, q) += 2 * CPW(p, p) * dE(p) * kinetic_(p);
-      }
-      for (int r = 0; r != nbasis_; ++r) {
-        ederiv_(p, q) += 2 * CPW(r, p) * (A(q) * A(r) * nai_(r, q) + B(q) * B(r) * smallnai_(r, q));
-        ederiv_(p, q) += 2 * CPW(r, q) * (A(q) * A(r) * nai_(r, p) + B(q) * B(r) * smallnai_(r, p));
-        if (p == q) {
-          ederiv_(p, q) += 2 * CPW(r, p) * (dA(p) * kinetic_(p) * A(r) * nai_(r, q) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, q));
-          ederiv_(p, q) += 2 * CPW(r, q) * (dA(p) * kinetic_(p) * A(r) * nai_(r, p) + dB(p) * kinetic_(p) * B(r) * smallnai_(r, p));
-        }
-      }
-    }
+  const Matrix CAN = CPW * A * nai_, NAC = nai_ * A * CPW, CBS = CPW * B * smallnai_, SBC = smallnai_ * B * CPW;
+  ederiv_ += 2 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
+  for (int p = 0; p != nbasis_; ++p) {
+    ederiv_(p, p) += 2 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * kinetic_(p);
   }
 
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
-  
   for (int p = 0; p != nbasis_; ++p) {
     for (int b = 0; b != nbasis_; ++b) {
       for (int a = 0; a != nbasis_; ++a) {
-        (*den)(a, b) += dE(p) * wtrans_(a, p) * wtrans_(b, p) * CPW(p, p);
-      }
-    }
-  }
-  for (int q = 0; q != nbasis_; ++q) {
-    for (int p = 0; p != nbasis_; ++p) {
-      for (int b = 0; b != nbasis_; ++b) {
-        for (int a = 0; a != nbasis_; ++a) {
-          (*den)(a, b) += (nai_(p, q) * (A(q) * dA(p) * wtrans_(a, p) * wtrans_(b, p) + A(p) * dA(q) * wtrans_(a, q) * wtrans_(b, q))
-                      + smallnai_(p, q) * (B(q) * dB(p) * wtrans_(a, p) * wtrans_(b, p) + B(p) * dB(q) * wtrans_(a, q) * wtrans_(b, q))) * CPW(p, q);
-        }
+        (*den)(a, b) += (dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p))) * wtrans_(a, p) * wtrans_(b, p);
       }
     }
   }
 
   Matrix N(nbasis_, nbasis_), O(nbasis_, nbasis_);
-  VectorB F(nbasis_), G(nbasis_), H(nbasis_), dF(nbasis_), dG(nbasis_), dH(nbasis_);
+  DiagVec F(nbasis_), G(nbasis_), H(nbasis_), dF(nbasis_), dG(nbasis_), dH(nbasis_);
   for (int i = 0; i != 12; ++i) {
     switch (i) {
     case 0:
@@ -334,7 +313,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
 
 array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1) {
   const double c2 = c__ * c__;
-  VectorB E(nbasis_), A(nbasis_), K(nbasis_), B(nbasis_);
+  DiagVec E(nbasis_), A(nbasis_), K(nbasis_), B(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
     A(p) = sqrt((E(p) + c2) / (2 * E(p)));
@@ -416,7 +395,7 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
 
 shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1) {
   const double c2 = c__ * c__;
-  VectorB E(nbasis_), A(nbasis_), K(nbasis_), B(nbasis_);
+  DiagVec E(nbasis_), A(nbasis_), K(nbasis_), B(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
     A(p) = sqrt((E(p) + c2) / (2 * E(p)));

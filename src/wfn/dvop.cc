@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: dkhcoreinfo.h
-// Copyright (C) 2017 Toru Shiozaki
+// Filename: dvop.cc
+// Copyright (C) 2017 Nils Strand
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,38 +23,27 @@
 //
 
 
-#ifndef __SRC_WFN_DKHCOREINFO_H
-#define __SRC_WFN_DKHCOREINFO_H
-
 #include <src/wfn/diagvec.h>
-#include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class DKHcoreInfo {
-  private:
-    int nbasis_;
+  Matrix operator*(const DiagVec &v, const Matrix &m) {
+    assert(m.ndim() == v.size());
+    Matrix out(v.size(), v.size());
+    for (int i = 0; i < m.mdim(); i++) {
+      for (int j = 0; j < m.ndim(); j++) {
+        out(j, i) = m(j, i) * v(j);
+      }
+    }
+    return out;
+  }
 
-    Matrix wtrans_;
-    Matrix wtrans_rev_;
-    Matrix ptrans_;
-
-    DiagVec kinetic_;
-    Matrix nai_;
-    Matrix smallnai_;
-
-    Matrix zmult_;
-    Matrix ederiv_;
-
-  public:
-    DKHcoreInfo() { }
-    DKHcoreInfo(std::shared_ptr<const Molecule>);
-
-    std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
-    std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
-    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
-};
+  Matrix operator*(const Matrix &m, const DiagVec &v) {
+    assert(m.mdim() == v.size());
+    Matrix out = m;
+    for (int i = 0; i != m.mdim(); ++i)
+      blas::scale_n(v(i), out.element_ptr(0, i), m.ndim());
+    return out;
+  }
 
 }
-
-#endif
