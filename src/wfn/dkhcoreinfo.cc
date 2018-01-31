@@ -323,15 +323,10 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
 
   const Matrix CPW = (ptrans_ % wtrans_rev_) % *rdm1 * (ptrans_ % wtrans_rev_);
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_), pvpden = make_shared<Matrix>(nbasis_, nbasis_);
+  *den += wtrans_ * A * CPW * A ^ wtrans_;
+  *pvpden += wtrans_ * B * CPW * B ^ wtrans_;
   for (int q = 0; q != nbasis_; ++q) {
     for (int p = 0; p != nbasis_; ++p) {
-      for (int b = 0; b != nbasis_; ++b) {
-        for (int a = 0; a != nbasis_; ++a) {
-          (*den)(a, b) += A(p) * A(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
-          (*pvpden)(a, b) += B(p) * B(q) * wtrans_(a, p) * wtrans_(b, q) * CPW(p, q);
-        }
-      }
-
       for (int r = 0; r != nbasis_; ++r) {
         for (int b = 0; b != nbasis_; ++b) {
           for (int a = 0; a != nbasis_; ++a) {
@@ -406,7 +401,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
   Matrix at(nbasis_, nbasis_);
   for (int q = 0; q != nbasis_; ++q) {
     for (int p = 0; p != nbasis_; ++p) {
-      at(p, q) = (zmult_(p, q) + zmult_(q, p)) * kinetic_(p);
+      at(p, q) = 2 * zmult_(p, q) * kinetic_(p);
     }
   }
 
@@ -417,23 +412,11 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
     }
   }
 
-  shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
   const Matrix CPW = ptrans_ * *rdm1 ^ (wtrans_rev_ % ptrans_);
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int b = 0; b != nbasis_; ++b) {
-      for (int a = 0; a != nbasis_; ++a) {
-        (*den)(a, b) += 2 * (E(p) - c2) * wtrans_(b, p) * CPW(a, p);
-      }
-    }
-  }
+  shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
+  *den += 2 * ((CPW * E - c2 * CPW) + CPW * (A * nai_ * A + B * smallnai_ * B)) ^ wtrans_;
   for (int q = 0; q != nbasis_; ++q) {
     for (int p = 0; p != nbasis_; ++p) {
-      for (int b = 0; b != nbasis_; ++b) {
-        for (int a = 0; a != nbasis_; ++a) {
-          (*den)(a, b) += (A(p) * nai_(p, q) * A(q) + B(p) * smallnai_(p, q) * B(q)) * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
-        }
-      }
-
       for (int r = 0; r != nbasis_; ++r) {
         for (int b = 0; b != nbasis_; ++b) {
           for (int a = 0; a != nbasis_; ++a) {
