@@ -458,8 +458,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
       for (int r = 0; r != nbasis_; ++r) {
         for (int b = 0; b != nbasis_; ++b) {
           for (int a = 0; a != nbasis_; ++a) {
-            (*den)(a, b) += (1 / ((E(p) + E(r)) * (E(q) + E(r)))) * (0
-                        - B(p) * smallnai_(r, p) * B(r) * E(r) * A(r) * nai_(r, q) * A(q)
+            (*den)(a, b) += (1 / ((E(p) + E(r)) * (E(q) + E(r)))) * (-B(p) * smallnai_(r, p) * B(r) * E(r) * A(r) * nai_(r, q) * A(q)
                         - A(p) * nai_(r, p) * A(r) * E(r) * B(r) * smallnai_(r, q) * B(q)
                         + 2 * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) * nai_(r, q) * A(q)
                         + 0.5 * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) * smallnai_(r, q) * B(q)
@@ -470,8 +469,8 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1
                         - 0.5 * E(p) * B(p) * smallnai_(r, p) * B(r) * A(r) * nai_(r, q) * A(q)
                         - 0.5 * E(p) * A(p) * nai_(r, p) * A(r) * B(r) * smallnai_(r, q) * B(q)
                         + E(p) * A(p) * nai_(r, p) * pow(A(r) * K(r), 2) * kinetic_(r) * nai_(r, q) * A(q)
-                        + 0.25 * E(p) * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) / kinetic_(r)) * smallnai_(r, q) * B(q)
-                        ) * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
+                        + 0.25 * E(p) * B(p) * smallnai_(r, p) * (pow(B(r) / K(r), 2) / kinetic_(r)) * smallnai_(r, q) * B(q))
+                        * (wtrans_(b, q) * CPW(a, p) + wtrans_(b, p) * CPW(a, q));
           }
         }
       }     
