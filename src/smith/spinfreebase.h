@@ -43,6 +43,7 @@ template<typename DataType>
 class SpinFreeMethod {
   protected:
     using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
+    using VecType = typename std::conditional<std::is_same<DataType,double>::value, VectorB, ZVectorB>::type;
     using CIWfnT  = typename std::conditional<std::is_same<DataType,double>::value,CIWfn,RelCIWfn>::type;
 
     IndexRange virt_;
@@ -150,6 +151,9 @@ class SpinFreeMethod {
 
     // This static function does up to 2RDM derivatives & fock-weighted 3RDM derivative (CASPT2)
     static std::shared_ptr<MatType> feed_rdm_2fderiv(std::shared_ptr<const SMITH_Info<DataType>> info, std::shared_ptr<const MatType> fockact, const int istate);
+    static std::tuple<std::shared_ptr<VecType>, std::shared_ptr<MatType>, std::shared_ptr<MatType>, std::shared_ptr<MatType>>
+      feed_rdm_deriv_mat(std::shared_ptr<const SMITH_Info<DataType>> info, std::shared_ptr<const MatType> fockact, const int istate, const size_t offset, const size_t size, std::shared_ptr<const MatType> rdm2fd_in);
+    // TODO will be removed after implementing feed_rdm_deriv_mat
     static std::tuple<IndexRange, std::shared_ptr<const IndexRange>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>,
                                   std::shared_ptr<Tensor_<DataType>>, std::shared_ptr<Tensor_<DataType>>>
@@ -166,6 +170,14 @@ template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom();
 template<> std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const;
 template<> std::shared_ptr<Matrix> SpinFreeMethod<double>::feed_rdm_2fderiv(std::shared_ptr<const SMITH_Info<double>> info, std::shared_ptr<const Matrix> fockact, const int istate);
 template<> std::shared_ptr<ZMatrix> SpinFreeMethod<std::complex<double>>::feed_rdm_2fderiv(std::shared_ptr<const SMITH_Info<std::complex<double>>> info, std::shared_ptr<const ZMatrix> fockact, const int istate);
+template<>
+std::tuple<std::shared_ptr<VectorB>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>, std::shared_ptr<Matrix>>
+  SpinFreeMethod<double>::feed_rdm_deriv_mat(std::shared_ptr<const SMITH_Info<double>> info, std::shared_ptr<const Matrix> fockact,
+      const int istate, const size_t offset, const size_t size, std::shared_ptr<const Matrix> rdm2fd_in);
+template<>
+std::tuple<std::shared_ptr<ZVectorB>, std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>, std::shared_ptr<ZMatrix>>
+  SpinFreeMethod<std::complex<double>>::feed_rdm_deriv_mat(std::shared_ptr<const SMITH_Info<std::complex<double>>> info, std::shared_ptr<const ZMatrix> fockact,
+      const int istate, const size_t offset, const size_t size, std::shared_ptr<const ZMatrix> rdm2fd_in);
 template<>
 std::tuple<IndexRange, std::shared_ptr<const IndexRange>, std::shared_ptr<Tensor_<double>>,
                         std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>, std::shared_ptr<Tensor_<double>>>

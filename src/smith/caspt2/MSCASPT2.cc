@@ -159,7 +159,6 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
 
         // collect den1ci
         {
-          // let me test
           vector<IndexRange> o = den1cit->indexrange();
           const int off0 = o[0].front().offset();
           const int off1 = o[1].front().offset();
@@ -298,6 +297,10 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
       if (ipass % ncomm == icomm && ncomm != icomm) {
         const size_t ioffset = ipass * nsize;
         const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+        shared_ptr<VectorB> rdm0deriv;
+        shared_ptr<Matrix> rdm1deriv;
+        shared_ptr<Matrix> rdm2deriv;
+        shared_ptr<Matrix> rdm3fderiv;
         tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
           = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
         for (int mst = 0; mst != nstates; ++mst) {
@@ -309,7 +312,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
 
           shared_ptr<VectorB> bdata;
 
-          bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize);
+          bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
 
           blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
         }
