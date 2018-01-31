@@ -33,6 +33,17 @@ using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
+
+shared_ptr<VectorB> MSCASPT2::MSCASPT2::contract_rdm_deriv_mat(shared_ptr<const CIWfn> ciwfn, int offset, int size,
+    shared_ptr<const Matrix> rdm0deriv, shared_ptr<const Matrix> rdm1deriv, shared_ptr<const Matrix> rdm2deriv, shared_ptr<const Matrix> rdm3deriv,
+    shared_ptr<const double> den0cirdmt, shared_ptr<const RDM<1>> den1cirdmt, shared_ptr<const RDM<2>> den2cirdmt, shared_ptr<const RDM<3>> den3cirdmt, shared_ptr<const RDM<3>> den4cirdmt) {
+  const size_t ndet = ci_deriv_->data(0)->size();
+  auto out = make_shared<VectorB>(ndet);
+
+  return out;
+}
+
+
 shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, shared_ptr<VectorB> bdata, int offset, int size, const bool reset, const bool diagonal) {
 
   array<shared_ptr<const IndexRange>,4> cindex = {{rclosed_, ractive_, rvirt_, rci_}};
