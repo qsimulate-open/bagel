@@ -35,10 +35,26 @@ using namespace bagel::SMITH;
 
 
 shared_ptr<VectorB> MSCASPT2::MSCASPT2::contract_rdm_deriv_mat(shared_ptr<const CIWfn> ciwfn, int offset, int size,
-    shared_ptr<const Matrix> rdm0deriv, shared_ptr<const Matrix> rdm1deriv, shared_ptr<const Matrix> rdm2deriv, shared_ptr<const Matrix> rdm3deriv,
+    shared_ptr<const VectorB> rdm0deriv, shared_ptr<const Matrix> rdm1deriv, shared_ptr<const Matrix> rdm2deriv, shared_ptr<const Matrix> rdm3deriv,
     shared_ptr<const double> den0cirdmt, shared_ptr<const RDM<1>> den1cirdmt, shared_ptr<const RDM<2>> den2cirdmt, shared_ptr<const RDM<3>> den3cirdmt, shared_ptr<const RDM<3>> den4cirdmt) {
   const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t nact  = info_->nact();
   auto out = make_shared<VectorB>(ndet);
+
+  // rdm0deriv contraction
+  {
+    blas::ax_plus_y_n(den0cirdmt.get()[0], rdm0deriv->data(), size, out->data()+offset);
+  }
+
+  // rdm1deriv contraction
+  {
+    dgemv_("N", size, nact*nact, 1.0, rdm1deriv->data(), size, den1cirdmt->data(), 1, 1.0, out->data()+offset, 1);
+  }
+
+  // rdm2deriv contraction
+  {
+    dgemv_("N", size, nact*nact*nact*nact, 1.0, rdm2deriv->data(), size, den2cirdmt->data(), 1, 1.0, out->data()+offset, 1);
+  }
 
   return out;
 }
@@ -53,6 +69,7 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(shared_ptr<const CIWfn>
   auto task900 = make_shared<Task900>(tensor900, reset);
   contract->add_task(task900);
 
+#if 0
   auto tensor901 = vector<shared_ptr<Tensor>>{deci, rdm0deriv_, den0cit};
   auto task901 = make_shared<Task901>(tensor901, cindex);
   task901->add_dep(task900);
@@ -67,6 +84,7 @@ shared_ptr<Queue> MSCASPT2::MSCASPT2::contract_rdm_deriv(shared_ptr<const CIWfn>
   auto task903 = make_shared<Task903>(tensor903, cindex);
   task903->add_dep(task900);
   contract->add_task(task903);
+#endif
 
   vector<IndexRange> I900_index = {ci_, active_, active_};
   auto I900 = make_shared<Tensor>(I900_index);

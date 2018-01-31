@@ -146,7 +146,7 @@ class MSCASPT2 {
     std::tuple<std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>> feed_denci();
     std::shared_ptr<Queue> contract_rdm_deriv(const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
     std::shared_ptr<VectorB> contract_rdm_deriv_mat(std::shared_ptr<const CIWfn> ciwfn, int offset, int size,
-      std::shared_ptr<const Matrix> rdm0deriv, std::shared_ptr<const Matrix> rdm1deriv, std::shared_ptr<const Matrix> rdm2deriv, std::shared_ptr<const Matrix> rdm3deriv,
+      std::shared_ptr<const VectorB> rdm0deriv, std::shared_ptr<const Matrix> rdm1deriv, std::shared_ptr<const Matrix> rdm2deriv, std::shared_ptr<const Matrix> rdm3deriv,
       std::shared_ptr<const double> den0cirdmt, std::shared_ptr<const RDM<1>> den1cirdmt, std::shared_ptr<const RDM<2>> den2cirdmt, std::shared_ptr<const RDM<3>> den3cirdmt, std::shared_ptr<const RDM<3>> den4cirdmt);
     void zero_total();
     void add_total(double factor);

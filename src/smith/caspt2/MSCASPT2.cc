@@ -346,6 +346,15 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
       const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
       tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
         = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, nst, ioffset, isize, rdm2fderiv_);
+#if 1
+      // just to debug
+      shared_ptr<VectorB> rdm0deriv;
+      shared_ptr<Matrix> rdm1deriv;
+      shared_ptr<Matrix> rdm2deriv;
+      shared_ptr<Matrix> rdm3fderiv;
+      tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
+        = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
+#endif
       for (int mst = 0; mst != nstates; ++mst) {
         den0cit = den0ciall->at(nst, mst);
         den1cit = den1ciall->at(nst, mst);
@@ -356,7 +365,17 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
 
         deci = make_shared<Tensor>(vector<IndexRange>{ci_});
         deci->allocate();
+#if 1
+        auto den0cirdmt = den0cirdm->at(nst, mst);
+        auto den1cirdmt = den1cirdm->at(nst, mst);
+        auto den2cirdmt = den2cirdm->at(nst, mst);
+        auto den3cirdmt = den3cirdm->at(nst, mst);
+        auto den4cirdmt = den4cirdm->at(nst, mst);
+        shared_ptr<VectorB> bdata;
+        bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
+#else
         auto bdata = make_shared<VectorB>(ndet);
+#endif
         shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
