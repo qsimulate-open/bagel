@@ -1471,19 +1471,15 @@ void Task5::Task_local::compute() {
     }
   }
   {
-    std::unique_ptr<double[]> i0data = in(3)->get_block(x7, x6, x2, x5, x4, x3, x1, x0);
+    std::unique_ptr<double[]> i0data = in(3)->get_block(x7, x6, x2, x5, x1, x0);
     for (int i0 = 0; i0 != x0.size(); ++i0) {
       for (int i1 = 0; i1 != x1.size(); ++i1) {
-        for (int i3 = 0; i3 != x3.size(); ++i3) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i5 = 0; i5 != x5.size(); ++i5) {
-              for (int i2 = 0; i2 != x2.size(); ++i2) {
-                for (int i6 = 0; i6 != x6.size(); ++i6) {
-                  for (int i7 = 0; i7 != x7.size(); ++i7) {
-                    odata[i7+x7.size()*(i6+x6.size()*(i2+x2.size()*(i5+x5.size()*(i1+x1.size()*(i0)))))]
-                      += (-1.0) * i0data[i7+x7.size()*(i6+x6.size()*(i2+x2.size()*(i5+x5.size()*(i4+x4.size()*(i3+x3.size()*(i1+x1.size()*(i0)))))))] * fdata[i4+x4.size()*(i3)];
-                  }
-                }
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
+          for (int i2 = 0; i2 != x2.size(); ++i2) {
+            for (int i6 = 0; i6 != x6.size(); ++i6) {
+              for (int i7 = 0; i7 != x7.size(); ++i7) {
+                odata[i7+x7.size()*(i6+x6.size()*(i2+x2.size()*(i5+x5.size()*(i1+x1.size()*(i0)))))]
+                  += (-1.0) * i0data[i7+x7.size()*(i6+x6.size()*(i2+x2.size()*(i5+x5.size()*(i1+x1.size()*(i0)))))];
               }
             }
           }
@@ -2635,19 +2631,15 @@ void Task24::Task_local::compute() {
     }
   }
   {
-    std::unique_ptr<double[]> i0data = in(2)->get_block(x7, x0, x6, x5, x4, x3, x2, x1);
+    std::unique_ptr<double[]> i0data = in(2)->get_block(x7, x0, x6, x5, x2, x1);
     for (int i1 = 0; i1 != x1.size(); ++i1) {
       for (int i2 = 0; i2 != x2.size(); ++i2) {
-        for (int i3 = 0; i3 != x3.size(); ++i3) {
-          for (int i4 = 0; i4 != x4.size(); ++i4) {
-            for (int i5 = 0; i5 != x5.size(); ++i5) {
-              for (int i6 = 0; i6 != x6.size(); ++i6) {
-                for (int i0 = 0; i0 != x0.size(); ++i0) {
-                  for (int i7 = 0; i7 != x7.size(); ++i7) {
-                    odata[i7+x7.size()*(i0+x0.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i1)))))]
-                      += (1.0) * i0data[i7+x7.size()*(i0+x0.size()*(i6+x6.size()*(i5+x5.size()*(i4+x4.size()*(i3+x3.size()*(i2+x2.size()*(i1)))))))] * fdata[i4+x4.size()*(i3)];
-                  }
-                }
+        for (int i5 = 0; i5 != x5.size(); ++i5) {
+          for (int i6 = 0; i6 != x6.size(); ++i6) {
+            for (int i0 = 0; i0 != x0.size(); ++i0) {
+              for (int i7 = 0; i7 != x7.size(); ++i7) {
+                odata[i7+x7.size()*(i0+x0.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i1)))))]
+                  += (1.0) * i0data[i7+x7.size()*(i0+x0.size()*(i6+x6.size()*(i5+x5.size()*(i2+x2.size()*(i1)))))];
               }
             }
           }

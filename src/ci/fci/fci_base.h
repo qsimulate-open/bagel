@@ -116,6 +116,7 @@ class FCI_base : public Method {
     virtual void compute_rdm12(const int ist, const int jst) = 0;
     // compute 3 and 4 RDMs
     virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const = 0;
+    virtual std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const = 0;
     // compute "alpha" 1 and 2 RDMs <ia ja> and <ia ja, k, l>
     virtual std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const = 0;
     // compute "alpha" 3 and 4 RDMs <ia ja, k, l, m n>...
@@ -131,10 +132,6 @@ class FCI_base : public Method {
     virtual std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, std::shared_ptr<const Matrix> dmat, const bool parallel = true) const = 0;
     virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> dbra_in, std::shared_ptr<const Matrix> fock_ebra_in) const = 0;
-
-    // 4RDM derivative is precontracted by an Fock operator
-    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const = 0;
 
     std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
     std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }

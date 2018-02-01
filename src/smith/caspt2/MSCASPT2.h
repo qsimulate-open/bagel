@@ -42,7 +42,6 @@ class MSCASPT2 {
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
-    std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<const Matrix> heff_;
     std::shared_ptr<const Matrix> fockact_;
@@ -65,6 +64,7 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> rdm2_;
     std::shared_ptr<Tensor> rdm3_;
     std::shared_ptr<Tensor> rdm4_;
+    std::shared_ptr<Tensor> rdm4f_;
     std::shared_ptr<Vec<Tensor>> den0ciall;
     std::shared_ptr<Vec<Tensor>> den1ciall;
     std::shared_ptr<Vec<Tensor>> den2ciall;
@@ -99,6 +99,7 @@ class MSCASPT2 {
     std::shared_ptr<Vec<Tensor>> rdm2all_;
     std::shared_ptr<Vec<Tensor>> rdm3all_;
     std::shared_ptr<Vec<Tensor>> rdm4all_;
+    std::shared_ptr<Vec<Tensor>> rdm4fall_;
     std::shared_ptr<Tensor> rdm0deriv_;
     std::shared_ptr<Tensor> rdm1deriv_;
     std::shared_ptr<Tensor> rdm2deriv_;
@@ -156,6 +157,7 @@ class MSCASPT2 {
       rdm1_ = rdm1all_->at(jst, ist);
       rdm2_ = rdm2all_->at(jst, ist);
       rdm3_ = rdm3all_->at(jst, ist);
+      rdm4f_ = rdm4fall_->at(jst, ist);
       rdm4_ = rdm4all_->at(jst, ist);
       mpi__->barrier();
     }

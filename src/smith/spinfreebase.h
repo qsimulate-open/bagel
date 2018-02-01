@@ -80,6 +80,7 @@ class SpinFreeMethod {
     std::shared_ptr<Tensor_<DataType>> rdm2_;
     std::shared_ptr<Tensor_<DataType>> rdm3_;
     std::shared_ptr<Tensor_<DataType>> rdm4_;
+    std::shared_ptr<Tensor_<DataType>> rdm4f_;
 
     // contains all the RDMs (for multistate runs)
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
@@ -87,6 +88,7 @@ class SpinFreeMethod {
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm2all_;
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm3all_;
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm4all_;
+    std::shared_ptr<Vec<Tensor_<DataType>>> rdm4fall_;
     // the function to set RDMs to rdm1_, rdm2_, etc
     void set_rdm(const int jst, const int ist);
 

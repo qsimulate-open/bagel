@@ -85,6 +85,11 @@ tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<4>>> DistFCI::rdm34(const int ist, cons
 }
 
 
+tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>> DistFCI::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+  return tuple<shared_ptr<RDM<3>>, shared_ptr<RDM<3>>>();
+}
+
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>> DistFCI::rdm12_alpha(const int ist, const int jst) const {
   return tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>();
 }
@@ -247,9 +252,3 @@ DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t
   return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>();
 }
 
-
-tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
-DistFCI::rdm34deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const {
-  throw logic_error("DistFCI::rdm34deriv is not implemented yet...");
-  return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>();
-}

@@ -181,9 +181,6 @@ class Reference : public std::enable_shared_from_this<Reference> {
     std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t offset, const size_t size, std::shared_ptr<const Matrix> dmat) const;
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
       rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> dbra_in, std::shared_ptr<const Matrix> fock_ebra_in) const;
-    // 4RDM derivative is precontracted by the Fock matrix
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const;
 
     // basis-set projection based on SVD
     virtual std::shared_ptr<Reference> project_coeff(const std::shared_ptr<const Geometry>, const bool check_geom_change = true) const;

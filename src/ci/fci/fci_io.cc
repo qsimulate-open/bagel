@@ -117,14 +117,14 @@ std::shared_ptr<RDM<4>> FCI::read_external_rdm4(const int ist, const int jst, co
 }
 
 
-std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, const string& file) const {
+std::shared_ptr<RDM<3>> FCI::read_external_rdm3(const int ist, const int jst, const string& file, const bool fock_contracted) const {
   auto out = make_shared<RDM<3>>(norb_);
 
   map<array<int,3>,double> elem;
   elem.emplace(array<int,3>{{0,1,2}}, 1.0); elem.emplace(array<int,3>{{0,2,1}}, 1.0); elem.emplace(array<int,3>{{1,0,2}}, 1.0);
   elem.emplace(array<int,3>{{1,2,0}}, 1.0); elem.emplace(array<int,3>{{2,0,1}}, 1.0); elem.emplace(array<int,3>{{2,1,0}}, 1.0);
 
-  stringstream ss; ss << file << "_" << ist << "_" << jst << ".rdm3";
+  stringstream ss; ss << file << "_" << ist << "_" << jst << (fock_contracted ? ".rdm4f" : ".rdm3");
   ifstream fs(ss.str());
   if (!fs.is_open()) throw runtime_error(ss.str() + " cannot be opened");
   string line;

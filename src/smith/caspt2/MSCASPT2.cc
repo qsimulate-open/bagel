@@ -60,6 +60,7 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm1all_ = cas.rdm1all_;
   rdm2all_ = cas.rdm2all_;
   rdm3all_ = cas.rdm3all_;
+  rdm4fall_ = cas.rdm4fall_;
   rdm4all_ = cas.rdm4all_;
 
   den0ci = cas.rdm0_->clone();
