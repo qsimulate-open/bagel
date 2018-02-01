@@ -372,15 +372,15 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         auto den3cirdmt = den3cirdm->at(nst, mst);
         auto den4cirdmt = den4cirdm->at(nst, mst);
         shared_ptr<VectorB> bdata;
-        bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
+        bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
 #else
         auto bdata = make_shared<VectorB>(ndet);
-#endif
         shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
         while (!queue->done())
           queue->next_compute();
 
         blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(mst)->data()+ioffset);
+#endif
         blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
       }
       if (npass > 1) {
