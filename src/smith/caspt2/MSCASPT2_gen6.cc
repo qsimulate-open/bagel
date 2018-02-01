@@ -426,7 +426,7 @@ Task282::Task282(vector<shared_ptr<Tensor>> t, const bool reset) : reset_(reset)
   den4ci_ =  t[4];
 }
 
-Task284::Task284(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task284::Task284(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[5], t[6]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -442,7 +442,7 @@ Task284::Task284(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x0, x5, x1, x4, x3, x2}}, in, out, range));
 }
 
-Task285::Task285(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task285::Task285(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -455,7 +455,7 @@ Task285::Task285(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, x0, x5, x4}}, in, t[0], range));
 }
 
-Task286::Task286(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task286::Task286(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -469,7 +469,7 @@ Task286::Task286(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x1, x2}}, in, out, range));
 }
 
-Task287::Task287(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task287::Task287(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -482,7 +482,7 @@ Task287::Task287(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task288::Task288(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task288::Task288(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -495,7 +495,7 @@ Task288::Task288(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c1, x3, x2, c2}}, in, t[0], range));
 }
 
-Task289::Task289(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task289::Task289(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -511,7 +511,7 @@ Task289::Task289(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x4, x0, x3, x1, x2}}, in, out, range));
 }
 
-Task290::Task290(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task290::Task290(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -526,7 +526,7 @@ Task290::Task290(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x1, x0, x2, x5, x4, x3}}, in, t[0], range));
 }
 
-Task291::Task291(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task291::Task291(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -539,7 +539,7 @@ Task291::Task291(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, x0, c1, x2}}, in, t[0], range));
 }
 
-Task292::Task292(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task292::Task292(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -553,7 +553,7 @@ Task292::Task292(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x1, x3, x0, x2}}, in, out, range));
 }
 
-Task293::Task293(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task293::Task293(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -566,7 +566,7 @@ Task293::Task293(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task294::Task294(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task294::Task294(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -579,7 +579,7 @@ Task294::Task294(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c1, c2, x3, x2}}, in, t[0], range));
 }
 
-Task295::Task295(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task295::Task295(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -592,7 +592,7 @@ Task295::Task295(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task296::Task296(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task296::Task296(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -605,7 +605,7 @@ Task296::Task296(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, c1, x1}}, in, t[0], range));
 }
 
-Task297::Task297(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task297::Task297(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -621,7 +621,7 @@ Task297::Task297(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x2, x5, x3, x4, x1, x0}}, in, out, range));
 }
 
-Task298::Task298(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task298::Task298(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -636,7 +636,7 @@ Task298::Task298(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x4, x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task299::Task299(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task299::Task299(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;

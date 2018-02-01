@@ -39,7 +39,6 @@ class MSCASPT2 {
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
-    IndexRange ci_;
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
