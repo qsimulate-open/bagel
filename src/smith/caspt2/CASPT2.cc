@@ -94,14 +94,21 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
 
 void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   Timer timer(1);
-  const size_t ndet = ci_deriv_->data(0)->size();
+  std::shared_ptr<double> den0cirdm;
+  std::shared_ptr<RDM<1>> den1cirdm;
+  std::shared_ptr<RDM<2>> den2cirdm;
+  std::shared_ptr<RDM<3>> den3cirdm;
+  std::shared_ptr<RDM<3>> den4cirdm;
+  tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
+
   const size_t nact  = info_->nact();
   const size_t norb2 = nact*nact;
-  const size_t ijmax = mpi__->size() >= 4 ? info_->cimaxchunk() * static_cast<size_t>(mpi__->size()) / 4 : info_->cimaxchunk();
-
+  const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t ijmax = info_->cimaxchunk();
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
+
   if (npass > 1)
     cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
 
@@ -111,34 +118,37 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   if (npass > 1)
     timer.tick_print("Fock-weighted 2RDM derivative");
 
+  // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
+  // otherwise just do using all the nodes.
+  const int nproc = npass > 1 ? 1 : mpi__->world_size();
+  const int ncomm = mpi__->world_size() / nproc;
+  const int icomm = mpi__->world_rank() / nproc;
+  mpi__->split(nproc);
+
   for (int ipass = 0; ipass != npass; ++ipass) {
-    const size_t ioffset = ipass * nsize;
-    const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-    tie(ci_, rci_, rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-      = SpinFreeMethod<double>::feed_rdm_deriv(info_, active_, fockact_, 0, ioffset, isize, rdm2fderiv_);
-    den0cit = den0ci;
-    den1cit = den1ci;
-    den2cit = den2ci;
-    den3cit = den3ci;
-    den4cit = den4ci;
-    mpi__->barrier();
+    if (ipass % ncomm == icomm && ncomm != icomm) {
+      const size_t ioffset = ipass * nsize;
+      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
+      shared_ptr<VectorB> rdm0deriv;
+      shared_ptr<Matrix> rdm1deriv;
+      shared_ptr<Matrix> rdm2deriv;
+      shared_ptr<Matrix> rdm3fderiv;
+      tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
+        = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
 
-    deci = make_shared<Tensor>(vector<IndexRange>{ci_});
-    deci->allocate();
-    auto bdata = make_shared<VectorB>(ndet);
-    shared_ptr<Queue> queue = contract_rdm_deriv(/*ciwfn=*/info_->ciwfn(), bdata, /*offset=*/ioffset, /*size=*/isize, /*reset=*/true);
+      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
+      blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
 
-    while (!queue->done())
-      queue->next_compute();
-
-    blas::ax_plus_y_n(factor, deci->vectorb()->data(), isize, ci_deriv_->data(0)->data()+ioffset);
-    blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
-
-    if (npass > 1) {
-      stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
-      timer.tick_print(ss.str());
+      if (npass > 1) {
+        stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+        timer.tick_print(ss.str());
+      }
     }
   }
+  mpi__->merge();
+
+  if (npass > 1)
+    mpi__->allreduce(ci_deriv_->data(0)->data(), ndet);
 }
 
 

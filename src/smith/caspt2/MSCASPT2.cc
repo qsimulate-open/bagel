@@ -132,8 +132,8 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
-  const int nstates = info_->ciwfn()->nstates();
   Timer timer(1);
+  const int nstates = info_->ciwfn()->nstates();
   std::shared_ptr<Vec<double>> den0cirdm;
   std::shared_ptr<VecRDM<1>> den1cirdm;
   std::shared_ptr<VecRDM<2>> den2cirdm;
