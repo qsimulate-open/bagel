@@ -25,7 +25,6 @@
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
 
-
 #include <src/smith/caspt2/MSCASPT2.h>
 
 using namespace std;
