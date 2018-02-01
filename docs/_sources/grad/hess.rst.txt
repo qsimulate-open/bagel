@@ -6,7 +6,7 @@ Molecular Hessian and frequency analysis
 
 Description
 ===========
-The Hessian section can be used to compute the numerical Hessian by central gradient differences. The Hessian, mass weighted Hessian, and symmetrized mass weighted Hessian are printed in the output by default. The rotational and translational degrees of freedom have been projected out. Vibrational frequencies, infrared intensities, and the Cartesian eigenvectors of each normal mode are also computed. The masses are averaged over the natural occurrence of isotopes.
+The Hessian section can be used to compute the numerical Hessian by central gradient differences. The Hessian, mass weighted Hessian, and symmetrized mass weighted Hessian are printed in the output by default. The rotational and translational degrees of freedom have been projected out. Vibrational frequencies, infrared intensities, and the Cartesian eigenvectors of each normal mode are also computed. The masses are averaged over the natural occurrence of isotopes unless otherwise specified (see other keywords below).
 
 Keywords
 ========
@@ -34,6 +34,16 @@ Optional Keywords
    | **Description:** The Hessian code is embarrassingly parallelized so that the displacements in the central gradient difference calculations can be run at the same time. The nproc keyword allows the user to specify the number of MPI processes to be used for each gradient calculation.
    | **Datatype:** int
    | **Default:** 1
+
+Other Keywords
+--------------
+
+.. topic:: ``mass``
+
+   | **Description:** Atomic masses can be specified by the users in the atom line in the molecule block. 
+   | **Datatype:** double
+   | **Default:** averaged over the natural occurrence of isotopes 
+
 
 Example
 =======
@@ -100,7 +110,8 @@ A sample input for the benzene molecule.
 
   ]}
 
-If you are running a Hessian calculation using the embarassingly parallel implementation, it is recommended to only have the Hessian calculation in your input. A molden file generated from a previous calculation can be read at the start of the calculation.
+If you are running a Hessian calculation using the embarassingly parallel implementation, it is recommended to only have the Hessian calculation in your input.
+A molden file generated from a previous calculation can be read at the start of the calculation.
 
 .. code-block:: javascript
 
@@ -133,6 +144,12 @@ If you are running a Hessian calculation using the embarassingly parallel implem
   }
 
   ]}
+
+The atomic masses can be specified as shown below.
+
+.. code-block:: javascript
+
+    { "atom" : "C", "xyz" : [     -0.072972,      2.554311,     -0.000005 ],  "mass" : 12.0 },
 
 
 References

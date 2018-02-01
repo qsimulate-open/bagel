@@ -292,7 +292,7 @@ void FCI::print_header() const {
 
 
 shared_ptr<const CIWfn> FCI::conv_to_ciwfn() const {
-  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, cc_->det());
+  return make_shared<CIWfn>(geom_, ncore_, norb_, nstate_, energy_, cc_, det_);
 }
 
 

@@ -129,6 +129,13 @@ The default values are recommended unless mentioned otherwise.
    | **Default:** 317520001
    | **Recommendation:** This number is adjusted for 64GB of memory. Decrease if necessary. 
 
+.. topic:: ``davidson_subspace``
+
+   | **Description:**  Number of vectors retained in the limited-memory Davidson algorithm.
+   | **Datatype:** int
+   | **Default:** 10
+   | **Recommendation:** Reduce if an insufficient amount of memory is available (do not reduce to a value lower than 3). 
+
 =======
 Example
 =======
