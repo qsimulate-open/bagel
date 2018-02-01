@@ -175,13 +175,13 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
           = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
         for (int mst = 0; mst != nstates; ++mst) {
-          auto den0cirdmt = den0cirdm->at(nst, mst);
-          auto den1cirdmt = den1cirdm->at(nst, mst);
-          auto den2cirdmt = den2cirdm->at(nst, mst);
-          auto den3cirdmt = den3cirdm->at(nst, mst);
-          auto den4cirdmt = den4cirdm->at(nst, mst);
+          den0cirdmt = den0cirdm->at(nst, mst);
+          den1cirdmt = den1cirdm->at(nst, mst);
+          den2cirdmt = den2cirdm->at(nst, mst);
+          den3cirdmt = den3cirdm->at(nst, mst);
+          den4cirdmt = den4cirdm->at(nst, mst);
 
-          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
+          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
           blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
         }
 

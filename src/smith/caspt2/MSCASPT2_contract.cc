@@ -156,8 +156,7 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
 }
 
 
-shared_ptr<VectorB> MSCASPT2::MSCASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, int offset, int size, shared_ptr<const Matrix> fock,
-    shared_ptr<const double> den0cirdmt, shared_ptr<const RDM<1>> den1cirdmt, shared_ptr<const RDM<2>> den2cirdmt, shared_ptr<const RDM<3>> den3cirdmt, shared_ptr<const RDM<3>> den4cirdmt) {
+shared_ptr<VectorB> MSCASPT2::MSCASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, int offset, int size, shared_ptr<const Matrix> fock) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t nact  = info_->nact();
   auto out = make_shared<VectorB>(ndet);

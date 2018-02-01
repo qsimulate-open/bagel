@@ -41,29 +41,22 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
   shared_ptr<RDM<3>> den3cirdm;
   shared_ptr<RDM<3>> den4cirdm;
 
-  den0cit = den0ci;
-  den1cit = den1ci;
-  den2cit = den2ci;
-  den3cit = den3ci;
-  den4cit = den4ci;
-  mpi__->barrier();
-
   // collect den0ci
   {
-    unique_ptr<double[]> d0data = den0cit->get_block();
+    unique_ptr<double[]> d0data = den0ci->get_block();
     auto d0 = make_shared<double>(d0data[0]);
     den0cirdm = d0;
   }
 
   // collect den1ci
   {
-    vector<IndexRange> o = den1cit->indexrange();
+    vector<IndexRange> o = den1ci->indexrange();
     const int off0 = o[0].front().offset();
     const int off1 = o[1].front().offset();
     auto d1 = make_shared<RDM<1>>(nact);
     for (auto& i1 : o[1].range())
       for (auto& i0 : o[0].range()) {
-        auto input = den1cit->get_block(i0, i1);
+        auto input = den1ci->get_block(i0, i1);
         for (size_t io1 = 0; io1 != i1.size(); ++io1)
           copy_n(&input[0+i0.size()*io1], i0.size(), d1->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1));
       }
@@ -72,7 +65,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
 
   // collect den2ci
   {
-    vector<IndexRange>o = den2cit->indexrange();
+    vector<IndexRange>o = den2ci->indexrange();
     const int off0 = o[0].front().offset();
     const int off1 = o[1].front().offset();
     const int off2 = o[2].front().offset();
@@ -82,7 +75,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
       for (auto& i2 : o[2].range())
         for (auto& i1 : o[1].range())
           for (auto& i0 : o[0].range()) {
-            auto input = den2cit->get_block(i0, i1, i2, i3);
+            auto input = den2ci->get_block(i0, i1, i2, i3);
             for (size_t io3 = 0; io3 != i3.size(); ++io3)
               for (size_t io2 = 0; io2 != i2.size(); ++io2)
                 for (size_t io1 = 0; io1 != i1.size(); ++io1)
@@ -93,7 +86,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
 
   // collect den3ci
   {
-    vector<IndexRange>o = den3cit->indexrange();
+    vector<IndexRange>o = den3ci->indexrange();
     const int off0 = o[0].front().offset();
     const int off1 = o[1].front().offset();
     const int off2 = o[2].front().offset();
@@ -107,7 +100,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
           for (auto& i2 : o[2].range())
             for (auto& i1 : o[1].range())
               for (auto& i0 : o[0].range()) {
-                auto input = den3cit->get_block(i0, i1, i2, i3, i4, i5);
+                auto input = den3ci->get_block(i0, i1, i2, i3, i4, i5);
                 for (size_t io5 = 0; io5 != i5.size(); ++io5)
                   for (size_t io4 = 0; io4 != i4.size(); ++io4)
                     for (size_t io3 = 0; io3 != i3.size(); ++io3)
@@ -121,7 +114,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
 
   // collect den4ci
   {
-    vector<IndexRange>o = den4cit->indexrange();
+    vector<IndexRange>o = den4ci->indexrange();
     const int off0 = o[0].front().offset();
     const int off1 = o[1].front().offset();
     const int off2 = o[2].front().offset();
@@ -135,7 +128,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
           for (auto& i2 : o[2].range())
             for (auto& i1 : o[1].range())
               for (auto& i0 : o[0].range()) {
-                auto input = den4cit->get_block(i0, i1, i2, i3, i4, i5);
+                auto input = den4ci->get_block(i0, i1, i2, i3, i4, i5);
                 for (size_t io5 = 0; io5 != i5.size(); ++io5)
                   for (size_t io4 = 0; io4 != i4.size(); ++io4)
                     for (size_t io3 = 0; io3 != i3.size(); ++io3)
@@ -151,8 +144,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
 }
 
 
-shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, int offset, int size, shared_ptr<const Matrix> fock,
-    shared_ptr<const double> den0cirdmt, shared_ptr<const RDM<1>> den1cirdmt, shared_ptr<const RDM<2>> den2cirdmt, shared_ptr<const RDM<3>> den3cirdmt, shared_ptr<const RDM<3>> den4cirdmt) {
+shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, int offset, int size, shared_ptr<const Matrix> fock) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t nact  = info_->nact();
   auto out = make_shared<VectorB>(ndet);

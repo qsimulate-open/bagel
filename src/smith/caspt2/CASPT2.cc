@@ -94,12 +94,7 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
 
 void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   Timer timer(1);
-  std::shared_ptr<double> den0cirdm;
-  std::shared_ptr<RDM<1>> den1cirdm;
-  std::shared_ptr<RDM<2>> den2cirdm;
-  std::shared_ptr<RDM<3>> den3cirdm;
-  std::shared_ptr<RDM<3>> den4cirdm;
-  tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
+  tie(den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt) = feed_denci();
 
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
   const size_t nact  = info_->nact();
@@ -133,7 +128,7 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
       tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
         = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
 
-      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
+      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
       blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
 
       if (npass > 1) {
