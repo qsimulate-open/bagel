@@ -175,7 +175,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
         shared_ptr<Matrix> rdm2deriv;
         shared_ptr<Matrix> rdm3fderiv;
         tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
-          = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
+          = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
         for (int mst = 0; mst != nstates; ++mst) {
           auto den0cirdmt = den0cirdm->at(nst, mst);
           auto den1cirdmt = den1cirdm->at(nst, mst);

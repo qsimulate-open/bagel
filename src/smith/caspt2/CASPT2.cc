@@ -134,7 +134,7 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
       shared_ptr<Matrix> rdm2deriv;
       shared_ptr<Matrix> rdm3fderiv;
       tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
-        = SpinFreeMethod<double>::feed_rdm_deriv_mat(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
+        = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
 
       shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
       blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
