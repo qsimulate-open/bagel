@@ -46,4 +46,13 @@ namespace bagel {
     return out;
   }
 
+  DiagVec operator*(const DiagVec &v1, const DiagVec &v2) {
+    assert(v1.size() == v2.size());
+    DiagVec out(v1.size());
+    for (int i = 0; i != v1.size(); ++i) {
+      out(i) = v1(i) * v2(i);
+    }
+    return out;
+  }
+
 }

@@ -40,13 +40,13 @@ namespace bagel {
     DiagVec(const size_t n) : data_(VectorB(n)) { }
     DiagVec(const VectorB &n) : data_(n) { }
     DiagVec(const Matrix &m) : data_(VectorB(m.mdim())) {
-      for (int i = 0; i < size(); i++) {
-        for (int j = 0; j < size(); j++) {
+      for (int i = 0; i != size(); ++i) {
+        for (int j = 0; j != size(); ++j) {
           if (i == j) {
             data_(i) = m(i, i);
           }
           else {
-            assert(fabs(m(i, j)) < 1.0e-8);
+            assert(fabs(m(j, i)) < 1.0e-8);
           }
         }
       }
@@ -61,13 +61,13 @@ namespace bagel {
       if (!len || len > size()) {
         len = size();
       }
-      for (int i = 0; i < len / 6; i++) {
+      for (int i = 0; i != len / 6; ++i) {
         std::cout << std::setw(6) << " ";
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j != 6; ++j) {
           std::cout << std::setw(20) << i * 6 + j;
         }
         std::cout << std::endl << std::setw(6) << " ";
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j != 6; ++j) {
           std::cout << std::setw(20) << std::setprecision(10) << data_(i * 6 + j);
         }
        std::cout << std::endl;
@@ -75,11 +75,11 @@ namespace bagel {
       if (len % 6) {
         int i = len / 6;
         std::cout << std::setw(6) << " ";
-        for (int j = 0; j < len % 6; j++) {
+        for (int j = 0; j != len % 6; ++j) {
           std::cout << std::setw(20) << i * 6 + j;
         }
         std::cout << std::endl << std::setw(6) << " ";
-        for (int j = 0; j < len % 6; j++) {
+        for (int j = 0; j != len % 6; ++j) {
           std::cout << std::setw(20) << std::setprecision(10) << data_(i * 6 + j);
         }
         std::cout << std::endl;
@@ -91,6 +91,8 @@ namespace bagel {
   extern Matrix operator*(const DiagVec&, const Matrix&);
 
   extern Matrix operator*(const Matrix&, const DiagVec&);
+
+  extern DiagVec operator*(const DiagVec&, const DiagVec&);
 
 }
 
