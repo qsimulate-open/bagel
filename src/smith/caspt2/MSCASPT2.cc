@@ -140,15 +140,15 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   std::shared_ptr<VecRDM<2>> den2cirdm;
   std::shared_ptr<VecRDM<3>> den3cirdm;
   std::shared_ptr<VecRDM<3>> den4cirdm;
-
   tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
+
   for (int nst = 0; nst != nstates; ++nst) {
     const size_t nact  = info_->nact();
     const size_t norb2 = nact*nact;
     const size_t ijmax = info_->cimaxchunk();
 
     const size_t ijnum = ndet * norb2 * norb2;
-    const size_t npass = (ijnum-1) / ijmax + 1;
+    const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
     const size_t nsize = (ndet-1) / npass + 1;
     if (npass > 1)
       cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
@@ -159,12 +159,10 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     if (npass > 1)
       timer.tick_print("Fock-weighted 2RDM derivative");
 
-    // should be connected to the input
-    const int nproc = 1;
-
+    // TODO should be connected to the input
+    const int nproc = npass > 1 ? 1 : mpi__->world_size();
     const int ncomm = mpi__->world_size() / nproc;
     const int icomm = mpi__->world_rank() / nproc;
-
     mpi__->split(nproc);
 
     for (int ipass = 0; ipass != npass; ++ipass) {
@@ -184,11 +182,13 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
           auto den3cirdmt = den3cirdm->at(nst, mst);
           auto den4cirdmt = den4cirdm->at(nst, mst);
 
-          shared_ptr<VectorB> bdata;
-
-          bdata = contract_rdm_deriv_mat(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
-
+          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
           blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
+        }
+
+        if (npass > 1) {
+          stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
+          timer.tick_print(ss.str());
         }
       }
     }
