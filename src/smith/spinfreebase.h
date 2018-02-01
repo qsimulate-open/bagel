@@ -50,13 +50,11 @@ class SpinFreeMethod {
     IndexRange active_;
     IndexRange closed_;
     IndexRange all_;
-    IndexRange ci_;
 
     // TODO these are redundant.
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
-    std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<const SMITH_Info<DataType>> info_;
     std::shared_ptr<const SMITH_Info<DataType>> info_orig_;
