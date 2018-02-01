@@ -101,6 +101,7 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
   std::shared_ptr<RDM<3>> den4cirdm;
   tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
 
+  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
   const size_t nact  = info_->nact();
   const size_t norb2 = nact*nact;
   const size_t ndet = ci_deriv_->data(0)->size();
@@ -505,9 +506,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       Den1_ = Den1;
     }
     timer.tick_print("Correlated density matrix evaluation");
-
-    // first make ci_deriv_
-    ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
 
     // then form deci0 - 4
     den0ci = rdm0_->clone();

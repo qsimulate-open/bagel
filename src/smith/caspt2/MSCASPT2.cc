@@ -142,6 +142,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   std::shared_ptr<VecRDM<3>> den4cirdm;
   tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
 
+  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
   const size_t nact  = info_->nact();
   const size_t norb2 = nact*nact;
   const size_t ndet = ci_deriv_->data(0)->size();
@@ -293,9 +294,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
   timer.tick_print("Correlated density matrix evaluation");
 
   if (!nocider) {
-    // CI derivative..
-    ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-
     for (int mst = 0; mst != nstates; ++mst) {
       const double mheffJ = (*heff_)(mst, targetJ);
       const double mheffI = (*heff_)(mst, targetI);
