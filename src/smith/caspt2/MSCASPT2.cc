@@ -133,7 +133,6 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const int nstates = info_->ciwfn()->nstates();
-  const size_t ndet = ci_deriv_->data(0)->size();
   Timer timer(1);
   std::shared_ptr<Vec<double>> den0cirdm;
   std::shared_ptr<VecRDM<1>> den1cirdm;
@@ -142,14 +141,15 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   std::shared_ptr<VecRDM<3>> den4cirdm;
   tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
 
-  for (int nst = 0; nst != nstates; ++nst) {
-    const size_t nact  = info_->nact();
-    const size_t norb2 = nact*nact;
-    const size_t ijmax = info_->cimaxchunk();
+  const size_t nact  = info_->nact();
+  const size_t norb2 = nact*nact;
+  const size_t ndet = ci_deriv_->data(0)->size();
+  const size_t ijmax = info_->cimaxchunk();
+  const size_t ijnum = ndet * norb2 * norb2;
+  const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
+  const size_t nsize = (ndet-1) / npass + 1;
 
-    const size_t ijnum = ndet * norb2 * norb2;
-    const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
-    const size_t nsize = (ndet-1) / npass + 1;
+  for (int nst = 0; nst != nstates; ++nst) {
     if (npass > 1)
       cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
 
@@ -159,7 +159,8 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     if (npass > 1)
       timer.tick_print("Fock-weighted 2RDM derivative");
 
-    // TODO should be connected to the input
+    // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
+    // otherwise just do using all the nodes.
     const int nproc = npass > 1 ? 1 : mpi__->world_size();
     const int ncomm = mpi__->world_size() / nproc;
     const int icomm = mpi__->world_rank() / nproc;
@@ -195,8 +196,9 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
     mpi__->merge();
   }
 
-  for (int mst = 0; mst != nstates; ++mst)
-    mpi__->allreduce(ci_deriv_->data(mst)->data(), ndet);
+  if (npass > 1)
+    for (int mst = 0; mst != nstates; ++mst)
+      mpi__->allreduce(ci_deriv_->data(mst)->data(), ndet);
 }
 
 
