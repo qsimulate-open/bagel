@@ -77,7 +77,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> rall_;
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
-    std::shared_ptr<Tensor> rdm3fderiv_;
 
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
@@ -145,7 +144,6 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> feed_denci();
     std::shared_ptr<VectorB> contract_rdm_deriv(std::shared_ptr<const CIWfn> ciwfn, int offset, int size, std::shared_ptr<const Matrix> fock,
-      std::shared_ptr<const VectorB> rdm0deriv, std::shared_ptr<const Matrix> rdm1deriv, std::shared_ptr<const Matrix> rdm2deriv, std::shared_ptr<const Matrix> rdm3deriv,
       std::shared_ptr<const double> den0cirdmt, std::shared_ptr<const RDM<1>> den1cirdmt, std::shared_ptr<const RDM<2>> den2cirdmt, std::shared_ptr<const RDM<3>> den3cirdmt, std::shared_ptr<const RDM<3>> den4cirdmt);
     void do_rdm_deriv(double factor);
 

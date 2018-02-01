@@ -91,14 +91,13 @@ class SpinFreeMethod {
     void set_rdm(const int jst, const int ist);
 
     // rdm ci derivatives
-    std::shared_ptr<Tensor_<DataType>> rdm0deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm1deriv_;
-    std::shared_ptr<Tensor_<DataType>> rdm2deriv_;
+    std::shared_ptr<VecType> rdm0deriv_;
+    std::shared_ptr<MatType> rdm1deriv_;
+    std::shared_ptr<MatType> rdm2deriv_;
+    std::shared_ptr<MatType> rdm2fderiv_;
+    std::shared_ptr<MatType> rdm3fderiv_;
 
     std::shared_ptr<Tensor_<DataType>> sigma_;
-
-    // fock-weighted 2RDM derivative, which is internally used
-    std::shared_ptr<MatType> rdm2fderiv_;
 
     // the diagonal denominator
     std::vector<double> eig_;

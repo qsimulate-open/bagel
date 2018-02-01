@@ -130,14 +130,10 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
     if (ipass % ncomm == icomm && ncomm != icomm) {
       const size_t ioffset = ipass * nsize;
       const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-      shared_ptr<VectorB> rdm0deriv;
-      shared_ptr<Matrix> rdm1deriv;
-      shared_ptr<Matrix> rdm2deriv;
-      shared_ptr<Matrix> rdm3fderiv;
-      tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
+      tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
         = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
 
-      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
+      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm);
       blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
 
       if (npass > 1) {

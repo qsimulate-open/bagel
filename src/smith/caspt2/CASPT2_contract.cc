@@ -152,7 +152,6 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
 
 
 shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> ciwfn, int offset, int size, shared_ptr<const Matrix> fock,
-    shared_ptr<const VectorB> rdm0deriv, shared_ptr<const Matrix> rdm1deriv, shared_ptr<const Matrix> rdm2deriv, shared_ptr<const Matrix> rdm3deriv,
     shared_ptr<const double> den0cirdmt, shared_ptr<const RDM<1>> den1cirdmt, shared_ptr<const RDM<2>> den2cirdmt, shared_ptr<const RDM<3>> den3cirdmt, shared_ptr<const RDM<3>> den4cirdmt) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t nact  = info_->nact();
@@ -160,20 +159,20 @@ shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> c
 
   // rdm0deriv contraction
   {
-    blas::ax_plus_y_n(den0cirdmt.get()[0], rdm0deriv->data(), size, out->data()+offset);
+    blas::ax_plus_y_n(den0cirdmt.get()[0], rdm0deriv_->data(), size, out->data()+offset);
   }
 
   // rdm1deriv contraction
   {
     const size_t nact2 = nact * nact;
-    dgemv_("N", size, nact2, 1.0, rdm1deriv->data(), size, den1cirdmt->data(), 1, 1.0, out->data()+offset, 1);
+    dgemv_("N", size, nact2, 1.0, rdm1deriv_->data(), size, den1cirdmt->data(), 1, 1.0, out->data()+offset, 1);
   }
 
   // rdm2deriv contraction
   {
     const size_t nact2 = nact * nact;
     const size_t nact4 = nact2 * nact2;
-    dgemv_("N", size, nact4, 1.0, rdm2deriv->data(), size, den2cirdmt->data(), 1, 1.0, out->data()+offset, 1);
+    dgemv_("N", size, nact4, 1.0, rdm2deriv_->data(), size, den2cirdmt->data(), 1, 1.0, out->data()+offset, 1);
   }
 
   // rdm3, 4 deriv contraction
@@ -197,7 +196,7 @@ shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> c
                 den3cis->element(i,l,m,n) += den3cif->element(i,j,j,l,m,n);
                 den3cis->element(i,l,m,n) += den3cif->element(m,j,i,l,j,n);
               }
-      dgemv_("N", size, nact4, -1.0, rdm2deriv->data(), size, den3cis->data(), 1, 1.0, out->data()+offset, 1);
+      dgemv_("N", size, nact4, -1.0, rdm2deriv_->data(), size, den3cis->data(), 1, 1.0, out->data()+offset, 1);
     }
 
     {
@@ -210,14 +209,14 @@ shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> c
                 den3cis->element(i,l,m,n) += den4cirdmt->element(j,n,i,l,m,j);
                 den3cis->element(i,l,m,n) += den4cirdmt->element(i,l,j,n,m,j);
               }
-      dgemv_("N", size, nact4, -1.0, rdm3deriv->data(), size, den3cis->data(), 1, 1.0, out->data()+offset, 1);
+      dgemv_("N", size, nact4, -1.0, rdm3fderiv_->data(), size, den3cis->data(), 1, 1.0, out->data()+offset, 1);
     }
 
     {
-      shared_ptr<Matrix> dtensor = rdm1deriv->clone();
+      shared_ptr<Matrix> dtensor = rdm1deriv_->clone();
       // TODO these operations should be made half (nact4 -> nunique)
-      dgemm_("N", "T", size, nact2, nact4, 1.0, rdm2deriv->data(), size, den3cif->data(), nact2, 1.0, dtensor->data(), size);
-      dgemm_("N", "N", size, nact2, nact4, 1.0, rdm3deriv->data(), size, den4cirdmt->data(), nact4, 1.0, dtensor->data(), size);
+      dgemm_("N", "T", size, nact2, nact4, 1.0, rdm2deriv_->data(), size, den3cif->data(), nact2, 1.0, dtensor->data(), size);
+      dgemm_("N", "N", size, nact2, nact4, 1.0, rdm3fderiv_->data(), size, den4cirdmt->data(), nact4, 1.0, dtensor->data(), size);
 
       {
         const size_t lena = ciwfn->det()->lena();

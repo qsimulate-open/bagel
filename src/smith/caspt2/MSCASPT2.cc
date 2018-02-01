@@ -172,11 +172,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
       if (ipass % ncomm == icomm && ncomm != icomm) {
         const size_t ioffset = ipass * nsize;
         const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-        shared_ptr<VectorB> rdm0deriv;
-        shared_ptr<Matrix> rdm1deriv;
-        shared_ptr<Matrix> rdm2deriv;
-        shared_ptr<Matrix> rdm3fderiv;
-        tie(rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv)
+        tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
           = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
         for (int mst = 0; mst != nstates; ++mst) {
           auto den0cirdmt = den0cirdm->at(nst, mst);
@@ -185,7 +181,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
           auto den3cirdmt = den3cirdm->at(nst, mst);
           auto den4cirdmt = den4cirdm->at(nst, mst);
 
-          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, rdm0deriv, rdm1deriv, rdm2deriv, rdm3fderiv, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
+          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_, den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt);
           blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
         }
 
