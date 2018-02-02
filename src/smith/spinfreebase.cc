@@ -148,15 +148,7 @@ void SpinFreeMethod<double>::rotate_xms() {
   VectorB eig(nstates);
   fmn.diagonalize(eig);
 
-  cout << endl;
-  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl;
-  cout << "      Rotation matrix:";
-  for (int ist = 0; ist != nstates; ++ist) {
-    cout << endl << "      ";
-    for (int jst = 0; jst != nstates; ++jst)
-      cout << setw(20) << setprecision(10) << fmn(ist, jst);
-  }
-  cout << endl << endl;
+  fmn.print("Extended multi-state CASPT2 (XMS-CASPT2) rotation matrix");
 
   // construct Reference
   shared_ptr<const CIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
@@ -202,15 +194,7 @@ void SpinFreeMethod<complex<double>>::rotate_xms() {
   VectorB eig(nstates);
   fmn.diagonalize(eig);
 
-  cout << endl;
-  cout << "    * Extended multi-state CASPT2 (XMS-CASPT2)" << endl;
-  cout << "      Rotation matrix:";
-  for (int ist = 0; ist != nstates; ++ist) {
-    cout << endl << "      ";
-    for (int jst = 0; jst != nstates; ++jst)
-      cout << setw(20) << setprecision(10) << fmn(ist, jst);
-  }
-  cout << endl << endl;
+  fmn.print("Extended multi-state CASPT2 (XMS-CASPT2) rotation matrix");
 
   // construct Reference
   shared_ptr<const RelCIWfn> new_ciwfn = rotate_ciwfn(info_->ciwfn(), fmn);
@@ -239,7 +223,13 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   rdm1all_ = make_shared<Vec<Tensor_<double>>>();
   rdm2all_ = make_shared<Vec<Tensor_<double>>>();
   rdm3all_ = make_shared<Vec<Tensor_<double>>>();
-  rdm4all_ = make_shared<Vec<Tensor_<double>>>();
+  rdm4fall_ = make_shared<Vec<Tensor_<double>>>();
+  if (info_->rdm4_eval()) {
+    rdm4all_ = make_shared<Vec<Tensor_<double>>>();
+    cout << "    * will calculate and save rdm4" << endl;
+  } else {
+    cout << "    * will calculate and save rdm4f" << endl;
+  }
 
   assert(fockact_);
   auto denom = make_shared<Denom<double>>(fockact_, nstates, info_->thresh_overlap());
@@ -251,13 +241,24 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       shared_ptr<const RDM<1>> rdm1;
       shared_ptr<const RDM<2>> rdm2;
       shared_ptr<const RDM<3>> rdm3;
-      shared_ptr<const RDM<4>> rdm4; // TODO to be removed
+      shared_ptr<RDM<3>> rdm4f;
+      shared_ptr<const RDM<4>> rdm4;
+
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
-      shared_ptr<RDM<3>> frdm4 = rdm3->clone();
-      auto rdm4v = group(group(*rdm4, 6,8), 0,6);
-      auto frdm4v = group(*frdm4, 0, 6);
-      contract(1.0, rdm4v, {0,1}, group(*fockact_,0,2), {1}, 0.0, frdm4v, {0});
+      // CASPT2 energy needs only rdm4f. Others (including caspt2 grad) req rdm4
+      if (info_->rdm4_eval()) {
+        tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+        rdm4f = info_->rdm4f_contract(rdm3, rdm4, fockact_);
+      } else {
+        tie(rdm3, rdm4f) = info_->rdm34f(jst, ist, fockact_);
+      }
+      // append denominator
+      if (!info_->sssr() || jst == ist)
+        denom->append(jst, ist, rdm1, rdm2, rdm3, rdm4f);
+
+      // then scale rdm4f to compensate
+      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      rdm4f->scale(rdm4factor);
 
       unique_ptr<double[]> data0(new double[1]);
       data0[0] = jst == ist ? 1.0 : 0.0;
@@ -268,16 +269,17 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
       auto rdm1t = fill_block<2,double>(rdm1, vector<int>(2,nclo), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,double>(rdm2, vector<int>(4,nclo), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,double>(rdm3, vector<int>(6,nclo), vector<IndexRange>(6,active_));
-      auto rdm4t = fill_block<8,double>(rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+      auto rdm4ft = fill_block<6,double>(rdm4f, vector<int>(6,nclo), vector<IndexRange>(6,active_));
 
       rdm0all_->emplace(jst, ist, rdm0t);
       rdm1all_->emplace(jst, ist, rdm1t);
       rdm2all_->emplace(jst, ist, rdm2t);
       rdm3all_->emplace(jst, ist, rdm3t);
-      rdm4all_->emplace(jst, ist, rdm4t);
-
-      if (!info_->sssr() || jst == ist)
-        denom->append(jst, ist, rdm1, rdm2, rdm3, frdm4);
+      rdm4fall_->emplace(jst, ist, rdm4ft);
+      if (info_->rdm4_eval()) {
+        auto rdm4t = fill_block<8,double>(rdm4, vector<int>(8,nclo), vector<IndexRange>(8,active_));
+        rdm4all_->emplace(jst, ist, rdm4t);
+      }
     }
   }
   denom->compute();
@@ -293,7 +295,13 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
   rdm1all_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm2all_ = make_shared<Vec<Tensor_<complex<double>>>>();
   rdm3all_ = make_shared<Vec<Tensor_<complex<double>>>>();
-  rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  rdm4fall_ = make_shared<Vec<Tensor_<complex<double>>>>();
+  if (info_->rdm4_eval()) {
+    rdm4all_ = make_shared<Vec<Tensor_<complex<double>>>>();
+    cout << "    * will calculate and save rdm4" << endl;
+  } else {
+    cout << "    * will calculate and save rdm4f" << endl;
+  }
 
   assert(fockact_);
   auto denom = make_shared<Denom<complex<double>>>(fockact_, nstates, info_->thresh_overlap());
@@ -305,15 +313,24 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
       shared_ptr<const Kramers<2,ZRDM<1>>> rdm1;
       shared_ptr<const Kramers<4,ZRDM<2>>> rdm2;
       shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+      shared_ptr<Kramers<6,ZRDM<3>>> rdm4f;
       shared_ptr<const Kramers<8,ZRDM<4>>> rdm4;
       tie(rdm1, rdm2) = info_->rdm12(jst, ist);
-      tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+      if (info_->rdm4_eval()) {
+        tie(rdm3, rdm4) = info_->rdm34(jst, ist);
+        rdm4f = info_->rdm4f_contract(rdm3, rdm4, fockact_);
+      } else {
+        tie(rdm3, rdm4f) = info_->rdm34f(jst, ist, fockact_);
+      }
+      shared_ptr<const Kramers<6,ZRDM<3>>> rdm4fe = rdm4f->copy();
 
       auto rdm1ex  = expand_kramers(rdm1, info_->nact());
       auto rdm2ex  = expand_kramers(rdm2, info_->nact());
       auto rdm3ex  = expand_kramers(rdm3, info_->nact());
-      if (!info_->sssr() || jst == ist)
-        denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4);
+      auto rdm4fex = expand_kramers(rdm4fe, info_->nact());
+      if (!info_->sssr() || jst == ist) {
+        denom->append(jst, ist, rdm1ex, rdm2ex, rdm3ex, rdm4fex);
+      }
 
       auto rdm0t = make_shared<Tensor_<complex<double>>>(vector<IndexRange>());
       unique_ptr<complex<double>[]> data0(new complex<double>[1]);
@@ -323,54 +340,68 @@ void SpinFreeMethod<complex<double>>::feed_rdm_denom() {
         rdm0t->put_block(data0);
 
       const int n = info_->nact();
-
 //#define ALL_KRAMERS
 #ifndef ALL_KRAMERS
       auto rdm1x = rdm1ex->clone();
       auto rdm2x = rdm2ex->clone();
       auto rdm3x = rdm3ex->clone();
+      auto rdm4fx = rdm4fex->clone();
+      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      rdm4fex->scale(rdm4factor);
       sort_indices<1,0,0,1,1,1>        (rdm1ex->data(), rdm1x->data(), 2*n, 2*n);
       sort_indices<1,0,3,2,0,1,1,1>    (rdm2ex->data(), rdm2x->data(), 2*n, 2*n, 2*n, 2*n);
       sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm3ex->data(), rdm3x->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
+      sort_indices<1,0,3,2,5,4,0,1,1,1>(rdm4fex->data(), rdm4fx->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
       auto rdm1t = fill_block<2,complex<double>>(rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,complex<double>>(rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,complex<double>>(rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      auto rdm4ft = fill_block<6,complex<double>>(rdm4fx, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
 #else
       shared_ptr<Kramers<2,ZRDM<1>>> rdm1x = rdm1->copy();
       shared_ptr<Kramers<4,ZRDM<2>>> rdm2x = rdm2->copy();
       shared_ptr<Kramers<6,ZRDM<3>>> rdm3x = rdm3->copy();
+      shared_ptr<Kramers<6,ZRDM<3>>> rdm4fx = rdm4f->copy();
       auto j1 = rdm1x->begin();
       auto j2 = rdm2x->begin();
       auto j3 = rdm3x->begin();
+      auto j4 = rdm4fx->begin();
+      const double rdm4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
       for (auto& i : *rdm1) sort_indices<1,0,0,1,1,1>        (i.second->data(), (*j1++).second->data(), n, n);
       for (auto& i : *rdm2) sort_indices<1,0,3,2,0,1,1,1>    (i.second->data(), (*j2++).second->data(), n, n, n, n);
       for (auto& i : *rdm3) sort_indices<1,0,3,2,5,4,0,1,1,1>(i.second->data(), (*j3++).second->data(), n, n, n, n, n, n);
+      for (auto& i : *rdm4f) {
+        ((*j4++).second)->scale(rdm4factor);
+        sort_indices<1,0,3,2,5,4,0,1,1,1>(i.second->data(), (*j4).second->data(), n, n, n, n, n, n);
+      }
       auto rdm1t = fill_block<2,complex<double>,ZRDM<1>>(rdm1x, vector<int>(2,nclo*2), vector<IndexRange>(2,active_));
       auto rdm2t = fill_block<4,complex<double>,ZRDM<2>>(rdm2x, vector<int>(4,nclo*2), vector<IndexRange>(4,active_));
       auto rdm3t = fill_block<6,complex<double>,ZRDM<3>>(rdm3x, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
+      auto rdm4ft = fill_block<6,complex<double>,ZRDM<3>>(rdm4fx, vector<int>(6,nclo*2), vector<IndexRange>(6,active_));
 #endif
-//#define RDM4_KRAMERS
-#ifdef RDM4_KRAMERS
-      auto rdm4x = make_shared<Kramers<8,ZRDM<4>>>();
-      rdm4x->set_perm(rdm4->perm());
-      for (auto& i : *rdm4) {
-        shared_ptr<ZRDM<4>> data = i.second->clone();
-        sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(i.second->data(), data->data(), n, n, n, n, n, n, n, n);
-        rdm4x->emplace(i.first.perm({1,0,3,2,5,4,7,6}), data);
-      }
-      auto rdm4t = fill_block<8,complex<double>,ZRDM<4>>(rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
-#else
-      auto rdm4ex  = expand_kramers(rdm4, info_->nact());
-      auto rdm4x = rdm4ex->clone();
-      sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4ex->data(), rdm4x->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
-      auto rdm4t = fill_block<8,complex<double>>(rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
-#endif
-
       rdm0all_->emplace(ist, jst, rdm0t);
       rdm1all_->emplace(ist, jst, rdm1t);
       rdm2all_->emplace(ist, jst, rdm2t);
       rdm3all_->emplace(ist, jst, rdm3t);
-      rdm4all_->emplace(ist, jst, rdm4t);
+      rdm4fall_->emplace(ist, jst, rdm4ft);
+      if (info_->rdm4_eval()) {
+//#define RDM4_KRAMERS
+#ifdef RDM4_KRAMERS
+        auto rdm4x = make_shared<Kramers<8,ZRDM<4>>>();
+        rdm4x->set_perm(rdm4->perm());
+        for (auto& i : *rdm4) {
+          shared_ptr<ZRDM<4>> data = i.second->clone();
+          sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(i.second->data(), data->data(), n, n, n, n, n, n, n, n);
+          rdm4x->emplace(i.first.perm({1,0,3,2,5,4,7,6}), data);
+        }
+        auto rdm4t = fill_block<8,complex<double>,ZRDM<4>>(rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+#else
+        auto rdm4ex  = expand_kramers(rdm4, info_->nact());
+        auto rdm4x = rdm4ex->clone();
+        sort_indices<1,0,3,2,5,4,7,6,0,1,1,1>(rdm4ex->data(), rdm4x->data(), 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n, 2*n);
+        auto rdm4t = fill_block<8,complex<double>>(rdm4x, vector<int>(8,nclo*2), vector<IndexRange>(8,active_));
+#endif
+        rdm4all_->emplace(ist, jst, rdm4t);
+      }
     }
   }
   denom->compute();
@@ -510,7 +541,9 @@ void SpinFreeMethod<DataType>::set_rdm(const int ist, const int jst) {
     rdm1_ = rdm1all_->at(jst, ist);
     rdm2_ = rdm2all_->at(jst, ist);
     rdm3_ = rdm3all_->at(jst, ist);
-    rdm4_ = rdm4all_->at(jst, ist);
+    rdm4f_ = rdm4fall_->at(jst, ist);
+    if (info_->rdm4_eval())
+      rdm4_ = rdm4all_->at(jst, ist);
 
     // ensure that get_block calls are done after RDMs are set in every node
     mpi__->barrier();
