@@ -77,125 +77,6 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
     dB(p) = A(p) * dK(p) + dA(p) * K(p);
   }
 
-  // array<Matrix, 12> N_, O_, WN_, WO_, WWN_, WWO_;
-  // array<DiagVec, 12> F_, G_, H_, dF_, dG_, dH_;
-  // N_.fill(Matrix(nbasis_, nbasis_));
-  // O_.fill(Matrix(nbasis_, nbasis_));
-  // WN_.fill(Matrix(nbasis_, nbasis_));
-  // WO_.fill(Matrix(nbasis_, nbasis_));
-  // WWN_.fill(Matrix(nbasis_, nbasis_));
-  // WWO_.fill(Matrix(nbasis_, nbasis_));
-  // F_.fill(DiagVec(nbasis_));
-  // G_.fill(DiagVec(nbasis_));
-  // H_.fill(DiagVec(nbasis_));
-  // dF_.fill(DiagVec(nbasis_));
-  // dG_.fill(DiagVec(nbasis_));
-  // dH_.fill(DiagVec(nbasis_));
-  // for (int p = 0; p != nbasis_; ++p) {
-  //   F_[0](p) = B(p);
-  //   G_[0](p) = A(p);
-  //   H_[0](p) = -B(p) * E(p) * A(p);
-  //   dF_[0](p) = dB(p);
-  //   dG_[0](p) = dA(p);
-  //   dH_[0](p) = -dB(p) * E(p) * A(p) - B(p) * dE(p) * A(p) - B(p) * E(p) * dA(p);
-  //   F_[1](p) = A(p);
-  //   G_[1](p) = B(p);
-  //   H_[1](p) = -A(p) * E(p) * B(p);
-  //   dF_[1](p) = dA(p);
-  //   dG_[1](p) = dB(p);
-  //   dH_[1](p) = -dA(p) * E(p) * B(p) - A(p) * dE(p) * B(p) - A(p) * E(p) * dB(p);
-  //   F_[2](p) = G_[2](p) = A(p);
-  //   H_[2](p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
-  //   dF_[2](p) = dG_[2](p) = dA(p);
-  //   dH_[2](p) = 4 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) * E(p) + 2 * pow(A(p) * K(p), 2) * E(p)
-  //             + 4 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p) * E(p) + 2 * pow(A(p) * K(p), 2) * kinetic_(p) * dE(p);
-  //   F_[3](p) = G_[3](p) = B(p);
-  //   H_[3](p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
-  //   dF_[3](p) = dG_[3](p) = dB(p);
-  //   dH_[3](p) = ((2 * B(p) * dB(p) * E(p) + pow(B(p), 2) * dE(p)) * kinetic_(p) * K(p)
-  //             - pow(B(p), 2) * E(p) * (K(p) + 2 * kinetic_(p) * dK(p))) / (2 * pow(kinetic_(p) * K(p), 2) * K(p));
-  //   F_[4](p) = B(p);
-  //   G_[4](p) = A(p) * E(p);
-  //   H_[4](p) = -B(p) * A(p) / 2;
-  //   dF_[4](p) = dB(p);
-  //   dG_[4](p) = dA(p) * E(p) + A(p) * dE(p);
-  //   dH_[4](p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
-  //   F_[5](p) = A(p);
-  //   G_[5](p) = B(p) * E(p);
-  //   H_[5](p) = -A(p) * B(p) / 2;
-  //   dF_[5](p) = dA(p);
-  //   dG_[5](p) = dB(p) * E(p) + B(p) * dE(p);
-  //   dH_[5](p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
-  //   F_[6](p) = A(p);
-  //   G_[6](p) = A(p) * E(p);
-  //   H_[6](p) = pow(A(p) * K(p), 2) * kinetic_(p);
-  //   dF_[6](p) = dA(p);
-  //   dG_[6](p) = dA(p) * E(p) + A(p) * dE(p);
-  //   dH_[6](p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-  //             + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
-  //   F_[7](p) = B(p);
-  //   G_[7](p) = B(p) * E(p);
-  //   H_[7](p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
-  //   dF_[7](p) = dB(p);
-  //   dG_[7](p) = dB(p) * E(p) + B(p) * dE(p);
-  //   dH_[7](p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
-  //             - pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (4 * pow(kinetic_(p) * K(p), 2) * K(p));
-  //   F_[8](p) = E(p) * B(p);
-  //   G_[8](p) = A(p);
-  //   H_[8](p) = -B(p) * A(p) / 2;
-  //   dF_[8](p) = dE(p) * B(p) + E(p) * dB(p);
-  //   dG_[8](p) = dA(p);
-  //   dH_[8](p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
-  //   F_[9](p) = E(p) * A(p);
-  //   G_[9](p) = B(p);
-  //   H_[9](p) = -A(p) * B(p) / 2;
-  //   dF_[9](p) = dE(p) * A(p) + E(p) * dA(p);
-  //   dG_[9](p) = dB(p);
-  //   dH_[9](p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
-  //   F_[10](p) = E(p) * A(p);
-  //   G_[10](p) = A(p);
-  //   H_[10](p) = pow(A(p) * K(p), 2) * kinetic_(p);
-  //   dF_[10](p) = dE(p) * A(p) + E(p) * dA(p);
-  //   dG_[10](p) = dA(p);
-  //   dH_[10](p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-  //             + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
-  //   F_[11](p) = E(p) * B(p);
-  //   G_[11](p) = B(p);
-  //   H_[11](p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
-  //   dF_[11](p) = dE(p) * B(p) + E(p) * dB(p);
-  //   dG_[11](p) = dB(p);
-  //   dH_[11](p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
-  //             - pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (4 * pow(kinetic_(p) * K(p), 2) * K(p));
-  // }
-  // N_[0] = smallnai_;
-  // O_[0] = nai_;
-  // N_[1] = nai_;
-  // O_[1] = smallnai_;
-  // N_[2] = O_[2] = nai_;
-  // N_[3] = O_[3] = smallnai_;
-  // N_[4] = smallnai_;
-  // O_[4] = nai_;
-  // N_[5] = nai_;
-  // O_[5] = smallnai_;
-  // N_[6] = O_[6] = nai_;
-  // N_[7] = O_[7] = smallnai_;
-  // N_[8] = smallnai_;
-  // O_[8] = nai_;
-  // N_[9] = nai_;
-  // O_[9] = smallnai_;
-  // N_[10] = O_[10] = nai_;
-  // N_[11] = O_[11] = smallnai_;
-  // for (int p = 0; p != nbasis_; ++p) {
-  //   for (int q = 0; q != nbasis_; ++q) {
-  //     for (int i = 0; i != 12; ++i) {
-  //       WN_[i](q, p) = N_[i](q, p) / (E(p) + E(q));
-  //       WO_[i](q, p) = O_[i](q, p) / (E(p) + E(q));
-  //       WWN_[i](q, p) = WN_[i](q, p) / (E(p) + E(q));
-  //       WWO_[i](q, p) = WO_[i](q, p) / (E(p) + E(q));
-  //     }
-  //   }
-  // }
-
   const Matrix CPW = (ptrans_ % wtrans_rev_) % *rdm1 * (ptrans_ % wtrans_rev_);
   const Matrix CAN = CPW * A * nai_, NAC = nai_ * A * CPW, CBS = CPW * B * smallnai_, SBC = smallnai_ * B * CPW;
   shared_ptr<Matrix> den = make_shared<Matrix>(nbasis_, nbasis_);
@@ -434,65 +315,157 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
   *den += wtrans_ * A * CPW * A ^ wtrans_;
   *pvpden += wtrans_ * B * CPW * B ^ wtrans_;
 
-  for (int q = 0; q != nbasis_; ++q) {
+  Matrix N(nbasis_, nbasis_), O(nbasis_, nbasis_);
+  DiagVec F(nbasis_), G(nbasis_), H(nbasis_);
+  pair<int, int> vint;
+  for (int i = 0; i != 12; ++i) {
+    switch (i) {
+    case 0:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = B(p);
+        G(p) = A(p);
+        H(p) = -B(p) * E(p) * A(p);
+      }
+      N = smallnai_;
+      O = nai_;
+      vint = make_pair(1, 0);
+      break;
+    case 1:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = A(p);
+        G(p) = B(p);
+        H(p) = -A(p) * E(p) * B(p);
+      }
+      N = nai_;
+      O = smallnai_;
+      vint = make_pair(0, 1);
+      break;
+    case 2:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = G(p) = A(p);
+        H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
+      }
+      N = O = nai_;
+      vint = make_pair(0, 0);
+      break;
+    case 3:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = G(p) = B(p);
+        H(p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
+      }
+      N = O = smallnai_;
+      vint = make_pair(1, 1);
+      break;
+    case 4:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = B(p);
+        G(p) = A(p) * E(p);
+        H(p) = -B(p) * A(p) / 2;
+      }
+      N = smallnai_;
+      O = nai_;
+      vint = make_pair(1, 0);
+      break;
+    case 5:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = A(p);
+        G(p) = B(p) * E(p);
+        H(p) = -A(p) * B(p) / 2;
+      }
+      N = nai_;
+      O = smallnai_;
+      vint = make_pair(0, 1);
+      break;
+    case 6:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = A(p);
+        G(p) = A(p) * E(p);
+        H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
+      }
+      N = O = nai_;
+      vint = make_pair(0, 0);
+      break;
+    case 7:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = B(p);
+        G(p) = B(p) * E(p);
+        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+      }
+      N = O = smallnai_;
+      vint = make_pair(1, 1);
+      break;
+    case 8:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * B(p);
+        G(p) = A(p);
+        H(p) = -B(p) * A(p) / 2;
+      }
+      N = smallnai_;
+      O = nai_;
+      vint = make_pair(1, 0);
+      break;
+    case 9:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * A(p);
+        G(p) = B(p);
+        H(p) = -A(p) * B(p) / 2;
+      }
+      N = nai_;
+      O = smallnai_;
+      vint = make_pair(0, 1);
+      break;
+    case 10:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * A(p);
+        G(p) = A(p);
+        H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
+      }
+      N = O = nai_;
+      vint = make_pair(0, 0);
+      break;
+    case 11:
+      for (int p = 0; p != nbasis_; ++p) {
+        F(p) = E(p) * B(p);
+        G(p) = B(p);
+        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+      }
+      N = O = smallnai_;
+      vint = make_pair(1, 1);
+      break;
+    }
+    Matrix WN(nbasis_, nbasis_), WO(nbasis_, nbasis_);
     for (int p = 0; p != nbasis_; ++p) {
-      for (int r = 0; r != nbasis_; ++r) {
-        for (int b = 0; b != nbasis_; ++b) {
+      for (int q = 0; q != nbasis_; ++q) {
+        WN(q, p) = N(q, p) / (E(p) + E(q));
+        WO(q, p) = O(q, p) / (E(p) + E(q));
+      }
+    }
+    const Matrix WHNF = wtrans_ * H * WN * F, WHOG = wtrans_ * H * WO * G;
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int q = 0; q != nbasis_; ++q) {
+        for (int r = 0; r != nbasis_; ++r) {
           for (int a = 0; a != nbasis_; ++a) {
-            (*den)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (B(r) * E(r) * A(r) / ((E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (A(r) * E(r) * B(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * B(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) -= (A(r) * E(r) * B(r) / ((E(p) + E(r)) * (E(q)
-                            + E(r)))) * A(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (2 * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * A(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (2 * pow(A(r) * K(r), 2) * kinetic_(r) * E(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * B(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) * E(r) / kinetic_(r)) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
-                        + E(r)))) * B(p) * A(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * A(p) * B(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * A(q) * E(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * A(p) * A(q) * E(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * B(q) * E(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * B(p) * B(q) * E(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
-                        + E(r)))) * E(p) * B(p) * A(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (B(r) * A(r) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * E(p) * B(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * E(p) * A(p) * B(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) -= (A(r) * B(r) / (2 * (E(p) + E(r)) * (E(q)
-                        + E(r)))) * E(p) * A(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * E(p) * A(p) * A(q) * nai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*den)(a, b) += (pow(A(r) * K(r), 2) * kinetic_(r) / ((E(p) + E(r)) * (E(q)
-                        + E(r)))) * E(p) * A(p) * A(q) * nai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * E(p) * B(p) * B(q) * smallnai_(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-            (*pvpden)(a, b) += ((pow(B(r) / K(r), 2) / kinetic_(r)) / (4 * (E(p) + E(r)) * (E(q)
-                            + E(r)))) * E(p) * B(p) * B(q) * smallnai_(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(p, q);
+            for (int b = 0; b != nbasis_; ++b) {
+              double nden = (H(r) / (E(p) + E(r))) * F(p) * G(q) * WO(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(q, p);
+              if (vint.first) {
+                (*pvpden)(b, a) += nden;
+              }
+              else {
+                (*den)(b, a) += nden;
+              }
+              double oden = (H(r) / (E(q) + E(r))) * F(p) * G(q) * WN(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
+              if (vint.second) {
+                (*pvpden)(b, a) += oden;
+              }
+              else {
+                (*den)(b, a) += oden;
+              }
+            }
           }
         }
       }
     }
   }
-  
   // den->print("d_bar");
   // pvpden->print("d_check");
   return { den, pvpden };
