@@ -148,7 +148,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t ijmax = info_->cimaxchunk();
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
+  const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum-1) / ijmax + 1;
   const size_t nsize = (ndet-1) / npass + 1;
 
   for (int nst = 0; nst != nstates; ++nst) {
@@ -163,9 +163,9 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
 
     // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
     // otherwise just do using all the nodes.
-    const int nproc = npass > 1 ? 1 : mpi__->world_size();
-    const int ncomm = mpi__->world_size() / nproc;
-    const int icomm = mpi__->world_rank() / nproc;
+    const int nproc = npass > 1 ? 1 : mpi__->size();
+    const int ncomm = mpi__->size() / nproc;
+    const int icomm = mpi__->rank() / nproc;
     mpi__->split(nproc);
 
     for (int ipass = 0; ipass != npass; ++ipass) {
