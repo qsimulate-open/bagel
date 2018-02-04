@@ -56,9 +56,9 @@ DKHgrad::DKHgrad(shared_ptr<const Molecule> current) {
 
   ptrans_ = ContrCoeff(current, nbasis_);
 
-  wtrans_.print("W");
-  wtrans_rev_.print("S^unc W");
-  ptrans_.print("P");
+  // wtrans_.print("W");
+  // wtrans_rev_.print("S^unc W");
+  // ptrans_.print("P");
 
   zmult_ = ederiv_ = Matrix(nbasis_, nbasis_);
 }
@@ -90,15 +90,13 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   const Matrix CBS = CPW * B * smallnai_;
   const Matrix SBC = smallnai_ * B * CPW;
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
+  DiagVec EC(nbasis_);
   ederiv_ += 2 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
   for (int p = 0; p != nbasis_; ++p) {
     ederiv_(p, p) += 2 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * kinetic_(p);
-    for (int a = 0; a != nbasis_; ++a) {
-      for (int b = 0; b != nbasis_; ++b) {
-        (*den)(b, a) += (dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p))) * wtrans_(a, p) * wtrans_(b, p);
-      }
-    }
+    EC(p) = dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
   }
+  *den += wtrans_ * EC ^ wtrans_;
 
   Matrix N(nbasis_, nbasis_);
   Matrix O(nbasis_, nbasis_);
@@ -266,42 +264,93 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     const Matrix CFN = CPW * F * WN;
     const Matrix CGO = CPW * G * WO;
     const Matrix HNFC = H * WN * F * CPW * G;
-    const Matrix HSGC = H * WO * G * CPW * F;
-    const Matrix CFNHO = CFN * H * WO;
-    const Matrix CFNHOO = CFN * H * WWO;
-    const Matrix CGOHN = CGO * H * WN;
-    const Matrix CGOHNN = CGO * H * WWN;
+    const Matrix HOGC = H * WO * G * CPW * F;
+    const Matrix CFNHOG = CFN * H * WO * dG * kinetic_;
+    const Matrix CFNHOOGE = CFN * H * WWO * G * dE * kinetic_;
+    const Matrix CGOHNF = CGO * H * WN * dF * kinetic_;
+    const Matrix CGOHNNFE = CGO * H * WWN * F * dE * kinetic_;
     const Matrix CFNGH = (CFN * G * dH - CPW * F * WWN * G * H * dE) * kinetic_;
     const Matrix CFNGHE = CFN * G * H * dE * kinetic_;
     const Matrix CGOFH = (CGO * F * dH - CPW * G * WWO * F * H * dE) * kinetic_;
     const Matrix CGOFHE = CGO * F * H * dE * kinetic_;
-    ederiv_ += CFN * H * WO * G + CGO * H * WN * F;
+    Matrix CH(nbasis_, nbasis_);
+    Matrix CH2(nbasis_, nbasis_);
+    for (int p = 0; p < nbasis_; ++p) {
+      for (int q = 0; q < nbasis_; ++q) {
+        if (p != q) {
+          CH(q, p) = CPW(q, p) * H(p);
+          CH2(q, p) = CPW(q, p) * dH(p);
+        }
+      }
+    }
+    Matrix WHNFC(nbasis_, nbasis_);
+    Matrix WHOGC(nbasis_, nbasis_);
+    Matrix CHFGO(nbasis_, nbasis_);
+    Matrix CHGFN(nbasis_, nbasis_);
+    DiagVec HCFNG(nbasis_);
+    DiagVec HCGOF(nbasis_);
     for (int p = 0; p != nbasis_; ++p) {
       for (int q = 0; q != nbasis_; ++q) {
-        for (int r = 0; r != nbasis_; ++r) {
-          ederiv_(q, p) += (1 / (E(p) + E(r))) * (O(r, q) * HNFC(r, p) + N(r, q) * HSGC(r, p));
-          if (p != r) {
-            ederiv_(q, p) += (CPW(r, p) * H(p) / (E(r) + E(p))) * (F(r) * G(p) * N(r, q) * WO(p, p) + F(p) * G(r) * WN(p, p) * O(r, q));
-            if (p == q) {
-              ederiv_(p, p) += CPW(r, p) * (F(r) * (G(p) * dH(p) * WN(r, p) * WO(p, p) - G(p) * H(p) * dE(p) * (WN(r, p) * WWO(p, p)
-                            + WWN(r, p) * WO(p, p))) + G(r) * (F(p) * dH(p) * WN(p, p) * WO(r, p) - F(p) * H(p) * dE(p) * (WWN(p, p) * WO(r, p)
-                            + WN(p, p) * WWO(r, p)))) * kinetic_(p);
-            }
-            for (int s = 0; s != nbasis_; ++s) {
-              if (p != s) {
-                ederiv_(q, p) += CPW(s, r) * H(p) * (F(s) * G(r) * WN(s, p) * O(r, q) / (E(r) + E(p)) + F(r) * G(s) * N(s, q) * WO(r, p) / (E(s) + E(p)));
-                if (p == q) {
-                  ederiv_(p, p) += CPW(s, r) * (F(s) * G(r) * (dH(p) * WN(s, p) - 2 * H(p) * dE(p) * WWN(s, p)) * WO(r, p)
-                                + F(r) * G(s) * (dH(p) * WO(r, p) - 2 * H(p) * dE(p) * WWO(r, p)) * WN(s, p)) * kinetic_(p);
-                }
-              }
-            }
-          }
-        }
-        ederiv_(q, p) += (H(p) / (2 * E(p))) * (CFN(p, p) * G(p) * O(q, p) + CGO(p, p) * F(p) * N(q, p));
+        WHNFC(q, p) = HNFC(q, p) / (E(p) + E(q));
+        WHOGC(q, p) = HOGC(q, p) / (E(p) + E(q));
+        CHFGO(q, p) = CH(q, p) * F(q) * G(p) * WO(p, p) / (E(q) + E(p));
+        CHGFN(q, p) = CH(q, p) * G(q) * F(p) * WN(p, p) / (E(q) + E(p));
       }
-      ederiv_(p, p) += 2 * (CFNHO(p, p) * dG(p) + CGOHN(p, p) * dF(p) - (CFNHOO(p, p) * G(p) + CGOHNN(p, p) * F(p)) * dE(p)) * kinetic_(p)
-                    + CFNGH(p, p) * WO(p, p) - CFNGHE(p, p) * WWO(p, p) + CGOFH(p, p) * WN(p, p) - CGOFHE(p, p) * WWN(p, p);
+      HCFNG(p) = H(p) * CFN(p, p) * G(p) / (2 * E(p));
+      HCGOF(p) = H(p) * CGO(p, p) * F(p) / (2 * E(p));
+    }
+    const Matrix CH2FNG = WN * F * CH2 * G * kinetic_;
+    const Matrix CHFNGE = WN * F * CH * G * dE * kinetic_;
+    const Matrix CHFNNGE = WWN * F * CH * G * dE * kinetic_;
+    const Matrix CH2GOF = WO * G * CH2 * F * kinetic_;
+    const Matrix CHGOFE = WO * G * CH * F * dE * kinetic_;
+    const Matrix CHGOOFE = WWO * G * CH * F * dE * kinetic_;
+    Matrix FN(nbasis_, nbasis_);
+    Matrix FO(nbasis_, nbasis_);
+    Matrix FNN(nbasis_, nbasis_);
+    Matrix FOO(nbasis_, nbasis_);
+    for (int p = 0; p < nbasis_; ++p) {
+      for (int q = 0; q < nbasis_; ++q) {
+        if (p != q) {
+          FN(q, p) = WN(q, p) * F(q);
+          FO(q, p) = WO(q, p) * F(q);
+          FNN(q, p) = WWN(q, p) * F(q);
+          FOO(q, p) = WWO(q, p) * F(q);
+        }
+      }
+    }
+    const Matrix CFN2 = CPW * FN;
+    const Matrix CFO2 = CPW * FO;
+    const Matrix CFNN2 = CPW * FNN;
+    const Matrix CFOO2 = CPW * FOO;
+    Matrix GCFN2H(nbasis_, nbasis_);
+    Matrix GCFO2H(nbasis_, nbasis_);
+    Matrix GCFN2H2(nbasis_, nbasis_);
+    Matrix GCFO2H2(nbasis_, nbasis_);
+    Matrix GCFNN2H2(nbasis_, nbasis_);
+    Matrix GCFOO2H2(nbasis_, nbasis_);
+    for (int p = 0; p < nbasis_; ++p) {
+      for (int q = 0; q < nbasis_; ++q) {
+        if (p != q) {
+          GCFN2H(q, p) = G(q) * CFN2(q, p) * H(p) / (E(q) + E(p));
+          GCFO2H(q, p) = G(q) * CFO2(q, p) * H(p) / (E(q) + E(p));
+          GCFN2H2(q, p) = G(q) * CFN2(q, p) * dH(p) * kinetic_(p);
+          GCFO2H2(q, p) = G(q) * CFO2(q, p) * dH(p) * kinetic_(p);
+          GCFNN2H2(q, p) = G(q) * CFNN2(q, p) * H(p) * dE(p) * kinetic_(p);
+          GCFOO2H2(q, p) = G(q) * CFOO2(q, p) * H(p) * dE(p) * kinetic_(p);
+        }
+      }
+    }
+    const Matrix OGCFN2H2 = WO * (GCFN2H2 - 2 * GCFNN2H2);
+    const Matrix NGCFO2H2 = WN * (GCFO2H2 - 2 * GCFOO2H2);
+    ederiv_ += CFN * H * WO * G + CGO * H * WN * F + O * (WHNFC + CHGFN + GCFN2H) + N * (WHOGC + CHFGO + GCFO2H)
+            + O * HCFNG + N * HCGOF;
+
+    for (int p = 0; p != nbasis_; ++p) {
+      ederiv_(p, p) += 2 * (CFNHOG(p, p) + CGOHNF(p, p) - CFNHOOGE(p, p) - CGOHNNFE(p, p))
+                    + (CFNGH(p, p) + CH2FNG(p, p) - CHFNNGE(p, p)) * WO(p, p) - (CFNGHE(p, p) + CHFNGE(p, p)) * WWO(p, p)
+                    + (CGOFH(p, p) + CH2GOF(p, p) - CHGOOFE(p, p)) * WN(p, p) - (CGOFHE(p, p) + CHGOFE(p, p)) * WWN(p, p)
+                    + OGCFN2H2(p, p) + NGCFO2H2(p, p);
     }
     const Matrix OHNF = WO * H * (WN * dF - WWN * F * dE);
     const Matrix NHOG = WN * H * (WO * dG - WWO * G * dE);
@@ -333,9 +382,9 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   }
 
   *den += wtrans_ * zmult_ ^ wtrans_;
-  ederiv_.print("Y_pq");
-  zmult_.print("z_pq");
-  den->print("d_tilde");
+  // ederiv_.print("Y_pq");
+  // zmult_.print("z_pq");
+  // den->print("d_tilde");
   return den;
 }
 
@@ -651,13 +700,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
     *den += CPW * (F * WN * H * WO * G + G * WO * H * WN * F) ^ wtrans_;
   }
 
-  Matrix at(nbasis_, nbasis_);
-  for (int p = 0; p != nbasis_; ++p) {
-    for (int q = 0; q != nbasis_; ++q) {
-      at(q, p) = 2 * zmult_(q, p) * kinetic_(q);
-    }
-  }
-
+  const Matrix at = 2 * zmult_ * kinetic_;
   Matrix xb(nbasis_, nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     for (int q = 0; q != nbasis_; ++q) {
@@ -666,8 +709,8 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   }
 
   *den -= (ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_);
-  at.print("a_tilde");
-  xb.print("X_bar");
-  den->print("X_tilde");
+  // at.print("a_tilde");
+  // xb.print("X_bar");
+  // den->print("X_tilde");
   return den;
 }

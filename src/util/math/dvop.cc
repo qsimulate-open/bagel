@@ -30,8 +30,8 @@ namespace bagel {
   Matrix operator*(const DiagVec &v, const Matrix &m) {
     assert(m.ndim() == v.size());
     Matrix out(v.size(), v.size());
-    for (int i = 0; i < m.mdim(); i++) {
-      for (int j = 0; j < m.ndim(); j++) {
+    for (int i = 0; i < m.mdim(); ++i) {
+      for (int j = 0; j < m.ndim(); ++j) {
         out(j, i) = m(j, i) * v(j);
       }
     }
