@@ -297,41 +297,33 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
               }
             }
           }
-          // for (int a = 0; a != nbasis_; ++a) {
-          //   for (int b = 0; b != nbasis_; ++b) {
-          //     (*den)(b, a) += (WO(r, q) * (WN(r, p) * G(q) * dF(p) - WWN(r, p) * F(p) * G(q) * dE(p)) * H(r) * wtrans_(a, p) * wtrans_(b, p)
-          //                 + WN(r, p) * (WO(r, q) * F(p) * dG(q) - WWO(r, q) * F(p) * G(q) * dE(q)) * H(r) * wtrans_(a, q) * wtrans_(b, q)
-          //                 + (WN(r, p) * WO(r, q) * F(p) * G(q) * dH(r) - WWN(r, p) * WO(r, q) * F(p) * G(q) * H(r) * dE(r)
-          //                 - WN(r, p) * WWO(r, q) * F(p) * G(q) * H(r) * dE(r)) * wtrans_(a, r) * wtrans_(b, r)) * CPW(q, p);
-          //   }
-          // }
         }
         ederiv_(q, p) += (H(p) / (2 * E(p))) * (CFN(p, p) * G(p) * O(q, p) + CGO(p, p) * F(p) * N(q, p));
       }
       ederiv_(p, p) += 2 * (CFNHO(p, p) * dG(p) + CGOHN(p, p) * dF(p) - (CFNHOO(p, p) * G(p) + CGOHNN(p, p) * F(p)) * dE(p)) * kinetic_(p)
                     + CFNGH(p, p) * WO(p, p) - CFNGHE(p, p) * WWO(p, p) + CGOFH(p, p) * WN(p, p) - CGOFHE(p, p) * WWN(p, p);
     }
-    const Matrix GOHNF = G * WO * H * WN * dF;
-    const Matrix GOHNFE = G * WO * H * WWN * F * dE;
+    const Matrix OHNF = WO * H * (WN * dF - WWN * F * dE);
+    const Matrix NHOG = WN * H * (WO * dG - WWO * G * dE);
+    const Matrix OGCFN = WO * G * CPW * F * WN;
+    const Matrix OGCFNN = WO * G * CPW * F * WWN;
+    const Matrix OOGCFN = WWO * G * CPW * F * WN;
+    Matrix OHNFC(nbasis_, nbasis_);
+    Matrix NHOGC(nbasis_, nbasis_);
+    DiagVec OGCFNH(nbasis_);
+    DiagVec OGCFNNH(nbasis_);
+    DiagVec OOGCFNH(nbasis_);
     for (int p = 0; p != nbasis_; ++p) {
       for (int q = 0; q != nbasis_; ++q) {
-        for (int r = 0; r != nbasis_; ++r) {
-          for (int a = 0; a != nbasis_; ++a) {
-            for (int b = 0; b != nbasis_; ++b) {
-              // how to modify the line below
-              (*den)(b, a) += WO(r, q) * WN(r, p) * dF(p) * G(q) * H(r) * wtrans_(a, p) * wtrans_(b, p) * CPW(q, p)
-                          - WO(r, q) * WWN(r, p) * F(p) * dE(p) * G(q) * H(r) * wtrans_(a, p) * wtrans_(b, p) * CPW(q, p)
-                          + WN(r, p) * WO(r, q) * F(p) * dG(q) * H(r) * wtrans_(a, q) * wtrans_(b, q) * CPW(q, p)
-                          - WN(r, p) * WWO(r, q) * F(p) * G(q) * dE(q) * H(r) * wtrans_(a, q) * wtrans_(b, q) * CPW(q, p)
-              // how to modify the line below
-                          + WN(r, p) * WO(r, q) * F(p) * G(q) * dH(r) * wtrans_(a, r) * wtrans_(b, r) * CPW(q, p)
-                          - WWN(r, p) * WO(r, q) * F(p) * G(q) * H(r) * dE(r) * wtrans_(a, r) * wtrans_(b, r) * CPW(q, p)
-                          - WN(r, p) * WWO(r, q) * F(p) * G(q) * H(r) * dE(r) * wtrans_(a, r) * wtrans_(b, r) * CPW(q, p);
-            }
-          }
-        }
+        OHNFC(q, p) = OHNF(q, p) * CPW(q, p);
+        NHOGC(q, p) = NHOG(q, p) * CPW(q, p);
       }
+      OGCFNH(p) = OGCFN(p, p) * dH(p);
+      OGCFNNH(p) = OGCFNN(p, p) * H(p) * dE(p);
+      OOGCFNH(p) = OOGCFN(p, p) * H(p) * dE(p);
     }
+    const DiagVec dkh2(OHNFC * *G.data() + NHOGC * *F.data() + *OGCFNH.data() - *OGCFNNH.data() - *OOGCFNH.data());
+    *den += wtrans_ * dkh2 ^ wtrans_;
   }
 
   for (int p = 0; p != nbasis_; ++p) {
@@ -495,35 +487,31 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
         WO(q, p) = O(q, p) / (E(p) + E(q));
       }
     }
-    const Matrix WHNF = wtrans_ * H * WN * F;
-    const Matrix WHOG = wtrans_ * H * WO * G;
+    const Matrix HOGCF = H * WO * G * CPW * F;
+    const Matrix HNFCG = H * WN * F * CPW * G;
+    Matrix WHOGCF(nbasis_, nbasis_);
+    Matrix WHNFCG(nbasis_, nbasis_);
     for (int p = 0; p != nbasis_; ++p) {
       for (int q = 0; q != nbasis_; ++q) {
-        for (int r = 0; r != nbasis_; ++r) {
-          for (int a = 0; a != nbasis_; ++a) {
-            for (int b = 0; b != nbasis_; ++b) {
-              double nden = (H(r) / (E(p) + E(r))) * F(p) * G(q) * WO(r, q) * wtrans_(a, p) * wtrans_(b, r) * CPW(q, p);
-              if (vint.first) {
-                (*pvpden)(b, a) += nden;
-              }
-              else {
-                (*den)(b, a) += nden;
-              }
-              double oden = (H(r) / (E(q) + E(r))) * F(p) * G(q) * WN(r, p) * wtrans_(a, q) * wtrans_(b, r) * CPW(p, q);
-              if (vint.second) {
-                (*pvpden)(b, a) += oden;
-              }
-              else {
-                (*den)(b, a) += oden;
-              }
-            }
-          }
-        }
+        WHOGCF(q, p) = HOGCF(q, p) / (E(p) + E(q));
+        WHNFCG(q, p) = HNFCG(q, p) / (E(p) + E(q));
       }
     }
+    if (vint.first) {
+      *pvpden += wtrans_ * WHOGCF ^ wtrans_;
+    }
+    else {
+      *den += wtrans_ * WHOGCF ^ wtrans_;
+    }
+    if (vint.second) {
+      *pvpden += wtrans_ * WHNFCG ^ wtrans_;
+    }
+    else {
+      *den += wtrans_ * WHNFCG ^ wtrans_;
+    }
   }
-  den->print("d_bar");
-  pvpden->print("d_check");
+  // den->print("d_bar");
+  // pvpden->print("d_check");
   return { den, pvpden };
 }
 
