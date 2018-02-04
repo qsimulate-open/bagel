@@ -30,7 +30,6 @@
 #include <src/util/input/input.h>
 #include <src/molecule/molecule.h>
 #include <src/wfn/hcoreinfo.h>
-#include <src/wfn/dkhcoreinfo.h>
 #include <src/wfn/fmminfo.h>
 
 namespace bagel {

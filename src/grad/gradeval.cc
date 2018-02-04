@@ -23,6 +23,7 @@
 //
 
 #include <src/grad/gradeval.h>
+#include <src/grad/dkhgrad.h>
 #include <src/util/timer.h>
 
 using namespace std;
@@ -57,7 +58,7 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
 
   shared_ptr<GradFile> grad;
   if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
-    auto dkh = make_shared<DKHcoreInfo>(geom_);
+    auto dkh = make_shared<DKHgrad>(geom_);
     shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
     array<shared_ptr<const Matrix>, 2> nai_dkh = dkh->compute_vden(rdm1);
     shared_ptr<const Matrix> vden = nai_dkh[0];

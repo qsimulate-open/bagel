@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: dkhcoreinfo.cc
+// Filename: dkhgrad.cc
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
@@ -23,7 +23,7 @@
 //
 
 
-#include <src/wfn/dkhcoreinfo.h>
+#include <src/grad/dkhgrad.h>
 #include <src/mat1e/kinetic.h>
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
@@ -34,7 +34,7 @@ using namespace std;
 using namespace bagel;
 
 
-DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
+DKHgrad::DKHgrad(shared_ptr<const Molecule> current) {
   auto mol = make_shared<Molecule>(*current);
   mol = mol->uncontract();
   nbasis_ = mol->nbasis();
@@ -63,7 +63,7 @@ DKHcoreInfo::DKHcoreInfo(shared_ptr<const Molecule> current) {
   zmult_ = ederiv_ = Matrix(nbasis_, nbasis_);
 }
 
-shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1) {
+shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   const double c2 = c__ * c__;
   DiagVec E(nbasis_);
   DiagVec A(nbasis_);
@@ -339,7 +339,7 @@ shared_ptr<const Matrix> DKHcoreInfo::compute_tden(shared_ptr<const Matrix> rdm1
   return den;
 }
 
-array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Matrix> rdm1) {
+array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix> rdm1) {
   const double c2 = c__ * c__;
   DiagVec E(nbasis_);
   DiagVec A(nbasis_);
@@ -515,7 +515,7 @@ array<shared_ptr<const Matrix>, 2> DKHcoreInfo::compute_vden(shared_ptr<const Ma
   return { den, pvpden };
 }
 
-shared_ptr<const Matrix> DKHcoreInfo::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1) {
+shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1) {
   const double c2 = c__ * c__;
   DiagVec E(nbasis_);
   DiagVec A(nbasis_);

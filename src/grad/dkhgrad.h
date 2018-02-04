@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: dkhcoreinfo.h
+// Filename: dkhgrad.h
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
@@ -23,15 +23,15 @@
 //
 
 
-#ifndef __SRC_WFN_DKHCOREINFO_H
-#define __SRC_WFN_DKHCOREINFO_H
+#ifndef __SRC_WFN_DKHGRAD_H
+#define __SRC_WFN_DKHGRAD_H
 
-#include <src/wfn/diagvec.h>
 #include <src/molecule/molecule.h>
+#include <src/util/math/diagvec.h>
 
 namespace bagel {
 
-class DKHcoreInfo {
+class DKHgrad {
   private:
     int nbasis_;
 
@@ -47,8 +47,8 @@ class DKHcoreInfo {
     Matrix ederiv_;
 
   public:
-    DKHcoreInfo() { }
-    DKHcoreInfo(std::shared_ptr<const Molecule>);
+    DKHgrad() { }
+    DKHgrad(std::shared_ptr<const Molecule>);
 
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
     std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);

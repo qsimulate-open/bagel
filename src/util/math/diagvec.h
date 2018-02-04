@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_WFN_DIAGVEC_H
-#define __SRC_WFN_DIAGVEC_H
+#ifndef __SRC_MATH_DIAGVEC_H
+#define __SRC_MATH_DIAGVEC_H
 
 #include <src/util/math/matrix.h>
 #include <src/util/math/vectorb.h>

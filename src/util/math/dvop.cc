@@ -23,7 +23,7 @@
 //
 
 
-#include <src/wfn/diagvec.h>
+#include <src/util/math/diagvec.h>
 
 namespace bagel {
 
