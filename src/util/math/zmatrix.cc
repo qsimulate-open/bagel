@@ -439,6 +439,52 @@ shared_ptr<const ZMatrix> ZMatrix::distmatrix() const {
 #endif
 
 
+void ZMatrix::print (const string tag, int len) const {
+  if (tag != "")
+    cout << endl << "  ++ " << tag << " ++" << endl << endl;
+
+  int len_n, len_m;
+
+  if (len == 0 || (len > mdim() && len > ndim())) {
+    len_n = ndim();
+    len_m = mdim();
+  } else {
+    len_n = len_m = len;
+  }
+
+  for (int i = 0; i != len_m / 6; ++i) {
+    cout << setw(6) << " ";
+    for (int k = 0; k != 6; ++k)
+      cout << setw(30) << i * 6 + k;
+    cout << endl;
+    for (int j = 0; j != len_n; ++j) {
+      cout << setw(6) << j;
+      for (int k = 0; k != 6; ++k)
+        cout << setw(30) << setprecision(10) << *element_ptr(j, i * 6 + k);
+      cout << endl;
+    }
+    cout << endl;
+  }
+
+  if (len_m % 6) {
+    int i = len_m / 6;
+    cout << setw(6) << " ";
+    for (int k = 0; k != len_m % 6; ++k)
+      cout << setw(30) << i * 6 + k;
+    cout << endl;
+
+    for (int j = 0; j != len_n; ++j) {
+      cout << setw(6) << j;
+      for (int k = 0; k != len_m % 6; ++k)
+        cout << setw(30) << setprecision(8) << *element_ptr(j, i * 6 + k);
+      cout << endl;
+    }
+    cout << endl;
+  }
+}
+
+
+
 shared_ptr<const ZMatrix> ZMatrix::form_density_rhf(const int n, const int offset, const complex<double> scale) const {
   const ZMatView tmp = this->slice(offset, offset+n);
   auto out = make_shared<ZMatrix>(tmp ^ tmp);
