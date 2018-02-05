@@ -273,7 +273,6 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
       for (auto& a : o.atoms_)
         atoms_.push_back(make_shared<const Atom>(*a, spherical_, basisfile_, make_pair(basisfile_, bdata), elem));
     }
-
   }
   const string prevaux = auxfile_;
   auxfile_ = geominfo->get<string>("df_basis", auxfile_);
@@ -560,15 +559,6 @@ shared_ptr<const Geometry> Geometry::relativistic(const bool do_gaunt, const boo
   timer.tick_print("Geometry relativistic (total)");
   cout << endl;
   return geom;
-}
-
-
-void Geometry::uncontract_rel() {
-  vector<shared_ptr<const Atom>> atom;
-  for (auto& i : atoms_)
-    atom.push_back(i->uncontract()->relativistic());
-
-  atoms_ = atom;
 }
 
 

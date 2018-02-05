@@ -35,23 +35,32 @@ class DKHgrad {
   private:
     int nbasis_;
 
+    // Transformation matrix to momentum space
     Matrix wtrans_;
+    // Reverse transformation from momentum space
     Matrix wtrans_rev_;
+    // Projection operator from uncontracted to contracted AO basis
     Matrix ptrans_;
 
+    // Integrals in momentum space
     DiagVec kinetic_;
     Matrix nai_;
     Matrix smallnai_;
 
+    // Lagrange multiplier for diagonalization of kinetic operator
     Matrix zmult_;
+    // Energy derivative with respect to momentum orbital rotation
     Matrix ederiv_;
 
   public:
     DKHgrad() { }
     DKHgrad(std::shared_ptr<const Molecule>);
 
+    // Effective density matrix for kinetic gradient
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
+    // Effective density matrices for NAI/SmallNAI gradients
     std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
+    // Effective density matrix for overlap gradient
     std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
 };
 

@@ -35,20 +35,24 @@ using namespace bagel;
 
 
 DKHgrad::DKHgrad(shared_ptr<const Molecule> current) {
+  // Gradients and integrals and RDMs to be computed in uncontracted basis
   auto mol = make_shared<Molecule>(*current);
   mol = mol->uncontract();
   nbasis_ = mol->nbasis();
 
+  // Compute momentum transformation matrix
   const Overlap overlap(mol);
   shared_ptr<const Matrix> gamma = overlap.tildex();
   const Kinetic kinetic(mol);
   auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
   VectorB kinetic0(nbasis_);
+  // Kinetic operator is diagonal in momentum space
   lambda->diagonalize(kinetic0);
   kinetic_ = DiagVec(kinetic0);
   wtrans_ = *gamma * *lambda;
   wtrans_rev_ = overlap * wtrans_;
 
+  // Evaluate integrals in momentum space
   const NAI nai(mol);
   nai_ = wtrans_ % nai * wtrans_;
   const Small1e<NAIBatch> small1e(mol);
@@ -91,8 +95,10 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   const Matrix SBC = smallnai_ * B * CPW;
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
   DiagVec EC(nbasis_);
+  // DKH1 correction
   ederiv_ += 2 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
   for (int p = 0; p != nbasis_; ++p) {
+    // dE_DKH1/dU_pq
     ederiv_(p, p) += 2 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * kinetic_(p);
     EC(p) = dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
   }
@@ -106,6 +112,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   DiagVec dF(nbasis_);
   DiagVec dG(nbasis_);
   DiagVec dH(nbasis_);
+  // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {
     case 0:
@@ -275,8 +282,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     const Matrix CGOFHE = CGO * F * H * dE * kinetic_;
     Matrix CH(nbasis_, nbasis_);
     Matrix CH2(nbasis_, nbasis_);
-    for (int p = 0; p < nbasis_; ++p) {
-      for (int q = 0; q < nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int q = 0; q != nbasis_; ++q) {
         if (p != q) {
           CH(q, p) = CPW(q, p) * H(p);
           CH2(q, p) = CPW(q, p) * dH(p);
@@ -309,8 +316,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     Matrix FO(nbasis_, nbasis_);
     Matrix FNN(nbasis_, nbasis_);
     Matrix FOO(nbasis_, nbasis_);
-    for (int p = 0; p < nbasis_; ++p) {
-      for (int q = 0; q < nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int q = 0; q != nbasis_; ++q) {
         if (p != q) {
           FN(q, p) = WN(q, p) * F(q);
           FO(q, p) = WO(q, p) * F(q);
@@ -329,8 +336,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     Matrix GCFO2H2(nbasis_, nbasis_);
     Matrix GCFNN2H2(nbasis_, nbasis_);
     Matrix GCFOO2H2(nbasis_, nbasis_);
-    for (int p = 0; p < nbasis_; ++p) {
-      for (int q = 0; q < nbasis_; ++q) {
+    for (int p = 0; p != nbasis_; ++p) {
+      for (int q = 0; q != nbasis_; ++q) {
         if (p != q) {
           GCFN2H(q, p) = G(q) * CFN2(q, p) * H(p) / (E(q) + E(p));
           GCFO2H(q, p) = G(q) * CFO2(q, p) * H(p) / (E(q) + E(p));
@@ -343,6 +350,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     }
     const Matrix OGCFN2H2 = WO * (GCFN2H2 - 2 * GCFNN2H2);
     const Matrix NGCFO2H2 = WN * (GCFO2H2 - 2 * GCFOO2H2);
+    // dE_DKH2/dU_pq
     ederiv_ += CFN * H * WO * G + CGO * H * WN * F + O * (WHNFC + CHGFN + GCFN2H) + N * (WHOGC + CHFGO + GCFO2H)
             + O * HCFNG + N * HCGOF;
 
@@ -375,6 +383,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     *den += wtrans_ * dkh2 ^ wtrans_;
   }
 
+  // z_pq from Lagrangian
   for (int p = 0; p != nbasis_; ++p) {
     for (int q = 0; q != nbasis_; ++q) {
       zmult_(q, p) = p == q ? 0 : -0.5 * (ederiv_(q, p) - ederiv_(p, q)) / (kinetic_(q) - kinetic_(p));
@@ -404,6 +413,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
   const Matrix CPW = (ptrans_ % wtrans_rev_) % *rdm1 * (ptrans_ % wtrans_rev_);
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
   auto pvpden = make_shared<Matrix>(nbasis_, nbasis_);
+  // DKH1 correction
   *den += wtrans_ * A * CPW * A ^ wtrans_;
   *pvpden += wtrans_ * B * CPW * B ^ wtrans_;
 
@@ -413,6 +423,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
   DiagVec G(nbasis_);
   DiagVec H(nbasis_);
   pair<int, int> vint;
+  // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {
     case 0:
@@ -565,6 +576,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
 }
 
 shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1) {
+  // Extra contributions stem for dependence of energy on overlap matrix (due to reverse transformation)
   const double c2 = c__ * c__;
   DiagVec E(nbasis_);
   DiagVec A(nbasis_);
@@ -579,6 +591,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
 
   const Matrix CPW = ptrans_ * *rdm1 ^ (wtrans_rev_ % ptrans_);
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
+  // DKH1 correction
   *den += 2 * ((CPW * E - c2 * CPW) + CPW * (A * nai_ * A + B * smallnai_ * B)) ^ wtrans_;
 
   Matrix N(nbasis_, nbasis_);
@@ -586,6 +599,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   DiagVec F(nbasis_);
   DiagVec G(nbasis_);
   DiagVec H(nbasis_);
+  // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {
     case 0:
@@ -700,7 +714,9 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
     *den += CPW * (F * WN * H * WO * G + G * WO * H * WN * F) ^ wtrans_;
   }
 
+  // a_tilde from dL/dU_pq
   const Matrix at = 2 * zmult_ * kinetic_;
+  // X_bar from Lagrangian, satisfies dL/dU_pq = 0
   Matrix xb(nbasis_, nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
     for (int q = 0; q != nbasis_; ++q) {
