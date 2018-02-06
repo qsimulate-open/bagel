@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_WFN_DKHGRAD_H
-#define __SRC_WFN_DKHGRAD_H
+#ifndef __SRC_GRAD_DKHGRAD_H
+#define __SRC_GRAD_DKHGRAD_H
 
 #include <src/molecule/molecule.h>
 #include <src/util/math/diagvec.h>
