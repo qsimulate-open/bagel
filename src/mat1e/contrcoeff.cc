@@ -43,7 +43,6 @@ void ContrCoeff::init(shared_ptr<const Molecule> mol) {
   for (auto a = mol->atoms().begin(); a != mol->atoms().end(); ++a, ++oa) {
     auto ob = oa->begin();
     for (auto b = (*a)->shells().begin(); b != (*a)->shells().end(); ++b, ++ob) {
-      int duplicates = (*b)->spherical() ? 2 * (*b)->angular_number() + 1 : ((*b)->angular_number() + 1) * ((*b)->angular_number() + 2) / 2;
       vector<vector<double>> contractions((*b)->contractions().size());
       auto citer = contractions.begin();
       for (auto iter = (*b)->contractions().begin(); iter != (*b)->contractions().end(); ++iter, ++citer) {
@@ -54,6 +53,7 @@ void ContrCoeff::init(shared_ptr<const Molecule> mol) {
           citer->push_back(*diter * std::sqrt(denom) / (pow(2.0 * *eiter / pi__, 0.75) * pow(std::sqrt(4.0 * *eiter), (*b)->angular_number())));
         }
       }
+      int duplicates = (*b)->spherical() ? 2 * (*b)->angular_number() + 1 : ((*b)->angular_number() + 1) * ((*b)->angular_number() + 2) / 2;
       const vector<pair<int, int>> contraction_ranges = (*b)->contraction_ranges();
       for (int r = 0; r != contraction_ranges.size(); r += msize) {
         msize = 0;
@@ -62,12 +62,12 @@ void ContrCoeff::init(shared_ptr<const Molecule> mol) {
         for (int i = 0; i != msize; ++i) {
           for (int j = 0; j != nsize; ++j) {
             for (int a = 0; a != duplicates; ++a) {
-              assert(npos + a < ndim() && mpos + i + a < mdim());
-              element(npos + a, mpos + i + a) = contractions[r + i][contraction_ranges[r].first + j];
+              assert(npos + j * duplicates + a < ndim() && mpos + i * duplicates + a < mdim());
+              element(npos + j * duplicates + a, mpos + i * duplicates + a) = contractions[r + i][contraction_ranges[r].first + j];
             }
-            npos += duplicates;
           }
         }
+        npos += nsize * duplicates;
         mpos += msize * duplicates;
       }
     }
