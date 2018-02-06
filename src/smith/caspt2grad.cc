@@ -66,6 +66,15 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
 
   cout << endl << "  === DF-CASPT2Grad calculation ===" << endl << endl;
 
+  {
+    const size_t nact = ref_->nact();
+    const size_t nact2 = nact * nact;
+    const size_t nact4 = nact2 * nact2;
+    const size_t nact6 = nact4 * nact2;
+    const size_t nstate = ref_->nstate();
+    cout << "    * Storage requirement for SMITH-computed tensor in each node is ";
+    cout << setprecision(3) << static_cast<size_t>(nstate * nstate * (nact6 * 2 + nact4 + nact2 + 1)) * 8.e-9 << " GB" << endl;
+  }
 #else
   throw logic_error("CASPT2 gradients require SMITH-generated code. Please compile BAGEL with --enable-smith");
 #endif
