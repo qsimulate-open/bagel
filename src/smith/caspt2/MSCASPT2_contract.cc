@@ -68,7 +68,7 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
             for (auto& i0 : o[0].range()) {
               auto input = den1cit->get_block(i0, i1);
               for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                copy_n(&input[0+i0.size()*io1], i0.size(), d1->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1));
+                copy_n(&input[0 + i0.size() * io1], i0.size(), d1->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1));
             }
           den1cirdm->emplace(nst, mst, d1);
         }
@@ -89,7 +89,7 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
                   for (size_t io3 = 0; io3 != i3.size(); ++io3)
                     for (size_t io2 = 0; io2 != i2.size(); ++io2)
                       for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                        copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*io3))], i0.size(), d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
+                        copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * io3))], i0.size(), d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
                 }
           den2cirdm->emplace(nst, mst, d2);
         }
@@ -116,7 +116,7 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
                           for (size_t io3 = 0; io3 != i3.size(); ++io3)
                             for (size_t io2 = 0; io2 != i2.size(); ++io2)
                               for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                                copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*(io3+i3.size()*(io4+i4.size()*io5))))],
+                                copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5))))],
                                     i0.size(), d3->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
                     }
           den3cirdm->emplace(nst, mst, d3);
@@ -144,7 +144,7 @@ tuple<shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared
                           for (size_t io3 = 0; io3 != i3.size(); ++io3)
                             for (size_t io2 = 0; io2 != i2.size(); ++io2)
                               for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                                copy_n(&input[0+i0.size()*(io1+i1.size()*(io2+i2.size()*(io3+i3.size()*(io4+i4.size()*io5))))],
+                                copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5))))],
                                     i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
                     }
           den4cirdm->emplace(nst, mst, d4);
