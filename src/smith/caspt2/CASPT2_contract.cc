@@ -215,30 +215,30 @@ shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> c
         const size_t lenb = ciwfn->det()->lenb();
 
         for (size_t ij = 0; ij != nact2; ++ij) {
-          const size_t j = ij/nact;
-          const size_t i = ij-j*nact;
+          const size_t j = ij / nact;
+          const size_t i = ij - j * nact;
 
-          for (auto& iter : ciwfn->det()->phia(i,j)) {
-            size_t iaJ = iter.source;
-            size_t iaK = iter.target;
-            double sign = static_cast<double>(iter.sign);
+          for (auto& iter : ciwfn->det()->phia(i, j)) {
+            const size_t iaJ = iter.source;
+            const size_t iaK = iter.target;
+            const double sign = static_cast<double>(iter.sign);
             for (size_t ib = 0; ib != lenb; ++ib) {
-              size_t iK = ib+iaK*lenb;
-              size_t iJ = ib+iaJ*lenb;
+              const size_t iK = ib + iaK * lenb;
+              const size_t iJ = ib + iaJ * lenb;
               if ((iK - offset) < size && iK >= offset)
-                (*out)[iJ] += sign * dtensor->element(iK-offset,ij);
+                (*out)[iJ] += sign * dtensor->element(iK - offset, ij);
             }
           }
 
           for (size_t ia = 0; ia != lena; ++ia) {
-            for (auto& iter : ciwfn->det()->phib(i,j)) {
-              size_t ibJ = iter.source;
-              size_t ibK = iter.target;
-              double sign = static_cast<double>(iter.sign);
-              size_t iK = ibK+ia*lenb;
-              size_t iJ = ibJ+ia*lenb;
+            for (auto& iter : ciwfn->det()->phib(i, j)) {
+              const size_t ibJ = iter.source;
+              const size_t ibK = iter.target;
+              const double sign = static_cast<double>(iter.sign);
+              const size_t iK = ibK + ia * lenb;
+              const size_t iJ = ibJ + ia * lenb;
               if ((iK - offset) < size && iK >= offset)
-                (*out)[iJ] += sign * dtensor->element(iK-offset,ij);
+                (*out)[iJ] += sign * dtensor->element(iK - offset, ij);
             }
           }
         }
