@@ -98,12 +98,12 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
 
   ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
   const size_t nact  = info_->nact();
-  const size_t norb2 = nact*nact;
+  const size_t norb2 = nact * nact;
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t ijmax = info_->cimaxchunk();
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() > ((ijnum-1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum-1) / ijmax + 1;
-  const size_t nsize = (ndet-1) / npass + 1;
+  const size_t npass = ((mpi__->size() > ((ijnum - 1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
+  const size_t nsize = (ndet - 1) / npass + 1;
 
   if (npass > 1)
     cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
