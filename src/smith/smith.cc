@@ -57,14 +57,14 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     const size_t nvirtual = r->nvirt() - info->nfrozenvirt();
     const size_t norb = nclosed + nact + nvirtual;
     const size_t rsize = nclosed * nclosed * nvirtual * nvirtual + nclosed * nact * nvirtual * nvirtual + nact * nact * nvirtual * nvirtual + nclosed * nclosed * nact * nvirtual + nclosed * nclosed * nact * nact + nact * nclosed * nact * nact + nact * nact * nact * nvirtual + nact * nact * nvirtual * nclosed;
-    cout << endl << "    * Aggregated memory requirement for SMITH calulation:" << endl;
+    cout << endl << "    * Memory requirement for SMITH calulation per MPI process:" << endl;
     cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
-    cout << setprecision(2) << rsize * (info->sssr() ? nstate : nstate * nstate) * (info->grad() ? 5 : 3) * 8.e-9 << " GB" << endl;
+    cout << setprecision(2) << rsize * (info->sssr() ? nstate : nstate * nstate) * (info->grad() ? 5 : 3) * 8.e-9 / static_cast<double>(mpi__->size()) << " GB" << endl;
     cout << "      o Storage requirement for MO integrals is ";
-    cout << setprecision(2) << (norb * norb * 2 + (nclosed + nact) * (nclosed + nact) * (nact + nvirtual) * (nact + nvirtual)) * 8.e-9 << " GB" << endl;
+    cout << setprecision(2) << (norb * norb * 2 + (nclosed + nact) * (nclosed + nact) * (nact + nvirtual) * (nact + nvirtual)) * 8.e-9 / static_cast<double>(mpi__->size()) << " GB" << endl;
     if (info->grad()) {
       cout << "      o Storage requirement for SMITH-computed gradient tensors is ";
-      cout << setprecision(2) << nstate * nstate * (nact6 * 2 + nact4 + nact2 + 1) * 8.e-9 * static_cast<double>(mpi__->size()) << " GB" << endl;
+      cout << setprecision(2) << nstate * nstate * (nact6 * 2 + nact4 + nact2 + 1) * 8.e-9 << " GB" << endl;
     }
   }
 
