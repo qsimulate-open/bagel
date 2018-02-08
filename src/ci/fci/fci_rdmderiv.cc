@@ -52,7 +52,6 @@ shared_ptr<Dvec> FCI::rdm1deriv(const int target) const {
 
 
 shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
-
   auto detex = make_shared<Determinants>(norb_, nelea_, neleb_, false, /*mute=*/true);
   cc_->set_det(detex);
   shared_ptr<Civec> cbra = cc_->data(target);
@@ -84,6 +83,7 @@ shared_ptr<Dvec> FCI::rdm2deriv(const int target) const {
   }
   return ebra;
 }
+
 
 namespace bagel {
   class RDM2derivTask {
@@ -142,6 +142,7 @@ namespace bagel {
   };
 }
 
+
 shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, const size_t size, shared_ptr<const Matrix> dmat, const bool parallel) const {
   const size_t norb2 = norb_ * norb_;
   auto emat = make_shared<Matrix>(size, norb2*norb2, /*local=*/!parallel);
@@ -168,6 +169,7 @@ shared_ptr<Matrix> FCI::rdm2deriv_offset(const int target, const size_t offset, 
 
   return emat;
 }
+
 
 namespace bagel {
   class RDM3derivTask {
