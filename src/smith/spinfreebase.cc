@@ -413,11 +413,11 @@ template<>
 shared_ptr<Matrix> SpinFreeMethod<double>::feed_rdm_2fderiv(shared_ptr<const SMITH_Info<double>> info, shared_ptr<const Matrix> fockact, const int istate) {
   const int nact = info->nact();
   const int ndet = info->ref()->civectors()->data(istate)->size();
-  auto rdm1d_full = make_shared<Matrix>(ndet, nact*nact);
+  auto rdm1d_full = make_shared<Matrix>(ndet, nact * nact);
   {
     shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
-    for (int i = 0; i != nact*nact; ++i)
-      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0,i));
+    for (int i = 0; i != nact * nact; ++i)
+      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0, i));
   }
   shared_ptr<Matrix> rdm2fd = info->ref()->rdm2fderiv(istate, fockact, rdm1d_full);
 
@@ -435,19 +435,19 @@ tuple<shared_ptr<VectorB>, shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Mat
   copy_n(info->ref()->civectors()->data(istate)->data() + offset, size, rdm0d->data());
 
   const int ndet = info->ref()->civectors()->data(istate)->size();
-  auto rdm1d_full = make_shared<Matrix>(ndet, nact*nact);
-  auto rdm1d = make_shared<Matrix>(size, nact*nact);
+  auto rdm1d_full = make_shared<Matrix>(ndet, nact * nact);
+  auto rdm1d = make_shared<Matrix>(size, nact * nact);
   {
     shared_ptr<Dvec> rdm1a = info->ref()->rdm1deriv(istate);
     auto fill2 = [&offset, &size](shared_ptr<const Dvec> in, shared_ptr<Matrix> out) {
       assert(out->mdim() == in->ij());
       for (int i = 0; i != in->ij(); ++i)
-        copy_n(in->data(i)->data() + offset, size, out->element_ptr(0,i));
+        copy_n(in->data(i)->data() + offset, size, out->element_ptr(0, i));
     };
     fill2(rdm1a, rdm1d);
 
-    for (int i = 0; i != nact*nact; ++i)
-      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0,i));
+    for (int i = 0; i != nact * nact; ++i)
+      copy_n(rdm1a->data(i)->data(), ndet, rdm1d_full->element_ptr(0, i));
   }
 
   shared_ptr<Matrix> rdm2d;

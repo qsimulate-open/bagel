@@ -60,7 +60,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     cout << "    * Storage requirement for T-amplitude, lambda, and residual is ";
     cout << setprecision(3) << rsize * (info->sssr() ? nstate : nstate * nstate) * (info->grad() ? 5 : 3) * 8.e-9 << " GB" << endl;
     cout << "    * Storage requirement for MO integral is ";
-    cout << setprecision(3) << norb * norb * 2 + (nclosed + nact) * (nclosed + nact) * (nact + nvirtual) * (nact + nvirtual) * 8.e-9 << " GB" << endl;
+    cout << setprecision(3) << (norb * norb * 2 + (nclosed + nact) * (nclosed + nact) * (nact + nvirtual) * (nact + nvirtual)) * 8.e-9 << " GB" << endl;
     if (info->grad()) {
       cout << "    * Storage requirement for SMITH-computed tensor is ";
       cout << setprecision(3) << nstate * nstate * (nact6 * 2 + nact4 + nact2 + 1) * 8.e-9 * static_cast<double>(mpi__->size()) << " GB" << endl;
