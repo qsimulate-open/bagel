@@ -230,7 +230,7 @@ shared_ptr<Dvec> DistFCI::rdm1deriv(const int istate) const {
 
 shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
   throw logic_error("DistFCI::rdm2deriv is not implemented yet...");
-  return make_shared<Dvec>();
+  return nullptr;
 }
 
 
