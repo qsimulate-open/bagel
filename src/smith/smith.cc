@@ -45,6 +45,30 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
 #ifdef COMPILE_SMITH
   // make a smith_info class
   auto info = make_shared<const SMITH_Info<double>>(r, idata);
+
+  {
+    // print memory requirements
+    const size_t nact = r->nact();
+    const size_t nact2 = nact * nact;
+    const size_t nact4 = nact2 * nact2;
+    const size_t nact6 = nact4 * nact2;
+    const size_t nstate = r->nstate();
+    const size_t nclosed = r->nclosed() - info->ncore();
+    const size_t nvirtual = r->nvirt() - info->nfrozenvirt();
+    const size_t nocc = nclosed + nact;
+    const size_t norb = nocc + nvirtual;
+    const size_t rsize = nclosed*nocc*nvirtual*nvirtual + nclosed*nclosed*nact*(nvirtual+nact) + nact2*(norb*nvirtual+nact*nclosed);
+    cout << endl << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
+    cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
+    cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 5 : 3) * 8.e-9 / mpi__->size() << " GB" << endl;
+    cout << "      o Storage requirement for MO integrals is ";
+    cout << setprecision(2) << (norb*norb*2 + nocc*nocc*(nact+nvirtual)*(nact+nvirtual)) * 8.e-9 / mpi__->size() << " GB" << endl;
+    if (info->grad()) {
+      cout << "      o Storage requirement for SMITH-computed gradient tensors is ";
+      cout << setprecision(2) << nstate*nstate*(nact6*2 + nact4 + nact2 + 1) * 8.e-9 << " GB" << endl;
+    }
+  }
+
   if (info->restart())
     cout << " ** Restarting calculations is currently unavailable for non-relativistic SMITH methods.  Serialized archives will not be generated." << endl << endl;
 

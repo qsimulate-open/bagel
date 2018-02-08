@@ -120,6 +120,7 @@ tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
   return compute_rdm12_last_step(dbra, dket, cbra);
 }
 
+
 tuple<shared_ptr<RDM<1>>, shared_ptr<RDM<2>>>
 FCI::compute_rdm12_last_step(shared_ptr<const Dvec> dbra, shared_ptr<const Dvec> dket, shared_ptr<const Civec> cibra) const {
 

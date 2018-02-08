@@ -39,11 +39,9 @@ class MSCASPT2 {
     IndexRange virt_;
     IndexRange active_;
     IndexRange closed_;
-    IndexRange ci_;
     std::shared_ptr<const IndexRange> rvirt_;
     std::shared_ptr<const IndexRange> ractive_;
     std::shared_ptr<const IndexRange> rclosed_;
-    std::shared_ptr<const IndexRange> rci_;
 
     std::shared_ptr<const Matrix> heff_;
     std::shared_ptr<const Matrix> fockact_;
@@ -82,6 +80,11 @@ class MSCASPT2 {
     std::shared_ptr<Tensor> den2cit;
     std::shared_ptr<Tensor> den3cit;
     std::shared_ptr<Tensor> den4cit;
+    std::shared_ptr<double> den0cirdmt;
+    std::shared_ptr<RDM<1>> den1cirdmt;
+    std::shared_ptr<RDM<2>> den2cirdmt;
+    std::shared_ptr<RDM<3>> den3cirdmt;
+    std::shared_ptr<RDM<3>> den4cirdmt;
 
     // storage for output
     std::shared_ptr<Matrix> den1_;
@@ -102,11 +105,11 @@ class MSCASPT2 {
     std::shared_ptr<Vec<Tensor>> rdm3all_;
     std::shared_ptr<Vec<Tensor>> rdm4all_;
     std::shared_ptr<Vec<Tensor>> rdm4fall_;
-    std::shared_ptr<Tensor> rdm0deriv_;
-    std::shared_ptr<Tensor> rdm1deriv_;
-    std::shared_ptr<Tensor> rdm2deriv_;
+    std::shared_ptr<VectorB> rdm0deriv_;
+    std::shared_ptr<Matrix> rdm1deriv_;
+    std::shared_ptr<Matrix> rdm2deriv_;
     std::shared_ptr<Matrix> rdm2fderiv_;
-    std::shared_ptr<Tensor> rdm3fderiv_;
+    std::shared_ptr<Matrix> rdm3fderiv_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
@@ -144,7 +147,9 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci2q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci3q(const bool reset = true, const bool diagonal = true);
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
-    std::shared_ptr<Queue> contract_rdm_deriv(const std::shared_ptr<const CIWfn> ciwfn, std::shared_ptr<VectorB> bdata, const int offset, const int cisize, const bool reset = true, const bool diagonal = true);
+
+    std::tuple<std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>> feed_denci();
+    std::shared_ptr<VectorB> contract_rdm_deriv(std::shared_ptr<const CIWfn> ciwfn, int offset, int size, std::shared_ptr<const Matrix> fock);
     void zero_total();
     void add_total(double factor);
     void do_rdm_deriv(double factor);

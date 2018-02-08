@@ -128,9 +128,10 @@ class FCI_base : public Method {
     // rdm ci derivatives
     virtual std::shared_ptr<Dvec> rdm1deriv(const int istate) const = 0;
     virtual std::shared_ptr<Dvec> rdm2deriv(const int istate) const = 0;
-    virtual std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel = true) const = 0;
-    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const = 0;
+    virtual std::shared_ptr<Matrix> rdm2fderiv(const int istate, std::shared_ptr<const Matrix> fock, std::shared_ptr<const Matrix> dmat) const = 0;
+    virtual std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, std::shared_ptr<const Matrix> dmat, const bool parallel = true) const = 0;
+    virtual std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
+      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> dbra_in, std::shared_ptr<const Matrix> fock_ebra_in) const = 0;
 
     std::shared_ptr<VecRDM<1>> rdm1() { return rdm1_; }
     std::shared_ptr<VecRDM<2>> rdm2() { return rdm2_; }

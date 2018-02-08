@@ -382,7 +382,6 @@ shared_ptr<PairFile<Matrix,Dvec>>
       for (int i = 0; i != z1->ij(); ++i)
         blas::ax_plus_y_n(-(fci_->energy(i)-core_energy), z1->data(i)->data(), z1->data(i)->size(), sigmaci->data(i)->data());
       sigmaci->scale(1.0/(lambda*lambda));
-
     } else {
       sigmaci = civector_->clone(); // always zero when nact=0
     }
