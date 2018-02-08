@@ -236,13 +236,13 @@ shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
 
 shared_ptr<Matrix> DistFCI::rdm2fderiv(const int istate, shared_ptr<const Matrix> fock, shared_ptr<const Matrix> dmat) const {
   throw logic_error("DistFCI::rdm2fderiv is not implemented yet...");
-  return make_shared<Matrix>();
+  return nullptr;
 }
 
 
 shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, shared_ptr<const Matrix> dmat, const bool parallel) const {
   throw logic_error("DistFCI::rdm2deriv_offset is not implemented yet...");
-  return make_shared<Matrix>();
+  return nullptr;
 }
 
 
