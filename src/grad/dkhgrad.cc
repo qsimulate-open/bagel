@@ -74,12 +74,12 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   DiagVec dK(nbasis_);
   DiagVec dB(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
-    E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
-    A(p) = sqrt((c2 + E(p)) / (2 * E(p)));
+    E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
+    A(p) = sqrt((c2 + E(p)) / (2.0 * E(p)));
     K(p) = c__ / (E(p) + c2);
     B(p) = A(p) * K(p);
-    dE(p) = c__ / sqrt(2 * kinetic_(p) + c2);
-    dA(p) = -c2 * dE(p) / (4 * pow(E(p), 2) * A(p));
+    dE(p) = c__ / sqrt(2.0 * kinetic_(p) + c2);
+    dA(p) = -c2 * dE(p) / (4.0 * pow(E(p), 2) * A(p));
     dK(p) = -c__ * dE(p) / pow(E(p) + c2, 2);
     dB(p) = A(p) * dK(p) + dA(p) * K(p);
   }
@@ -92,11 +92,11 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
   DiagVec EC(nbasis_);
   // DKH1 correction
-  ederiv_ += 2 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
+  ederiv_ += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
   for (int p = 0; p != nbasis_; ++p) {
     // dE_DKH1/dU_pq
-    ederiv_(p, p) += 2 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * kinetic_(p);
-    EC(p) = dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
+    ederiv_(p, p) += 2.0 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * kinetic_(p);
+    EC(p) = dE(p) * CPW(p, p) + 2.0 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
   }
   *den += wtrans_ * EC ^ wtrans_;
 
@@ -138,20 +138,20 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     case 2:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = A(p);
-        H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
+        H(p) = 2.0 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
         dF(p) = dG(p) = dA(p);
-        dH(p) = 4 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) * E(p) + 2 * pow(A(p) * K(p), 2) * E(p)
-              + 4 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p) * E(p) + 2 * pow(A(p) * K(p), 2) * kinetic_(p) * dE(p);
+        dH(p) = 4.0 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) * E(p) + 2.0 * pow(A(p) * K(p), 2) * E(p)
+              + 4.0 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p) * E(p) + 2.0 * pow(A(p) * K(p), 2) * kinetic_(p) * dE(p);
       }
       N = O = nai_;
       break;
     case 3:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * kinetic_(p));
         dF(p) = dG(p) = dB(p);
-        dH(p) = ((2 * B(p) * dB(p) * E(p) + pow(B(p), 2) * dE(p)) * kinetic_(p) * K(p)
-              - pow(B(p), 2) * E(p) * (K(p) + 2 * kinetic_(p) * dK(p))) / (2 * pow(kinetic_(p) * K(p), 2) * K(p));
+        dH(p) = ((2.0 * B(p) * dB(p) * E(p) + pow(B(p), 2) * dE(p)) * kinetic_(p) * K(p)
+              - pow(B(p), 2) * E(p) * (K(p) + 2.0 * kinetic_(p) * dK(p))) / (2.0 * pow(kinetic_(p) * K(p), 2) * K(p));
       }
       N = O = smallnai_;
       break;
@@ -159,10 +159,10 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
         dF(p) = dB(p);
         dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
+        dH(p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -171,10 +171,10 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = A(p);
         G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
         dF(p) = dA(p);
         dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
+        dH(p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -186,8 +186,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
         H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
         dF(p) = dA(p);
         dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-              + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
+        dH(p) = 2.0 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+              + 2.0 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
       }
       N = O = nai_;
       break;
@@ -195,11 +195,11 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
         dF(p) = dB(p);
         dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
-              - pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (4 * pow(kinetic_(p) * K(p), 2) * K(p));
+        dH(p) = (2.0 * B(p) * dB(p) * kinetic_(p) * K(p)
+              - pow(B(p), 2) * (K(p) + 2.0 * kinetic_(p) * dK(p))) / (4.0 * pow(kinetic_(p) * K(p), 2) * K(p));
       }
       N = O = smallnai_;
       break;
@@ -207,10 +207,10 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
         dF(p) = dE(p) * B(p) + E(p) * dB(p);
         dG(p) = dA(p);
-        dH(p) = -dB(p) * A(p) / 2 - B(p) * dA(p) / 2;
+        dH(p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -219,10 +219,10 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * A(p);
         G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
         dF(p) = dE(p) * A(p) + E(p) * dA(p);
         dG(p) = dB(p);
-        dH(p) = -dA(p) * B(p) / 2 - A(p) * dB(p) / 2;
+        dH(p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -234,8 +234,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
         H(p) = pow(A(p) * K(p), 2) * kinetic_(p);
         dF(p) = dE(p) * A(p) + E(p) * dA(p);
         dG(p) = dA(p);
-        dH(p) = 2 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-              + 2 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
+        dH(p) = 2.0 * A(p) * dA(p) * kinetic_(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+              + 2.0 * pow(A(p), 2) * kinetic_(p) * K(p) * dK(p);
       }
       N = O = nai_;
       break;
@@ -243,11 +243,11 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
         dF(p) = dE(p) * B(p) + E(p) * dB(p);
         dG(p) = dB(p);
-        dH(p) = (2 * B(p) * dB(p) * kinetic_(p) * K(p)
-              - pow(B(p), 2) * (K(p) + 2 * kinetic_(p) * dK(p))) / (4 * pow(kinetic_(p) * K(p), 2) * K(p));
+        dH(p) = (2.0 * B(p) * dB(p) * kinetic_(p) * K(p)
+              - pow(B(p), 2) * (K(p) + 2.0 * kinetic_(p) * dK(p))) / (4.0 * pow(kinetic_(p) * K(p), 2) * K(p));
       }
       N = O = smallnai_;
       break;
@@ -299,8 +299,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
         CHFGO(q, p) = CH(q, p) * F(q) * G(p) * WO(p, p) / (E(q) + E(p));
         CHGFN(q, p) = CH(q, p) * G(q) * F(p) * WN(p, p) / (E(q) + E(p));
       }
-      HCFNG(p) = H(p) * CFN(p, p) * G(p) / (2 * E(p));
-      HCGOF(p) = H(p) * CGO(p, p) * F(p) / (2 * E(p));
+      HCFNG(p) = H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
+      HCGOF(p) = H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
     }
     const Matrix CH2FNG = WN * F * CH2 * G * kinetic_;
     const Matrix CHFNGE = WN * F * CH * G * dE * kinetic_;
@@ -344,14 +344,14 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
         }
       }
     }
-    const Matrix OGCFN2H2 = WO * (GCFN2H2 - 2 * GCFNN2H2);
-    const Matrix NGCFO2H2 = WN * (GCFO2H2 - 2 * GCFOO2H2);
+    const Matrix OGCFN2H2 = WO * (GCFN2H2 - 2.0 * GCFNN2H2);
+    const Matrix NGCFO2H2 = WN * (GCFO2H2 - 2.0 * GCFOO2H2);
     // dE_DKH2/dU_pq
     ederiv_ += CFN * H * WO * G + CGO * H * WN * F + O * (WHNFC + CHGFN + GCFN2H) + N * (WHOGC + CHFGO + GCFO2H)
             + O * HCFNG + N * HCGOF;
 
     for (int p = 0; p != nbasis_; ++p) {
-      ederiv_(p, p) += 2 * (CFNHOG(p, p) + CGOHNF(p, p) - CFNHOOGE(p, p) - CGOHNNFE(p, p))
+      ederiv_(p, p) += 2.0 * (CFNHOG(p, p) + CGOHNF(p, p) - CFNHOOGE(p, p) - CGOHNNFE(p, p))
                     + (CFNGH(p, p) + CH2FNG(p, p) - CHFNNGE(p, p)) * WO(p, p) - (CFNGHE(p, p) + CHFNGE(p, p)) * WWO(p, p)
                     + (CGOFH(p, p) + CH2GOF(p, p) - CHGOOFE(p, p)) * WN(p, p) - (CGOFHE(p, p) + CHGOFE(p, p)) * WWN(p, p)
                     + OGCFN2H2(p, p) + NGCFO2H2(p, p);
@@ -382,7 +382,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   // z_pq from Lagrangian
   for (int p = 0; p != nbasis_; ++p) {
     for (int q = 0; q != nbasis_; ++q) {
-      zmult_(q, p) = p == q ? 0 : -0.5 * (ederiv_(q, p) - ederiv_(p, q)) / (kinetic_(q) - kinetic_(p));
+      zmult_(q, p) = fabs(kinetic_(p) - kinetic_(q)) > 1.0e-12 ? -0.5 * (ederiv_(q, p) - ederiv_(p, q)) / (kinetic_(q) - kinetic_(p)) : 0.0;
     }
   }
 
@@ -397,8 +397,8 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
   DiagVec K(nbasis_);
   DiagVec B(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
-    E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
-    A(p) = sqrt((E(p) + c2) / (2 * E(p)));
+    E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
+    A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
     K(p) = c__ / (E(p) + c2);
     B(p) = A(p) * K(p);
   }
@@ -442,7 +442,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
     case 2:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = A(p);
-        H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
+        H(p) = 2.0 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
       }
       N = O = nai_;
       vint = make_pair(0, 0);
@@ -450,7 +450,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
     case 3:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * kinetic_(p));
       }
       N = O = smallnai_;
       vint = make_pair(1, 1);
@@ -459,7 +459,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -469,7 +469,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = A(p);
         G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -488,7 +488,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
       }
       N = O = smallnai_;
       vint = make_pair(1, 1);
@@ -497,7 +497,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -507,7 +507,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * A(p);
         G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -526,7 +526,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
       }
       N = O = smallnai_;
       vint = make_pair(1, 1);
@@ -572,8 +572,8 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   DiagVec K(nbasis_);
   DiagVec B(nbasis_);
   for (int p = 0; p != nbasis_; ++p) {
-    E(p) = c__ * sqrt(2 * kinetic_(p) + c2);
-    A(p) = sqrt((E(p) + c2) / (2 * E(p)));
+    E(p) = c__ * sqrt(2.0 * kinetic_(p) + c2);
+    A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
     K(p) = c__ / (E(p) + c2);
     B(p) = A(p) * K(p);
   }
@@ -581,7 +581,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   const Matrix CPW = ptrans_ * *rdm1 ^ (wtrans_rev_ % ptrans_);
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
   // DKH1 correction
-  *den += 2 * ((CPW * E - c2 * CPW) + CPW * (A * nai_ * A + B * smallnai_ * B)) ^ wtrans_;
+  *den += 2.0 * ((CPW * E - c2 * CPW) + CPW * (A * nai_ * A + B * smallnai_ * B)) ^ wtrans_;
 
   Matrix N(nbasis_, nbasis_);
   Matrix O(nbasis_, nbasis_);
@@ -612,14 +612,14 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
     case 2:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = A(p);
-        H(p) = 2 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
+        H(p) = 2.0 * pow(A(p) * K(p), 2) * kinetic_(p) * E(p);
       }
       N = O = nai_;
       break;
     case 3:
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * kinetic_(p));
       }
       N = O = smallnai_;
       break;
@@ -627,7 +627,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -636,7 +636,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = A(p);
         G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -653,7 +653,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = B(p);
         G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
       }
       N = O = smallnai_;
       break;
@@ -661,7 +661,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2;
+        H(p) = -B(p) * A(p) / 2.0;
       }
       N = smallnai_;
       O = nai_;
@@ -670,7 +670,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * A(p);
         G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2;
+        H(p) = -A(p) * B(p) / 2.0;
       }
       N = nai_;
       O = smallnai_;
@@ -687,7 +687,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       for (int p = 0; p != nbasis_; ++p) {
         F(p) = E(p) * B(p);
         G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4 * kinetic_(p));
+        H(p) = pow(B(p) / K(p), 2) / (4.0 * kinetic_(p));
       }
       N = O = smallnai_;
       break;
@@ -704,7 +704,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   }
 
   // a_tilde from dL/dU_pq
-  const Matrix at = 2 * zmult_ * kinetic_;
+  const Matrix at = 2.0 * zmult_ * kinetic_;
   // X_bar from Lagrangian, satisfies dL/dU_pq = 0
   Matrix xb(nbasis_, nbasis_);
   for (int p = 0; p != nbasis_; ++p) {

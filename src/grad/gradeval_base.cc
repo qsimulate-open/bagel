@@ -44,7 +44,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
     vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
 
     vector<shared_ptr<GradTask>> task2;
-    if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+    if (geom_->hcoreinfo()->dkh()) {
       auto dkh = make_shared<DKHgrad>(geom_);
       shared_ptr<const Matrix> tden = dkh->compute_tden(d);
       array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(d);
@@ -82,8 +82,6 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
   if (!v)
     *grad_ += *geom_->compute_grad_vnuc();
-
-  *grad_ += *geom_->hcoreinfo()->compute_grad(geom_, d);
 
   grad_->allreduce();
 

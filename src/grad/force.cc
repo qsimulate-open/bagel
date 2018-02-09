@@ -62,10 +62,7 @@ shared_ptr<GradFile> Force::compute() {
     cout << "  The gradients will be computed analytically." << endl;
 
   if (geom_->hcoreinfo()->dkh()) {
-    if (geom_->hcoreinfo()->seminum())
-      cout << "  Semi-numerical gradient (de Jong, Harrison, Dixon) is used for DKH Hamiltonian." << endl;
-    else
-      cout << "  DKH gradient correction is included." << endl;
+    cout << "  DKH gradient correction is included." << endl;
   }
 
   shared_ptr<GradFile> out;

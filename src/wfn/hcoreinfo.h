@@ -43,37 +43,28 @@ class HcoreInfo {
   protected:
     HcoreType type_;
 
-    // for semi-numerical gradients
-    bool seminum_;
-    double mat1e_dx_;
-
   private:
     // serialization
     friend class boost::serialization::access;
 
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
-      ar & type_ & mat1e_dx_;
+      ar & type_;
     }
 
   public:
-    HcoreInfo() : type_(HcoreType::standard), mat1e_dx_(0.001) { }
+    HcoreInfo() : type_(HcoreType::standard) { }
     HcoreInfo(std::shared_ptr<const PTree> idata);
 
     bool dkh() const { return type_ == HcoreType::dkh; }
     bool ecp() const { return type_ == HcoreType::ecp; }
     bool standard() const { return type_ == HcoreType::standard; }
-    bool seminum() const { return seminum_; }
-    double mat1e_dx() const { return mat1e_dx_; }
     void print() const;
 
     // DKH specific
-    std::vector<std::shared_ptr<Matrix>> dkh_grad(std::shared_ptr<const Molecule> current) const;
-    std::shared_ptr<Matrix> compute_grad_dkh(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute_dkh(std::shared_ptr<const Molecule> current) const;
 
     // general function
-    std::shared_ptr<Matrix> compute_grad(std::shared_ptr<const Molecule> current, std::shared_ptr<const Matrix> den) const;
     std::shared_ptr<Matrix> compute(std::shared_ptr<const Molecule> current) const;
 };
 
