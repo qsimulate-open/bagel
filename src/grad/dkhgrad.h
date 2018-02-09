@@ -33,6 +33,7 @@ namespace bagel {
 
 class DKHgrad {
   private:
+    // Number of uncontracted basis functions
     int nbasis_;
 
     // Transformation matrix to momentum space

@@ -156,6 +156,12 @@ shared_ptr<GradFile> Force::compute() {
 
     } else if (method == "dhf") {
 
+      if (geom_->hcoreinfo()->dkh()) {
+
+        throw runtime_error("cannot run Dirac-Hartree-Fock gradient with DKH turned on");
+
+      }
+
       auto force = make_shared<GradEval<Dirac>>(cinput, geom_, ref_);
       energyvec = force->energyvec();
       out = force->compute(jobtitle, gradinfo);

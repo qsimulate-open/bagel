@@ -60,11 +60,9 @@ shared_ptr<GradFile> GradEval<RHF>::compute(const std::string jobtitle, shared_p
   if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
     auto dkh = make_shared<DKHgrad>(geom_);
     shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
-    array<shared_ptr<const Matrix>, 2> nai_dkh = dkh->compute_vden(rdm1);
-    shared_ptr<const Matrix> vden = nai_dkh[0];
-    shared_ptr<const Matrix> pvpden = nai_dkh[1];
+    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(rdm1);
     shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
-    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden, pvpden);
+    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
   } else {
     grad = contract_gradient(rdm1, erdm1, qrs, qq);
   }
@@ -96,7 +94,16 @@ shared_ptr<GradFile> GradEval<UHF>::compute(const std::string jobtitle, shared_p
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
-  shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  shared_ptr<GradFile> grad;
+  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+    auto dkh = make_shared<DKHgrad>(geom_);
+    shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
+    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(rdm1);
+    shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
+    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
+  } else {
+    grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  }
 
   dipole_ = task_->scf_dipole();
 
@@ -124,7 +131,16 @@ shared_ptr<GradFile> GradEval<ROHF>::compute(const std::string jobtitle, shared_
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
-  shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  shared_ptr<GradFile> grad;
+  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+    auto dkh = make_shared<DKHgrad>(geom_);
+    shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
+    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(rdm1);
+    shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
+    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
+  } else {
+    grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  }
 
   dipole_ = task_->scf_dipole();
 
@@ -153,7 +169,16 @@ shared_ptr<GradFile> GradEval<KS>::compute(const std::string jobtitle, shared_pt
   shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
   shared_ptr<const DFDist> qrs = qijd->back_transform(coeff_occ)->back_transform(coeff_occ);
 
-  shared_ptr<GradFile> grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  shared_ptr<GradFile> grad;
+  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+    auto dkh = make_shared<DKHgrad>(geom_);
+    shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
+    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(rdm1);
+    shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
+    grad = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
+  } else {
+    grad = contract_gradient(rdm1, erdm1, qrs, qq);
+  }
 
   //- Exchange-correlation part -//
   shared_ptr<const GradFile> ggrad = task_->grid()->compute_xcgrad(task_->func(), make_shared<Matrix>(coeff_occ));

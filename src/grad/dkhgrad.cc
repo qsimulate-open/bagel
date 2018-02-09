@@ -99,7 +99,6 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     EC(p) = dE(p) * CPW(p, p) + 2 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
   }
   *den += wtrans_ * EC ^ wtrans_;
-  // den->print("d_tilde dkh1");
 
   Matrix N(nbasis_, nbasis_);
   Matrix O(nbasis_, nbasis_);
@@ -378,7 +377,6 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
     }
     const DiagVec dkh2(OHNFC * *G.data() + NHOGC * *F.data() + *OGCFNH.data() - *OGCFNNH.data() - *OOGCFNH.data());
     *den += wtrans_ * dkh2 ^ wtrans_;
-    // den->print("d_tilde " + to_string(i));
   }
 
   // z_pq from Lagrangian
@@ -389,8 +387,6 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   }
 
   *den += wtrans_ * zmult_ ^ wtrans_;
-  // zmult_.print("z_pq");
-  // den->print("d_tilde full");
   return den;
 }
 
@@ -586,7 +582,6 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   auto den = make_shared<Matrix>(nbasis_, nbasis_);
   // DKH1 correction
   *den += 2 * ((CPW * E - c2 * CPW) + CPW * (A * nai_ * A + B * smallnai_ * B)) ^ wtrans_;
-  // den->print("X_tilde dkh1");
 
   Matrix N(nbasis_, nbasis_);
   Matrix O(nbasis_, nbasis_);
@@ -706,7 +701,6 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
       }
     }
     *den += CPW * (F * WN * H * WO * G + G * WO * H * WN * F) ^ wtrans_;
-    // den->print("X_tilde " + to_string(i));
   }
 
   // a_tilde from dL/dU_pq
@@ -720,6 +714,5 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
   }
 
   *den -= (ptrans_ * *erdm1 ^ ptrans_) + (wtrans_ * xb ^ wtrans_);
-  // den->print("X_tilde full");
   return den;
 }
