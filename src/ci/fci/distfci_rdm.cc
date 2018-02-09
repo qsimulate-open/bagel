@@ -229,16 +229,26 @@ shared_ptr<Dvec> DistFCI::rdm1deriv(const int istate) const {
 
 
 shared_ptr<Dvec> DistFCI::rdm2deriv(const int istate) const {
+  throw logic_error("DistFCI::rdm2deriv is not implemented yet...");
   return nullptr;
 }
 
 
-shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel) const {
+shared_ptr<Matrix> DistFCI::rdm2fderiv(const int istate, shared_ptr<const Matrix> fock, shared_ptr<const Matrix> dmat) const {
+  throw logic_error("DistFCI::rdm2fderiv is not implemented yet...");
   return nullptr;
 }
 
 
-tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>
-DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> fock_ebra_in) const {
-  return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>,shared_ptr<Matrix>>();
+shared_ptr<Matrix> DistFCI::rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, shared_ptr<const Matrix> dmat, const bool parallel) const {
+  throw logic_error("DistFCI::rdm2deriv_offset is not implemented yet...");
+  return nullptr;
 }
+
+
+tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>
+DistFCI::rdm3deriv(const int istate, shared_ptr<const Matrix> fock, const size_t offset, const size_t size, shared_ptr<const Matrix> dbra_in, shared_ptr<const Matrix> fock_ebra_in) const {
+  throw logic_error("DistFCI::rdm3deriv is not implemented yet...");
+  return tuple<shared_ptr<Matrix>,shared_ptr<Matrix>>();
+}
+
