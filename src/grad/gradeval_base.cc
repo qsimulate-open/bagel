@@ -36,8 +36,7 @@ using namespace bagel;
 shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Matrix> d, const shared_ptr<const Matrix> w,
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
                                                       const shared_ptr<const Matrix> v, const bool numerical,
-                                                      const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o,
-                                                      const shared_ptr<const Matrix> g2o2) {
+                                                      const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o, const shared_ptr<const Matrix> g2o2) {
   grad_->zero();
 
   if (!numerical) {
