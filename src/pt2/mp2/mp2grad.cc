@@ -26,7 +26,6 @@
 #include <src/pt2/mp2/mp2cache.h>
 #include <src/pt2/mp2/mp2accum.h>
 #include <src/grad/cphf.h>
-#include <src/grad/dkhgrad.h>
 #include <iostream>
 #include <iomanip>
 #include <src/util/f77.h>
@@ -359,16 +358,7 @@ shared_ptr<GradFile> GradEval<MP2Grad>::compute(const string jobtitle, shared_pt
   cout << endl;
 
   // gradient evaluation
-  shared_ptr<GradFile> gradf;
-  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
-    auto dkh = make_shared<DKHgrad>(geom_);
-    shared_ptr<const Matrix> tden = dkh->compute_tden(dtotao);
-    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(dtotao);
-    shared_ptr<const Matrix> sden = dkh->compute_sden(dtotao, wdao);
-    gradf = contract_gradient(tden, sden, sep3, sep2, /*nacme = */nullptr, false, cgeom, sep32, sep22, vden[0], vden[1]);
-  } else {
-    gradf = contract_gradient(dtotao, wdao, sep3, sep2, /*nacme = */nullptr, false, cgeom, sep32, sep22);
-  }
+  shared_ptr<GradFile> gradf = contract_gradient(dtotao, wdao, sep3, sep2, /*nacme = */nullptr, false, cgeom, sep32, sep22);
 
   time.tick_print("Gradient integrals contracted");
   cout << endl;

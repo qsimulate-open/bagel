@@ -29,7 +29,6 @@
 #include <src/grad/gradeval.h>
 #include <src/grad/finite.h>
 #include <src/grad/cpcasscf.h>
-#include <src/grad/dkhgrad.h>
 #include <src/prop/multipole.h>
 #include <src/prop/moprint.h>
 
@@ -158,15 +157,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, shared_ptr
     shared_ptr<const Matrix> qq  = qij->form_aux_2index(qijd, 1.0);
     shared_ptr<const DFDist> qrs = qijd->back_transform(ocoeff)->back_transform(ocoeff);
 
-    if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
-      auto dkh = make_shared<DKHgrad>(geom_);
-      shared_ptr<const Matrix> tden = dkh->compute_tden(rdm1);
-      array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(rdm1);
-      shared_ptr<const Matrix> sden = dkh->compute_sden(rdm1, erdm1);
-      gradient = contract_gradient(tden, sden, qrs, qq, nullptr, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
-    } else {
-      gradient = contract_gradient(rdm1, erdm1, qrs, qq);
-    }
+    gradient = contract_gradient(rdm1, erdm1, qrs, qq);
 
   } else {
 
@@ -354,15 +345,7 @@ shared_ptr<GradFile> GradEval<CASSCF>::compute(const string jobtitle, shared_ptr
     shared_ptr<const Matrix> qq  = qri->form_aux_2index(halfjj, 1.0);
     shared_ptr<const DFDist> qrs = qri->back_transform(ocoeff);
 
-    if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
-      auto dkh = make_shared<DKHgrad>(geom_);
-      shared_ptr<const Matrix> tden = dkh->compute_tden(dtotao);
-      array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(dtotao);
-      shared_ptr<const Matrix> sden = dkh->compute_sden(dtotao, xmatao);
-      gradient = contract_gradient(tden, sden, qrs, qq, qxmatao, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
-    } else {
-      gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
-    }
+    gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
     if (jobtitle == "nacme" && !(gradinfo->nacmtype()->is_noweight()))
       gradient->scale(1.0/egap);
   }

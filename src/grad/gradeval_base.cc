@@ -24,6 +24,7 @@
 
 
 #include <src/grad/gradeval_base.h>
+#include <src/grad/dkhgrad.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/resources.h>
 #include <src/util/parallel/mpi_interface.h>
@@ -36,13 +37,23 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
                                                       const shared_ptr<const DFDist> o, const shared_ptr<const Matrix> o2,
                                                       const shared_ptr<const Matrix> v, const bool numerical,
                                                       const shared_ptr<const Geometry> g2, const shared_ptr<const DFDist> g2o,
-                                                      const shared_ptr<const Matrix> g2o2, const shared_ptr<const Matrix> vd,
-                                                      const shared_ptr<const Matrix> pvpd) {
+                                                      const shared_ptr<const Matrix> g2o2) {
   grad_->zero();
 
   if (!numerical) {
     vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
-    vector<shared_ptr<GradTask>> task2 = geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum() ? contract_graddkh1e(d, vd, pvpd, w) : contract_grad1e<GradTask1>(d, w);
+
+    vector<shared_ptr<GradTask>> task2;
+    if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
+      auto dkh = make_shared<DKHgrad>(geom_);
+      shared_ptr<const Matrix> tden = dkh->compute_tden(d);
+      array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(d);
+      shared_ptr<const Matrix> sden = dkh->compute_sden(d, w);
+      task2 = contract_graddkh1e(tden, vden[0], vden[1], sden);
+    } else {
+      task2 = contract_grad1e<GradTask1>(d, w);
+    }
+
     vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);
     task.insert(task.end(), task2.begin(), task2.end());
     task.insert(task.end(), task3.begin(), task3.end());

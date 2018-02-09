@@ -26,7 +26,6 @@
 
 #include <src/scf/hf/fock.h>
 #include <src/grad/cpcasscf.h>
-#include <src/grad/dkhgrad.h>
 #include <src/grad/gradeval.h>
 #include <src/multi/casscf/cassecond.h>
 #include <src/multi/casscf/casnoopt.h>
@@ -508,16 +507,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   timer.tick_print("Effective densities");
 
   // compute gradients
-  shared_ptr<GradFile> gradient;
-  if (geom_->hcoreinfo()->dkh() && !geom_->hcoreinfo()->seminum()) {
-    auto dkh = make_shared<DKHgrad>(geom_);
-    shared_ptr<const Matrix> tden = dkh->compute_tden(dtotao);
-    array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(dtotao);
-    shared_ptr<const Matrix> sden = dkh->compute_sden(dtotao, xmatao);
-    gradient = contract_gradient(tden, sden, qrs, qq, qxmatao, false, nullptr, nullptr, nullptr, vden[0], vden[1]);
-  } else {
-    gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
-  }
+  shared_ptr<GradFile> gradient = contract_gradient(dtotao, xmatao, qrs, qq, qxmatao);
 
   if ((jobtitle == "nacme") && !(gradinfo->nacmtype()->is_noweight()))
     gradient->scale(1.0/egap);

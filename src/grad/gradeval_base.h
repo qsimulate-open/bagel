@@ -77,9 +77,7 @@ class GradEval_base {
                                                 const std::shared_ptr<const Matrix> v = nullptr, const bool numerical = false,
                                                 const std::shared_ptr<const Geometry> g2 = nullptr,
                                                 const std::shared_ptr<const DFDist> g2o = nullptr,
-                                                const std::shared_ptr<const Matrix> g2o2 = nullptr,
-                                                const std::shared_ptr<const Matrix> vd = nullptr,
-                                                const std::shared_ptr<const Matrix> pvpd = nullptr);
+                                                const std::shared_ptr<const Matrix> g2o2 = nullptr);
     virtual std::shared_ptr<GradFile> compute() { assert(false); return nullptr; }
 
     friend class GradTask1;
