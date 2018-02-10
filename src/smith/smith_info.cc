@@ -48,7 +48,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   maxiter_ = idata->get<int>("maxiter", 50);
   maxtile_ = idata->get<int>("maxtile", 10);
-  cimaxtile_ = idata->get<int>("cimaxtile", (ciwfn()->civectors()->size() > 10000) ? 100 : 10);
   cimaxchunk_ = idata->get<int>("cimaxchunk", 317520001);
 
   do_ms_   = idata->get<bool>("ms",  true);
@@ -108,7 +107,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, shared_ptr<const SMITH_Info> info)
   : ref_(o), method_(info->method_), ncore_(info->ncore_), nfrozenvirt_(info->nfrozenvirt_), thresh_(info->thresh_), shift_(info->shift_),
-    maxiter_(info->maxiter_), maxtile_(info->maxtile_), cimaxtile_(info->cimaxtile_),
+    maxiter_(info->maxiter_), maxtile_(info->maxtile_),
     cimaxchunk_(info->cimaxchunk_), davidson_subspace_(info->davidson_subspace_), grad_(info->grad_),
     do_ms_(info->do_ms_), do_xms_(info->do_xms_), sssr_(info->sssr_),
     shift_diag_(info->shift_diag_), block_diag_fock_(info->block_diag_fock_), restart_(info->restart_),
@@ -151,6 +150,34 @@ tuple<shared_ptr<const RDM<3>>, shared_ptr<const RDM<4>>> SMITH_Info<double>::rd
 
 
 template<>
+tuple<shared_ptr<const RDM<3>>, shared_ptr<RDM<3>>> SMITH_Info<double>::rdm34f(const int ist, const int jst, shared_ptr<const Matrix> fock) const {
+  FCI_bare fci(ciwfn());
+  shared_ptr<const RDM<3>> r3;
+  shared_ptr<RDM<3>> r4f;
+  if (external_rdm_.empty()) {
+    fci.compute_rdm12(ist, jst);
+    tie(r3, r4f) = fci.rdm34f(ist, jst, fock);
+  } else {
+    r3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    r4f = fci.read_external_rdm3(ist, jst, external_rdm_, /*fock_contracted=*/true);
+  }
+  return make_tuple(r3, r4f);
+}
+
+
+template<>
+shared_ptr<RDM<3>> SMITH_Info<double>::rdm4f_contract(shared_ptr<const RDM<3>> rdm3, shared_ptr<const RDM<4>> rdm4, shared_ptr<const Matrix> fock) const {
+  shared_ptr<RDM<3>> rdm4f = rdm3->clone();
+
+  auto rdm4v = btas::group(group(*rdm4, 6,8), 0,6);
+  auto rdm4fv = btas::group(*rdm4f, 0,6);
+  contract(1.0, rdm4v, {0,1}, btas::group(*fock,0,2), {1}, 0.0, rdm4fv, {0});
+
+  return rdm4f;
+}
+
+
+template<>
 tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>>
   SMITH_Info<complex<double>>::rdm12(const int ist, const int jst) const {
 
@@ -165,6 +192,54 @@ tuple<shared_ptr<const Kramers<2,ZRDM<1>>>, shared_ptr<const Kramers<4,ZRDM<2>>>
     rdm2 = fci.read_external_rdm2(ist, jst, external_rdm_);
   }
   return make_tuple(rdm1, rdm2);
+}
+
+
+template<>
+tuple<shared_ptr<const Kramers<6,ZRDM<3>>>, shared_ptr<Kramers<6,ZRDM<3>>>>
+  SMITH_Info<complex<double>>::rdm34f(const int ist, const int jst, shared_ptr<const ZMatrix> fock) const {
+
+  ZFCI_bare fci(ciwfn());
+  shared_ptr<const Kramers<6,ZRDM<3>>> rdm3;
+  shared_ptr<Kramers<6,ZRDM<3>>> rdm4f;
+
+  if (external_rdm_.empty()) {
+    tie(rdm3, rdm4f) = fci.rdm34f(ist, jst, fock);
+  } else {
+    rdm3 = fci.read_external_rdm3(ist, jst, external_rdm_);
+    rdm4f = fci.read_external_rdm3(ist, jst, external_rdm_, /*fock_contracted=*/true);
+  }
+
+  return make_tuple(rdm3, rdm4f);
+}
+
+
+template<>
+shared_ptr<Kramers<6,ZRDM<3>>> SMITH_Info<complex<double>>::rdm4f_contract(shared_ptr<const Kramers<6,ZRDM<3>>> rdm3, shared_ptr<const Kramers<8,ZRDM<4>>> rdm4, shared_ptr<const ZMatrix> fockact) const {
+  shared_ptr<Kramers<6,ZRDM<3>>> rdm4f = make_shared<Kramers<6,ZRDM<3>>>();
+  const int n = fockact->ndim()/2;
+
+  Kramers<2,ZMatrix> fock;
+  fock.emplace(0, fockact->get_submatrix(0, 0, n, n));
+  fock.emplace(1, fockact->get_submatrix(n, 0, n, n));
+  fock.emplace(2, fockact->get_submatrix(0, n, n, n));
+  fock.emplace(3, fockact->get_submatrix(n, n, n, n));
+  for (int i = 0; i != 64; ++i) {
+    for (int j = 0; j != 4; ++j) {
+      auto work = make_shared<ZRDM<3>>(n);
+      shared_ptr<const ZMatrix> cfock = fock.at(j);
+      shared_ptr<const ZRDM<4>> crdm = rdm4->get_data(i * 4 + j);
+      if (!crdm) continue;
+
+      auto wgr = btas::group(*work, 0,6);
+      auto crdmgr = btas::group(btas::group(*crdm, 6,8),0,6);
+      auto fgr = btas::group(*cfock, 0,2);
+      btas::contract(1.0, crdmgr, {0,1}, fgr, {1}, 0.0, wgr, {0});
+      rdm4f->add(i, work);
+    }
+  }
+
+  return rdm4f;
 }
 
 

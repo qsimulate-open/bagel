@@ -46,8 +46,7 @@ class SMITH_Info {
     double shift_;
     int maxiter_;
     int maxtile_;
-    int cimaxtile_;
-    int cimaxchunk_;
+    size_t cimaxchunk_;
     int davidson_subspace_;
 
     bool grad_;
@@ -75,7 +74,7 @@ class SMITH_Info {
     template<class Archive>
     void serialize(Archive& ar, const unsigned int) {
       ar & ref_ & method_ & ncore_ & nfrozenvirt_ & thresh_ & shift_ & maxiter_;
-      ar & maxtile_ & cimaxtile_ & cimaxchunk_ & davidson_subspace_ & grad_;
+      ar & maxtile_ & cimaxchunk_ & davidson_subspace_ & grad_;
       ar & do_ms_ & do_xms_ & sssr_ & shift_diag_ & block_diag_fock_ & restart_ & restart_each_iter_;
       ar & thresh_overlap_ & state_begin_ & restart_iter_ & aniso_data_ & external_rdm_;
     }
@@ -98,13 +97,14 @@ class SMITH_Info {
     std::shared_ptr<const RDM<1,DataType>> rdm1_av() const;
 
     std::tuple<std::shared_ptr<const RDMType<1>>, std::shared_ptr<const RDMType<2>>> rdm12(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<RDMType<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const MatType> fock) const;
     std::tuple<std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>> rdm34(const int ist, const int jst) const;
+    std::shared_ptr<RDMType<3>> rdm4f_contract(std::shared_ptr<const RDMType<3>>, std::shared_ptr<const RDMType<4>>, std::shared_ptr<const MatType> fock) const;
 
     double thresh() const { return thresh_; }
     double shift() const {return shift_; }
     int maxiter() const { return maxiter_; }
     int maxtile() const { return maxtile_; }
-    int cimaxtile() const { return cimaxtile_; }
     int cimaxchunk() const { return cimaxchunk_; }
     bool grad() const { return grad_; }
     bool do_ms() const { return do_ms_; }
@@ -114,6 +114,7 @@ class SMITH_Info {
     bool block_diag_fock() const { return block_diag_fock_; }
     bool restart() const { return restart_; }
     bool restart_each_iter() const { return restart_each_iter_; }
+    bool rdm4_eval() const { return (grad_ || method_!="caspt2"); }
 
     double thresh_overlap() const { return thresh_overlap_; }
 
@@ -154,11 +155,16 @@ class SMITH_Info {
 };
 
 template<> std::tuple<std::shared_ptr<const RDM<1>>, std::shared_ptr<const RDM<2>>> SMITH_Info<double>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<RDM<3>>> SMITH_Info<double>::rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const;
 template<> std::tuple<std::shared_ptr<const RDM<3>>, std::shared_ptr<const RDM<4>>> SMITH_Info<double>::rdm34(const int ist, const int jst) const;
+template<> std::shared_ptr<RDM<3>> SMITH_Info<double>::rdm4f_contract(std::shared_ptr<const RDM<3>> rdm3, std::shared_ptr<const RDM<4>> rdm4, std::shared_ptr<const Matrix> fock) const;
 template<> std::tuple<std::shared_ptr<const Kramers<2,ZRDM<1>>>, std::shared_ptr<const Kramers<4,ZRDM<2>>>>
            SMITH_Info<std::complex<double>>::rdm12(const int ist, const int jst) const;
+template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<Kramers<6,ZRDM<3>>>>
+           SMITH_Info<std::complex<double>>::rdm34f(const int ist, const int jst, std::shared_ptr<const ZMatrix> fock) const;
 template<> std::tuple<std::shared_ptr<const Kramers<6,ZRDM<3>>>, std::shared_ptr<const Kramers<8,ZRDM<4>>>>
            SMITH_Info<std::complex<double>>::rdm34(const int ist, const int jst) const;
+template<> std::shared_ptr<Kramers<6,ZRDM<3>>> SMITH_Info<std::complex<double>>::rdm4f_contract(std::shared_ptr<const Kramers<6,ZRDM<3>>> rdm3, std::shared_ptr<const Kramers<8,ZRDM<4>>> rdm4, std::shared_ptr<const ZMatrix> fock) const;
 
 template<> std::shared_ptr<const CIWfn>   SMITH_Info<double>::ciwfn() const;
 template<> std::shared_ptr<const Matrix>  SMITH_Info<double>::coeff() const;

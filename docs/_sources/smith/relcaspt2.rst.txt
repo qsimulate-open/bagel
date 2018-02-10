@@ -103,13 +103,6 @@ The default values are recommended unless mentioned otherwise.
    | **Datatype:** int
    | **Default:** 10
 
-.. topic:: ``cimaxtile``
-
-   | **Description:** Maximum number of Slater determinants in a single data tile used in CASPT2 gradient.
-   | **Datatype:** int
-   | **Default:** 100 (When number of determinants is over 10000), 10 (otherwise)
-   | **Recommendation:** Use default. Increase further when the number of determinants is larger.
-
 .. topic:: ``davidson_subspace``
 
    | **Description:**  Number of vectors retained in the limited-memory Davidson algorithm.

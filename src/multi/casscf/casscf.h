@@ -39,6 +39,34 @@
 
 namespace bagel {
 
+enum FCIAlgorithmType { knowles, harrison, dist };
+
+class FCI_algorithms {
+  protected:
+    FCIAlgorithmType type_;
+
+  public:
+    FCI_algorithms() : type_(FCIAlgorithmType::knowles) { }
+    FCI_algorithms(std::string input_algorithm) {
+      if (input_algorithm == "knowles" || input_algorithm == "kh" || input_algorithm == "handy") {
+        type_ = FCIAlgorithmType::knowles;
+      } else if (input_algorithm == "harrison" || input_algorithm == "zarrabian" || input_algorithm == "hz") {
+        type_ = FCIAlgorithmType::harrison;
+#ifdef HAVE_MPI_H
+      } else if (input_algorithm == "parallel" || input_algorithm == "dist") {
+        type_ = FCIAlgorithmType::dist;
+#endif
+      } else {
+        throw std::runtime_error("Unknown FCI algorithm specified. " + input_algorithm);
+      }
+    }
+
+    bool is_knowles() const { return type_ == FCIAlgorithmType::knowles; }
+    bool is_harrison() const { return type_ == FCIAlgorithmType::harrison; }
+    bool is_dist() const { return type_ == FCIAlgorithmType::dist; }
+};
+
+
 class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
   protected:
@@ -62,7 +90,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
 
     // RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
-    std::string fci_algorithm_;
+    std::shared_ptr<FCI_algorithms> fci_algorithm_;
     std::shared_ptr<FCI_base> fci_;
     void print_header() const;
     void print_iteration(const int iter, const std::vector<double>& energy, const double error, const double time) const;

@@ -100,6 +100,7 @@ class DistFCI : public FCI_base {
     void compute_rdm12() override;
     void compute_rdm12(const int ist, const int jst) override;
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34(const int ist, const int jst) const override;
+    std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<3>>> rdm34f(const int ist, const int jst, std::shared_ptr<const Matrix> fock) const override;
     std::tuple<std::shared_ptr<RDM<1>>, std::shared_ptr<RDM<2>>> rdm12_alpha(const int ist, const int jst) const override;
     std::tuple<std::shared_ptr<RDM<3>>, std::shared_ptr<RDM<4>>> rdm34_alpha(const int ist, const int jst) const override;
 
@@ -118,12 +119,10 @@ class DistFCI : public FCI_base {
     // rdm ci derivatives
     std::shared_ptr<Dvec> rdm1deriv(const int istate) const override;
     std::shared_ptr<Dvec> rdm2deriv(const int istate) const override;
-    std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, const bool parallel = true) const override;
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> fock_ebra_in) const override;
-    // 4RDM derivative is precontracted by an Fock operator
+    std::shared_ptr<Matrix> rdm2fderiv(const int istate, std::shared_ptr<const Matrix> fock, std::shared_ptr<const Matrix> dmat) const override;
+    std::shared_ptr<Matrix> rdm2deriv_offset(const int istate, const size_t dsize, const size_t offset, std::shared_ptr<const Matrix> dmat, const bool parallel = true) const override;
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Matrix>>
-      rdm34deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size) const override;
+      rdm3deriv(const int istate, std::shared_ptr<const Matrix> fock, const size_t offset, const size_t size, std::shared_ptr<const Matrix> dbra_in, std::shared_ptr<const Matrix> fock_ebra_in) const override;
 
     std::shared_ptr<const CIWfn> conv_to_ciwfn() const override;
     std::shared_ptr<const Dvec> conv_to_dvec() const;
@@ -131,13 +130,7 @@ class DistFCI : public FCI_base {
     std::shared_ptr<const DistDvec> dvec_to_distdvec(std::shared_ptr<const Dvec> c) const;
     std::shared_ptr<const Reference> conv_to_ref() const override { return nullptr; }
 
-    // RDM reader for DistFCI: currently same with FCI
-    void read_external_rdm12_av(const std::string& file) override;
-    std::shared_ptr<RDM<1>> read_external_rdm1(const int ist, const int jst, const std::string& file) const;
-    std::shared_ptr<RDM<2>> read_external_rdm2(const int ist, const int jst, const std::string& file) const;
-    std::shared_ptr<RDM<3>> read_external_rdm3(const int ist, const int jst, const std::string& file) const;
-    std::shared_ptr<RDM<4>> read_external_rdm4(const int ist, const int jst, const std::string& file) const;
-    void dump_ints() const;
+    void read_external_rdm12_av(const std::string& file) override { };
 };
 
 }

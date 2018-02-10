@@ -142,7 +142,6 @@ class Tensor_ {
     double orthog(const std::list<std::shared_ptr<const Tensor_<DataType>>> o);
 
     std::vector<DataType> diag() const;
-    std::shared_ptr<MatType> matrix_3index() const;
     std::shared_ptr<MatType> matrix() const;
     std::shared_ptr<VecType> vectorb() const;
 

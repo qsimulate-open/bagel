@@ -185,22 +185,6 @@ In addition, the relaxed density in MP2, SA-CASSCF, and CASPT2 calculations can 
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">save_ref</span></code></p>
-<div class="line-block">
-<div class="line"><strong>Description:</strong> The reference wavefunction is saved to an archive file.</div>
-<div class="line"><strong>Datatype:</strong> bool</div>
-<div class="line"><strong>Default:</strong> false</div>
-<div class="line"><strong>Recommendation:</strong> Save file if it is likely that the calculation will need to be restarted.</div>
-</div>
-</div>
-<div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ref_out</span></code></p>
-<div class="line-block">
-<div class="line"><strong>Description:</strong> The name of the archive file for the stored reference. The path to the location the file should be written can also be specified here.</div>
-<div class="line"><strong>Datatype:</strong> string</div>
-</div>
-</div>
-<div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">nproc</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The numerical gradient code is embarrassingly parallelized so that the displacements in the finite difference calculations can be run at the same time. The nproc keyword allows the user to specify the number of MPI processes to be used for each energy calculation.</div>

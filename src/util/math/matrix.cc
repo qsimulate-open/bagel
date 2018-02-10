@@ -428,7 +428,7 @@ void Matrix::print (const string tag, int len) const {
     len_n = len_m = len;
   }
 
-  for (int i = 0; i != len_m/6; ++i) {
+  for (int i = 0; i != len_m / 6; ++i) {
     cout << setw(6) << " ";
     for (int k = 0; k != 6; ++k)
       cout << setw(20) << i * 6 + k;
@@ -442,16 +442,16 @@ void Matrix::print (const string tag, int len) const {
     cout << endl;
   }
 
-  if (len_m%6) {
-    int i = len_m/6;
+  if (len_m % 6) {
+    int i = len_m / 6;
     cout << setw(6) << " ";
-    for (int k = 0; k != len_m%6; ++k)
+    for (int k = 0; k != len_m % 6; ++k)
       cout << setw(20) << i * 6 + k;
     cout << endl;
 
     for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
-      for (int k = 0; k != len_m%6; ++k)
+      for (int k = 0; k != len_m % 6; ++k)
         cout << setw(20) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }

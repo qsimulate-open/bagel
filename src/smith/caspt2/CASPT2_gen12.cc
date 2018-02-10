@@ -32,7 +32,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
-Task550::Task550(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task550::Task550(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -47,7 +47,7 @@ Task550::Task550(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x2, x1, x0, x5, x4, x3}}, in, t[0], range));
 }
 
-Task551::Task551(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task551::Task551(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -62,7 +62,7 @@ Task551::Task551(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x2, x1, x0, x5, x4, x3}}, in, t[0], range));
 }
 
-Task552::Task552(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task552::Task552(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -76,7 +76,7 @@ Task552::Task552(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x2, x3, x1, x0}}, in, out, range));
 }
 
-Task553::Task553(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task553::Task553(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -89,7 +89,7 @@ Task553::Task553(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task554::Task554(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task554::Task554(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -100,7 +100,7 @@ Task554::Task554(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{c1, x3}}, in, t[0], range));
 }
 
-Task555::Task555(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task555::Task555(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
@@ -113,7 +113,7 @@ Task555::Task555(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c2, a3, c1, x3}}, in, t[0], range));
 }
 
-Task556::Task556(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task556::Task556(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -126,7 +126,7 @@ Task556::Task556(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task557::Task557(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task557::Task557(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -139,7 +139,7 @@ Task557::Task557(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c2, a1, x3, x2}}, in, t[0], range));
 }
 
-Task558::Task558(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task558::Task558(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -152,7 +152,7 @@ Task558::Task558(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task559::Task559(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task559::Task559(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -165,7 +165,7 @@ Task559::Task559(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{a2, c1, x3, x2}}, in, t[0], range));
 }
 
-Task560::Task560(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task560::Task560(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
@@ -178,7 +178,7 @@ Task560::Task560(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c3, a2, c1, x3}}, in, t[0], range));
 }
 
-Task561::Task561(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task561::Task561(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -191,7 +191,7 @@ Task561::Task561(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task562::Task562(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task562::Task562(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -204,7 +204,7 @@ Task562::Task562(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task563::Task563(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task563::Task563(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -220,7 +220,7 @@ Task563::Task563(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x3, x2, x4, x1, x0}}, in, out, range));
 }
 
-Task564::Task564(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task564::Task564(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -235,7 +235,7 @@ Task564::Task564(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
                 subtasks_.push_back(make_shared<Task_local>(array<const Index,6>{{x5, x4, x3, x2, x1, x0}}, in, t[0], range));
 }
 
-Task565::Task565(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task565::Task565(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -248,7 +248,7 @@ Task565::Task565(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x5, c1, x4, x3}}, in, t[0], range));
 }
 
-Task566::Task566(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task566::Task566(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -262,7 +262,7 @@ Task566::Task566(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x3, x2, x0, x1}}, in, out, range));
 }
 
-Task567::Task567(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task567::Task567(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -275,7 +275,7 @@ Task567::Task567(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task568::Task568(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task568::Task568(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -286,7 +286,7 @@ Task568::Task568(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, c3}}, in, t[0], range));
 }
 
-Task569::Task569(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task569::Task569(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -299,7 +299,7 @@ Task569::Task569(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task570::Task570(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task570::Task570(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -310,7 +310,7 @@ Task570::Task570(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, c1}}, in, t[0], range));
 }
 
-Task571::Task571(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task571::Task571(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -323,7 +323,7 @@ Task571::Task571(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task572::Task572(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task572::Task572(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -336,7 +336,7 @@ Task572::Task572(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, a2, c1, x1}}, in, t[0], range));
 }
 
-Task573::Task573(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task573::Task573(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -349,7 +349,7 @@ Task573::Task573(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task574::Task574(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task574::Task574(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -362,7 +362,7 @@ Task574::Task574(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, a2, x1}}, in, t[0], range));
 }
 
-Task575::Task575(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task575::Task575(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -375,7 +375,7 @@ Task575::Task575(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task576::Task576(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task576::Task576(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -388,7 +388,7 @@ Task576::Task576(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, a2, c1, x1}}, in, t[0], range));
 }
 
-Task577::Task577(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task577::Task577(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -401,7 +401,7 @@ Task577::Task577(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task578::Task578(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task578::Task578(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -414,7 +414,7 @@ Task578::Task578(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, t[0], range));
 }
 
-Task579::Task579(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task579::Task579(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[5], t[6]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -428,7 +428,7 @@ Task579::Task579(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, x3, x2, x1}}, in, out, range));
 }
 
-Task580::Task580(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task580::Task580(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -439,7 +439,7 @@ Task580::Task580(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x3, x0}}, in, t[0], range));
 }
 
-Task581::Task581(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task581::Task581(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
@@ -452,7 +452,7 @@ Task581::Task581(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c3, a2, c1, x3}}, in, t[0], range));
 }
 
-Task582::Task582(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task582::Task582(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[5]}};
   array<shared_ptr<Tensor>,5> out = {{t[0], t[1], t[2], t[3], t[4]}};
   in_ = in;
@@ -464,7 +464,7 @@ Task582::Task582(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, out, range));
 }
 
-Task583::Task583(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task583::Task583(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -475,7 +475,7 @@ Task583::Task583(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task584::Task584(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task584::Task584(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -488,7 +488,7 @@ Task584::Task584(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, a2, c4}}, in, t[0], range));
 }
 
-Task585::Task585(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task585::Task585(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -499,7 +499,7 @@ Task585::Task585(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task586::Task586(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task586::Task586(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -512,7 +512,7 @@ Task586::Task586(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, a2, c4}}, in, t[0], range));
 }
 
-Task587::Task587(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task587::Task587(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -523,7 +523,7 @@ Task587::Task587(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task588::Task588(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task588::Task588(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -536,7 +536,7 @@ Task588::Task588(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, a2, c1, c4}}, in, t[0], range));
 }
 
-Task589::Task589(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task589::Task589(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -547,7 +547,7 @@ Task589::Task589(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task590::Task590(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task590::Task590(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -560,7 +560,7 @@ Task590::Task590(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, c1, a4}}, in, t[0], range));
 }
 
-Task591::Task591(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task591::Task591(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -571,7 +571,7 @@ Task591::Task591(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task592::Task592(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task592::Task592(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -584,7 +584,7 @@ Task592::Task592(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, a2, c1, c4}}, in, t[0], range));
 }
 
-Task593::Task593(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task593::Task593(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -595,7 +595,7 @@ Task593::Task593(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task594::Task594(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task594::Task594(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -608,7 +608,7 @@ Task594::Task594(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{x0, c3, c1, a4}}, in, t[0], range));
 }
 
-Task595::Task595(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task595::Task595(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -619,7 +619,7 @@ Task595::Task595(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task596::Task596(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task596::Task596(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -630,7 +630,7 @@ Task596::Task596(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{a4, x0}}, in, t[0], range));
 }
 
-Task597::Task597(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task597::Task597(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
@@ -643,7 +643,7 @@ Task597::Task597(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
             subtasks_.push_back(make_shared<Task_local>(array<const Index,4>{{c1, a4, c3, a2}}, in, t[0], range));
 }
 
-Task598::Task598(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task598::Task598(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,2> in = {{t[1], t[2]}};
   out_ = t[0];
   in_ = in;
@@ -654,7 +654,7 @@ Task598::Task598(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange
         subtasks_.push_back(make_shared<Task_local>(array<const Index,2>{{x0, x1}}, in, t[0], range));
 }
 
-Task599::Task599(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,4> range) {
+Task599::Task599(vector<shared_ptr<Tensor>> t, array<shared_ptr<const IndexRange>,3> range) {
   array<shared_ptr<const Tensor>,1> in = {{t[1]}};
   out_ = t[0];
   in_ = in;
