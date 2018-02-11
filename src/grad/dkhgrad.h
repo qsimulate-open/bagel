@@ -27,7 +27,7 @@
 #define __SRC_GRAD_DKHGRAD_H
 
 #include <src/molecule/molecule.h>
-#include <src/util/math/diagvec.h>
+#include <src/util/math/diagmatrix.h>
 
 namespace bagel {
 
@@ -38,18 +38,18 @@ class DKHgrad {
     // Effective density matrix for kinetic gradient
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
-                                                std::shared_ptr<const DiagVec>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const DiagMatrix>, std::shared_ptr<const Matrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<Matrix>,
                                                 std::shared_ptr<Matrix>);
     // Effective density matrices for NAI/SmallNAI gradients
     std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
-                                                                std::shared_ptr<const DiagVec>, std::shared_ptr<const Matrix>,
+                                                                std::shared_ptr<const DiagMatrix>, std::shared_ptr<const Matrix>,
                                                                 std::shared_ptr<const Matrix>);
     // Effective density matrix for overlap gradient
     std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
-                                                std::shared_ptr<const Matrix>, std::shared_ptr<const DiagVec>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const DiagMatrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                                 std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
 

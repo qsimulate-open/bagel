@@ -46,12 +46,9 @@ void CASSecond::compute() {
         fci_->compute();
         fci_->compute_rdm12();
       } else {
-        if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
-        if (fci_algorithm_->is_knowles()) {
-          fci_->read_external_rdm12_av(external_rdm_);
-        } else {
-          throw runtime_error("reading external RDM is only supported for Knowles--Handy algorithm.");
-        }
+        if (iter != 0)
+          throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
+        fci_->read_external_rdm12_av(external_rdm_);
       }
       trans_natorb();
       fci_time.tick_print("FCI and RDMs");

@@ -39,7 +39,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   auto unc = make_shared<Molecule>(*mol_);
   unc = unc->uncontract();
   // Number of uncontracted basis functions
-  int nbasis = unc->nbasis();
+  const int nbasis = unc->nbasis();
 
   // Compute momentum transformation matrix
   const Overlap overlap(unc);
@@ -49,7 +49,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   VectorB t0(nbasis);
   // Kinetic operator is diagonal in momentum space
   lambda->diagonalize(t0);
-  auto t = make_shared<const DiagVec>(t0);
+  auto t = make_shared<const DiagMatrix>(t0);
   // Transformation matrix to momentum space
   auto wmat = make_shared<const Matrix>(*gamma * *lambda);
   // Reverse transformation from momentum space
@@ -77,19 +77,19 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
 
 shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat,
                                                 shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
-                                                shared_ptr<const DiagVec> t, shared_ptr<const Matrix> v,
+                                                shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v,
                                                 shared_ptr<const Matrix> pvp, shared_ptr<Matrix> zpq,
                                                 shared_ptr<Matrix> ypq) {
-  int nbasis = t->size();
+  const int nbasis = t->ndim();
   const double c2 = c__ * c__;
-  DiagVec E(nbasis);
-  DiagVec A(nbasis);
-  DiagVec B(nbasis);
-  DiagVec K(nbasis);
-  DiagVec dE(nbasis);
-  DiagVec dA(nbasis);
-  DiagVec dK(nbasis);
-  DiagVec dB(nbasis);
+  DiagMatrix E(nbasis);
+  DiagMatrix A(nbasis);
+  DiagMatrix B(nbasis);
+  DiagMatrix K(nbasis);
+  DiagMatrix dE(nbasis);
+  DiagMatrix dA(nbasis);
+  DiagMatrix dK(nbasis);
+  DiagMatrix dB(nbasis);
   for (int p = 0; p != nbasis; ++p) {
     E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
     A(p) = sqrt((c2 + E(p)) / (2.0 * E(p)));
@@ -107,7 +107,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
   const Matrix CBS = CPW * B * *pvp;
   const Matrix SBC = *pvp * B * CPW;
   auto den = make_shared<Matrix>(nbasis, nbasis);
-  DiagVec EC(nbasis);
+  DiagMatrix EC(nbasis);
   // DKH1 correction
   *ypq += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
   for (int p = 0; p != nbasis; ++p) {
@@ -119,12 +119,12 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
 
   Matrix N(nbasis, nbasis);
   Matrix O(nbasis, nbasis);
-  DiagVec F(nbasis);
-  DiagVec G(nbasis);
-  DiagVec H(nbasis);
-  DiagVec dF(nbasis);
-  DiagVec dG(nbasis);
-  DiagVec dH(nbasis);
+  DiagMatrix F(nbasis);
+  DiagMatrix G(nbasis);
+  DiagMatrix H(nbasis);
+  DiagMatrix dF(nbasis);
+  DiagMatrix dG(nbasis);
+  DiagMatrix dH(nbasis);
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {
@@ -307,8 +307,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
     Matrix WHOGC(nbasis, nbasis);
     Matrix CHFGO(nbasis, nbasis);
     Matrix CHGFN(nbasis, nbasis);
-    DiagVec HCFNG(nbasis);
-    DiagVec HCGOF(nbasis);
+    DiagMatrix HCFNG(nbasis);
+    DiagMatrix HCGOF(nbasis);
     for (int p = 0; p != nbasis; ++p) {
       for (int q = 0; q != nbasis; ++q) {
         WHNFC(q, p) = HNFC(q, p) / (E(p) + E(q));
@@ -380,9 +380,9 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
     const Matrix OOGCFN = WWO * G * CPW * F * WN;
     Matrix OHNFC(nbasis, nbasis);
     Matrix NHOGC(nbasis, nbasis);
-    DiagVec OGCFNH(nbasis);
-    DiagVec OGCFNNH(nbasis);
-    DiagVec OOGCFNH(nbasis);
+    DiagMatrix OGCFNH(nbasis);
+    DiagMatrix OGCFNNH(nbasis);
+    DiagMatrix OOGCFNH(nbasis);
     for (int p = 0; p != nbasis; ++p) {
       for (int q = 0; q != nbasis; ++q) {
         OHNFC(q, p) = OHNF(q, p) * CPW(q, p);
@@ -392,7 +392,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
       OGCFNNH(p) = OGCFNN(p, p) * H(p) * dE(p);
       OOGCFNH(p) = OOGCFN(p, p) * H(p) * dE(p);
     }
-    const DiagVec dkh2(OHNFC * G.diag() + NHOGC * F.diag() + OGCFNH.diag() - OGCFNNH.diag() - OOGCFNH.diag());
+    const DiagMatrix dkh2(OHNFC * G.diag() + NHOGC * F.diag() + OGCFNH.diag() - OGCFNNH.diag() - OOGCFNH.diag());
     *den += *wmat * dkh2 ^ *wmat;
   }
 
@@ -409,14 +409,14 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
 
 array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat,
                                                 shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
-                                                shared_ptr<const DiagVec> t, shared_ptr<const Matrix> v,
+                                                shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v,
                                                 shared_ptr<const Matrix> pvp) {
-  int nbasis = t->size();
+  const int nbasis = t->ndim();
   const double c2 = c__ * c__;
-  DiagVec E(nbasis);
-  DiagVec A(nbasis);
-  DiagVec K(nbasis);
-  DiagVec B(nbasis);
+  DiagMatrix E(nbasis);
+  DiagMatrix A(nbasis);
+  DiagMatrix K(nbasis);
+  DiagMatrix B(nbasis);
   for (int p = 0; p != nbasis; ++p) {
     E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
     A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
@@ -433,9 +433,9 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
 
   Matrix N(nbasis, nbasis);
   Matrix O(nbasis, nbasis);
-  DiagVec F(nbasis);
-  DiagVec G(nbasis);
-  DiagVec H(nbasis);
+  DiagMatrix F(nbasis);
+  DiagMatrix G(nbasis);
+  DiagMatrix H(nbasis);
   pair<int, int> vint;
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
@@ -587,16 +587,16 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
 
 shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1,
                                                 shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat,
-                                                shared_ptr<const Matrix> wmat_rev, shared_ptr<const DiagVec> t,
+                                                shared_ptr<const Matrix> wmat_rev, shared_ptr<const DiagMatrix> t,
                                                 shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp,
                                                 shared_ptr<Matrix> zpq, shared_ptr<Matrix> ypq) {
   // Extra contributions stem for dependence of energy on overlap matrix (due to reverse transformation)
-  int nbasis = t->size();
+  const int nbasis = t->ndim();
   const double c2 = c__ * c__;
-  DiagVec E(nbasis);
-  DiagVec A(nbasis);
-  DiagVec K(nbasis);
-  DiagVec B(nbasis);
+  DiagMatrix E(nbasis);
+  DiagMatrix A(nbasis);
+  DiagMatrix K(nbasis);
+  DiagMatrix B(nbasis);
   for (int p = 0; p != nbasis; ++p) {
     E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
     A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
@@ -611,9 +611,9 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
 
   Matrix N(nbasis, nbasis);
   Matrix O(nbasis, nbasis);
-  DiagVec F(nbasis);
-  DiagVec G(nbasis);
-  DiagVec H(nbasis);
+  DiagMatrix F(nbasis);
+  DiagMatrix G(nbasis);
+  DiagMatrix H(nbasis);
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {

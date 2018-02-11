@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: diagvec.h
+// Filename: diagmatrix.h
 // Copyright (C) 2017 Nils Strand
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
@@ -23,37 +23,47 @@
 //
 
 
-#ifndef __SRC_MATH_DIAGVEC_H
-#define __SRC_MATH_DIAGVEC_H
+#ifndef __SRC_MATH_DIAGMATRIX_H
+#define __SRC_MATH_DIAGMATRIX_H
 
 #include <src/util/math/matrix.h>
 #include <src/util/math/vectorb.h>
 
 namespace bagel {
 
-class DiagVec {
+class DiagMatrix {
   private:
     VectorB data_;
 
   public:
-    DiagVec() { }
-    DiagVec(const size_t n) : data_(n) { }
-    DiagVec(const VectorB& o) : data_(o) { }
-    DiagVec(const Matrix& m) : data_(m.mdim()) {
-      for (int i = 0; i != size(); ++i)
+    DiagMatrix() { }
+    DiagMatrix(const size_t n) : data_(n) { }
+    DiagMatrix(const VectorB& o) : data_(o) { }
+    DiagMatrix(const DiagMatrix& o) : data_(o.data_) { }
+    DiagMatrix(DiagMatrix&& o) : data_(std::move(o.data_)) { }
+    DiagMatrix(const Matrix& m) : data_(m.mdim()) {
+      assert(m.ndim() == m.mdim());
+      for (int i = 0; i != ndim(); ++i)
         data_(i) = m(i, i);
     }
 
-    size_t size() const { return data_.size(); }
-    const VectorB& diag() const { return data_; }
     double& operator()(const int i) { return data_(i); }
     const double& operator()(const int i) const { return data_(i); }
 
+    DiagMatrix& operator+=(const DiagMatrix& o) { data_ += o.data_; return *this; }
+    DiagMatrix& operator-=(const DiagMatrix& o) { data_ -= o.data_; return *this; }
+    DiagMatrix operator+(const DiagMatrix& o) const { DiagMatrix out(*this); out += o; return out; }
+    DiagMatrix operator-(const DiagMatrix& o) const { DiagMatrix out(*this); out -= o; return out; }
+
+    size_t ndim() const { return data_.size(); }
+    size_t mdim() const { return data_.size(); }
+
+    const VectorB& diag() const { return data_; }
 };
 
-extern Matrix operator*(const DiagVec&, const Matrix&);
-extern Matrix operator*(const Matrix&, const DiagVec&);
-extern DiagVec operator*(const DiagVec&, const DiagVec&);
+extern Matrix operator*(const DiagMatrix&, const Matrix&);
+extern Matrix operator*(const Matrix&, const DiagMatrix&);
+extern DiagMatrix operator*(const DiagMatrix&, const DiagMatrix&);
 
 }
 
