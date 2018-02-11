@@ -51,7 +51,6 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   // when computing gradient, we store half-transform integrals
   do_grad_ = idata->get<bool>("_gradient", false);
   if (do_grad_ && geom_->magnetism()) throw runtime_error("Gradient integrals have not been implemented for a GIAO basis.");
-          
 
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);

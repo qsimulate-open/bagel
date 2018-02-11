@@ -61,10 +61,6 @@ shared_ptr<GradFile> Force::compute() {
   else
     cout << "  The gradients will be computed analytically." << endl;
 
-  if (geom_->hcoreinfo()->dkh()) {
-    cout << "  DKH gradient correction is included." << endl;
-  }
-
   shared_ptr<GradFile> out;
 
   const string method = to_lower(cinput->get<string>("title", ""));

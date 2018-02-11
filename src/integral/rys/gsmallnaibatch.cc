@@ -42,7 +42,7 @@ GSmallNAIBatch::GSmallNAIBatch(array<shared_ptr<const Shell>,2> info, shared_ptr
   const size_t a1 = a1size_inc + a1size_dec;
 
   for (int i = 0; i != mol_->natom()*3; ++i)
-     data_.push_back(make_shared<Matrix>(a0, a1, true));
+    data_.push_back(make_shared<Matrix>(a0, a1, true));
 }
 
 
@@ -62,8 +62,11 @@ shared_ptr<GradFile> GSmallNAIBatch::compute_gradient(array<shared_ptr<const Mat
   int cnt = 0;
   for (int& i : xyz)
     for (int& j : xyz)
-      if (i <= j)
-        denc += *shells_[0]->small(i) * *d[cnt++] ^ *shells_[1]->small(j);
+      if (i <= j) {
+        if (d[cnt])
+          denc += *shells_[0]->small(i) * *d[cnt] ^ *shells_[1]->small(j);
+        ++cnt;
+      }
 
   for (int iatom = 0; iatom != mol_->natom(); ++iatom)
     for (int i = 0; i != 3; ++i)
