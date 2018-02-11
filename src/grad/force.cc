@@ -61,10 +61,6 @@ shared_ptr<GradFile> Force::compute() {
   else
     cout << "  The gradients will be computed analytically." << endl;
 
-  if (geom_->hcoreinfo()->dkh()) {
-    cout << "  Semi-numerical gradient (de Jong, Harrison, Dixon) is used for DKH Hamiltonian." << endl;
-  }
-
   shared_ptr<GradFile> out;
 
   const string method = to_lower(cinput->get<string>("title", ""));

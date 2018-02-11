@@ -46,13 +46,13 @@ MultiSite::MultiSite(shared_ptr<const PTree> input, shared_ptr<const Reference> 
 
 
 void MultiSite::localize(shared_ptr<const PTree> localization_data) {
-  
+
   if (!localization_data->get_child_optional("region_sizes")) throw runtime_error("region_sizes has to be provided to do localization");
   vector<int> region_sizes = localization_data->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes.begin(), region_sizes.end(), 0) == hf_ref_->geom()->natom());
 
   string localizemethod = localization_data->get<string>("algorithm", "pm");
-  
+
   shared_ptr<OrbitalLocalization> localization;
   auto input_data = make_shared<PTree>(*localization_data);
   input_data->erase("virtual"); input_data->put("virtual", true);
@@ -97,7 +97,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
 
   const int nsites = region_sizes.size();
   auto out_coeff = local_coeff->clone();
-  
+
   for (const pair<int, int>& subspace : orbital_subspaces) {
     vector<set<int>> orbital_sets(nsites);
     const int nsuborbs = subspace.second - subspace.first;
@@ -111,7 +111,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
       const pair<int, int> bounds = region_bounds[site];
       const int nregbasis = bounds.second - bounds.first;
       dgemm_("T", "N", nsuborbs, nsuborbs, nregbasis, 1.0, ShalfC.element_ptr(bounds.first, subspace.first), ShalfC.ndim(),
-                                                           ShalfC.element_ptr(bounds.first, subspace.first), ShalfC.ndim(), 
+                                                           ShalfC.element_ptr(bounds.first, subspace.first), ShalfC.ndim(),
                                                       0.0, Q.data(), Q.ndim());
       for (int orb = 0; orb != nsuborbs; ++orb)
         lowdin_populations[orb][site] = Q(orb, orb) * Q(orb, orb);
@@ -128,7 +128,7 @@ void MultiSite::localize(shared_ptr<const PTree> localization_data) {
     size_t imo = subspace.first;
 
     for (auto& subset : orbital_sets) {
-      if (subset.empty()) 
+      if (subset.empty())
         throw runtime_error("one of the active subspaces has bad definition, no matching active orbitals are localized on it, please redefine subspaces");
       Matrix subspace(out_coeff->ndim(), subset.size());
       int pos = 0;

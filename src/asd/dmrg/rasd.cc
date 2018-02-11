@@ -743,7 +743,7 @@ map<BlockKey, vector<shared_ptr<ProductRASCivec>>> RASD::diagonalize_site_and_bl
 #endif
 
     Matrix orthonormalize(*overlap.tildex(1.0e-11));
-    
+
     if (orthonormalize.mdim() > 0) {
 #ifdef HAVE_MPI_H
       orthonormalize.synchronize();

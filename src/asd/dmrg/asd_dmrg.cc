@@ -41,7 +41,7 @@ ASD_DMRG::ASD_DMRG(shared_ptr<const PTree> input, shared_ptr<const Reference> ir
   active_electrons_ = input_->get_vector<int>("active_electrons");
   region_sizes_ = input_->get_vector<int>("region_sizes");
   assert(accumulate(region_sizes_.begin(), region_sizes_.end(), 0) == iref->geom()->natom());
-  
+
   ntrunc_ = input_->get<int>("ntrunc", 0);
   if (ntrunc_ == 0) throw runtime_error("ntrunc_ has to be provided");
   thresh_ = input_->get<double>("thresh", 1.0e-6);
@@ -99,7 +99,7 @@ void ASD_DMRG::rearrange_orbitals(shared_ptr<const Reference> iref) {
       copy_n(iref->coeff()->element_ptr(0, iorb), nbasis, out_coeff->element_ptr(0, (closed_position < nclosed ? closed_position++ : virt_position++)));
   assert(closed_position == nclosed);
   assert(virt_position == out_coeff->mdim());
-  
+
   sref_ = make_shared<Reference>(iref->geom(), make_shared<Coeff>(move(*out_coeff)), nclosed, nactive, nvirt);
 }
 
@@ -125,7 +125,7 @@ void ASD_DMRG::project_active() {
   const Matrix ovlp = static_cast<Matrix>(Overlap(sref_->geom()));
 
   const int nclosed = sref_->nclosed();
-  
+
   shared_ptr<const Matrix> fock;
   if (nclosed) {// construct Fock
     shared_ptr<const Matrix> density = sref_->coeff()->form_density_rhf(nclosed);
@@ -134,7 +134,7 @@ void ASD_DMRG::project_active() {
   } else {
     fock = sref_->hcore();
   }
-  
+
   const int nactive = sref_->nact();
 
   shared_ptr<const PTree> localization_data = input_->get_child_optional("localization");
@@ -152,7 +152,7 @@ void ASD_DMRG::project_active() {
       input_data->erase("type"); input_data->put("type", "region");
       localization = make_shared<PMLocalization>(input_data, sref_, region_sizes_);
     } else throw runtime_error("Unrecognized orbital localization method");
-    
+
     shared_ptr<const Matrix> active_coeff = localization->localize()->get_submatrix(0, nclosed, sref_->geom()->nbasis(), nactive);
 
     Matrix ShalfC(ovlp);
@@ -191,17 +191,17 @@ void ASD_DMRG::project_active() {
         cout << "localized active sizes : "; for (auto& e : orb_set) cout<< e << " ";
         throw runtime_error("Localized active orbital partition does not agree with input active_sizes, redefine active subspaces");
       }
-      
+
       int imo = nclosed;
       for (auto& subset : orbital_sets) {
         if (subset.empty())
           throw runtime_error("one of the active subspaces has bad definition, no matching active orbitals are localized on it, please redefine subspaces");
-        
+
         Matrix subspace(out_coeff->ndim(), subset.size());
         int pos = 0;
         for (const int& i : subset)
           copy_n(active_coeff->element_ptr(0, i), active_coeff->ndim(), subspace.element_ptr(0, pos++));
-        
+
         // canonicalize within active subspaces
         Matrix subfock(subspace % *fock * subspace);
         VectorB eigs(subspace.ndim());

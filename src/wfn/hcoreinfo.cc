@@ -36,7 +36,6 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
   const bool dkh = idata->get<bool>("dkh", false);
   if (dkh)
     type_ = HcoreType::dkh;
-  mat1e_dx_ = idata->get<double>("mat1e_dx", 0.001);
 
   // ECP
   const string basisfile = idata->get<string>("basis", "");
@@ -46,67 +45,6 @@ HcoreInfo::HcoreInfo(shared_ptr<const PTree> idata) : type_(HcoreType::standard)
       throw runtime_error("DKH and ECP cannot be used simultaneously");
     type_ = HcoreType::ecp;
   }
-}
-
-
-vector<shared_ptr<Matrix>> HcoreInfo::dkh_grad(shared_ptr<const Molecule> current) const {
-  int natom = current->natom();
-  vector<shared_ptr<Matrix>> dkhgrad;
-
-  for (int i = 0; i != natom; ++i) {
-    for (int j = 0; j != 3; ++j) {
-      shared_ptr<Matrix> h_plus;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = mat1e_dx();
-        auto geom_plus = make_shared<Molecule>(*current, displ, false);
-        shared_ptr<Matrix> hd_plus = compute_dkh(geom_plus);
-        auto ho_plus = make_shared<Hcore>(geom_plus);
-
-        h_plus = make_shared<Matrix>(*hd_plus - *ho_plus);
-      }
-
-      shared_ptr<Matrix> h_minus;
-      {
-        auto displ = make_shared<XYZFile>(natom);
-        displ->element(j,i) = -mat1e_dx();
-        auto geom_minus = make_shared<Molecule>(*current, displ, false);
-        shared_ptr<Matrix> hd_minus = compute_dkh(geom_minus);
-        auto ho_minus = make_shared<Hcore>(geom_minus);
-
-        h_minus = make_shared<Matrix>(*hd_minus - *ho_minus);
-      }
-
-      dkhgrad.push_back(make_shared<Matrix>(*h_plus - *h_minus));
-      dkhgrad[j+i*3]->scale(1.0 / (2.0 * mat1e_dx()));
-    }
-  }
-
-  return dkhgrad;
-}
-
-
-shared_ptr<Matrix> HcoreInfo::compute_grad_dkh(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
-  int natom = current->natom();
-  auto out = make_shared<Matrix>(3,natom);
-  vector<shared_ptr<Matrix>> dkhg = dkh_grad(current);
-
-  for (int i = 0; i != natom; ++i)
-    for (int j = 0; j != 3; ++j)
-      out->element(j,i) += dkhg[j+i*3]->dot_product(den);
-
-  return out;
-}
-
-
-shared_ptr<Matrix> HcoreInfo::compute_grad(shared_ptr<const Molecule> current, shared_ptr<const Matrix> den) const {
-  int natom = current->natom();
-  auto out = make_shared<Matrix>(3, natom);
-
-  if (dkh())
-    out = compute_grad_dkh(current, den);
-
-  return out;
 }
 
 

@@ -62,7 +62,7 @@ class ZCASSecond_base : public ZCASSCF {
 
   public:
     void compute() override;
-    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0; 
+    virtual std::shared_ptr<const Reference> conv_to_ref() const override = 0;
 };
 
 

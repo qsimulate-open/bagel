@@ -1,9 +1,9 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: jop_london.h
+// Filename: contrcoeff.h
 // Copyright (C) 2017 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu>
+// Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -22,24 +22,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __BAGEL_CI_ZFCI_JOP_LONDON_H
-#define __BAGEL_CI_ZFCI_JOP_LONDON_H
 
-#include <src/ci/zfci/zmofile.h>
+#ifndef __SRC_MAT1E_CONTRCOEFF_H
+#define __SRC_MAT1E_CONTRCOEFF_H
+
+#include <src/util/math/matrix.h>
+#include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class Jop_London : public ZMOFile {
+class ContrCoeff : public Matrix {
   protected:
-    std::shared_ptr<ZMatrix> compute_hcore() const override;
-    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool) const override;
-    std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
-    std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
+    std::shared_ptr<const Molecule> mol_;
+    void init(std::shared_ptr<const Molecule>);
 
   public:
-    Jop_London(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const ZCoeff_Block> coeff);
+    ContrCoeff() { }
+    ContrCoeff(std::shared_ptr<const Molecule>, int);
 };
 
 }
 
+#include <src/util/archive.h>
+BOOST_CLASS_EXPORT_KEY(bagel::ContrCoeff)
+
 #endif
+

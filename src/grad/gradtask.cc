@@ -279,3 +279,45 @@ shared_ptr<GradFile> GradTask1r::compute_smallnai() const {
   }
   return batch.compute_gradient(dmat);
 }
+
+
+void GradTask1d::compute() {
+  auto grad_local = make_shared<GradFile>(ge_->geom_->natom());
+  *grad_local += *compute_nai();
+  *grad_local += *compute_smallnai();
+  *grad_local += *compute_os<GKineticBatch>(den_[0]);
+  *grad_local += *compute_os<GOverlapBatch>(den_[3]);
+
+  for (int iatom = 0; iatom != ge_->geom_->natom(); ++iatom) {
+    lock_guard<mutex> lock(ge_->mutex_[iatom]);
+    ge_->grad_->element(0, iatom) += grad_local->element(0, iatom);
+    ge_->grad_->element(1, iatom) += grad_local->element(1, iatom);
+    ge_->grad_->element(2, iatom) += grad_local->element(2, iatom);
+  }
+}
+
+
+shared_ptr<GradFile> GradTask1d::compute_nai() const {
+  const int dimb1 = shell_[0]->nbasis();
+  const int dimb0 = shell_[1]->nbasis();
+  GNAIBatch batch2(shell_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
+  batch2.compute();
+  shared_ptr<Matrix> cden = den_[1]->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  const int dummy = -1;
+  return batch2.compute_gradient(cden, dummy, dummy, ge_->geom_->natom());
+}
+
+
+shared_ptr<GradFile> GradTask1d::compute_smallnai() const {
+  const int dimb1 = shell_[0]->nbasis();
+  const int dimb0 = shell_[1]->nbasis();
+  GSmallNAIBatch batch(shell_, ge_->geom_, tie(atomindex_[1], atomindex_[0]));
+  batch.compute();
+
+  array<shared_ptr<const Matrix>,6> dmat;
+  shared_ptr<Matrix> cden = den_[2]->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  cden->localize();
+  dmat[0] = dmat[3] = dmat[5] = cden;
+  dmat[1] = dmat[2] = dmat[4] = nullptr;
+  return batch.compute_gradient(dmat);
+}

@@ -442,7 +442,7 @@ void CASSecond::trans_natorb() {
 
   fci_->rotate_rdms(trans);
 
-  auto cnew = make_shared<Coeff>(*coeff_); 
+  auto cnew = make_shared<Coeff>(*coeff_);
   cnew->copy_block(0, nclosed_, cnew->ndim(), nact_, coeff_->slice(nclosed_, nocc_) * *trans);
   coeff_ = cnew;
 }

@@ -58,7 +58,7 @@ shared_ptr<const ZCoeff_Block> FCI_London::init_coeff() {
     copy_n(rr->zcoeff()->element_ptr(0,i), rndim, coeff.element_ptr(0,2*i));
     copy_n(rr->zcoeff()->element_ptr(0,i), rndim, coeff.element_ptr(0,2*i+1));
   }
-  auto scoeff = make_shared<const ZCoeff_Striped>(coeff, ncore_, norb_, rr->nvirt()); 
+  auto scoeff = make_shared<const ZCoeff_Striped>(coeff, ncore_, norb_, rr->nvirt());
 
   // Reorder as specified in the input so frontier orbitals contain the desired active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");

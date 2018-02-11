@@ -191,7 +191,7 @@ void FMM::get_boxes() {
 
             if (!parent_found) {
               if (nss != 0) {
-                const double boxsize = unitsize_ * pow(2, ns_-nss+1); 
+                const double boxsize = unitsize_ * pow(2, ns_-nss+1);
                 auto newbox = make_shared<Box>(ns_-nss+1, boxsize, array<double, 3>{{0.0, 0.0, 0.0}},
                      nbox, idxp, lmax_, lmax_k_, box_[ichild]->sp(), thresh_);
                 box_.insert(box_.end(), newbox);
@@ -363,7 +363,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM(shared_ptr<const Matrix> density)
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
- 
+
   Timer fmmtime;
   M2M(density);
   M2L();
@@ -466,7 +466,7 @@ shared_ptr<const Matrix> FMM::compute_K_ff(shared_ptr<const Matrix> ocoeff, shar
 
     projtime.tick_print("Projecting K");
   }
-  
+
   ktime.tick_print("FMM-K");
   const double enk = ocoeff->dot_product(*krj);
   cout << "          o    Far-field Exchange energy: " << setprecision(9) << enk << endl;
@@ -495,7 +495,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_K(shared_ptr<const Matrix> densit
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
- 
+
   Timer nftime;
   if (density) {
     assert(nbasis_ == density->ndim());
@@ -540,7 +540,7 @@ shared_ptr<const Matrix> FMM::compute_Fock_FMM_J(shared_ptr<const Matrix> densit
 
   auto out = make_shared<Matrix>(nbasis_, nbasis_);
   out->zero();
- 
+
   Timer fmmtime;
   M2M(density);
   M2L();
