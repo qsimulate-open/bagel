@@ -41,11 +41,6 @@ class DiagMatrix {
     DiagMatrix(const VectorB& o) : data_(o) { }
     DiagMatrix(const DiagMatrix& o) : data_(o.data_) { }
     DiagMatrix(DiagMatrix&& o) : data_(std::move(o.data_)) { }
-    DiagMatrix(const Matrix& m) : data_(m.mdim()) {
-      assert(m.ndim() == m.mdim());
-      for (int i = 0; i != ndim(); ++i)
-        data_(i) = m(i, i);
-    }
 
     double& operator()(const int i) { return data_(i); }
     const double& operator()(const int i) const { return data_(i); }
@@ -87,6 +82,26 @@ DiagMatrix operator*(const DiagMatrix& v1, const DiagMatrix& v2) {
     out(i) = v1(i) * v2(i);
   return out;
 }
+
+Matrix operator+(const Matrix& m, const DiagMatrix& v) {
+  assert(m.mdim() == v.mdim());
+  Matrix out = m;
+  for (int i = 0; i != m.mdim(); ++i)
+    out(i, i) += v(i);
+  return out;
+}
+
+Matrix operator-(const Matrix& m, const DiagMatrix& v) {
+  assert(m.mdim() == v.mdim());
+  Matrix out = m;
+  for (int i = 0; i != m.mdim(); ++i)
+    out(i, i) -= v(i);
+  return out;
+}
+
+Matrix operator+(const DiagMatrix& v, const Matrix& m) { return m + v; }
+Matrix operator-(const DiagMatrix& v, const Matrix& m) { return m - v; }
+
 
 }
 

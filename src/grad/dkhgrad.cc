@@ -41,46 +41,58 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   // Number of uncontracted basis functions
   const int nbasis = unc->nbasis();
 
-  // Compute momentum transformation matrix
-  const Overlap overlap(unc);
-  shared_ptr<const Matrix> gamma = overlap.tildex();
-  const Kinetic kinetic(unc);
-  auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
-  VectorB t0(nbasis);
-  // Kinetic operator is diagonal in momentum space
-  lambda->diagonalize(t0);
-  auto t = make_shared<const DiagMatrix>(t0);
-  // Transformation matrix to momentum space
-  auto wmat = make_shared<const Matrix>(*gamma * *lambda);
-  // Reverse transformation from momentum space
-  auto wmat_rev = make_shared<const Matrix>(overlap * *wmat);
+  shared_ptr<const Matrix> wmat, wmat_rev;
+  shared_ptr<const DiagMatrix> t;
+  {
+    // Compute momentum transformation matrix
+    const Overlap overlap(unc);
+    shared_ptr<const Matrix> gamma = overlap.tildex();
+    // Kinetic operator is diagonal in momentum space
+    const Kinetic kinetic(unc);
+    auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
+    VectorB t0(nbasis);
+    lambda->diagonalize(t0);
+    t = make_shared<const DiagMatrix>(t0);
+    // Transformation matrix to momentum space
+    wmat = make_shared<const Matrix>(*gamma * *lambda);
+    // Reverse transformation from momentum space
+    wmat_rev = make_shared<const Matrix>(overlap * *wmat);
+  }
 
-  // Evaluate integrals in momentum space
-  const NAI nai(unc);
-  auto v = make_shared<const Matrix>(*wmat % nai * *wmat);
-  const Small1e<NAIBatch> small1e(unc);
-  auto pvp = make_shared<const Matrix>(*wmat % small1e[0] * *wmat);
+  shared_ptr<const Matrix> v, pvp;
+  {
+    // Evaluate integrals in momentum space
+    const NAI nai(unc);
+    v = make_shared<const Matrix>(*wmat % nai * *wmat);
+    const Small1e<NAIBatch> small1e(unc);
+    pvp = make_shared<const Matrix>(*wmat % small1e[0] * *wmat);
+  }
 
   // Projection operator from uncontracted to contracted AO basis
   auto pmat = make_shared<const ContractMat>(mol_, nbasis);
 
-  // Lagrange multiplier for diagonalization of kinetic operator
-  auto zpq = make_shared<Matrix>(nbasis, nbasis);
-  // Energy derivative with respect to momentum orbital rotation
-  auto ypq = make_shared<Matrix>(nbasis, nbasis);
+  // Lagrange multiplier for diagonalization of kinetic operator and energy derivative with respect to momentum orbital rotation
+  shared_ptr<const Matrix> tden, zpq, ypq;
+  tie(tden, zpq, ypq) = compute_tden_(rdm1, pmat, wmat, wmat_rev, t, v, pvp); 
 
-  shared_ptr<const Matrix> tden = compute_tden(rdm1, pmat, wmat, wmat_rev, t, v, pvp, zpq, ypq);
-  array<shared_ptr<const Matrix>, 2> vden = compute_vden(rdm1, pmat, wmat, wmat_rev, t, v, pvp);
-  shared_ptr<const Matrix> sden = compute_sden(rdm1, erdm1, pmat, wmat, wmat_rev, t, v, pvp, zpq, ypq);
-  return { tden, vden[0], vden[1], sden };
+  shared_ptr<const Matrix> sden = compute_sden_(rdm1, erdm1, pmat, wmat, wmat_rev, t, v, pvp, zpq, ypq);
+  shared_ptr<const Matrix> vden0, vden1;
+  tie(vden0, vden1) = compute_vden_(rdm1, pmat, wmat, wmat_rev, t, v, pvp);
+  return { tden, vden0, vden1, sden };
 }
 
-shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat,
-                                                shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
-                                                shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v,
-                                                shared_ptr<const Matrix> pvp, shared_ptr<Matrix> zpq,
-                                                shared_ptr<Matrix> ypq) {
+
+// Effective density matrix for kinetic gradient. This function also returns zpq and ypq
+tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>>
+  DKHgrad::compute_tden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
+                         shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
   const int nbasis = t->ndim();
+
+  // output
+  auto den = make_shared<Matrix>(nbasis, nbasis);
+  auto zpq = make_shared<Matrix>(nbasis, nbasis);
+  auto ypq = make_shared<Matrix>(nbasis, nbasis);
+
   const double c2 = c__ * c__;
   DiagMatrix E(nbasis);
   DiagMatrix A(nbasis);
@@ -102,20 +114,22 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
   }
 
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
-  const Matrix CAN = CPW * A * *v;
-  const Matrix NAC = *v * A * CPW;
-  const Matrix CBS = CPW * B * *pvp;
-  const Matrix SBC = *pvp * B * CPW;
-  auto den = make_shared<Matrix>(nbasis, nbasis);
-  DiagMatrix EC(nbasis);
-  // DKH1 correction
-  *ypq += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
-  for (int p = 0; p != nbasis; ++p) {
-    // dE_DKH1/dU_pq
-    (*ypq)(p, p) += 2.0 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * (*t)(p);
-    EC(p) = dE(p) * CPW(p, p) + 2.0 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
+  {
+    const Matrix CAN = CPW * A * *v;
+    const Matrix NAC = *v * A * CPW;
+    const Matrix CBS = CPW * B * *pvp;
+    const Matrix SBC = *pvp * B * CPW;
+    // DKH1 correction
+    *ypq += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
+
+    DiagMatrix EC(nbasis);
+    for (int p = 0; p != nbasis; ++p) {
+      // dE_DKH1/dU_pq
+      (*ypq)(p, p) += 2.0 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * (*t)(p);
+      EC(p) = dE(p) * CPW(p, p) + 2.0 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
+    }
+    *den += *wmat * EC ^ *wmat;
   }
-  *den += *wmat * EC ^ *wmat;
 
   Matrix N(nbasis, nbasis);
   Matrix O(nbasis, nbasis);
@@ -125,6 +139,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
   DiagMatrix dF(nbasis);
   DiagMatrix dG(nbasis);
   DiagMatrix dH(nbasis);
+
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
     switch (i) {
@@ -281,18 +296,7 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
         WWO(q, p) = WO(q, p) / (E(p) + E(q));
       }
     }
-    const Matrix CFN = CPW * F * WN;
-    const Matrix CGO = CPW * G * WO;
-    const Matrix HNFC = H * WN * F * CPW * G;
-    const Matrix HOGC = H * WO * G * CPW * F;
-    const Matrix CFNHOG = CFN * H * WO * dG * *t;
-    const Matrix CFNHOOGE = CFN * H * WWO * G * dE * *t;
-    const Matrix CGOHNF = CGO * H * WN * dF * *t;
-    const Matrix CGOHNNFE = CGO * H * WWN * F * dE * *t;
-    const Matrix CFNGH = (CFN * G * dH - CPW * F * WWN * G * H * dE) * *t;
-    const Matrix CFNGHE = CFN * G * H * dE * *t;
-    const Matrix CGOFH = (CGO * F * dH - CPW * G * WWO * F * H * dE) * *t;
-    const Matrix CGOFHE = CGO * F * H * dE * *t;
+
     Matrix CH(nbasis, nbasis);
     Matrix CH2(nbasis, nbasis);
     for (int p = 0; p != nbasis; ++p) {
@@ -303,115 +307,114 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
         }
       }
     }
-    Matrix WHNFC(nbasis, nbasis);
-    Matrix WHOGC(nbasis, nbasis);
-    Matrix CHFGO(nbasis, nbasis);
-    Matrix CHGFN(nbasis, nbasis);
-    DiagMatrix HCFNG(nbasis);
-    DiagMatrix HCGOF(nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        WHNFC(q, p) = HNFC(q, p) / (E(p) + E(q));
-        WHOGC(q, p) = HOGC(q, p) / (E(p) + E(q));
-        CHFGO(q, p) = CH(q, p) * F(q) * G(p) * WO(p, p) / (E(q) + E(p));
-        CHGFN(q, p) = CH(q, p) * G(q) * F(p) * WN(p, p) / (E(q) + E(p));
-      }
-      HCFNG(p) = H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
-      HCGOF(p) = H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
-    }
-    const Matrix CH2FNG = WN * F * CH2 * G * *t;
-    const Matrix CHFNGE = WN * F * CH * G * dE * *t;
-    const Matrix CHFNNGE = WWN * F * CH * G * dE * *t;
-    const Matrix CH2GOF = WO * G * CH2 * F * *t;
-    const Matrix CHGOFE = WO * G * CH * F * dE * *t;
-    const Matrix CHGOOFE = WWO * G * CH * F * dE * *t;
-    Matrix FN(nbasis, nbasis);
-    Matrix FO(nbasis, nbasis);
-    Matrix FNN(nbasis, nbasis);
-    Matrix FOO(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        if (p != q) {
-          FN(q, p) = WN(q, p) * F(q);
-          FO(q, p) = WO(q, p) * F(q);
-          FNN(q, p) = WWN(q, p) * F(q);
-          FOO(q, p) = WWO(q, p) * F(q);
-        }
-      }
-    }
-    const Matrix CFN2 = CPW * FN;
-    const Matrix CFO2 = CPW * FO;
-    const Matrix CFNN2 = CPW * FNN;
-    const Matrix CFOO2 = CPW * FOO;
-    Matrix GCFN2H(nbasis, nbasis);
-    Matrix GCFO2H(nbasis, nbasis);
-    Matrix GCFN2H2(nbasis, nbasis);
-    Matrix GCFO2H2(nbasis, nbasis);
-    Matrix GCFNN2H2(nbasis, nbasis);
-    Matrix GCFOO2H2(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        if (p != q) {
-          GCFN2H(q, p) = G(q) * CFN2(q, p) * H(p) / (E(q) + E(p));
-          GCFO2H(q, p) = G(q) * CFO2(q, p) * H(p) / (E(q) + E(p));
-          GCFN2H2(q, p) = G(q) * CFN2(q, p) * dH(p) * (*t)(p);
-          GCFO2H2(q, p) = G(q) * CFO2(q, p) * dH(p) * (*t)(p);
-          GCFNN2H2(q, p) = G(q) * CFNN2(q, p) * H(p) * dE(p) * (*t)(p);
-          GCFOO2H2(q, p) = G(q) * CFOO2(q, p) * H(p) * dE(p) * (*t)(p);
-        }
-      }
-    }
-    const Matrix OGCFN2H2 = WO * (GCFN2H2 - 2.0 * GCFNN2H2);
-    const Matrix NGCFO2H2 = WN * (GCFO2H2 - 2.0 * GCFOO2H2);
-    // dE_DKH2/dU_pq
-    *ypq += CFN * H * WO * G + CGO * H * WN * F + O * (WHNFC + CHGFN + GCFN2H) + N * (WHOGC + CHFGO + GCFO2H)
-            + O * HCFNG + N * HCGOF;
 
-    for (int p = 0; p != nbasis; ++p) {
-      (*ypq)(p, p) += 2.0 * (CFNHOG(p, p) + CGOHNF(p, p) - CFNHOOGE(p, p) - CGOHNNFE(p, p))
-                    + (CFNGH(p, p) + CH2FNG(p, p) - CHFNNGE(p, p)) * WO(p, p) - (CFNGHE(p, p) + CHFNGE(p, p)) * WWO(p, p)
-                    + (CGOFH(p, p) + CH2GOF(p, p) - CHGOOFE(p, p)) * WN(p, p) - (CGOFHE(p, p) + CHGOFE(p, p)) * WWN(p, p)
-                    + OGCFN2H2(p, p) + NGCFO2H2(p, p);
-    }
-    const Matrix OHNF = WO * H * (WN * dF - WWN * F * dE);
-    const Matrix NHOG = WN * H * (WO * dG - WWO * G * dE);
-    const Matrix OGCFN = WO * G * CPW * F * WN;
-    const Matrix OGCFNN = WO * G * CPW * F * WWN;
-    const Matrix OOGCFN = WWO * G * CPW * F * WN;
-    Matrix OHNFC(nbasis, nbasis);
-    Matrix NHOGC(nbasis, nbasis);
-    DiagMatrix OGCFNH(nbasis);
-    DiagMatrix OGCFNNH(nbasis);
-    DiagMatrix OOGCFNH(nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        OHNFC(q, p) = OHNF(q, p) * CPW(q, p);
-        NHOGC(q, p) = NHOG(q, p) * CPW(q, p);
+    const Matrix CFN = CPW * F * WN;
+    const Matrix CGO = CPW * G * WO;
+    {
+      const Matrix HNFC = H * WN * F * CPW * G;
+      const Matrix HOGC = H * WO * G * CPW * F;
+      Matrix WHNFC(nbasis, nbasis);
+      Matrix WHOGC(nbasis, nbasis);
+      for (int p = 0; p != nbasis; ++p) {
+        for (int q = 0; q != nbasis; ++q) {
+          WHNFC(q, p) = (HNFC(q, p) + CH(q, p) * G(q) * F(p) * WN(p, p)) / (E(p) + E(q));
+          WHOGC(q, p) = (HOGC(q, p) + CH(q, p) * F(q) * G(p) * WO(p, p)) / (E(p) + E(q));
+        }
+        WHNFC(p, p) += H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
+        WHOGC(p, p) += H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
       }
-      OGCFNH(p) = OGCFN(p, p) * dH(p);
-      OGCFNNH(p) = OGCFNN(p, p) * H(p) * dE(p);
-      OOGCFNH(p) = OOGCFN(p, p) * H(p) * dE(p);
+      *ypq += O * WHNFC + N * WHOGC + CFN * H * WO * G + CGO * H * WN * F;
     }
-    DiagMatrix dkh2(OHNFC * G.diag() + NHOGC * F.diag());
-    dkh2 += OGCFNH - OGCFNNH - OOGCFNH;
+
+    {
+      Matrix FN(nbasis, nbasis);
+      Matrix FO(nbasis, nbasis);
+      Matrix FNN(nbasis, nbasis);
+      Matrix FOO(nbasis, nbasis);
+      for (int p = 0; p != nbasis; ++p)
+        for (int q = 0; q != nbasis; ++q)
+          if (p != q) {
+            FN(q, p) = WN(q, p) * F(q);
+            FO(q, p) = WO(q, p) * F(q);
+            FNN(q, p) = WWN(q, p) * F(q);
+            FOO(q, p) = WWO(q, p) * F(q);
+          }
+      FN = CPW * FN;
+      FO = CPW * FO;
+      FNN = CPW * FNN;
+      FOO = CPW * FOO;
+
+      Matrix GCFN2H(nbasis, nbasis);
+      Matrix GCFO2H(nbasis, nbasis);
+      Matrix GCFN2H2(nbasis, nbasis);
+      Matrix GCFO2H2(nbasis, nbasis);
+      for (int p = 0; p != nbasis; ++p)
+        for (int q = 0; q != nbasis; ++q)
+          if (p != q) {
+            const double fac1 = G(q) * H(p) / (E(q) + E(p));
+            const double fac2 = G(q) * dH(p) * (*t)(p);
+            const double fac3 = G(q) * H(p) * dE(p) * (*t)(p);
+            GCFN2H(q, p) = fac1 * FN(q, p);
+            GCFO2H(q, p) = fac1 * FO(q, p);
+            GCFN2H2(q, p) = fac2 * FN(q, p) - 2.0 * fac3 * FNN(q, p);
+            GCFO2H2(q, p) = fac2 * FO(q, p) - 2.0 * fac3 * FOO(q, p);
+          }
+
+      // dE_DKH2/dU_pq
+      *ypq += O * GCFN2H + N * GCFO2H;
+
+      const Matrix OGCFN2H2 = WO * GCFN2H2 + WN * GCFO2H2;
+      for (int p = 0; p != nbasis; ++p)
+        (*ypq)(p, p) += OGCFN2H2(p, p);
+    }
+
+    {
+      const Matrix CFNHOG = (CFN * H * (WO * dG - WWO * G * dE) + CGO * H * (WN * dF - WWN * F * dE)) * *t;
+      const Matrix CFNGH = (CFN * G * dH - (CPW * F * WWN * G * H + WWN * F * CH * G) * dE + WN * F * CH2 * G) * *t;
+      const Matrix CFNGHE = (CFN * G * H + WN * F * CH * G) * dE * *t;
+      const Matrix CGOFH = (CGO * F * dH - (CPW * G * WWO * F * H + WWO * G * CH * F) * dE + WO * G * CH2 * F) * *t;
+      const Matrix CGOFHE = (CGO * F * H + WO * G * CH * F) * dE * *t;
+      for (int p = 0; p != nbasis; ++p)
+        (*ypq)(p, p) += 2.0 * CFNHOG(p, p) + CFNGH(p, p) * WO(p, p) - CFNGHE(p, p) * WWO(p, p)
+                      + CGOFH(p, p) * WN(p, p) - CGOFHE(p, p) * WWN(p, p);
+    }
+
+    DiagMatrix dkh2(nbasis);
+    {
+      const Matrix OGCFN = WO * G * CPW * F * WN;
+      const Matrix OGCFNN = WO * G * CPW * F * WWN;
+      const Matrix OOGCFN = WWO * G * CPW * F * WN;
+      const Matrix OHNF = WO * H * (WN * dF - WWN * F * dE);
+      const Matrix NHOG = WN * H * (WO * dG - WWO * G * dE);
+      Matrix OHNFC(nbasis, nbasis);
+      Matrix NHOGC(nbasis, nbasis);
+      for (int p = 0; p != nbasis; ++p) {
+        for (int q = 0; q != nbasis; ++q) {
+          OHNFC(q, p) = OHNF(q, p) * CPW(q, p);
+          NHOGC(q, p) = NHOG(q, p) * CPW(q, p);
+        }
+        dkh2(p) = OGCFN(p, p) * dH(p) - OGCFNN(p, p) * H(p) * dE(p) - OOGCFN(p, p) * H(p) * dE(p);
+      }
+      dkh2 += OHNFC * G.diag() + NHOGC * F.diag();
+    }
+
     *den += *wmat * dkh2 ^ *wmat;
   }
 
   // z_pq from Lagrangian
-  for (int p = 0; p != nbasis; ++p) {
-    for (int q = 0; q != nbasis; ++q) {
+  for (int p = 0; p != nbasis; ++p)
+    for (int q = 0; q != nbasis; ++q)
       (*zpq)(q, p) = fabs((*t)(p) - (*t)(q)) > 1.0e-12 ? -0.5 * ((*ypq)(q, p) - (*ypq)(p, q)) / ((*t)(q) - (*t)(p)) : 0.0;
-    }
-  }
 
   *den += *wmat * *zpq ^ *wmat;
-  return den;
+  return {den, zpq, ypq};
 }
 
-array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat,
-                                                shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
-                                                shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v,
-                                                shared_ptr<const Matrix> pvp) {
+
+// Effective density matrices for NAI/SmallNAI gradients
+tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
+  DKHgrad::compute_vden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
+                         shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
   const int nbasis = t->ndim();
   const double c2 = c__ * c__;
   DiagMatrix E(nbasis);
@@ -554,6 +557,7 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
       vint = make_pair(1, 1);
       break;
     }
+
     Matrix WN(nbasis, nbasis);
     Matrix WO(nbasis, nbasis);
     for (int p = 0; p != nbasis; ++p) {
@@ -562,31 +566,35 @@ array<shared_ptr<const Matrix>, 2> DKHgrad::compute_vden(shared_ptr<const Matrix
         WO(q, p) = O(q, p) / (E(p) + E(q));
       }
     }
-    const Matrix HOGCF = H * WO * G * CPW * F;
-    const Matrix HNFCG = H * WN * F * CPW * G;
+
     Matrix WHOGCF(nbasis, nbasis);
     Matrix WHNFCG(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        WHOGCF(q, p) = HOGCF(q, p) / (E(p) + E(q));
-        WHNFCG(q, p) = HNFCG(q, p) / (E(p) + E(q));
-      }
+    {
+      const Matrix HOGCF = H * WO * G * CPW * F;
+      const Matrix HNFCG = H * WN * F * CPW * G;
+      for (int p = 0; p != nbasis; ++p)
+        for (int q = 0; q != nbasis; ++q) {
+          WHOGCF(q, p) = HOGCF(q, p) / (E(p) + E(q));
+          WHNFCG(q, p) = HNFCG(q, p) / (E(p) + E(q));
+        }
     }
-    if (vint.first) {
+
+    if (vint.first)
       *pvpden += *wmat * WHOGCF ^ *wmat;
-    } else {
+    else
       *den += *wmat * WHOGCF ^ *wmat;
-    }
-    if (vint.second) {
+
+    if (vint.second)
       *pvpden += *wmat * WHNFCG ^ *wmat;
-    } else {
+    else
       *den += *wmat * WHNFCG ^ *wmat;
-    }
   }
   return { den, pvpden };
 }
 
-shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1,
+
+// Effective density matrix for overlap gradient
+shared_ptr<const Matrix> DKHgrad::compute_sden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1,
                                                 shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat,
                                                 shared_ptr<const Matrix> wmat_rev, shared_ptr<const DiagMatrix> t,
                                                 shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp,
