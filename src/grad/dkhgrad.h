@@ -33,36 +33,29 @@ namespace bagel {
 
 class DKHgrad {
   protected:
-    // Number of uncontracted basis functions
-    int nbasis_;
-
-    // Transformation matrix to momentum space
-    Matrix wtrans_;
-    // Reverse transformation from momentum space
-    Matrix wtrans_rev_;
-    // Projection operator from uncontracted to contracted AO basis
-    Matrix ptrans_;
-
-    // Integrals in momentum space
-    DiagVec kinetic_;
-    Matrix nai_;
-    Matrix smallnai_;
-
-    // Lagrange multiplier for diagonalization of kinetic operator
-    Matrix zmult_;
-    // Energy derivative with respect to momentum orbital rotation
-    Matrix ederiv_;
+    std::shared_ptr<const Molecule> mol_;
 
     // Effective density matrix for kinetic gradient
-    std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const DiagVec>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<Matrix>,
+                                                std::shared_ptr<Matrix>);
     // Effective density matrices for NAI/SmallNAI gradients
-    std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
+    std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                                std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                                std::shared_ptr<const DiagVec>, std::shared_ptr<const Matrix>,
+                                                                std::shared_ptr<const Matrix>);
     // Effective density matrix for overlap gradient
-    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const DiagVec>,
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
+                                                std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
 
   public:
     DKHgrad() { }
-    DKHgrad(std::shared_ptr<const Molecule>);
+    DKHgrad(std::shared_ptr<const Molecule> current) : mol_(current) { }
 
     // Compute array of densities needed for DKH gradient
     std::array<std::shared_ptr<const Matrix>, 4> compute(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
