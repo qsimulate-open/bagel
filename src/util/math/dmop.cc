@@ -30,7 +30,7 @@
 namespace bagel {
 
 Matrix operator*(const DiagMatrix& v, const Matrix& m) {
-  assert(m.ndim() == v.size());
+  assert(m.ndim() == v.ndim());
   Matrix out(v.ndim(), v.mdim());
   for (int i = 0; i < m.mdim(); ++i) {
     for (int j = 0; j < m.ndim(); ++j) {
