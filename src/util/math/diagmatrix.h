@@ -61,9 +61,34 @@ class DiagMatrix {
     const VectorB& diag() const { return data_; }
 };
 
-extern Matrix operator*(const DiagMatrix&, const Matrix&);
-extern Matrix operator*(const Matrix&, const DiagMatrix&);
-extern DiagMatrix operator*(const DiagMatrix&, const DiagMatrix&);
+namespace {
+
+Matrix operator*(const DiagMatrix& v, const Matrix& m) {
+  assert(m.ndim() == v.ndim());
+  Matrix out(v.ndim(), v.mdim());
+  for (int i = 0; i != m.mdim(); ++i)
+    for (int j = 0; j != m.ndim(); ++j)
+      out(j, i) = m(j, i) * v(j);
+  return out;
+}
+
+Matrix operator*(const Matrix& m, const DiagMatrix& v) {
+  assert(m.mdim() == v.mdim());
+  Matrix out = m;
+  for (int i = 0; i != m.mdim(); ++i)
+    blas::scale_n(v(i), out.element_ptr(0, i), m.ndim());
+  return out;
+}
+
+DiagMatrix operator*(const DiagMatrix& v1, const DiagMatrix& v2) {
+  assert(v1.ndim() == v2.ndim());
+  DiagMatrix out(v1.ndim());
+  for (int i = 0; i != v1.ndim(); ++i)
+    out(i) = v1(i) * v2(i);
+  return out;
+}
+
+}
 
 }
 
