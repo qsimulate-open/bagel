@@ -90,7 +90,7 @@ class LinearRM {
         mat_->element(size_-1,i) = s->dot_product(**siter++);
         mat_->element(i,size_-1) = detail::conj(mat_->element(size_-1,i));
         overlap_->element(size_-1,i) = c->dot_product(**citer++);
-        overlap_->element(i,size_-1) = detail::conj(overlap_->element(size_-1,i)); 
+        overlap_->element(i,size_-1) = detail::conj(overlap_->element(size_-1,i));
       }
       // NOTE THE MINUS SIGN HERE!!
       prod_->element(size_-1,0) = - s->dot_product(*grad_);
@@ -123,7 +123,7 @@ class LinearRM {
         overwrite(c_);
         overwrite(sigma_);
         // matrix elements should be updated as well.
-        MatType trans(size_, size_); 
+        MatType trans(size_, size_);
         trans.unit();
         std::copy_n(vec_->element_ptr(0,0), size_, trans.element_ptr(0,0));
         mat_->copy_block(0, 0, size_, size_, trans % *mat_->get_submatrix(0, 0, size_, size_) * trans);

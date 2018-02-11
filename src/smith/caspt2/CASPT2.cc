@@ -425,7 +425,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         i = init_residual();
       for (auto& i : *sourceI)
         i = init_residual();
-     
+
       for (int ist = 0; ist != nstates_; ++ist) { // L states
         auto sist = make_shared<MultiTensor>(nstates_);
         for (int jst = 0; jst != nstates_; ++jst) {
@@ -443,7 +443,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
         sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
       }
-     
+
       for (int istate = 0; istate != nstates_; ++istate) { //K states
         sall_[istate]->zero();
         for (int jst = 0; jst != nstates_; ++jst)

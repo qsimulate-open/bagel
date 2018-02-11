@@ -279,10 +279,10 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
           unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ui->mdim()*nmult_k]);
           for (int k = 0; k != nmult_k; ++k)
             zgemm_("N", "N", dimb0, ocoeff_ui->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zui.data(), dimb1,
-                                                              0.0, tmp.get()+dimb0*ocoeff_ui->mdim()*k, dimb0); 
+                                                              0.0, tmp.get()+dimb0*ocoeff_ui->mdim()*k, dimb0);
           lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
           const int off = get<0>(shell0_.at(v->shell(0)));
-          interm.add_block(1.0, off, 0, dimb0, ocoeff_ui->mdim()*nmult_k, tmp.get()); 
+          interm.add_block(1.0, off, 0, dimb0, ocoeff_ui->mdim()*nmult_k, tmp.get());
         }
       );
     }
@@ -295,7 +295,7 @@ void Box::compute_M2M_X(shared_ptr<const Matrix> ocoeff_sj, shared_ptr<const Mat
       const int all_offset = get<1>(i.second);
       const int size = i.first->nbasis();
       for (int m = 0; m != ocoeff_sj->mdim(); ++m)
-        for (int n = 0; n != size; ++n) 
+        for (int n = 0; n != size; ++n)
           icoeff(n+local_offset, m) = ocoeff_sj->element(n+all_offset, m);
     }
     zgemm_("C", "N", icoeff.mdim(), interm.mdim(), nshell0_, 1.0, icoeff.data(), nshell0_, interm.data(), nshell0_, 0.0, olm_ji_->data(), icoeff.mdim());
@@ -598,15 +598,15 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
         const int dimb1 = v->shell(1)->nbasis();
         const ZMatrix zti(*ocoeff_ti->cut(v->offset(1), v->offset(1)+dimb1), 1.0);
         unique_ptr<complex<double>[]> tmp(new complex<double>[dimb0*ocoeff_ti->mdim()*nmult_k]);
-        for (int k = 0; k != nmult_k; ++k) 
+        for (int k = 0; k != nmult_k; ++k)
           zgemm_("N", "N", dimb0, ocoeff_ti->mdim(), dimb1, 1.0, olm_su.data() + olm_su.size_block()*k, dimb0, zti.data(), dimb1,
-                                                            0.0, tmp.get()+dimb0*ocoeff_ti->mdim()*k, dimb0); 
+                                                            0.0, tmp.get()+dimb0*ocoeff_ti->mdim()*k, dimb0);
         lock_guard<mutex> lock(mmutex[get<2>(shell0_.at(v->shell(0)))]);
         const int off = get<0>(shell0_.at(v->shell(0)));
-        interm.add_block(1.0, off, 0, dimb0, ocoeff_ti->mdim()*nmult_k, tmp.get()); 
+        interm.add_block(1.0, off, 0, dimb0, ocoeff_ti->mdim()*nmult_k, tmp.get());
       }
     );
-  }   
+  }
   tasks.compute();
 
   ZMatrix kjr(olm_ndim_, nshell0_);
@@ -619,7 +619,7 @@ shared_ptr<const Matrix> Box::compute_Fock_ff_K(shared_ptr<const Matrix> ocoeff_
     const int local_offset = get<0>(i.second);
     const int all_offset = get<1>(i.second);
     for (int i = 0; i != olm_ndim_; ++i)
-      blas::ax_plus_y_n(1.0, krj->element_ptr(local_offset, i), dimb0, out->element_ptr(all_offset, i)); 
+      blas::ax_plus_y_n(1.0, krj->element_ptr(local_offset, i), dimb0, out->element_ptr(all_offset, i));
   }
 
   return out;
@@ -790,7 +790,7 @@ shared_ptr<const ZMatrix> Box::shift_localLX(const int lmax, const shared_ptr<co
           const int k = m - l + b + j;
           const double prefactor = rr * plm0[a*a+a+b] * invfac[a+abs(b)];
           const complex<double> Oab = polar(prefactor, -b*phi);
-          lmjk.element(l*l+m, j*j+k) = Oab;        
+          lmjk.element(l*l+m, j*j+k) = Oab;
         }
       }
     }
@@ -830,7 +830,7 @@ shared_ptr<const ZMatrix> Box::shift_localMX(const int lmax, shared_ptr<const ZM
           const int b = m - l + k - j;
           double prefactor = plm0[a*a+a+b] * rr * f(a-abs(b));
           const complex<double> Mab = phase_l * polar(prefactor, b*phi);
-          lmjk.element(l*l+m, j*j+k) = Mab;        
+          lmjk.element(l*l+m, j*j+k) = Mab;
         }
       }
     }

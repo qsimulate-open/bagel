@@ -44,7 +44,7 @@ class ASD_DMRG {
     int nspin_;
     int ntrunc_;
     int maxiter_;
-    
+
     std::vector<int> active_electrons_;
     std::vector<int> active_sizes_;
     std::vector<int> region_sizes_;
