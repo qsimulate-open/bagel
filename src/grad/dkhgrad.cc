@@ -28,7 +28,7 @@
 #include <src/mat1e/nai.h>
 #include <src/mat1e/rel/small1e.h>
 #include <src/mat1e/overlap.h>
-#include <src/mat1e/contrcoeff.h>
+#include <src/wfn/contractmat.h>
 
 using namespace std;
 using namespace bagel;
@@ -62,7 +62,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   auto pvp = make_shared<const Matrix>(*wmat % small1e[0] * *wmat);
 
   // Projection operator from uncontracted to contracted AO basis
-  auto pmat = make_shared<const ContrCoeff>(mol_, nbasis);
+  auto pmat = make_shared<const ContractMat>(mol_, nbasis);
 
   // Lagrange multiplier for diagonalization of kinetic operator
   auto zpq = make_shared<Matrix>(nbasis, nbasis);
@@ -590,7 +590,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden(shared_ptr<const Matrix> rdm1, sh
                                                 shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat,
                                                 shared_ptr<const Matrix> wmat_rev, shared_ptr<const DiagMatrix> t,
                                                 shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp,
-                                                shared_ptr<Matrix> zpq, shared_ptr<Matrix> ypq) {
+                                                shared_ptr<const Matrix> zpq, shared_ptr<const Matrix> ypq) {
   // Extra contributions stem for dependence of energy on overlap matrix (due to reverse transformation)
   const int nbasis = t->ndim();
   const double c2 = c__ * c__;

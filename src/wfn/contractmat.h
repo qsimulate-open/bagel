@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: contrcoeff.h
+// Filename: contractmat.h
 // Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
@@ -23,28 +23,28 @@
 //
 
 
-#ifndef __SRC_MAT1E_CONTRCOEFF_H
-#define __SRC_MAT1E_CONTRCOEFF_H
+#ifndef __SRC_WFN_CONTRACTMAT_H
+#define __SRC_WFN_CONTRACTMAT_H
 
 #include <src/util/math/matrix.h>
 #include <src/molecule/molecule.h>
 
 namespace bagel {
 
-class ContrCoeff : public Matrix {
+class ContractMat : public Matrix {
   protected:
     std::shared_ptr<const Molecule> mol_;
     void init(std::shared_ptr<const Molecule>);
 
   public:
-    ContrCoeff() { }
-    ContrCoeff(std::shared_ptr<const Molecule>, int);
+    ContractMat() { }
+    ContractMat(std::shared_ptr<const Molecule>, int);
 };
 
 }
 
 #include <src/util/archive.h>
-BOOST_CLASS_EXPORT_KEY(bagel::ContrCoeff)
+BOOST_CLASS_EXPORT_KEY(bagel::ContractMat)
 
 #endif
 

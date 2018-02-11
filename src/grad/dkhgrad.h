@@ -51,7 +51,7 @@ class DKHgrad {
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const DiagMatrix>,
                                                 std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>,
-                                                std::shared_ptr<Matrix>, std::shared_ptr<Matrix>);
+                                                std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
 
   public:
     DKHgrad() { }

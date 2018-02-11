@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: contrcoeff.cc
-// Copyright (C) 2016 Toru Shiozaki
+// Filename: contractmat.cc
+// Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
 // Maintainer: Shiozaki group
@@ -23,21 +23,21 @@
 //
 
 
-#include <src/mat1e/contrcoeff.h>
+#include <src/wfn/contractmat.h>
 #include <src/integral/os/overlapbatch.h>
 
 using namespace std;
 using namespace bagel;
 
-BOOST_CLASS_EXPORT_IMPLEMENT(ContrCoeff)
+BOOST_CLASS_EXPORT_IMPLEMENT(ContractMat)
 
 
-ContrCoeff::ContrCoeff(shared_ptr<const Molecule> mol, int nunc) : Matrix(nunc, mol->nbasis()) {
+ContractMat::ContractMat(shared_ptr<const Molecule> mol, int nunc) : Matrix(nunc, mol->nbasis()) {
   init(mol);
 }
 
 
-void ContrCoeff::init(shared_ptr<const Molecule> mol) {
+void ContractMat::init(shared_ptr<const Molecule> mol) {
   int npos = 0, mpos = 0, nsize = 0, msize = 0;
   auto oa = mol->offsets().begin();
   for (auto a = mol->atoms().begin(); a != mol->atoms().end(); ++a, ++oa) {
