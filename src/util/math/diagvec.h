@@ -52,9 +52,9 @@ namespace bagel {
       }
     }
     size_t size() const { return data_.size(); }
-    const VectorB *data() const { return &data_; }
-    double &operator()(const int i) { return data_(i); }
-    const double &operator()(const int i) const { return data_(i); }
+    const VectorB& data() const { return data_; }
+    double& operator()(const int i) { return data_(i); }
+    const double& operator()(const int i) const { return data_(i); }
     void print(const std::string tag = "", int len = 0) const {
       if (tag != "")
         std::cout << std::endl << "  ++ " << tag << " ++" << std::endl << std::endl;

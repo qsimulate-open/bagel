@@ -27,7 +27,7 @@
 
 namespace bagel {
 
-  Matrix operator*(const DiagVec &v, const Matrix &m) {
+  Matrix operator*(const DiagVec& v, const Matrix& m) {
     assert(m.ndim() == v.size());
     Matrix out(v.size(), v.size());
     for (int i = 0; i < m.mdim(); ++i) {
@@ -38,7 +38,7 @@ namespace bagel {
     return out;
   }
 
-  Matrix operator*(const Matrix &m, const DiagVec &v) {
+  Matrix operator*(const Matrix& m, const DiagVec& v) {
     assert(m.mdim() == v.size());
     Matrix out = m;
     for (int i = 0; i != m.mdim(); ++i)
@@ -46,7 +46,7 @@ namespace bagel {
     return out;
   }
 
-  DiagVec operator*(const DiagVec &v1, const DiagVec &v2) {
+  DiagVec operator*(const DiagVec& v1, const DiagVec& v2) {
     assert(v1.size() == v2.size());
     DiagVec out(v1.size());
     for (int i = 0; i != v1.size(); ++i) {
