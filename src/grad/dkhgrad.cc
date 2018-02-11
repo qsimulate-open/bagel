@@ -395,7 +395,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
         }
         dkh2(p) = OGCFN(p, p) * dH(p) - OGCFNN(p, p) * H(p) * dE(p) - OOGCFN(p, p) * H(p) * dE(p);
       }
-      dkh2 += OHNFC * G.diag() + NHOGC * F.diag();
+      dkh2 += DiagMatrix(OHNFC * G.diag() + NHOGC * F.diag());
     }
 
     *den += *wmat * dkh2 ^ *wmat;
