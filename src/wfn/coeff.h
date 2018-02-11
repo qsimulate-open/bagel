@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_SCF_COEFF_H
-#define __SRC_SCF_COEFF_H
+#ifndef __SRC_WFN_COEFF_H
+#define __SRC_WFN_COEFF_H
 
 #include <src/wfn/geometry.h>
 

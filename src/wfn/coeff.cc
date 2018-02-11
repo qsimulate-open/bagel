@@ -23,11 +23,9 @@
 //
 
 #include <algorithm>
-#include <src/scf/coeff.h>
 #include <cassert>
-#include <iostream>
-#include <iomanip>
 #include <src/util/f77.h>
+#include <src/wfn/coeff.h>
 
 using namespace std;
 using namespace bagel;

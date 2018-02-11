@@ -26,7 +26,7 @@
 #ifndef _BAGEL_WFN_CIWFN_H
 #define _BAGEL_WFN_CIWFN_H
 
-#include <src/scf/coeff.h>
+#include <src/wfn/coeff.h>
 #include <src/wfn/geometry.h>
 #include <src/ci/fci/dvec.h>
 #include <src/ci/zfci/reldvec.h>
