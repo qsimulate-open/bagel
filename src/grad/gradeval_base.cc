@@ -45,10 +45,7 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
     vector<shared_ptr<GradTask>> task2;
     if (geom_->hcoreinfo()->dkh()) {
       auto dkh = make_shared<DKHgrad>(geom_);
-      shared_ptr<const Matrix> tden = dkh->compute_tden(d);
-      array<shared_ptr<const Matrix>, 2> vden = dkh->compute_vden(d);
-      shared_ptr<const Matrix> sden = dkh->compute_sden(d, w);
-      task2 = contract_graddkh1e(tden, vden[0], vden[1], sden);
+      task2 = contract_graddkh1e(dkh->compute(d, w));
     } else {
       task2 = contract_grad1e<GradTask1>(d, w);
     }
@@ -138,7 +135,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
 }
 
 
-vector<shared_ptr<GradTask>> GradEval_base::contract_graddkh1e(shared_ptr<const Matrix> tden, shared_ptr<const Matrix> vden, shared_ptr<const Matrix> pvpden, shared_ptr<const Matrix> sden) {
+vector<shared_ptr<GradTask>> GradEval_base::contract_graddkh1e(array<shared_ptr<const Matrix>, 4> den) {
   auto geom = make_shared<Molecule>(*geom_);
   geom = geom->uncontract();
   vector<shared_ptr<GradTask>> out;
@@ -167,7 +164,7 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_graddkh1e(shared_ptr<const 
           vector<int> atom = {iatom0, iatom1};
           vector<int> offset_ = {*o0, *o1};
 
-          out.push_back(make_shared<GradTask1d>(input, atom, offset_, tden, vden, pvpden, sden, this));
+          out.push_back(make_shared<GradTask1d>(input, atom, offset_, den, this));
         }
       }
     }

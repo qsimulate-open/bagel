@@ -63,6 +63,11 @@ DKHgrad::DKHgrad(shared_ptr<const Molecule> current) {
   zmult_ = ederiv_ = Matrix(nbasis_, nbasis_);
 }
 
+array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> erdm1) {
+  array<shared_ptr<const Matrix>, 2> vden = compute_vden(rdm1);
+  return { compute_tden(rdm1), vden[0], vden[1], compute_sden(rdm1, erdm1) };
+}
+
 shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1) {
   const double c2 = c__ * c__;
   DiagVec E(nbasis_);

@@ -178,22 +178,18 @@ class GradTask1rf : public GradTask {
 class GradTask1d : public GradTask {
   private:
     std::array<std::shared_ptr<const Shell>, 2> shell_;
-    std::shared_ptr<const Matrix> tden_;
-    std::shared_ptr<const Matrix> vden_;
-    std::shared_ptr<const Matrix> pvpden_;
-    std::shared_ptr<const Matrix> sden_;
+    std::array<std::shared_ptr<const Matrix>, 4> den_;
 
     std::shared_ptr<GradFile> compute_nai() const;
     std::shared_ptr<GradFile> compute_smallnai() const;
     // implemented in gradeval_base.h
     template<typename TBatch>
-    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix> den) const;
+    std::shared_ptr<GradFile> compute_os(std::shared_ptr<const Matrix>) const;
 
   public:
     GradTask1d(const std::array<std::shared_ptr<const Shell>,2>& s, const std::vector<int>& a, const std::vector<int>& o,
-              const std::shared_ptr<const Matrix> tden, const std::shared_ptr<const Matrix> vden, const std::shared_ptr<const Matrix> pvpden,
-              const std::shared_ptr<const Matrix> sden, GradEval_base* p)
-      : GradTask(a, o, p), shell_(s), tden_(tden), vden_(vden), pvpden_(pvpden), sden_(sden) { }
+              const std::array<std::shared_ptr<const Matrix>, 4> den, GradEval_base* p)
+      : GradTask(a, o, p), shell_(s), den_(den) { }
     void compute();
 };
 

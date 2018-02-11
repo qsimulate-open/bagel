@@ -50,7 +50,7 @@ class GradEval_base {
     template<typename TaskType>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
     /// contract 1-electron gradient integrals used for DKH
-    std::vector<std::shared_ptr<GradTask>> contract_graddkh1e(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+    std::vector<std::shared_ptr<GradTask>> contract_graddkh1e(std::array<std::shared_ptr<const Matrix>, 4>);
     /// contract small NAI gradient integrals with an array of densities
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
     /// contract finite-nucleus NAI gradient

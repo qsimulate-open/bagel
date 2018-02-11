@@ -32,7 +32,7 @@
 namespace bagel {
 
 class DKHgrad {
-  private:
+  protected:
     // Number of uncontracted basis functions
     int nbasis_;
 
@@ -53,16 +53,19 @@ class DKHgrad {
     // Energy derivative with respect to momentum orbital rotation
     Matrix ederiv_;
 
-  public:
-    DKHgrad() { }
-    DKHgrad(std::shared_ptr<const Molecule>);
-
     // Effective density matrix for kinetic gradient
     std::shared_ptr<const Matrix> compute_tden(std::shared_ptr<const Matrix>);
     // Effective density matrices for NAI/SmallNAI gradients
     std::array<std::shared_ptr<const Matrix>, 2> compute_vden(std::shared_ptr<const Matrix>);
     // Effective density matrix for overlap gradient
     std::shared_ptr<const Matrix> compute_sden(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
+
+  public:
+    DKHgrad() { }
+    DKHgrad(std::shared_ptr<const Molecule>);
+
+    // Compute array of densities needed for DKH gradient
+    std::array<std::shared_ptr<const Matrix>, 4> compute(std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>);
 };
 
 }
