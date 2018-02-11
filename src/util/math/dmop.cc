@@ -25,11 +25,10 @@
 
 #include <src/util/math/diagmatrix.h>
 
-// using namespace std;
-// using namespace bagel;
-namespace bagel {
+using namespace std;
+using namespace bagel;
 
-Matrix operator*(const DiagMatrix& v, const Matrix& m) {
+Matrix bagel::operator*(const DiagMatrix& v, const Matrix& m) {
   assert(m.ndim() == v.ndim());
   Matrix out(v.ndim(), v.mdim());
   for (int i = 0; i < m.mdim(); ++i) {
@@ -40,7 +39,7 @@ Matrix operator*(const DiagMatrix& v, const Matrix& m) {
   return out;
 }
 
-Matrix operator*(const Matrix& m, const DiagMatrix& v) {
+Matrix bagel::operator*(const Matrix& m, const DiagMatrix& v) {
   assert(m.mdim() == v.mdim());
   Matrix out = m;
   for (int i = 0; i != m.mdim(); ++i)
@@ -48,12 +47,11 @@ Matrix operator*(const Matrix& m, const DiagMatrix& v) {
   return out;
 }
 
-DiagMatrix operator*(const DiagMatrix& v1, const DiagMatrix& v2) {
+DiagMatrix bagel::operator*(const DiagMatrix& v1, const DiagMatrix& v2) {
   assert(v1.ndim() == v2.ndim());
   DiagMatrix out(v1.ndim());
   for (int i = 0; i != v1.ndim(); ++i) {
     out(i) = v1(i) * v2(i);
   }
   return out;
-}
 }
