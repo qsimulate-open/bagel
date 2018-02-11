@@ -392,7 +392,8 @@ shared_ptr<const Matrix> DKHgrad::compute_tden(shared_ptr<const Matrix> rdm1, sh
       OGCFNNH(p) = OGCFNN(p, p) * H(p) * dE(p);
       OOGCFNH(p) = OOGCFN(p, p) * H(p) * dE(p);
     }
-    const DiagMatrix dkh2(OHNFC * G.diag() + NHOGC * F.diag() + OGCFNH.diag() - OGCFNNH.diag() - OOGCFNH.diag());
+    DiagMatrix dkh2(OHNFC * G.diag() + NHOGC * F.diag());
+    dkh2 += OGCFNH - OGCFNNH - OOGCFNH;
     *den += *wmat * dkh2 ^ *wmat;
   }
 
