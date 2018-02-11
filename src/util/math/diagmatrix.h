@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: diagvec.h
+// Filename: diagmatrix.h
 // Copyright (C) 2017 Nils Strand
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
@@ -23,23 +23,23 @@
 //
 
 
-#ifndef __SRC_MATH_DIAGVEC_H
-#define __SRC_MATH_DIAGVEC_H
+#ifndef __SRC_MATH_DIAGMATRIX_H
+#define __SRC_MATH_DIAGMATRIX_H
 
 #include <src/util/math/matrix.h>
 #include <src/util/math/vectorb.h>
 
 namespace bagel {
 
-class DiagVec {
+class DiagMatrix {
   private:
     VectorB data_;
 
   public:
-    DiagVec() { }
-    DiagVec(const size_t n) : data_(VectorB(n)) { }
-    DiagVec(const VectorB &n) : data_(n) { }
-    DiagVec(const Matrix &m) : data_(VectorB(m.mdim())) {
+    DiagMatrix() { }
+    DiagMatrix(const size_t n) : data_(VectorB(n)) { }
+    DiagMatrix(const VectorB &n) : data_(n) { }
+    DiagMatrix(const Matrix &m) : data_(VectorB(m.mdim())) {
       for (int i = 0; i != size(); ++i) {
         data_(i) = m(i, i);
 #ifndef NDEBUG
@@ -88,11 +88,11 @@ class DiagVec {
 
   };
 
-  extern Matrix operator*(const DiagVec&, const Matrix&);
+  extern Matrix operator*(const DiagMatrix&, const Matrix&);
 
-  extern Matrix operator*(const Matrix&, const DiagVec&);
+  extern Matrix operator*(const Matrix&, const DiagMatrix&);
 
-  extern DiagVec operator*(const DiagVec&, const DiagVec&);
+  extern DiagMatrix operator*(const DiagMatrix&, const DiagMatrix&);
 
 }
 
