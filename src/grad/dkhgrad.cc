@@ -457,11 +457,9 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
   const DiagMatrix& E = ta.E;
 
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
-  auto den = make_shared<Matrix>(wmat->ndim(), wmat->ndim());
-  auto pvpden = den->clone(); 
   // DKH1 correction
-  *den += *wmat * A * CPW * A ^ *wmat;
-  *pvpden += *wmat * B * CPW * B ^ *wmat;
+  auto den = make_shared<Matrix>(*wmat * A * CPW * A ^ *wmat);
+  auto pvpden = make_shared<Matrix>(*wmat * B * CPW * B ^ *wmat);
 
   auto divide_Epq = [&E](const Matrix& input) {
     shared_ptr<Matrix> out = input.clone();
