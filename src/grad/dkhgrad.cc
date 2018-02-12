@@ -361,14 +361,12 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     const Matrix CFN = CPW * F * WN;
     const Matrix CGO = CPW * G * WO;
     {
-      const Matrix HNFC = H * WN * F * CPW * G;
-      const Matrix HOGC = H * WO * G * CPW * F;
-      Matrix WHNFC(nbasis, nbasis);
-      Matrix WHOGC(nbasis, nbasis);
+      Matrix WHNFC = divide_Epq(H * WN * F * CPW * G);
+      Matrix WHOGC = divide_Epq(H * WO * G * CPW * F);
       for (int p = 0; p != nbasis; ++p) {
         for (int q = 0; q != nbasis; ++q) {
-          WHNFC(q, p) = (HNFC(q, p) + CH(q, p) * G(q) * F(p) * WN(p, p)) / (E(p) + E(q));
-          WHOGC(q, p) = (HOGC(q, p) + CH(q, p) * F(q) * G(p) * WO(p, p)) / (E(p) + E(q));
+          WHNFC(q, p) = CH(q, p) * G(q) * F(p) * WN(p, p) / (E(p) + E(q));
+          WHOGC(q, p) = CH(q, p) * F(q) * G(p) * WO(p, p) / (E(p) + E(q));
         }
         WHNFC(p, p) += H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
         WHOGC(p, p) += H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
