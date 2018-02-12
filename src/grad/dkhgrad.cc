@@ -443,7 +443,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
       (*zpq)(q, p) = fabs((*t)(p) - (*t)(q)) > 1.0e-12 ? -0.5 * ((*ypq)(q, p) - (*ypq)(p, q)) / ((*t)(q) - (*t)(p)) : 0.0;
 
   *den += *wmat * *zpq ^ *wmat;
-  return {den, zpq, ypq};
+  return make_tuple(den, zpq, ypq);
 }
 
 
@@ -486,7 +486,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
     (vint.first ? *pvpden : *den) += *wmat * WHOGCF ^ *wmat;
     (vint.second ? *pvpden : *den) += *wmat * WHNFCG ^ *wmat;
   }
-  return { den, pvpden };
+  return make_tuple(den, pvpden);
 }
 
 
