@@ -323,9 +323,24 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     *den += *wmat * EC ^ *wmat;
   }
 
+  auto divide_Epq = [&E](const Matrix& input) {
+    shared_ptr<Matrix> out = input.clone();
+    for (int p = 0; p != input.mdim(); ++p)
+      for (int q = 0; q != input.ndim(); ++q)
+        (*out)(q, p) = input(q, p) / (E(p) + E(q));
+    return *out;
+  };
+
+  auto mult_offdiag = [](const Matrix& m, const DiagMatrix& d, const bool rev) {
+    shared_ptr<Matrix> out = m.clone(); 
+    for (int p = 0; p != m.mdim(); ++p)
+      for (int q = 0; q != m.ndim(); ++q)
+        if (p != q)
+          (*out)(q, p) = m(q, p) * d(!rev ? p : q);
+    return *out;
+  };
+
   for (int i = 0; i != 12; ++i) {
-    const Matrix& N = *ta.N.at(i);
-    const Matrix& O = *ta.O.at(i);
     const DiagMatrix& F = ta.F.at(i); 
     const DiagMatrix& G = ta.G.at(i); 
     const DiagMatrix& H = ta.H.at(i); 
@@ -333,29 +348,15 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     const DiagMatrix& dG = ta.dG.at(i); 
     const DiagMatrix& dH = ta.dH.at(i); 
 
-    Matrix WN(nbasis, nbasis);
-    Matrix WO(nbasis, nbasis);
-    Matrix WWN(nbasis, nbasis);
-    Matrix WWO(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        WN(q, p) = N(q, p) / (E(p) + E(q));
-        WO(q, p) = O(q, p) / (E(p) + E(q));
-        WWN(q, p) = WN(q, p) / (E(p) + E(q));
-        WWO(q, p) = WO(q, p) / (E(p) + E(q));
-      }
-    }
+    const Matrix& N = *ta.N.at(i);
+    const Matrix& O = *ta.O.at(i);
+    const Matrix WN = divide_Epq(N);
+    const Matrix WO = divide_Epq(O);
+    const Matrix WWN = divide_Epq(WN);
+    const Matrix WWO = divide_Epq(WO);
 
-    Matrix CH(nbasis, nbasis);
-    Matrix CH2(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        if (p != q) {
-          CH(q, p) = CPW(q, p) * H(p);
-          CH2(q, p) = CPW(q, p) * dH(p);
-        }
-      }
-    }
+    const Matrix CH = mult_offdiag(CPW, H, false);
+    const Matrix CH2 = mult_offdiag(CPW, dH, false);
 
     const Matrix CFN = CPW * F * WN;
     const Matrix CGO = CPW * G * WO;
@@ -376,22 +377,10 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     }
 
     {
-      Matrix FN(nbasis, nbasis);
-      Matrix FO(nbasis, nbasis);
-      Matrix FNN(nbasis, nbasis);
-      Matrix FOO(nbasis, nbasis);
-      for (int p = 0; p != nbasis; ++p)
-        for (int q = 0; q != nbasis; ++q)
-          if (p != q) {
-            FN(q, p) = WN(q, p) * F(q);
-            FO(q, p) = WO(q, p) * F(q);
-            FNN(q, p) = WWN(q, p) * F(q);
-            FOO(q, p) = WWO(q, p) * F(q);
-          }
-      FN = CPW * FN;
-      FO = CPW * FO;
-      FNN = CPW * FNN;
-      FOO = CPW * FOO;
+      const Matrix FN = CPW * mult_offdiag(WN, F, true);
+      const Matrix FO = CPW * mult_offdiag(WO, F, true);
+      const Matrix FNN = CPW * mult_offdiag(WWN, F, true);
+      const Matrix FOO = CPW * mult_offdiag(WWO, F, true);
 
       Matrix GCFN2H(nbasis, nbasis);
       Matrix GCFO2H(nbasis, nbasis);
@@ -464,58 +453,40 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
 tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
   DKHgrad::compute_vden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
                          shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
-  const int nbasis = t->ndim();
-
   const TempArrays ta(t, v, pvp);
   const DiagMatrix& A = ta.A;
   const DiagMatrix& B = ta.B;
   const DiagMatrix& E = ta.E;
 
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
-  auto den = make_shared<Matrix>(nbasis, nbasis);
-  auto pvpden = make_shared<Matrix>(nbasis, nbasis);
+  auto den = make_shared<Matrix>(wmat->ndim(), wmat->ndim());
+  auto pvpden = den->clone(); 
   // DKH1 correction
   *den += *wmat * A * CPW * A ^ *wmat;
   *pvpden += *wmat * B * CPW * B ^ *wmat;
 
+  auto divide_Epq = [&E](const Matrix& input) {
+    shared_ptr<Matrix> out = input.clone();
+    for (int p = 0; p != input.mdim(); ++p)
+      for (int q = 0; q != input.ndim(); ++q)
+        (*out)(q, p) = input(q, p) / (E(p) + E(q));
+    return *out;
+  };
+
   for (int i = 0; i != 12; ++i) {
-    const Matrix& N = *ta.N.at(i);
-    const Matrix& O = *ta.O.at(i);
     const DiagMatrix& F = ta.F.at(i); 
     const DiagMatrix& G = ta.G.at(i); 
     const DiagMatrix& H = ta.H.at(i); 
+
+    const Matrix WN = divide_Epq(*ta.N.at(i));
+    const Matrix WO = divide_Epq(*ta.O.at(i));
+
+    const Matrix WHOGCF = divide_Epq(H * WO * G * CPW * F);
+    const Matrix WHNFCG = divide_Epq(H * WN * F * CPW * G);
+
     const pair<int,int>& vint = ta.vint.at(i);
-
-    Matrix WN(nbasis, nbasis);
-    Matrix WO(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        WN(q, p) = N(q, p) / (E(p) + E(q));
-        WO(q, p) = O(q, p) / (E(p) + E(q));
-      }
-    }
-
-    Matrix WHOGCF(nbasis, nbasis);
-    Matrix WHNFCG(nbasis, nbasis);
-    {
-      const Matrix HOGCF = H * WO * G * CPW * F;
-      const Matrix HNFCG = H * WN * F * CPW * G;
-      for (int p = 0; p != nbasis; ++p)
-        for (int q = 0; q != nbasis; ++q) {
-          WHOGCF(q, p) = HOGCF(q, p) / (E(p) + E(q));
-          WHNFCG(q, p) = HNFCG(q, p) / (E(p) + E(q));
-        }
-    }
-
-    if (vint.first)
-      *pvpden += *wmat * WHOGCF ^ *wmat;
-    else
-      *den += *wmat * WHOGCF ^ *wmat;
-
-    if (vint.second)
-      *pvpden += *wmat * WHNFCG ^ *wmat;
-    else
-      *den += *wmat * WHNFCG ^ *wmat;
+    (vint.first ? *pvpden : *den) += *wmat * WHOGCF ^ *wmat;
+    (vint.second ? *pvpden : *den) += *wmat * WHNFCG ^ *wmat;
   }
   return { den, pvpden };
 }
@@ -528,47 +499,38 @@ shared_ptr<const Matrix> DKHgrad::compute_sden_(shared_ptr<const Matrix> rdm1, s
                                                 shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp,
                                                 shared_ptr<const Matrix> zpq, shared_ptr<const Matrix> ypq) {
   // Extra contributions stem for dependence of energy on overlap matrix (due to reverse transformation)
-  const int nbasis = t->ndim();
-  const double c2 = c__ * c__;
-
   const TempArrays ta(t, v, pvp);
   const DiagMatrix& E = ta.E; 
   const DiagMatrix& A = ta.A; 
   const DiagMatrix& B = ta.B; 
 
   const Matrix CPW = *pmat * *rdm1 ^ (*wmat_rev % *pmat);
-  auto den = make_shared<Matrix>(nbasis, nbasis);
   // DKH1 correction
-  *den += 2.0 * ((CPW * E - c2 * CPW) + CPW * (A * *v * A + B * *pvp * B)) ^ *wmat;
+  const double c2 = c__ * c__;
+  auto den = make_shared<Matrix>(2.0 * ((CPW * E - c2 * CPW) + CPW * (A * *v * A + B * *pvp * B)) ^ *wmat);
+
+  auto divide_Epq = [&E](const Matrix& input) {
+    shared_ptr<Matrix> out = input.clone();
+    for (int p = 0; p != input.mdim(); ++p)
+      for (int q = 0; q != input.ndim(); ++q)
+        (*out)(q, p) = input(q, p) / (E(p) + E(q));
+    return *out;
+  };
 
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
-    const Matrix& N = *ta.N.at(i);
-    const Matrix& O = *ta.O.at(i);
     const DiagMatrix& F = ta.F.at(i); 
     const DiagMatrix& G = ta.G.at(i); 
     const DiagMatrix& H = ta.H.at(i); 
-
-    Matrix WN(nbasis, nbasis);
-    Matrix WO(nbasis, nbasis);
-    for (int p = 0; p != nbasis; ++p) {
-      for (int q = 0; q != nbasis; ++q) {
-        WN(q, p) = N(q, p) / (E(p) + E(q));
-        WO(q, p) = O(q, p) / (E(p) + E(q));
-      }
-    }
+    const Matrix WN = divide_Epq(*ta.N.at(i));
+    const Matrix WO = divide_Epq(*ta.O.at(i));
     *den += CPW * (F * WN * H * WO * G + G * WO * H * WN * F) ^ *wmat;
   }
 
   // a_tilde from dL/dU_pq
-  const Matrix at = 2.0 * *zpq * *t;
   // X_bar from Lagrangian, satisfies dL/dU_pq = 0
-  Matrix xb(nbasis, nbasis);
-  for (int p = 0; p != nbasis; ++p) {
-    for (int q = 0; q != nbasis; ++q) {
-      xb(q, p) = 0.25 * ((*ypq)(q, p) + (*ypq)(p, q) + at(q, p) + at(p, q));
-    }
-  }
+  Matrix xb(0.5 * *ypq + *zpq * *t);
+  xb.symmetrize();
 
   *den -= (*pmat * *erdm1 ^ *pmat) + (*wmat * xb ^ *wmat);
   return den;
