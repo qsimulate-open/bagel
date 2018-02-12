@@ -44,8 +44,7 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
   // collect den0ci
   {
     unique_ptr<double[]> d0data = den0ci->get_block();
-    auto d0 = make_shared<double>(d0data[0]);
-    den0cirdm = d0;
+    den0cirdm = make_shared<double>(d0data[0]);
   }
 
   // collect den1ci
@@ -79,7 +78,8 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
             for (size_t io3 = 0; io3 != i3.size(); ++io3)
               for (size_t io2 = 0; io2 != i2.size(); ++io2)
                 for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * io3))], i0.size(), d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
+                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * io3))], i0.size(),
+                         d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
           }
     den2cirdm = d2->copy();
   }
@@ -107,7 +107,8 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
                       for (size_t io2 = 0; io2 != i2.size(); ++io2)
                         for (size_t io1 = 0; io1 != i1.size(); ++io1)
                           copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5))))],
-                              i0.size(), d3->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
+                                 i0.size(), d3->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2,
+                                 io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
               }
     den3cirdm = d3->copy();
   }
@@ -135,7 +136,8 @@ tuple<shared_ptr<double>,shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>
                       for (size_t io2 = 0; io2 != i2.size(); ++io2)
                         for (size_t io1 = 0; io1 != i1.size(); ++io1)
                           copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5))))],
-                              i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
+                                 i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2,
+                                 io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
               }
     den4cirdm = d4->copy();
   }
@@ -151,7 +153,7 @@ shared_ptr<VectorB> CASPT2::CASPT2::contract_rdm_deriv(shared_ptr<const CIWfn> c
 
   // rdm0deriv contraction
   {
-    blas::ax_plus_y_n(den0cirdmt.get()[0], rdm0deriv_->data(), size, out->data()+offset);
+    blas::ax_plus_y_n(*den0cirdmt, rdm0deriv_->data(), size, out->data()+offset);
   }
 
   // rdm1deriv contraction
