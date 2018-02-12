@@ -420,18 +420,12 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
       const Matrix OGCFN = WO * G * CPW * F * WN;
       const Matrix OGCFNN = WO * G * CPW * F * WWN;
       const Matrix OOGCFN = WWO * G * CPW * F * WN;
-      const Matrix OHNF = WO * H * (WN * dF - WWN * F * dE);
-      const Matrix NHOG = WN * H * (WO * dG - WWO * G * dE);
-      Matrix OHNFC(nbasis, nbasis);
-      Matrix NHOGC(nbasis, nbasis);
-      for (int p = 0; p != nbasis; ++p) {
-        for (int q = 0; q != nbasis; ++q) {
-          OHNFC(q, p) = OHNF(q, p) * CPW(q, p);
-          NHOGC(q, p) = NHOG(q, p) * CPW(q, p);
-        }
+      for (int p = 0; p != nbasis; ++p)
         dkh2(p) = OGCFN(p, p) * dH(p) - OGCFNN(p, p) * H(p) * dE(p) - OOGCFN(p, p) * H(p) * dE(p);
-      }
-      dkh2 += DiagMatrix(OHNFC * G.diag() + NHOGC * F.diag());
+
+      const Matrix OHNF = *CPW.hadamard_product(WO * H * (WN * dF - WWN * F * dE));
+      const Matrix NHOG = *CPW.hadamard_product(WN * H * (WO * dG - WWO * G * dE));
+      dkh2 += DiagMatrix(OHNF * G.diag() + NHOG * F.diag());
     }
 
     *den += *wmat * dkh2 ^ *wmat;

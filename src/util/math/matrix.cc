@@ -367,6 +367,14 @@ void Matrix::sqrt() {
 #endif
 }
 
+
+shared_ptr<Matrix> Matrix::hadamard_product(const Matrix& o) const {
+  assert(size() == o.size());
+  shared_ptr<Matrix> out = o.clone();
+  vdmul_(o.size(), data(), o.data(), out->data());
+  return out;
+}
+
 // CAUTION: assumes no orbital is rotated twice
 void Matrix::rotate(vector<tuple<int, int, double>>& rotations) {
   if (rotations.size() > 6*resources__->max_num_threads()) {
