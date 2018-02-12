@@ -46,8 +46,8 @@ class DiagMatrix {
     double& operator()(const int i) { return data_(i); }
     const double& operator()(const int i) const { return data_(i); }
 
-    DiagMatrix& operator=(const DiagMatrix& o) { data_ = o.data_; }
-    DiagMatrix& operator=(DiagMatrix&& o) { data_ = std::move(o.data_); }
+    DiagMatrix& operator=(const DiagMatrix& o) { data_ = o.data_; return *this; }
+    DiagMatrix& operator=(DiagMatrix&& o) { data_ = std::move(o.data_); return *this; }
     DiagMatrix& operator+=(const DiagMatrix& o) { data_ += o.data_; return *this; }
     DiagMatrix& operator-=(const DiagMatrix& o) { data_ -= o.data_; return *this; }
     DiagMatrix operator+(const DiagMatrix& o) const { DiagMatrix out(*this); out += o; return out; }
