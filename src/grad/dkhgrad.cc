@@ -82,10 +82,213 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
 }
 
 
+namespace {
+struct TempArrays { 
+  array<shared_ptr<const Matrix>,12> N;
+  array<shared_ptr<const Matrix>,12> O;
+  array<DiagMatrix,12> F;
+  array<DiagMatrix,12> G;
+  array<DiagMatrix,12> H;
+  array<DiagMatrix,12> dF;
+  array<DiagMatrix,12> dG;
+  array<DiagMatrix,12> dH;
+  array<pair<int,int>,12> vint;
+  DiagMatrix E;
+  DiagMatrix A;
+  DiagMatrix B;
+  DiagMatrix K;
+  DiagMatrix dE;
+  DiagMatrix dA;
+  DiagMatrix dB;
+  DiagMatrix dK;
+
+  TempArrays(shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp)
+    : E(v->ndim()), A(v->ndim()), B(v->ndim()), K(v->ndim()), dE(v->ndim()), dA(v->ndim()), dB(v->ndim()), dK(v->ndim()) {
+
+    const int nbasis = v->ndim();
+    const double c2 = c__ * c__;
+    for (int p = 0; p != nbasis; ++p) {
+      E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
+      A(p) = sqrt((c2 + E(p)) / (2.0 * E(p)));
+      K(p) = c__ / (E(p) + c2);
+      B(p) = A(p) * K(p);
+      dE(p) = c__ / sqrt(2.0 * (*t)(p) + c2);
+      dA(p) = -c2 * dE(p) / (4.0 * pow(E(p), 2) * A(p));
+      dK(p) = -c__ * dE(p) / pow(E(p) + c2, 2);
+      dB(p) = A(p) * dK(p) + dA(p) * K(p);
+    }
+
+    for (int i = 0; i != 12; ++i) { // loop over terms
+      F[i] = DiagMatrix(nbasis);
+      G[i] = DiagMatrix(nbasis);
+      H[i] = DiagMatrix(nbasis);
+      dF[i] = DiagMatrix(nbasis);
+      dG[i] = DiagMatrix(nbasis);
+      dH[i] = DiagMatrix(nbasis);
+      switch (i) {
+      case 0:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = B(p);
+          G[i](p) = A(p);
+          H[i](p) = -B(p) * E(p) * A(p);
+          dF[i](p) = dB(p);
+          dG[i](p) = dA(p);
+          dH[i](p) = -dB(p) * E(p) * A(p) - B(p) * dE(p) * A(p) - B(p) * E(p) * dA(p);
+        }
+        N[i] = pvp;
+        O[i] = v;
+        vint[i] = make_pair(1, 0);
+        break;
+      case 1:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = A(p);
+          G[i](p) = B(p);
+          H[i](p) = -A(p) * E(p) * B(p);
+          dF[i](p) = dA(p);
+          dG[i](p) = dB(p);
+          dH[i](p) = -dA(p) * E(p) * B(p) - A(p) * dE(p) * B(p) - A(p) * E(p) * dB(p);
+        }
+        N[i] = v;
+        O[i] = pvp;
+        vint[i] = make_pair(0, 1);
+        break;
+      case 2:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = G[i](p) = A(p);
+          H[i](p) = 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * E(p);
+          dF[i](p) = dG[i](p) = dA(p);
+          dH[i](p) = 4.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) * E(p) + 2.0 * pow(A(p) * K(p), 2) * E(p)
+                + 4.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p) * E(p) + 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * dE(p);
+        }
+        N[i] = O[i] = v;
+        vint[i] = make_pair(0, 0);
+        break;
+      case 3:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = G[i](p) = B(p);
+          H[i](p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * (*t)(p));
+          dF[i](p) = dG[i](p) = dB(p);
+          dH[i](p) = ((2.0 * B(p) * dB(p) * E(p) + pow(B(p), 2) * dE(p)) * (*t)(p) * K(p)
+                - pow(B(p), 2) * E(p) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (2.0 * pow((*t)(p) * K(p), 2) * K(p));
+        }
+        N[i] = O[i] = pvp;
+        vint[i] = make_pair(1, 1);
+        break;
+      case 4:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = B(p);
+          G[i](p) = A(p) * E(p);
+          H[i](p) = -B(p) * A(p) / 2.0;
+          dF[i](p) = dB(p);
+          dG[i](p) = dA(p) * E(p) + A(p) * dE(p);
+          dH[i](p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
+        }
+        N[i] = pvp;
+        O[i] = v;
+        vint[i] = make_pair(1, 0);
+        break;
+      case 5:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = A(p);
+          G[i](p) = B(p) * E(p);
+          H[i](p) = -A(p) * B(p) / 2.0;
+          dF[i](p) = dA(p);
+          dG[i](p) = dB(p) * E(p) + B(p) * dE(p);
+          dH[i](p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
+        }
+        N[i] = v;
+        O[i] = pvp;
+        vint[i] = make_pair(0, 1);
+        break;
+      case 6:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = A(p);
+          G[i](p) = A(p) * E(p);
+          H[i](p) = pow(A(p) * K(p), 2) * (*t)(p);
+          dF[i](p) = dA(p);
+          dG[i](p) = dA(p) * E(p) + A(p) * dE(p);
+          dH[i](p) = 2.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+                + 2.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p);
+        }
+        N[i] = O[i] = v;
+        vint[i] = make_pair(0, 0);
+        break;
+      case 7:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = B(p);
+          G[i](p) = B(p) * E(p);
+          H[i](p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
+          dF[i](p) = dB(p);
+          dG[i](p) = dB(p) * E(p) + B(p) * dE(p);
+          dH[i](p) = (2.0 * B(p) * dB(p) * (*t)(p) * K(p)
+                - pow(B(p), 2) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (4.0 * pow((*t)(p) * K(p), 2) * K(p));
+        }
+        N[i] = O[i] = pvp;
+        vint[i] = make_pair(1, 1);
+        break;
+      case 8:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = E(p) * B(p);
+          G[i](p) = A(p);
+          H[i](p) = -B(p) * A(p) / 2.0;
+          dF[i](p) = dE(p) * B(p) + E(p) * dB(p);
+          dG[i](p) = dA(p);
+          dH[i](p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
+        }
+        N[i] = pvp;
+        O[i] = v;
+        vint[i] = make_pair(1, 0);
+        break;
+      case 9:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = E(p) * A(p);
+          G[i](p) = B(p);
+          H[i](p) = -A(p) * B(p) / 2.0;
+          dF[i](p) = dE(p) * A(p) + E(p) * dA(p);
+          dG[i](p) = dB(p);
+          dH[i](p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
+        }
+        N[i] = v;
+        O[i] = pvp;
+        vint[i] = make_pair(0, 1);
+        break;
+      case 10:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = E(p) * A(p);
+          G[i](p) = A(p);
+          H[i](p) = pow(A(p) * K(p), 2) * (*t)(p);
+          dF[i](p) = dE(p) * A(p) + E(p) * dA(p);
+          dG[i](p) = dA(p);
+          dH[i](p) = 2.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
+                + 2.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p);
+        }
+        N[i] = O[i] = v;
+        vint[i] = make_pair(0, 0);
+        break;
+      case 11:
+        for (int p = 0; p != nbasis; ++p) {
+          F[i](p) = E(p) * B(p);
+          G[i](p) = B(p);
+          H[i](p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
+          dF[i](p) = dE(p) * B(p) + E(p) * dB(p);
+          dG[i](p) = dB(p);
+          dH[i](p) = (2.0 * B(p) * dB(p) * (*t)(p) * K(p)
+                - pow(B(p), 2) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (4.0 * pow((*t)(p) * K(p), 2) * K(p));
+        }
+        N[i] = O[i] = pvp;
+        vint[i] = make_pair(1, 1);
+        break;
+      }
+    }
+  }
+};
+}
+
 // Effective density matrix for kinetic gradient. This function also returns zpq and ypq
 tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>>
   DKHgrad::compute_tden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
                          shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
+  const double c2 = c__ * c__;
   const int nbasis = t->ndim();
 
   // output
@@ -93,25 +296,14 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   auto zpq = make_shared<Matrix>(nbasis, nbasis);
   auto ypq = make_shared<Matrix>(nbasis, nbasis);
 
-  const double c2 = c__ * c__;
-  DiagMatrix E(nbasis);
-  DiagMatrix A(nbasis);
-  DiagMatrix B(nbasis);
-  DiagMatrix K(nbasis);
-  DiagMatrix dE(nbasis);
-  DiagMatrix dA(nbasis);
-  DiagMatrix dK(nbasis);
-  DiagMatrix dB(nbasis);
-  for (int p = 0; p != nbasis; ++p) {
-    E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
-    A(p) = sqrt((c2 + E(p)) / (2.0 * E(p)));
-    K(p) = c__ / (E(p) + c2);
-    B(p) = A(p) * K(p);
-    dE(p) = c__ / sqrt(2.0 * (*t)(p) + c2);
-    dA(p) = -c2 * dE(p) / (4.0 * pow(E(p), 2) * A(p));
-    dK(p) = -c__ * dE(p) / pow(E(p) + c2, 2);
-    dB(p) = A(p) * dK(p) + dA(p) * K(p);
-  }
+  const TempArrays ta(t, v, pvp);
+
+  const DiagMatrix& A = ta.A;
+  const DiagMatrix& B = ta.B;
+  const DiagMatrix& E = ta.E;
+  const DiagMatrix& dA = ta.dA;
+  const DiagMatrix& dB = ta.dB;
+  const DiagMatrix& dE = ta.dE;
 
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
   {
@@ -131,159 +323,16 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     *den += *wmat * EC ^ *wmat;
   }
 
-  Matrix N(nbasis, nbasis);
-  Matrix O(nbasis, nbasis);
-  DiagMatrix F(nbasis);
-  DiagMatrix G(nbasis);
-  DiagMatrix H(nbasis);
-  DiagMatrix dF(nbasis);
-  DiagMatrix dG(nbasis);
-  DiagMatrix dH(nbasis);
-
-  // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
-    switch (i) {
-    case 0:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * E(p) * A(p);
-        dF(p) = dB(p);
-        dG(p) = dA(p);
-        dH(p) = -dB(p) * E(p) * A(p) - B(p) * dE(p) * A(p) - B(p) * E(p) * dA(p);
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 1:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * E(p) * B(p);
-        dF(p) = dA(p);
-        dG(p) = dB(p);
-        dH(p) = -dA(p) * E(p) * B(p) - A(p) * dE(p) * B(p) - A(p) * E(p) * dB(p);
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 2:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = A(p);
-        H(p) = 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * E(p);
-        dF(p) = dG(p) = dA(p);
-        dH(p) = 4.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) * E(p) + 2.0 * pow(A(p) * K(p), 2) * E(p)
-              + 4.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p) * E(p) + 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * dE(p);
-      }
-      N = O = *v;
-      break;
-    case 3:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * (*t)(p));
-        dF(p) = dG(p) = dB(p);
-        dH(p) = ((2.0 * B(p) * dB(p) * E(p) + pow(B(p), 2) * dE(p)) * (*t)(p) * K(p)
-              - pow(B(p), 2) * E(p) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (2.0 * pow((*t)(p) * K(p), 2) * K(p));
-      }
-      N = O = *pvp;
-      break;
-    case 4:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2.0;
-        dF(p) = dB(p);
-        dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 5:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2.0;
-        dF(p) = dA(p);
-        dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 6:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = A(p) * E(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-        dF(p) = dA(p);
-        dG(p) = dA(p) * E(p) + A(p) * dE(p);
-        dH(p) = 2.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-              + 2.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p);
-      }
-      N = O = *v;
-      break;
-    case 7:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-        dF(p) = dB(p);
-        dG(p) = dB(p) * E(p) + B(p) * dE(p);
-        dH(p) = (2.0 * B(p) * dB(p) * (*t)(p) * K(p)
-              - pow(B(p), 2) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (4.0 * pow((*t)(p) * K(p), 2) * K(p));
-      }
-      N = O = *pvp;
-      break;
-    case 8:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2.0;
-        dF(p) = dE(p) * B(p) + E(p) * dB(p);
-        dG(p) = dA(p);
-        dH(p) = -dB(p) * A(p) / 2.0 - B(p) * dA(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 9:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2.0;
-        dF(p) = dE(p) * A(p) + E(p) * dA(p);
-        dG(p) = dB(p);
-        dH(p) = -dA(p) * B(p) / 2.0 - A(p) * dB(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 10:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = A(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-        dF(p) = dE(p) * A(p) + E(p) * dA(p);
-        dG(p) = dA(p);
-        dH(p) = 2.0 * A(p) * dA(p) * (*t)(p) * pow(K(p), 2) + pow(A(p) * K(p), 2)
-              + 2.0 * pow(A(p), 2) * (*t)(p) * K(p) * dK(p);
-      }
-      N = O = *v;
-      break;
-    case 11:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-        dF(p) = dE(p) * B(p) + E(p) * dB(p);
-        dG(p) = dB(p);
-        dH(p) = (2.0 * B(p) * dB(p) * (*t)(p) * K(p)
-              - pow(B(p), 2) * (K(p) + 2.0 * (*t)(p) * dK(p))) / (4.0 * pow((*t)(p) * K(p), 2) * K(p));
-      }
-      N = O = *pvp;
-      break;
-    }
+    const Matrix& N = *ta.N.at(i);
+    const Matrix& O = *ta.O.at(i);
+    const DiagMatrix& F = ta.F.at(i); 
+    const DiagMatrix& G = ta.G.at(i); 
+    const DiagMatrix& H = ta.H.at(i); 
+    const DiagMatrix& dF = ta.dF.at(i); 
+    const DiagMatrix& dG = ta.dG.at(i); 
+    const DiagMatrix& dH = ta.dH.at(i); 
+
     Matrix WN(nbasis, nbasis);
     Matrix WO(nbasis, nbasis);
     Matrix WWN(nbasis, nbasis);
@@ -416,17 +465,11 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
   DKHgrad::compute_vden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
                          shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
   const int nbasis = t->ndim();
-  const double c2 = c__ * c__;
-  DiagMatrix E(nbasis);
-  DiagMatrix A(nbasis);
-  DiagMatrix K(nbasis);
-  DiagMatrix B(nbasis);
-  for (int p = 0; p != nbasis; ++p) {
-    E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
-    A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
-    K(p) = c__ / (E(p) + c2);
-    B(p) = A(p) * K(p);
-  }
+
+  const TempArrays ta(t, v, pvp);
+  const DiagMatrix& A = ta.A;
+  const DiagMatrix& B = ta.B;
+  const DiagMatrix& E = ta.E;
 
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
   auto den = make_shared<Matrix>(nbasis, nbasis);
@@ -435,128 +478,13 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Matrix>>
   *den += *wmat * A * CPW * A ^ *wmat;
   *pvpden += *wmat * B * CPW * B ^ *wmat;
 
-  Matrix N(nbasis, nbasis);
-  Matrix O(nbasis, nbasis);
-  DiagMatrix F(nbasis);
-  DiagMatrix G(nbasis);
-  DiagMatrix H(nbasis);
-  pair<int, int> vint;
-  // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
-    switch (i) {
-    case 0:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * E(p) * A(p);
-      }
-      N = *pvp;
-      O = *v;
-      vint = make_pair(1, 0);
-      break;
-    case 1:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * E(p) * B(p);
-      }
-      N = *v;
-      O = *pvp;
-      vint = make_pair(0, 1);
-      break;
-    case 2:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = A(p);
-        H(p) = 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * E(p);
-      }
-      N = O = *v;
-      vint = make_pair(0, 0);
-      break;
-    case 3:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      vint = make_pair(1, 1);
-      break;
-    case 4:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      vint = make_pair(1, 0);
-      break;
-    case 5:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      vint = make_pair(0, 1);
-      break;
-    case 6:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = A(p) * E(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-      }
-      N = O = *v;
-      vint = make_pair(0, 0);
-      break;
-    case 7:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      vint = make_pair(1, 1);
-      break;
-    case 8:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      vint = make_pair(1, 0);
-      break;
-    case 9:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      vint = make_pair(0, 1);
-      break;
-    case 10:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = A(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-      }
-      N = O = *v;
-      vint = make_pair(0, 0);
-      break;
-    case 11:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      vint = make_pair(1, 1);
-      break;
-    }
+    const Matrix& N = *ta.N.at(i);
+    const Matrix& O = *ta.O.at(i);
+    const DiagMatrix& F = ta.F.at(i); 
+    const DiagMatrix& G = ta.G.at(i); 
+    const DiagMatrix& H = ta.H.at(i); 
+    const pair<int,int>& vint = ta.vint.at(i);
 
     Matrix WN(nbasis, nbasis);
     Matrix WO(nbasis, nbasis);
@@ -602,131 +530,25 @@ shared_ptr<const Matrix> DKHgrad::compute_sden_(shared_ptr<const Matrix> rdm1, s
   // Extra contributions stem for dependence of energy on overlap matrix (due to reverse transformation)
   const int nbasis = t->ndim();
   const double c2 = c__ * c__;
-  DiagMatrix E(nbasis);
-  DiagMatrix A(nbasis);
-  DiagMatrix K(nbasis);
-  DiagMatrix B(nbasis);
-  for (int p = 0; p != nbasis; ++p) {
-    E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
-    A(p) = sqrt((E(p) + c2) / (2.0 * E(p)));
-    K(p) = c__ / (E(p) + c2);
-    B(p) = A(p) * K(p);
-  }
+
+  const TempArrays ta(t, v, pvp);
+  const DiagMatrix& E = ta.E; 
+  const DiagMatrix& A = ta.A; 
+  const DiagMatrix& B = ta.B; 
 
   const Matrix CPW = *pmat * *rdm1 ^ (*wmat_rev % *pmat);
   auto den = make_shared<Matrix>(nbasis, nbasis);
   // DKH1 correction
   *den += 2.0 * ((CPW * E - c2 * CPW) + CPW * (A * *v * A + B * *pvp * B)) ^ *wmat;
 
-  Matrix N(nbasis, nbasis);
-  Matrix O(nbasis, nbasis);
-  DiagMatrix F(nbasis);
-  DiagMatrix G(nbasis);
-  DiagMatrix H(nbasis);
   // DKH2 corrections, one for each term
   for (int i = 0; i != 12; ++i) {
-    switch (i) {
-    case 0:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * E(p) * A(p);
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 1:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * E(p) * B(p);
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 2:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = A(p);
-        H(p) = 2.0 * pow(A(p) * K(p), 2) * (*t)(p) * E(p);
-      }
-      N = O = *v;
-      break;
-    case 3:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) * E(p) / (2.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      break;
-    case 4:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = A(p) * E(p);
-        H(p) = -B(p) * A(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 5:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = B(p) * E(p);
-        H(p) = -A(p) * B(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 6:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = A(p);
-        G(p) = A(p) * E(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-      }
-      N = O = *v;
-      break;
-    case 7:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = B(p);
-        G(p) = B(p) * E(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      break;
-    case 8:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = A(p);
-        H(p) = -B(p) * A(p) / 2.0;
-      }
-      N = *pvp;
-      O = *v;
-      break;
-    case 9:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = B(p);
-        H(p) = -A(p) * B(p) / 2.0;
-      }
-      N = *v;
-      O = *pvp;
-      break;
-    case 10:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * A(p);
-        G(p) = A(p);
-        H(p) = pow(A(p) * K(p), 2) * (*t)(p);
-      }
-      N = O = *v;
-      break;
-    case 11:
-      for (int p = 0; p != nbasis; ++p) {
-        F(p) = E(p) * B(p);
-        G(p) = B(p);
-        H(p) = pow(B(p) / K(p), 2) / (4.0 * (*t)(p));
-      }
-      N = O = *pvp;
-      break;
-    }
+    const Matrix& N = *ta.N.at(i);
+    const Matrix& O = *ta.O.at(i);
+    const DiagMatrix& F = ta.F.at(i); 
+    const DiagMatrix& G = ta.G.at(i); 
+    const DiagMatrix& H = ta.H.at(i); 
+
     Matrix WN(nbasis, nbasis);
     Matrix WO(nbasis, nbasis);
     for (int p = 0; p != nbasis; ++p) {
