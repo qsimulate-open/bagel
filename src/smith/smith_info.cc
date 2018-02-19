@@ -99,8 +99,6 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   external_rdm_ = idata->get<string>("external_rdm", "");
   if (external_rdm_.empty() && !ciwfn()->civectors())
     throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");
-  if (!external_rdm_.empty() && is_same<DataType,double>::value)
-    throw logic_error("so far the external RDMs are only interfaced to relativistic theories. TODO");
 }
 
 

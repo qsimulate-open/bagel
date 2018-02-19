@@ -226,9 +226,9 @@ void SpinFreeMethod<double>::feed_rdm_denom() {
   rdm4fall_ = make_shared<Vec<Tensor_<double>>>();
   if (info_->rdm4_eval()) {
     rdm4all_ = make_shared<Vec<Tensor_<double>>>();
-    cout << "    * will calculate and save rdm4" << endl;
+    cout << "    * Calculating and saving rdm4" << endl;
   } else {
-    cout << "    * will calculate and save rdm4f" << endl;
+    cout << "    * Calculating and saving rdm4f" << endl;
   }
 
   assert(fockact_);
