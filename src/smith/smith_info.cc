@@ -36,15 +36,16 @@ using namespace bagel;
 
 template<typename DataType>
 SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr<const PTree> idata) : ref_(o) {
+  stringstream ss;
   method_ = idata->get<string>("method");
 
   const bool frozen = idata->get<bool>("frozen", true);
   ncore_ = idata->get<int>("ncore", (frozen ? ref_->geom()->num_count_ncore_only()/2 : 0));
   if (ncore_)
-    cout << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
+    ss << "    * freezing " << ncore_ << " orbital" << (ncore_^1 ? "s" : "") << endl;
   nfrozenvirt_ = idata->get<int>("nfrozenvirt", 0);
   if (nfrozenvirt_)
-    cout << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << endl;
+    ss << "    * freezing " << nfrozenvirt_ << " orbital" << (nfrozenvirt_^1 ? "s" : "") << " (virtual)" << endl;
 
   maxiter_ = idata->get<int>("maxiter", 50);
   maxtile_ = idata->get<int>("maxtile", 10);
@@ -53,7 +54,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   do_ms_   = idata->get<bool>("ms",  true);
   do_xms_  = idata->get<bool>("xms", true);
   if (do_xms_ && (method_ == "casa" || method_ == "mrci")) {
-    cout << "    * XMS rotation is only appropriate for CASPT2, and will not be used with " << method_ << endl;
+    ss << "    * XMS rotation is only appropriate for CASPT2, and will not be used with " << method_ << endl;
     do_xms_ = false;
   }
 
@@ -63,7 +64,11 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
 
   // check nact() because ciwfn() is nullptr with zero active orbitals
   if (nact() && ciwfn()->nstates() > 1)
-    cout << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
+    ss << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;
+
+  // print
+  const string sout = ss.str();
+  cout << sout << (sout.empty() ? "" : "\n");
 
   if (ref_->nstate() != 1) {
     if (idata->get<bool>("extract_civectors", false)) {
