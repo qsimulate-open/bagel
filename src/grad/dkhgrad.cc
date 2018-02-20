@@ -292,9 +292,8 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   const int nbasis = t->ndim();
 
   // output
-  auto den = make_shared<Matrix>(nbasis, nbasis);
+  shared_ptr<Matrix> den, ypq;
   auto zpq = make_shared<Matrix>(nbasis, nbasis);
-  auto ypq = make_shared<Matrix>(nbasis, nbasis);
 
   const TempArrays ta(t, v, pvp);
 
@@ -312,7 +311,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     const Matrix CBS = CPW * B * *pvp;
     const Matrix SBC = *pvp * B * CPW;
     // DKH1 correction
-    *ypq += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
+    ypq = make_shared<Matrix>(2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B));
 
     DiagMatrix EC(nbasis);
     for (int p = 0; p != nbasis; ++p) {
@@ -320,7 +319,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
       (*ypq)(p, p) += 2.0 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * (*t)(p);
       EC(p) = dE(p) * CPW(p, p) + 2.0 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
     }
-    *den += *wmat * EC ^ *wmat;
+    den = make_shared<Matrix>(*wmat * EC ^ *wmat);
   }
 
   auto divide_Epq = [&E](const Matrix& input) {
@@ -360,11 +359,6 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
 
     const Matrix CFN = CPW * F * WN;
     const Matrix CGO = CPW * G * WO;
-    cout << "nbasis " << nbasis << endl;
-    for (int x = 0; x != nbasis; ++x) {
-      cout << (*t)(x) << " ";
-    }
-    cout << endl;
     {
       Matrix WHNFC = divide_Epq(H * WN * F * CPW * G);
       Matrix WHOGC = divide_Epq(H * WO * G * CPW * F);
@@ -376,16 +370,6 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
         WHNFC(p, p) += H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
         WHOGC(p, p) += H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
       }
-      // CPW.print("CPW");
-      // CH.print("CH");
-      // WO.print("WO");
-      // CGO.print("CGO");
-      // WHOGC.print("WHOGC");
-      // cout << "CPW " << CPW.rms() << endl;
-      // cout << "CH " << CH.rms() << endl;
-      // cout << "WO " << WO.rms() << endl;
-      // cout << "CGO " << CGO.rms() << endl;
-      // cout << "WHOGC " << WHOGC.rms() << endl;
       *ypq += O * WHNFC + N * WHOGC + CFN * H * WO * G + CGO * H * WN * F;
     }
 
