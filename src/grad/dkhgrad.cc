@@ -38,8 +38,6 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   // Gradient integrals and RDMs to be computed in uncontracted basis
   auto unc = make_shared<Molecule>(*mol_);
   unc = unc->uncontract();
-  // Number of uncontracted basis functions
-  const int nbasis = unc->nbasis();
 
   shared_ptr<const Matrix> wmat, wmat_rev;
   shared_ptr<const DiagMatrix> t;
@@ -50,7 +48,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
     // Kinetic operator is diagonal in momentum space
     const Kinetic kinetic(unc);
     auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
-    VectorB t0(nbasis);
+    VectorB t0(lambda->ndim());
     lambda->diagonalize(t0);
     t = make_shared<const DiagMatrix>(t0);
     // Transformation matrix to momentum space
@@ -69,7 +67,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   }
 
   // Projection operator from uncontracted to contracted AO basis
-  auto pmat = make_shared<const ContractMat>(mol_, nbasis);
+  auto pmat = make_shared<const ContractMat>(mol_, unc->nbasis());
 
   // Lagrange multiplier for diagonalization of kinetic operator and energy derivative with respect to momentum orbital rotation
   shared_ptr<const Matrix> tden, zpq, ypq;
@@ -105,6 +103,7 @@ struct TempArrays {
   TempArrays(shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp)
     : E(v->ndim()), A(v->ndim()), B(v->ndim()), K(v->ndim()), dE(v->ndim()), dA(v->ndim()), dB(v->ndim()), dK(v->ndim()) {
 
+    // Number of uncontracted basis functions
     const int nbasis = v->ndim();
     const double c2 = c__ * c__;
     for (int p = 0; p != nbasis; ++p) {
@@ -289,6 +288,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   DKHgrad::compute_tden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
                          shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
   const double c2 = c__ * c__;
+  // Number of uncontracted basis functions
   const int nbasis = t->ndim();
 
   // output
@@ -360,6 +360,11 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
 
     const Matrix CFN = CPW * F * WN;
     const Matrix CGO = CPW * G * WO;
+    cout << "nbasis " << nbasis << endl;
+    for (int x = 0; x != nbasis; ++x) {
+      cout << (*t)(x) << " ";
+    }
+    cout << endl;
     {
       Matrix WHNFC = divide_Epq(H * WN * F * CPW * G);
       Matrix WHOGC = divide_Epq(H * WO * G * CPW * F);
@@ -371,6 +376,16 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
         WHNFC(p, p) += H(p) * CFN(p, p) * G(p) / (2.0 * E(p));
         WHOGC(p, p) += H(p) * CGO(p, p) * F(p) / (2.0 * E(p));
       }
+      // CPW.print("CPW");
+      // CH.print("CH");
+      // WO.print("WO");
+      // CGO.print("CGO");
+      // WHOGC.print("WHOGC");
+      // cout << "CPW " << CPW.rms() << endl;
+      // cout << "CH " << CH.rms() << endl;
+      // cout << "WO " << WO.rms() << endl;
+      // cout << "CGO " << CGO.rms() << endl;
+      // cout << "WHOGC " << WHOGC.rms() << endl;
       *ypq += O * WHNFC + N * WHOGC + CFN * H * WO * G + CGO * H * WN * F;
     }
 
