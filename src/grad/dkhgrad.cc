@@ -291,10 +291,6 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   // Number of uncontracted basis functions
   const int nbasis = t->ndim();
 
-  // output
-  shared_ptr<Matrix> den, ypq;
-  auto zpq = make_shared<Matrix>(nbasis, nbasis);
-
   const TempArrays ta(t, v, pvp);
 
   const DiagMatrix& A = ta.A;
@@ -304,6 +300,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   const DiagMatrix& dB = ta.dB;
   const DiagMatrix& dE = ta.dE;
 
+  shared_ptr<Matrix> den, ypq;
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
   {
     const Matrix CAN = CPW * A * *v;
@@ -431,6 +428,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   }
 
   // z_pq from Lagrangian
+  auto zpq = make_shared<Matrix>(nbasis, nbasis);
   for (int p = 0; p != nbasis; ++p)
     for (int q = 0; q != nbasis; ++q)
       (*zpq)(q, p) = fabs((*t)(p) - (*t)(q)) > 1.0e-12 ? -0.5 * ((*ypq)(q, p) - (*ypq)(p, q)) / ((*t)(q) - (*t)(p)) : 0.0;
