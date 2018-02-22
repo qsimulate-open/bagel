@@ -120,7 +120,6 @@ void Atom::basis_init(shared_ptr<const PTree> basis) {
     }
     basis_info.push_back(make_tuple(ang, exponents, coeff));
   }
-  // basis_info.push_back(basis_info.front());
   construct_shells(basis_info);
   common_init();
 
