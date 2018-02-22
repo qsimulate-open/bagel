@@ -361,10 +361,10 @@ void CASPT2::CASPT2::solve_dm(const int istate, const int jstate) {
 
 void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared_ptr<const NacmType> nacmtype, const bool nocider) {
   Timer timer;
-  // First solve lambda equation if this is MS-CASPT2 or CASPT2 with shift
+  // First solve lambda equation if this is MS-CASPT2
   assert (!((targetJ != targetI) && (nstates_ == 1)));
 
-  if ((info_->do_ms() && nstates_ > 1) || info_->shift() != 0.0) {
+  if (info_->do_ms() && nstates_ > 1) {
     // Lambda equation solver
     for (int i = 0; i != nstates_; ++i)
       lall_.push_back(t2all_[i]->clone());
