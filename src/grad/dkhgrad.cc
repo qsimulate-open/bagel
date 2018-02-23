@@ -104,7 +104,7 @@ struct TempArrays {
     : E(v->ndim()), A(v->ndim()), B(v->ndim()), K(v->ndim()), dE(v->ndim()), dA(v->ndim()), dB(v->ndim()), dK(v->ndim()) {
 
     // Number of uncontracted basis functions
-    const int nbasis = v->ndim();
+    const int nbasis = t->ndim();
     const double c2 = c__ * c__;
     for (int p = 0; p != nbasis; ++p) {
       E(p) = c__ * sqrt(2.0 * (*t)(p) + c2);
@@ -300,8 +300,8 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   const DiagMatrix& dB = ta.dB;
   const DiagMatrix& dE = ta.dE;
 
-  shared_ptr<Matrix> den, ypq;
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
+  shared_ptr<Matrix> den, ypq;
   {
     const Matrix CAN = CPW * A * *v;
     const Matrix NAC = *v * A * CPW;
