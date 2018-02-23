@@ -110,7 +110,7 @@ void CASSecond::compute() {
       }
     }
 
-    shared_ptr<RotFile> sol = solver.civec();
+    shared_ptr<const RotFile> sol = solver.civec();
     shared_ptr<const Matrix> a = sol->unpack();
     Matrix w(*a * *a);
     VectorB eig(a->ndim());

@@ -394,7 +394,7 @@ BAGEL References
 +-----------------------------------------------+----------------------------------------------------------------------------+
 |          Description of Reference             |                               Reference                                    |
 +===============================================+============================================================================+
-| Exact exchange evaluation using occ-RI-FMM    | H\.-A. Le and T. Shiozaki, *submitted*, arXiv:1708.05353 (2017)            |
+| Exact exchange evaluation using occ-RI-FMM    | H\.-A. Le and T. Shiozaki, J. Chem. Theory Comput., in press (2018)        |
 +-----------------------------------------------+----------------------------------------------------------------------------+
 
 General References
