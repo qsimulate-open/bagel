@@ -491,10 +491,10 @@ shared_ptr<const Matrix> DKHgrad::compute_sden_(shared_ptr<const Matrix> rdm1, s
   const DiagMatrix& A = ta.A; 
   const DiagMatrix& B = ta.B; 
 
-  const Matrix mmat = *pmat * *rdm1 ^ (*wmat_rev % *pmat);
+  const Matrix mup = *pmat * *rdm1 ^ (*wmat_rev % *pmat);
   // DKH1 correction
   const double c2 = c__ * c__;
-  auto den = make_shared<Matrix>(2.0 * ((mmat * E - c2 * mmat) + mmat * (A * *v * A + B * *pvp * B)) ^ *wmat);
+  auto den = make_shared<Matrix>(2.0 * ((mup * E - c2 * mup) + mup * (A * *v * A + B * *pvp * B)) ^ *wmat);
 
   auto divide_Epq = [&E](const Matrix& input) {
     shared_ptr<Matrix> out = input.clone();
@@ -511,7 +511,7 @@ shared_ptr<const Matrix> DKHgrad::compute_sden_(shared_ptr<const Matrix> rdm1, s
     const DiagMatrix& H = ta.H.at(i); 
     const Matrix wn = divide_Epq(*ta.N.at(i));
     const Matrix wo = divide_Epq(*ta.O.at(i));
-    *den += mmat * (F * wn * H * wo * G + G * wo * H * wn * F) ^ *wmat;
+    *den += mup * (F * wn * H * wo * G + G * wo * H * wn * F) ^ *wmat;
   }
 
   // a_tilde from dL/dU_pq
