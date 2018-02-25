@@ -71,6 +71,22 @@ Write results from a vibrational frequency calculation:
 
    ]}
 
+One can use a Molden file as an input as follows. Note that the Molden format does not specify the density fitting basis set,
+and therefore, the molecule block does need to contain the df_basis keyword.
+
+.. code-block:: javascript
+
+   { "bagel" : [
+
+   {
+     "title" : "molecule",
+     "basis" : "molden",
+     "df_basis" : "svp-jkfit",
+     "molden_file" : "hf.molden"
+   }
+
+   ]}
+
 ==========
 References
 ==========
