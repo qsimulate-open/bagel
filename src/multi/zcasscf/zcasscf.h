@@ -46,6 +46,7 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     bool gaunt_;
     bool breit_;
     bool natocc_;
+    bool canonical_;
 
     // set if RDMs are given externally (e.g., FCIQMC)
     std::string external_rdm_;
