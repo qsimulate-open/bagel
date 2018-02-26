@@ -366,8 +366,10 @@ void MOFock<complex<double>>::init() {
     const int nc = 2;
     assert(f->ndim() == f->mdim() && f->ndim() == nc * info_->nocc() + nc * info_->nvirt());
     f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
-    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
-    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
+    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(),
+                  fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
+    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(),
+                  fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
   }
 
   data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
