@@ -44,6 +44,12 @@ Keywords
    | **Example:**
    |    [36, 37, 39] : include 36th, 37th, and 39th orbitals.
 
+.. topic:: ``charge``
+
+   | **Description**:  Molecular charge.
+   | **Datatype**: int
+   | **Default**: 0
+
 .. topic:: ``algorithm``
 
    | **Description:** Orbital optimization algorithm.
@@ -78,11 +84,11 @@ Keywords
    | **Datatype**: bool
    | **Default**: false
 
-.. topic:: ``charge``
+.. topic:: ``canonical``
 
-   | **Description**:  Molecular charge.
-   | **Datatype**: int
-   | **Default**: 0
+   | **Description**: If set to "true," optimized orbitals will be transformed to semi-canonical orbitals. This option is ignored if ``algorithm`` is ``noopt``.
+   | **Datatype:** bool
+   | **Default:** false.
 
 .. topic:: ``hcore_guess``
 

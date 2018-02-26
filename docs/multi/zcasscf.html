@@ -97,6 +97,14 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
+<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description</strong>:  Molecular charge.</div>
+<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Default</strong>: 0</div>
+</div>
+</div>
+<div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Orbital optimization algorithm.</div>
@@ -143,11 +151,11 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal"><span class="pre">canonical</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>:  Molecular charge.</div>
-<div class="line"><strong>Datatype</strong>: int</div>
-<div class="line"><strong>Default</strong>: 0</div>
+<div class="line"><strong>Description</strong>: If set to “true,” optimized orbitals will be transformed to semi-canonical orbitals. This option is ignored if <code class="docutils literal"><span class="pre">algorithm</span></code> is <code class="docutils literal"><span class="pre">noopt</span></code>.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Default:</strong> false.</div>
 </div>
 </div>
 <div class="topic">
