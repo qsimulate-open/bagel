@@ -283,9 +283,9 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
     if (atoms) {
       const bool angstrom = geominfo->get<bool>("angstrom", false);
       for (auto& a : *atoms)
-        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem));
+        aux_atoms_.push_back(make_shared<const Atom>(a, spherical_, angstrom, make_pair(auxfile_, bdata), elem, true));
     } else {
-      for (auto& a : o.atoms_)
+      for (auto& a : o.aux_atoms_)
         aux_atoms_.push_back(make_shared<const Atom>(*a, spherical_, auxfile_, make_pair(auxfile_, bdata), elem));
     }
   }
