@@ -59,10 +59,10 @@ void ZHarrison::dump_ints() const {
       cout << "Writing 2e integral block " << i+1 << " / 16 : ";
       shared_ptr<const ZMatrix> tmp = jop_->mo2e(i);
       // assuming here that the fastest bit in i corresponds to the slowest orbital in mo2e
-      const int jfac  = 2 - (i & 1);
-      const int j2fac = 2 - (i & 2)/2;
-      const int kfac  = 2 - (i & 4)/4;
-      const int k2fac = 2 - (i & 8)/8;
+      const int jfac  = (i & 1) + 1;
+      const int j2fac = (i & 2)/2 + 1;
+      const int kfac  = (i & 4)/4 + 1;
+      const int k2fac = (i & 8)/8 + 1;
 
       const map<int,string> pm{{1, "+"}, {2, "-"}};
       cout << "( " << pm.at(k2fac) << " " << pm.at(j2fac) << " | " << pm.at(kfac) << " " << pm.at(jfac) << " )" << endl;
@@ -84,8 +84,8 @@ void ZHarrison::dump_ints() const {
       cout << "Writing 1e integral block " << i+1 << " / 4" << endl;
       shared_ptr<const ZMatrix> tmp = jop_->mo1e(i);
 
-      const int jfac = 2 - (i & 1);
-      const int kfac = 2 - (i & 2)/2;
+      const int jfac = (i & 1) + 1;
+      const int kfac = (i & 2)/2 + 1;
 
       for (int j = 0; j != norb_; ++j)
         for (int k = 0; k != norb_; ++k) {

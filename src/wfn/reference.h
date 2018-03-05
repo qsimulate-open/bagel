@@ -27,12 +27,12 @@
 #define _BAGEL_WFN_REFERENCE_H
 
 #include <set>
-#include <src/scf/coeff.h>
 #include <src/mat1e/hcore.h>
 #include <src/ci/fci/dvec.h>
 #include <src/wfn/geometry.h>
 #include <src/wfn/ciwfn.h>
 #include <src/wfn/rdm.h>
+#include <src/wfn/coeff.h>
 #include <src/util/vec.h>
 
 // all the info to construct wave functions

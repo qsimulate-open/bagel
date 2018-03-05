@@ -95,6 +95,9 @@ void ZCASSCF::init() {
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
 
+  // option for saving canonical orbitals
+  canonical_ = idata_->get<bool>("canonical", false);
+
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
   if (nclosed_ < -1) {
@@ -169,7 +172,7 @@ void ZCASSCF::select_active() {
   // specify active orbitals and move into the active space
   shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
   if (iactive) {
-    shared_ptr<const ZCoeff_Striped> scoeff = coeff_->striped_format(); 
+    shared_ptr<const ZCoeff_Striped> scoeff = coeff_->striped_format();
     // Subtracting one so that orbitals are input in 1-based format but are stored in C format (0-based)
     set<int> active_indices;
     for (auto& i : *iactive)
@@ -201,7 +204,7 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
-  const bool noci = !nact_ || external_rdm_ == "noref"; 
+  const bool noci = !nact_ || external_rdm_ == "noref";
   return noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
               : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
                                           fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());

@@ -22,11 +22,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <cstring>
 #include <src/util/math/algo.h>
 #include <bagel_config.h>
 #ifdef HAVE_MKL_H
-#include <src/util/mkl_sparse.h>
+#include <src/util/mkl_ext.h>
 #endif
 
 using namespace std;
@@ -52,6 +51,16 @@ void dcsrmm_(const char *transa, const int m, const int n, const int k, const do
       }
     }
   }
+#endif
+}
+
+
+void vdmul_(const int n, const double* a, const double* b, double* y) {
+#ifdef HAVE_MKL_H
+  ::vdmul_(&n, a, b, y);
+#else
+  for (size_t i = 0; i != n; ++i)
+    y[i] = a[i] * b[i];
 #endif
 }
 

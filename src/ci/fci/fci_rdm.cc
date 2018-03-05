@@ -39,7 +39,7 @@ FCI_bare::FCI_bare(shared_ptr<const CIWfn> ci) {
   norb_  = ci->nact();
   nstate_ = ci->nstates();
   energy_ = ci->energies();
-  cc_ = ci->civectors()->copy();
+  cc_ = ci->civectors() ? ci->civectors()->copy() : nullptr;
   det_ = ci->det();
   rdm1_ = make_shared<VecRDM<1>>();
   rdm2_ = make_shared<VecRDM<2>>();

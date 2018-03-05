@@ -24,6 +24,18 @@
 
 #include <src/wfn/reference.h>
 
+std::vector<double> reference_noshift() {
+  std::vector<double> out(6);
+  out[2] =  0.0043773889;
+  out[5] = -0.0043773889;
+  return out;
+}
+std::vector<double> reference_shift() {
+  std::vector<double> out(6);
+  out[2] =  0.0042621205;
+  out[5] = -0.0042621205;
+  return out;
+}
 std::vector<double> reference_ms() {
   std::vector<double> out(6);
   out[2] =  0.0396123988;
@@ -41,6 +53,8 @@ std::vector<double> reference_xms() {
 BOOST_AUTO_TEST_SUITE(TEST_SMITH)
 
 BOOST_AUTO_TEST_CASE(CASPT2_Opt) {
+    BOOST_CHECK(compare(run_force("li2_svp_caspt2_grad"),    reference_noshift(),  1.0e-5));
+    BOOST_CHECK(compare(run_force("li2_svp_caspt2_shift"),   reference_shift(),  1.0e-5));
     BOOST_CHECK(compare(run_force("lif_svp_mscaspt2_grad"),  reference_ms(),  1.0e-5));
     BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_grad"), reference_xms(), 1.0e-5));
 }

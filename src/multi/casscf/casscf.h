@@ -85,6 +85,7 @@ class CASSCF : public Method, public std::enable_shared_from_this<CASSCF> {
     bool conv_ignore_;
     bool restart_cas_;
     bool natocc_;
+    bool canonical_;
 
     std::shared_ptr<const Coeff> coeff_;
 

@@ -367,7 +367,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   // First solve lambda equation if this is MS-CASPT2
   assert (!((targetJ != targetI) && (nstates_ == 1)));
 
-  if (info_->do_ms() && nstates_ > 1) {
+  if ((info_->do_ms() && nstates_ > 1) || info_->shift() != 0.0) {
     // Lambda equation solver
     for (int i = 0; i != nstates_; ++i)
       lall_.push_back(t2all_[i]->clone());
@@ -428,7 +428,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         i = init_residual();
       for (auto& i : *sourceI)
         i = init_residual();
-     
+
       for (int ist = 0; ist != nstates_; ++ist) { // L states
         auto sist = make_shared<MultiTensor>(nstates_);
         for (int jst = 0; jst != nstates_; ++jst) {
@@ -446,7 +446,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
         sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
       }
-     
+
       for (int istate = 0; istate != nstates_; ++istate) { //K states
         sall_[istate]->zero();
         for (int jst = 0; jst != nstates_; ++jst)
@@ -537,7 +537,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   }
 
   correlated_norm_.resize(nstates_);
-  if (nstates_ == 1) {
+  if (nstates_ == 1 && info_->shift() == 0.0) {
     n = init_residual();
     shared_ptr<Queue> normq = make_normq();
     while (!normq->done())

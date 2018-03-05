@@ -144,7 +144,7 @@ We could also have changed the basis set in the input, rather than changing the 
 
     {
       "title" : "load_ref",
-      "file" : "/your/directory/filename"
+      "file" : "/your/directory/filename",
       "continue_geom" : false
     },
 

@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: mkl_sparse.h
+// Filename: mkl_ext.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
@@ -22,8 +22,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef __SRC_UTIL_MKL_SPARSE_H
-#define __SRC_UTIL_MKL_SPARSE_H
+#ifndef __SRC_UTIL_MKL_EXT_H
+#define __SRC_UTIL_MKL_EXT_H
 
 #include <bagel_config.h>
 
@@ -33,17 +33,24 @@
 
 extern "C" {
   // mkl_sparse routines
-  //void mkl_dcsrmm (char *transa, MKL_INT *m, MKL_INT *n, MKL_INT *k, double *alpha, char *matdescra, double *val, MKL_INT *indx, MKL_INT *pntrb, MKL_INT *pntre, double *b, MKL_INT *ldb, double *beta, double *c, MKL_INT *ldc);
-  void mkl_dcsrmm_(const char *transa, const int *m, const int *n, const int *k, const double *alpha, const char *matdescra, const double *val, const int *indx, const int *pntrb, const int *pntre,
-                   const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
+  void mkl_dcsrmm_(const char* transa, const int* m, const int* n, const int* k, const double* alpha, const char* matdescra,
+                   const double* val, const int* indx, const int* pntrb, const int* pntre,
+                   const double* b, const int* ldb, const double* beta, double* c, const int* ldc);
+
+  // MKL Hadamard product
+  void vdmul_(const int* n, const double* a, const double* b, double* y); 
 }
 
 // All arguments passed in
-static void mkl_dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const char *matdescra, const double* val, const int* indx, const int* pntrb, const int* pntre, const double* b, const int ldb, const double beta, double* c, const int ldc)
-    { mkl_dcsrmm_(transa, &m, &n, &k, &alpha, matdescra, val, indx, pntrb, pntre, b, &ldb, &beta, c, &ldc); }
-
+static void mkl_dcsrmm_(const char* transa, const int m, const int n, const int k, const double alpha, const char* matdescra,
+                        const double* val, const int* indx, const int* pntrb, const int* pntre,
+                        const double* b, const int ldb, const double beta, double* c, const int ldc) {
+  mkl_dcsrmm_(transa, &m, &n, &k, &alpha, matdescra, val, indx, pntrb, pntre, b, &ldb, &beta, c, &ldc);
+}
 // Special case
-static void mkl_dcsrmm_(const char *transa, const int m, const int n, const int k, const double alpha, const double* val, const int* cols, const int* rind, const double* b, const int ldb, const double beta, double* c, const int ldc) {
+static void mkl_dcsrmm_(const char* transa, const int m, const int n, const int k, const double alpha,
+                        const double* val, const int* cols, const int* rind,
+                        const double* b, const int ldb, const double beta, double* c, const int ldc) {
   std::unique_ptr<char[]> matdescra(new char[6]);
   matdescra[0] = 'G'; // General
   matdescra[3] = 'F'; // Fortran 1-based indexing (this is required to use a column-major dense matrix)

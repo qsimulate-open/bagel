@@ -126,8 +126,8 @@ class ZHarrison : public Method {
     std::vector<std::pair<std::bitset<nbit__>, std::bitset<nbit__>>> detseeds(const int ndet, const int nelea, const int neleb) const;
 
     // pure virtual functions to be implemented by derived classes
-    virtual std::shared_ptr<const ZCoeff_Block> init_coeff() = 0; 
-    virtual void dump_integrals_and_exit() const = 0; 
+    virtual std::shared_ptr<const ZCoeff_Block> init_coeff() = 0;
+    virtual void dump_integrals_and_exit() const = 0;
 
     void const_denom();
 

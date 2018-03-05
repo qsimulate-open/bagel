@@ -307,21 +307,21 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
           const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
 
-        if (!info_->sssr() || nst == lst) {
-          l2 = t2all_[lst]->at(nst);
-          dec = make_deci3q(/*zero=*/true);
-          while (!dec->done())
-            dec->next_compute();
-          add_total(lmhJI);
-        }
+          if (!info_->sssr() || nst == lst) {
+            l2 = t2all_[lst]->at(nst);
+            dec = make_deci3q(/*zero=*/true);
+            while (!dec->done())
+              dec->next_compute();
+            add_total(lmhJI);
+          }
 
-        if (!info_->sssr() || mst == lst) {
-          l2 = t2all_[lst]->at(mst);
-          dec = make_deci4q(/*zero=*/true);
-          while (!dec->done())
-            dec->next_compute();
-          add_total(lnhJI);
-        }
+          if (!info_->sssr() || mst == lst) {
+            l2 = t2all_[lst]->at(mst);
+            dec = make_deci4q(/*zero=*/true);
+            while (!dec->done())
+              dec->next_compute();
+            add_total(lnhJI);
+          }
 
           if (!info_->sssr() || (mst == lst && nst == lst)) {
             e0_ = 2.0*info_->shift();

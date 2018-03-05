@@ -43,6 +43,10 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
 
 #ifdef COMPILE_SMITH
+  // print a header
+  if (!idata->get<bool>("_grad", false))
+    cout << "  === SMITH program ===" << endl << endl;
+
   // make a smith_info class
   auto info = make_shared<const SMITH_Info<double>>(r, idata);
 
@@ -58,7 +62,7 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     const size_t nocc = nclosed + nact;
     const size_t norb = nocc + nvirtual;
     const size_t rsize = nclosed*nocc*nvirtual*nvirtual + nclosed*nclosed*nact*(nvirtual+nact) + nact2*(norb*nvirtual+nact*nclosed);
-    cout << endl << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
+    cout << "    * Approximate memory requirement for SMITH calulation per MPI process:" << endl;
     cout << "      o Storage requirement for T-amplitude, lambda, and residual is ";
     cout << setprecision(2) << rsize*(info->sssr() ? nstate : nstate*nstate) * (info->grad() ? 5 : 3) * 8.e-9 / mpi__->size() << " GB" << endl;
     cout << "      o Storage requirement for MO integrals is ";
@@ -140,6 +144,10 @@ void Smith::compute_gradient(const int istate, const int jstate, shared_ptr<cons
 
 RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, shared_ptr<const Reference> r) : Method(idata, g, r) {
 #ifdef COMPILE_SMITH
+  // print a header
+  if (!idata->get<bool>("_grad", false))
+    cout << "  === SMITH program ===" << endl << endl;
+
   const string method = to_lower(idata_->get<string>("method", "caspt2"));
   if (!dynamic_pointer_cast<const RelReference>(r) && method != "continue")
     throw runtime_error("Relativistic correlation methods require a fully relativistic reference wavefunction.");
@@ -157,7 +165,6 @@ RelSmith::RelSmith(const shared_ptr<const PTree> idata, shared_ptr<const Geometr
       stringstream ss; ss << method << " method is not implemented in RelSMITH";
       throw logic_error(ss.str());
     }
-
   } else {
 #ifndef DISABLE_SERIALIZATION
     // method == "continue" - so load SMITH_Info and T2 amplitudes from Archives

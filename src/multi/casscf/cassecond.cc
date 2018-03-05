@@ -46,12 +46,9 @@ void CASSecond::compute() {
         fci_->compute();
         fci_->compute_rdm12();
       } else {
-        if (iter != 0) throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
-        if (fci_algorithm_->is_knowles()) {
-          fci_->read_external_rdm12_av(external_rdm_);
-        } else {
-          throw runtime_error("reading external RDM is only supported for Knowles--Handy algorithm.");
-        }
+        if (iter != 0)
+          throw runtime_error("\"external_rdm\" should be used with maxiter == 1");
+        fci_->read_external_rdm12_av(external_rdm_);
       }
       trans_natorb();
       fci_time.tick_print("FCI and RDMs");
@@ -113,7 +110,7 @@ void CASSecond::compute() {
       }
     }
 
-    shared_ptr<RotFile> sol = solver.civec();
+    shared_ptr<const RotFile> sol = solver.civec();
     shared_ptr<const Matrix> a = sol->unpack();
     Matrix w(*a * *a);
     VectorB eig(a->ndim());
@@ -445,7 +442,7 @@ void CASSecond::trans_natorb() {
 
   fci_->rotate_rdms(trans);
 
-  auto cnew = make_shared<Coeff>(*coeff_); 
+  auto cnew = make_shared<Coeff>(*coeff_);
   cnew->copy_block(0, nclosed_, cnew->ndim(), nact_, coeff_->slice(nclosed_, nocc_) * *trans);
   coeff_ = cnew;
 }

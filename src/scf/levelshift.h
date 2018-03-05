@@ -26,7 +26,7 @@
 #ifndef __BAGEL_SCF_LEVELSHIFT_H
 #define __BAGEL_SCF_LEVELSHIFT_H
 
-#include <src/scf/coeff.h>
+#include <src/wfn/coeff.h>
 
 /************************************************************************************
 * Class of functions to level shift the Fock operator in SCF. Matrices are shifted  *

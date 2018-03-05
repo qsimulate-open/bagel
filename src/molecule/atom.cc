@@ -67,7 +67,7 @@ Atom::Atom(shared_ptr<const PTree> inp, const bool spherical, const bool angstro
   }
   atom_exponent_ = inp->get<double>("exponent", default_finite ? atommap.nuclear_exponent(name_) : 0.0);
 
-  mass_ = inp->get<double>("mass", atommap.averaged_mass(name_)); 
+  mass_ = inp->get<double>("mass", atommap.averaged_mass(name_));
 }
 
 

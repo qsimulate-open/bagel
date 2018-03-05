@@ -171,7 +171,7 @@ void ZCASSecond_base::compute() {
     }
     auto R = make_shared<ZMatrix>(*a ^ *atmp);
     impose_symmetry(R);
-    coeff_ = make_shared<ZCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
+    coeff_ = make_shared<ZCoeff_Block>(*coeff_ * *R, nclosed_, nact_, nvirtnr_, nneg_);
 
     if (iter == max_iter_-1) {
       if (external_rdm_.empty() && !conv_ignore_) {
@@ -186,13 +186,15 @@ void ZCASSecond_base::compute() {
     if (restart_cas_) {
       stringstream ss; ss << "zcasscf_" << iter;
       OArchive archive(ss.str());
-      shared_ptr<const Reference> ref = conv_to_ref(); 
+      shared_ptr<const Reference> ref = conv_to_ref();
       archive << ref;
     }
 #endif
   }
 
-  // this is not needed for energy, but for consistency we want to have this...
+  if (canonical_)
+    coeff_ = semi_canonical_orb();
+
   // update construct Jop from scratch
   muffle_->unmute();
   if (nact_ && external_rdm_.empty()) {
@@ -520,12 +522,12 @@ void ZCASSecond_London::trans_natorb() {
   for (int i = 0; i != nact_*2; ++i)
     occup[i] = 1.0-occup[i];
 
-  // reorder the orbitals into the block format 
+  // reorder the orbitals into the block format
   shared_ptr<ZMatrix> trans = natorb->clone();
   VectorB roccup(nact_*2);
   for (int i = 0; i != nact_; ++i) {
-    copy_n(natorb->element_ptr(0, 2*i), nact_*2, trans->element_ptr(0, i)); 
-    copy_n(natorb->element_ptr(0, 2*i+1), nact_*2, trans->element_ptr(0, nact_+i)); 
+    copy_n(natorb->element_ptr(0, 2*i), nact_*2, trans->element_ptr(0, i));
+    copy_n(natorb->element_ptr(0, 2*i+1), nact_*2, trans->element_ptr(0, nact_+i));
     roccup[i] = occup[2*i];
     roccup[nact_+i] = occup[2*i+1];
   }

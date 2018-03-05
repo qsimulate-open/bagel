@@ -45,11 +45,7 @@ class CASNoopt : public CASSCF {
         fci_->compute();
         fci_->compute_rdm12();
       } else {
-        if (fci_algorithm_->is_knowles()) {
-          fci_->read_external_rdm12_av(external_rdm_);
-        } else {
-          throw std::runtime_error("reading external RDM is only supported for Knowles--Handy algorithm.");
-        }
+        fci_->read_external_rdm12_av(external_rdm_);
       }
       energy_ = fci_->energy();
 

@@ -32,6 +32,8 @@
 #include <src/scf/dhf/dfock.h>
 #include <src/ci/zfci/reljop.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/util/exception.h>
+#include <iostream>
 
 using namespace std;
 using namespace bagel;
@@ -364,12 +366,27 @@ void MOFock<complex<double>>::init() {
     const int nc = 2;
     assert(f->ndim() == f->mdim() && f->ndim() == nc * info_->nocc() + nc * info_->nvirt());
     f->copy_block(0, 0, nc*info_->nclosed(), nc*info_->nclosed(), fsave->get_submatrix(0, 0, nc*info_->nclosed(), nc*info_->nclosed()));
-    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(), fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
-    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(), fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
+    f->copy_block(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact(),
+                  fsave->get_submatrix(nc*info_->nclosed(), nc*info_->nclosed(), nc*info_->nact(), nc*info_->nact()));
+    f->copy_block(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt(),
+                  fsave->get_submatrix(nc*info_->nocc(), nc*info_->nocc(), nc*info_->nvirt(), nc*info_->nvirt()));
   }
 
   data_ = fill_block<2,complex<double>>(f->get_conjg(), {0,0}, blocks_);
   h1_   = fill_block<2,complex<double>>(h1->get_conjg(), {0,0}, blocks_);
+
+  // print out the Fock matrix and terminate when preparing for external RDM runs
+  if (info_->external_rdm() == "noref") {
+    stringstream ss; ss << scientific << setprecision(15);
+    for (int i = 0; i != nact; ++i) {
+      for (int j = 0; j != nact; ++j)
+        ss << f->element(j+nclosed+ncore, i+nclosed+ncore) << " ";
+      ss << endl;
+    }
+    ofstream fs("FOCKMAT");
+    fs << ss.str();
+    throw Termination("Fock matrix has been dumped in FOCKMAT");
+  }
 }
 
 template<>
@@ -453,6 +470,19 @@ void MOFock<double>::init() {
 
   data_ = fill_block<2,double>(f, {0,0}, blocks_);
   h1_   = fill_block<2,double>(h1, {0,0}, blocks_);
+
+  // print out the Fock matrix and terminate when preparing for external RDM runs
+  if (info_->external_rdm() == "noref") {
+    stringstream ss; ss << scientific << setprecision(15);
+    for (int i = 0; i != nact; ++i) {
+      for (int j = 0; j != nact; ++j)
+        ss << f->element(j+nclosed+ncore, i+nclosed+ncore) << " ";
+      ss << endl;
+    }
+    ofstream fs("FOCKMAT");
+    fs << ss.str();
+    throw Termination("Fock matrix has been dumped in FOCKMAT");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

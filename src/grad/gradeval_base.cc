@@ -24,6 +24,7 @@
 
 
 #include <src/grad/gradeval_base.h>
+#include <src/grad/dkhgrad.h>
 #include <src/util/taskqueue.h>
 #include <src/util/parallel/resources.h>
 #include <src/util/parallel/mpi_interface.h>
@@ -40,7 +41,15 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
   if (!numerical) {
     vector<shared_ptr<GradTask>> task  = contract_grad2e(o);
-    vector<shared_ptr<GradTask>> task2 = contract_grad1e<GradTask1>(d, w);
+
+    vector<shared_ptr<GradTask>> task2;
+    if (geom_->hcoreinfo()->dkh()) {
+      auto dkh = make_shared<DKHgrad>(geom_);
+      task2 = contract_graddkh1e(dkh->compute(d, w));
+    } else {
+      task2 = contract_grad1e<GradTask1>(d, w);
+    }
+
     vector<shared_ptr<GradTask>> task3 = contract_grad2e_2index(o2);
     task.insert(task.end(), task2.begin(), task2.end());
     task.insert(task.end(), task3.begin(), task3.end());
@@ -69,8 +78,6 @@ shared_ptr<GradFile> GradEval_base::contract_gradient(const shared_ptr<const Mat
 
   if (!v)
     *grad_ += *geom_->compute_grad_vnuc();
-
-  *grad_ += *geom_->hcoreinfo()->compute_grad(geom_, d);
 
   grad_->allreduce();
 
@@ -122,6 +129,45 @@ vector<shared_ptr<GradTask>> GradEval_base::contract_grad1e(const shared_ptr<con
   if (geom_->has_finite_nucleus()) {
     vector<shared_ptr<GradTask>> task0 = contract_grad1e_fnai(nmat);
     out.insert(out.end(), task0.begin(), task0.end());
+  }
+
+  return out;
+}
+
+
+vector<shared_ptr<GradTask>> GradEval_base::contract_graddkh1e(array<shared_ptr<const Matrix>, 4> den) {
+  auto geom = make_shared<Molecule>(*geom_);
+  geom = geom->uncontract();
+  vector<shared_ptr<GradTask>> out;
+  const size_t nshell  = std::accumulate(geom->atoms().begin(), geom->atoms().end(), 0,
+                                          [](const int& i, const shared_ptr<const Atom>& o) { return i+o->shells().size(); });
+  out.reserve(nshell*nshell);
+
+  // TODO perhaps we could reduce operation by a factor of 2
+  int cnt = 0;
+  int iatom0 = 0;
+  auto oa0 = geom->offsets().begin();
+  for (auto a0 = geom->atoms().begin(); a0 != geom->atoms().end(); ++a0, ++oa0, ++iatom0) {
+    int iatom1 = 0;
+    auto oa1 = geom->offsets().begin();
+    for (auto a1 = geom->atoms().begin(); a1 != geom->atoms().end(); ++a1, ++oa1, ++iatom1) {
+
+      auto o0 = oa0->begin();
+      for (auto b0 = (*a0)->shells().begin(); b0 != (*a0)->shells().end(); ++b0, ++o0) {
+        auto o1 = oa1->begin();
+        for (auto b1 = (*a1)->shells().begin(); b1 != (*a1)->shells().end(); ++b1, ++o1) {
+
+          // static distribution since this is cheap
+          if (cnt++ % mpi__->size() != mpi__->rank()) continue;
+
+          array<shared_ptr<const Shell>,2> input = {{*b1, *b0}};
+          vector<int> atom = {iatom0, iatom1};
+          vector<int> offset_ = {*o0, *o1};
+
+          out.push_back(make_shared<GradTask1d>(input, atom, offset_, den, this));
+        }
+      }
+    }
   }
 
   return out;

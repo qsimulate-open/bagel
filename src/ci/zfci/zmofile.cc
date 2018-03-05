@@ -3,7 +3,7 @@
 // Filename: zmofile.cc
 // Copyright (C) 2013 Toru Shiozaki
 //
-// Author: Toru Shiozaki <shiozaki@northwestern.edu> 
+// Author: Toru Shiozaki <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group
 //
 // This file is part of the BAGEL package.
@@ -43,7 +43,7 @@ void ZMOFile::init(const int nstart, const int nfence, const bool store_c, const
   assert(geom_->dfs());
 
   // calculates the core fock matrix
-  shared_ptr<const ZMatrix> hcore = compute_hcore(); 
+  shared_ptr<const ZMatrix> hcore = compute_hcore();
 
   if (nstart != 0) {
     shared_ptr<const ZMatrix> den = coeff_->distmatrix()->form_density_rhf(nstart)->matrix();

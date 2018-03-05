@@ -49,6 +49,8 @@ class GradEval_base {
     /// same as above, but one can specify density matrices to each integral kernel
     template<typename TaskType>
     std::vector<std::shared_ptr<GradTask>> contract_grad1e(const std::shared_ptr<const Matrix> n, const std::shared_ptr<const Matrix> k, const std::shared_ptr<const Matrix> o);
+    /// contract 1-electron gradient integrals used for DKH
+    std::vector<std::shared_ptr<GradTask>> contract_graddkh1e(std::array<std::shared_ptr<const Matrix>, 4>);
     /// contract small NAI gradient integrals with an array of densities
     std::vector<std::shared_ptr<GradTask>> contract_gradsmall1e(std::array<std::shared_ptr<const Matrix>,6>);
     /// contract finite-nucleus NAI gradient
@@ -86,6 +88,7 @@ class GradEval_base {
     friend class GradTask1f;
     friend class GradTask3r;
     friend class GradTask1rf;
+    friend class GradTask1d;
 };
 
 template<typename TBatch>
@@ -100,6 +103,16 @@ std::shared_ptr<GradFile> GradTask1::compute_os(std::shared_ptr<const Matrix> de
 
 template<typename TBatch>
 std::shared_ptr<GradFile> GradTask1s::compute_os(std::shared_ptr<const Matrix> den) const {
+  const int dimb1 = shell_[0]->nbasis();
+  const int dimb0 = shell_[1]->nbasis();
+  std::shared_ptr<const Matrix> cden = den->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);
+  TBatch batch(shell_);
+  batch.compute();
+  return batch.compute_gradient(cden, atomindex_[0], atomindex_[1], ge_->geom_->natom());
+}
+
+template<typename TBatch>
+std::shared_ptr<GradFile> GradTask1d::compute_os(std::shared_ptr<const Matrix> den) const {
   const int dimb1 = shell_[0]->nbasis();
   const int dimb0 = shell_[1]->nbasis();
   std::shared_ptr<const Matrix> cden = den->get_submatrix(offset_[1], offset_[0], dimb1, dimb0);

@@ -11,7 +11,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -107,6 +107,20 @@
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;print&quot;</span><span class="p">,</span>
   <span class="s2">&quot;file&quot;</span> <span class="o">:</span> <span class="s2">&quot;freq.molden&quot;</span><span class="p">,</span>
   <span class="s2">&quot;vibration&quot;</span> <span class="o">:</span> <span class="kc">true</span>
+<span class="p">}</span>
+
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>One can use a Molden file as an input as follows. Note that the Molden format does not specify the density fitting basis set,
+and therefore, the molecule block does need to contain the df_basis keyword.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;molden&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;df_basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp-jkfit&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;molden_file&quot;</span> <span class="o">:</span> <span class="s2">&quot;hf.molden&quot;</span>
 <span class="p">}</span>
 
 <span class="p">]}</span>

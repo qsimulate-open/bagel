@@ -122,6 +122,7 @@ class Matrix : public Matrix_base<double>, public std::enable_shared_from_this<M
     using Matrix_base<double>::dot_product;
     void ax_plus_y(const double a, const Matrix& o) { this->ax_plus_y_impl(a, o); }
     double dot_product(const Matrix& o) const { return this->dot_product_impl(o); }
+    std::shared_ptr<Matrix> hadamard_product(const Matrix& o) const;
 
     double orthog(const std::list<std::shared_ptr<const Matrix>> o) { return this->orthog_impl(o); }
     void rotate(const int i, const int j, const double c, const double s) { drot_(ndim(), element_ptr(0,i), 1, element_ptr(0,j), 1, c, s); }
