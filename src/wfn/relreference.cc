@@ -43,8 +43,8 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   shared_ptr<Reference> out;
   const bool giao = (geomin->magnetism() || geom_->magnetism());
-  if ((geomin->magnetism() && !geom_->magnetism()) || (!geomin->magnetism() && geom_->magnetism()))
-    throw runtime_error("Projection between GIAO and real basis sets is not implemented.   Use the GIAO code at zero-field or restart.");
+  if (!geomin->magnetism() && geom_->magnetism())
+    throw runtime_error("Projection from GIAO to real basis set is not implemented.");
 
   bool moved = false;
   bool newbasis = false;
@@ -62,6 +62,12 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   if (moved && newbasis)
     throw runtime_error("changing geometry and basis set at the same time is not allowed");
+
+  if (geomin->magnetism() && !geom_->magnetism()) {
+    if (geomin->nonzero_magnetic_field() || moved || newbasis)
+      throw runtime_error("The conversion from standard to GIAO architecture requires that no changes be made to atom positions, basis, or magnetic field.  (But these can all be changed with a second \"molecule\" input block.)");
+    cout << "  * Attempting projection from (zero-field) real basis set to GIAO basis set." << endl;
+  }
 
   if (newbasis) {
     // 4-component wavefunction, change of basis
@@ -117,6 +123,11 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
     auto c2 = make_shared<ZCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
+
+  } else if (!moved && geomin->magnetism() && !geom_->magnetism()) {
+    // Special case - do nothing when converting from standard basis to GIAO without adding field
+    out = make_shared<RelReference>(geomin, relcoeff_, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
+
   } else {
 
     // 4-component wavefunction, change of atom positions
