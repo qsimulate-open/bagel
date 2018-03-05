@@ -264,7 +264,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
               continue;
             l2 = t2all_[istate]->at(ist);
             t2 = t2all_[istate]->at(jst);
-            shared_ptr<Queue> queue = make_densityq(false, ist == jst);
+            shared_ptr<Queue> queue = make_densityq(true, ist == jst);
             while (!queue->done())
               queue->next_compute();
             result2->ax_plus_y(ijhJI, den2);
@@ -282,10 +282,9 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             continue;
           l2 = lall_[istate]->at(ist);
           t2 = t2all_[istate]->at(jst);
-          shared_ptr<Queue> queue = make_densityq(false, ist == jst);
+          shared_ptr<Queue> queue = make_densityq(true, ist == jst);
           while (!queue->done())
             queue->next_compute();
-
           result2->ax_plus_y(1.0, den2);
         }
       }
