@@ -290,8 +290,9 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
         }
       }
     }
-    den2_ = den2->matrix();
+    den2_ = result2->matrix();
   }
+
   // first-order contribution from the lambda terms
   {
     den1->zero();
