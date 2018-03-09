@@ -114,6 +114,9 @@ void CASSCF::common_init() {
   // option for printing natural orbitals
   natocc_ = idata_->get<bool>("natocc", false);
 
+  // option for saving canonical orbitals
+  canonical_ = idata_->get<bool>("canonical", false);
+
   // nact from the input.
   nact_ = idata_->get<int>("nact", 0);
   // FCI algorithm
@@ -246,6 +249,11 @@ shared_ptr<const Coeff> CASSCF::semi_canonical_orb() const {
     Matrix ofock = ocoeff % fock * ocoeff;
     ofock.diagonalize(eig);
     trans.copy_block(0, 0, nclosed_, nclosed_, ofock);
+  }
+  if (nact_ && canonical_) {
+    Matrix afock = acoeff % fock * acoeff;
+    afock.diagonalize(eig);
+    trans.copy_block(nclosed_, nclosed_, nact_, nact_, afock);
   }
   Matrix vfock = vcoeff % fock * vcoeff;
   vfock.diagonalize(eig);

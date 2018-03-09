@@ -38,8 +38,6 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   // Gradient integrals and RDMs to be computed in uncontracted basis
   auto unc = make_shared<Molecule>(*mol_);
   unc = unc->uncontract();
-  // Number of uncontracted basis functions
-  const int nbasis = unc->nbasis();
 
   shared_ptr<const Matrix> wmat, wmat_rev;
   shared_ptr<const DiagMatrix> t;
@@ -50,7 +48,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
     // Kinetic operator is diagonal in momentum space
     const Kinetic kinetic(unc);
     auto lambda = make_shared<Matrix>(*gamma % kinetic * *gamma);
-    VectorB t0(nbasis);
+    VectorB t0(lambda->ndim());
     lambda->diagonalize(t0);
     t = make_shared<const DiagMatrix>(t0);
     // Transformation matrix to momentum space
@@ -69,7 +67,7 @@ array<shared_ptr<const Matrix>, 4> DKHgrad::compute(shared_ptr<const Matrix> rdm
   }
 
   // Projection operator from uncontracted to contracted AO basis
-  auto pmat = make_shared<const ContractMat>(mol_, nbasis);
+  auto pmat = make_shared<const ContractMat>(mol_, unc->nbasis());
 
   // Lagrange multiplier for diagonalization of kinetic operator and energy derivative with respect to momentum orbital rotation
   shared_ptr<const Matrix> tden, zpq, ypq;
@@ -105,6 +103,7 @@ struct TempArrays {
   TempArrays(shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp)
     : E(v->ndim()), A(v->ndim()), B(v->ndim()), K(v->ndim()), dE(v->ndim()), dA(v->ndim()), dB(v->ndim()), dK(v->ndim()) {
 
+    // Number of uncontracted basis functions
     const int nbasis = v->ndim();
     const double c2 = c__ * c__;
     for (int p = 0; p != nbasis; ++p) {
@@ -289,12 +288,8 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   DKHgrad::compute_tden_(shared_ptr<const Matrix> rdm1, shared_ptr<const Matrix> pmat, shared_ptr<const Matrix> wmat, shared_ptr<const Matrix> wmat_rev,
                          shared_ptr<const DiagMatrix> t, shared_ptr<const Matrix> v, shared_ptr<const Matrix> pvp) {
   const double c2 = c__ * c__;
+  // Number of uncontracted basis functions
   const int nbasis = t->ndim();
-
-  // output
-  auto den = make_shared<Matrix>(nbasis, nbasis);
-  auto zpq = make_shared<Matrix>(nbasis, nbasis);
-  auto ypq = make_shared<Matrix>(nbasis, nbasis);
 
   const TempArrays ta(t, v, pvp);
 
@@ -305,6 +300,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   const DiagMatrix& dB = ta.dB;
   const DiagMatrix& dE = ta.dE;
 
+  shared_ptr<Matrix> den, ypq;
   const Matrix CPW = (*pmat % *wmat_rev) % *rdm1 * (*pmat % *wmat_rev);
   {
     const Matrix CAN = CPW * A * *v;
@@ -312,7 +308,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
     const Matrix CBS = CPW * B * *pvp;
     const Matrix SBC = *pvp * B * CPW;
     // DKH1 correction
-    *ypq += 2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B);
+    ypq = make_shared<Matrix>(2.0 * (CPW * E - c2 * CPW + (CAN + NAC) * A + (CBS + SBC) * B));
 
     DiagMatrix EC(nbasis);
     for (int p = 0; p != nbasis; ++p) {
@@ -320,7 +316,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
       (*ypq)(p, p) += 2.0 * (CPW(p, p) * dE(p) + ((CAN(p, p) + NAC(p, p)) * dA(p) + (CBS(p, p) + SBC(p, p)) * dB(p))) * (*t)(p);
       EC(p) = dE(p) * CPW(p, p) + 2.0 * (NAC(p, p) * dA(p) + SBC(p, p) * dB(p));
     }
-    *den += *wmat * EC ^ *wmat;
+    den = make_shared<Matrix>(*wmat * EC ^ *wmat);
   }
 
   auto divide_Epq = [&E](const Matrix& input) {
@@ -432,6 +428,7 @@ tuple<shared_ptr<const Matrix>,shared_ptr<const Matrix>,shared_ptr<const Matrix>
   }
 
   // z_pq from Lagrangian
+  auto zpq = make_shared<Matrix>(nbasis, nbasis);
   for (int p = 0; p != nbasis; ++p)
     for (int q = 0; q != nbasis; ++q)
       (*zpq)(q, p) = fabs((*t)(p) - (*t)(q)) > 1.0e-12 ? -0.5 * ((*ypq)(q, p) - (*ypq)(p, q)) / ((*t)(q) - (*t)(p)) : 0.0;

@@ -364,7 +364,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   // First solve lambda equation if this is MS-CASPT2
   assert (!((targetJ != targetI) && (nstates_ == 1)));
 
-  if (info_->do_ms() && nstates_ > 1) {
+  if ((info_->do_ms() && nstates_ > 1) || info_->shift() != 0.0) {
     // Lambda equation solver
     for (int i = 0; i != nstates_; ++i)
       lall_.push_back(t2all_[i]->clone());
@@ -534,7 +534,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   }
 
   correlated_norm_.resize(nstates_);
-  if (nstates_ == 1) {
+  if (nstates_ == 1 && info_->shift() == 0.0) {
     n = init_residual();
     shared_ptr<Queue> normq = make_normq();
     while (!normq->done())

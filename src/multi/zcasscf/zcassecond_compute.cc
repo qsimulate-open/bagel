@@ -171,7 +171,7 @@ void ZCASSecond_base::compute() {
     }
     auto R = make_shared<ZMatrix>(*a ^ *atmp);
     impose_symmetry(R);
-    coeff_ = make_shared<ZCoeff_Block>(*coeff_ * *R, coeff_->nclosed(), coeff_->nact(), coeff_->nvirt_nr(), coeff_->nneg());
+    coeff_ = make_shared<ZCoeff_Block>(*coeff_ * *R, nclosed_, nact_, nvirtnr_, nneg_);
 
     if (iter == max_iter_-1) {
       if (external_rdm_.empty() && !conv_ignore_) {
@@ -192,7 +192,9 @@ void ZCASSecond_base::compute() {
 #endif
   }
 
-  // this is not needed for energy, but for consistency we want to have this...
+  if (canonical_)
+    coeff_ = semi_canonical_orb();
+
   // update construct Jop from scratch
   muffle_->unmute();
   if (nact_ && external_rdm_.empty()) {

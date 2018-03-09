@@ -95,6 +95,9 @@ void ZCASSCF::init() {
   // option for printing natural orbital occupation numbers
   natocc_ = idata_->get<bool>("natocc", false);
 
+  // option for saving canonical orbitals
+  canonical_ = idata_->get<bool>("canonical", false);
+
   // nclosed from the input. If not present, full core space is generated.
   nclosed_ = idata_->get<int>("nclosed", -1);
   if (nclosed_ < -1) {

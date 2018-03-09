@@ -134,6 +134,7 @@ class SMITH_Info {
     std::shared_ptr<const Reference> ref() const { return ref_; }
     std::shared_ptr<const Geometry> geom() const { return ref_->geom(); }
     std::shared_ptr<const CIWfnT> ciwfn() const;
+    std::string external_rdm() const { return external_rdm_; }
 
     // this function hides coeff function in Reference and RelReference
     std::shared_ptr<const MatType> coeff() const { assert(false); }
