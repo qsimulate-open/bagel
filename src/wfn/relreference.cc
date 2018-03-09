@@ -48,6 +48,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   bool moved = false;
   bool newbasis = false;
+  bool newfield = (giao ? (geomin->magnetic_field() != geom_->magnetic_field()) : false);
 
   if (check_geom_change) {
     auto j = geomin->atoms().begin();
@@ -124,7 +125,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
     auto c2 = make_shared<ZCoeff_Striped>(*c, relcoeff_->nclosed(), relcoeff_->nact(), relcoeff_->nvirt_nr(), relcoeff_->nneg());
     out = make_shared<RelReference>(geomin, c2, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
-  } else if (!moved && geomin->magnetism() && !geom_->magnetism()) {
+  } else if (!moved && !newfield) {
     // Special case - do nothing when converting from standard basis to GIAO without adding field
     out = make_shared<RelReference>(geomin, relcoeff_, energy_, nneg(), nclosed(), nact(), nvirt()+2*(geomin->nbasis()-geom_->nbasis()), gaunt_, breit_, kramers_);
 
