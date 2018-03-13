@@ -335,6 +335,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
         while (!normq->done())
           normq->next_compute();
         // shift r
+        e0_ = e0all_[i];
         add_imaginary_shift(rall_[i]->at(i), n);
       }
 
