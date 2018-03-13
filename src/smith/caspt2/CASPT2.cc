@@ -386,10 +386,10 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         // This should also yield right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
-        for (int ist = 0; ist != nstates_; ++ist) {//N states
+        for (int ist = 0; ist != nstates_; ++ist) {  //N
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
-          for (int jst = 0; jst != nstates_; ++jst) {
+          for (int jst = 0; jst != nstates_; ++jst) {  //M
             if (sall_[ist]->at(jst)) {
               sist->at(jst) = sall_[ist]->at(jst);
             } else {
@@ -400,14 +400,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
                 sourceq->next_compute();
               sist->at(jst) = s;
             }
-            if (jst == ist)
-              sall_[ist]->at(jst)->ax_plus_y((*heff_)(ist, target) * (*heff_)(ist, target), sist->at(jst));
           }
           source->ax_plus_y((*heff_)(ist, target), sist);
+          sall_[ist]->ax_plus_y((*heff_)(ist, target) * (*heff_)(ist, target), sist);
         }
 
         for (int istate = 0; istate != nstates_; ++istate) { //L states
-          for (int jst = 0; jst != nstates_; ++jst) {
+          for (int jst = 0; jst != nstates_; ++jst) { // M
             if (!info_->sssr() || istate == jst)
               sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), source->at(jst));
           }

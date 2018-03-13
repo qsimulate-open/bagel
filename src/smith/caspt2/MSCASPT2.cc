@@ -369,14 +369,14 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(llhJI);
           }
 
-          if ((!info_->sssr() || (mst == lst && nst == lst)) && info_->shift_imag()) {
+          if ((mst == lst && nst == lst) && info_->shift_imag()) {
             e0_ = e0all_[lst];
             l2 = t2all_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(true);
             while(!dec->done())
               dec->next_compute();
-            dec = make_deci2q(true);
+            dec = make_deci2q(false);
             while (!dec->done())
               dec->next_compute();
             add_total(2.0 * llhJI);
