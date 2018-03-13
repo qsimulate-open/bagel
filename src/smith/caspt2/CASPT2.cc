@@ -318,13 +318,26 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           r = rall_[i]->at(jst);
 
           // compute residuals named r for each K
-          e0_ = e0all_[i] - info_->shift();
+          e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
           diagonal(r, t2, jst == ist);
         }
       }
+
+      if (info_->shift_imag()) {
+        // considering only SS-SR case for time being. Get <L | E^+ T_LL | L>
+        n = init_residual();
+        set_rdm(i, i);
+        t2 = t2all_[i]->at(i);
+        shared_ptr<Queue> normq = make_normq(true, true);
+        while (!normq->done())
+          normq->next_compute();
+        // shift r
+        add_imaginary_shift(rall_[i]->at(i), n);
+      }
+
       // solve using subspace updates
       rall_[i] = solver->compute_residual(t[i], rall_[i]);
       t[i] = solver->civec();
