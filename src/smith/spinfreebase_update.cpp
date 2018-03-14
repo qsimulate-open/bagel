@@ -45,6 +45,7 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
   const int nst = t->nref();
   const int fac2 = is_same<DataType,double>::value ? 1.0 : 2.0;
+  const double shift2 = info_->shift() * info_->shift();
 
   for (int ist = 0; ist != nst; ++ist) {
     t->fac(ist) = 0.0;
@@ -67,12 +68,17 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 blas::scale_n(0.25, data0.get(), r->at(ist)->get_size(i0, i1, i2, i3));
               }
               size_t iall = 0;
+              // note that e0 is cancelled by another term
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                      // note that e0 is cancelled by another term
-                      data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
+                    for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                      if (info_->shift_imag()) {
+                        data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc - shift2 / (eig_[j3] + eig_[j1] - eig_[j2] - eig_[j0] + e0loc));
+                      } else {
+                        data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
+                      }
+                    }
               t->at(ist)->add_block(data0, i0, i1, i2, i3);
             }
           }
