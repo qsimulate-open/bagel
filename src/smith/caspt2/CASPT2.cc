@@ -288,7 +288,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
     double error = 0.0;
-    e0_ = e0all_[i] - info_->shift();
+    e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
     energy_[i] = 0.0;
     // set guess vector
     t[i]->zero();
@@ -322,20 +322,20 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
+
           diagonal(r, t2, jst == ist);
         }
       }
 
       if (info_->shift_imag()) {
-        // considering only SS-SR case for time being. Get <L | E^+ T_LL | L>
+        // considering only SS-SR case for the time being (I am quite unsure yet). Get <L | E^+ T_LL | L>
+        // convergence pattern is not that good
         n = init_residual();
         set_rdm(i, i);
-        t2 = t2all_[i]->at(i);
+        t2 = t[i]->at(i);
         shared_ptr<Queue> normq = make_normq(true, true);
         while (!normq->done())
           normq->next_compute();
-        // shift r
-        e0_ = e0all_[i];
         add_imaginary_shift(rall_[i]->at(i), n);
       }
 
