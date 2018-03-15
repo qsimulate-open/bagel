@@ -140,7 +140,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<3>
 }
 
 
-void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tensor> norm, const int istate) {
+void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<const Tensor> norm, const int istate) {
   const double shift2 = info_->shift() * info_->shift();
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
@@ -173,54 +173,6 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
             res->add_block(temp, i0, i1, i2, i3);
 
           }
-  }
-
-  // a r b i case
-  {
-    for (auto& i0 : active_) {
-      const size_t interm_size = denom_->shalf_x()->ndim();
-      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I0) {
-        unique_ptr<double[]> out(new double[I0.size()*interm_size]);
-        for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
-          copy_n(denom_->shalf_x()->element_ptr(0,j0-nclosed + i*nact), interm_size, out.get()+interm_size*k);
-        return move(out);
-      };
-      unique_ptr<double[]> transp = create_transp(istate, i0);
-
-      for (auto& i3 : virt_) {
-        for (auto& i2 : closed_) {
-          for (auto& i1 : virt_) {
-            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            const int blocksize = norm->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> data2(new double[blocksize]);
-            sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
-
-            // move to orthogonal basis
-            unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*interm_size]);
-            btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, interm_size, i1.size()*i2.size()*i3.size(), i0.size(),
-                                        1.0, transp.get(), interm_size, data2.get(), i0.size(), 0.0, interm.get(), interm_size);
-
-            size_t iall = 0;
-            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
-                    interm[iall] *= (shift2 / (denom_->denom_x(j0) + eig_[j3] + eig_[j1] - eig_[j2] - e0_));
-                  }
-
-            // move back to non-orthogonal basis
-            unique_ptr<double[]> data3(new double[blocksize]);
-            btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
-                                        1.0, transp.get(), interm_size, interm.get(), interm_size, 0.0, data3.get(), i0.size());
-            unique_ptr<double[]> data4(new double[blocksize]);
-            sort_indices<2,3,0,1,0,1,1,1>(data3, data4, i0.size(), i1.size(), i2.size(), i3.size());
-
-            res->add_block(data4, i2, i3, i0, i1);
-          }
-        }
-      }
-    }
   }
 
   // a r b s case
@@ -273,6 +225,55 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
     }
     }
   }
+
+  // a r b i case
+  {
+    for (auto& i0 : active_) {
+      const size_t interm_size = denom_->shalf_x()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I0) {
+        unique_ptr<double[]> out(new double[I0.size()*interm_size]);
+        for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
+          copy_n(denom_->shalf_x()->element_ptr(0,j0-nclosed + i*nact), interm_size, out.get()+interm_size*k);
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i0);
+
+      for (auto& i3 : virt_) {
+        for (auto& i2 : closed_) {
+          for (auto& i1 : virt_) {
+            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
+            const int blocksize = norm->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
+            unique_ptr<double[]> data2(new double[blocksize]);
+            sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
+
+            // move to orthogonal basis
+            unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*interm_size]);
+            btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, interm_size, i1.size()*i2.size()*i3.size(), i0.size(),
+                                        1.0, transp.get(), interm_size, data2.get(), i0.size(), 0.0, interm.get(), interm_size);
+
+            size_t iall = 0;
+            for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
+                    interm[iall] *= (shift2 / (denom_->denom_x(j0) + eig_[j3] + eig_[j1] - eig_[j2] - e0_));
+                  }
+
+            // move back to non-orthogonal basis
+            unique_ptr<double[]> data3(new double[blocksize]);
+            btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
+                                        1.0, transp.get(), interm_size, interm.get(), interm_size, 0.0, data3.get(), i0.size());
+            unique_ptr<double[]> data4(new double[blocksize]);
+            sort_indices<2,3,0,1,0,1,1,1>(data3, data4, i0.size(), i1.size(), i2.size(), i3.size());
+
+            res->add_block(data4, i2, i3, i0, i1);
+          }
+        }
+      }
+    }
+  }
+#if 1
 
   // a i r j case
   {
@@ -542,6 +543,7 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
     }
     }
   }
+#endif
 
 }
 

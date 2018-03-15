@@ -133,11 +133,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               size_t iall = 0;
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j02 = 0; j02 != interm_size; ++j02, ++iall)
-                    if (info_->shift_imag())
+                  for (int j02 = 0; j02 != interm_size; ++j02, ++iall) {
+                    if (info_->shift_imag()) {
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]) - shift2 / (denom_->denom_xx(j02) + eig_[j3] + eig_[j1] - e0_));
-                    else
+                    } else {
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
+                    }
+                  }
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -202,10 +204,11 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
-                        if (info_->shift_imag())
+                        if (info_->shift_imag()) {
                           interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]) - shift2 / (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1] - e0_));
-                        else
+                        } else {
                           interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
+                        }
                       }
 
                 // move back to non-orthogonal basis
@@ -266,8 +269,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 for (int j3 = 0; j3 != interm_size; ++j3)
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                        interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]));
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                        if (info_->shift_imag()) {
+                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]) - shift2 / (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0] - e0_));
+                        } else {
+                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]));
+                        }
+                      }
 
                 // move back to non-orthogonal basis
                 unique_ptr<DataType[]> data3(new DataType[blocksizet]);
@@ -324,8 +332,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               size_t iall = 0;
               for (int j13 = 0; j13 != interm_size; ++j13)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]));
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                    if (info_->shift_imag()) {
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]) - shift2 / (denom_->denom_hh(j13) - eig_[j2] - eig_[j0] - e0_));
+                    } else {
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]));
+                    }
+                  }
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -393,8 +406,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               size_t iall = 0;
               for (int j23 = 0; j23 != interm_size; ++j23)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]));
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                    if (info_->shift_imag()) {
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]) - shift2 / (denom_->denom_xh(j23) + eig_[j1] - eig_[j0] - e0_));
+                    } else {
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]));
+                    }
+                  }
 
               // move back to non-orthogonal basis
               btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2t.size()*i3t.size()*2, interm_size,
@@ -516,8 +534,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
             size_t iall = 0;
             for (int j123 = 0; j123 != interm_size; ++j123)
-              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
-                interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]));
+              for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall) {
+                if (info_->shift_imag()) {
+                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]) - shift2 / (denom_->denom_xxh(j123) + eig_[j1] - e0_));
+                } else {
+                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]));
+                }
+              }
 
             // move back to non-orthogonal basis
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i1.size(), i0t.size()*i2t.size()*i3t.size(), interm_size,
@@ -579,8 +602,13 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
 
             size_t iall = 0;
             for (int j013 = 0; j013 != interm_size; ++j013)
-              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
-                interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]));
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall) {
+                if (info_->shift_imag()) {
+                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]) - shift2 / (denom_->denom_xhh(j013) - eig_[j2] - e0_));
+                } else {
+                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]));
+                }
+              }
 
             // move back to non-orthogonal basis
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i2.size(), i0t.size()*i1t.size()*i3t.size(), interm_size,
