@@ -323,20 +323,16 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           while (!queue->done())
             queue->next_compute();
 
+          if (info_->shift_imag()) {
+            n = init_residual();
+            shared_ptr<Queue> normq = make_normq(true, true);
+            while (!normq->done())
+              normq->next_compute();
+            add_imaginary_shift(r, n, i);
+          }
+
           diagonal(r, t2, jst == ist);
         }
-      }
-
-      if (info_->shift_imag()) {
-        // considering only SS-SR case for the time being (I am quite unsure yet). Get <L | E^+ T_LL | L>
-        // convergence pattern is not that good
-        n = init_residual();
-        set_rdm(i, i);
-        t2 = t[i]->at(i);
-        shared_ptr<Queue> normq = make_normq(true, true);
-        while (!normq->done())
-          normq->next_compute();
-        add_imaginary_shift(rall_[i]->at(i), n);
       }
 
       // solve using subspace updates

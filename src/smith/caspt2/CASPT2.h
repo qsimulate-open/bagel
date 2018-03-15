@@ -152,7 +152,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> get_rdm();
     std::shared_ptr<VectorB> contract_rdm_deriv(std::shared_ptr<const CIWfn> ciwfn, int offset, int size, std::shared_ptr<const Matrix> fock);
     void do_rdm_deriv(double factor);
-    void add_imaginary_shift(std::shared_ptr<Tensor> res, std::shared_ptr<Tensor> norm);
+    void add_imaginary_shift(std::shared_ptr<Tensor> res, std::shared_ptr<Tensor> norm, const int state);
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);

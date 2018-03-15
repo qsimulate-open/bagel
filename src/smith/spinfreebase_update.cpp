@@ -134,7 +134,10 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != interm_size; ++j02, ++iall)
-                    interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
+                    if (info_->shift_imag())
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]) - shift2 / (denom_->denom_xx(j02) + eig_[j3] + eig_[j1] - e0_));
+                    else
+                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
 
               // move back to non-orthogonal basis
               // factor of 0.5 due to the factor in the overlap
@@ -198,8 +201,12 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                 for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                      for (int j0 = 0; j0 != interm_size; ++j0, ++iall)
-                        interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
+                      for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
+                        if (info_->shift_imag())
+                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]) - shift2 / (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1] - e0_));
+                        else
+                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
+                      }
 
                 // move back to non-orthogonal basis
                 unique_ptr<DataType[]> data3(new DataType[blocksizet]);
