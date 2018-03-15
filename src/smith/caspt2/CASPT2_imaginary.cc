@@ -178,8 +178,6 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
   // a r b i case
   {
     for (auto& i0 : active_) {
-      // trans is the transformation matrix
-      assert(denom_->shalf_x());
       const size_t interm_size = denom_->shalf_x()->ndim();
       auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I0) {
         unique_ptr<double[]> out(new double[I0.size()*interm_size]);
@@ -208,7 +206,7 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
               for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
-                    interm[iall] *= shift2 / (denom_->denom_x(j0) + eig_[j3] + eig_[j1] - eig_[j2] - e0_);
+                    interm[iall] *= (shift2 / (denom_->denom_x(j0) + eig_[j3] + eig_[j1] - eig_[j2] - e0_));
                   }
 
             // move back to non-orthogonal basis
@@ -275,353 +273,275 @@ void CASPT2::CASPT2::add_imaginary_shift(shared_ptr<Tensor> res, shared_ptr<Tens
     }
     }
   }
-#if 0
-#if 0
-  // a r b i case
-  {
-    auto dx = make_shared<RDM<1>>(nact);
-    auto workv = btas::group(*dx, 0,2);
-    auto rdm2v = btas::group(btas::group(*rdm2,2,4),0,2);
-    btas::contract(1.0, rdm2v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
-    for (auto& i0 : active_)
-      for (auto& i3 : virt_)
-        for (auto& i2 : closed_)
-          for (auto& i1 : virt_) {
-            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i2, i3, i0, i1)]);
-
-            size_t iall = 0;
-            for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dx->element(j0-nclosed,j0-nclosed) - eig_[j2] + eig_[j3] + eig_[j1] - e0_);
-                  }
-            res->add_block(temp, i2, i3, i0, i1);
-          }
-  }
-#endif
-  // a r b s case
-  {
-    // this term is either wrong or I am misunderstanding something
-    auto dxx = make_shared<RDM<2>>(nact);
-    auto workv = btas::group(*dxx, 0,4);
-    auto rdm3v = btas::group(btas::group(*rdm3,4,6),0,4);
-    btas::contract(1.0, rdm3v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
-    for (auto& i2 : active_)
-      for (auto& i0 : active_)
-        for (auto& i3 : virt_)
-          for (auto& i1 : virt_) {
-            if (!norm->is_local(i0, i1, i2, i3) || !res->get_size(i0, i1, i2, i3)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i0, i1, i2, i3);
-            unique_ptr<double[]> temp(new double[res->get_size(i0, i1, i2, i3)]);
-
-            size_t iall = 0;
-            for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-              for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1)
-                for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-                  for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dxx->element(j0-nclosed,j2-nclosed,j0-nclosed,j2-nclosed) + eig_[j3] + eig_[j1] - e0_ );
-                  }
-            res->add_block(temp, i0, i1, i2, i3);
-          }
-  }
 
   // a i r j case
-  // responsible for different sth
   {
-    const size_t dim = nact;
-    auto dh = make_shared<Matrix>(dim, dim);
-    {
-      auto D2h = make_shared<RDM<2>>(*rdm2);
-      D2h->scale(-1.0);
-      for (int i0 = 0; i0 != nact; ++i0)
-        for (int i1 = 0; i1 != nact; ++i1)
-          for (int i2 = 0; i2 != nact; ++i2)
-            for (int i3 = 0; i3 != nact; ++i3) {
-              if (i1 == i2 && i0 == i3) D2h->element(i0, i1, i2, i3) += 2.0;
-              if (i1 == i2) D2h->element(i0, i1, i2, i3) -= rdm1->element(i0, i3);
-              if (i0 == i3) D2h->element(i0, i1, i2, i3) -= rdm1->element(i1, i2);
-              if (i0 == i1) D2h->element(i0, i1, i2, i3) += 2.0 * rdm1->element(i2, i3);
-            }
-      auto workv = btas::group(*dh, 0,2);
-      auto rdm2v = btas::group(btas::group(*D2h,2,4),0,2);
-      btas::contract(1.0, rdm2v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
-    }
+    for (auto& i3 : active_) {
+      // trans is the transformation matrix
+      assert(denom_->shalf_h());
+      const size_t interm_size = denom_->shalf_x()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I3) {
+        unique_ptr<double[]> out(new double[I3.size()*interm_size]);
+        for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3, ++k)
+          copy_n(denom_->shalf_h()->element_ptr(0,j3-nclosed + i*nact), interm_size, out.get()+interm_size*k);
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i3);
 
-    for (auto& i3 : active_)
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
+      for (auto& i2 : closed_) {
+        for (auto& i1 : virt_) {
           for (auto& i0 : closed_) {
             if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i2, i3, i0, i1)]);
+            const size_t blocksize = norm->get_size(i2, i3, i0, i1);
+
+            unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
+            unique_ptr<double[]> data2(new double[blocksize]);
+            sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
+
+            // move to orthogonal basis
+            unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*interm_size]);
+            btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size()*i2.size(), interm_size, i3.size(),
+                                        1.0, data2.get(), i0.size()*i1.size()*i2.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i1.size()*i2.size());
 
             size_t iall = 0;
-            for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dh->element(j3-nclosed,j3-nclosed) - eig_[j2] + eig_[j1] - eig_[j0] - e0_);
-                  }
+            for (int j3 = 0; j3 != interm_size; ++j3)
+              for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                    interm[iall] *= shift2 / (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0] - e0_);
 
-            res->add_block(temp, i2, i3, i0, i1);
+            // move back to non-orthogonal basis
+            unique_ptr<double[]> data3(new double[blocksize]);
+            btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), interm_size,
+                                        1.0, interm.get(), i0.size()*i1.size()*i2.size(), transp.get(), interm_size, 0.0, data3.get(), i0.size()*i1.size()*i2.size());
+
+            unique_ptr<double[]> data4(new double[blocksize]);
+            sort_indices<2,3,0,1,0,1,1,1>(data3, data4, i0.size(), i1.size(), i2.size(), i3.size());
+
+            res->add_block(data4, i2, i3, i0, i1);
           }
+        }
+      }
+    }
   }
 
   // r i s j case
-  // seems right
   {
-    const size_t dim = nact * nact;
-    auto dhh = make_shared<Matrix>(dim, dim);
-    {
-      auto D3hh = make_shared<RDM<3>>(*rdm3);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          for (int k = 0; k != nact; ++k)
-            for (int l = 0; l != nact; ++l)
-              for (int m = 0; m != nact; ++m)
-                for (int n = 0; n != nact; ++n) {
-                  if (l == n) D3hh->element(i,j,k,l,m,n) += rdm2->element(j,m,i,k);
-                  if (l == m) D3hh->element(i,j,k,l,m,n) += rdm2->element(i,n,j,k);
-                  if (i == n) D3hh->element(i,j,k,l,m,n) += rdm2->element(i,m,l,k);
-                  if (j == n && l == m) D3hh->element(i,j,k,l,m,n) += rdm1->element(i,k);
-                  if (j == m) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm2->element(i,n,l,k);
-                  if (j == m && l == n) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(i,k);
-                  if (j == k) D3hh->element(i,j,k,l,m,n) += rdm2->element(i,n,l,m);
-                  if (j == k && l == n) D3hh->element(i,j,k,l,m,n) += rdm1->element(i,m);
-                  if (j == k && l == m) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(i,n);
-                  if (i == n) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm2->element(j,m,l,k);
-                  if (i == n && l == m) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(j,k);
-                  if (j == k && i == n) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(l,m);
-                  if (j == k && i == n && l == m) D3hh->element(i,j,k,l,m,n) += 4.0;
-                  if (i == m) D3hh->element(i,j,k,l,m,n) += rdm2->element(i,n,l,k);
-                  if (l == n && i == m) D3hh->element(i,j,k,l,m,n) += rdm1->element(j,k);
-                  if (j == k && i == m) D3hh->element(i,j,k,l,m,n) += rdm1->element(l,n);
-                  if (j == k && i == m && l == n) D3hh->element(i,j,k,l,m,n) -= 2.0;
-                  if (i == k) D3hh->element(i,j,k,l,m,n) += rdm2->element(l,n,j,m);
-                  if (i == k && l == n) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(j,m);
-                  if (i == k && l == m) D3hh->element(i,j,k,l,m,n) += rdm1->element(j,n);
-                  if (j == n && i == k) D3hh->element(i,j,k,l,m,n) += rdm1->element(i,m);
-                  if (i == k && j == n && l == m) D3hh->element(i,j,k,l,m,n) -= 2.0;
-                  if (i == k && j == m) D3hh->element(i,j,k,l,m,n) += rdm1->element(l,n);
-                  if (j == m && l == n && i == k) D3hh->element(i,j,k,l,m,n) += 4.0;
-                  if (i == n && j == m) D3hh->element(i,j,k,l,m,n) += 4.0 * rdm1->element(l,k);
-                  if (i == m && j == n) D3hh->element(i,j,k,l,m,n) -= 2.0 * rdm1->element(l,k);
-                }
-      auto workv = btas::group(*dhh, 0,2);
-      auto rdm3v = btas::group(btas::group(*D3hh,4,6),0,4);
-      btas::contract(1.0, rdm3v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
+    for (auto& i3 : active_) {
+    for (auto& i1 : active_) {
+      assert(denom_->shalf_hh());
+      const size_t interm_size = denom_->shalf_hh()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I1, const Index& I3) {
+        unique_ptr<double[]> out(new double[I1.size()*I3.size()*interm_size]);
+        for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+          for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1, ++k)
+            copy_n(denom_->shalf_hh()->element_ptr(0,(j1-nclosed)+(j3-nclosed)*nact + i*nact*nact),
+                   interm_size, out.get()+interm_size*k);
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i1, i3);
+
+      for (auto& i2 : closed_) {
+        for (auto& i0 : closed_) {
+          if (!norm->is_local(i0, i1, i2, i3) || !res->get_size(i0, i1, i2, i3)) continue;
+          const size_t blocksize = norm->get_size(i0, i1, i2, i3);
+          // data0 is the source area
+          unique_ptr<double[]> data0 = norm->get_block(i0, i1, i2, i3);
+          unique_ptr<double[]> data1(new double[blocksize]);
+          // sort. Active indices run slower
+          sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
+          // intermediate area
+          unique_ptr<double[]> interm(new double[i0.size()*i2.size()*interm_size]);
+
+          // move to orthogonal basis
+          btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i2.size(), interm_size, i1.size()*i3.size(),
+                                      1.0, data1.get(), i0.size()*i2.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i2.size());
+
+          size_t iall = 0;
+          for (int j13 = 0; j13 != interm_size; ++j13)
+            for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                interm[iall] *= shift2 / (denom_->denom_hh(j13) - eig_[j2] - eig_[j0] - e0_);
+
+          // move back to non-orthogonal basis
+          // factor of 0.5 due to the factor in the overlap
+          btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), interm_size,
+                                      0.5, interm.get(), i0.size()*i2.size(), transp.get(), interm_size, 0.0, data1.get(), i0.size()*i2.size());
+
+          // sort back to the original order
+          unique_ptr<double[]> data2(new double[blocksize]);
+          sort_indices<0,2,1,3,0,1,1,1>(data1, data2, i0.size(), i2.size(), i1.size(), i3.size());
+          res->add_block(data2, i0, i1, i2, i3);
+        }
+      }
     }
-    for (auto& i3 : active_)
-      for (auto& i1 : active_)
-        for (auto& i2 : closed_)
-          for (auto& i0 : closed_) {
-            if (!norm->is_local(i0, i1, i2, i3) || !res->get_size(i0, i1, i2, i3)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i0, i1, i2, i3);
-            unique_ptr<double[]> temp(new double[res->get_size(i0, i1, i2, i3)]);
-
-            size_t iall = 0;
-            for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-              for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1)
-                for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-                  for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dhh->element(j1-nclosed+(j3-nclosed)*nact, j1-nclosed+(j3-nclosed)*nact) - eig_[j2] - eig_[j0] - e0_);
-                  }
-
-            res->add_block(temp, i0, i1, i2, i3);
-          }
+    }
   }
 
-  // a i r s case
-  // wrong from here
+  // a i r s & a r s i case
   {
-    const size_t dim = nact * nact;
-    auto dxh2 = make_shared<Matrix>(dim, dim);
-    {
-      auto D3xh2 = make_shared<RDM<3>>(*rdm3);
-      D3xh2->scale(-1.0);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          for (int k = 0; k != nact; ++k)
-            for (int l = 0; l != nact; ++l)
-              for (int m = 0; m != nact; ++m)
-                for (int n = 0; n != nact; ++n) {
-                  if (n == i) D3xh2->element(i,j,k,l,m,n) -= rdm2->element(m,j,k,l);
-                  if (j == m) D3xh2->element(i,j,k,l,m,n) -= rdm2->element(i,n,k,l);
-                  if (n == i && j == m) D3xh2->element(i,j,k,l,m,n) += 2.0 * rdm1->element(k,l);
-                  if (i == j) D3xh2->element(i,j,k,l,m,n) += 2.0 * rdm2->element(m,n,k,l);
-                }
-      auto workv = btas::group(*dxh2, 0,2);
-      auto rdm3v = btas::group(btas::group(*D3xh2,4,6),0,4);
-      btas::contract(1.0, rdm3v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
-    }
-    for (auto& i0 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i2 : active_)
-          for (auto& i3 : active_) {
-            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i2, i3, i0, i1)]);
-
-            size_t iall = 0;
-            for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dxh2->element(j2-nclosed+(j2-nclosed)*nact, j3-nclosed+(j3-nclosed)*nact) + eig_[j1] - eig_[j0] - e0_);
-//                    cout << " " << j0 << " " << j1 << " " << j2 << " " << j3 << "  = " << dxh1->element(j2+j2*nact, j3+j3*nact) + eig_[j1] - eig_[j0] - e0_ << endl;
-                  }
-
-            res->add_block(temp, i2, i3, i0, i1);
+    for (auto& i3 : active_) {
+    for (auto& i2 : active_) {
+      assert(denom_->shalf_xh());
+      const size_t interm_size = denom_->shalf_xh()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I2, const Index& I3) {
+        unique_ptr<double[]> out(new double[I2.size()*I3.size()*interm_size*2]);
+        for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+          for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k) {
+            copy_n(denom_->shalf_xh()->element_ptr(0, (j2-nclosed)+(j3-nclosed)*nact + 2*i*nact*nact),
+                   interm_size, out.get()+interm_size*k);
+            copy_n(denom_->shalf_xh()->element_ptr(0, (j2-nclosed)+(j3-nclosed)*nact + (2*i+1)*nact*nact),
+                   interm_size, out.get()+interm_size*(k+I2.size()*I3.size()));
           }
-  }
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i2, i3);
 
-//  cout << " a r s i case " << endl;
-  // a r s i case
-  {
-    const size_t dim = nact * nact;
-    auto dxh1 = make_shared<Matrix>(dim, dim);
-    {
-      auto D3xh1 = make_shared<RDM<3>>(*rdm3);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          for (int k = 0; k != nact; ++k)
-            for (int l = 0; l != nact; ++l)
-              for (int m = 0; m != nact; ++m)
-                for (int n = 0; n != nact; ++n) {
-                  if (n == k) D3xh1->element(i,j,k,l,m,n) += rdm2->element(i,j,m,l);
-                  if (j == m) D3xh1->element(i,j,k,l,m,n) += rdm2->element(i,n,k,l);
-                  if (j == m && n == k) D3xh1->element(i,j,k,l,m,n) += rdm1->element(i,l);
-                  if (j == k) D3xh1->element(i,j,k,l,m,n) += rdm2->element(m,n,i,l);
-                }
-      auto workv = btas::group(*dxh1, 0,2);
-      auto rdm3v = btas::group(btas::group(*D3xh1,4,6),0,4);
-      btas::contract(1.0, rdm3v, {0,1}, btas::group(*fockact_,0,2), {1}, 0.0, workv, {0});
+      for (auto& i1 : virt_) {
+        for (auto& i0 : closed_) {
+          if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
+          const size_t blocksize = norm->get_size(i2, i3, i0, i1);
+          unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
+          unique_ptr<double[]> data1 = norm->get_block(i0, i3, i2, i1);
+
+          unique_ptr<double[]> data2(new double[blocksize*2]);
+          // sort. Active indices run slower
+          sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
+          sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+          // intermediate area
+          unique_ptr<double[]> interm(new double[i0.size()*i1.size()*interm_size]);
+
+          // move to orthogonal basis
+          btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size(), interm_size, i2.size()*i3.size()*2,
+                                      1.0, data2.get(), i0.size()*i1.size(), transp.get(), interm_size, 0.0, interm.get(), i0.size()*i1.size());
+
+          size_t iall = 0;
+          for (int j23 = 0; j23 != interm_size; ++j23)
+            for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+              for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                interm[iall] *= shift2 / (denom_->denom_xh(j23) + eig_[j1] - eig_[j0] - e0_);
+
+          // move back to non-orthogonal basis
+          btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size()*2, interm_size,
+                                      1.0, interm.get(), i0.size()*i1.size(), transp.get(), interm_size, 0.0, data2.get(), i0.size()*i1.size());
+
+          // sort back to the original order
+          unique_ptr<double[]> data3(new double[blocksize]);
+          unique_ptr<double[]> data4(new double[blocksize]);
+          sort_indices<2,3,0,1,0,1,1,1>(data2.get()          , data3.get(), i0.size(), i1.size(), i2.size(), i3.size());
+          sort_indices<0,3,2,1,0,1,1,1>(data2.get()+blocksize, data4.get(), i0.size(), i1.size(), i2.size(), i3.size());
+          res->add_block(data3, i2, i3, i0, i1);
+          res->add_block(data4, i0, i3, i2, i1);
+        }
+      }
     }
-    for (auto& i0 : closed_)
-      for (auto& i1 : virt_)
-        for (auto& i2 : active_)
-          for (auto& i3 : active_) {
-            if (!norm->is_local(i0, i3, i2, i1) || !res->get_size(i0, i3, i2, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i0, i3, i2, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i0, i3, i2, i1)]);
-
-            size_t iall = 0;
-            for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-                    temp[iall] = ncurrent[iall] * shift2 / (dxh1->element(j2-nclosed+(j2-nclosed)*nact, j3-nclosed+(j3-nclosed)*nact) + eig_[j1] - eig_[j0] - e0_);
-//                    cout << " " << j0 << " " << j1 << " " << j2 << " " << j3 << "  = " << dxh2->element(j2+j2*nact, j3+j3*nact) + eig_[j1] - eig_[j0] - e0_ << endl;
-                  }
-
-            res->add_block(temp, i0, i3, i2, i1);
-          }
+    }
   }
 
   // a r s t case
   {
-    auto dxxh = make_shared<RDM<3>>(*rdm4f);
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nact; ++j)
-        for (int k = 0; k != nact; ++k)
-          for (int l = 0; l != nact; ++l)
-            for (int m = 0; m != nact; ++m)
-              for (int n = 0; n != nact; ++n) {
-                dxxh->element(i,j,k,l,m,n) += rdm2->element(i,l,m,n) * fockact_->element(j,k);
-                for (int o = 0; o != nact; ++o) {
-                  dxxh->element(i,j,k,l,m,n) += rdm3->element(i,j,o,l,m,n) * fockact_->element(o,k);
-                  dxxh->element(i,j,k,l,m,n) += rdm3->element(i,o,k,l,m,n) * fockact_->element(j,o);
-                  for (int p = 0; p != nact; ++p)
-                    if (j == k) dxxh->element(i,j,k,l,m,n) += rdm3->element(o,p,i,l,m,n) * fockact_->element(o,p);
-                }
-              }
-    for (auto& i0 : active_)
-      for (auto& i1 : virt_)
-        for (auto& i2 : active_)
-          for (auto& i3 : active_) {
-            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i2, i3, i0, i1)]);
+    for (auto& i3 : active_) {
+    for (auto& i2 : active_) {
+    for (auto& i0 : active_) {
+      assert(denom_->shalf_xxh());
+      const size_t interm_size = denom_->shalf_xxh()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I0, const Index& I2, const Index& I3) {
+        unique_ptr<double[]> out(new double[I0.size()*I2.size()*I3.size()*interm_size]);
+        for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+          for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2)
+            for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+              copy_n(denom_->shalf_xxh()->element_ptr(0,j0-nclosed+nact*(j2-nclosed+nact*(j3-nclosed)) + i*nact*nact*nact),
+                     interm_size, out.get()+interm_size*k);
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i0, i2, i3);
 
-            size_t iall = 0;
-            for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-//                    temp[iall] = ncurrent[iall] * shift2 / (dxxh->element(j0-nclosed,j0-nclosed,j2-nclosed,j2-nclosed,j3-nclosed,j3-nclosed) + eig_[j1] - e0_);
-                    temp[iall] = ncurrent[iall] * shift2 / (dxxh->element(j0-nclosed,j2-nclosed,j3-nclosed,j0-nclosed,j2-nclosed,j3-nclosed) + eig_[j1] - e0_);
-                  }
+      for (auto& i1 : virt_) {
+        if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
+        const size_t blocksize = norm->get_size(i2, i3, i0, i1);
+        // data0 is the source area
+        unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
+        unique_ptr<double[]> data1(new double[blocksize]);
+        // sort. Active indices run slower
+        sort_indices<3,2,0,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+        // intermediate area
+        unique_ptr<double[]> interm(new double[i1.size()*interm_size]);
 
-            res->add_block(temp, i2, i3, i0, i1);
-          }
+        // move to orthogonal basis
+        btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i1.size(), interm_size, i0.size()*i2.size()*i3.size(),
+                                    1.0, data1.get(), i1.size(), transp.get(), interm_size, 0.0, interm.get(), i1.size());
+
+        size_t iall = 0;
+        for (int j123 = 0; j123 != interm_size; ++j123)
+          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall)
+            interm[iall] *= shift2 / (denom_->denom_xxh(j123) + eig_[j1] - e0_);
+
+        // move back to non-orthogonal basis
+        btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i1.size(), i0.size()*i2.size()*i3.size(), interm_size,
+                                    1.0, interm.get(), i1.size(), transp.get(), interm_size, 0.0, data1.get(), i1.size());
+
+        // sort back to the original order
+        unique_ptr<double[]> data2(new double[blocksize]);
+        sort_indices<2,3,1,0,0,1,1,1>(data1, data2, i1.size(), i0.size(), i2.size(), i3.size());
+        res->add_block(data2, i2, i3, i0, i1);
+      }
+    }
+    }
+    }
   }
- 
+
   // r i s t case
   {
-    auto dxhh = make_shared<RDM<3>>(*rdm4f);
-    dxhh->scale(-1.0);
-    for (int i = 0; i != nact; ++i)
-      for (int j = 0; j != nact; ++j)
-        for (int k = 0; k != nact; ++k)
-          for (int l = 0; l != nact; ++l)
-            for (int m = 0; m != nact; ++m)
-              for (int n = 0; n != nact; ++n) {
-                dxhh->element(i,j,k,l,m,n) -= rdm2->element(i,j,k,m) * fockact_->element(l,m);
-                dxhh->element(i,j,k,l,m,n) += 2.0 * rdm2->element(i,j,m,n) * fockact_->element(l,k);
-                if (j == m) dxhh->element(i,j,k,l,m,n) += 2.0 * rdm1->element(i,n) * fockact_->element(l,k);
-                if (j == k) dxhh->element(i,j,k,l,m,n) -= rdm1->element(i,n) * fockact_->element(l,m);
-                dxhh->element(i,j,k,l,m,n) -= rdm2->element(k,l,i,n) * fockact_->element(j,m);
-                dxhh->element(i,j,k,l,m,n) -= rdm2->element(i,l,m,n) * fockact_->element(j,k);
-                if (l == m) dxhh->element(i,j,k,l,m,n) -= rdm1->element(i,n) * fockact_->element(j,k);
-                if (l == k && j == m) dxhh->element(i,j,k,l,m,n) += 2.0 * rdm1->element(i,n);
-                for (int o = 0; o != nact; ++o) {
-                  dxhh->element(i,j,k,l,m,n) -= rdm3->element(o,n,i,j,k,l) * fockact_->element(o,m);
-                  dxhh->element(i,j,k,l,m,n) -= rdm3->element(o,l,m,n,i,j) * fockact_->element(o,k);
-                  if (l == m) dxhh->element(i,j,k,l,m,n) -= rdm2->element(o,n,i,j) * fockact_->element(o,k);
-                  if (l == k) dxhh->element(i,j,k,l,m,n) += 2.0 * rdm2->element(o,n,i,j) * fockact_->element(o,m);
-                  dxhh->element(i,j,k,l,m,n) -= rdm3->element(m,n,i,j,k,o) * fockact_->element(l,o);
-                  if (j == m) dxhh->element(i,j,k,l,m,n) -= rdm2->element(o,l,i,n) * fockact_->element(o,k);
-                  if (j == m) dxhh->element(i,j,k,l,m,n) -= rdm2->element(i,n,k,o) * fockact_->element(l,o);
-                  if (j == k) dxhh->element(i,j,k,l,m,n) -= rdm2->element(o,n,i,l) * fockact_->element(o,m);
-                  if (j == k) dxhh->element(i,j,k,l,m,n) -= rdm2->element(m,n,i,o) * fockact_->element(l,o);
-                  dxhh->element(i,j,k,l,m,n) -= rdm3->element(k,l,m,n,i,o) * fockact_->element(j,o);
-                  if (l == m) dxhh->element(i,j,k,l,m,n) -= rdm2->element(k,n,i,o) * fockact_->element(j,o);
-                  if (l == k) dxhh->element(i,j,k,l,m,n) += 2.0 * rdm2->element(m,n,i,o) * fockact_->element(j,o);
-                  for (int p = 0; p != nact; ++p) {
-                    if (l == m) dxhh->element(i,j,k,l,m,n) -= rdm3->element(k,n,i,j,o,p) * fockact_->element(o,p);
-                    if (k == l) dxhh->element(i,j,k,l,m,n) += rdm3->element(m,n,i,j,o,p) * fockact_->element(o,p);
-                    if (j == m) dxhh->element(i,j,k,l,m,n) -= rdm3->element(k,l,i,n,o,p) * fockact_->element(o,p);
-                    if (j == k) dxhh->element(i,j,k,l,m,n) -= rdm3->element(m,n,i,l,o,p) * fockact_->element(o,p);
-                    if (j == m && l == k) dxhh->element(i,j,k,l,m,n) += 2.0 * rdm2->element(i,n,o,p) * fockact_->element(o,p);
-                    if (j == k && l == m) dxhh->element(i,j,k,l,m,n) -= rdm2->element(i,n,o,p) * fockact_->element(o,p);
-                  }
-                }
-              }
+    for (auto& i3 : active_) {
+    for (auto& i1 : active_) {
+    for (auto& i0 : active_) {
+      assert(denom_->shalf_xhh());
+      const size_t interm_size = denom_->shalf_xhh()->ndim();
+      auto create_transp = [&nclosed,&nact,&interm_size, this](const int i, const Index& I0, const Index& I1, const Index& I3) {
+        unique_ptr<double[]> out(new double[I0.size()*I1.size()*I3.size()*interm_size]);
+        for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+          for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1)
+            for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+              copy_n(denom_->shalf_xhh()->element_ptr(0,j0-nclosed+nact*(j1-nclosed+nact*(j3-nclosed)) + i*nact*nact*nact),
+                     interm_size, out.get()+interm_size*k);
+        return move(out);
+      };
+      unique_ptr<double[]> transp = create_transp(istate, i0, i1, i3);
 
-    for (auto& i3 : active_)
-      for (auto& i1 : active_)
-        for (auto& i2 : closed_)
-          for (auto& i0 : active_) {
-            if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
-            unique_ptr<double[]> ncurrent = norm->get_block(i2, i3, i0, i1);
-            unique_ptr<double[]> temp(new double[res->get_size(i2, i3, i0, i1)]);
+      for (auto& i2 : closed_) {
+        if (!norm->is_local(i2, i3, i0, i1) || !res->get_size(i2, i3, i0, i1)) continue;
+        // if this block is not included in the current wave function, skip it
+        const size_t blocksize = norm->get_size(i2, i3, i0, i1);
+        // data0 is the source area
+        unique_ptr<double[]> data0 = norm->get_block(i2, i3, i0, i1);
+        unique_ptr<double[]> data1(new double[blocksize]);
+        // sort. Active indices run slower
+        sort_indices<0,2,3,1,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+        // intermediate area
+        unique_ptr<double[]> interm(new double[i2.size()*interm_size]);
 
-            size_t iall = 0;
-            for (int j2 = i2.offset(); j2 != i2.offset() + i2.size(); ++j2)
-              for (int j3 = i3.offset(); j3 != i3.offset() + i3.size(); ++j3)
-                for (int j0 = i0.offset(); j0 != i0.offset() + i0.size(); ++j0)
-                  for (int j1 = i1.offset(); j1 != i1.offset() + i1.size(); ++j1, ++iall) {
-//                    temp[iall] = ncurrent[iall] * shift2 / (dxhh->element(j0-nclosed,j0-nclosed,j1-nclosed,j1-nclosed,j3-nclosed,j3-nclosed) - eig_[j2] - e0_);
-                    temp[iall] = ncurrent[iall] * shift2 / (dxhh->element(j0-nclosed,j1-nclosed,j3-nclosed,j0-nclosed,j1-nclosed,j3-nclosed) - eig_[j2] - e0_);
-                  }
+        // move to orthogonal basis
+        btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i2.size(), interm_size, i0.size()*i1.size()*i3.size(),
+                                    1.0, data1.get(), i2.size(), transp.get(), interm_size, 0.0, interm.get(), i2.size());
 
-            res->add_block(temp, i2, i3, i0, i1);
-          }
+        size_t iall = 0;
+        for (int j013 = 0; j013 != interm_size; ++j013)
+          for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall)
+            interm[iall] *= shift2 / (denom_->denom_xhh(j013) - eig_[j2] - e0_);
+
+        // move back to non-orthogonal basis
+        btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i2.size(), i0.size()*i1.size()*i3.size(), interm_size,
+                                    1.0, interm.get(), i2.size(), transp.get(), interm_size, 0.0, data1.get(), i2.size());
+
+        // sort back to the original order
+        unique_ptr<double[]> data2(new double[blocksize]);
+        sort_indices<0,3,1,2,0,1,1,1>(data1, data2, i2.size(), i0.size(), i1.size(), i3.size());
+        res->add_block(data2, i2, i3, i0, i1);
+      }
+    }
+    }
+    }
   }
-#endif
 
 }
 
