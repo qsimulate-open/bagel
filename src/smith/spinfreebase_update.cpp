@@ -74,7 +74,8 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
                       if (info_->shift_imag()) {
-                        data0[iall] /= (eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc - shift2 / (eig_[j3] + eig_[j1] - eig_[j2] - eig_[j0] + e0loc));
+                        const double denom = - eig_[j0] - eig_[j2] + eig_[j3] + eig_[j1] + e0loc;
+                        data0[iall] *= -(denom / (denom * denom + shift2));
                       } else {
                         data0[iall] /= eig_[j0] + eig_[j2] - eig_[j3] - eig_[j1] - e0loc;
                       }
@@ -134,11 +135,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j02 = 0; j02 != interm_size; ++j02, ++iall) {
+#if 1
                     if (info_->shift_imag()) {
-                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]) - shift2 / (denom_->denom_xx(j02) + eig_[j3] + eig_[j1] - e0_));
+                      const double denom = eig_[j3] + eig_[j1] + denom_->denom_xx(j02) - e0_;
+                      interm[iall] *= -(denom / (denom * denom + shift2));
                     } else {
+#endif
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_xx(j02) + eig_[j3] + eig_[j1]));
+#if 1
                     }
+#endif
                   }
 
               // move back to non-orthogonal basis
@@ -204,11 +210,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = 0; j0 != interm_size; ++j0, ++iall) {
+#if 0
                         if (info_->shift_imag()) {
-                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]) - shift2 / (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1] - e0_));
+                          const double denom = eig_[j1] + eig_[j3] + denom_->denom_x(j0) - eig_[j2] - e0_;
+                          interm[iall] *= -(denom / (denom * denom + shift2));
                         } else {
+#endif
                           interm[iall] /= min(-0.1, e0_ - (denom_->denom_x(j0) + eig_[j3] - eig_[j2] + eig_[j1]));
+#if 0
                         }
+#endif
                       }
 
                 // move back to non-orthogonal basis
@@ -270,11 +281,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
                   for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+#if 0
                         if (info_->shift_imag()) {
-                          interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]) - shift2 / (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0] - e0_));
+                          const double denom = denom_->denom_h(j3) + eig_[j1] - eig_[j2] - eig_[j0] - e0_;
+                          interm[iall] *= -(denom / (denom * denom + shift2));
                         } else {
+#endif
                           interm[iall] /= min(-0.1, e0_ - (denom_->denom_h(j3) - eig_[j2] + eig_[j1] - eig_[j0]));
+#if 0
                         }
+#endif
                       }
 
                 // move back to non-orthogonal basis
@@ -333,11 +349,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j13 = 0; j13 != interm_size; ++j13)
                 for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+#if 0
                     if (info_->shift_imag()) {
-                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]) - shift2 / (denom_->denom_hh(j13) - eig_[j2] - eig_[j0] - e0_));
+                      const double denom = denom_->denom_hh(j13) - eig_[j2] - eig_[j0] - e0_;
+                      interm[iall] *= -(denom / (denom * denom + shift2));
                     } else {
+#endif
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_hh(j13) - eig_[j2] - eig_[j0]));
+#if 0
                     }
+#endif
                   }
 
               // move back to non-orthogonal basis
@@ -407,11 +428,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
               for (int j23 = 0; j23 != interm_size; ++j23)
                 for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+#if 0
                     if (info_->shift_imag()) {
-                      interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]) - shift2 / (denom_->denom_xh(j23) + eig_[j1] - eig_[j0] - e0_));
+                      const double denom = denom_->denom_xh(j23) + eig_[j1] - eig_[j0] - e0_;
+                      interm[iall] *= -(denom / (denom * denom + shift2));
                     } else {
+#endif
                       interm[iall] /= min(-0.1, e0_ - (denom_->denom_xh(j23) + eig_[j1] - eig_[j0]));
+#if 0
                     }
+#endif
                   }
 
               // move back to non-orthogonal basis
@@ -535,11 +561,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             size_t iall = 0;
             for (int j123 = 0; j123 != interm_size; ++j123)
               for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1, ++iall) {
+#if 0
                 if (info_->shift_imag()) {
-                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]) - shift2 / (denom_->denom_xxh(j123) + eig_[j1] - e0_));
+                  const double denom = denom_->denom_xxh(j123) + eig_[j1] - e0_;
+                  interm[iall] *= -(denom / (denom * denom + shift2));
                 } else {
+#endif
                   interm[iall] /= min(-0.1, e0_ - (denom_->denom_xxh(j123) + eig_[j1]));
+#if 0
                 }
+#endif
               }
 
             // move back to non-orthogonal basis
@@ -603,11 +634,16 @@ void SpinFreeMethod<DataType>::update_amplitude(shared_ptr<MultiTensor_<DataType
             size_t iall = 0;
             for (int j013 = 0; j013 != interm_size; ++j013)
               for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2, ++iall) {
+#if 0
                 if (info_->shift_imag()) {
-                  interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]) - shift2 / (denom_->denom_xhh(j013) - eig_[j2] - e0_));
+                  const double denom = denom_->denom_xxh(j013) - eig_[j2] - e0_;
+                  interm[iall] *= -(denom / (denom * denom + shift2));
                 } else {
+#endif
                   interm[iall] /= min(-0.1, e0_ - (denom_->denom_xhh(j013) - eig_[j2]));
+#if 0
                 }
+#endif
               }
 
             // move back to non-orthogonal basis
