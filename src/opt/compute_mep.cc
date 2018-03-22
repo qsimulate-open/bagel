@@ -54,9 +54,6 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
       mep_start = mep_start->transform(bmat_[1], true);
   }
 
-  // get step
-  mep_start->scale(maxstep_ / mep_start->norm());
-  copy_n(mep_start->data(), size_, displ_->data());
   muffle_ = make_shared<Muffle>("mep.log");
   muffle_->mute();
 
@@ -78,8 +75,17 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
         else
           grad_ = grad_->transform(bmat_[1], true);
       }
+
+      if (optinfo()->mep_direction() == 0) {
+        copy_n(grad_->data(), size_, mep_start->data());
+      }
     }
   }
+
+  // get step
+  mep_start->scale(maxstep_ / mep_start->norm());
+  copy_n(mep_start->data(), size_, displ_->data());
+
   muffle_->unmute();
 
   // macroiteration
@@ -235,7 +241,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
     }
     muffle_->unmute();
 
-    if (fabs(prev_en_.back() - en_) < 1.0e-6) {
+    if (fabs(prev_en_.back() - en_) < 1.0e-6 && !(optinfo()->mep_direction() == 0 && iter == 1)) {
       cout << "  * MEP job converged to reactant / product, or too small stepsize." << endl;
       break;
     } else if (flag) {
