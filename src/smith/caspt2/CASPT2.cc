@@ -372,7 +372,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
     double error = 0.0;
-    e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+    e0_ = e0all_[i];
     energy_[i] = 0.0;
     // set guess vector
     shared_ptr<VectorB> source = transform_to_orthogonal(s[i]);
@@ -404,7 +404,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
           r = rall_[i]->at(jst);
 
           // compute residuals named r for each K
-          e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+          e0_ = e0all_[i];
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();
@@ -413,8 +413,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
         }
       }
       shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
-      if (info_->shift_imag())
-        add_imaginary_shift(residual, amplitude, i);
+      add_shift(residual, amplitude, i);
       residual = solver->compute_residual(amplitude, residual);
       amplitude = solver->civec();
 

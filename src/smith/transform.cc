@@ -761,7 +761,8 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
   const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
   const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
   const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
-  const double shift2 = info_->shift() * info_->shift();
+  const double shift = info_->shift();
+  const double shift2 = shift * shift;
 
   size_t ioffset = 0;
 
@@ -784,7 +785,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                         if (info_->shift_imag()) {
                           (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                         } else {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                         }
                       }
                 }
@@ -807,7 +808,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       if (info_->shift_imag()) {
                         (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                       } else {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                       }
                     }
                   }
@@ -833,7 +834,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                         if (info_->shift_imag()) {
                           (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                         } else {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                         }
                       }
               }
@@ -857,7 +858,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                         if (info_->shift_imag()) {
                           (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                         } else {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                         }
                       }
               }
@@ -880,7 +881,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       if (info_->shift_imag()) {
                         (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                       } else {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                       }
                     }
               }
@@ -904,7 +905,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       if (info_->shift_imag()) {
                         (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                       } else {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                       }
                    }
               }
@@ -926,7 +927,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                     if (info_->shift_imag()) {
                       (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                     } else {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                     }
                   }
               }
@@ -948,7 +949,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                     if (info_->shift_imag()) {
                       (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                     } else {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                     }
                   }
               }
