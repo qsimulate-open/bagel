@@ -165,7 +165,7 @@ class OptInfo : public GradInfo {
       maxiter_ = idat->get<int>("maxiter", 100);
       scratch_ = idat->get<bool>("scratch", false);
       numerical_ = idat->get<bool>("numerical", false);
-      hess_approx_ = idat->get<bool>("hess_approx", true);
+      hess_approx_ = idat->get<bool>("hess_approx", opttype_->is_mep() ? false : true);
 
       explicit_bond_ = idat->get<bool>("explicitbond", false);
       if (explicit_bond_) {
@@ -222,6 +222,7 @@ class OptInfo : public GradInfo {
         mep_direction_ = 0;
       }
     }
+
 
     std::shared_ptr<OptType> opttype() const { return opttype_; }
     std::shared_ptr<OptAlgorithms> algorithm() const { return algorithm_; }

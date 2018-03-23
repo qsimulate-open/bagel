@@ -239,10 +239,11 @@ Optional Keywords (Minimum Energy Path)
 
 .. topic:: ``mep_direction``
 
-   | **Description:** Direction of the MEP calculation from the transition state.
+   | **Description:** Direction of the MEP calculation.
    | **Datatype:** int
    | **Values:**
    |    ``1``: use the direction of the lowest eigenvector.
+   |    ``0``: use gradient.
    |    ``-1``: use the opposite direction of the lowest eigenvector.
    | **Default:** 1
    | **Recommendation:** run two calculations with "1" and "-1" to get the full path.

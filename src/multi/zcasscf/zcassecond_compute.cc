@@ -192,7 +192,7 @@ void ZCASSecond_base::compute() {
 #endif
   }
 
-  if (canonical_)
+  if (max_iter_ > 0 && canonical_)
     coeff_ = semi_canonical_orb();
 
   // update construct Jop from scratch

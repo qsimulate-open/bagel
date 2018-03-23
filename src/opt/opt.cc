@@ -103,7 +103,13 @@ void Opt::compute() {
       hess_ = hess->hess()->copy();
     }
 
-    copy_n(hess->proj_hess()->element_ptr(0, abs(optinfo()->mep_direction()) - 1), current_->natom() * 3, mep_start->data());
+    if (optinfo()->opttype()->is_mep()) {
+      if (optinfo()->mep_direction() == 0) {
+        mep_start->zero();
+      } else {
+        copy_n(hess->proj_hess()->element_ptr(0, abs(optinfo()->mep_direction()) - 1), current_->natom() * 3, mep_start->data());
+      }
+    }
   }
 
   if (optinfo_->opttype()->is_mep()) {
