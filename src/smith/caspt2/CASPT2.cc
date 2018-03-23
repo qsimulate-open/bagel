@@ -165,7 +165,14 @@ void CASPT2::CASPT2::solve() {
   }
 
   // solve linear equation for t amplitudes
-  t2all_ = solve_linear(sall_, t2all_);
+  if (info_->orthogonal_basis()) {
+    cout << "using orthogonal basis" << endl;
+    t2all_ = solve_linear_orthogonal(sall_, t2all_);
+  } else {
+    cout << "using non-orthogonal basis" << endl;
+    t2all_ = solve_linear(sall_, t2all_);
+  }
+
   timer.tick_print("CASPT2 energy evaluation");
   cout << endl;
 
@@ -323,13 +330,11 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           while (!queue->done())
             queue->next_compute();
 
+#if 1
           if (info_->shift_imag()) {
-            n = init_residual();
-            shared_ptr<Queue> normq = make_normq(true, true);
-            while (!normq->done())
-              normq->next_compute();
-            add_imaginary_shift(r, n, i);
+            add_imaginary_shift(r, t2, i);
           }
+#endif
 
           diagonal(r, t2, jst == ist);
         }
@@ -348,12 +353,90 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
 
-      // compute delta t2 and update amplitude
       if (!conv) {
         t[i]->zero();
         update_amplitude(t[i], rall_[i]);
       }
       if (conv) break;
+    }
+    if (i+1 != nstates_) cout << endl;
+    converged &= conv;
+  }
+  print_iteration(!converged);
+  return t;
+}
+
+
+vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
+  Timer mtimer;
+  // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
+  // loop over state of interest
+  bool converged = true;
+  for (int i = 0; i != nstates_; ++i) {  // K states
+    bool conv = false;
+    double error = 0.0;
+    e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+    energy_[i] = 0.0;
+    // set guess vector
+    shared_ptr<VectorB> source = transform_to_orthogonal(s[i]);
+    auto amplitude = make_shared<VectorB>(source->size());
+    if (s[i]->rms() < 1.0e-15) {
+      print_iteration(0, 0.0, 0.0, mtimer.tick());
+      if (i+1 != nstates_) cout << endl;
+      continue;
+    } else {
+      update_amplitude_orthogonal(amplitude, source, nstates_, i);
+    }
+
+    auto solver = make_shared<LinearRM<VectorB>>(info_->davidson_subspace(), source);
+    for (int iter = 0; iter != info_->maxiter(); ++iter) {
+      rall_[i]->zero();
+
+      const double norm = amplitude->norm();
+      amplitude->scale(1.0/norm);
+      t[i] = transform_to_redundant_amplitude(amplitude, nstates_, i);
+
+      // compute residuals named r for each K
+      for (int jst = 0; jst != nstates_; ++jst) { // jst bra vector
+        for (int ist = 0; ist != nstates_; ++ist) { // ist ket vector
+          if (info_->sssr() && (jst != i || ist != i))
+            continue;
+          // first term <proj_jst| H0 - E0_K |1_ist>
+          set_rdm(jst, ist);
+          t2 = t[i]->at(ist);
+          r = rall_[i]->at(jst);
+
+          // compute residuals named r for each K
+          e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+          shared_ptr<Queue> queue = make_residualq(false, jst == ist);
+          while (!queue->done())
+            queue->next_compute();
+
+          diagonal(r, t2, jst == ist);
+        }
+      }
+      shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
+      residual = solver->compute_residual(amplitude, residual);
+      amplitude = solver->civec();
+
+      // energy is now the Hylleraas energy
+      energy_[i] = source->dot_product(amplitude);
+      energy_[i] += residual->dot_product(amplitude);
+
+      // compute rms for state i
+//      error = residual->rms() / pow(residual->size(), 0.25);
+      error = residual->norm() / pow(residual->size(), 0.125);
+      print_iteration(iter, energy_[i], error, mtimer.tick());
+      conv = error < info_->thresh();
+
+      if (!conv) {
+        amplitude->zero();
+        update_amplitude_orthogonal(amplitude, residual, nstates_, i);
+      }
+      if (conv) {
+        t[i] = transform_to_redundant_amplitude(amplitude, nstates_, i);
+        break;
+      }
     }
     if (i+1 != nstates_) cout << endl;
     converged &= conv;
