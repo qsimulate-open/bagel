@@ -145,6 +145,11 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
 
 
 void CASPT2::CASPT2::solve() {
+  if (info_->orthogonal_basis())
+    cout << "    * CASPT2 iteration is performed using orthogonal basis" << endl;
+  else {
+    cout << "    * CASPT2 iteration is performed using redundant basis" << endl;
+  }
   Timer timer;
   print_iteration();
 
@@ -166,10 +171,8 @@ void CASPT2::CASPT2::solve() {
 
   // solve linear equation for t amplitudes
   if (info_->orthogonal_basis()) {
-    cout << "using orthogonal basis" << endl;
     t2all_ = solve_linear_orthogonal(sall_, t2all_);
   } else {
-    cout << "using non-orthogonal basis" << endl;
     t2all_ = solve_linear(sall_, t2all_);
   }
 
@@ -424,8 +427,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
       energy_[i] += residual->dot_product(amplitude);
 
       // compute rms for state i
-//      error = residual->rms() / pow(residual->size(), 0.25);
-      error = residual->norm() / pow(residual->size(), 0.125);
+      error = residual->norm() / pow(residual->size(), 0.25);
       print_iteration(iter, energy_[i], error, mtimer.tick());
       conv = error < info_->thresh();
 
