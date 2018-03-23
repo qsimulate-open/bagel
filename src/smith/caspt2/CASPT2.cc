@@ -146,9 +146,9 @@ void CASPT2::CASPT2::do_rdm_deriv(double factor) {
 
 void CASPT2::CASPT2::solve() {
   if (info_->orthogonal_basis())
-    cout << "    * CASPT2 iteration is performed using orthogonal basis" << endl;
+    cout << "    * CASPT2 iteration is performed using orthogonal basis" << endl << endl;
   else {
-    cout << "    * CASPT2 iteration is performed using redundant basis" << endl;
+    cout << "    * CASPT2 iteration is performed using redundant basis" << endl << endl;
   }
   Timer timer;
   print_iteration();
@@ -333,12 +333,6 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           while (!queue->done())
             queue->next_compute();
 
-#if 1
-          if (info_->shift_imag()) {
-            add_imaginary_shift(r, t2, i);
-          }
-#endif
-
           diagonal(r, t2, jst == ist);
         }
       }
@@ -419,6 +413,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
         }
       }
       shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
+      add_imaginary_shift(residual, amplitude, i);
       residual = solver->compute_residual(amplitude, residual);
       amplitude = solver->civec();
 

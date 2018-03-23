@@ -388,7 +388,6 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
               }
           }
         }
-
     ioffset += size_rist;
   }
 
@@ -779,6 +778,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
   const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
   const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
   const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const double shift2 = info_->shift() * info_->shift();
 
   size_t ioffset = 0;
 
@@ -798,7 +798,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                         const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
                         const double denom = e0loc - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j3+nocc] + eig_[j1+nocc];
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        if (info_->shift_imag()) {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                        } else {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        }
                       }
                 }
               }
@@ -817,7 +821,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                     for (int j02 = 0; j02 != interm_size; ++j02) {
                       const size_t jall = j02 + interm_size * (j1 + nvirt * j3);
                       const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0_;
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      if (info_->shift_imag()) {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                      } else {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      }
                     }
                   }
                 }
@@ -839,7 +847,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       for (int j0 = 0; j0 != interm_size; ++j0) {
                         const size_t jall = j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
                         const double denom = eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+ncore] + denom_->denom_x(j0) - e0_;
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        if (info_->shift_imag()) {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                        } else {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        }
                       }
               }
         }
@@ -859,7 +871,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                       for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                         const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
                         const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3) - e0_;
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        if (info_->shift_imag()) {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                        } else {
+                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                        }
                       }
               }
         }
@@ -878,7 +894,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                     for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                       const size_t jall = j0 + nclo * (j2 + nclo * j13);
                       const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_hh(j13) - e0_;
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      if (info_->shift_imag()) {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                      } else {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      }
                     }
               }
           }
@@ -898,7 +918,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                     for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                       const size_t jall = j0 + nclo * (j1 + nvirt * j23);
                       const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j23) - e0_;
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      if (info_->shift_imag()) {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                      } else {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                      }
                    }
               }
           }
@@ -916,7 +940,11 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                   for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
                     const size_t jall = j1 + nvirt * j023;
                     const double denom = eig_[j1+nocc] + denom_->denom_xxh(j023) - e0_;
-                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                    if (info_->shift_imag()) {
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                    } else {
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                    }
                   }
               }
             }
@@ -934,11 +962,14 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
                   for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
                     const size_t jall = j2 + nclo*j013;
                     const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0_;
-                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                    if (info_->shift_imag()) {
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                    } else {
+                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / denom;
+                    }
                   }
               }
             }
-  
         ioffset += size_rist;
       }
 
