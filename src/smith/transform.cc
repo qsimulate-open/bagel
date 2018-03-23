@@ -431,7 +431,6 @@ shared_ptr<MultiTensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redund
 
 template<typename DataType>
 shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_amplitude_v(shared_ptr<const Vector_<DataType>> vector, const int istate) const {
-  // to be implemented
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();

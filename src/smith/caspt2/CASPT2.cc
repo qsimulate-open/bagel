@@ -623,7 +623,11 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       }
     }
     // solve linear equation and store lambda in lall
-    lall_ = solve_linear(sall_, lall_);
+    if (info_->orthogonal_basis()) {
+      lall_ = solve_linear_orthogonal(sall_, lall_);
+    } else {
+      lall_ = solve_linear(sall_, lall_);
+    }
 
     timer.tick_print("CASPT2 lambda equation");
   }
