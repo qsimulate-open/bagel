@@ -413,7 +413,8 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
         }
       }
       shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
-      add_imaginary_shift(residual, amplitude, i);
+      if (info_->shift_imag())
+        add_imaginary_shift(residual, amplitude, i);
       residual = solver->compute_residual(amplitude, residual);
       amplitude = solver->civec();
 
