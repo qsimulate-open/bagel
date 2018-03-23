@@ -233,7 +233,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
               for (auto& i2 : closed_) {
                 for (int j013 = 0; j013 != interm_size; ++j013)
                   for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
-                    const size_t jall = j2 + nclo*j013;
+                    const size_t jall = j2 + nclo * j013;
                     const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0_;
                     if (info_->shift_imag()) {
                       (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;

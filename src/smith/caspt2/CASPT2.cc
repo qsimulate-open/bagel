@@ -374,8 +374,8 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
     double error = 0.0;
     e0_ = e0all_[i];
     energy_[i] = 0.0;
-    // set guess vector
     shared_ptr<VectorB> source = transform_to_orthogonal(s[i]);
+    // set guess vector
     auto amplitude = make_shared<VectorB>(source->size());
     if (s[i]->rms() < 1.0e-15) {
       print_iteration(0, 0.0, 0.0, mtimer.tick());
@@ -413,7 +413,8 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
         }
       }
       shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
-      add_shift(residual, amplitude, i);
+      if (info_->shift() != 0.0)
+        add_shift(residual, amplitude, i);
       residual = solver->compute_residual(amplitude, residual);
       amplitude = solver->civec();
 

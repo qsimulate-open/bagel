@@ -54,14 +54,14 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
 
   const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
 
-  const int nst = tensor->nref();
+  const size_t nst = tensor->nref();
   shared_ptr<Vector_<DataType>> out;
   if (info_->sssr())
     out = make_shared<Vector_<DataType>>(size_all);
   else
     out = make_shared<Vector_<DataType>>(nst*size_all);
 
-  int ioffset = 0;
+  size_t ioffset = 0;
   for (int ist = 0; ist != nst; ++ist) {
     if (tensor->at(ist)) {
       shared_ptr<Vector_<DataType>> vist = transform_to_orthogonal(tensor->at(ist), ist);
@@ -106,7 +106,6 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
         for (auto& i1 : virt_)
           for (auto& i0 : closed_) {
             unique_ptr<DataType[]> data0 = tensor->get_block(i0, i1, i2, i3);
-            // not sure whether this is nessessary or not...
             if (is_same<DataType,double>::value) {
               const unique_ptr<DataType[]> data1 = tensor->get_block(i0, i3, i2, i1);
               sort_indices<0,3,2,1,2,6,1,6>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
@@ -383,7 +382,7 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
             size_t iall = 0;
             for (int j013 = 0; j013 != interm_size; ++j013)
               for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2, ++iall) {
-                const size_t jall = j2 + nclo*j013;
+                const size_t jall = j2 + nclo * j013;
                 (*out)[ioffset + jall] = interm[iall];
               }
           }
@@ -725,7 +724,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
             size_t iall = 0;
             for (int j013 = 0; j013 != interm_size; ++j013)
               for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2, ++iall) {
-                const size_t jall = j2 + nclo*j013;
+                const size_t jall = j2 + nclo * j013;
                 interm[iall] = (*vector)[ioffset + jall];
               }
             unique_ptr<DataType[]> data0(new DataType[blocksize]);
@@ -944,7 +943,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
               for (auto& i2 : closed_) {
                 for (int j013 = 0; j013 != interm_size; ++j013)
                   for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
-                    const size_t jall = j2 + nclo*j013;
+                    const size_t jall = j2 + nclo * j013;
                     const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0_;
                     if (info_->shift_imag()) {
                       (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
