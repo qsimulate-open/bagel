@@ -121,8 +121,6 @@ class SpinFreeMethod {
     // transformation to orthogonal basis
     std::shared_ptr<Vector_<DataType>> transform_to_orthogonal(std::shared_ptr<const MultiTensor_<DataType>> tensor) const;
     std::shared_ptr<Vector_<DataType>> transform_to_orthogonal(std::shared_ptr<const Tensor_<DataType>> tensor, const int ist) const;
-    std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant_residual(std::shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const;
-    std::shared_ptr<Tensor_<DataType>> transform_to_redundant_residual_v(std::shared_ptr<const Vector_<DataType>> vector, const int ist) const;
     std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant_amplitude(std::shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const;
     std::shared_ptr<Tensor_<DataType>> transform_to_redundant_amplitude_v(std::shared_ptr<const Vector_<DataType>> vector, const int ist) const;
     void update_amplitude_orthogonal(std::shared_ptr<Vector_<DataType>> amplitude, std::shared_ptr<const Vector_<DataType>> residual, const int nstates, const int istate) const;

@@ -298,7 +298,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
     double error = 0.0;
-    e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+    e0_ = e0all_[i] - info_->shift();
     energy_[i] = 0.0;
     // set guess vector
     t[i]->zero();
@@ -328,7 +328,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           r = rall_[i]->at(jst);
 
           // compute residuals named r for each K
-          e0_ = info_->shift_imag() ? e0all_[i] : e0all_[i] - info_->shift();
+          e0_ = e0all_[i] - info_->shift();
           shared_ptr<Queue> queue = make_residualq(false, jst == ist);
           while (!queue->done())
             queue->next_compute();

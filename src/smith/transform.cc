@@ -396,23 +396,6 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
 
 
 template<typename DataType>
-shared_ptr<MultiTensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_residual(shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const {
-  // not urgent then transform_to_redundant
-  auto out = make_shared<MultiTensor_<DataType>>(nstates);
-
-  return out;
-}
-
-
-template<typename DataType>
-shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_residual_v(shared_ptr<const Vector_<DataType>> vector, const int istate) const {
-  auto out = init_residual();
-
-  return out;
-}
-
-
-template<typename DataType>
 shared_ptr<MultiTensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_amplitude(shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const {
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
