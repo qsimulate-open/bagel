@@ -278,7 +278,7 @@ shared_ptr<const ZCoeff_Block> ZCASSecond_London::semi_canonical_orb() const {
   auto ocoeff = coeff_->slice(0, nclosed_*2);
   auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
   auto vcoeff = coeff_->slice(nocc_*2, (nocc_+nvirt_)*2);
-  assert((nocc_+nvirt_)*2 = coeff_->mdim());
+  assert((nocc_+nvirt_)*2 == coeff_->mdim());
 
   ZMatrix trans(coeff_->mdim(), coeff_->mdim());
   trans.unit();
