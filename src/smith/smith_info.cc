@@ -64,6 +64,12 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   block_diag_fock_ = idata->get<bool>("block_diag_fock", false);
   orthogonal_basis_ = idata->get<bool>("orthogonal_basis", shift_imag_ ? true : false);
 
+  if (!orthogonal_basis_ && shift_imag_)
+    throw runtime_error("Imaginary shift is only applicable when orthogonal basis is used.");
+
+  if (!sssr_ && orthogonal_basis_)
+    throw runtime_error("MS-MR internal contraction is only stable with redundant basis.");
+
   // check nact() because ciwfn() is nullptr with zero active orbitals
   if (nact() && ciwfn()->nstates() > 1)
     ss << "    * " << (sssr_ ? "SS-SR" : "MS-MR") << " internal contraction is used" << endl;

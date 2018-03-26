@@ -74,7 +74,6 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
 }
 
 
-
 template<typename DataType>
 shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(shared_ptr<const Tensor_<DataType>> tensor, const int istate) const {
   // number of orthogonal basis functions: use numbers of denom.

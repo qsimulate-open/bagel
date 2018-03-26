@@ -385,6 +385,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
       update_amplitude_orthogonal(amplitude, source, nstates_, i);
     }
 
+    // TODO should replace (or distribute) the parameters among the nodes
     auto solver = make_shared<LinearRM<VectorB>>(info_->davidson_subspace(), source);
     for (int iter = 0; iter != info_->maxiter(); ++iter) {
       rall_[i]->zero();
