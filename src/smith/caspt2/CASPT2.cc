@@ -596,6 +596,8 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     ms.solve_gradient(targetJ, targetI, nocider);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
+    if (info_->shift_imag())
+      den2_tt_ = ms.rdm12_tt();
     Den1_ = ms.rdm21();
     if (!nocider)
       ci_deriv_ = ms.ci_deriv();
@@ -646,15 +648,28 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j) {
           dtmp->element(j, i) -=  correlated_norm_lt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-          if (info_->shift_imag())
-            dtmp->element(j, i) -= correlated_norm_tt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed) * (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
         }
     }
     dtmp->symmetrize();
     den2_ = dtmp;
+  }
+
+  if (info_->shift_imag()) {
+    auto dtmp2 = den2_tt_->copy();
+    for (int ist = 0; ist != nstates_; ++ist) {
+      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j) {
+          dtmp2->element(j, i) -= correlated_norm_tt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed) * factor;
+        }
+    }
+    dtmp2->symmetrize();
+    den2_tt_ = dtmp2;
   }
 
   shared_ptr<const Reference> ref = info_->ref();
@@ -683,12 +698,17 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
-      if (info_->shift_imag()) {
-        const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_tt_[ist]);
+    }
+
+    if (info_->shift_imag()) {
+      shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
+      for (int ist = 0; ist != nstates_; ++ist) {
+        const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+        const Matrix op2(*gd2_tt * (1.0/nstates_) - *fock * correlated_norm_tt_[ist] * factor);
         shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
-            ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+            ci_deriv_->data(ist)->ax_plus_y(2.0*op2(j,i), deriv->data(j+i*nact));
       }
     }
 
@@ -747,6 +767,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       // also rotate cideriv back to the MS states
       btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3});
     }
+  }
+
+  if (info_->shift_imag()) {
+    auto dtmp = den2_->copy();
+    dtmp->ax_plus_y(1.0, den2_tt_);
+    den2_ = dtmp;
   }
 
   // restore original energy

@@ -235,8 +235,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             queue2->next_compute();
           result2->ax_plus_y(ijhJI, Den1);
 
-          // if ist == jst, additional first-order correction is there in imaginary
-          if (info_->shift_imag() && ist == jst) {
+          // if istate == jst, additional first-order correction in imaginary
+          if (info_->shift_imag() && istate == jst) {
             result->ax_plus_y(ijhJI, den1);
             result2->ax_plus_y(ijhJI, Den1);
           }
@@ -271,8 +271,10 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           }
         }
       }
+      den2_tt_ = result2->matrix();
+      den2->zero();
+      result2->zero();
     }
-    den2->zero();
 
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
