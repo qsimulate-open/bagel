@@ -383,13 +383,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         i = init_residual();
       // first implement gradient case
       if (info_->shift_imag()) {
-        // This should also yield right results for the real shift.
+        // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
-        for (int ist = 0; ist != nstates_; ++ist) {//N states
+        for (int ist = 0; ist != nstates_; ++ist) { // N states
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
-          for (int jst = 0; jst != nstates_; ++jst) {
+          for (int jst = 0; jst != nstates_; ++jst) { // M states
             if (sall_[ist]->at(jst)) {
               sist->at(jst) = sall_[ist]->at(jst);
             } else {
@@ -400,16 +400,26 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
                 sourceq->next_compute();
               sist->at(jst) = s;
             }
-            if (jst == ist)
-              sall_[ist]->at(jst)->ax_plus_y((*heff_)(ist, target) * (*heff_)(ist, target), sist->at(jst));
           }
           source->ax_plus_y((*heff_)(ist, target), sist);
         }
 
         for (int istate = 0; istate != nstates_; ++istate) { //L states
-          for (int jst = 0; jst != nstates_; ++jst) {
+          for (int jst = 0; jst != nstates_; ++jst) { // M states
             if (!info_->sssr() || istate == jst)
               sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), source->at(jst));
+          }
+        }
+
+        for (int istate = 0; istate != nstates_; ++istate) {  // L states
+          for (int jst = 0; jst != nstates_; ++jst) {
+            if (info_->sssr() && istate != jst) continue;
+            set_rdm(jst, istate);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target) * (*heff_)(istate, target), s);
           }
         }
         
@@ -418,9 +428,9 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         for (auto& i : *rlike)
           i = init_residual();
 
-        for (int i = 0; i != nstates_; ++i) {
-          for (int ist = 0; ist != nstates_; ++ist) {
-            for (int jst = 0; jst != nstates_; ++jst) {
+        for (int i = 0; i != nstates_; ++i) {             // L states
+          for (int ist = 0; ist != nstates_; ++ist) {     // N states
+            for (int jst = 0; jst != nstates_; ++jst) {   // M states
               if (info_->sssr() && (jst != i || ist != i))
                 continue;
               set_rdm(jst, ist);
@@ -434,8 +444,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
             }
           }
           for (int jst = 0; jst != nstates_; ++jst) {
-            if (info_->sssr() && jst != i)
-              continue;
+            if (info_->sssr() && jst != i) continue;
             sall_[i]->at(jst)->ax_plus_y((*heff_)(i, target) * (*heff_)(i, target), rlike->at(jst));
           }
         }
