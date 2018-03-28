@@ -436,7 +436,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
               set_rdm(jst, ist);
               t2 = t2all_[i]->at(ist);
               r = rlike->at(jst);
-              e0_ = e0all_[i] + info_->shift();
+              e0_ = e0all_[i];
               shared_ptr<Queue> queue = make_residualq(true, ist == jst);
               while (!queue->done())
                 queue->next_compute();
@@ -445,7 +445,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           }
           for (int jst = 0; jst != nstates_; ++jst) {
             if (info_->sssr() && jst != i) continue;
-            sall_[i]->at(jst)->ax_plus_y((*heff_)(i, target) * (*heff_)(i, target), rlike->at(jst));
+            sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, target) * (*heff_)(i, target), rlike->at(jst));
           }
         }
       } else {
@@ -556,7 +556,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
               set_rdm(jst, ist);
               t2 = t2all_[i]->at(ist);
               r = rlike->at(jst);
-              e0_ = e0all_[i] + info_->shift();
+              e0_ = e0all_[i];
               shared_ptr<Queue> queue = make_residualq(true, ist == jst);
               while (!queue->done())
                 queue->next_compute();
@@ -565,7 +565,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           }
           for (int jst = 0; jst != nstates_; ++jst) {
             if (info_->sssr() && jst != i) continue;
-            sall_[i]->at(jst)->ax_plus_y((*heff_)(i, targetJ) * (*heff_)(i, targetI), rlike->at(jst));
+            sall_[i]->at(jst)->ax_plus_y((*heff_)(i, targetJ) * (*heff_)(i, targetI) * 2.0, rlike->at(jst));
           }
         }
       } else {
