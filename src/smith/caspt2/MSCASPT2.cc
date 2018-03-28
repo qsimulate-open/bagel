@@ -359,7 +359,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
               dec->next_compute();
             add_total(lnhJI);
             if (info_->shift_imag() && lst == nst)
-              add_total(nnhJI);
+              add_total(llhJI);
           }
 
           if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->shift_imag()) {
