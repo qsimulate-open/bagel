@@ -37,7 +37,7 @@ using namespace std;
 using namespace bagel;
 
 MPI_Interface::MPI_Interface()
- : cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
+ : depth_(0), cnt_(0), nprow_(0), npcol_(0), context_(0), myprow_(0), mypcol_(0), mpimutex_() {
 
 #ifdef HAVE_MPI_H
   int provided;
@@ -386,23 +386,30 @@ bool MPI_Interface::test(const int rq) {
 void MPI_Interface::split(const int n) {
 #ifdef HAVE_MPI_H
 #ifdef HAVE_SCALAPACK
-  // first make a map between MPI ranks and process numbers
-  vector<int> pmap(world_size_, 0);
-  pmap[world_rank_] = pnum(myprow_, mypcol_);
-  allreduce(pmap.data(), world_size_);
+  // make a map between MPI ranks and process numbers
+  if (depth_ == 0) {
+    pmap_ = vector<int>(world_size_, 0);
+    pmap_[world_rank_] = pnum(myprow_, mypcol_);
+    allreduce(pmap_.data(), size_);
+  }
 #endif
   MPI_Comm new_comm;
-  const int icomm = world_rank_ / n;
-  MPI_Comm_split(MPI_COMM_WORLD, icomm, world_rank_, &new_comm);
+  const int icomm = rank_ / n;
+
+  mpi_comm_old_.push_back(mpi_comm_);
+
+  ++depth_;
+
+  MPI_Comm_split(mpi_comm_, icomm, world_rank_, &new_comm);
   mpi_comm_ = new_comm;
   MPI_Comm_rank(mpi_comm_, &rank_);
   MPI_Comm_size(mpi_comm_, &size_);
 #ifdef HAVE_SCALAPACK
   blacs_gridexit_(context_);
   tie(nprow_, npcol_) = numgrid(size_);
-  vector<int> imap(size_);
-  for (int i = 0; i != size_; ++i)
-    imap[i] = pmap[icomm*n + i];
+  vector<int> imap(size_, 0);
+  imap[rank_] = pmap_[world_rank_];
+  allreduce(imap.data(), size_);
   blacs_get_(0, 0, context_);
   blacs_gridmap_(context_, imap.data(), nprow_, nprow_, npcol_);
   blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
@@ -414,14 +421,30 @@ void MPI_Interface::split(const int n) {
 void MPI_Interface::merge() {
 #ifdef HAVE_MPI_H
   MPI_Comm_free(&mpi_comm_);
-  mpi_comm_ = MPI_COMM_WORLD;
-  rank_ = world_rank_;
-  size_ = world_size_;
+
+  --depth_;
+
+  mpi_comm_ = mpi_comm_old_[depth_];
+  MPI_Comm_rank(mpi_comm_, &rank_);
+  MPI_Comm_size(mpi_comm_, &size_);
+
+  mpi_comm_old_.pop_back();
 #ifdef HAVE_SCALAPACK
-  blacs_gridexit_(context_);
-  tie(nprow_, npcol_) = numgrid(size_);
-  sl_init_(context_, nprow_, npcol_);
-  blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+  if (depth_ == 0) {
+    blacs_gridexit_(context_);
+    tie(nprow_, npcol_) = numgrid(size_);
+    sl_init_(context_, nprow_, npcol_);
+    blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+  } else {
+    blacs_gridexit_(context_);
+    tie(nprow_, npcol_) = numgrid(size_);
+    vector<int> imap(size_, 0);
+    imap[rank_] = pmap_[world_rank_];
+    allreduce(imap.data(), size_);
+    blacs_get_(0, 0, context_);
+    blacs_gridmap_(context_, imap.data(), nprow_, nprow_, npcol_);
+    blacs_gridinfo_(context_, nprow_, npcol_, myprow_, mypcol_);
+  }
 #endif
 #endif
 }

@@ -44,12 +44,17 @@ class MPI_Interface {
     int world_size_;
     int rank_;
     int size_;
+    int depth_;
 
     int cnt_;
     // request handles
 #ifdef HAVE_MPI_H
     MPI_Comm mpi_comm_;
     std::map<int, std::vector<MPI_Request>> request_;
+    std::vector<MPI_Comm> mpi_comm_old_;
+#endif
+#ifdef HAVE_SCALAPACK
+    std::vector<int> pmap_;
 #endif
     int nprow_;
     int npcol_;
@@ -74,6 +79,7 @@ class MPI_Interface {
     int world_size() const { return world_size_; }
     int rank() const { return rank_; }
     int size() const { return size_; }
+    int depth() const { return depth_; }
     bool last() const { return rank() == size()-1; }
 
     // collective functions
