@@ -234,12 +234,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           while (!queue2->done())
             queue2->next_compute();
           result2->ax_plus_y(ijhJI, Den1);
-
-          // if istate == jst, additional first-order correction in imaginary
-          if (info_->shift_imag() && istate == jst) {
-            result->ax_plus_y(ijhJI, den1);
-            result2->ax_plus_y(ijhJI, Den1);
-          }
         }
       }
     }
@@ -253,7 +247,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     den2->zero();
     shared_ptr<Tensor> result2 = den2->clone();
     result2->zero();
-    // if imaginary, second-order contribution from energy
+    // if Hylleraas, second-order contribution from energy
     if (info_->shift_imag()) {
       for (int jst = 0; jst != nstates; ++jst) {  // bra
         for (int ist = 0; ist != nstates; ++ist) {  // ket
@@ -318,6 +312,34 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     den1_->ax_plus_y(1.0, den1->matrix());
     Den1_->ax_plus_y(1.0, Den1);
   }
+
+  if (info_->shift_imag()) {
+    for (int jst = 0; jst != nstates; ++jst) { // N
+      den1->zero();
+      Den1->zero();
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      const double nnhJI = (jheffJ*jheffI + jheffI*jheffJ) * 0.5;
+
+      for (int ist = 0; ist != nstates; ++ist) { // M
+        if (info_->sssr() && jst != ist)
+          continue;
+        set_rdm(jst, ist);
+
+        l2 = t2all_[jst]->at(ist);
+        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
+        while (!queue->done())
+          queue->next_compute();
+
+        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
+        while (!queue2->done())
+          queue2->next_compute();
+      }
+      den1_->ax_plus_y(nnhJI, den1->matrix());
+      Den1_->ax_plus_y(nnhJI, Den1);
+    }
+  }
+
   // because of the convention...
   den1_->scale(0.5);
   Den1_->scale(0.5);
@@ -340,7 +362,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           const double lnhJI  = (lheffJ * nheffI + lheffI * nheffJ) * 0.5;
           const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
           const double lmhJI  = (lheffJ * mheffI + lheffI * mheffJ) * 0.5;
-          const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
 
           if (!info_->sssr() || nst == lst) {
             l2 = t2all_[lst]->at(nst);
@@ -348,8 +369,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             while (!dec->done())
               dec->next_compute();
             add_total(lmhJI);
-            if (info_->shift_imag() && lst == mst)
-              add_total(llhJI);
           }
 
           if (!info_->sssr() || mst == lst) {
@@ -358,8 +377,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             while (!dec->done())
               dec->next_compute();
             add_total(lnhJI);
-            if (info_->shift_imag() && lst == nst)
-              add_total(llhJI);
           }
 
           if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->shift_imag()) {
@@ -384,6 +401,22 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
               dec->next_compute();
             add_total(2.0 * llhJI);
           }
+        }
+
+        if ((!info_->sssr() || nst == mst) && info_->shift_imag()) {
+          const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
+          l2 = t2all_[mst]->at(nst);
+          dec = make_deci3q(/*zero*/true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(mmhJI);
+
+          const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
+          l2 = t2all_[nst]->at(mst);
+          dec = make_deci4q(true);
+          while (!dec->done())
+            dec->next_compute();
+          add_total(nnhJI);
         }
 
         if (!info_->sssr() || nst == mst) {
