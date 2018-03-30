@@ -423,28 +423,21 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         }
 
         for (int i = 0; i != nstates_; ++i) {             // L states
-          // residual-like term
-          auto rlike = make_shared<MultiTensor>(nstates_);
-          for (auto& j : *rlike)
-            j = init_residual();
-
           for (int jst = 0; jst != nstates_; ++jst) {   // M states
             for (int ist = 0; ist != nstates_; ++ist) {     // N states
               if (info_->sssr() && (jst != i || ist != i))
                 continue;
               set_rdm(jst, ist);
               t2 = t2all_[i]->at(ist);
-              r = rlike->at(jst);
+              r = init_residual();
               e0_ = e0all_[i];
-              shared_ptr<Queue> queue = make_residualq(true, ist == jst);
+              shared_ptr<Queue> queue = make_residualq(true, jst == ist);
               while (!queue->done())
                 queue->next_compute();
               diagonal(r, t2, ist == jst);
+
+              sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, target) * (*heff_)(i, target), r);
             }
-          }
-          for (int jst = 0; jst != nstates_; ++jst) {
-            if (info_->sssr() && jst != i) continue;
-            sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, target) * (*heff_)(i, target), rlike->at(jst));
           }
         }
       } else {
@@ -541,28 +534,21 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         }
 
         for (int i = 0; i != nstates_; ++i) {             // L states
-          // residual-like term
-          auto rlike = make_shared<MultiTensor>(nstates_);
-          for (auto& j : *rlike)
-            j = init_residual();
-
           for (int jst = 0; jst != nstates_; ++jst) {     // N states
             for (int ist = 0; ist != nstates_; ++ist) {   // M states
               if (info_->sssr() && (jst != i || ist != i))
                 continue;
               set_rdm(jst, ist);
               t2 = t2all_[i]->at(ist);
-              r = rlike->at(jst);
+              r = init_residual();
               e0_ = e0all_[i];
               shared_ptr<Queue> queue = make_residualq(true, ist == jst);
               while (!queue->done())
                 queue->next_compute();
               diagonal(r, t2, ist == jst);
+
+              sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, targetJ) * (*heff_)(i, targetI), r);
             }
-          }
-          for (int jst = 0; jst != nstates_; ++jst) {
-            if (info_->sssr() && jst != i) continue;
-            sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, targetJ) * (*heff_)(i, targetI), rlike->at(jst));
           }
         }
       } else {

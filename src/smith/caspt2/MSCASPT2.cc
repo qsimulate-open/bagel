@@ -249,11 +249,11 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     result2->zero();
     // if Hylleraas, second-order contribution from energy
     if (info_->shift_imag()) {
+      // consistent with the next
       for (int jst = 0; jst != nstates; ++jst) {  // bra
         for (int ist = 0; ist != nstates; ++ist) {  // ket
           set_rdm(jst, ist);
           for (int istate = 0; istate != nstates; ++istate) { // state of T
-            const double ijhJI = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
             if (info_->sssr() && (jst != istate || ist != istate))
               continue;
             l2 = t2all_[istate]->at(ist);
@@ -261,6 +261,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             shared_ptr<Queue> queue = make_densityq(true, ist == jst);
             while (!queue->done())
               queue->next_compute();
+
+            const double ijhJI = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
             result2->ax_plus_y(ijhJI, den2);
           }
         }
@@ -289,30 +291,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     den2_ = result2->matrix();
   }
 
-  // first-order contribution from the lambda terms
-  {
-    den1->zero();
-    Den1->zero();
-    for (int jst = 0; jst != nstates; ++jst) { // bra
-      for (int ist = 0; ist != nstates; ++ist) { // ket
-        if (info_->sssr() && jst != ist)
-          continue;
-        set_rdm(jst, ist);
-
-        l2 = lall_[jst]->at(ist);
-        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
-        while (!queue->done())
-          queue->next_compute();
-
-        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
-        while (!queue2->done())
-          queue2->next_compute();
-      }
-    }
-    den1_->ax_plus_y(1.0, den1->matrix());
-    Den1_->ax_plus_y(1.0, Den1);
-  }
-
   if (info_->shift_imag()) {
     for (int jst = 0; jst != nstates; ++jst) { // N
       den1->zero();
@@ -338,6 +316,30 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       den1_->ax_plus_y(nnhJI, den1->matrix());
       Den1_->ax_plus_y(nnhJI, Den1);
     }
+  }
+
+  // first-order contribution from the lambda terms
+  {
+    den1->zero();
+    Den1->zero();
+    for (int jst = 0; jst != nstates; ++jst) { // bra
+      for (int ist = 0; ist != nstates; ++ist) { // ket
+        if (info_->sssr() && jst != ist)
+          continue;
+        set_rdm(jst, ist);
+
+        l2 = lall_[jst]->at(ist);
+        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
+        while (!queue->done())
+          queue->next_compute();
+
+        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
+        while (!queue2->done())
+          queue2->next_compute();
+      }
+    }
+    den1_->ax_plus_y(1.0, den1->matrix());
+    Den1_->ax_plus_y(1.0, Den1);
   }
 
   // because of the convention...
@@ -389,7 +391,11 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(llhJI);
           }
 
-          if ((!info_->sssr() || (mst == lst && nst == lst)) && info_->shift_imag()) {
+          if (info_->shift_imag()) {
+            // Consistent with the nexts
+            if (info_->sssr() && (nst != lst || mst != lst))
+              continue;
+
             e0_ = e0all_[lst];
             l2 = t2all_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
@@ -399,19 +405,21 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             dec = make_deci2q(false);
             while (!dec->done())
               dec->next_compute();
+
             add_total(2.0 * llhJI);
           }
         }
 
         if ((!info_->sssr() || nst == mst) && info_->shift_imag()) {
+          // Consistent with the nexts
           const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
+          const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
           l2 = t2all_[mst]->at(nst);
           dec = make_deci3q(/*zero*/true);
           while (!dec->done())
             dec->next_compute();
           add_total(mmhJI);
 
-          const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
           l2 = t2all_[nst]->at(mst);
           dec = make_deci4q(true);
           while (!dec->done())
