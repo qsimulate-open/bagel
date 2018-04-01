@@ -389,16 +389,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
           for (int jst = 0; jst != nstates_; ++jst) { // M states
-            if (sall_[ist]->at(jst)) {
-              sist->at(jst) = sall_[ist]->at(jst);
-            } else {
-              set_rdm(jst, ist);
-              s = init_residual();
-              shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-              while(!sourceq->done())
-                sourceq->next_compute();
-              sist->at(jst) = s;
-            }
+            set_rdm(jst, ist);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sist->at(jst) = s;
           }
           source->ax_plus_y((*heff_)(ist, target), sist);
         }
@@ -418,7 +414,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
             shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
             while(!sourceq->done())
               sourceq->next_compute();
-            sall_[istate]->at(jst)->ax_plus_y(2.0 * (*heff_)(istate, target) * (*heff_)(istate, target), s);
+            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target) * (*heff_)(istate, target), s);
           }
         }
 
@@ -497,16 +493,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
           for (int jst = 0; jst != nstates_; ++jst) {
-            if (sall_[ist]->at(jst)) {
-              sist->at(jst) = sall_[ist]->at(jst);
-            } else {
-              set_rdm(jst, ist);
-              s = init_residual();
-              shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-              while(!sourceq->done())
-                sourceq->next_compute();
-              sist->at(jst) = s;
-            }
+            set_rdm(jst, ist);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sist->at(jst) = s;
           }
           sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
           sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
@@ -529,7 +521,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
             shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
             while(!sourceq->done())
               sourceq->next_compute();
-            sall_[istate]->at(jst)->ax_plus_y(2.0 * (*heff_)(istate, targetI) * (*heff_)(istate, targetJ), s);
+            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI) * (*heff_)(istate, targetJ), s);
           }
         }
 
