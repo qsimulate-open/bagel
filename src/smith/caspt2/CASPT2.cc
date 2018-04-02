@@ -289,6 +289,49 @@ void CASPT2::CASPT2::solve() {
 }
 
 
+// temporary
+void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
+  for (int i = 0; i != nstates_; ++i) {
+    if (!s->at(i)) continue;
+    // a i b j
+#if 1
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i0, i1, i2, i3);
+          }
+#endif
+#if 0
+    // a r b i
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
+#endif
+    // a i r j
+#if 1
+    for (auto& i3 : active_) 
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
+#endif
+  }
+}
+
 // function to solve linear equation
 vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
@@ -296,6 +339,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   // loop over state of interest
   bool converged = true;
   for (int i = 0; i != nstates_; ++i) {  // K states
+    ///vvvvvvv
+    manipulate(s[i]);
+    ///^^^^^^^
     bool conv = false;
     double error = 0.0;
     e0_ = e0all_[i] - info_->shift();
@@ -336,6 +382,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           diagonal(r, t2, jst == ist);
         }
       }
+      ///vvvvvvv
+      manipulate(rall_[i]);
+      ///^^^^^^^
 
       // solve using subspace updates
       rall_[i] = solver->compute_residual(t[i], rall_[i]);
@@ -374,6 +423,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
     double error = 0.0;
     e0_ = e0all_[i];
     energy_[i] = 0.0;
+    ///vvvvvvv
+    manipulate(s[i]);
+    ///^^^^^^^
     shared_ptr<VectorB> source = transform_to_orthogonal(s[i]);
     // set guess vector
     auto amplitude = make_shared<VectorB>(source->size());
@@ -413,6 +465,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
           diagonal(r, t2, jst == ist);
         }
       }
+      ///vvvvvvv
+      manipulate(rall_[i]);
+      ///^^^^^^^
       shared_ptr<VectorB> residual = transform_to_orthogonal(rall_[i]);
       if (info_->shift() != 0.0)
         add_shift(residual, amplitude, i);
