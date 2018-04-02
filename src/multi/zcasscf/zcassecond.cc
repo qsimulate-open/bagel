@@ -36,6 +36,7 @@ using namespace bagel;
 ZCASSecond_base::ZCASSecond_base(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
  : ZCASSCF(idat, geom, ref) {
   thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
+  dfpcmo_ = idata_->get<bool>("dfpcmo", false);
 }
 
 

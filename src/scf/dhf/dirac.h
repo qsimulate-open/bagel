@@ -47,6 +47,8 @@ class Dirac : public Method {
     bool gaunt_;
     bool breit_;
 
+    bool dfpcmo_;
+
     // for Fock build
     bool robust_;
 

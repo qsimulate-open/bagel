@@ -35,6 +35,9 @@ class ZCASSecond_base : public ZCASSCF {
     // convergence threshold for micro iteration relative to stepsize
     double thresh_microstep_;
 
+    // print out converged orbitals in the DIRAC's DFPCMO format
+    bool dfpcmo_;
+
     // compute orbital gradient
     std::shared_ptr<ZRotFile> compute_gradient(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
 
