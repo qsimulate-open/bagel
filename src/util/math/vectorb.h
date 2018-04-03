@@ -173,6 +173,14 @@ class Vector_ : public btas::Tensor1<DataType> {
       return out;
     }
 
+    void print(const std::string tag = "") const {
+      if (tag != "")
+        std::cout << std::endl << "  ++ " << tag << " ++" << std::endl << std::endl;
+
+      for (int i = 0; i != size(); ++i)
+        std::cout << std::setw(6) << i << std::setw(20) << std::setprecision(10) << *(data()+i) << std::endl;
+    }
+
     void allreduce() {
       mpi__->allreduce(data(), size());
     }
