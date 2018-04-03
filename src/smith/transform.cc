@@ -176,6 +176,7 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
       for (auto& i3 : virt_)
         for (auto& i2 : closed_)
           for (auto& i1 : virt_) {
+            // covariant to contravariant
             const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
             unique_ptr<DataType[]> data0 = tensor->get_block(i2, i3, i0, i1);
             unique_ptr<DataType[]> data2(new DataType[blocksize]);
@@ -186,7 +187,7 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
             } else {
               blas::scale_n(0.5, data2.get(), blocksize);
             }
-            // move to orthogonal basis
+            // R contravariant -> orthogonal
             unique_ptr<DataType[]> interm(new DataType[i1.size()*i2.size()*i3.size()*interm_size]);
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, interm_size, i1.size()*i2.size()*i3.size(), i0.size(),
                                         1.0, transp.get(), interm_size, data2.get(), i0.size(), 0.0, interm.get(), interm_size);
@@ -465,7 +466,6 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                 for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
                   for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0, ++iall) {
                     const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-
                     data0[iall] = (*vector)[ioffset + jall] * 0.5;
                   }
             }
@@ -541,9 +541,9 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                   }
 
             unique_ptr<DataType[]> data0(new DataType[blocksize]);
+            // R internal -> covariant
             btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
                                         1.0, transp.get(), interm_size, interm.get(), interm_size, 0.0, data0.get(), i0.size());
-
             out->put_block(data0, i0, i1, i2, i3);
           }
     }
@@ -959,6 +959,84 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
   }
 }
 
+
+template<typename DataType>
+DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr<const Vector_<DataType>> source, shared_ptr<const Vector_<DataType>> residual, shared_ptr<const Vector_<DataType>> amplitude, const double error, const double timing) const {
+  const size_t nact = info_->nact();
+  const size_t nclosed = info_->nclosed();
+  const size_t nvirt = info_->nvirt();
+  const size_t ncore = info_->ncore();
+  const size_t nocc = nact + nclosed;
+  const size_t nclo = nclosed - ncore;
+  const size_t size_aibj = nvirt * nvirt * nclo * nclo;
+  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
+  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
+  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
+  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
+  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
+  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+
+  size_t iortho = 0;
+  DataType E_aibj = 0.0;
+  for (int l = 0; l != size_aibj; ++l, ++iortho) E_aibj += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  DataType E_arbs = 0.0;
+  for (int l = 0; l != size_arbs; ++l, ++iortho) E_arbs += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
+  DataType E_arbi = 0.0;
+  {
+    for (auto& i0 : active_) {
+      const size_t interm_size = denom_->shalf_x()->ndim();
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = 0; j0 != interm_size; ++j0) {
+                    const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
+                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                    E_arbi += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
+                  }
+          }
+    }
+    iortho += size_arbi;
+  }
+  DataType E_airj = 0.0;
+  {
+    for (auto& i3 : active_) {
+      const size_t interm_size = denom_->shalf_h()->ndim();
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j3 = 0; j3 != interm_size; ++j3)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                    const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
+                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                    E_airj += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
+                  }
+          }
+    }
+    iortho += size_airj;
+  }
+  DataType E_risj = 0.0;
+  for (int l = 0; l != size_risj; ++l, ++iortho) E_risj += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  DataType E_airs = 0.0;
+  for (int l = 0; l != size_airs; ++l, ++iortho) E_airs += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  DataType E_arst = 0.0;
+  for (int l = 0; l != size_arst; ++l, ++iortho) E_arst += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  DataType E_rist = 0.0;
+  for (int l = 0; l != size_rist; ++l, ++iortho) E_rist += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  DataType Etot = E_aibj + E_arbs + E_arbi + E_airj + E_risj + E_airs + E_arst + E_rist;
+  cout << setw(8) << iter << setprecision(6) << setw(12) << E_aibj << setw(12) << E_arbs << setw(12) << E_arbi << setw(12) << E_airj;
+  cout << setw(12) << E_risj << setw(12) << E_airs << setw(12) << E_arst << setw(12) << E_rist;
+  cout << setw(15) << setprecision(8) << Etot << setw(15) << error << setw(7) << setprecision(2) << timing << endl;
+  return Etot;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explicit instantiation at the end of the file

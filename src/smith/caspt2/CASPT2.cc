@@ -151,7 +151,8 @@ void CASPT2::CASPT2::solve() {
     cout << "    * CASPT2 iteration is performed using redundant basis" << endl << endl;
   }
   Timer timer;
-  print_iteration();
+  if (!info_->orthogonal_basis())
+    print_iteration();
 
   // <proj_jst|H|0_K> set to sall in ms-caspt2
   for (int istate = 0; istate != nstates_; ++istate) { //K states
@@ -294,7 +295,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
   for (int i = 0; i != nstates_; ++i) {
     if (!s->at(i)) continue;
     // a i b j
-#if 1
+#if 0
     for (auto& i3 : virt_)
       for (auto& i2 : closed_)
         for (auto& i1 : virt_)
@@ -318,7 +319,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
           }
 #endif
     // a i r j
-#if 1
+#if 0
     for (auto& i3 : active_) 
       for (auto& i2 : closed_)
         for (auto& i1 : virt_)
@@ -418,6 +419,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
+  cout << endl << "      -----------------------------------------------------  CASPT2 iteration  --------------------------------------------------------------" << endl;
+  cout << "       #        aibj        arbs        arbi        airj        risj        airs        arst        rist           Etot          error   time" << endl;
+  cout << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
   for (int i = 0; i != nstates_; ++i) {  // K states
     bool conv = false;
     double error = 0.0;
@@ -430,7 +434,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
     // set guess vector
     auto amplitude = make_shared<VectorB>(source->size());
     if (s[i]->rms() < 1.0e-15) {
-      print_iteration(0, 0.0, 0.0, mtimer.tick());
+      print_energy_parts(0, source, source, amplitude, 0.0, mtimer.tick());
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
@@ -474,13 +478,9 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
       residual = solver->compute_residual(amplitude, residual);
       amplitude = solver->civec();
 
-      // energy is now the Hylleraas energy
-      energy_[i] = source->dot_product(amplitude);
-      energy_[i] += residual->dot_product(amplitude);
-
       // compute rms for state i
       error = residual->norm() / pow(residual->size(), 0.25);
-      print_iteration(iter, energy_[i], error, mtimer.tick());
+      energy_[i] = print_energy_parts(iter, source, residual, amplitude, error, mtimer.tick());
       conv = error < info_->thresh();
 
       if (!conv) {
@@ -495,7 +495,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
     if (i+1 != nstates_) cout << endl;
     converged &= conv;
   }
-  print_iteration(!converged);
+  cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
   return t;
 }
 
@@ -518,7 +518,8 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     // Lambda equation solver
     for (int i = 0; i != nstates_; ++i)
       lall_.push_back(t2all_[i]->clone());
-    print_iteration();
+    if (!info_->orthogonal_basis())
+      print_iteration();
 
     // source stores the result of summation over M'
     if (targetJ == targetI) {

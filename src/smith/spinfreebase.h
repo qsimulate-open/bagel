@@ -124,6 +124,7 @@ class SpinFreeMethod {
     std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant_amplitude(std::shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const;
     std::shared_ptr<Tensor_<DataType>> transform_to_redundant_amplitude_v(std::shared_ptr<const Vector_<DataType>> vector, const int ist) const;
     void update_amplitude_orthogonal(std::shared_ptr<Vector_<DataType>> amplitude, std::shared_ptr<const Vector_<DataType>> residual, const int nstates, const int istate) const;
+    DataType print_energy_parts(const int iter, std::shared_ptr<const Vector_<DataType>> source, std::shared_ptr<const Vector_<DataType>> residual, std::shared_ptr<const Vector_<DataType>> amplitude, const double error, const double timing) const;
 
     // update t from the residual and denominator (this function does not zero out).
     void update_amplitude(std::shared_ptr<Tensor_<DataType>> t, std::shared_ptr<const Tensor_<DataType>> r) const;
