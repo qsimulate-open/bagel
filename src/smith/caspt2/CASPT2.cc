@@ -203,7 +203,23 @@ void CASPT2::CASPT2::solve() {
     cout << "    * CASPT2 energy : state " << setw(2) << istate << fixed << setw(20) << setprecision(10) << pt2energy_[istate] << endl;
     if (info_->shift() != 0.0)
       cout << "        w/o shift correction  " << fixed << setw(20) << setprecision(10) << energy_[istate]+(*eref_)(istate,istate) << endl;
-    // TODO reference weight is not printed here
+    {
+      n = init_residual();
+      double norm = 0.0;
+      for (int jst = 0; jst != nstates_; ++jst) { // bra
+        for (int ist = 0; ist != nstates_; ++ist) { // ket
+          if (info_->sssr() && (jst != istate || ist != istate))
+            continue;
+          set_rdm(jst, ist);
+          t2 = t2all_[istate]->at(ist);
+          shared_ptr<Queue> normq = make_normq(true, jst == ist);
+          while (!normq->done())
+            normq->next_compute();
+          norm += dot_product_transpose(n, t2all_[istate]->at(jst));
+        }
+      }
+      cout << "        reference weight      " << fixed << setw(20) << setprecision(10) << 1.0/(1.0+norm) << endl;
+    }
     cout << endl;
   }
 
