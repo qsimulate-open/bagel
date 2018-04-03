@@ -1038,6 +1038,82 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
   return Etot;
 }
 
+
+template<typename DataType>
+DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataType>> bra, shared_ptr<const Vector_<DataType>> ket) const {
+  const size_t nact = info_->nact();
+  const size_t nclosed = info_->nclosed();
+  const size_t nvirt = info_->nvirt();
+  const size_t ncore = info_->ncore();
+  const size_t nocc = nact + nclosed;
+  const size_t nclo = nclosed - ncore;
+  const size_t size_aibj = nvirt * nvirt * nclo * nclo;
+  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
+  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
+  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
+  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
+  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
+  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+
+  size_t iortho = 0;
+  DataType norm_aibj = 0.0;
+  for (int l = 0; l != size_aibj; ++l, ++iortho) norm_aibj += (*bra)[iortho] * (*ket)[iortho];
+  DataType norm_arbs = 0.0;
+  for (int l = 0; l != size_arbs; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
+  // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
+  DataType norm_arbi = 0.0;
+  {
+    for (auto& i0 : active_) {
+      const size_t interm_size = denom_->shalf_x()->ndim();
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = 0; j0 != interm_size; ++j0) {
+                    const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
+                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                    norm_arbi += (*bra)[jall] * ket_covar;
+                  }
+          }
+    }
+    iortho += size_arbi;
+  }
+  DataType norm_airj = 0.0;
+  {
+    for (auto& i3 : active_) {
+      const size_t interm_size = denom_->shalf_h()->ndim();
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j3 = 0; j3 != interm_size; ++j3)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                    const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
+                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                    norm_airj += (*bra)[jall] * ket_covar;
+                  }
+          }
+    }
+    iortho += size_airj;
+  }
+  DataType norm_risj = 0.0;
+  for (int l = 0; l != size_risj; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
+  DataType norm_airs = 0.0;
+  for (int l = 0; l != size_airs; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
+  DataType norm_arst = 0.0;
+  for (int l = 0; l != size_arst; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
+  DataType norm_rist = 0.0;
+  for (int l = 0; l != size_rist; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
+  DataType norm = norm_aibj + norm_arbs + norm_arbi + norm_airj + norm_risj + norm_airs + norm_arst + norm_rist;
+  return norm;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explicit instantiation at the end of the file
 template class SpinFreeMethod<double>;
