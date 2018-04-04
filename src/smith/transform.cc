@@ -977,10 +977,26 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
 
   size_t iortho = 0;
   DataType E_aibj = 0.0;
-  for (int l = 0; l != size_aibj; ++l, ++iortho) E_aibj += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
+  {
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                    const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1));
+                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                    E_aibj += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
+                  }
+            }
+          }
+    iortho += size_aibj;
+  }
   DataType E_arbs = 0.0;
   for (int l = 0; l != size_arbs; ++l, ++iortho) E_arbs += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
-  // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
   DataType E_arbi = 0.0;
   {
     for (auto& i0 : active_) {
@@ -1056,7 +1072,24 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
 
   size_t iortho = 0;
   DataType norm_aibj = 0.0;
-  for (int l = 0; l != size_aibj; ++l, ++iortho) norm_aibj += (*bra)[iortho] * (*ket)[iortho];
+  {
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                    const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                    const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1));
+                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                    norm_aibj += (*bra)[jall] * ket_covar;
+                  }
+            }
+          }
+    iortho += size_aibj;
+  }
   DataType norm_arbs = 0.0;
   for (int l = 0; l != size_arbs; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
   // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
