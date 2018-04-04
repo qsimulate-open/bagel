@@ -36,6 +36,7 @@ using namespace bagel;
 ZCASSecond_base::ZCASSecond_base(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
  : ZCASSCF(idat, geom, ref) {
   thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
+  dfpcmo_ = idata_->get<bool>("dfpcmo", false);
 }
 
 
@@ -246,7 +247,7 @@ shared_ptr<const ZCoeff_Block> ZCASSecond::semi_canonical_orb() const {
   auto ocoeff = coeff_->slice(0, nclosed_*2);
   auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
   auto vcoeff = coeff_->slice(nocc_*2, (nocc_+nvirt_)*2);
-  assert((nocc_+nvirt_)*2 = coeff_->mdim());
+  assert((nocc_+nvirt_)*2 == coeff_->mdim());
 
   ZMatrix trans(coeff_->mdim(), coeff_->mdim());
   trans.unit();
@@ -278,7 +279,7 @@ shared_ptr<const ZCoeff_Block> ZCASSecond_London::semi_canonical_orb() const {
   auto ocoeff = coeff_->slice(0, nclosed_*2);
   auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
   auto vcoeff = coeff_->slice(nocc_*2, (nocc_+nvirt_)*2);
-  assert((nocc_+nvirt_)*2 = coeff_->mdim());
+  assert((nocc_+nvirt_)*2 == coeff_->mdim());
 
   ZMatrix trans(coeff_->mdim(), coeff_->mdim());
   trans.unit();

@@ -22,14 +22,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <src/util/math/aughess.h>
 #include <src/scf/dhf/dfock.h>
+#include <src/scf/dhf/population_analysis.h>
 #include <src/multi/zcasscf/zqvec.h>
 #include <src/multi/zcasscf/zcassecond.h>
-#include <src/scf/dhf/population_analysis.h>
 #include <src/prop/pseudospin/pseudospin.h>
 #include <src/ci/zfci/reljop.h>
 #include <src/util/math/quatmatrix.h>
+#include <src/util/math/aughess.h>
+#include <src/util/io/dfpcmo.h>
 
 using namespace std;
 using namespace bagel;
@@ -192,8 +193,16 @@ void ZCASSecond_base::compute() {
 #endif
   }
 
-  if (max_iter_ > 0 && canonical_)
+  if (max_iter_ > 0 && canonical_) {
     coeff_ = semi_canonical_orb();
+    if (dfpcmo_) {
+      auto scoeff = make_shared<ZCoeff_Striped>(*coeff_->striped_format(), nneg_/2, 0, 0, (nclosed_+nact_+nvirtnr_)*2, true);
+      const ZMatrix fock = *fci_->jop()->core_fock() + *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
+      shared_ptr<const VectorB> eig = (*scoeff % fock * *scoeff).diag().get_real_part();
+      DFPCMO dfpcmo(scoeff, eig, energy_[0], (nclosed_+nact_+nvirtnr_)*2, nneg_, scoeff->ndim());
+      dfpcmo.print();
+    }
+  }
 
   // update construct Jop from scratch
   muffle_->unmute();

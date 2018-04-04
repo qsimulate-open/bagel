@@ -205,8 +205,8 @@ void ZCASSCF::print_iteration(const int iter, const vector<double>& energy, cons
 
 shared_ptr<const Reference> ZCASSCF::conv_to_ref_(const bool kramers) const {
   const bool noci = !nact_ || external_rdm_ == "noref";
-  return noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers)
-              : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirt_-nneg_/2, gaunt_, breit_, kramers,
+  return noci ? make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers)
+              : make_shared<RelReference>(geom_, coeff_->striped_format(), energy_, nneg_, nclosed_, nact_, nvirtnr_, gaunt_, breit_, kramers,
                                           fci_->rdm1_av(), fci_->rdm2_av(), fci_->conv_to_ciwfn());
 }
 

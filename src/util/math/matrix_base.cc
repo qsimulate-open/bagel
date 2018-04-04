@@ -228,13 +228,12 @@ DataType Matrix_base<DataType>::trace() const {
 
 
 template<typename DataType>
-unique_ptr<DataType[]> Matrix_base<DataType>::diag() const {
+Vector_<DataType> Matrix_base<DataType>::diag() const {
   if (ndim() != mdim()) throw logic_error("illegal call of Matrix::diag()");
-  unique_ptr<DataType[]> out(new DataType[ndim()]);
-  for (int i = 0; i != ndim(); ++i) {
+  Vector_<DataType> out(ndim());
+  for (int i = 0; i != ndim(); ++i)
     out[i] = element(i,i);
-  }
-  return move(out);
+  return out;
 }
 
 

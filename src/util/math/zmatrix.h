@@ -134,8 +134,6 @@ class ZMatrix : public Matrix_base<std::complex<double>>, public std::enable_sha
       for (int ii = i; ii != j; ++ii) element(ii,ii) += a;
     }
     void add_diag(const std::complex<double> a) { add_diag(a,0,ndim()); }
-    // returns diagonal elements
-    std::unique_ptr<std::complex<double>[]> diag() const;
 
     // purify a (near unitary) matrix to be unitary
     void purify_unitary();
