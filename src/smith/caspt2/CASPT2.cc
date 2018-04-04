@@ -545,28 +545,22 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       auto source = make_shared<MultiTensor>(nstates_);
       for (auto& i : *source)
         i = init_residual();
-      // first implement gradient case
       if (info_->shift_imag()) {
-        // This should also yield right results for the real shift.
+        // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
-        for (int ist = 0; ist != nstates_; ++ist) {  //N
+        for (int ist = 0; ist != nstates_; ++ist) { // N states
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
-          for (int jst = 0; jst != nstates_; ++jst) {  //M
-            if (sall_[ist]->at(jst)) {
-              sist->at(jst) = sall_[ist]->at(jst);
-            } else {
-              set_rdm(jst, ist);
-              s = init_residual();
-              shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
-              while(!sourceq->done())
-                sourceq->next_compute();
-              sist->at(jst) = s;
-            }
+          for (int jst = 0; jst != nstates_; ++jst) { // M states
+            set_rdm(jst, ist);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sist->at(jst) = s;
           }
           source->ax_plus_y((*heff_)(ist, target), sist);
-          sall_[ist]->ax_plus_y((*heff_)(ist, target) * (*heff_)(ist, target), sist);
         }
 
         for (int istate = 0; istate != nstates_; ++istate) { //L states
@@ -575,31 +569,35 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
               sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target), source->at(jst));
           }
         }
-        
-        // residual-like term
-        auto rlike = make_shared<MultiTensor>(nstates_);
-        for (auto& i : *rlike)
-          i = init_residual();
 
-        for (int i = 0; i != nstates_; ++i) {
-          for (int ist = 0; ist != nstates_; ++ist) {
-            for (int jst = 0; jst != nstates_; ++jst) {
+        for (int istate = 0; istate != nstates_; ++istate) {  // L states
+          for (int jst = 0; jst != nstates_; ++jst) {
+            if (info_->sssr() && istate != jst) continue;
+            set_rdm(jst, istate);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, target) * (*heff_)(istate, target), s);
+          }
+        }
+
+        for (int i = 0; i != nstates_; ++i) {             // L states
+          for (int jst = 0; jst != nstates_; ++jst) {   // M states
+            for (int ist = 0; ist != nstates_; ++ist) {     // N states
               if (info_->sssr() && (jst != i || ist != i))
                 continue;
               set_rdm(jst, ist);
               t2 = t2all_[i]->at(ist);
-              r = rlike->at(jst);
+              r = init_residual();
               e0_ = e0all_[i];
-              shared_ptr<Queue> queue = make_residualq(true, ist == jst);
+              shared_ptr<Queue> queue = make_residualq(true, jst == ist);
               while (!queue->done())
                 queue->next_compute();
               diagonal(r, t2, ist == jst);
+
+              sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, target) * (*heff_)(i, target), r);
             }
-          }
-          for (int jst = 0; jst != nstates_; ++jst) {
-            if (info_->sssr() && jst != i)
-              continue;
-            sall_[i]->at(jst)->ax_plus_y((*heff_)(i, target) * (*heff_)(i, target), rlike->at(jst));
           }
         }
       } else {
@@ -644,20 +642,21 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
         }
       }
     } else {
-      // NACME case
       auto sourceJ = make_shared<MultiTensor>(nstates_);
       auto sourceI = make_shared<MultiTensor>(nstates_);
       for (auto& i : *sourceJ)
         i = init_residual();
       for (auto& i : *sourceI)
         i = init_residual();
-
-      for (int ist = 0; ist != nstates_; ++ist) { // L states
-        auto sist = make_shared<MultiTensor>(nstates_);
-        for (int jst = 0; jst != nstates_; ++jst) {
-          if (sall_[ist]->at(jst)) {
-            sist->at(jst) = sall_[ist]->at(jst);
-          } else {
+      // NACME case
+      if (info_->shift_imag()) {
+        // This should also yield the right results for the real shift.
+        // Nevertheless, it requires additional evaluation of residual-like term,
+        // and therefore, only applied for imaginary case only
+        for (int ist = 0; ist != nstates_; ++ist) { // L states
+          sall_[ist]->zero();
+          auto sist = make_shared<MultiTensor>(nstates_);
+          for (int jst = 0; jst != nstates_; ++jst) {
             set_rdm(jst, ist);
             s = init_residual();
             shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
@@ -665,31 +664,89 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
               sourceq->next_compute();
             sist->at(jst) = s;
           }
+          sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
+          sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
         }
-        sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
-        sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
-      }
 
-      for (int istate = 0; istate != nstates_; ++istate) { //K states
-        sall_[istate]->zero();
-        for (int jst = 0; jst != nstates_; ++jst)
-          if (!info_->sssr() || istate == jst) {
-            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI), sourceI->at(jst));
-            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetJ), sourceJ->at(jst));
+        for (int istate = 0; istate != nstates_; ++istate) { //L states
+          for (int jst = 0; jst != nstates_; ++jst) { // M states
+            if (!info_->sssr() || istate == jst) {
+              sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI), sourceI->at(jst));
+              sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetJ), sourceJ->at(jst));
+            }
           }
-        if (info_->shift() != 0.0) {
-          // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
-          n = init_residual();
-          for (int jst = 0; jst != nstates_; ++jst) { // bra
-            for (int ist = 0; ist != nstates_; ++ist) { // ket
-              if (info_->sssr() && (jst != istate || ist != istate))
+        }
+
+        for (int istate = 0; istate != nstates_; ++istate) {  // L states
+          for (int jst = 0; jst != nstates_; ++jst) {
+            if (info_->sssr() && istate != jst) continue;
+            set_rdm(jst, istate);
+            s = init_residual();
+            shared_ptr<Queue> sourceq = make_sourceq(false, jst == istate);
+            while(!sourceq->done())
+              sourceq->next_compute();
+            sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI) * (*heff_)(istate, targetJ), s);
+          }
+        }
+
+        for (int i = 0; i != nstates_; ++i) {             // L states
+          for (int jst = 0; jst != nstates_; ++jst) {     // N states
+            for (int ist = 0; ist != nstates_; ++ist) {   // M states
+              if (info_->sssr() && (jst != i || ist != i))
                 continue;
               set_rdm(jst, ist);
-              t2 = t2all_[istate]->at(ist);
-              shared_ptr<Queue> normq = make_normq(true, jst == ist);
-              while (!normq->done())
-                normq->next_compute();
-              sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * (*heff_)(istate, targetJ) * (*heff_)(istate, targetI), n);
+              t2 = t2all_[i]->at(ist);
+              r = init_residual();
+              e0_ = e0all_[i];
+              shared_ptr<Queue> queue = make_residualq(true, ist == jst);
+              while (!queue->done())
+                queue->next_compute();
+              diagonal(r, t2, ist == jst);
+
+              sall_[i]->at(jst)->ax_plus_y(2.0 * (*heff_)(i, targetJ) * (*heff_)(i, targetI), r);
+            }
+          }
+        }
+      } else {
+        for (int ist = 0; ist != nstates_; ++ist) { // L states
+          auto sist = make_shared<MultiTensor>(nstates_);
+          for (int jst = 0; jst != nstates_; ++jst) {
+            if (sall_[ist]->at(jst)) {
+              sist->at(jst) = sall_[ist]->at(jst);
+            } else {
+              set_rdm(jst, ist);
+              s = init_residual();
+              shared_ptr<Queue> sourceq = make_sourceq(false, jst == ist);
+              while(!sourceq->done())
+                sourceq->next_compute();
+              sist->at(jst) = s;
+            }
+          }
+          sourceJ->ax_plus_y((*heff_)(ist, targetI) * 0.5, sist);
+          sourceI->ax_plus_y((*heff_)(ist, targetJ) * 0.5, sist);
+        }
+
+        for (int istate = 0; istate != nstates_; ++istate) { //K states
+          sall_[istate]->zero();
+          for (int jst = 0; jst != nstates_; ++jst)
+            if (!info_->sssr() || istate == jst) {
+              sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetI), sourceI->at(jst));
+              sall_[istate]->at(jst)->ax_plus_y((*heff_)(istate, targetJ), sourceJ->at(jst));
+            }
+          if (info_->shift() != 0.0) {
+            // subtract 2*Eshift*T_M^2*<proj|Psi_M> from source term
+            n = init_residual();
+            for (int jst = 0; jst != nstates_; ++jst) { // bra
+              for (int ist = 0; ist != nstates_; ++ist) { // ket
+                if (info_->sssr() && (jst != istate || ist != istate))
+                  continue;
+                set_rdm(jst, ist);
+                t2 = t2all_[istate]->at(ist);
+                shared_ptr<Queue> normq = make_normq(true, jst == ist);
+                while (!normq->done())
+                  normq->next_compute();
+                sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * (*heff_)(istate, targetJ) * (*heff_)(istate, targetI), n);
+              }
             }
           }
         }
@@ -754,6 +811,8 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     ms.solve_gradient(targetJ, targetI, nocider);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
+    if (info_->shift_imag())
+      den2_tt_ = ms.rdm12_tt();
     Den1_ = ms.rdm21();
     if (!nocider)
       ci_deriv_ = ms.ci_deriv();
@@ -804,15 +863,28 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j) {
-          dtmp->element(j, i) -=  correlated_norm_lt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-          if (info_->shift_imag())
-            dtmp->element(j, i) -= correlated_norm_tt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed) * (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+          dtmp->element(j, i) -= correlated_norm_lt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
         }
     }
     dtmp->symmetrize();
     den2_ = dtmp;
+  }
+
+  if (info_->shift_imag()) {
+    auto dtmp2 = den2_tt_->copy();
+    for (int ist = 0; ist != nstates_; ++ist) {
+      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j) {
+          dtmp2->element(j, i) -= correlated_norm_tt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed) * factor;
+        }
+    }
+    dtmp2->symmetrize();
+    den2_tt_ = dtmp2;
   }
 
   shared_ptr<const Reference> ref = info_->ref();
@@ -841,12 +913,17 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
-      if (info_->shift_imag()) {
-        const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_tt_[ist]);
+    }
+
+    if (info_->shift_imag()) {
+      shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
+      for (int ist = 0; ist != nstates_; ++ist) {
+        const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+        const Matrix op2(*gd2_tt * (1.0/nstates_) - *fock * correlated_norm_tt_[ist] * factor);
         shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
-            ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+            ci_deriv_->data(ist)->ax_plus_y(2.0*op2(j,i), deriv->data(j+i*nact));
       }
     }
 
@@ -905,6 +982,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       // also rotate cideriv back to the MS states
       btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3});
     }
+  }
+
+  if (info_->shift_imag()) {
+    auto dtmp = den2_->copy();
+    dtmp->ax_plus_y(1.0, den2_tt_);
+    den2_ = dtmp;
   }
 
   // restore original energy
