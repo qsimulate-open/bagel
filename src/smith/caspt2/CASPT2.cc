@@ -500,6 +500,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     auto amplitude = make_shared<VectorB>(source->size());
     if (s[i]->rms() < 1.0e-15) {
       print_energy_parts(0, source, source, amplitude, 0.0, mtimer.tick());
+      out.push_back(amplitude);
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
