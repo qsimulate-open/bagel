@@ -322,7 +322,26 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             s->at(i)->put_block(data, i0, i1, i2, i3);
           }
 #endif
-#if 0
+    // a r b s
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i3 : virt_)
+          for (auto& i1 : virt_) {
+            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i0, i1, i2, i3);
+          }
+    // a i r j
+    for (auto& i3 : active_) 
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
     // a r b i
     for (auto& i0 : active_)
       for (auto& i3 : virt_)
@@ -333,19 +352,47 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
             s->at(i)->put_block(data, i2, i3, i0, i1);
           }
-#endif
-    // a i r j
-#if 0
-    for (auto& i3 : active_) 
-      for (auto& i2 : closed_)
+    // r i s j
+    for (auto& i3 : active_)
+      for (auto& i1 : active_)
+        for (auto& i2 : closed_)
+          for (auto& i0 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i0, i1, i2, i3);
+          }
+    // a i r s & a r s i
+    for (auto& i3 : active_)
+      for (auto& i2 : active_)
         for (auto& i1 : virt_)
           for (auto& i0 : closed_) {
             const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
             unique_ptr<double[]> data(new double[blocksize]);
             for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
             s->at(i)->put_block(data, i2, i3, i0, i1);
+            s->at(i)->put_block(data, i0, i3, i2, i1);
           }
-#endif
+    // a r s t
+    for (auto& i3 : active_)
+      for (auto& i2 : active_)
+        for (auto& i0 : active_)
+          for (auto& i1 : virt_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
+    // r i s t
+    for (auto& i3 : active_)
+      for (auto& i1 : active_)
+        for (auto& i0 : active_)
+          for (auto& i2 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
   }
 }
 
