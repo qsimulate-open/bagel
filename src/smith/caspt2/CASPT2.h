@@ -83,6 +83,10 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
+    // in orthogonal basis
+    std::vector<std::shared_ptr<VectorB>> lall_orthogonal_;
+    std::vector<std::shared_ptr<VectorB>> t2all_orthogonal_;
+
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Matrix> den2_tt_;
@@ -148,7 +152,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<std::shared_ptr<MultiTensor_<double>>>
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
-    std::vector<std::shared_ptr<MultiTensor_<double>>>
+    std::tuple<std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
       solve_linear_orthogonal(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
 
     std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> feed_denci();

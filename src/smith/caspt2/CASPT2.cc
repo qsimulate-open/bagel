@@ -172,7 +172,7 @@ void CASPT2::CASPT2::solve() {
 
   // solve linear equation for t amplitudes
   if (info_->orthogonal_basis()) {
-    t2all_ = solve_linear_orthogonal(sall_, t2all_);
+    tie(t2all_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
   } else {
     t2all_ = solve_linear(sall_, t2all_);
   }
@@ -477,11 +477,13 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 }
 
 
-vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
+tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
+CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
+  vector<shared_ptr<VectorB>> out;
   cout << endl << "      -----------------------------------------------------  CASPT2 iteration  --------------------------------------------------------------" << endl;
   cout << "       #        aibj        arbs        arbi        airj        risj        airs        arst        rist           Etot          error   time" << endl;
   cout << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
@@ -552,6 +554,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
       }
       if (conv) {
         t[i] = transform_to_redundant_amplitude(amplitude, nstates_, i);
+        out.push_back(amplitude);
         break;
       }
     }
@@ -559,7 +562,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear_orthogonal
     converged &= conv;
   }
   cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
-  return t;
+  return make_tuple(out, t);
 }
 
 
@@ -801,7 +804,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
     // solve linear equation and store lambda in lall
     if (info_->orthogonal_basis()) {
-      lall_ = solve_linear_orthogonal(sall_, lall_);
+      tie(lall_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
     } else {
       lall_ = solve_linear(sall_, lall_);
     }
