@@ -112,6 +112,10 @@ class MSCASPT2 {
     std::shared_ptr<Matrix> rdm2fderiv_;
     std::shared_ptr<Matrix> rdm3fderiv_;
 
+    // in orthogonal basis
+    std::vector<std::shared_ptr<VectorB>> lall_orthogonal_;
+    std::vector<std::shared_ptr<VectorB>> t2all_orthogonal_;
+
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
     std::shared_ptr<FutureTensor> Gamma34_();

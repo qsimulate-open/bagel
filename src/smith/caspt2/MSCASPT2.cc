@@ -49,6 +49,8 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
   rall_  = cas.rall_;
+  t2all_orthogonal_ = cas.t2all_orthogonal_;
+  lall_orthogonal_ = cas.lall_orthogonal_;
   h1_ = cas.h1_;
   f1_ = cas.f1_;
   v2_ = cas.v2_;
@@ -288,6 +290,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       }
     }
     den2_ = result2->matrix();
+
   }
 
   if (info_->shift_imag()) {

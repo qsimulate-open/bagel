@@ -76,6 +76,7 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
 
   // sall is changed in gradient and nacme codes while the others are not
   t2all_ = cas.t2all_;
+  t2all_orthogonal_ = cas.t2all_orthogonal_;
   rall_  = cas.rall_;
   for (int i = 0; i != nstates_; ++i) {
     sall_.push_back(cas.sall_[i]->copy());
@@ -909,6 +910,65 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int ncore = info_->ncore();
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
+
+  if (info_->shift_imag()) {
+    const double shift2 = info_->shift() * info_->shift();
+    shared_ptr<Matrix> dshift = den2_->clone();
+    for (int istate = 0; istate != nstates_; ++istate) { // state of T
+      // considering only SS-SR case
+      shared_ptr<VectorB> lambda = lall_orthogonal_[istate];
+      shared_ptr<VectorB> amplitude = t2all_orthogonal_[istate];
+      // a i b j
+      {
+        const size_t nact = info_->nact();
+        const size_t nclosed = info_->nclosed();
+        const size_t nvirt = info_->nvirt();
+        const size_t nocc = nact + nclosed;
+        const size_t ncore = info_->ncore();
+        const size_t nclo = nclosed - ncore;
+        const size_t size_aibj = nvirt * nvirt * nclo * nclo;
+        const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
+        const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
+        const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+        const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
+        const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
+        const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
+        const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+
+        const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
+        size_t ioffset = 0;
+        for (auto& i3 : virt_)
+          for (auto& i2 : closed_)
+            for (auto& i1 : virt_)
+              for (auto& i0 : closed_) {
+                for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
+                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                    for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                      for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                        const int j0i = j0;
+                        const int j1i = j1 + nocc - ncore;
+                        const int j2i = j2;
+                        const int j3i = j3 + nocc - ncore;
+                        const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+                        const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j3+nocc] + eig_[j1+nocc];
+                        dshift->element(j0i, j0i) += (shift2) * (*lambda)[jall] * (*amplitude)[jall] / (denom * denom);
+                        dshift->element(j2i, j2i) += (shift2) * (*lambda)[jall] * (*amplitude)[jall] / (denom * denom);
+                        dshift->element(j1i, j1i) -= (shift2) * (*lambda)[jall] * (*amplitude)[jall] / (denom * denom);
+                        dshift->element(j3i, j3i) -= (shift2) * (*lambda)[jall] * (*amplitude)[jall] / (denom * denom);
+                      }
+                }
+              }
+      }
+    }
+    {
+      auto dtmp = den2_->copy();
+      for (int i = 0; i != dtmp->ndim(); ++i)
+        for (int j = 0; j != dtmp->mdim(); ++j)
+          dtmp->element(j, i) += dshift->element(j, i);
+      den2_ = dtmp;
+    }
+  }
+
   {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     auto dtmp = den2_->copy();
