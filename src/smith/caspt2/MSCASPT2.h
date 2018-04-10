@@ -115,6 +115,9 @@ class MSCASPT2 {
     // in orthogonal basis
     std::vector<std::shared_ptr<VectorB>> lall_orthogonal_;
     std::vector<std::shared_ptr<VectorB>> t2all_orthogonal_;
+    // temporary. to be removed...
+    std::shared_ptr<const Denom<double>> denom_;
+    std::vector<double> eig_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
