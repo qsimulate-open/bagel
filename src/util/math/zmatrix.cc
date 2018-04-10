@@ -466,7 +466,7 @@ void ZMatrix::print (const string tag, int len) const {
     for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
       for (int k = 0; k != len_m % 6; ++k)
-        cout << setw(30) << setprecision(8) << *element_ptr(j, i * 6 + k);
+        cout << setw(30) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }
     cout << endl;
