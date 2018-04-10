@@ -113,7 +113,7 @@ Keywords
 
 .. topic:: ``canonical``
 
-   | **Description**: If set to "true," optimized orbitals will be transformed to semi-canonical orbitals. This option is ignored if ``algorithm`` is ``noopt``.
+   | **Description**: If set to "true," optimized orbitals will be transformed to semi-canonical orbitals.
    | **Datatype:** bool
    | **Default:** false.
 
