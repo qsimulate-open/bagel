@@ -108,9 +108,9 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
             unique_ptr<DataType[]> data0 = tensor->get_block(i0, i1, i2, i3);
             if (is_same<DataType,double>::value) {
               const unique_ptr<DataType[]> data1 = tensor->get_block(i0, i3, i2, i1);
-              sort_indices<0,3,2,1,2,6,1,6>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
             } else {
-              blas::scale_n(0.5, data0.get(), tensor->get_size(i0, i1, i2, i3));
+              blas::scale_n(0.25, data0.get(), tensor->get_size(i0, i1, i2, i3));
             }
             size_t iall = 0;
             for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
@@ -464,7 +464,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                 for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
                   for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0, ++iall) {
                     const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-                    data0[iall] = (*vector)[ioffset + jall] * 0.5;
+                    data0[iall] = (*vector)[ioffset + jall];
                   }
             }
             out->put_block(data0, i0, i1, i2, i3);
@@ -988,7 +988,7 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
                   for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                     const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
                     const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1));
-                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                    const DataType amplitude_covar = (*amplitude)[jall] * 8.0 - (*amplitude)[jall2] * 4.0;
                     E_aibj += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
                   }
             }
@@ -1083,7 +1083,7 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
                   for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
                     const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
                     const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1));
-                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                    const DataType ket_covar = (*ket)[jall] * 8.0 - (*ket)[jall2] * 4.0;
                     norm_aibj += (*bra)[jall] * ket_covar;
                   }
             }

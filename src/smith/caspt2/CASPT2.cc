@@ -952,13 +952,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
                 const int j3i = j3 + nocc - ncore;
                 const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
                 const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-                const double lcovar = ((*lambda)[jall] * 2.0 - (*lambda)[jall2]);
-                const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j3+nocc] + eig_[j1+nocc];
+                const double lcovar = ((*lambda)[jall] * 8.0 - (*lambda)[jall2] * 4.0);
+                const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
                 // almost all contributions are from closed
-                dshift->element(j0i, j0i) += (shift2) * lcovar * (*amplitude)[jall] / (denom * denom);
-                dshift->element(j1i, j1i) -= (shift2) * lcovar * (*amplitude)[jall] / (denom * denom);
-                dshift->element(j2i, j2i) += (shift2) * lcovar * (*amplitude)[jall] / (denom * denom);
-                dshift->element(j3i, j3i) -= (shift2) * lcovar * (*amplitude)[jall] / (denom * denom);
+                dshift->element(j0i, j0i) += lcovar * (*amplitude)[jall] * shift2 / (denom * denom);
+                dshift->element(j1i, j1i) -= lcovar * (*amplitude)[jall] * shift2 / (denom * denom);
+                dshift->element(j2i, j2i) += lcovar * (*amplitude)[jall] * shift2 / (denom * denom);
+                dshift->element(j3i, j3i) -= lcovar * (*amplitude)[jall] * shift2 / (denom * denom);
               }
       }
     }
