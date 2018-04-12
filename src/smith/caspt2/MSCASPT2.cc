@@ -446,7 +446,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
 
-            e0_ = e0all_[lst] - info_->shift();
+            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
             l2 = lall_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
@@ -511,7 +511,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
                               const int j3i = j3 + nocc - ncore;
                               const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
                               const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-                              const double lcovar = (*lambda)[jall] * 2.0 - (*lambda)[jall2];
+                              const double lcovar = (*lambda)[jall] * 8.0 - (*lambda)[jall2] * 4.0;
                               const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j3+nocc] + eig_[j1+nocc];
                               unique_ptr<double[]> o0data(new double[den0cit->get_size()]);
                               o0data[0] = 2.0 * (shift2) *  lcovar * (*amplitude)[jall] / (denom * denom);
