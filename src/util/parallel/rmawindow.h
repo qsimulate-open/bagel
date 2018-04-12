@@ -60,7 +60,7 @@ class RMAWindow {
     using MPI_Win = int; // just to compile
 #endif
     MPI_Win win_;
-    DataType* win_base_;
+    std::unique_ptr<DataType[]> data_;
 
     bool initialized_;
 
@@ -84,7 +84,7 @@ class RMAWindow {
     DataType dot_product(const RMAWindow<DataType>& o) const;
     DataType dot_product(std::shared_ptr<const RMAWindow<DataType>> o) const { return dot_product(*o); }
 
-    const DataType* local_data() const { fence(); return win_base_; }
+    const DataType* local_data() const { fence(); return data_.get(); }
 
     // Blocking
     std::unique_ptr<DataType[]> rma_get(const size_t key) const;
