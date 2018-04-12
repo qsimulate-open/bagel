@@ -157,8 +157,8 @@ shared_ptr<GradFile> Force::compute() {
     } else if (method == "mp2") {
 
       auto force = make_shared<GradEval<MP2Grad>>(cinput, geom_, ref_);
-      energyvec = force->energyvec();
       out = force->compute(jobtitle, gradinfo);
+      energyvec = force->energyvec();
       ref = force->ref();
       force_dipole_ = force->dipole();
 
