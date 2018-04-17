@@ -161,6 +161,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     void do_rdm_deriv(double factor);
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
 
+    std::shared_ptr<Matrix> make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
+
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     CASPT2(const CASPT2& cas);
