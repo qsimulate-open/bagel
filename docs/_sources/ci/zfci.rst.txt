@@ -118,11 +118,6 @@ Keywords
    | **Default**: true
    | **Recommendation**: Use false if the error "generate_guess produced an invalid determinant" is generated. 
 
-.. topic:: ``aniso``
-
-   | **Description**: Performs magnetic anisotropy analysis (g-factors and zero-field splitting parameters). 
-   | **Datatype**: int
-
 =======
 Example
 =======
