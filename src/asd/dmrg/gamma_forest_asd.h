@@ -91,7 +91,19 @@ class GammaForestASD : public GammaForest<VecType, 1> {
 
     SparseList sparselist() const { return sparselist_; }
 
-    int block_tag(BlockKey b) const { return b.nelea + (b.neleb << 10); }
+    size_t block_tag(const BlockKey& b) const { return b.nelea + (b.neleb << 10); }
+
+    bool exist(const BlockKey& bra, const BlockKey& ket, const std::list<GammaSQ>& gammalist) const {
+      const size_t bratag = block_tag(bra);
+      const size_t kettag = block_tag(ket);
+      return GammaForest<VecType,1>::template exist<0>(bratag, kettag, gammalist);
+    }
+
+    std::shared_ptr<const Matrix> get(const BlockKey& bra, const BlockKey& ket, const std::list<GammaSQ>& gammalist) const {
+      const size_t bratag = block_tag(bra);
+      const size_t kettag = block_tag(ket);
+      return GammaForest<VecType,1>::template get<0>(bratag, kettag, gammalist);
+    }
 
 };
 
