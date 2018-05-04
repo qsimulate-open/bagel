@@ -36,13 +36,13 @@ class RelJop : public ZMOFile {
     bool breit_;
 
     virtual std::shared_ptr<ZMatrix> compute_hcore() const override;
-    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const override;
+    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g, const int batchsize) const override;
     std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
 
   public:
     RelJop(const std::shared_ptr<const Geometry> geom, const int nstart, const int nfence, std::shared_ptr<const ZCoeff_Block> coeff,
-           const bool gaunt, const bool breit, const bool store_c = false, const bool store_g = false);
+           const bool gaunt, const bool breit, const bool store_c = false, const bool store_g = false, const int batchsize = 250);
 
     static std::tuple<std::list<std::shared_ptr<RelDFHalf>>, std::list<std::shared_ptr<RelDFHalf>>>
       compute_half(std::shared_ptr<const Geometry> geom, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit);

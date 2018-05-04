@@ -44,7 +44,7 @@ class ZMOFile {
     std::shared_ptr<Kramers<1,ZMatrix>> kramers_coeff_;
 
     // creates integral files and returns the core energy.
-    void init(const int nstart, const int nfence, const bool store_c, const bool store_g);
+    void init(const int nstart, const int nfence, const bool store_c, const bool store_g, const int batchsize = 250);
 
     // hamiltoniam data
     std::shared_ptr<Kramers<2,ZMatrix>> mo1e_;
@@ -55,7 +55,7 @@ class ZMOFile {
                           std::shared_ptr<Kramers<4,ZMatrix>> buf2e);
 
     virtual std::shared_ptr<ZMatrix> compute_hcore() const = 0;
-    virtual std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const = 0;
+    virtual std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g, const int batchsize) const = 0;
     virtual std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
     virtual std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) = 0;
 

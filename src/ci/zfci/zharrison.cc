@@ -45,6 +45,7 @@ ZHarrison::ZHarrison(shared_ptr<const PTree> idat, shared_ptr<const Geometry> g,
   thresh_ = idata_->get<double>("thresh_fci", thresh_);
   print_thresh_ = idata_->get<double>("print_thresh", 0.05);
   restart_ = idata_->get<bool>("restart", false);
+  batchsize_ = idata_->get<int>("batchsize", 250);
 
   if (idata_->get<int>("nspin", -1) != -1 || idata_->get<int>("nstate", -1) != -1)
     throw runtime_error("nspin and nstate are used as inputs only for non-relativistic FCI or CASSCF.  \

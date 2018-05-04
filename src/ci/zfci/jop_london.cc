@@ -41,7 +41,7 @@ shared_ptr<ZMatrix> Jop_London::compute_hcore() const {
 }
 
 
-shared_ptr<ZMatrix> Jop_London::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool) const {
+shared_ptr<ZMatrix> Jop_London::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool, const int dummy) const {
   auto ocoeff = coeff_->slice_copy(0, nclosed);
   ocoeff->scale(1.0/sqrt(2.0));
   return make_shared<Fock_London<1>>(geom_, hcore, nullptr, ocoeff, false, true);

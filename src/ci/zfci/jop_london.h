@@ -32,7 +32,7 @@ namespace bagel {
 class Jop_London : public ZMOFile {
   protected:
     std::shared_ptr<ZMatrix> compute_hcore() const override;
-    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool) const override;
+    std::shared_ptr<ZMatrix> compute_fock(std::shared_ptr<const ZMatrix> hcore, const int nclosed, const bool, const bool, const int dummy) const override;
     std::shared_ptr<Kramers<2,ZMatrix>> compute_mo1e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
     std::shared_ptr<Kramers<4,ZMatrix>> compute_mo2e(std::shared_ptr<const Kramers<1,ZMatrix>> coeff) override;
 
