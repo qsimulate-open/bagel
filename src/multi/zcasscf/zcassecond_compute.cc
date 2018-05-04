@@ -34,8 +34,6 @@
 using namespace std;
 using namespace bagel;
 
-// TODO batch size should be automatically determined by the memory size etc. (like in DFock)
-const static int batchsize = 250;
 
 void ZCASSecond_base::compute() {
   assert(nvirt_ && nact_);
@@ -110,7 +108,7 @@ void ZCASSecond_base::compute() {
     shared_ptr<const ZMatrix> afock_c = afock;
     shared_ptr<const ZMatrix> qxr_c = qxr;
     if (gaunt_) {
-      cfock_c = nclosed_ ? make_shared<ZMatrix>(*coeff_ % DFock(geom_, hcore_, coeff_->slice(0, nclosed_*2), false, false, false, false) * *coeff_)
+      cfock_c = nclosed_ ? make_shared<ZMatrix>(*coeff_ % DFock(geom_, hcore_, coeff_->slice(0, nclosed_*2), false, false, false, false, 1.0, 1.0, false, batchsize_) * *coeff_)
                          : make_shared<ZMatrix>(*coeff_ % *hcore_ * *coeff_);
       afock_c = make_shared<ZMatrix>(*coeff_ % *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av(), /*coulomb only*/true) * *coeff_);
       qxr_c = make_shared<ZQvec>(nbasis_*2, nact_, geom_, coeff_, coeff_->slice_copy(nclosed_*2,nocc_*2), nclosed_, fci_, false, false);
@@ -280,7 +278,7 @@ shared_ptr<ZRotFile> ZCASSecond_base::compute_hess_trial(shared_ptr<const ZRotFi
     auto tcoeff = make_shared<ZMatrix>(*vcoeff * *vc + *acoeff * *ca->transpose_conjg());
 
     const int noccupied = tcoeff->mdim();
-    int nbatch = (noccupied-1) / batchsize+1;
+    int nbatch = (noccupied-1) / batchsize_+1;
     StaticDist dist(noccupied, nbatch);
     vector<pair<size_t, size_t>> table = dist.atable();
 

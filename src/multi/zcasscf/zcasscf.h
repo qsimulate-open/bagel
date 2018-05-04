@@ -78,6 +78,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // hides some outputs
     mutable std::shared_ptr<Muffle> muffle_;
 
+    // splitting of closed orbitals for management of memory cost
+    int batchsize_;
+
     std::shared_ptr<ZHarrison> fci_;
     // Fock matrix with active 1RDM
     std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1, const bool coulomb_only = false) const;

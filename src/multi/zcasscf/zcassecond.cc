@@ -110,7 +110,7 @@ void ZCASSecond::init_coeff() {
         c.copy_block(0, scoeff->mdim(), scoeff->ndim(), tildex->mdim()-scoeff->mdim(), *tildex * trans->slice(scoeff->mdim(), tildex->mdim()));
 
         scoeff = make_shared<ZCoeff_Striped>(move(c), nclosed_, nact_, nvirtnr_, nneg_);
-        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, gaunt_, breit_);
+        scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, geom_->nele() - charge_, gaunt_, breit_, batchsize_);
 #ifndef NDEBUG
         ZMatrix unit(scoeff->mdim(), scoeff->mdim()); unit.unit();
         assert((*scoeff % *overlap_ * *scoeff - unit).rms() < 1.0e-10);
@@ -128,7 +128,7 @@ void ZCASSecond::init_coeff() {
 
   // initialize coefficient to enforce kramers symmetry
   if (!relref->kramers() && (external_rdm_.empty() || external_rdm_ == "noref"))
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap_, hcore_, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_, batchsize_);
 
   // specify active orbitals and move into the active space
   const shared_ptr<const PTree> iactive = idata_->get_child_optional("active");
