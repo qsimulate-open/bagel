@@ -115,6 +115,8 @@ MOPrint::MOPrint(const shared_ptr<const PTree> idata, const shared_ptr<const Geo
       start_pos[i] = min_pos[i] - 4.0;
       ngrid_dim_[i] = static_cast<size_t>((max_pos[i] - min_pos[i] + 8.0) / inc_size_[i]) + 1;
     }
+  } else {
+    ngrid_dim_ = idata->get_array<size_t,3>("ngrid", {{41, 41, 41}});
   }
   ngrid_ = ngrid_dim_[0] * ngrid_dim_[1] * ngrid_dim_[2];
 
