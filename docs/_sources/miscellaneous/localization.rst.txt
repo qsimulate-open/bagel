@@ -59,7 +59,7 @@ Keywords
 
 .. topic:: ``lowdin``
 
-   | **Description:** Lowdin charges are used in the localization (CHECK THIS)`
+   | **Description:** Lowdin charges are used in the localization
    | **Datatype:** bool
    | **Values:**
    |    ``true``: Uses Lowdin charges

@@ -35,6 +35,9 @@ class ZCASSecond_base : public ZCASSCF {
     // convergence threshold for micro iteration relative to stepsize
     double thresh_microstep_;
 
+    // print out converged orbitals in the DIRAC's DFPCMO format
+    bool dfpcmo_;
+
     // compute orbital gradient
     std::shared_ptr<ZRotFile> compute_gradient(std::shared_ptr<const ZMatrix> cfock, std::shared_ptr<const ZMatrix> afock, std::shared_ptr<const ZMatrix> qxr) const;
 
@@ -56,7 +59,7 @@ class ZCASSecond_base : public ZCASSCF {
     virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override = 0;
 
     virtual void trans_natorb() = 0;
-    virtual std::shared_ptr<const ZCoeff_Block> semi_canonical_orb() const = 0;
+    virtual bool kramers() const = 0;
 
   protected:
     ZCASSecond_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
@@ -74,7 +77,7 @@ class ZCASSecond : public ZCASSecond_base {
     virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final;
     virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final;
     virtual void trans_natorb() override final;
-    virtual std::shared_ptr<const ZCoeff_Block> semi_canonical_orb() const final;
+    virtual bool kramers() const override { return true; }
 
   public:
     ZCASSecond(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);
@@ -89,7 +92,7 @@ class ZCASSecond_London : public ZCASSecond_base {
     virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final { /*do nothing*/ }
     virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final { /*do nothing*/ }
     virtual void trans_natorb() override final;
-    virtual std::shared_ptr<const ZCoeff_Block> semi_canonical_orb() const final;
+    virtual bool kramers() const override { return false; }
 
   public:
     ZCASSecond_London(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref = nullptr);

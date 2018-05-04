@@ -240,7 +240,7 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgcc->block(0)->data()+nri*(i+nclosed_*i), 1, 0.0, tmp.data(), 1);
         tmp.allreduce();
         Matrix tmp0 = vcoeff % tmp * vcoeff;
-        blas::ax_plus_y_n(-4.0, tmp0.diag().get(), nvirt_, denom->ptr_vc()+nvirt_*i);
+        blas::ax_plus_y_n(-4.0, tmp0.diag().data(), nvirt_, denom->ptr_vc()+nvirt_*i);
       }
     }
     shared_ptr<const DFFullDist> vaa  = halfa->compute_second_transform(acoeff);
@@ -252,10 +252,10 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
         tmp.allreduce();
         Matrix tmp0 = vcoeff % tmp * vcoeff;
-        blas::ax_plus_y_n(2.0, tmp0.diag().get(), nvirt_, denom->ptr_va()+nvirt_*i);
+        blas::ax_plus_y_n(2.0, tmp0.diag().data(), nvirt_, denom->ptr_va()+nvirt_*i);
         if (nclosed_) {
           Matrix tmp1 = ccoeff % tmp * ccoeff;
-          blas::ax_plus_y_n(2.0, tmp1.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
+          blas::ax_plus_y_n(2.0, tmp1.diag().data(), nclosed_, denom->ptr_ca()+nclosed_*i);
         }
       }
       shared_ptr<const DFFullDist> vaa_noj = fci_->jop()->mo2e_1ext()->compute_second_transform(acoeff);
@@ -294,7 +294,7 @@ shared_ptr<RotFile> CASSecond::compute_denom(shared_ptr<const DFHalfDist> half, 
         dgemv_("T", nri, nao*nao, 1.0, geom_->df()->block(0)->data(), nri, vgaa->block(0)->data()+nri*(i+nact_*i), 1, 0.0, tmp.data(), 1);
         tmp.allreduce();
         Matrix tmp0 = ccoeff % tmp * ccoeff;
-        blas::ax_plus_y_n(4.0, tmp0.diag().get(), nclosed_, denom->ptr_ca()+nclosed_*i);
+        blas::ax_plus_y_n(4.0, tmp0.diag().data(), nclosed_, denom->ptr_ca()+nclosed_*i);
       }
     }
   }

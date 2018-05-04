@@ -225,16 +225,6 @@ shared_ptr<ZMatrix> ZMatrix::log(const int deg) const {
 }
 
 
-unique_ptr<complex<double>[]> ZMatrix::diag() const {
-  if (ndim() != mdim()) throw logic_error("illegal call of ZMatrix::diag()");
-  unique_ptr<complex<double>[]> out(new complex<double>[ndim()]);
-  for (int i = 0; i != ndim(); ++i) {
-    out[i] = element(i,i);
-  }
-  return move(out);
-}
-
-
 shared_ptr<ZMatrix> ZMatrix::transpose(const complex<double> factor) const {
   auto out = make_shared<ZMatrix>(mdim(), ndim(), localized_);
   blas::transpose(data(), ndim(), mdim(), out->data(), factor);
@@ -476,7 +466,7 @@ void ZMatrix::print (const string tag, int len) const {
     for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
       for (int k = 0; k != len_m % 6; ++k)
-        cout << setw(30) << setprecision(8) << *element_ptr(j, i * 6 + k);
+        cout << setw(30) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }
     cout << endl;

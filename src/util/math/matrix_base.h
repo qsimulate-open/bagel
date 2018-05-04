@@ -164,7 +164,7 @@ class Matrix_base : public btas::Tensor2<DataType> {
     void localize() { localized_ = true; }
     bool localized() const { return localized_; }
 
-    std::unique_ptr<DataType[]> diag() const;
+    Vector_<DataType> diag() const;
     void add_diag(const DataType& a) { add_diag(a,0,ndim()); }
     void add_diag(const DataType& a, const int i, const int j);
 

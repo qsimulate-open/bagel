@@ -179,6 +179,7 @@ int main(int argc, char** argv) {
           ref = asd_dmrg->sref();
       } else if (title == "localize") {
         if (ref == nullptr) throw runtime_error("Localize needs a reference");
+        if (ref->coeffB()) throw runtime_error("Localize is not implemented for UHF/ROHF");
 
         string localizemethod = itree->get<string>("algorithm", "pm");
         shared_ptr<OrbitalLocalization> localization;

@@ -36,6 +36,7 @@ using namespace bagel;
 ZCASSecond_base::ZCASSecond_base(shared_ptr<const PTree> idat, shared_ptr<const Geometry> geom, shared_ptr<const Reference> ref)
  : ZCASSCF(idat, geom, ref) {
   thresh_microstep_ = idata_->get<double>("thresh_microstep", 1.0e-4);
+  dfpcmo_ = idata_->get<bool>("dfpcmo", false);
 }
 
 
@@ -240,63 +241,3 @@ void ZCASSecond::impose_symmetry(shared_ptr<ZRotFile> o) const {
 }
 
 
-shared_ptr<const ZCoeff_Block> ZCASSecond::semi_canonical_orb() const {
-  const ZMatrix fock = *fci_->jop()->core_fock()
-                     + *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
-  auto ocoeff = coeff_->slice(0, nclosed_*2);
-  auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
-  auto vcoeff = coeff_->slice(nocc_*2, (nocc_+nvirt_)*2);
-  assert((nocc_+nvirt_)*2 = coeff_->mdim());
-
-  ZMatrix trans(coeff_->mdim(), coeff_->mdim());
-  trans.unit();
-  VectorB eig(coeff_->mdim());
-  if (nclosed_) {
-    QuatMatrix ofock(ocoeff % fock * ocoeff);
-    ofock.diagonalize(eig);
-    trans.copy_block(0, 0, nclosed_*2, nclosed_*2, ofock);
-  }
-  if (nact_ && canonical_) {
-    QuatMatrix afock = acoeff % fock * acoeff;
-    afock.diagonalize(eig);
-    trans.copy_block(nclosed_*2, nclosed_*2, nact_*2, nact_*2, afock);
-  }
-  QuatMatrix vfock = vcoeff % fock * vcoeff;
-  vfock.diagonalize(eig);
-  trans.copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirtnr_, vfock.slice(nvirt_-nvirtnr_, nvirt_));
-  trans.copy_block(nocc_*2, nocc_*2+nvirtnr_, nvirt_*2, nvirt_-nvirtnr_, vfock.slice(0, nvirt_-nvirtnr_));
-  trans.copy_block(nocc_*2, nocc_*2+nvirt_, nvirt_*2, nvirtnr_, vfock.slice(nvirt_*2-nvirtnr_, nvirt_*2));
-  trans.copy_block(nocc_*2, nocc_*2+nvirt_+nvirtnr_, nvirt_*2, nvirt_-nvirtnr_, vfock.slice(nvirt_, nvirt_*2-nvirtnr_));
- 
-  return make_shared<ZCoeff_Block>(*coeff_ * trans, nclosed_, nact_, nvirtnr_, nneg_);
-}
-
-
-shared_ptr<const ZCoeff_Block> ZCASSecond_London::semi_canonical_orb() const {
-  const ZMatrix fock = *fci_->jop()->core_fock()
-                     + *compute_active_fock(coeff_->slice(nclosed_*2, nocc_*2), fci_->rdm1_av());
-  auto ocoeff = coeff_->slice(0, nclosed_*2);
-  auto acoeff = coeff_->slice(nclosed_*2, nocc_*2);
-  auto vcoeff = coeff_->slice(nocc_*2, (nocc_+nvirt_)*2);
-  assert((nocc_+nvirt_)*2 = coeff_->mdim());
-
-  ZMatrix trans(coeff_->mdim(), coeff_->mdim());
-  trans.unit();
-  VectorB eig(coeff_->mdim());
-  if (nclosed_) {
-    ZMatrix ofock(ocoeff % fock * ocoeff);
-    ofock.diagonalize(eig);
-    trans.copy_block(0, 0, nclosed_*2, nclosed_*2, ofock);
-  }
-  if (nact_ && canonical_) {
-    ZMatrix afock = acoeff % fock * acoeff;
-    afock.diagonalize(eig);
-    trans.copy_block(nclosed_*2, nclosed_*2, nact_*2, nact_*2, afock);
-  }
-  ZMatrix vfock = vcoeff % fock * vcoeff;
-  vfock.diagonalize(eig);
-  trans.copy_block(nocc_*2, nocc_*2, nvirt_*2, nvirtnr_*2, vfock.slice((nvirt_-nvirtnr_)*2, nvirt_*2));
-  trans.copy_block(nocc_*2, nocc_*2+nvirtnr_*2, nvirt_*2, (nvirt_-nvirtnr_)*2, vfock.slice(0, (nvirt_-nvirtnr_)*2));
-
-  return make_shared<ZCoeff_Block>(*coeff_ * trans, nclosed_, nact_, nvirtnr_, nneg_);
-}

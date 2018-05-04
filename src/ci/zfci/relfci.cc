@@ -65,7 +65,7 @@ void RelFCI::dump_integrals_and_exit() const {
   auto rr = dynamic_pointer_cast<const RelReference>(ref_);
   assert(rr);
   OArchive ar("relref");
-  auto rout = make_shared<RelReference>(geom_, jop_->coeff()->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit());
+  auto rout = make_shared<RelReference>(geom_, jop_->coeff()->striped_format(), 0.0, rr->nneg(), rr->nclosed(), rr->nact(), rr->nvirt(), rr->gaunt(), rr->breit(), rr->kramers());
   ar << rout;
   dump_ints();
   throw Termination("Relativistic MO integrals are dumped on a file.");

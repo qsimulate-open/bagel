@@ -37,6 +37,7 @@
 #include <src/util/math/matrix.h>
 #include <src/util/math/diis.h>
 #include <src/util/muffle.h>
+#include <src/util/io/dfpcmo.h>
 #include <src/scf/dhf/population_analysis.h>
 
 using namespace std;
@@ -51,6 +52,9 @@ Dirac::Dirac(const shared_ptr<const PTree> idata, const shared_ptr<const Geometr
   // when computing gradient, we store half-transform integrals
   do_grad_ = idata->get<bool>("_gradient", false);
   if (do_grad_ && geom_->magnetism()) throw runtime_error("Gradient integrals have not been implemented for a GIAO basis.");
+
+  // MO printout option
+  dfpcmo_ = idata->get<bool>("dfpcmo", false);
 
   geom_ = geom->relativistic(gaunt_);
   common_init(idata);
@@ -133,20 +137,12 @@ void Dirac::compute() {
     Timer ptime(1);
 
     auto fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_, 1.0, 1.0, false, batchsize_);
-
-// TODO I have a feeling that the code should not need this, but sometimes there are slight errors. still looking on it.
-#if 0
-    assert(fock->is_hermitian());
-    fock->hermite();
-#endif
-    // distribute
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
     const complex<double> prod = aodensity->dot_product(*hcore+*distfock); // identical to Tr(D^+ F)
     if (fabs(prod.imag()) > 1.0e-12) {
       stringstream ss; ss << "imaginary part of energy is nonzero!! Perhaps Fock is not Hermite for some reasons " << setprecision(10) << prod.imag();
-//    throw runtime_error(ss.str());
       cout << ss.str() << endl;
     }
     energy_ = 0.5*prod.real() + geom_->nuclear_repulsion();
@@ -164,6 +160,11 @@ void Dirac::compute() {
       if (do_grad_) {
         assert(!gaunt_);
         half_ = fock->half_coulomb();
+      }
+      if (dfpcmo_) {
+        shared_ptr<const ZMatrix> scoeff = coeff->matrix();
+        DFPCMO dfpcmo(scoeff, make_shared<VectorB>(eig_), energy_, scoeff->mdim()-nneg_, nneg_, scoeff->ndim());
+        dfpcmo.print();
       }
       break;
     } else if (iter == max_iter_-1) {

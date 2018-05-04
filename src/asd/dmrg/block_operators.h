@@ -111,14 +111,6 @@ class BlockOperators1 : public BlockOperators {
     std::shared_ptr<BlockSparseMatrix> gamma_a(const BlockKey bk, int i) const override;
     std::shared_ptr<BlockSparseMatrix> gamma_b(const BlockKey bk, int i) const override;
 
-    std::shared_ptr<Matrix>    Q_aa_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_aa_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    Q_bb_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_bb_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    Q_ab_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(Q_ab_.at(bk), i, j); }
-    std::shared_ptr<Matrix>     S_a_as_matrix(const BlockKey bk, int i) const { return get_mat_block(S_a_.at(bk), i); }
-    std::shared_ptr<Matrix>     S_b_as_matrix(const BlockKey bk, int i) const { return get_mat_block(S_b_.at(bk), i); }
-    std::shared_ptr<Matrix>    P_aa_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_aa_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    P_bb_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_bb_.at(bk), i, j); }
-    std::shared_ptr<Matrix>    P_ab_as_matrix(const BlockKey bk, int i, int j) const { return get_mat_block(P_ab_.at(bk), i, j); }
     std::shared_ptr<Matrix> gamma_a_as_matrix(const BlockKey bk, int i) const;
     std::shared_ptr<Matrix> gamma_b_as_matrix(const BlockKey bk, int i) const;
 
