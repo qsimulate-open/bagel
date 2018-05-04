@@ -27,15 +27,13 @@
 using namespace std;
 using namespace bagel;
 
-// TODO batch size should be automatically determined by the memory size etc.
-const static int batchsize = 250;
 
 DFock::DFock(shared_ptr<const Geometry> a,  shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb, const bool store_half_gaunt)
+             const bool store_half, const bool robust, const double scale_exch, const double scale_coulomb, const bool store_half_gaunt, const int batchsize)
   : ZMatrix(*hc), geom_(a), gaunt_(gaunt), breit_(breit), store_half_(store_half), store_half_gaunt_(store_half_gaunt), robust_(robust) {
 
   assert(breit ? gaunt : true);
-  two_electron_part(coeff, scale_exch, scale_coulomb);
+  two_electron_part(coeff, scale_exch, scale_coulomb, batchsize);
 }
 
 
@@ -64,7 +62,7 @@ DFock::DFock(shared_ptr<const Geometry> a, shared_ptr<const ZMatrix> hc, shared_
 }
 
 
-void DFock::two_electron_part(const ZMatView coeff, const double scale_exchange, const double scale_coulomb) {
+void DFock::two_electron_part(const ZMatView coeff, const double scale_exchange, const double scale_coulomb, const int batchsize) {
 
   assert(geom_->nbasis()*4 == coeff.ndim());
 
