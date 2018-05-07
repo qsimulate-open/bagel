@@ -131,7 +131,7 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
 
   } else {
 
-    // 4-component wavefunction, change of atom positions
+    // 4-component wavefunction, change of atom positions (or change in magnetic field)
     shared_ptr<ZMatrix> snew, sold;
     if (!giao) {
       snew = make_shared<RelOverlap>(geomin);
