@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelMRCI_gamma.cc
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group

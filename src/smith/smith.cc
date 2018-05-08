@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: smith.cc
-// Copyright (C) 2013 Matthew MacLeod
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Matthew K. MacLeod <matthew.macleod@northwestern.edu>
 // Maintainer: Shiozaki group

@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: multisite.h
-// Copyright (C) 2014 Shane Parker
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki Group

@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: RelCASPT2.h
-// Copyright (C) 2014 Shiozaki group
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group

@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: diagonal.cc
-// Copyright (C) 2015 Shiozaki group
+// Copyright (C) 2015 Toru Shiozaki
 //
 // Author: Shiozaki group <shiozaki@northwestern.edu>
 // Maintainer: Shiozaki group

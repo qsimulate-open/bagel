@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: breit2index.cc
-// Copyright (C) 2013 Matthew Kelley
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Matthew Kelley <matthewkelley2017@northwestern.edu>
 // Maintainer: Shiozaki group

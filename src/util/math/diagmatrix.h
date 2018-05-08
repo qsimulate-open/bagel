@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: diagmatrix.h
-// Copyright (C) 2017 Nils Strand
+// Copyright (C) 2017 Toru Shiozaki
 //
 // Author: Nils Strand <nilsstrand2022@u.northwestern.edu>
 // Maintainer: Shiozaki group
