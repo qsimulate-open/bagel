@@ -64,11 +64,10 @@ shared_ptr<Reference> RelReference::project_coeff(shared_ptr<const Geometry> geo
   if (moved && newbasis)
     throw runtime_error("changing geometry and basis set at the same time is not allowed");
 
-  if (geomin->magnetism() && !geom_->magnetism()) {
+  if (geomin->magnetism() && !geom_->magnetism())
     if (geomin->nonzero_magnetic_field() || moved || newbasis)
-      throw runtime_error("The conversion from standard to GIAO architecture requires that no changes be made to atom positions, basis, or magnetic field.  (But these can all be changed with a second \"molecule\" input block.)");
-    cout << "  * Attempting projection from (zero-field) real basis set to GIAO basis set." << endl;
-  }
+      throw runtime_error("The conversion from standard orbitals to GIAO requires that no simultaneous changes be made to atom positions, basis set, or magnetic field.");
+
 
   if (newbasis) {
     // 4-component wavefunction, change of basis
