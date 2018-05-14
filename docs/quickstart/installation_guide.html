@@ -134,7 +134,7 @@ $ cd obj
 <div class="highlight-default"><div class="highlight"><pre><span></span>$ export BOOST_ROOT=/path/to/boost
 $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
 
-$ ../configure &#39;--enable-mkl&#39; &#39;--with-boost=$BOOST_ROOT&#39;
+$ ../configure --enable-mkl --with-boost=$BOOST_ROOT
 </pre></div>
 </div>
 <dl class="docutils">
@@ -154,11 +154,10 @@ However, Open MPI is not recommended.</div>
 </dd>
 </dl>
 <p>Example (Release build on the Shiozaki group’s cluster)</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span>$ export BOOST_ROOT=/usr/local/boost/boost_1_62_0_gcc-6.2.0
+<div class="highlight-default"><div class="highlight"><pre><span></span>$ export BOOST_ROOT=/usr/local/boost/boost_1_64_0_gcc-7.1.0
 $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
 
-$ ../configure &#39;--with-boost=/usr/local/boost/boost_1_62_0_gcc-6.2.0&#39; &#39;CXXFLAGS=-DNDEBUG -O3 -mavx&#39;
-  &#39;--enable-mkl&#39; &#39;--with-mpi=intel&#39; &#39;CC=/usr/local/gcc/gcc-6.2.0/bin/gcc&#39; &#39;CXX=/usr/local/gcc/gcc-6.2.0/bin/g++&#39;
+$ ../configure CXXFLAGS=&quot;-DNDEBUG -O3 -mavx&quot; --enable-mkl --with-boost=$BOOST_ROOT --with-mpi=intel
 </pre></div>
 </div>
 </li>

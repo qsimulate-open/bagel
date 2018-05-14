@@ -63,7 +63,7 @@ Build BAGEL
     $ export BOOST_ROOT=/path/to/boost
     $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
 
-    $ ../configure '--enable-mkl' '--with-boost=$BOOST_ROOT'
+    $ ../configure --enable-mkl --with-boost=$BOOST_ROOT
 
   Configure options:
      | ``--with-mpi=value``  turns on MPI, where "value" can be "mvapich", "intel", or "openmpi".
@@ -79,11 +79,10 @@ Build BAGEL
 
   Example (Release build on the Shiozaki group's cluster) ::
 
-       $ export BOOST_ROOT=/usr/local/boost/boost_1_62_0_gcc-6.2.0
+       $ export BOOST_ROOT=/usr/local/boost/boost_1_64_0_gcc-7.1.0
        $ export LD_LIBRARY_PATH=$BOOST_ROOT/lib:$LD_LIBRARY_PATH
 
-       $ ../configure '--with-boost=/usr/local/boost/boost_1_62_0_gcc-6.2.0' 'CXXFLAGS=-DNDEBUG -O3 -mavx'
-         '--enable-mkl' '--with-mpi=intel' 'CC=/usr/local/gcc/gcc-6.2.0/bin/gcc' 'CXX=/usr/local/gcc/gcc-6.2.0/bin/g++'
+       $ ../configure CXXFLAGS="-DNDEBUG -O3 -mavx" --enable-mkl --with-boost=$BOOST_ROOT --with-mpi=intel
 
 * Compile ::
 
