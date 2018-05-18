@@ -52,7 +52,7 @@ void ZCASNoopt::init_coeff() {
   if (!relref->kramers()) {
     auto overlap = make_shared<RelOverlap>(geom_);
     auto hcore = make_shared<RelHcore>(geom_);
-    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_, batchsize_);
+    scoeff = scoeff->init_kramers_coeff(geom_, overlap, hcore, 2*ref_->nclosed() + ref_->nact(), gaunt_, breit_);
   }
   coeff_ = scoeff->block_format();
 }

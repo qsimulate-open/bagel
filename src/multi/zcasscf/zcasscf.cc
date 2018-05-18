@@ -129,13 +129,6 @@ void ZCASSCF::init() {
   // to save binary archives with each iteration
   restart_cas_ = idata_->get<bool>("restart_cas", false);
 
-  batchsize_ = idata_->get<int>("batchsize", 250);
-  if (batchsize_ < 2*nclosed_) {
-    const int nbatch = (2*nclosed_ - 1) / batchsize_ + 1;
-    const string sizerange = ((2*nclosed_) % nbatch == 0) ? to_string((2*nclosed_) / nbatch) : to_string((2*nclosed_) / nbatch) + " to " + to_string((2*nclosed_) / nbatch + 1);
-    cout << "   ***  Maximum batchsize set to " << batchsize_ << ".  The core Fock matrix will be evaluated in " << nbatch << " batches of " << sizerange << " spin-orbitals." << endl;
-  }
-
   // get thresh (for macro iteration) from the input
   thresh_ = idata_->get<double>("thresh", 1.0e-8);
   // get thresh (for micro iteration) from the input
