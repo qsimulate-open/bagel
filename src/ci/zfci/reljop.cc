@@ -32,9 +32,9 @@ using namespace bagel;
 
 
 RelJop::RelJop(const shared_ptr<const Geometry> geom, const int nstart, const int nfence, shared_ptr<const ZCoeff_Block> coeff,
-               const bool gaunt, const bool breit, const bool store_c, const bool store_g, const int batchsize)
+               const bool gaunt, const bool breit, const bool store_c, const bool store_g)
  : ZMOFile(geom, coeff), gaunt_(gaunt), breit_(breit) {
-  init(nstart, nfence, store_c, store_g, batchsize);
+  init(nstart, nfence, store_c, store_g);
 }
 
 
@@ -44,8 +44,8 @@ shared_ptr<ZMatrix> RelJop::compute_hcore() const {
 }
 
 
-shared_ptr<ZMatrix> RelJop::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g, const int batchsize) const {
-  return make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nclosed), gaunt_, breit_, store_c, /*robust*/breit_, /*scale_J*/1.0, /*scale_K*/1.0, store_g, batchsize);
+shared_ptr<ZMatrix> RelJop::compute_fock(shared_ptr<const ZMatrix> hcore, const int nclosed, const bool store_c, const bool store_g) const {
+  return make_shared<DFock>(geom_, hcore, coeff_->slice_copy(0, nclosed), gaunt_, breit_, store_c, /*robust*/breit_, /*scale_J*/1.0, /*scale_K*/1.0, store_g);
 }
 
 

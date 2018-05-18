@@ -97,7 +97,7 @@ shared_ptr<const ZCoeff_Block> RelFCI::init_coeff() {
 
 void RelFCI::update(shared_ptr<const ZCoeff_Block> coeff) {
   Timer timer;
-  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, store_half_ints_, store_gaunt_half_ints_, batchsize_);
+  jop_ = make_shared<RelJop>(geom_, ncore_*2, (ncore_+norb_)*2, coeff, gaunt_, breit_, store_half_ints_, store_gaunt_half_ints_);
   cout << "    * Integral transformation done. Elapsed time: " << setprecision(2) << timer.tick() << endl << endl;
   const_denom();
 }
