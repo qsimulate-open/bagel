@@ -74,12 +74,6 @@ void Dirac::common_init(const shared_ptr<const PTree> idata) {
   thresh_overlap_ = idata_->get<double>("thresh_overlap", 1.0e-8);
   ncharge_ = idata->get<int>("charge", 0);
   nele_ = geom_->nele()-ncharge_;
-  batchsize_ = idata->get<int>("batchsize", 250);
-  if (batchsize_ < nele_) {
-    const int nbatch = (nele_ - 1) / batchsize_ + 1;
-    const string sizerange = (nele_ % nbatch == 0) ? to_string(nele_ / nbatch) : to_string(nele_ / nbatch) + " to " + to_string(nele_ / nbatch + 1);
-    cout << "   ***  Maximum batchsize set to " << batchsize_ << ".  The Fock matrix will be evaluated in " << nbatch << " batches of " << sizerange << " spin-orbitals." << endl;
-  }
 
   // whether or not to throw if the calculation does not converge
   conv_ignore_ = idata_->get<bool>("conv_ignore", false);
@@ -136,7 +130,7 @@ void Dirac::compute() {
   for (int iter = 0; iter != max_iter_; ++iter) {
     Timer ptime(1);
 
-    auto fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_, 1.0, 1.0, false, batchsize_);
+    auto fock = make_shared<DFock>(geom_, hcore_, coeff->matrix()->slice_copy(nneg_, nele_+nneg_), gaunt_, breit_, do_grad_, robust_);
     shared_ptr<const DistZMatrix> distfock = fock->distmatrix();
 
     // compute energy here
@@ -249,7 +243,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
   } else if (dynamic_pointer_cast<const RelReference>(ref_)) {
     // Relativistic (4-component) reference
     auto relref = dynamic_pointer_cast<const RelReference>(ref_);
-    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_, 1.0, 1.0, false, batchsize_);
+    shared_ptr<ZMatrix> fock = make_shared<DFock>(geom_, hcore_, relref->relcoeff()->slice_copy(0, nele_), gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -263,7 +257,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
     auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
     ocoeff->add_block(1.0, 0,    0, n, nocc, zref->zcoeff()->slice(0,nocc));
     ocoeff->add_block(1.0, n, nocc, n, nocc, zref->zcoeff()->slice(0,nocc));
-    auto fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_, 1.0, 1.0, false, batchsize_);
+    auto fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);
     coeff = make_shared<const DistZMatrix>(*s12 * interm);
@@ -278,7 +272,7 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nocc);
       ocoeff->add_real_block(1.0, 0,    0, n, nocc, ref_->coeff()->slice(0,nocc));
       ocoeff->add_real_block(1.0, n, nocc, n, nocc, ref_->coeff()->slice(0,nocc));
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_, 1.0, 1.0, false, batchsize_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else if (ref_->noccB() != 0) {
       // UHF & ROHF
       const int nocca = ref_->noccA();
@@ -287,13 +281,13 @@ shared_ptr<const DistZMatrix> Dirac::initial_guess(const shared_ptr<const DistZM
       auto ocoeff = make_shared<ZMatrix>(n*4, nocca+noccb);
       ocoeff->add_real_block(1.0, 0,     0, n, nocca, ref_->coeffA()->slice(0,nocca));
       ocoeff->add_real_block(1.0, n, nocca, n, noccb, ref_->coeffB()->slice(0,noccb));
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_, 1.0, 1.0, false, batchsize_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     } else {
       // CASSCF
       auto ocoeff = make_shared<ZMatrix>(n*4, 2*nele_);
       ocoeff->add_real_block(1.0, 0,     0, n, nele_, ref_->coeff()->slice(0,nele_));
       ocoeff->add_real_block(1.0, n, nele_, n, nele_, ref_->coeff()->slice(0,nele_));
-      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_, 1.0, 1.0, false, batchsize_);
+      fock = make_shared<DFock>(geom_, hcore_, ocoeff, gaunt_, breit_, /*store_half*/false, robust_);
     }
     DistZMatrix interm = *s12 % *fock->distmatrix() * *s12;
     interm.diagonalize(eig);

@@ -36,7 +36,7 @@ class DFock : public ZMatrix {
     const bool gaunt_;
     const bool breit_;
 
-    void two_electron_part(const ZMatView coeff, const double scale_ex, const double scale_coulomb, const int batchsize);
+    void two_electron_part(const ZMatView coeff, const double scale_ex, const double scale_coulomb);
 
 
     void add_Jop_block(std::shared_ptr<const RelDF>, std::list<std::shared_ptr<const RelCDMatrix>>, const double scale);
@@ -56,13 +56,11 @@ class DFock : public ZMatrix {
 
   public:
     DFock(std::shared_ptr<const Geometry> a,  std::shared_ptr<const ZMatrix> hc, const ZMatView coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false,
-          const int batchsize = 250);
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false);
     // same as above
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, const bool gaunt, const bool breit,
-          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false,
-          const int batchsize = 250)
-     : DFock(a, hc, *coeff, gaunt, breit, store_half, robust, scale_exch, scale_coulomb, store_half_gaunt, batchsize) {
+          const bool store_half, const bool robust = false, const double scale_exch = 1.0, const double scale_coulomb = 1.0, const bool store_half_gaunt = false)
+     : DFock(a, hc, *coeff, gaunt, breit, store_half, robust, scale_exch, scale_coulomb, store_half_gaunt) {
     }
     // DFock from half-transformed integrals
     DFock(std::shared_ptr<const Geometry> a, std::shared_ptr<const ZMatrix> hc, std::shared_ptr<const ZMatrix> coeff, std::shared_ptr<const ZMatrix> tcoeff,

@@ -51,7 +51,6 @@ class Dirac : public Method {
 
     // for Fock build
     bool robust_;
-    int batchsize_;
 
     int multipole_print_;
     bool conv_ignore_;
