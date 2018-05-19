@@ -66,7 +66,7 @@ shared_ptr<ZMatrix> RelOverlap_London::tildex(const double thresh) const {
   out->copy_block(2*n, 2*m, 2*n, 2*m, tildes);
 
   // check numerical stability of the orthogonalization
-  assert((*out % *this * *out).is_identity());
+  assert((*out % *this * *out).is_identity(1.0e-7));
 
   return out;
 }

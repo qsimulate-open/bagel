@@ -114,7 +114,7 @@ void ZMatrix::diagonalize(VecView eig) {
   const int n = ndim();
   int info;
 #ifdef HAVE_SCALAPACK
-  if (localized_  || n <= blocksize__) {
+  if (localized_  || n <= 10*blocksize__) {
 #endif
     unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
     unique_ptr<double[]> rwork(new double[3*ndim()]);
