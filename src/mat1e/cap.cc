@@ -28,7 +28,7 @@
 using namespace std;
 using namespace bagel;
 
-CAP::CAP(shared_ptr<const Molecule> mol, array<double,3> size) : Matrix1e(mol), mol_(mol), size_(size) {
+CAP::CAP(shared_ptr<const Molecule> mol) : Matrix1e(mol), mol_(mol) {
 
 }
 
@@ -47,6 +47,7 @@ void CAP::compute() {
   shared_ptr<Matrix> aow = ao->copy();
 
   const array<double,3> origin = mol_->charge_center();
+  const array<double,3> size = mol_->cap();
 
   auto r = [](const double r0, const double size) {
     const double ra = fabs(r0);
@@ -62,7 +63,7 @@ void CAP::compute() {
 
     // here we calculate the CAP amplitude at this grid point
     // omega is set to one 
-    const double cap = pow(r(x, size_[0]), 2) * pow(r(y, size_[1]), 2) * pow(r(z, size_[2]), 2);
+    const double cap = pow(r(x, size[0]), 2) * pow(r(y, size[1]), 2) * pow(r(z, size[2]), 2);
     blas::scale_n(cap * w, aow->element_ptr(0, i), aow->ndim());
   }
 

@@ -33,15 +33,12 @@ class CAP : public Matrix1e {
   protected:
     std::shared_ptr<const Molecule> mol_;
 
-    // square box dimension (x, y, z)
-    std::array<double,3> size_;
-
     // do nothing
     void computebatch(const std::array<std::shared_ptr<const Shell>,2>&, const int, const int, std::shared_ptr<const Molecule>) override { }
     void init(std::shared_ptr<const Molecule>) override { } 
 
   public:
-    CAP(std::shared_ptr<const Molecule> mol, std::array<double,3> size);
+    CAP(std::shared_ptr<const Molecule> mol);
 
     void compute();
 };

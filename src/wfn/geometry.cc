@@ -146,6 +146,8 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   const bool dofmm = geominfo->get<bool>("cfmm", false);
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
+
+  cap_ = geominfo->get_array<double,3>("cap", {{0.0, 0.0, 0.0}});
 }
 
 
@@ -199,6 +201,7 @@ Geometry::Geometry(const Geometry& o, const array<double,3> displ)
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   skip_self_interaction_ = o.skip_self_interaction_;
+  cap_ = o.cap_;
 
   // first construct atoms using displacements
   for (auto& i : o.atoms_) {
@@ -230,6 +233,7 @@ Geometry::Geometry(const Geometry& o, shared_ptr<const PTree> geominfo, const bo
   atoms_ = o.atoms_;
   aux_atoms_ = o.aux_atoms_;
   magnetic_field_ = o.magnetic_field_;
+  cap_ = o.cap_;
 
   // check all the options
   schwarz_thresh_ = geominfo->get<double>("schwarz_thresh", schwarz_thresh_);

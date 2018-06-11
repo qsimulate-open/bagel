@@ -49,6 +49,7 @@ Molecule::Molecule(const Molecule& o, shared_ptr<const Matrix> displ, const bool
   external_ = o.external_;
   magnetic_field_ = o.magnetic_field_;
   skip_self_interaction_ = o.skip_self_interaction_;
+  cap_ = o.cap_;
 
   // first construct atoms using displacements
   int iat = 0;
