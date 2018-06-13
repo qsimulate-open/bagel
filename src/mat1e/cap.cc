@@ -63,7 +63,7 @@ void CAP::compute() {
 
     // here we calculate the CAP amplitude at this grid point
     // omega is set to one 
-    const double cap = pow(r(x, size[0]), 2) * pow(r(y, size[1]), 2) * pow(r(z, size[2]), 2);
+    const double cap = pow(r(x, size[0]), 2) + pow(r(y, size[1]), 2) + pow(r(z, size[2]), 2);
     blas::scale_n(cap * w, aow->element_ptr(0, i), aow->ndim());
   }
 
@@ -71,7 +71,5 @@ void CAP::compute() {
 
   if (!is_symmetric())
     cout << " *** WARNING **** CAP AO matrix is not symmetric..." << endl;
-
-  print("cap");
 }
 
