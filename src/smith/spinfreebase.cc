@@ -237,16 +237,17 @@ void SpinFreeMethod<double>::reference_prop() const {
       }
 
     auto compute_local = [&,this](const Matrix& mat1e, const string title) {
-      auto cvec = (ccoeff % mat1e * ccoeff).diag();
-      const double csum = accumulate(cvec.begin(), cvec.end(), 0.0);
-
-      auto amat = acoeff % mat1e * acoeff;
       Matrix propmat(nstates, nstates);
-      for (int i = 0; i != nstates; ++i) {
+      if (info_->nclosed()) {
+        auto cvec = (ccoeff % mat1e * ccoeff).diag();
+        const double csum = accumulate(cvec.begin(), cvec.end(), 0.0);
+        for (int i = 0; i != nstates; ++i)
+          propmat(i, i) += csum * 2.0;
+      }
+      auto amat = acoeff % mat1e * acoeff;
+      for (int i = 0; i != nstates; ++i)
         for (int j = 0; j <= i; ++j)
           propmat(j, i) = propmat(i, j) = blas::dot_product(rdmmap.at(make_pair(j,i))->data(), info_->nact()*info_->nact(), amat.data());
-        propmat(i, i) += csum;
-      }
       propmat.print(title);
     };
 
