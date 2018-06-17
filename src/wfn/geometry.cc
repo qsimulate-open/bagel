@@ -147,7 +147,8 @@ Geometry::Geometry(shared_ptr<const PTree> geominfo) : magnetism_(false), do_per
   if (dofmm)
     fmm_ = make_shared<const FMMInfo>(atoms_, offsets_, to_lower(geominfo->get<string>("extent_type", "yang")));
 
-  cap_ = geominfo->get_array<double,3>("cap", {{0.0, 0.0, 0.0}});
+  const double nan1 = nan("1");
+  cap_ = geominfo->get_array<double,3>("cap", {{nan1, nan1, nan1}});
 }
 
 

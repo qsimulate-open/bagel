@@ -35,7 +35,7 @@ CAP::CAP(shared_ptr<const Molecule> mol) : Matrix1e(mol), mol_(mol) {
 
 void CAP::compute() {
 #if 0
-  // Original Becke grid. nrad is abitrary, nang should be the value in src/ks/lebedevlist.h 
+  // Original Becke grid. nrad is abitrary, nang should be the value in src/scf/ks/lebedevlist.h 
   BLGrid grid(/*nrad*/ 100, /*nang*/ 302, mol_);
 #else
   // standard DFT grid
@@ -68,8 +68,5 @@ void CAP::compute() {
   }
 
   *static_cast<Matrix*>(this) = *ao ^ *aow;
-
-  if (!is_symmetric())
-    cout << " *** WARNING **** CAP AO matrix is not symmetric..." << endl;
 }
 
