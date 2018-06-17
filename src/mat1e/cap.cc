@@ -34,7 +34,7 @@ CAP::CAP(shared_ptr<const Molecule> mol) : Matrix1e(mol), mol_(mol) {
 
 
 void CAP::compute() {
-#if 0
+#if 1
   // Original Becke grid. nrad is abitrary, nang should be the value in src/scf/ks/lebedevlist.h 
   BLGrid grid(/*nrad*/ 100, /*nang*/ 302, mol_);
 #else
