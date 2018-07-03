@@ -6,6 +6,7 @@ INTLIBS = opt/libbagel_opt.la multi/zcasscf/libbagel_zcasscf.la ci/zfci/libbagel
 lib_LTLIBRARIES = libbagel.la
 libbagel_la_SOURCES = run_bagel.cc static.cc
 libbagel_la_LIBADD = $(INTLIBS)
+include_HEADERS = bagel.h
 
 bin_PROGRAMS = BAGEL
 BAGEL_SOURCES = main.cc
