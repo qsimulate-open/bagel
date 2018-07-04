@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: caspt2.cc
+// Filename: caspt2energy.cc
 // Copyright (C) 2016 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
