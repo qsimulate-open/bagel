@@ -37,7 +37,7 @@ using namespace bagel::SMITH;
 template<typename DataType>
 shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(shared_ptr<const MultiTensor_<DataType>> tensor) const {
   // TODO maybe define the struct to define orthogonal basis (there are too many reduncies)
-  const size_t nact = info_->nact();
+//  const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
 //  const size_t nocc = nact + nclosed;

@@ -346,7 +346,9 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<const RDM<2>> rdm2tmp;
           tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
           for (size_t j0 = 0; j0 != nact; ++j0) {
+            const size_t j0i = j0 + nclo;
             for (size_t j6 = 0; j6 != nact; ++j6) {
+              const size_t j6i = j6 + nclo;
               for (size_t j0o = 0; j0o != interm_size; ++j0o) {
                 for (size_t j4 = 0; j4 != nact; ++j4) {
                   for (size_t j5 = 0; j5 != nact; ++j5) {
