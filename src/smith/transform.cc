@@ -40,7 +40,7 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
-  const size_t nocc = nact + nclosed;
+//  const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
 
@@ -395,10 +395,10 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
 
 template<typename DataType>
 shared_ptr<MultiTensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_amplitude(shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const {
-  const size_t nact = info_->nact();
+//  const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
-  const size_t nocc = nact + nclosed;
+//  const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
 
@@ -791,96 +791,86 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       // a r b s case
       {
         ioffset += size_aibj;
-        for (auto& i2 : active_)
-          for (auto& i0 : active_) {
-            const size_t interm_size = denom_->shalf_xx()->ndim();
-            for (auto& i3 : virt_)
-              for (auto& i1 : virt_) {
-                for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
-                    for (int j02 = 0; j02 != interm_size; ++j02) {
-                      const size_t jall = j02 + interm_size * (j1 + nvirt * j3);
-                      const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0_;
-                      if (info_->shift_imag()) {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                      } else {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                      }
-                    }
+        const size_t interm_size = denom_->shalf_xx()->ndim();
+        for (auto& i3 : virt_)
+          for (auto& i1 : virt_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
+                for (int j02 = 0; j02 != interm_size; ++j02) {
+                  const size_t jall = j02 + interm_size * (j1 + nvirt * j3);
+                  const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                  } else {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                   }
                 }
               }
+            }
           }
       }
 
       // a r b i case
       {
         ioffset += size_arbs;
-        for (auto& i0 : active_) {
-          const size_t interm_size = denom_->shalf_x()->ndim();
-          for (auto& i3 : virt_)
-            for (auto& i2 : closed_)
-              for (auto& i1 : virt_) {
-                for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                      for (int j0 = 0; j0 != interm_size; ++j0) {
-                        const size_t jall = j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
-                        const double denom = eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+ncore] + denom_->denom_x(j0) - e0_;
-                        if (info_->shift_imag()) {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                        } else {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                        }
-                      }
-              }
-        }
-      }
-
-      // a i r j case
-      {
-        ioffset += size_arbi;
-        for (auto& i3 : active_) {
-          const size_t interm_size = denom_->shalf_h()->ndim();
+        const size_t interm_size = denom_->shalf_x()->ndim();
+        for (auto& i3 : virt_)
           for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                for (int j3 = 0; j3 != interm_size; ++j3)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                      for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                        const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-                        const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3) - e0_;
-                        if (info_->shift_imag()) {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                        } else {
-                          (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                        }
-                      }
-              }
-        }
-      }
-
-      // r i s j case
-      {
-        ioffset += size_airj;
-        for (auto& i3 : active_)
-          for (auto& i1 : active_) {
-            const size_t interm_size = denom_->shalf_hh()->ndim();
-            for (auto& i2 : closed_)
-              for (auto& i0 : closed_) {
-                for (int j13 = 0; j13 != interm_size; ++j13)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                      const size_t jall = j0 + nclo * (j2 + nclo * j13);
-                      const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_hh(j13) - e0_;
+            for (auto& i1 : virt_) {
+              for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+                for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                    for (int j0 = 0; j0 != interm_size; ++j0) {
+                      const size_t jall = j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                      const double denom = eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+ncore] + denom_->denom_x(j0) - e0all_[ist];
                       if (info_->shift_imag()) {
                         (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
                       } else {
                         (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
                       }
                     }
-              }
+            }
+      }
+
+      // a i r j case
+      {
+        ioffset += size_arbi;
+        const size_t interm_size = denom_->shalf_h()->ndim();
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_)
+            for (auto& i0 : closed_) {
+              for (int j3 = 0; j3 != interm_size; ++j3)
+                for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                      const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                      const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3) - e0all_[ist];
+                      if (info_->shift_imag()) {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                      } else {
+                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
+                      }
+                    }
+            }
+      }
+
+      // r i s j case
+      {
+        ioffset += size_airj;
+        const size_t interm_size = denom_->shalf_hh()->ndim();
+        for (auto& i2 : closed_)
+          for (auto& i0 : closed_) {
+            for (int j13 = 0; j13 != interm_size; ++j13)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = j0 + nclo * (j2 + nclo * j13);
+                  const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_hh(j13) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                  } else {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
+                  }
+                }
           }
       }
 
@@ -888,68 +878,57 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       // TODO implement complex case
       {
         ioffset += size_risj;
-        for (auto& i3 : active_)
-          for (auto& i2 : active_) {
-            const size_t interm_size = denom_->shalf_xh()->ndim();
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                for (int j23 = 0; j23 != interm_size; ++j23)
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                      const size_t jall = j0 + nclo * (j1 + nvirt * j23);
-                      const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j23) - e0_;
-                      if (info_->shift_imag()) {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                      } else {
-                        (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                      }
-                   }
-              }
+        const size_t interm_size = denom_->shalf_xh()->ndim();
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j23 = 0; j23 != interm_size; ++j23)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = j0 + nclo * (j1 + nvirt * j23);
+                  const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j23) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+                  } else {
+                    (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
+                  }
+               }
           }
       }
 
       // a r s t case
       {
         ioffset += size_airs;
-        for (auto& i3 : active_)
-          for (auto& i2 : active_)
-            for (auto& i0 : active_) {
-              const size_t interm_size = denom_->shalf_xxh()->ndim();
-              for (auto& i1 : virt_) {
-                for (int j023 = 0; j023 != interm_size; ++j023)
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
-                    const size_t jall = j1 + nvirt * j023;
-                    const double denom = eig_[j1+nocc] + denom_->denom_xxh(j023) - e0_;
-                    if (info_->shift_imag()) {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                    } else {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                    }
-                  }
+        const size_t interm_size = denom_->shalf_xxh()->ndim();
+        for (auto& i1 : virt_) {
+          for (int j023 = 0; j023 != interm_size; ++j023)
+            for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
+              const size_t jall = j1 + nvirt * j023;
+              const double denom = eig_[j1+nocc] + denom_->denom_xxh(j023) - e0all_[ist];
+              if (info_->shift_imag()) {
+                (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+              } else {
+                (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
               }
             }
+        }
       }
 
       // r i s t case
       {
         ioffset += size_arst;
-        for (auto& i3 : active_)
-          for (auto& i1 : active_)
-            for (auto& i0 : active_) {
-              const size_t interm_size = denom_->shalf_xhh()->ndim();
-              for (auto& i2 : closed_) {
-                for (int j013 = 0; j013 != interm_size; ++j013)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
-                    const size_t jall = j2 + nclo * j013;
-                    const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0_;
-                    if (info_->shift_imag()) {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
-                    } else {
-                      (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
-                    }
-                  }
+        const size_t interm_size = denom_->shalf_xhh()->ndim();
+        for (auto& i2 : closed_) {
+          for (int j013 = 0; j013 != interm_size; ++j013)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
+              const size_t jall = j2 + nclo * j013;
+              const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0all_[ist];
+              if (info_->shift_imag()) {
+                (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] * denom / (denom * denom + shift2);
+              } else {
+                (*amplitude)[ioffset + jall] -= (*residual)[ioffset + jall] / (denom + shift);
               }
             }
+        }
         ioffset += size_rist;
       }
 
@@ -999,42 +978,38 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
   for (int l = 0; l != size_arbs; ++l, ++iortho) E_arbs += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
   DataType E_arbi = 0.0;
   {
-    for (auto& i0 : active_) {
-      const size_t interm_size = denom_->shalf_x()->ndim();
-      for (auto& i3 : virt_)
-        for (auto& i2 : closed_)
-          for (auto& i1 : virt_) {
-            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
-              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                  for (int j0 = 0; j0 != interm_size; ++j0) {
-                    const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
-                    const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
-                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
-                    E_arbi += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
-                  }
-          }
-    }
+    const size_t interm_size = denom_->shalf_x()->ndim();
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_) {
+          for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = 0; j0 != interm_size; ++j0) {
+                  const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                  const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
+                  const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                  E_arbi += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
+                }
+        }
     iortho += size_arbi;
   }
   DataType E_airj = 0.0;
   {
-    for (auto& i3 : active_) {
-      const size_t interm_size = denom_->shalf_h()->ndim();
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            for (int j3 = 0; j3 != interm_size; ++j3)
-              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                    const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-                    const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
-                    const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
-                    E_airj += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
-                  }
-          }
-    }
+    const size_t interm_size = denom_->shalf_h()->ndim();
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          for (int j3 = 0; j3 != interm_size; ++j3)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                  const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
+                  const DataType amplitude_covar = (*amplitude)[jall] * 2.0 - (*amplitude)[jall2];
+                  E_airj += (*source)[jall] * amplitude_covar + (*residual)[jall] * amplitude_covar;
+                }
+        }
     iortho += size_airj;
   }
   DataType E_risj = 0.0;
@@ -1095,42 +1070,38 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
   // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
   DataType norm_arbi = 0.0;
   {
-    for (auto& i0 : active_) {
-      const size_t interm_size = denom_->shalf_x()->ndim();
-      for (auto& i3 : virt_)
-        for (auto& i2 : closed_)
-          for (auto& i1 : virt_) {
-            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
-              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                  for (int j0 = 0; j0 != interm_size; ++j0) {
-                    const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
-                    const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
-                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
-                    norm_arbi += (*bra)[jall] * ket_covar;
-                  }
-          }
-    }
+    const size_t interm_size = denom_->shalf_x()->ndim();
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_) {
+          for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = 0; j0 != interm_size; ++j0) {
+                  const size_t jall = iortho + j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                  const size_t jall2 = iortho + j0 + interm_size * (j3 + nvirt * (j2 + nclo * j1));
+                  const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                  norm_arbi += (*bra)[jall] * ket_covar;
+                }
+        }
     iortho += size_arbi;
   }
   DataType norm_airj = 0.0;
   {
-    for (auto& i3 : active_) {
-      const size_t interm_size = denom_->shalf_h()->ndim();
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            for (int j3 = 0; j3 != interm_size; ++j3)
-              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                  for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                    const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-                    const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
-                    const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
-                    norm_airj += (*bra)[jall] * ket_covar;
-                  }
-          }
-    }
+    const size_t interm_size = denom_->shalf_h()->ndim();
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          for (int j3 = 0; j3 != interm_size; ++j3)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = iortho + j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                  const size_t jall2 = iortho + j2 + nclo * (j1 + nvirt * (j0 + nclo * j3));
+                  const DataType ket_covar = (*ket)[jall] * 2.0 - (*ket)[jall2];
+                  norm_airj += (*bra)[jall] * ket_covar;
+                }
+        }
     iortho += size_airj;
   }
   DataType norm_risj = 0.0;

@@ -84,96 +84,86 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       // a r b s case
       {
         ioffset += size_aibj;
-        for (auto& i2 : active_)
-          for (auto& i0 : active_) {
-            const size_t interm_size = denom_->shalf_xx()->ndim();
-            for (auto& i3 : virt_)
-              for (auto& i1 : virt_) {
-                for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
-                    for (int j02 = 0; j02 != interm_size; ++j02) {
-                      const size_t jall = j02 + interm_size * (j1 + nvirt * j3);
-                      const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0_;
-                      if (info_->shift_imag()) {
-                        (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                      } else {
-                        (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                      }
-                    }
+        const size_t interm_size = denom_->shalf_xx()->ndim();
+        for (auto& i3 : virt_)
+          for (auto& i1 : virt_) {
+            for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
+                for (int j02 = 0; j02 != interm_size; ++j02) {
+                  const size_t jall = j02 + interm_size * (j1 + nvirt * j3);
+                  const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+                  } else {
+                    (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
                   }
                 }
               }
+            }
           }
       }
 
       // a r b i case
       {
         ioffset += size_arbs;
-        for (auto& i0 : active_) {
-          const size_t interm_size = denom_->shalf_x()->ndim();
-          for (auto& i3 : virt_)
-            for (auto& i2 : closed_)
-              for (auto& i1 : virt_) {
-                for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                      for (int j0 = 0; j0 != interm_size; ++j0) {
-                        const size_t jall = j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
-                        const double denom = eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+ncore] + denom_->denom_x(j0) - e0_;
-                        if (info_->shift_imag()) {
-                          (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                        } else {
-                          (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                        }
-                      }
-              }
-        }
-      }
-
-      // a i r j case
-      {
-        ioffset += size_arbi;
-        for (auto& i3 : active_) {
-          const size_t interm_size = denom_->shalf_h()->ndim();
+        const size_t interm_size = denom_->shalf_x()->ndim();
+        for (auto& i3 : virt_)
           for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                for (int j3 = 0; j3 != interm_size; ++j3)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                      for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                        const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
-                        const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3) - e0_;
-                        if (info_->shift_imag()) {
-                          (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                        } else {
-                          (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                        }
-                      }
-              }
-        }
-      }
-
-      // r i s j case
-      {
-        ioffset += size_airj;
-        for (auto& i3 : active_)
-          for (auto& i1 : active_) {
-            const size_t interm_size = denom_->shalf_hh()->ndim();
-            for (auto& i2 : closed_)
-              for (auto& i0 : closed_) {
-                for (int j13 = 0; j13 != interm_size; ++j13)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                      const size_t jall = j0 + nclo * (j2 + nclo * j13);
-                      const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_hh(j13) - e0_;
+            for (auto& i1 : virt_) {
+              for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3)
+                for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                    for (int j0 = 0; j0 != interm_size; ++j0) {
+                      const size_t jall = j0 + interm_size * (j1 + nvirt * (j2 + nclo * j3));
+                      const double denom = eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+ncore] + denom_->denom_x(j0) - e0all_[ist];
                       if (info_->shift_imag()) {
                         (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
                       } else {
                         (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
                       }
                     }
-              }
+            }
+      }
+
+      // a i r j case
+      {
+        ioffset += size_arbi;
+        const size_t interm_size = denom_->shalf_h()->ndim();
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_)
+            for (auto& i0 : closed_) {
+              for (int j3 = 0; j3 != interm_size; ++j3)
+                for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                      const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3));
+                      const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3) - e0all_[ist];
+                      if (info_->shift_imag()) {
+                        (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+                      } else {
+                        (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
+                      }
+                    }
+            }
+      }
+
+      // r i s j case
+      {
+        ioffset += size_airj;
+        const size_t interm_size = denom_->shalf_hh()->ndim();
+        for (auto& i2 : closed_)
+          for (auto& i0 : closed_) {
+            for (int j13 = 0; j13 != interm_size; ++j13)
+              for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = j0 + nclo * (j2 + nclo * j13);
+                  const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_hh(j13) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+                  } else {
+                    (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
+                  }
+                }
           }
       }
 
@@ -181,68 +171,57 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       // TODO implement complex case
       {
         ioffset += size_risj;
-        for (auto& i3 : active_)
-          for (auto& i2 : active_) {
-            const size_t interm_size = denom_->shalf_xh()->ndim();
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                for (int j23 = 0; j23 != interm_size; ++j23)
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                    for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                      const size_t jall = j0 + nclo * (j1 + nvirt * j23);
-                      const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j23) - e0_;
-                      if (info_->shift_imag()) {
-                        (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                      } else {
-                        (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                      }
-                   }
-              }
+        const size_t interm_size = denom_->shalf_xh()->ndim();
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            for (int j23 = 0; j23 != interm_size; ++j23)
+              for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
+                for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
+                  const size_t jall = j0 + nclo * (j1 + nvirt * j23);
+                  const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j23) - e0all_[ist];
+                  if (info_->shift_imag()) {
+                    (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+                  } else {
+                    (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
+                  }
+               }
           }
       }
 
       // a r s t case
       {
         ioffset += size_airs;
-        for (auto& i3 : active_)
-          for (auto& i2 : active_)
-            for (auto& i0 : active_) {
-              const size_t interm_size = denom_->shalf_xxh()->ndim();
-              for (auto& i1 : virt_) {
-                for (int j023 = 0; j023 != interm_size; ++j023)
-                  for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
-                    const size_t jall = j1 + nvirt * j023;
-                    const double denom = eig_[j1+nocc] + denom_->denom_xxh(j023) - e0_;
-                    if (info_->shift_imag()) {
-                      (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                    } else {
-                      (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                    }
-                  }
+        const size_t interm_size = denom_->shalf_xxh()->ndim();
+        for (auto& i1 : virt_) {
+          for (int j023 = 0; j023 != interm_size; ++j023)
+            for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1) {
+              const size_t jall = j1 + nvirt * j023;
+              const double denom = eig_[j1+nocc] + denom_->denom_xxh(j023) - e0all_[ist];
+              if (info_->shift_imag()) {
+                (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+              } else {
+                (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
               }
             }
+        }
       }
 
       // r i s t case
       {
         ioffset += size_arst;
-        for (auto& i3 : active_)
-          for (auto& i1 : active_)
-            for (auto& i0 : active_) {
-              const size_t interm_size = denom_->shalf_xhh()->ndim();
-              for (auto& i2 : closed_) {
-                for (int j013 = 0; j013 != interm_size; ++j013)
-                  for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
-                    const size_t jall = j2 + nclo * j013;
-                    const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0_;
-                    if (info_->shift_imag()) {
-                      (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
-                    } else {
-                      (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
-                    }
-                  }
+        const size_t interm_size = denom_->shalf_xhh()->ndim();
+        for (auto& i2 : closed_) {
+          for (int j013 = 0; j013 != interm_size; ++j013)
+            for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2) {
+              const size_t jall = j2 + nclo * j013;
+              const double denom = - eig_[j2+ncore] + denom_->denom_xhh(j013) - e0all_[ist];
+              if (info_->shift_imag()) {
+                (*residual)[ioffset + jall] += shift2 * (*amplitude)[ioffset + jall] / denom;
+              } else {
+                (*residual)[ioffset + jall] += shift * (*amplitude)[ioffset + jall];
               }
             }
+        }
         ioffset += size_rist;
       }
 
@@ -251,7 +230,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
 }
 
 
-shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
+shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude, vector<shared_ptr<VectorB>> residual) const {
   shared_ptr<Matrix> dshift = den2_->clone();
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
@@ -259,17 +238,18 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
   const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
+//  const size_t norb = nocc + nvirt;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
   const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
   const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+/*  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
   const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
   const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
   const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
-  const double ovlfactor = 1.0;     //temporary
+  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;*/
+//  const double ovlfactor = 1.0;     //temporary
 
-  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
+//  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates_; ++istate) { // state of T
     // temporary. will replace (RDM calculation redundant)
@@ -283,6 +263,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     tie(rdm3, rdm4) = info_->rdm34(istate, istate);
     shared_ptr<const VectorB> l = lambda[istate];
     shared_ptr<const VectorB> t = amplitude[istate];
+    shared_ptr<const VectorB> r = residual[istate];
     // a i b j
     size_t ioffset = 0;
     {
@@ -298,11 +279,167 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
               const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
               const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
               const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
-              const double z = - lcovar * (*t)[jall] * shift2 / (denom * denom);
-              dshift->element(j0i, j0i) -= z;
-              dshift->element(j1i, j1i) += z;
-              dshift->element(j2i, j2i) -= z;
-              dshift->element(j3i, j3i) += z;
+              const double Lambda = -lcovar * (*t)[jall] * shift2 / (denom * denom);
+              dshift->element(j0i, j0i) -= Lambda;
+              dshift->element(j1i, j1i) += Lambda;
+              dshift->element(j2i, j2i) -= Lambda;
+              dshift->element(j3i, j3i) += Lambda;
+            }
+      ioffset += size_aibj;
+    }
+
+    ioffset += size_arbs;
+    // a r b i
+    {
+      const size_t interm_size = denom_->shalf_x()->ndim();
+      auto smallz = make_shared<Matrix>(interm_size, interm_size);
+      auto largey = make_shared<Matrix>(interm_size, interm_size);
+      auto largex = make_shared<Matrix>(interm_size, interm_size);
+      // multipliers
+      for (size_t j3 = 0; j3 != nvirt; ++j3) {
+        const size_t j3i = j3 + nocc - ncore;
+        for (size_t j2 = 0; j2 != nclo; ++j2) {
+          const size_t j2i = j2;
+          for (size_t j1 = 0; j1 != nvirt; ++j1) {
+            const size_t j1i = j1 + nocc - ncore;
+            for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+              const size_t jall = j0o + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+              const size_t jall2 = j0o + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+              const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
+              const double denom = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j0o) - e0all_[istate];
+              const double Lambda = lcovar * (*t)[jall] * shift2 / (denom * denom);
+              dshift->element(j1i, j1i) += -Lambda;
+              dshift->element(j3i, j3i) += -Lambda;
+              dshift->element(j2i, j2i) +=  Lambda;
+              smallz->element(j0o, j0o) += -Lambda;
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                const size_t kall = j1o + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+                const size_t kall2 = j1o + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+                const double lcovark = ((*l)[kall] * 2.0 - (*l)[kall2]);
+                const double denomk = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
+                largey->element(j1o, j0o) += lcovark * (*t)[jall] * shift2 * (1.0 / denomk - 1.0 / denom);
+              }
+            }
+          }
+        }
+      }
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j1o == j0o) continue;
+          const double fdiff = denom_->denom_x(j1o) - denom_->denom_x(j0o);
+          smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-8 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+        }
+      }
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_x(j1o))
+                                    + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_x(j0o));
+        }
+      }
+      smallz->print("z = ");
+      largey->print("Y = ");
+      largex->print("X = ");
+      for (size_t is = 0; is != nstates_; ++is) {
+        for (size_t js = 0; js != nstates_; ++js) {
+//          if (is != js) continue;
+          shared_ptr<const RDM<1>> rdm1tmp;
+          shared_ptr<const RDM<2>> rdm2tmp;
+          tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
+          for (size_t j0 = 0; j0 != nact; ++j0) {
+            for (size_t j6 = 0; j6 != nact; ++j6) {
+              for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                for (size_t j4 = 0; j4 != nact; ++j4) {
+                  for (size_t j5 = 0; j5 != nact; ++j5) {
+                    const double VtO = denom_->shalf_x()->element(j0o, j4 + is*nact);
+                    const double VuO = denom_->shalf_x()->element(j0o, j5 + js*nact);
+                    const double factor = VtO * VuO;
+                    dshift->element(j0i, j6i) += smallz->element(j0o, j0o) * factor * rdm2tmp->element(j4, j5, j0, j6);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      for (size_t j0 = 0; j0 != nact; ++j0) {
+        const size_t j0i = j0 + nclo;
+        for (size_t j6 = 0; j6 != nact; ++j6) {
+          const size_t j6i = j6 + nclo;
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            dshift->element(j0i, j6i) -= smallz->element(j0o, j0o) * rdm1->element(j0, j6);
+          }
+        }
+      }
+      double tes = 0.0;
+      for (size_t is = 0; is != nstates_; ++is) {
+        for (size_t js = 0; js != nstates_; ++js) {
+//          if (is != js) continue;
+          shared_ptr<const RDM<1>> rdm1tmp;
+          shared_ptr<const RDM<2>> rdm2tmp;
+          tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
+          auto e1 = make_shared<Matrix>(nact, nact);       // only for e^(1). we should implement RDM form of e other than e^(1).
+          for (size_t j0 = 0; j0 != nact; ++j0) {
+//            const size_t j0i = j0 + nclo;
+            for (size_t j6 = 0; j6 != nact; ++j6) {
+//              const size_t j6i = j6 + nclo;
+              for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                  const double VtO = denom_->shalf_x()->element(j0o, j0 + is * nact);
+                  const double VuO = denom_->shalf_x()->element(j1o, j6 + js * nact);
+                  e1->element(j0, j6) += largex->element(j0o, j1o) * VtO * VuO;
+                }
+              }
+              tes += e1->element(j0, j6) * rdm1tmp->element(j0, j6);
+            }
+          }
+          e1->print("e1 = ");
+        }
+      }
+      ioffset += size_arbi;
+      cout << " tes = " << tes << endl;
+    }
+  }
+
+  return dshift;
+}
+
+
+double CASPT2::CASPT2::compute_energy_lt() {
+  const size_t nact = info_->nact();
+  const size_t nclosed = info_->nclosed();
+  const size_t nvirt = info_->nvirt();
+  const size_t nocc = nact + nclosed;
+  const size_t ncore = info_->ncore();
+  const size_t nclo = nclosed - ncore;
+  const size_t size_aibj = nvirt * nvirt * nclo * nclo;
+  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
+  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
+  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
+  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
+  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
+  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  double E_lt = 0.0;
+
+//  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
+  const double shift2 = info_->shift() * info_->shift();
+  for (int istate = 0; istate != nstates_; ++istate) { // state of T
+    // temporary. will replace (RDM calculation redundant)
+    // considering only SS-SR case
+    shared_ptr<const VectorB> t = t2all_orthogonal()[istate];
+    shared_ptr<const VectorB> l = lall_orthogonal()[istate];
+    // a i b j
+    size_t ioffset = 0;
+    {
+      for (size_t j3 = 0; j3 != nvirt; ++j3)
+        for (size_t j2 = 0; j2 != nclo; ++j2)
+          for (size_t j1 = 0; j1 != nvirt; ++j1)
+            for (size_t j0 = 0; j0 != nclo; ++j0) {
+              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+              const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
+              const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
+              E_lt += lcovar * (*t)[jall] * shift2 / denom * 2.0;
             }
       ioffset += size_aibj;
     }
@@ -312,34 +449,14 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       const size_t interm_size = denom_->shalf_xx()->ndim();
       for (size_t j3 = 0; j3 != nvirt; ++j3)
         for (size_t j1 = 0; j1 != nvirt; ++j1) {
-            const size_t j1i = j1 + nocc - ncore;
-            const size_t j3i = j3 + nocc - ncore;
             for (size_t j02 = 0; j02 != interm_size; ++j02) {
               const size_t jall = j02 + interm_size * (j1 + nvirt * j3) + ioffset;
-              const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0_;
-              const double z = - (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
-              dshift->element(j1i, j1i) += z;
-              dshift->element(j3i, j3i) += z;
-              for (size_t j2 = 0; j2 != nact; ++j2) {
-                const size_t j2i = j2 + nclo;
-                for (size_t j0 = 0; j0 != nact; ++j0) {
-                  const size_t j0i = j0 + nclo;
-                  for (size_t j4 = 0; j4 != nact; ++j4)
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      const double VtuO = denom_->shalf_xx()->element(j02, j4+j5*nact + istate*nact*nact);
-                      for (size_t j6 = 0; j6 != nact; ++j6)
-                        for (size_t j7 = 0; j7 != nact; ++j7) {
-                          const double VvwO = denom_->shalf_xx()->element(j02, j6+j7*nact + istate*nact*nact);
-                          dshift->element(j0i, j2i) += z * rdm3->element(j4, j5, j6, j7, j0, j2) * VtuO * VvwO * ovlfactor;
-                        }
-                    }
-                  dshift->element(j0i, j2i) -= z * rdm1->element(j0, j2);
-                }
-              }
+              const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j02) - e0all_[istate];
+              E_lt += (*l)[jall] * (*t)[jall] * shift2 / denom * 2.0;
             }
         }
-      ioffset += size_arbs;
     }
+    ioffset += size_arbs;
 
     // a r b i
     {
@@ -347,73 +464,29 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       for (size_t j3 = 0; j3 != nvirt; ++j3)
         for (size_t j2 = 0; j2 != nclo; ++j2)
           for (size_t j1 = 0; j1 != nvirt; ++j1) {
-            const size_t j3i = j3 + nocc - ncore;
-            const size_t j2i = j2;
-            const size_t j1i = j1 + nocc - ncore;
             for (size_t j0o = 0; j0o != interm_size; ++j0o) {
               const size_t jall = j0o + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
               const size_t jall2 = j0o + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
               const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
-              const double denom = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j0o) - e0_;
-              const double z = - lcovar * (*t)[jall] * shift2 / (denom * denom);
-              dshift->element(j1i, j1i) += z;
-              dshift->element(j3i, j3i) += z;
-              dshift->element(j2i, j2i) -= z;
-              for (size_t j0 = 0; j0 != nact; ++j0) {
-                const size_t j0i = j0 + nclo;
-                for (size_t j6 = 0; j6 != nact; ++j6) {
-                  const size_t j6i = j6 + nclo;
-                  for (size_t j4 = 0; j4 != nact; ++j4) {
-                    const double VtO = denom_->shalf_x()->element(j0o, j4 + istate*nact);
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      const double VuO = denom_->shalf_x()->element(j0o, j5 + istate*nact);
-                      dshift->element(j0i, j6i) += z * rdm2->element(j4, j5, j0, j6) * VtO * VuO;
-                    }
-                  }
-                  dshift->element(j0i, j6i) -= z * rdm1->element(j0, j6);
-                }
-              }
+              const double denom = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j0o) - e0all_[istate];
+              E_lt += lcovar * (*t)[jall] * shift2 / denom * 2.0;
             }
           }
       ioffset += size_arbi;
     }
-    
+
     // a i r j
     {
       const size_t interm_size = denom_->shalf_h()->ndim();
       for (size_t j2 = 0; j2 != nclo; ++j2)
         for (size_t j1 = 0; j1 != nvirt; ++j1)
           for (size_t j0 = 0; j0 != nclo; ++j0) {
-            const size_t j2i = j2;
-            const size_t j1i = j1 + nocc - ncore;
-            const size_t j0i = j0;
             for (size_t j3o = 0; j3o != interm_size; ++j3o) {
               const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3o)) + ioffset;
               const size_t jall2 = j2 + nclo * (j1 + nvirt * (j0 + nclo * j3o)) + ioffset;
               const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
-              const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3o) - e0_;
-              const double z = - lcovar * (*t)[jall] * shift2 / (denom * denom);
-              dshift->element(j1i, j1i) += z;
-              dshift->element(j0i, j0i) -= z;
-              dshift->element(j2i, j2i) -= z;
-              for (size_t j3 = 0; j3 != nact; ++j3) {
-                const size_t j3i = j3 + nclo;
-                for (size_t j6 = 0; j6 != nact; ++j6) {
-                  const size_t j6i = j6 + nclo;
-                  for (size_t j4 = 0; j4 != nact; ++j4) {
-                    const double VtO = denom_->shalf_h()->element(j3o, j4 + istate*nact);
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      const double VuO = denom_->shalf_h()->element(j3o, j5 + istate*nact);
-                      dshift->element(j3i, j6i) -= z * rdm2->element(j4, j5, j3, j6) * VtO * VuO;
-                      if (j3 == j5 && j4 == j6) dshift->element(j3i, j6i) += z * 2.0;
-                      if (j3 == j5) dshift->element(j3i, j6i) -= z * rdm1->element(j4, j6);
-                      if (j4 == j6) dshift->element(j3i, j6i) -= z * rdm1->element(j5, j3);
-                      if (j4 == j5) dshift->element(j3i, j6i) += z * 2.0 * rdm1->element(j3, j6);
-                    }
-                  }
-                  dshift->element(j3i, j6i) -= z * rdm1->element(j3, j6);
-                }
-              }
+              const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3o) - e0all_[istate];
+              E_lt += lcovar * (*t)[jall] * shift2 / denom * 2.0;
             }
           }
       ioffset += size_airj;
@@ -424,58 +497,10 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       const size_t interm_size = denom_->shalf_hh()->ndim();
       for (size_t j5 = 0; j5 != nclo; ++j5)
         for (size_t j6 = 0; j6 != nclo; ++j6) {
-          const size_t j5i = j5;
-          const size_t j6i = j6;
           for (size_t j13 = 0; j13 != interm_size; ++j13) {
             const size_t jall = j5 + nclo * (j6 + nclo * j13) + ioffset;
-            const double denom = - eig_[j5+ncore] - eig_[j6+ncore] + denom_->denom_hh(j13) - e0_;
-            const double z = - (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
-            dshift->element(j5i, j5i) -= z;
-            dshift->element(j6i, j6i) -= z;
-            for (int j2 = 0; j2 != nact; ++j2) {
-              const size_t j2i = j2 + nclo;
-              for (int j3 = 0; j3 != nact; ++j3) {
-                const size_t j3i = j3 + nclo;
-                for (int j4 = 0; j4 != nact; ++j4) {
-                  const size_t j4i = j4 + nclo;
-                  dshift->element(j2i, j3i) += 4.0 * z * denom_->shalf_hh()->element(j13, j4+j2*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j3*nact + istate*nact*nact) * ovlfactor;
-                  dshift->element(j2i, j3i) -= 2.0 * z * denom_->shalf_hh()->element(j13, j4+j2*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j4*nact + istate*nact*nact) * ovlfactor;
-                  dshift->element(j4i, j3i) -= 2.0 * z * denom_->shalf_hh()->element(j13, j4+j2*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j2+j3*nact + istate*nact*nact) * ovlfactor;
-                  dshift->element(j4i, j3i) += 4.0 * z * denom_->shalf_hh()->element(j13, j4+j2*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j2*nact + istate*nact*nact) * ovlfactor;
-                  for (int j1 = 0; j1 != nact; ++j1) {
-                    const size_t j1i = j1 + nclo;
-                    dshift->element(j2i, j3i) +=       z * rdm1->element(j2, j1) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j3*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j2, j1) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j4i, j3i) +=       z * rdm1->element(j2, j1) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j2*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j4i, j3i) -= 2.0 * z * rdm1->element(j2, j1) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j2+j3*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j2, j4) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j3*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j4, j3) * denom_->shalf_hh()->element(j13, j1+j2*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) +=       z * rdm1->element(j2, j1) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j1i, j3i) +=       z * rdm1->element(j2, j3) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j2+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j4, j1) * denom_->shalf_hh()->element(j13, j2+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) +=       z * rdm1->element(j4, j1) * denom_->shalf_hh()->element(j13, j2+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j3*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) +=       z * rdm1->element(j4, j3) * denom_->shalf_hh()->element(j13, j2+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j4, j3) * denom_->shalf_hh()->element(j13, j2+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) += 4.0 * z * rdm1->element(j2, j3) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * ovlfactor;
-                    dshift->element(j2i, j3i) -= 2.0 * z * rdm1->element(j2, j3) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * ovlfactor;
-                    for (int j0 = 0; j0 != nact; ++j0) {
-                      dshift->element(j2i, j3i) +=       z * rdm2->element(j2, j0, j4, j1) * denom_->shalf_hh()->element(j13, j0+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j3+j4*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j2i, j3i) +=       z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j0+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j3*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j2i, j3i) +=       z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j0+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j2i, j3i) -= 2.0 * z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j0+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j1i, j3i) +=       z * rdm2->element(j2, j0, j4, j3) * denom_->shalf_hh()->element(j13, j0+j1*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j2+j4*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j2i, j3i) -= 2.0 * z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j1+j0*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j4*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j2i, j3i) +=       z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j1+j0*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j4+j1*nact + istate*nact*nact) * ovlfactor;
-                      dshift->element(j1i, j3i) +=       z * rdm2->element(j4, j0, j2, j3) * denom_->shalf_hh()->element(j13, j1+j0*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j2+j4*nact + istate*nact*nact) * ovlfactor;
-                      for (int j7 = 0; j7 != nact; ++j7) {
-                        dshift->element(j2i, j3i) += z * rdm3->element(j0, j1, j4, j7, j2, j3) * denom_->shalf_hh()->element(j13, j0+j4*nact + istate*nact*nact) * denom_->shalf_hh()->element(j13, j1+j7*nact + istate*nact*nact) * ovlfactor;
-                      }
-                    }
-                  }
-                }
-                dshift->element(j2i, j3i) -= z * rdm1->element(j2, j3);
-              }
-            }
+            const double denom = - eig_[j5+ncore] - eig_[j6+ncore] + denom_->denom_hh(j13) - e0all_[istate];
+            E_lt += (*l)[jall] * (*t)[jall] * shift2 / denom * 2.0;
           }
         }
       ioffset += size_risj;
@@ -483,51 +508,27 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
 
     // a i r s & a r s i
     {
-      ioffset += size_airs;
+      const size_t interm_size = denom_->shalf_xh()->ndim();
+      for (size_t j6 = 0; j6 != nclo; ++j6) {
+        for (size_t j7 = 0; j7 != nvirt; ++j7) {
+          for (size_t jo = 0; jo != interm_size; ++jo) {
+            const size_t jall = j6 + nclo * (j7 + nvirt * jo) + ioffset;
+            const double denom = eig_[j7+nocc] - eig_[j6+ncore] + denom_->denom_xh(jo) - e0all_[istate];
+            E_lt += (*l)[jall] * (*t)[jall] * shift2 / denom * 2.0;
+          }
+        }
+      }
     }
+    ioffset += size_airs;
+
     // a r s t
     {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
       for (size_t j8 = 0; j8 != nvirt; ++j8) {
-        size_t j8i = j8 + nocc - ncore;
         for (size_t jo = 0; jo != interm_size; ++jo) {
           const size_t jall = j8 + nvirt * jo + ioffset;
-          const double denom = eig_[j8+nocc] + denom_->denom_xxh(jo) - e0_;
-          const double z = - (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
-          dshift->element(j8i, j8i) += z;
-          for (size_t j4 = 0; j4 != nact; ++j4) {
-            const size_t j4i = j4 + nclo;
-            for (size_t j3 = 0; j3 != nact; ++j3) {
-              const size_t j3i = j3 + nclo;
-              for (size_t j7 = 0; j7 != nact; ++j7) {
-                const size_t j7i = j7 + nclo;
-                for (size_t j6 = 0; j6 != nact; ++j6) {
-                  const size_t j6i = j6 + nclo;
-                  for (size_t j2 = 0; j2 != nact; ++j2) {
-                    const size_t j2i = j2 + nclo;
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      const size_t j5i = j5 + nclo;
-                      const double VxyzO = denom_->shalf_xxh()->element(jo, j7+nact*(j6+nact*j5) + istate*nact*nact*nact);
-                      for (size_t j1 = 0; j1 != nact; ++j1) {
-                        const size_t j1i = j1 + nclo;
-                        for (size_t j0 = 0; j0 != nact; ++j0) {
-                          const size_t j0i = j0 + nclo;
-                          const double VtuwO = denom_->shalf_xxh()->element(jo, j0+nact*(j1+nact*j2) + istate*nact*nact*nact);
-                          const double factor = VtuwO * VxyzO * z;
-                          dshift->element(j3i, j4i) += factor *  1.0 * rdm4->element(j1, j2, j5, j6, j0, j7, j3, j4);
-                          if (j4 == j5)                         dshift->element(j3i, j4i) += factor *  1.0 * rdm3->element(j1, j2, j3, j6, j0, j7);
-                          if (j2 == j3)                         dshift->element(j3i, j4i) += factor *  1.0 * rdm3->element(j1, j4, j5, j6, j0, j7);
-                          if (j2 == j3 && j4 == j5)             dshift->element(j3i, j4i) += factor *  1.0 * rdm2->element(j1, j6, j0, j7);
-                          if (j2 == j5)                         dshift->element(j3i, j4i) += factor *  1.0 * rdm3->element(j3, j4, j1, j6, j0, j7);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              dshift->element(j3i, j4i) -= z * rdm1->element(j3, j4);
-            }
-          }
+          const double denom = eig_[j8+nocc] + denom_->denom_xxh(jo) - e0all_[istate];
+          E_lt += (*l)[jall] * (*t)[jall] * shift2 / denom * 2.0;
         }
       }
       ioffset += size_arst;
@@ -537,74 +538,18 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     {
       const size_t interm_size = denom_->shalf_xhh()->ndim();
       for (size_t j8 = 0; j8 != nclo; ++j8) {
-        const size_t j8i = j8;
         for (size_t jo = 0; jo != interm_size; ++jo) {
           const size_t jall = j8 + nclo * jo + ioffset;
-          const double denom = - eig_[j8+ncore] + denom_->denom_xhh(jo) - e0_;
-          const double z = - (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
-          dshift->element(j8i, j8i) -= z;
-          for (size_t j4 = 0; j4 != nact; ++j4) {
-            const size_t j4i = j4 + nclo;
-            for (size_t j3 = 0; j3 != nact; ++j3) {
-              const size_t j3i = j3 + nclo;
-              for (size_t j7 = 0; j7 != nact; ++j7) {
-                const size_t j7i = j7 + nclo;
-                for (size_t j6 = 0; j6 != nact; ++j6) {
-                  const size_t j6i = j6 + nclo;
-                  for (size_t j2 = 0; j2 != nact; ++j2) {
-                    const size_t j2i = j2 + nclo;
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      const size_t j5i = j5 + nclo;
-                      const double VxyzO = denom_->shalf_xhh()->element(jo, j7+nact*(j6+nact*j5) + istate*nact*nact*nact);
-                      for (size_t j1 = 0; j1 != nact; ++j1) {
-                        const size_t j1i = j1 + nclo;
-                        for (size_t j0 = 0; j0 != nact; ++j0) {
-                          const size_t j0i = j0 + nclo;
-                          const double VtuwO = denom_->shalf_xhh()->element(jo, j0+nact*(j1+nact*j2) + istate*nact*nact*nact);
-                          const double factor = VtuwO * VxyzO * z;
-                          dshift->element(j3i, j4i) += factor * -1.0 * rdm4->element(j0, j1, j5, j2, j6, j7, j3, j4);
-                          if (j4 == j6)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j1, j5, j2, j3, j7);
-                          if (j4 == j5)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j1, j3, j2, j6, j7);
-                          if (j2 == j6)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j1, j3, j4, j5, j7);
-                          if (j2 == j6 && j4 == j5)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j1, j3, j7);
-                          if (j2 == j5)                         dshift->element(j3i, j4i) += factor *  2.0 * rdm3->element(j0, j1, j3, j4, j6, j7);
-                          if (j2 == j5 && j4 == j6)             dshift->element(j3i, j4i) += factor *  2.0 * rdm2->element(j0, j1, j3, j7);
-                          if (j2 == j3)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j1, j5, j4, j6, j7);
-                          if (j2 == j3 && j4 == j6)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j1, j5, j7);
-                          if (j2 == j3 && j4 == j5)             dshift->element(j3i, j4i) += factor *  2.0 * rdm2->element(j0, j1, j6, j7);
-                          if (j1 == j6)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j3, j4, j5, j2, j0, j7);
-                          if (j1 == j6 && j4 == j5)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j3, j2, j0, j7);
-                          if (j1 == j6 && j2 == j3)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j5, j4, j0, j7);
-                          if (j1 == j6 && j2 == j3 && j4 == j5) dshift->element(j3i, j4i) += factor *  2.0 * rdm1->element(j0, j7);
-                          if (j1 == j5)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j2, j3, j4, j6, j7);
-                          if (j1 == j5 && j4 == j6)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j2, j3, j7);
-                          if (j2 == j3 && j1 == j5)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j4, j6, j7);
-                          if (j2 == j3 && j1 == j5 && j4 == j6) dshift->element(j3i, j4i) += factor * -1.0 * rdm1->element(j0, j7);
-                          if (j1 == j3)                         dshift->element(j3i, j4i) += factor * -1.0 * rdm3->element(j0, j4, j5, j2, j6, j7);
-                          if (j1 == j3 && j4 == j6)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j5, j2, j0, j7);
-                          if (j1 == j3 && j4 == j5)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j2, j6, j7);
-                          if (j2 == j6 && j1 == j3)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j0, j4, j5, j7);
-                          if (j2 == j6 && j1 == j3 && j4 == j5) dshift->element(j3i, j4i) += factor * -1.0 * rdm1->element(j0, j7);
-                          if (j1 == j3 && j2 == j5)             dshift->element(j3i, j4i) += factor *  2.0 * rdm2->element(j0, j4, j6, j7);
-                          if (j4 == j6 && j2 == j5 && j1 == j3) dshift->element(j3i, j4i) += factor *  2.0 * rdm1->element(j0, j7);
-                          if (j1 == j6 && j2 == j5)             dshift->element(j3i, j4i) += factor *  2.0 * rdm2->element(j3, j4, j0, j7);
-                          if (j1 == j5 && j2 == j6)             dshift->element(j3i, j4i) += factor * -1.0 * rdm2->element(j3, j4, j0, j7);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              dshift->element(j3i, j4i) -= z * rdm1->element(j3, j4);
-            }
-          }
+          const double denom = - eig_[j8+ncore] + denom_->denom_xhh(jo) - e0all_[istate];
+          E_lt += (*l)[jall] * (*t)[jall] * shift2 / denom * 2.0;
         }
       }
-      ioffset += size_rist;
     }
+    ioffset += size_rist;
   }
+ 
 
-  return dshift;
+  return E_lt;
 }
 
 #endif

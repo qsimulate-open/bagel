@@ -56,6 +56,7 @@ class CASPT2Grad : public Method {
     std::shared_ptr<RDM<2>> d20ms_;
     // norm of the first-order wave function
     std::vector<double> wf1norm_;
+    std::vector<double> wf1norm_tt_;
 
     // second-order spin density matrix
     std::shared_ptr<const Matrix> sd1_;
@@ -82,7 +83,6 @@ class CASPT2Grad : public Method {
 
     // properties
     bool do_hyperfine_;
-    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -93,6 +93,8 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Tensor> d2() const { return d2_; }
     std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
+    std::vector<double> wf1norm() const { return wf1norm_; }
+    std::vector<double> wf1norm_tt() const { return wf1norm_tt_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI_base> fci() const { return fci_; }
@@ -128,6 +130,7 @@ class CASPT2Grad : public Method {
     // function for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj, const bool nacme);
+    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
     // function for nacme
     void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj, const int istate, const int jstate, const double egap);

@@ -177,6 +177,7 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, shared_ptr
     cideriv_ = smith_->cideriv()->copy();
   ncore_   = smith_->algo()->info()->ncore();
   wf1norm_ = smith_->wf1norm();
+  wf1norm_tt_ = smith_->wf1norm_tt();
   msrot_   = smith_->msrot();
   nstates_ = wf1norm_.size();
   assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);
@@ -349,6 +350,63 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
 
   if (jobtitle == "nacme" && (gradinfo->nacmtype()->is_full() || gradinfo->nacmtype()->is_etf()))
     task_->augment_Y(d0ms, g0, g1, halfj, istate, jstate, egap);
+
+#if 1
+  double Enn = geom_->nuclear_repulsion();
+  cout << " Nuclear Repulsion   = " << setprecision(12) << Enn << endl;
+  shared_ptr<const Hcore> hcore = make_shared<Hcore>(geom_, geom_->hcoreinfo());
+  auto dtotaonr = make_shared<Matrix>(*coeff * (*d0ms + *d11 + *d1) ^ *coeff);
+  double E1 = dtotaonr->dot_product(*hcore);
+  cout << " One-electron energy = " << setprecision(12) << E1 << endl;
+
+  double E11 = 0.0;
+  {
+    shared_ptr<const Matrix> d0sa = ref->rdm1_mat()->resize(nmobasis, nmobasis);
+    shared_ptr<Matrix> out = make_shared<Matrix>(nmobasis, nmobasis);
+    auto dkl = make_shared<Matrix>(*d0sa); // D0SA
+    dkl->sqrt();
+    dkl->scale(1.0/sqrt(2.0));
+    Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
+    *out += *coeff % fock * *coeff * *d1 * 2.0;
+    for (int i = 0; i != nmobasis; ++i)
+      E11 += out->element(i,i) * .5;
+  }
+  cout << " One-electron Fock   = " << setprecision(12) << E11 << endl;
+  double E2 = 0.0;
+  {
+    shared_ptr<Matrix> out = make_shared<Matrix>(nmobasis, nmobasis);
+    const MatView ocmat = coeff->slice(0, nocc);
+    shared_ptr<const DFFullDist> fullo = halfj->compute_second_transform(ocmat);
+    shared_ptr<const DFFullDist> full = halfj->compute_second_transform(coeff);
+    shared_ptr<const DFFullDist> fullks;
+    fullks = task_->contract_D1(full);
+    *out += *full->form_2index(fullks, 2.0);
+    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*task_->d20ms(), *task_->d10ms(), nclosed, nact);
+    out->add_block(1.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
+    for (int i = 0; i != nmobasis; ++i)
+      E2 += out->element(i,i) * .5;
+  }
+  cout << " Two-electron energy = " << setprecision(12) << E2 << endl;
+  double Elt = 0.0;
+  {
+    if (task_->smith()->algo()->info()->shift_imag()) {
+      Elt = task_->smith()->algo()->energy_lt();
+    } else if (task_->smith()->algo()->info()->orthogonal_basis()) {
+/*      for (int i = 0; i != task_->nstates(); ++i) {
+        Elt += task_->wf1norm()[i] *  task_->smith()->algo()->info()->shift();
+      }*/
+    } else {
+      for (int i = 0; i != task_->nstates(); ++i) {
+        (jobtitle == "nacme") ?
+          Elt -= task_->wf1norm_tt()[i] * task_->msrot(i, istate) * task_->msrot(i, jstate) * task_->smith()->algo()->info()->shift() :
+          Elt -= task_->wf1norm_tt()[i] * task_->msrot(i, istate) * task_->msrot(i, istate) * task_->smith()->algo()->info()->shift();
+        Elt += task_->wf1norm()[i] *  task_->smith()->algo()->info()->shift();
+      }
+    }
+    cout << " Shift correction en = " << Elt << endl;
+  }
+  cout << " Etot                = " << Enn + E1 + E11 + E2 + Elt << endl;
+#endif
 
   timer.tick_print("Yrs non-Lagrangian terms");
 

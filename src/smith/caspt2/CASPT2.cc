@@ -77,6 +77,7 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
   // sall is changed in gradient and nacme codes while the others are not
   t2all_ = cas.t2all_;
   t2all_orthogonal_ = cas.t2all_orthogonal_;
+  rall_orthogonal_ = cas.rall_orthogonal_;
   rall_  = cas.rall_;
   for (int i = 0; i != nstates_; ++i) {
     sall_.push_back(cas.sall_[i]->copy());
@@ -173,7 +174,7 @@ void CASPT2::CASPT2::solve() {
 
   // solve linear equation for t amplitudes
   if (info_->orthogonal_basis()) {
-    tie(t2all_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
+    tie(t2all_orthogonal_, rall_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
   } else {
     t2all_ = solve_linear(sall_, t2all_);
   }
@@ -309,10 +310,19 @@ void CASPT2::CASPT2::solve() {
 
 // temporary
 void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
+  // aibj good
+  const bool zero_aibj = true;
+  const bool zero_arbs = true;
+  const bool zero_arbi = false;
+  const bool zero_airj = true;
+  const bool zero_risj = true;
+  const bool zero_airs = true;
+  const bool zero_arst = true;
+  const bool zero_rist = true;
   for (int i = 0; i != nstates_; ++i) {
     if (!s->at(i)) continue;
     // a i b j
-#if 0
+    if (zero_aibj)
     for (auto& i3 : virt_)
       for (auto& i2 : closed_)
         for (auto& i1 : virt_)
@@ -323,6 +333,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             s->at(i)->put_block(data, i0, i1, i2, i3);
           }
     // a r b s
+    if (zero_arbs)
     for (auto& i2 : active_)
       for (auto& i0 : active_)
         for (auto& i3 : virt_)
@@ -332,17 +343,8 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
             s->at(i)->put_block(data, i0, i1, i2, i3);
           }
-    // a i r j
-    for (auto& i3 : active_) 
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-          }
     // a r b i
+    if (zero_arbi)
     for (auto& i0 : active_)
       for (auto& i3 : virt_)
         for (auto& i2 : closed_)
@@ -352,7 +354,19 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
             s->at(i)->put_block(data, i2, i3, i0, i1);
           }
+    // a i r j
+    if (zero_airj)
+    for (auto& i3 : active_) 
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_) {
+            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
+            unique_ptr<double[]> data(new double[blocksize]);
+            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
+            s->at(i)->put_block(data, i2, i3, i0, i1);
+          }
     // r i s j
+    if (zero_risj)
     for (auto& i3 : active_)
       for (auto& i1 : active_)
         for (auto& i2 : closed_)
@@ -363,6 +377,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             s->at(i)->put_block(data, i0, i1, i2, i3);
           }
     // a i r s & a r s i
+    if (zero_airs)
     for (auto& i3 : active_)
       for (auto& i2 : active_)
         for (auto& i1 : virt_)
@@ -374,6 +389,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             s->at(i)->put_block(data, i0, i3, i2, i1);
           }
     // a r s t
+    if (zero_arst)
     for (auto& i3 : active_)
       for (auto& i2 : active_)
         for (auto& i0 : active_)
@@ -384,6 +400,7 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             s->at(i)->put_block(data, i2, i3, i0, i1);
           }
     // r i s t
+    if (zero_rist)
     for (auto& i3 : active_)
       for (auto& i1 : active_)
         for (auto& i0 : active_)
@@ -393,7 +410,6 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
             for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
             s->at(i)->put_block(data, i2, i3, i0, i1);
           }
-#endif
   }
 }
 
@@ -478,13 +494,14 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 }
 
 
-tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
+tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
 CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
   vector<shared_ptr<VectorB>> out;
+  vector<shared_ptr<VectorB>> rout;
   cout << endl << "      -----------------------------------------------------  CASPT2 iteration  --------------------------------------------------------------" << endl;
   cout << "       #        aibj        arbs        arbi        airj        risj        airs        arst        rist           Etot          error   time" << endl;
   cout << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
@@ -501,6 +518,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     auto amplitude = make_shared<VectorB>(source->size());
     if (s[i]->rms() < 1.0e-15) {
       print_energy_parts(0, source, source, amplitude, 0.0, mtimer.tick());
+      rout.push_back(source);
       out.push_back(amplitude);
       if (i+1 != nstates_) cout << endl;
       continue;
@@ -557,6 +575,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
       if (conv) {
         t[i] = transform_to_redundant_amplitude(amplitude, nstates_, i);
         out.push_back(amplitude);
+        rout.push_back(residual);
         break;
       }
     }
@@ -564,7 +583,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     converged &= conv;
   }
   cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
-  return make_tuple(out, t);
+  return make_tuple(out, rout, t);
 }
 
 
@@ -597,7 +616,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       auto source = make_shared<MultiTensor>(nstates_);
       for (auto& i : *source)
         i = init_residual();
-      if (info_->shift_imag()) {
+      if (info_->shift_imag() || info_->orthogonal_basis()) {
         // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
@@ -687,6 +706,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
                 shared_ptr<Queue> normq = make_normq(true, jst == ist);
                 while (!normq->done())
                   normq->next_compute();
+                // I do not know why, but the linear energy is correct WITHOUT it !!!! (seriously, why???)
                 sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * pow((*heff_)(istate, target), 2.0), n);
               }
             }
@@ -701,7 +721,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       for (auto& i : *sourceI)
         i = init_residual();
       // NACME case
-      if (info_->shift_imag()) {
+      if (info_->shift_imag() || info_->orthogonal_basis()) {
         // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
@@ -806,7 +826,8 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
     // solve linear equation and store lambda in lall
     if (info_->orthogonal_basis()) {
-      tie(lall_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
+      vector<shared_ptr<VectorB>> tmp;
+      tie(lall_orthogonal_, tmp, lall_) = solve_linear_orthogonal(sall_, lall_);
     } else {
       lall_ = solve_linear(sall_, lall_);
     }
@@ -863,7 +884,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     ms.solve_gradient(targetJ, targetI, nocider);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
-    if (info_->shift_imag())
+    if (info_->shift_imag() || info_->orthogonal_basis())
       den2_tt_ = ms.rdm12_tt();
     Den1_ = ms.rdm21();
     if (!nocider)
@@ -914,21 +935,23 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   // TODO cleanup
 #if 1
   if (info_->shift_imag()) {
-    shared_ptr<Matrix> dshift = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
-    {
-      auto dtmp = den2_->copy();
-      dtmp->ax_plus_y(1.0, dshift);
-      den2_ = dtmp;
-    }
+//    shared_ptr<Matrix> dshift = make_d2_imag(lall_orthogonal_, t2all_orthogonal_, rall_orthogonal_);
+//    {
+//      auto dtmp = den2_->copy();
+//      dtmp->ax_plus_y(1.0, dshift);
+//      den2_ = dtmp;
+//    }
+    energy_lt_ = 0.0;
+//    energy_lt_ = compute_energy_lt();
   }
 #endif
+  timer.tick_print("dshift");
 
   {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j) {
           dtmp->element(j, i) -= correlated_norm_lt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
@@ -938,7 +961,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_ = dtmp;
   }
 
-  if (info_->shift_imag()) {
+  if (info_->shift_imag() || info_->orthogonal_basis()) {
     auto dtmp2 = den2_tt_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -980,7 +1003,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
     }
 
-    if (info_->shift_imag()) {
+    if (info_->shift_imag() || info_->orthogonal_basis()) {
       shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
         const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
@@ -1049,7 +1072,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
   }
 
-  if (info_->shift_imag()) {
+  if (info_->shift_imag() || info_->orthogonal_basis()) {
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_tt_);
     den2_ = dtmp;

@@ -252,7 +252,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     shared_ptr<Tensor> result2 = den2->clone();
     result2->zero();
     // if Hylleraas, second-order contribution from energy
-    if (info_->shift_imag()) {
+    if (info_->shift_imag() || info_->orthogonal_basis()) {
       // consistent with the next
       for (int jst = 0; jst != nstates; ++jst) {  // bra
         for (int ist = 0; ist != nstates; ++ist) {  // ket
@@ -295,7 +295,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
 
   }
 
-  if (info_->shift_imag()) {
+  if (info_->shift_imag() || info_->orthogonal_basis()) {
     for (int jst = 0; jst != nstates; ++jst) { // N
       den1->zero();
       Den1->zero();
@@ -385,7 +385,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(lnhJI);
           }
 
-          if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->shift_imag()) {
+          if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->orthogonal_basis()) {
             e0_ = 2.0*info_->shift();
             l2 = t2all_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
@@ -395,7 +395,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(llhJI);
           }
 
-          if (info_->shift_imag()) {
+          if (info_->orthogonal_basis()) {
             // Consistent with the nexts
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
@@ -414,7 +414,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           }
         }
 
-        if ((!info_->sssr() || nst == mst) && info_->shift_imag()) {
+        if ((!info_->sssr() || nst == mst) && info_->orthogonal_basis()) {
           // Consistent with the nexts
           const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
           const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
@@ -446,7 +446,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
 
-            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
+            e0_ = info_->orthogonal_basis() ? e0all_[lst] : e0all_[lst] - info_->shift();
             l2 = lall_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
@@ -468,62 +468,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           add_total(1.0);
         }
 
-#if 1
-        // TODO cleanup
-        if (info_->shift_imag()) {
-          const double shift2 = info_->shift() * info_->shift();
-          for (int istate = 0; istate != nstates; ++istate) { // state of T
-            if (info_->sssr() && (nst != istate || mst != istate))
-              continue;
-            // considering only SS-SR case
-            shared_ptr<VectorB> lambda = lall_orthogonal_[istate];
-            shared_ptr<VectorB> amplitude = t2all_orthogonal_[istate];
-            // a i b j
-            {
-              const size_t nact = info_->nact();
-              const size_t nclosed = info_->nclosed();
-              const size_t nvirt = info_->nvirt();
-              const size_t nocc = nact + nclosed;
-              const size_t ncore = info_->ncore();
-              const size_t nclo = nclosed - ncore;
-              const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-              const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-              const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-              const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-              const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-              const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-              const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-              const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
-   
-              const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
-              size_t ioffset = 0;
-              for (auto& i3 : virt_)
-                for (auto& i2 : closed_)
-                  for (auto& i1 : virt_)
-                    for (auto& i0 : closed_) {
-                      for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
-                        for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
-                          for (int j1 = i1.offset()-nocc; j1 != i1.offset()+i1.size()-nocc; ++j1)
-                            for (int j0 = i0.offset()-ncore; j0 != i0.offset()+i0.size()-ncore; ++j0) {
-                              const int j0i = j0;
-                              const int j1i = j1 + nocc - ncore;
-                              const int j2i = j2;
-                              const int j3i = j3 + nocc - ncore;
-                              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-                              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-                              const double lcovar = (*lambda)[jall] * 8.0 - (*lambda)[jall2] * 4.0;
-                              const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j3+nocc] + eig_[j1+nocc];
-                              unique_ptr<double[]> o0data(new double[den0cit->get_size()]);
-                              o0data[0] = 2.0 * (shift2) *  lcovar * (*amplitude)[jall] / (denom * denom);
-                              o0data[0] -=       (shift2) * lcovar * (*amplitude)[jall] / (denom * denom);
-                              den0cit->add_block(o0data);
-                            }
-                      }
-                    }
-            }
-          }
-        }
-#endif
 
         // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
         double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());

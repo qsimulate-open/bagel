@@ -86,6 +86,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     // in orthogonal basis
     std::vector<std::shared_ptr<VectorB>> lall_orthogonal_;
     std::vector<std::shared_ptr<VectorB>> t2all_orthogonal_;
+    std::vector<std::shared_ptr<VectorB>> rall_orthogonal_;
 
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
@@ -152,7 +153,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<std::shared_ptr<MultiTensor_<double>>>
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
-    std::tuple<std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
+    std::tuple<std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
       solve_linear_orthogonal(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
 
     std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> feed_denci();
@@ -161,7 +162,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     void do_rdm_deriv(double factor);
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
 
-    std::shared_ptr<Matrix> make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
+    std::shared_ptr<Matrix> make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda, std::vector<std::shared_ptr<VectorB>> residual) const;
+    double compute_energy_lt();
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
@@ -181,6 +183,9 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<double> correlated_norm_lt() const { return correlated_norm_lt_; }
     std::vector<double> correlated_norm_tt() const { return correlated_norm_tt_; }
+
+    std::vector<std::shared_ptr<VectorB>> lall_orthogonal() const { return lall_orthogonal_; }
+    std::vector<std::shared_ptr<VectorB>> t2all_orthogonal() const { return t2all_orthogonal_; }
 
     std::shared_ptr<const Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }

@@ -84,9 +84,14 @@ void Denom<DataType>::compute() {
   // TODO in principle, we can use smaller dimension (i.e., use canonical orthogonalization for shalf_x_)
   {
     shalf_x_->inverse_half(thresh_);
+    work_x_->print("work_x = ");
     MatType tmp(*shalf_x_ % *work_x_ * *shalf_x_);
+    shalf_x_->print("shalf_x = ");
+    tmp.print("tmp = ");
     tmp.diagonalize(denom_x_);
+    denom_x_.print("denom = ");
     shalf_x_ = make_shared<MatType>(tmp % *shalf_x_);
+    shalf_x_->print("final = ");
   }
   {
     shalf_h_->inverse_half(thresh_);
@@ -139,6 +144,7 @@ void Denom<DataType>::init_x_(const int jst, const int ist, shared_ptr<const RDM
   auto rdm2v = group(group(*rdm2, 2,4),0,2);
   auto workv = group(work2, 0,2);
   contract(1.0, rdm2v, {0,1}, group(*fock_,0,2), {1}, 0.0, workv, {0});
+  work2.print("work2 = ");
   work_x_->copy_block(dim*jst, dim*ist, dim, dim, work2);
 }
 
