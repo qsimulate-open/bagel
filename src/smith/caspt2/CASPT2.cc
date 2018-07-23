@@ -935,14 +935,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   // TODO cleanup
 #if 1
   if (info_->shift_imag()) {
-//    shared_ptr<Matrix> dshift = make_d2_imag(lall_orthogonal_, t2all_orthogonal_, rall_orthogonal_);
-//    {
-//      auto dtmp = den2_->copy();
-//      dtmp->ax_plus_y(1.0, dshift);
-//      den2_ = dtmp;
-//    }
-    energy_lt_ = 0.0;
-//    energy_lt_ = compute_energy_lt();
+    shared_ptr<Matrix> dshift = make_d2_imag(lall_orthogonal_, t2all_orthogonal_, rall_orthogonal_);
+    {
+      auto dtmp = den2_->copy();
+      dtmp->ax_plus_y(1.0, dshift);
+      den2_ = dtmp;
+    }
+    energy_lt_ = compute_energy_lt();
   }
 #endif
   timer.tick_print("dshift");
