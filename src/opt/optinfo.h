@@ -215,7 +215,7 @@ class OptInfo : public GradInfo {
       if (opttype_->is_mep()) {
         // parameters for MEP calculations (Gonzalez, Schlegel)
         mep_direction_ = idat->get<int>("mep_direction", 1);
-        if (hess_approx_)
+        if (hess_approx_ && mep_direction_ != 0)
           throw std::runtime_error("MEP calculation should be started with Hessian eigenvectors");
       } else {
         // initialize the values
