@@ -46,12 +46,14 @@ namespace bagel { namespace impl {
 
 
 void bagel::run_bagel_from_input(const string& input) {
+  static_variables();
   auto idata = make_shared<const PTree>(input);
   impl::run_bagel_(idata);
 }
 
 
 void bagel::run_bagel_from_json(const string& input) {
+  static_variables();
   stringstream ss; ss << input;
   auto idata = make_shared<const PTree>(ss);
   impl::run_bagel_(idata);
@@ -60,7 +62,6 @@ void bagel::run_bagel_from_json(const string& input) {
 
 void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
 
-  static_variables();
   print_header();
 
   shared_ptr<const Geometry> geom;

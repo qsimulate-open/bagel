@@ -34,13 +34,12 @@ using namespace std;
 using namespace bagel;
 
 int main(int argc, char** argv) {
-  const bool input_provided = argc == 2;
-  if (!input_provided) {
-    throw runtime_error("no input file provided");
-  }
-  const string input = argv[1];
-
   try {
+    const bool input_provided = argc == 2;
+    if (!input_provided)
+      throw runtime_error("no input file provided");
+    const string input = argv[1];
+
     // this is the main driver
     bagel::run_bagel_from_input(input);
   } catch (const Termination& e) {
