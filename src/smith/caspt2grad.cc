@@ -392,9 +392,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     if (task_->smith()->algo()->info()->shift_imag()) {
       Elt = task_->smith()->algo()->energy_lt();
     } else if (task_->smith()->algo()->info()->orthogonal_basis()) {
-/*      for (int i = 0; i != task_->nstates(); ++i) {
+      for (int i = 0; i != task_->nstates(); ++i) {
         Elt += task_->wf1norm()[i] *  task_->smith()->algo()->info()->shift();
-      }*/
+      }
     } else {
       for (int i = 0; i != task_->nstates(); ++i) {
         (jobtitle == "nacme") ?

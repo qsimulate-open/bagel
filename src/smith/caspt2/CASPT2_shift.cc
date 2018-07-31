@@ -291,12 +291,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     ioffset += size_arbs;
     // a r b i
     {
-      auto test_denom = make_shared<VectorB>(size_arbi);
-      auto test_denom2 = make_shared<VectorB>(size_arbi);
-      double test1 = 0.0;
-      double test2 = 0.0;
-
-      denom_->shalf_x()->print("shalf_x = ");
       const size_t interm_size = denom_->shalf_x()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -318,29 +312,26 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j3i, j3i) -= Lambda;
               dshift->element(j2i, j2i) += Lambda;
-              (*test_denom2)[jall-ioffset] = denom;
               // should be done only once!!
-              (*test_denom)[jall-ioffset] += eig_[j1+nocc] + eig_[j3 + nocc] - eig_[j2 + ncore];
-              test1 += Lambda * (eig_[j1+nocc] + eig_[j3+nocc] - eig_[j2+nocc]);
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 const size_t j0i = j0 + nclo;
                 for (size_t j6 = 0; j6 != nact; ++j6) {
                   const size_t j6i = j6 + nclo;
                   dshift->element(j0i, j6i) += Lambda * rdm1->element(j0, j6);
                   dshift_part1->element(j0, j6) += Lambda * rdm1->element(j0, j6);
-                  (*test_denom)[jall-ioffset] -= rdm1->element(j0, j6) * fockact_->element(j0, j6);
-                  test1 -= Lambda * rdm1->element(j0, j6) * fockact_->element(j0, j6);
                 }
               }
               largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o);
               for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                 const size_t kall = j1o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
                 const double denom2 = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
+//                largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
                 largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
               }
 #if 1
               for (size_t is = 0; is != nstates_; ++is) {
                 for (size_t js = 0; js != nstates_; ++js) {
+                  if (is != js) continue;
                   shared_ptr<const RDM<1>> rdm1tmp;
                   shared_ptr<const RDM<2>> rdm2tmp;
                   tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
@@ -354,8 +345,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                         for (size_t j5 = 0; j5 != nact; ++j5) {
                           dshift->element(j0i, j6i) -= Lambda * VtO * VuO * rdm2tmp->element(j0, j6, j4, j5);
                           dshift_part1->element(j0, j6) -= Lambda * VtO * VuO * rdm2tmp->element(j0, j6, j4, j5);
-                          (*test_denom)[jall-ioffset] += rdm2tmp->element(j0, j6, j4, j5) * fockact_->element(j0, j6) * VtO * VuO;
-                          test1 += Lambda * rdm2tmp->element(j0, j6, j4, j5) * fockact_->element(j0, j6) * VtO * VuO;
                         }
                       }
                     }
@@ -367,14 +356,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           }
         }
       }
-      for (size_t i0 = 0; i0 != nclo; ++i0) test2 += dshift->element(i0, i0) * eig_[i0 + ncore];
-      for (size_t i0 = 0; i0 != nact; ++i0)
-        for (size_t i1 = 0; i1 != nact; ++i1)
-          test2 += dshift_part1->element(i0, i1) * fockact_->element(i0, i1);
-      for (size_t i0 = 0; i0 != nvirt; ++i0) test2 += dshift->element(i0, i0) * eig_[i0 + nocc];
-      cout << " test1 = " <<setw(20) << setprecision(10) <<  test1 << setw(20) << test2 << endl;
-      // debug, whether denominator is evaluated well
-//      for (size_t i = 0; i != size_arbi; ++i) cout << setw(20) << setprecision(10) << (*test_denom)[i] << setw(20) << (*test_denom2)[i] << setw(20) << (*test_denom)[i] - (*test_denom2)[i] << endl;
       fockact_->print("fockact = ");
       dshift_part1->print("dshift_part1 = ");
       dshift_part1->zero();
@@ -400,6 +381,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
 #if 1
       for (size_t is = 0; is != nstates_; ++is) {
         for (size_t js = 0; js != nstates_; ++js) {
+          if (is != js) continue;
           shared_ptr<const RDM<1>> rdm1tmp;
           shared_ptr<const RDM<2>> rdm2tmp;
           tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
