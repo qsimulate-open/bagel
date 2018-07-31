@@ -291,10 +291,12 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     ioffset += size_arbs;
     // a r b i
     {
+      denom_->shalf_x()->print("shalf_x = ");
       const size_t interm_size = denom_->shalf_x()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
       auto largex = make_shared<Matrix>(interm_size, interm_size);
+      auto dshift_part1 = make_shared<Matrix>(nact, nact);
       // multipliers
       for (size_t j3 = 0; j3 != nvirt; ++j3) {
         const size_t j3i = j3 + nocc - ncore;
@@ -316,10 +318,18 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                 for (size_t j6 = 0; j6 != nact; ++j6) {
                   const size_t j6i = j6 + nclo;
                   dshift->element(j0i, j6i) += Lambda * rdm1->element(j0, j6);
+                  dshift_part1->element(j0, j6) += Lambda * rdm1->element(j0, j6);
                 }
+              }
+              largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o);
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                const size_t kall = j1o + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+                const double denom2 = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
+                largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
               }
               for (size_t is = 0; is != nstates_; ++is) {
                 for (size_t js = 0; js != nstates_; ++js) {
+                  if (is != js) continue;
                   shared_ptr<const RDM<1>> rdm1tmp;
                   shared_ptr<const RDM<2>> rdm2tmp;
                   tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
@@ -332,14 +342,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                       for (size_t j4 = 0; j4 != nact; ++j4) {
                         for (size_t j5 = 0; j5 != nact; ++j5) {
                           dshift->element(j0i, j6i) -= Lambda * VtO * VuS * rdm2tmp->element(j0, j6, j4, j5);
-                          for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                            const double VuO = denom_->shalf_x()->element(j1o, j6 + js*nact);
-                            const double VtS = denom_->shalf_x()->element(j1o, j0 + is*nact);
-                            largey->element(j0o, j1o) -= fockact_->element(j4, j5) * (VtO * VuO + VtS * VuS) * rdm2tmp->element(j0, j6, j4, j5) * Lambda;
-/*                            const size_t kall =  j1o + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-                            const double denomk = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
-                            largey->element(j0o, j1o) += lcovar * (*t)[kall] * (shift2 / (denom * denom) - shift2 / (denomk * denomk));*/
-                          }
+                          dshift_part1->element(j0, j6) -= Lambda * VtO * VuS * rdm2tmp->element(j0, j6, j4, j5);
                         }
                       }
                     }
@@ -350,9 +353,11 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           }
         }
       }
+      fockact_->print("fockact = ");
+      dshift_part1->print("dshift_part1 = ");
+      dshift_part1->zero();
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-          if (j1o == j0o) continue;
           const double fdiff = denom_->denom_x(j1o) - denom_->denom_x(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-8 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
         }
@@ -372,6 +377,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
 
       for (size_t is = 0; is != nstates_; ++is) {
         for (size_t js = 0; js != nstates_; ++js) {
+          if (is != js) continue;
           shared_ptr<const RDM<1>> rdm1tmp;
           shared_ptr<const RDM<2>> rdm2tmp;
           tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
@@ -387,6 +393,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                       const double VuO = denom_->shalf_x()->element(j1o, j5 + js*nact);
                       const double factor = VtO * VuO;
                       dshift->element(j0i, j6i) += smallz->element(j0o, j1o) * factor * rdm2tmp->element(j4, j5, j0, j6);
+                      dshift_part1->element(j0, j6) += smallz->element(j0o, j1o) * factor * rdm2tmp->element(j4, j5, j0, j6);
                     }
                   }
                 }
@@ -395,42 +402,12 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           }
         }
       }
-/*      for (size_t is = 0; is != nstates_; ++is) {
-        for (size_t js = 0; js != nstates_; ++js) {
-//          if (is != js) continue;
-          shared_ptr<const RDM<1>> rdm1tmp;
-          shared_ptr<const RDM<2>> rdm2tmp;
-          tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
-          for (size_t j0 = 0; j0 != nact; ++j0) {
-            const size_t j0i = j0 + nclo;
-            for (size_t j6 = 0; j6 != nact; ++j6) {
-              const size_t j6i = j6 + nclo;
-              for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                for (size_t j4 = 0; j4 != nact; ++j4) {
-                  for (size_t j5 = 0; j5 != nact; ++j5) {
-                    const double VtO = denom_->shalf_x()->element(j0o, j4 + is*nact);
-                    const double VuO = denom_->shalf_x()->element(j0o, j5 + js*nact);
-                    const double factor = VtO * VuO;
-                    dshift->element(j0i, j6i) += smallz->element(j0o, j0o) * factor * rdm2tmp->element(j4, j5, j0, j6);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }*/
-/*      for (size_t j0 = 0; j0 != nact; ++j0) {
-        const size_t j0i = j0 + nclo;
-        for (size_t j6 = 0; j6 != nact; ++j6) {
-          const size_t j6i = j6 + nclo;
-          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-            dshift->element(j0i, j6i) -= smallz->element(j0o, j0o) * rdm1->element(j0, j6);
-          }
-        }
-      }*/
+      dshift_part1->print("dshift_part2 = ");
+      auto e1_test = make_shared<Matrix>(interm_size, interm_size);
       double tes = 0.0;
       for (size_t is = 0; is != nstates_; ++is) {
         for (size_t js = 0; js != nstates_; ++js) {
+          if (is != js) continue;
           shared_ptr<const RDM<1>> rdm1tmp;
           shared_ptr<const RDM<2>> rdm2tmp;
           tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
@@ -441,16 +418,19 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                 for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                   const double VtO = denom_->shalf_x()->element(j0o, j0 + is * nact);
                   const double VuO = denom_->shalf_x()->element(j1o, j6 + js * nact);
-                  e1->element(j0, j6) += largex->element(j0o, j1o) * VtO * VuO;
+                  e1->element(j0, j6) -= largex->element(j0o, j1o) * VtO * VuO;
+                  e1_test->element(j0o, j1o) -= VtO * VuO * rdm1tmp->element(j0, j6);
                 }
               }
-              tes -= e1->element(j0, j6) * rdm1tmp->element(j0, j6);
+              tes += e1->element(j0, j6) * rdm1tmp->element(j0, j6);
             }
           }
           e1->print("e1 = ");
         }
       }
-      cout << " tes = " << tes + xdiag << endl;
+      e1_test->print("e1_test = ");
+      cout << " tes = " << tes << endl;
+      cout << " xdiag = " << xdiag << endl;
     }
     ioffset += size_arbi;
     ioffset += size_airj;
