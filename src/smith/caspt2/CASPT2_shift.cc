@@ -33,7 +33,7 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
 
-tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> CASPT2::CASPT2::feed_rdm(const int ist, const int jst) {
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> CASPT2::CASPT2::feed_rdm(const int ist, const int jst) const {
   shared_ptr<RDM<1>> rdm1;
   shared_ptr<RDM<2>> rdm2;
   shared_ptr<RDM<3>> rdm3;
@@ -108,6 +108,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
   }
 
   // collect den4ci
+#if 0
   {
     vector<IndexRange>o = rdm4all_->at(jst, ist)->indexrange();
     const int off0 = o[0].front().offset();
@@ -141,6 +142,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
               }
     rdm4 = d4->copy();
   }
+#endif
 
   return tie(rdm1, rdm2, rdm3, rdm4);
 }
@@ -425,7 +427,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j3i, j3i) -= Lambda;
               dshift->element(j2i, j2i) += Lambda;
-              // should be done only once!!
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 const size_t j0i = j0 + nclo;
                 for (size_t j6 = 0; j6 != nact; ++j6) {
@@ -444,9 +445,11 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
               for (size_t is = 0; is != nstates_; ++is) {
                 for (size_t js = 0; js != nstates_; ++js) {
                   if (is != js) continue;
-                  shared_ptr<const RDM<1>> rdm1tmp;
-                  shared_ptr<const RDM<2>> rdm2tmp;
-                  tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
+                  shared_ptr<RDM<1>> rdm1tmp;
+                  shared_ptr<RDM<2>> rdm2tmp;
+                  shared_ptr<RDM<3>> rdm3tmp;
+                  shared_ptr<RDM<4>> rdm4tmp;
+                  tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
                   for (size_t j0 = 0; j0 != nact; ++j0) {
                     for (size_t j6 = 0; j6 != nact; ++j6) {
                       const double VtO = denom_->shalf_x()->element(j0o, j0 + is*nact);
@@ -495,9 +498,11 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       for (size_t is = 0; is != nstates_; ++is) {
         for (size_t js = 0; js != nstates_; ++js) {
           if (is != js) continue;
-          shared_ptr<const RDM<1>> rdm1tmp;
-          shared_ptr<const RDM<2>> rdm2tmp;
-          tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
+          shared_ptr<RDM<1>> rdm1tmp;
+          shared_ptr<RDM<2>> rdm2tmp;
+          shared_ptr<RDM<3>> rdm3tmp;
+          shared_ptr<RDM<4>> rdm4tmp;
+          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
           for (size_t j0 = 0; j0 != nact; ++j0) {
             const size_t j0i = j0 + nclo;
             for (size_t j6 = 0; j6 != nact; ++j6) {
@@ -530,9 +535,11 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       for (size_t is = 0; is != nstates_; ++is) {
         for (size_t js = 0; js != nstates_; ++js) {
           if (is != js) continue;
-          shared_ptr<const RDM<1>> rdm1tmp;
-          shared_ptr<const RDM<2>> rdm2tmp;
-          tie(rdm1tmp, rdm2tmp) = info_->rdm12(is, js);
+          shared_ptr<RDM<1>> rdm1tmp;
+          shared_ptr<RDM<2>> rdm2tmp;
+          shared_ptr<RDM<3>> rdm3tmp;
+          shared_ptr<RDM<4>> rdm4tmp;
+          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
           auto e1 = make_shared<Matrix>(nact, nact);       // only for e^(1). we should implement RDM form of e other than e^(1).
           for (size_t j0 = 0; j0 != nact; ++j0) {
             for (size_t j6 = 0; j6 != nact; ++j6) {
