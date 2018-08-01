@@ -33,6 +33,119 @@ using namespace bagel::SMITH;
 using namespace bagel::SMITH::CASPT2;
 
 
+tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>>> CASPT2::CASPT2::feed_rdm(const int ist, const int jst) {
+  shared_ptr<RDM<1>> rdm1;
+  shared_ptr<RDM<2>> rdm2;
+  shared_ptr<RDM<3>> rdm3;
+  shared_ptr<RDM<4>> rdm4;
+
+  const size_t nact = info_->nact();
+
+  // collect den1ci
+  {
+    vector<IndexRange> o = rdm1all_->at(jst, ist)->indexrange();
+    const int off0 = o[0].front().offset();
+    const int off1 = o[1].front().offset();
+    auto d1 = make_shared<RDM<1>>(nact);
+    for (auto& i1 : o[1].range())
+      for (auto& i0 : o[0].range()) {
+        auto input = rdm1all_->at(jst, ist)->get_block(i0, i1);
+        for (size_t io1 = 0; io1 != i1.size(); ++io1)
+          copy_n(&input[0 + i0.size() * io1], i0.size(), d1->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1));
+      }
+    rdm1 = d1->copy();
+  }
+
+  // collect den2ci
+  {
+    vector<IndexRange>o = rdm2all_->at(jst, ist)->indexrange();
+    const int off0 = o[0].front().offset();
+    const int off1 = o[1].front().offset();
+    const int off2 = o[2].front().offset();
+    const int off3 = o[3].front().offset();
+    auto d2 = make_shared<RDM<2>>(nact);
+    for (auto& i3 : o[3].range())
+      for (auto& i2 : o[2].range())
+        for (auto& i1 : o[1].range())
+          for (auto& i0 : o[0].range()) {
+            auto input = rdm2all_->at(jst, ist)->get_block(i0, i1, i2, i3);
+            for (size_t io3 = 0; io3 != i3.size(); ++io3)
+              for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * io3))], i0.size(),
+                         d2->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2, io3 + i3.offset() - off3));
+          }
+    rdm2 = d2->copy();
+  }
+
+  // collect den3ci
+  {
+    vector<IndexRange>o = rdm3all_->at(jst, ist)->indexrange();
+    const int off0 = o[0].front().offset();
+    const int off1 = o[1].front().offset();
+    const int off2 = o[2].front().offset();
+    const int off3 = o[3].front().offset();
+    const int off4 = o[4].front().offset();
+    const int off5 = o[5].front().offset();
+    auto d3 = make_shared<RDM<3>>(nact);
+    for (auto& i5 : o[5].range())
+      for (auto& i4 : o[4].range())
+        for (auto& i3 : o[3].range())
+          for (auto& i2 : o[2].range())
+            for (auto& i1 : o[1].range())
+              for (auto& i0 : o[0].range()) {
+                auto input = rdm3all_->at(jst, ist)->get_block(i0, i1, i2, i3, i4, i5);
+                for (size_t io5 = 0; io5 != i5.size(); ++io5)
+                  for (size_t io4 = 0; io4 != i4.size(); ++io4)
+                    for (size_t io3 = 0; io3 != i3.size(); ++io3)
+                      for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                        for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                          copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5))))],
+                                 i0.size(), d3->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2,
+                                 io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5));
+              }
+    rdm3 = d3->copy();
+  }
+
+  // collect den4ci
+  {
+    vector<IndexRange>o = rdm4all_->at(jst, ist)->indexrange();
+    const int off0 = o[0].front().offset();
+    const int off1 = o[1].front().offset();
+    const int off2 = o[2].front().offset();
+    const int off3 = o[3].front().offset();
+    const int off4 = o[4].front().offset();
+    const int off5 = o[5].front().offset();
+    const int off6 = o[6].front().offset();
+    const int off7 = o[7].front().offset();
+    auto d4 = make_shared<RDM<4>>(nact);
+    for (auto& i7 : o[7].range())
+      for (auto& i6 : o[6].range())
+        for (auto& i5 : o[5].range())
+          for (auto& i4 : o[4].range())
+            for (auto& i3 : o[3].range())
+              for (auto& i2 : o[2].range())
+                for (auto& i1 : o[1].range())
+                  for (auto& i0 : o[0].range()) {
+                    auto input = rdm4all_->at(jst, ist)->get_block(i0, i1, i2, i3, i4, i5, i6, i7);
+                    for (size_t io7 = 0; io7 != i7.size(); ++io7)
+                      for (size_t io6 = 0; io6 != i6.size(); ++io6)
+                        for (size_t io5 = 0; io5 != i5.size(); ++io5)
+                          for (size_t io4 = 0; io4 != i4.size(); ++io4)
+                            for (size_t io3 = 0; io3 != i3.size(); ++io3)
+                              for (size_t io2 = 0; io2 != i2.size(); ++io2)
+                                for (size_t io1 = 0; io1 != i1.size(); ++io1)
+                                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5 + i5.size() * (io6 + i6.size() * io7)))))],
+                                         i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2,
+                                         io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5, io6 + i6.offset() - off6, io7 + i7.offset() - off7));
+              }
+    rdm4 = d4->copy();
+  }
+
+  return tie(rdm1, rdm2, rdm3, rdm4);
+}
+
+
 void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const VectorB> amplitude, const int istate) {
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
