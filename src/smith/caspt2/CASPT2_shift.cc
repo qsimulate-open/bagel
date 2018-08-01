@@ -79,6 +79,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
   }
 
   // collect den3ci
+#if 1
   {
     vector<IndexRange>o = rdm3all_->at(jst, ist)->indexrange();
     const int off0 = o[0].front().offset();
@@ -108,7 +109,6 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
   }
 
   // collect den4ci
-#if 0
   {
     vector<IndexRange>o = rdm4all_->at(jst, ist)->indexrange();
     const int off0 = o[0].front().offset();
@@ -136,7 +136,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
                             for (size_t io3 = 0; io3 != i3.size(); ++io3)
                               for (size_t io2 = 0; io2 != i2.size(); ++io2)
                                 for (size_t io1 = 0; io1 != i1.size(); ++io1)
-                                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * io5 + i5.size() * (io6 + i6.size() * io7)))))],
+                                  copy_n(&input[0 + i0.size() * (io1 + i1.size() * (io2 + i2.size() * (io3 + i3.size() * (io4 + i4.size() * (io5 + i5.size() * (io6 + i6.size() * io7))))))],
                                          i0.size(), d4->element_ptr(i0.offset() - off0, io1 + i1.offset() - off1, io2 + i2.offset() - off2,
                                          io3 + i3.offset() - off3, io4 + i4.offset() - off4, io5 + i5.offset() - off5, io6 + i6.offset() - off6, io7 + i7.offset() - off7));
               }
