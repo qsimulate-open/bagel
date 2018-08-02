@@ -346,6 +346,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
 
 
 shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude, vector<shared_ptr<VectorB>> residual) const {
+  // extremely inefficient code for calculating d^(2) from the imaginary shift term. should improve the algorithm for realistic applications
   shared_ptr<Matrix> dshift = den2_->clone();
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
@@ -785,10 +786,12 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       ioffset += size_risj;
     }
 
+    // a i r s
     {
       ioffset += size_airs;
     }
 
+    // a r s t
     {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
@@ -875,7 +878,108 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       ioffset += size_arst;
     }
 
+    // r i s t
     {
+      const size_t interm_size = denom_->shalf_xhh()->ndim();
+      auto smallz = make_shared<Matrix>(interm_size, interm_size);
+      auto largey = make_shared<Matrix>(interm_size, interm_size);
+      auto largex = make_shared<Matrix>(interm_size, interm_size);
+
+      for (size_t j0 = 0; j0 != nclo; ++j0) {
+        const size_t j0i = j0;
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          const size_t jall = j0 + nclo * j1o + ioffset;
+          const double denom = - eig_[j0+ncore] + denom_->denom_xhh(j1o) - e0all_[istate];
+          const double Lambda = (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
+          dshift->element(j0i, j0i) += Lambda;
+          smallz->element(j1o, j1o) -= Lambda;
+          for (size_t j2 = 0; j2 != nact; ++j2) {
+            const size_t j2i = j2 + nclo;
+            for (size_t j3 = 0; j3 != nact; ++j3) {
+              const size_t j3i = j3 + nclo;
+              dshift->element(j2i, j3i) += Lambda * rdm1->element(j2, j3);
+            }
+          }
+          largey->element(j1o, j1o) -= Lambda * denom_->denom_xhh(j1o);
+          for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+            const size_t kall = j0 + nclo * j1o + ioffset;
+            const double denom2 = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
+            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+          }
+        }
+      }
+
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j1o == j0o) continue;
+          const double fdiff = denom_->denom_x(j1o) - denom_->denom_xhh(j0o);
+          smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-8 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+        }
+      }
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xhh(j1o))
+                                    + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xhh(j0o));
+        }
+      }
+      for (size_t is = 0; is != nstates_; ++is) {
+        for (size_t js = 0; js != nstates_; ++js) {
+          if (is != js) continue;
+          shared_ptr<RDM<1>> rdm1tmp;
+          shared_ptr<RDM<2>> rdm2tmp;
+          shared_ptr<RDM<3>> rdm3tmp;
+          shared_ptr<RDM<4>> rdm4tmp;
+          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
+          // TODO overlap part should be here!
+          for (size_t j7 = 0; j7 != nact; ++j7)
+            for (size_t j0 = 0; j0 != nact; ++j0)
+              for (size_t j6 = 0; j6 != nact; ++j6)
+                for (size_t j5 = 0; j5 != nact; ++j5)
+                  for (size_t j2 = 0; j2 != nact; ++j2)
+                    for (size_t j1 = 0; j1 != nact; ++j1) {
+                      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                        const double VrstO = denom_->shalf_xhh()->element(j0o, j0 + nact*(j1 + nact*j2) + is*nact*nact*nact);
+                        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                          const double VuvwO = denom_->shalf_xhh()->element(j1o, j7 + nact*(j6 + nact*j5)+ js*nact*nact*nact);
+                          for (size_t j4 = 0; j4 != nact; ++j4) {
+                            size_t j4i = j4 + nclo;
+                            for (size_t j3 = 0; j3 != nact; ++j3) {
+                              size_t j3i = j3 + nclo;
+                              const double factor = VrstO * VuvwO * smallz->element(j0o, j1o);
+                              dshift->element(j3i, j4i) -= factor * rdm4tmp->element(j0, j1, j5, j2, j6, j7, j3, j4);
+                              if (j4 == j6)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j1, j5, j2, j3, j7);
+                              if (j4 == j5)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j1, j3, j2, j6, j7);
+                              if (j2 == j6)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j1, j3, j4, j5, j7);
+                              if (j2 == j6 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j1, j3, j7);
+                              if (j2 == j5)                         dshift->element(j3i, j4i) +=  2.0 * factor * rdm3tmp->element(j0, j1, j3, j4, j6, j7);
+                              if (j2 == j5 && j4 == j6)             dshift->element(j3i, j4i) +=  2.0 * factor * rdm2tmp->element(j0, j1, j3, j7);
+                              if (j2 == j3)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j1, j5, j4, j6, j7);
+                              if (j2 == j3 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j1, j5, j7);
+                              if (j2 == j3 && j4 == j5)             dshift->element(j3i, j4i) +=  2.0 * factor * rdm2tmp->element(j0, j1, j6, j7);
+                              if (j1 == j6)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j3, j4, j5, j2, j0, j7);
+                              if (j1 == j6 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j3, j2, j0, j7);
+                              if (j1 == j6 && j2 == j3)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j5, j4, j0, j7);
+                              if (j1 == j6 && j2 == j3 && j4 == j5) dshift->element(j3i, j4i) +=  2.0 * factor * rdm1tmp->element(j0, j7);
+                              if (j1 == j5)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j2, j3, j4, j6, j7);
+                              if (j1 == j5 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j2, j3, j7);
+                              if (j2 == j3 && j1 == j5)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j4, j6, j7);
+                              if (j2 == j3 && j1 == j5 && j4 == j6) dshift->element(j3i, j4i) += -1.0 * factor * rdm1tmp->element(j0, j7);
+                              if (j1 == j3)                         dshift->element(j3i, j4i) += -1.0 * factor * rdm3tmp->element(j0, j4, j5, j2, j6, j7);
+                              if (j1 == j3 && j4 == j6)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j5, j2, j0, j7);
+                              if (j1 == j3 && j4 == j5)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j2, j6, j7);
+                              if (j2 == j6 && j1 == j3)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j0, j4, j5, j7);
+                              if (j2 == j6 && j1 == j3 && j4 == j5) dshift->element(j3i, j4i) += -1.0 * factor * rdm1tmp->element(j0, j7);
+                              if (j1 == j3 && j2 == j5)             dshift->element(j3i, j4i) +=  2.0 * factor * rdm2tmp->element(j0, j4, j6, j7);
+                              if (j4 == j6 && j2 == j5 && j1 == j3) dshift->element(j3i, j4i) +=  2.0 * factor * rdm1tmp->element(j0, j7);
+                              if (j1 == j6 && j2 == j5)             dshift->element(j3i, j4i) +=  2.0 * factor * rdm2tmp->element(j3, j4, j0, j7);
+                              if (j1 == j5 && j2 == j6)             dshift->element(j3i, j4i) += -1.0 * factor * rdm2tmp->element(j3, j4, j0, j7);
+                            }
+                          }
+                        }
+                      }
+                    }
+        }
+      }
       ioffset += size_rist;
     }
   }
