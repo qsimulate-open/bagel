@@ -786,8 +786,103 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
       ioffset += size_risj;
     }
 
-    // a i r s
+    // a i r s & a r s i
     {
+      const size_t interm_size = denom_->shalf_xh()->ndim();
+      auto smallz = make_shared<Matrix>(interm_size, interm_size);
+      auto largey = make_shared<Matrix>(interm_size, interm_size);
+      auto largex = make_shared<Matrix>(interm_size, interm_size);
+
+      for (size_t j0 = 0; j0 != nclo; ++j0) {
+        const size_t j0i = j0;
+        for (size_t j1 = 0; j1 != nvirt; ++j1) {
+          const size_t j1i = j1 + nocc - ncore;
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            const size_t jall = j0 + nclo * (j1 + nvirt * j0o) + ioffset;
+            const double denom = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j0o) - e0all_[istate];
+            const double Lambda = (*l)[jall] * (*t)[jall] * shift2 / (denom * denom);
+            dshift->element(j0i, j0i) += Lambda;
+            dshift->element(j1i, j1i) -= Lambda;
+            smallz->element(j0o, j0o) -= Lambda;
+            for (size_t j2 = 0; j2 != nact; ++j2) {
+              const size_t j2i = j2 + nclo;
+              for (size_t j3 = 0; j3 != nact; ++j3) {
+                const size_t j3i = j3 + nclo;
+                dshift->element(j2i, j3i) += Lambda * rdm1->element(j2, j3);
+              }
+            }
+            largey->element(j0o, j0o) -= Lambda * denom_->denom_xh(j0o);
+            for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+              const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
+              const double denom2 = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
+              largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+            }
+          }
+        }
+      }
+
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j1o == j0o) continue;
+          const double fdiff = denom_->denom_x(j1o) - denom_->denom_xh(j0o);
+          smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-8 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+        }
+      }
+      for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xh(j1o))
+                                    + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xh(j0o));
+        }
+      }
+
+      for (size_t is = 0; is != nstates_; ++is) {
+        for (size_t js = 0; js != nstates_; ++js) {
+          if (is != js) continue;
+          shared_ptr<RDM<1>> rdm1tmp;
+          shared_ptr<RDM<2>> rdm2tmp;
+          shared_ptr<RDM<3>> rdm3tmp;
+          shared_ptr<RDM<4>> rdm4tmp;
+          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
+          for (size_t j5 = 0; j5 != nact; ++j5) {
+            for (size_t j4 = 0; j4 != nact; ++j4) {
+              for (size_t j0 = 0; j0 != nact; ++j0) {
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                    const double VrsO = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+0)*nact*nact);
+                    const double VrsS = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+1)*nact*nact);
+                    const double VrsT = denom_->shalf_xh()->element(j0o, j5 + j4*nact + (2*is+1)*nact*nact);
+                    for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                      const double VtuO = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+0)*nact*nact);
+                      const double VtuS = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+1)*nact*nact);
+                      const double VtuT = denom_->shalf_xh()->element(j1o, j0 + j1*nact + (2*js+1)*nact*nact);
+                      for (size_t j2 = 0; j2 != nact; ++j2) {
+                        const size_t j2i = j2 + nclo;
+                        for (size_t j3 = 0; j3 != nact; ++j3) {
+                          const size_t j3i = j3 + nclo;
+                          const double factorOO = VrsO * VtuO * smallz->element(j0o, j1o) * 2.0;
+                          const double factorOS = -VrsO * VtuS * smallz->element(j0o, j1o);
+                          const double factorSO = -VrsS * VtuO * smallz->element(j0o, j1o);
+                          const double factorSS = VrsT * VtuT * smallz->element(j0o, j1o);
+                          dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm3tmp->element(j0, j1, j4, j5, j2, j3);
+                          dshift->element(j2i, j3i) -= factorSS * rdm3tmp->element(j4, j1, j0, j5, j2, j3);
+                          if (j3 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j1, j2, j5);
+                          if (j1 == j2)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j3, j4, j5);
+                          if (j1 == j2 && j3 == j4) dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm1tmp->element(j0, j5);
+                          if (j1 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j2, j3, j0, j5);
+                          if (j3 == j4)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j2, j1, j0, j5);
+                          if (j1 == j2)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j4, j3, j0, j5);
+                          if (j3 == j4 && j1 == j2) dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm1tmp->element(j0, j5);
+                          if (j1 == j4)             dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm2tmp->element(j2, j3, j0, j5);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
       ioffset += size_airs;
     }
 
