@@ -312,10 +312,10 @@ void CASPT2::CASPT2::solve() {
 void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
   // aibj good
   const bool zero_aibj = false;
-  const bool zero_arbs = true;
+  const bool zero_arbs = false;
   const bool zero_arbi = false;
-  const bool zero_airj = true;
-  const bool zero_risj = true;
+  const bool zero_airj = false;
+  const bool zero_risj = false;
   const bool zero_airs = true;
   const bool zero_arst = true;
   const bool zero_rist = true;
