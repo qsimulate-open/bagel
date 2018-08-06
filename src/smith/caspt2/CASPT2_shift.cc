@@ -345,7 +345,9 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
 }
 
 
-shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude, vector<shared_ptr<VectorB>> residual) const {
+//shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude, vector<shared_ptr<VectorB>> residual) const {
+tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<4>>>
+  CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // extremely inefficient code for calculating d^(2) from the imaginary shift term. should improve the algorithm for realistic applications
   shared_ptr<Matrix> dshift = den2_->clone();
   const size_t nact = info_->nact();
@@ -363,7 +365,28 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
   const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
   const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
 
-//  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
+  auto e0 = make_shared<Vec<double>>();
+  auto e1 = make_shared<VecRDM<1>>();
+  auto e2 = make_shared<VecRDM<2>>();
+  auto e3 = make_shared<VecRDM<3>>();
+  auto e4 = make_shared<VecRDM<4>>();
+
+  for (size_t is = 0; is != nstates_; ++is)
+    for (size_t js = 0; js != nstates_; ++js)
+      if (!info_->sssr() || is == js) {
+        auto e0temp = make_shared<double>(0.0);
+        auto e1temp = make_shared<RDM<1>>(nact);
+        auto e2temp = make_shared<RDM<2>>(nact);
+        auto e3temp = make_shared<RDM<3>>(nact);
+        auto e4temp = make_shared<RDM<4>>(nact);
+
+        e0->emplace(is, js, e0temp);
+        e1->emplace(is, js, e1temp);
+        e2->emplace(is, js, e2temp);
+        e3->emplace(is, js, e3temp);
+        e4->emplace(is, js, e4temp);
+      }
+
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates_; ++istate) { // state of T
     // temporary. will replace (RDM calculation redundant)
@@ -375,7 +398,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(istate, istate);
     shared_ptr<const VectorB> l = lambda[istate];
     shared_ptr<const VectorB> t = amplitude[istate];
-    shared_ptr<const VectorB> r = residual[istate];
     size_t ioffset = 0;
     // a i b j
     {
@@ -456,7 +478,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          auto e2 = make_shared<RDM<2>>(nact);
           for (size_t j0 = 0; j0 != nact; ++j0) {
             for (size_t j1 = 0; j1 != nact; ++j1) {
               for (size_t j2 = 0; j2 != nact; ++j2) {
@@ -466,7 +487,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                     for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                       const double VtuO = denom_->shalf_xx()->element(j1o, j2 + j3*nact + js*nact*nact);
                       const double factor = VrsO * VtuO;
-                      e2->element(j0, j2, j1, j3) -= largex->element(j0o, j1o) * factor;
+                      e2->at(is,js)->element(j0, j2, j1, j3) -= largex->element(j0o, j1o) * factor;
                       for (size_t j4 = 0; j4 != nact; ++j4) {
                         const size_t j4i = j4 + nclo;
                         for (size_t j5 = 0; j5 != nact; ++j5) {
@@ -547,7 +568,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          auto e1 = make_shared<RDM<1>>(nact);
           for (size_t j0 = 0; j0 != nact; ++j0) {
             const size_t j0i = j0 + nclo;
             for (size_t j6 = 0; j6 != nact; ++j6) {
@@ -556,7 +576,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                 for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                   const double VtS = denom_->shalf_x()->element(j0o, j0 + is * nact);
                   const double VuS = denom_->shalf_x()->element(j1o, j6 + js * nact);
-                  e1->element(j0, j6) -= largex->element(j0o, j1o) * VtS * VuS;
+                  e1->at(is,js)->element(j0, j6) -= largex->element(j0o, j1o) * VtS * VuS;
                   for (size_t j4 = 0; j4 != nact; ++j4) {
                     for (size_t j5 = 0; j5 != nact; ++j5) {
                       const double VtO = denom_->shalf_x()->element(j0o, j4 + is*nact);
@@ -636,8 +656,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          auto e1 = make_shared<RDM<1>>(nact);
-          double e0 = 0.0;
           for (size_t j0 = 0; j0 != nact; ++j0) {
             const size_t j0i = j0 + nclo;
             for (size_t j6 = 0; j6 != nact; ++j6) {
@@ -646,8 +664,8 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                 for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                   const double VtS = denom_->shalf_h()->element(j0o, j0 + is * nact);
                   const double VuS = denom_->shalf_h()->element(j1o, j6 + js * nact);
-                  e1->element(j0, j6) -= -largex->element(j0o, j1o) * VtS * VuS;
-                  if (is == js) e0 -= 2.0 * largex->element(j0o, j1o) * VtS * VuS;  // per hole rdm
+                  e1->at(is,js)->element(j0, j6) -= -largex->element(j0o, j1o) * VtS * VuS;
+                  if (is == js) *(e0->at(is,js)) -= 2.0 * largex->element(j0o, j1o) * VtS * VuS;  // per hole rdm
                   for (size_t j4 = 0; j4 != nact; ++j4) {
                     for (size_t j5 = 0; j5 != nact; ++j5) {
                       const double VtO = denom_->shalf_h()->element(j0o, j4 + is*nact);
@@ -726,9 +744,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          auto e2 = make_shared<RDM<2>>(nact);
-          auto e1 = make_shared<RDM<1>>(nact);
-          double e0 = 0.0;
           for (size_t j4 = 0; j4 != nact; ++j4)
             for (size_t j1 = 0; j1 != nact; ++j1)
               for (size_t j5 = 0; j5 != nact; ++j5)
@@ -737,13 +752,13 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                     const double VrsO = denom_->shalf_hh()->element(j0o, j0 + j1*nact + is*nact*nact);
                     for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                       const double VtuO = denom_->shalf_hh()->element(j1o, j5 + j4*nact + js*nact*nact);
-                      e2->element(j0, j5, j1, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j5 == j1) e1->element(j0, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j5 == j4) e1->element(j0, j5) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j0 == j5) e1->element(j1, j4) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j0 == j4) e1->element(j1, j5) -= largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j0 == j5 && j1 == j4 && is == js) e0 -= 4.0 * largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j0 == j4 && j1 == j5 && is == js) e0 -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
+                      e2->at(is,js)->element(j0, j5, j1, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j5 == j1) e1->at(is,js)->element(j0, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j5 == j4) e1->at(is,js)->element(j0, j5) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j0 == j5) e1->at(is,js)->element(j1, j4) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j0 == j4) e1->at(is,js)->element(j1, j5) -= largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j0 == j5 && j1 == j4 && is == js) *(e0->at(is,js)) -= 4.0 * largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j0 == j4 && j1 == j5 && is == js) *(e0->at(is,js)) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
                         for (size_t j2 = 0; j2 != nact; ++j2) {
                           const size_t j2i = j2 + nclo;
                           for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -843,6 +858,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
+          // TODO overlap part should be here!
           for (size_t j5 = 0; j5 != nact; ++j5) {
             for (size_t j4 = 0; j4 != nact; ++j4) {
               for (size_t j0 = 0; j0 != nact; ++j0) {
@@ -938,8 +954,6 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          auto e3 = make_shared<RDM<3>>(nact);
-          auto e2 = make_shared<RDM<2>>(nact);
           for (size_t j7 = 0; j7 != nact; ++j7)
             for (size_t j0 = 0; j0 != nact; ++j0)
               for (size_t j6 = 0; j6 != nact; ++j6)
@@ -950,8 +964,8 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
                         const double VrstO = denom_->shalf_xxh()->element(j0o, j0 + nact*(j1 + nact*j2) + is*nact*nact*nact);
                         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                           const double VuvwO = denom_->shalf_xxh()->element(j1o, j7 + nact*(j6 + nact*j5)+ js*nact*nact*nact);
-                          e3->element(j1, j2, j5, j6, j0, j7) -= largex->element(j0o, j1o) * VrstO * VuvwO;
-                          if (j2 == j5) e2->element(j1, j6, j0, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
+                          e3->at(is,js)->element(j1, j2, j5, j6, j0, j7) -= largex->element(j0o, j1o) * VrstO * VuvwO;
+                          if (j2 == j5) e2->at(is,js)->element(j1, j6, j0, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
                           for (size_t j4 = 0; j4 != nact; ++j4) {
                             size_t j4i = j4 + nclo;
                             for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -1079,7 +1093,7 @@ shared_ptr<Matrix> CASPT2::CASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lamb
     }
   }
 
-  return dshift;
+  return tie(dshift, e0, e1, e2, e3, e4);
 }
 
 

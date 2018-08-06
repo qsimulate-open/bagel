@@ -77,7 +77,6 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
   // sall is changed in gradient and nacme codes while the others are not
   t2all_ = cas.t2all_;
   t2all_orthogonal_ = cas.t2all_orthogonal_;
-  rall_orthogonal_ = cas.rall_orthogonal_;
   rall_  = cas.rall_;
   for (int i = 0; i != nstates_; ++i) {
     sall_.push_back(cas.sall_[i]->copy());
@@ -91,58 +90,6 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
   rdm2all_ = cas.rdm2all_;
   rdm3all_ = cas.rdm3all_;
   rdm4all_ = cas.rdm4all_;
-}
-
-
-void CASPT2::CASPT2::do_rdm_deriv(double factor) {
-  Timer timer(1);
-  tie(den0cirdmt, den1cirdmt, den2cirdmt, den3cirdmt, den4cirdmt) = feed_denci();
-
-  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), 1);
-  const size_t nact  = info_->nact();
-  const size_t norb2 = nact * nact;
-  const size_t ndet = ci_deriv_->data(0)->size();
-  const size_t ijmax = info_->cimaxchunk();
-  const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() > ((ijnum - 1)/ijmax + 1)) && (mpi__->size() != 1) && ndet > 10000) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
-  const size_t nsize = (ndet - 1) / npass + 1;
-
-  if (npass > 1)
-    cout << "       - CI derivative contraction will be done with " << npass << " passes" << endl;
-
-  // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
-  rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, 0);
-
-  if (npass > 1)
-    timer.tick_print("Fock-weighted 2RDM derivative");
-
-  // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
-  // otherwise just do using all the nodes.
-  const int nproc = npass > 1 ? 1 : mpi__->size();
-  const int ncomm = mpi__->size() / nproc;
-  const int icomm = mpi__->rank() / nproc;
-  mpi__->split(nproc);
-
-  for (int ipass = 0; ipass != npass; ++ipass) {
-    if (ipass % ncomm == icomm && ncomm != icomm) {
-      const size_t ioffset = ipass * nsize;
-      const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-      tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-        = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, 0, ioffset, isize, rdm2fderiv_);
-
-      shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
-      blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(0)->data());
-
-      if (npass > 1) {
-        stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
-        timer.tick_print(ss.str());
-      }
-    }
-  }
-  mpi__->merge();
-
-  if (npass > 1)
-    mpi__->allreduce(ci_deriv_->data(0)->data(), ndet);
 }
 
 
@@ -174,7 +121,7 @@ void CASPT2::CASPT2::solve() {
 
   // solve linear equation for t amplitudes
   if (info_->orthogonal_basis()) {
-    tie(t2all_orthogonal_, rall_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
+    tie(t2all_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
   } else {
     t2all_ = solve_linear(sall_, t2all_);
   }
@@ -494,7 +441,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 }
 
 
-tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
+tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
 CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
@@ -575,7 +522,6 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
       if (conv) {
         t[i] = transform_to_redundant_amplitude(amplitude, nstates_, i);
         out.push_back(amplitude);
-        rout.push_back(residual);
         break;
       }
     }
@@ -583,7 +529,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     converged &= conv;
   }
   cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
-  return make_tuple(out, rout, t);
+  return make_tuple(out, t);
 }
 
 
@@ -827,7 +773,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     // solve linear equation and store lambda in lall
     if (info_->orthogonal_basis()) {
       vector<shared_ptr<VectorB>> tmp;
-      tie(lall_orthogonal_, tmp, lall_) = solve_linear_orthogonal(sall_, lall_);
+      tie(lall_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
     } else {
       lall_ = solve_linear(sall_, lall_);
     }
@@ -895,6 +841,20 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     timer.tick();
   }
 
+  // Hmm..... this should be in MSCASPT2...
+#if 1
+  if (info_->shift_imag()) {
+    tie(den2_shift_,eten0_,eten1_,eten2_,eten3_,eten4_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+    {
+      auto dtmp = den2_->copy();
+      dtmp->ax_plus_y(1.0, den2_shift_);
+      den2_ = dtmp;
+    }
+    energy_lt_ = compute_energy_lt();
+  }
+  timer.tick_print("dshift");
+#endif
+
   correlated_norm_lt_.resize(nstates_);
   correlated_norm_tt_.resize(nstates_);
   if (nstates_ == 1 && info_->shift() == 0.0) {
@@ -931,20 +891,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int ncore = info_->ncore();
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
-
-  // TODO cleanup
-#if 1
-  if (info_->shift_imag()) {
-    shared_ptr<Matrix> dshift = make_d2_imag(lall_orthogonal_, t2all_orthogonal_, rall_orthogonal_);
-    {
-      auto dtmp = den2_->copy();
-      dtmp->ax_plus_y(1.0, dshift);
-      den2_ = dtmp;
-    }
-    energy_lt_ = compute_energy_lt();
-  }
-#endif
-  timer.tick_print("dshift");
 
   {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
@@ -1013,6 +959,20 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
             ci_deriv_->data(ist)->ax_plus_y(2.0*op2(j,i), deriv->data(j+i*nact));
       }
     }
+
+    // dshift-dependent term
+#if 0
+    if (info_->shift_imag()) {
+      shared_ptr<const Matrix> gd2_shift = focksub(den2_shift_, coeff_->slice(ncore, coeff_->mdim()), false);
+      for (int ist = 0; ist != nstates_; ++ist) {
+        const Matrix op(*gd2_shift * (1.0/nstates_));
+        shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
+        for (int i = 0; i != nact; ++i)
+          for (int j = 0; j != nact; ++j)
+            ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+      }
+    }
+#endif
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
     if (targetJ == targetI) {

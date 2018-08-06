@@ -91,6 +91,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
     std::shared_ptr<const Matrix> den2_tt_;
+    std::shared_ptr<const Matrix> den2_shift_;
     std::shared_ptr<const Tensor> Den1_;
     // for derivative coupling only
     std::shared_ptr<const Matrix> vden1_;
@@ -103,6 +104,11 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
+    std::shared_ptr<Vec<double>> eten0_;
+    std::shared_ptr<VecRDM<1>> eten1_;
+    std::shared_ptr<VecRDM<2>> eten2_;
+    std::shared_ptr<VecRDM<3>> eten3_;
+    std::shared_ptr<VecRDM<4>> eten4_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma92_();
@@ -153,7 +159,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<std::shared_ptr<MultiTensor_<double>>>
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
-    std::tuple<std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
+    std::tuple<std::vector<std::shared_ptr<VectorB>>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
       solve_linear_orthogonal(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
 
     std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> feed_denci();
@@ -163,7 +169,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
 
-    std::shared_ptr<Matrix> make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda, std::vector<std::shared_ptr<VectorB>> residual) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<4>>>
+      make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
     double compute_energy_lt();
 
   public:
