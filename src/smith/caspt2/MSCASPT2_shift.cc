@@ -145,7 +145,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 }
 
 
-tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<4>>>
+tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>>
   MSCASPT2::MSCASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // extremely inefficient code for calculating d^(2) from the imaginary shift term. should improve the algorithm for realistic applications
   shared_ptr<Matrix> dshift = den2_->clone();
@@ -169,7 +169,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   auto e1 = make_shared<VecRDM<1>>();
   auto e2 = make_shared<VecRDM<2>>();
   auto e3 = make_shared<VecRDM<3>>();
-  auto e4 = make_shared<VecRDM<4>>();
 
   for (size_t is = 0; is != nstates; ++is)
     for (size_t js = 0; js != nstates; ++js)
@@ -178,13 +177,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         auto e1temp = make_shared<RDM<1>>(nact);
         auto e2temp = make_shared<RDM<2>>(nact);
         auto e3temp = make_shared<RDM<3>>(nact);
-        auto e4temp = make_shared<RDM<4>>(nact);
 
         e0->emplace(is, js, e0temp);
         e1->emplace(is, js, e1temp);
         e2->emplace(is, js, e2temp);
         e3->emplace(is, js, e3temp);
-        e4->emplace(is, js, e4temp);
       }
 
   const double shift2 = info_->shift() * info_->shift();
@@ -591,7 +588,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             if (j1 == j4 && j2 == j5 && j0 == j3 && is == js) dshift->element(j2i, j3i) += factor * 4.0;
                             if (j0 == j5 && j1 == j4)                         dshift->element(j2i, j3i) += factor * 4.0* rdm1tmp->element(j2, j3);
                             if (j0 == j4 && j1 == j5)                         dshift->element(j2i, j3i) += factor * -2.0* rdm1tmp->element(j2, j3);
-                          }                                            
+                          }
                         }
                     }
                   }
@@ -893,7 +890,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
   }
 
-  return tie(dshift, e0, e1, e2, e3, e4);
+  return tie(dshift, e0, e1, e2, e3);
 }
 
 #endif
