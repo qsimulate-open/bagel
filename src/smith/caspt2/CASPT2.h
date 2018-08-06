@@ -104,12 +104,6 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
 
-    std::shared_ptr<Vec<double>> eten0_;
-    std::shared_ptr<VecRDM<1>> eten1_;
-    std::shared_ptr<VecRDM<2>> eten2_;
-    std::shared_ptr<VecRDM<3>> eten3_;
-    std::shared_ptr<VecRDM<4>> eten4_;
-
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma92_();
     std::shared_ptr<FutureTensor> Gamma2_();
@@ -167,10 +161,7 @@ class CASPT2 : public SpinFreeMethod<double> {
     void manipulate(std::shared_ptr<MultiTensor_<double>> s);
     void do_rdm_deriv(double factor);
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
-    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
 
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<4>>>
-      make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
     double compute_energy_lt();
 
   public:

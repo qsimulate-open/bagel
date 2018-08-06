@@ -830,8 +830,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     ms.solve_gradient(targetJ, targetI, nocider);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
-    if (info_->shift_imag() || info_->orthogonal_basis())
+    if (info_->orthogonal_basis()) {
       den2_tt_ = ms.rdm12_tt();
+    }
+    if (info_->shift_imag()) {
+      den2_shift_ = ms.rdm12_shift();
+    }
     Den1_ = ms.rdm21();
     if (!nocider)
       ci_deriv_ = ms.ci_deriv();
@@ -841,10 +845,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     timer.tick();
   }
 
-  // Hmm..... this should be in MSCASPT2...
-#if 1
   if (info_->shift_imag()) {
-    tie(den2_shift_,eten0_,eten1_,eten2_,eten3_,eten4_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
     {
       auto dtmp = den2_->copy();
       dtmp->ax_plus_y(1.0, den2_shift_);
@@ -852,8 +853,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
     energy_lt_ = compute_energy_lt();
   }
-  timer.tick_print("dshift");
-#endif
 
   correlated_norm_lt_.resize(nstates_);
   correlated_norm_tt_.resize(nstates_);

@@ -90,6 +90,7 @@ class MSCASPT2 {
     std::shared_ptr<Matrix> den1_;
     std::shared_ptr<Matrix> den2_;
     std::shared_ptr<Matrix> den2_tt_;
+    std::shared_ptr<Matrix> den2_shift_;
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<Matrix> dcheck_;
@@ -118,6 +119,12 @@ class MSCASPT2 {
     // temporary. to be removed...
     std::shared_ptr<const Denom<double>> denom_;
     std::vector<double> eig_;
+
+    std::shared_ptr<Vec<double>> eten0_;
+    std::shared_ptr<VecRDM<1>> eten1_;
+    std::shared_ptr<VecRDM<2>> eten2_;
+    std::shared_ptr<VecRDM<3>> eten3_;
+    std::shared_ptr<VecRDM<4>> eten4_;
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma31_();
@@ -162,6 +169,10 @@ class MSCASPT2 {
     void add_total(double factor);
     void do_rdm_deriv(double factor);
 
+    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<4>>>
+      make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
+
     // same function as that implemented in SpinFreeMethod
     void set_rdm(const int ist, const int jst) {
       rdm0_ = rdm0all_->at(jst, ist);
@@ -183,6 +194,7 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
     std::shared_ptr<const Matrix> rdm12_tt() const { return den2_tt_; }
+    std::shared_ptr<const Matrix> rdm12_shift() const { return den2_shift_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
     std::shared_ptr<const Matrix> vden1() const { return vden1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }

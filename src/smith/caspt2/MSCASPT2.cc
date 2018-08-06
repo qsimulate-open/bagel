@@ -136,74 +136,6 @@ void MSCASPT2::MSCASPT2::zero_total() {
 }
 
 
-void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
-  Timer timer(1);
-  const int nstates = info_->ciwfn()->nstates();
-  std::shared_ptr<Vec<double>> den0cirdm;
-  std::shared_ptr<VecRDM<1>> den1cirdm;
-  std::shared_ptr<VecRDM<2>> den2cirdm;
-  std::shared_ptr<VecRDM<3>> den3cirdm;
-  std::shared_ptr<VecRDM<3>> den4cirdm;
-  tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
-
-  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-  const size_t nact  = info_->nact();
-  const size_t norb2 = nact * nact;
-  const size_t ndet = ci_deriv_->data(0)->size();
-  const size_t ijmax = info_->cimaxchunk();
-  const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() > ((ijnum-1) / ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
-  const size_t nsize = (ndet - 1) / npass + 1;
-
-  for (int nst = 0; nst != nstates; ++nst) {
-    if (npass > 1)
-      cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
-
-    // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
-    rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, nst);
-
-    if (npass > 1)
-      timer.tick_print("Fock-weighted 2RDM derivative");
-
-    // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
-    // otherwise just do using all the nodes.
-    const int nproc = npass > 1 ? 1 : mpi__->size();
-    const int ncomm = mpi__->size() / nproc;
-    const int icomm = mpi__->rank() / nproc;
-    mpi__->split(nproc);
-
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      if (ipass % ncomm == icomm && ncomm != icomm) {
-        const size_t ioffset = ipass * nsize;
-        const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-        tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-          = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
-        for (int mst = 0; mst != nstates; ++mst) {
-          den0cirdmt = den0cirdm->at(nst, mst);
-          den1cirdmt = den1cirdm->at(nst, mst);
-          den2cirdmt = den2cirdm->at(nst, mst);
-          den3cirdmt = den3cirdm->at(nst, mst);
-          den4cirdmt = den4cirdm->at(nst, mst);
-
-          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
-          blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
-        }
-
-        if (npass > 1) {
-          stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
-          timer.tick_print(ss.str());
-        }
-      }
-    }
-    mpi__->merge();
-  }
-
-  if (npass > 1)
-    for (int mst = 0; mst != nstates; ++mst)
-      mpi__->allreduce(ci_deriv_->data(mst)->data(), ndet);
-}
-
-
 void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, const bool nocider) {
   Timer timer;
   const int nstates = info_->ciwfn()->nstates();
@@ -483,6 +415,14 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
       timer.tick_print(ss.str());
     }
+
+#if 1
+    // Finally, construct dshift...
+    if (info_->shift_imag()) {
+      tie(den2_shift_,eten0_,eten1_,eten2_,eten3_,eten4_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+    }
+    timer.tick_print("dshift");
+#endif
 
     do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
