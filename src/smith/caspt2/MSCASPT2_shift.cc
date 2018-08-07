@@ -929,7 +929,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           }
           largey->element(j1o, j1o) -= Lambda * denom_->denom_xhh(j1o);
           for (size_t j2o = 0; j2o != interm_size; ++j2o) {
-            const size_t kall = j0 + nclo * j1o + ioffset;
+            const size_t kall = j0 + nclo * j2o + ioffset;
             const double denom2 = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
             largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
           }
