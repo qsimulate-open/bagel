@@ -80,15 +80,12 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
           den2cirdmt = den2cirdm->at(nst, mst);
           den3cirdmt = den3cirdm->at(nst, mst);
           den4cirdmt = den4cirdm->at(nst, mst);
-
-#if 1
-          if (nst == mst) {
+          if (nst == mst && info_->shift_imag()) {
             *(den0cirdmt) += *(etensor0_->at(nst, mst));
             *(den1cirdmt) += *(etensor1_->at(nst, mst));
             *(den2cirdmt) += *(etensor2_->at(nst, mst));
             *(den3cirdmt) += *(etensor3_->at(nst, mst));
           }
-#endif
 
           shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
           blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
