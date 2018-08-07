@@ -270,7 +270,6 @@ void Denom<DataType>::init_hh_(const int jst, const int ist, shared_ptr<const RD
 }
 
 
-
 template<typename DataType>
 void Denom<DataType>::init_xh_(const int jst, const int ist, shared_ptr<const RDM<1,DataType>> rdm1, shared_ptr<const RDM<2,DataType>> rdm2,
                                                              shared_ptr<const RDM<3,DataType>> rdm3, shared_ptr<const RDM<3,DataType>> rdm4f) {

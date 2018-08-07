@@ -845,15 +845,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     timer.tick();
   }
 
-  if (info_->shift_imag()) {
-    {
-      auto dtmp = den2_->copy();
-      dtmp->ax_plus_y(1.0, den2_shift_);
-      den2_ = dtmp;
-    }
-    energy_lt_ = compute_energy_lt();
-  }
-
   correlated_norm_lt_.resize(nstates_);
   correlated_norm_tt_.resize(nstates_);
   if (nstates_ == 1 && info_->shift() == 0.0) {
@@ -960,18 +951,16 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
 
     // dshift-dependent term
-#if 0
     if (info_->shift_imag()) {
       shared_ptr<const Matrix> gd2_shift = focksub(den2_shift_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
-        const Matrix op(*gd2_shift * (1.0/nstates_));
+        const Matrix op3(*gd2_shift * (1.0/nstates_));
         shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)
-            ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
+            ci_deriv_->data(ist)->ax_plus_y(2.0*op3(j,i), deriv->data(j+i*nact));
       }
     }
-#endif
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
     if (targetJ == targetI) {
@@ -1034,6 +1023,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_tt_);
     den2_ = dtmp;
+  }
+
+  if (info_->shift_imag()) {
+    auto dtmp = den2_->copy();
+    dtmp->ax_plus_y(1.0, den2_shift_);
+    den2_ = dtmp;
+    energy_lt_ = compute_energy_lt();
   }
 
   // restore original energy

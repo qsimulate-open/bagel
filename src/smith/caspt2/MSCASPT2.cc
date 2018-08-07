@@ -416,13 +416,11 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       timer.tick_print(ss.str());
     }
 
-#if 1
     // Finally, construct dshift...
     if (info_->shift_imag()) {
       tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
     }
     timer.tick_print("dshift");
-#endif
 
     do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
