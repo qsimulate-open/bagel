@@ -186,7 +186,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates; ++istate) { // state of T
-    // temporary. will replace (RDM calculation redundant)
     shared_ptr<const RDM<1>> rdm1;
     shared_ptr<const RDM<2>> rdm2;
     shared_ptr<const RDM<3>> rdm3;
@@ -554,7 +553,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         if (is != js) continue;
                         const double VrsO = denom_->shalf_hh()->element(j2o, j2 + j4*nact + is * nact * nact);
                         const double VtuO = denom_->shalf_hh()->element(j2o, j3 + j5*nact + js * nact * nact);
-#if 1
                         e2->at(is, js)->element(j2, j3, j4, j5) += VrsO * VtuO * Lambda * denom * 2.0;
                         if (j3 == j4) e1->at(is, js)->element(j2, j5) += VrsO * VtuO * Lambda * denom * 2.0;
                         if (j3 == j5) e1->at(is, js)->element(j2, j4) -= 2.0 * VrsO * VtuO * Lambda * denom * 2.0;
@@ -562,7 +560,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         if (j2 == j5) e1->at(is, js)->element(j4, j3) += VrsO * VtuO * Lambda * denom * 2.0;
                         if (j2 == j3 && j4 == j5) (*e0->at(is, js)) += 4.0 * VrsO * VtuO * Lambda * denom * 2.0;
                         if (j2 == j5 && j3 == j4) (*e0->at(is, js)) -= 2.0 * VrsO * VtuO * Lambda * denom * 2.0;
-#endif
                       }
                     }
                   }
@@ -612,7 +609,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 #if 1
                       e2->at(is,js)->element(j0, j5, j1, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j5 == j1) e1->at(is,js)->element(j0, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
-                      if (j5 == j4) e1->at(is,js)->element(j0, j5) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
+                      if (j5 == j4) e1->at(is,js)->element(j0, j1) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j0 == j5) e1->at(is,js)->element(j1, j4) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j0 == j4) e1->at(is,js)->element(j1, j5) -= largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j0 == j5 && j1 == j4 && is == js) *(e0->at(is,js)) -= 4.0 * largex->element(j0o, j1o) * VrsO * VtuO;
@@ -756,12 +753,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       const double xfactorOS = -VrsO * VtuS;
                       const double xfactorSO = -VrsS * VtuO;
                       const double xfactorSS = VrsS * VtuS;
-#if 1
-                      e2->at(is,js)->element(j0, j1, j4, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * 0.5;
-                      if (j0 == j5) e1->at(is,js)->element(j1, j4) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * 0.5;
-                      e2->at(is,js)->element(j1, j4, j5, j0) -= -1.0 * largex->element(j0o, j1o) * xfactorSS * 0.5;
-                      if (j1 == j4) e1->at(is,js)->element(j5, j0) -= 2.0 * largex->element(j0o, j1o) * xfactorSS * 0.5;
-#endif
+                      e2->at(is,js)->element(j0, j1, j4, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO);
+                      if (j0 == j5) e1->at(is,js)->element(j1, j4) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO);
+                      e2->at(is,js)->element(j1, j4, j5, j0) -= -1.0 * largex->element(j0o, j1o) * xfactorSS;
+                      if (j1 == j4) e1->at(is,js)->element(j5, j0) -= 2.0 * largex->element(j0o, j1o) * xfactorSS;
                       for (size_t j2 = 0; j2 != nact; ++j2) {
                         const size_t j2i = j2 + nclo;
                         for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -1007,6 +1002,16 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       cout << setprecision(10) << "largex diagonal (rist) = " << largex_diag << endl;
     }
   }
+
+#if 0
+  //scale
+  for (int i = 0; i != nstates; ++i) {
+    (*e0->at(i,i)) *= 0.5;
+    e1->at(i,i)->scale(0.5);
+    e2->at(i,i)->scale(0.5);
+    e3->at(i,i)->scale(0.5);
+  }
+#endif
 
   return tie(dshift, e0, e1, e2, e3);
 }
