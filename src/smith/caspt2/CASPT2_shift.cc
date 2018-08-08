@@ -224,7 +224,6 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
         }
         ioffset += size_rist;
       }
-
     }
   }
 }

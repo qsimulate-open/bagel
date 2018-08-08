@@ -378,7 +378,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
 
-            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
+//            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
+            e0_ = info_->orthogonal_basis() ? e0all_[lst] : e0all_[lst] - info_->shift();
             l2 = lall_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
@@ -400,7 +401,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
           add_total(1.0);
         }
 
-
         // when active is divided into the blocks, den4cit is evaluated (activeblock)**2 times
         double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
         den4cit->scale(den4factor);
@@ -417,9 +417,14 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     }
 
     // Finally, construct dshift...
-    if (info_->shift_imag()) {
-      tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
-      timer.tick_print("dshift");
+    if (info_->orthogonal_basis()) {
+      if (info_->shift_imag()) {
+        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+        timer.tick_print("dshift");
+      } else {
+        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_real(lall_orthogonal_, t2all_orthogonal_);
+        timer.tick_print("dshift");
+      }
     }
 
     do_rdm_deriv(1.0);

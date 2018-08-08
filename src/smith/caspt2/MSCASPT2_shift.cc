@@ -148,7 +148,6 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>>
   MSCASPT2::MSCASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // extremely inefficient code for calculating d^(2) from the imaginary shift term. should improve the algorithm for realistic applications
-  shared_ptr<Matrix> dshift = den2_->clone();
   const int nstates = info_->ciwfn()->nstates();
   const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
@@ -165,6 +164,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
   const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
 
+  shared_ptr<Matrix> dshift = den2_->clone();
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
   auto e2 = make_shared<VecRDM<2>>();
@@ -469,7 +469,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
           if (j1o == j0o) continue;
-          const double fdiff = denom_->denom_x(j1o) - denom_->denom_x(j0o);
+          const double fdiff = denom_->denom_h(j1o) - denom_->denom_h(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-8 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
         }
       }
@@ -606,7 +606,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const double VrsO = denom_->shalf_hh()->element(j0o, j0 + j1*nact + is*nact*nact);
                     for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                       const double VtuO = denom_->shalf_hh()->element(j1o, j5 + j4*nact + js*nact*nact);
-#if 1
                       e2->at(is,js)->element(j0, j5, j1, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j5 == j1) e1->at(is,js)->element(j0, j4) -= largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j5 == j4) e1->at(is,js)->element(j0, j1) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
@@ -614,7 +613,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       if (j0 == j4) e1->at(is,js)->element(j1, j5) -= largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j0 == j5 && j1 == j4 && is == js) *(e0->at(is,js)) -= 4.0 * largex->element(j0o, j1o) * VrsO * VtuO;
                       if (j0 == j4 && j1 == j5 && is == js) *(e0->at(is,js)) -= -2.0 * largex->element(j0o, j1o) * VrsO * VtuO;
-#endif
                         for (size_t j2 = 0; j2 != nact; ++j2) {
                           const size_t j2i = j2 + nclo;
                           for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -1000,6 +998,300 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       for (size_t j0o = 0; j0o != interm_size; ++j0o)
         largex_diag += largex->element(j0o, j0o);
       cout << setprecision(10) << "largex diagonal (rist) = " << largex_diag << endl;
+    }
+  }
+
+#if 0
+  //scale
+  for (int i = 0; i != nstates; ++i) {
+    (*e0->at(i,i)) *= 0.5;
+    e1->at(i,i)->scale(0.5);
+    e2->at(i,i)->scale(0.5);
+    e3->at(i,i)->scale(0.5);
+  }
+#endif
+
+  return tie(dshift, e0, e1, e2, e3);
+}
+
+
+tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>>
+  MSCASPT2::MSCASPT2::make_d2_real(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
+  // More of a debug code to debug the overlap gradient code [<I|l T|N> E_shift]
+  const int nstates = info_->ciwfn()->nstates();
+  const size_t nact = info_->nact();
+  const size_t nclosed = info_->nclosed();
+  const size_t nvirt = info_->nvirt();
+  const size_t nocc = nact + nclosed;
+  const size_t ncore = info_->ncore();
+  const size_t nclo = nclosed - ncore;
+  const size_t size_aibj = nvirt * nvirt * nclo * nclo;
+  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
+  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
+  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
+  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
+  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
+  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
+  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+
+  shared_ptr<Matrix> dshift = den2_->clone();
+  auto e0 = make_shared<Vec<double>>();
+  auto e1 = make_shared<VecRDM<1>>();
+  auto e2 = make_shared<VecRDM<2>>();
+  auto e3 = make_shared<VecRDM<3>>();
+
+  for (size_t is = 0; is != nstates; ++is)
+    for (size_t js = 0; js != nstates; ++js)
+      if (!info_->sssr() || is == js) {
+        auto e0temp = make_shared<double>(0.0);
+        auto e1temp = make_shared<RDM<1>>(nact);
+        auto e2temp = make_shared<RDM<2>>(nact);
+        auto e3temp = make_shared<RDM<3>>(nact);
+
+        e0->emplace(is, js, e0temp);
+        e1->emplace(is, js, e1temp);
+        e2->emplace(is, js, e2temp);
+        e3->emplace(is, js, e3temp);
+      }
+
+  const double shift = info_->shift();
+  for (int istate = 0; istate != nstates; ++istate) { // state of T
+    shared_ptr<const VectorB> l = lambda[istate];
+    shared_ptr<const VectorB> t = amplitude[istate];
+    size_t ioffset = 0;
+    // a i b j
+    {
+      for (size_t j3 = 0; j3 != nvirt; ++j3)
+        for (size_t j2 = 0; j2 != nclo; ++j2)
+          for (size_t j1 = 0; j1 != nvirt; ++j1)
+            for (size_t j0 = 0; j0 != nclo; ++j0) {
+              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+              const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
+              *(e0->at(istate,istate)) += lcovar * (*t)[jall] * 2.0 * shift;
+            }
+      ioffset += size_aibj;
+    }
+
+    // a r b s
+    {
+      const size_t interm_size = denom_->shalf_xx()->ndim();
+      for (size_t j3 = 0; j3 != nvirt; ++j3) {
+        for (size_t j1 = 0; j1 != nvirt; ++j1) {
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            const size_t jall = j0o + interm_size * (j1 + nvirt * j3) + ioffset;
+            for (size_t j0 = 0; j0 != nact; ++j0) {
+              for (size_t j6 = 0; j6 != nact; ++j6) {
+                for (size_t j2 = 0; j2 != nact; ++j2) {
+                  for (size_t j3 = 0; j3 != nact; ++j3) {
+                    for (size_t is = 0; is != nstates; ++is) {
+                      for (size_t js = 0; js != nstates; ++js) {
+                        if (is != js) continue;
+                        e2->at(is, js)->element(j0, j6, j2, j3) += denom_->shalf_xx()->element(j0o, j0 + j2*nact + is*nact*nact) * denom_->shalf_xx()->element(j0o, j6 + j3*nact + js*nact*nact) * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_arbs;
+    }
+
+    // a r b i
+    {
+      const size_t interm_size = denom_->shalf_x()->ndim();
+
+      for (size_t j3 = 0; j3 != nvirt; ++j3) {
+        for (size_t j2 = 0; j2 != nclo; ++j2) {
+          for (size_t j1 = 0; j1 != nvirt; ++j1) {
+            const size_t j1i = j1 + nocc - ncore;
+            for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+              const size_t jall = j0o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+              const size_t jall2 = j0o + interm_size * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+              const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
+              for (size_t j0 = 0; j0 != nact; ++j0) {
+                for (size_t j6 = 0; j6 != nact; ++j6) {
+                  for (size_t is = 0; is != nstates; ++is) {
+                    for (size_t js = 0; js != nstates; ++js) {
+                      if (is != js) continue;
+                      e1->at(is, js)->element(j0, j6) += denom_->shalf_x()->element(j0o, j0 + is * nact) * denom_->shalf_x()->element(j0o, j6 + js * nact) * lcovar * (*t)[jall] * 2.0 * shift;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_arbi;
+    }
+
+    // a i r j
+    {
+      const size_t interm_size = denom_->shalf_h()->ndim();
+
+      for (size_t j2 = 0; j2 != nclo; ++j2) {
+        for (size_t j1 = 0; j1 != nvirt; ++j1) {
+          for (size_t j0 = 0; j0 != nclo; ++j0) {
+            for (size_t j3o = 0; j3o != interm_size; ++j3o) {
+              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3o)) + ioffset;
+              const size_t jall2 = j2 + nclo * (j1 + nvirt * (j0 + nclo * j3o)) + ioffset;
+              const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
+              for (size_t j4 = 0; j4 != nact; ++j4) {
+                for (size_t j5 = 0; j5 != nact; ++j5) {
+                  for (size_t is = 0; is != nstates; ++is) {
+                    for (size_t js = 0; js != nstates; ++js) {
+                      if (is != js) continue;
+                      e1->at(is, js)->element(j4, j5) += -denom_->shalf_h()->element(j3o, j4 + is * nact) * denom_->shalf_h()->element(j3o, j5 + js * nact) * lcovar * (*t)[jall] * 2.0 * shift;
+                      (*e0->at(is, js)) += 2.0 * denom_->shalf_h()->element(j3o, j4 + is * nact) * denom_->shalf_h()->element(j3o, j5 + js * nact) * lcovar * (*t)[jall] * 2.0 * shift;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_airj;
+    }
+
+    // r i s j
+    {
+      const size_t interm_size = denom_->shalf_hh()->ndim();
+
+      for (size_t j0 = 0; j0 != nclo; ++j0) {
+        for (size_t j1 = 0; j1 != nclo; ++j1) {
+          for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+            const size_t jall = j0 + nclo * (j1 + nclo * j2o) + ioffset;
+            for (size_t j2 = 0; j2 != nact; ++j2) {
+              for (size_t j3 = 0; j3 != nact; ++j3) {
+                for (size_t j4 = 0; j4 != nact; ++j4) {
+                  for (size_t j5 = 0; j5 != nact; ++j5) {
+                    for (size_t is = 0; is != nstates; ++is) {
+                      for (size_t js = 0; js != nstates; ++js) {
+                        if (is != js) continue;
+                        const double VrsO = denom_->shalf_hh()->element(j2o, j2 + j4*nact + is * nact * nact);
+                        const double VtuO = denom_->shalf_hh()->element(j2o, j3 + j5*nact + js * nact * nact);
+                        e2->at(is, js)->element(j2, j3, j4, j5) += VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j3 == j4) e1->at(is, js)->element(j2, j5) += VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j3 == j5) e1->at(is, js)->element(j2, j4) -= 2.0 * VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j2 == j3) e1->at(is, js)->element(j4, j5) -= 2.0 * VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j2 == j5) e1->at(is, js)->element(j4, j3) += VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j2 == j3 && j4 == j5) (*e0->at(is, js)) += 4.0 * VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        if (j2 == j5 && j3 == j4) (*e0->at(is, js)) -= 2.0 * VrsO * VtuO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_risj;
+    }
+
+    // a i r s & a r s i
+    {
+      const size_t interm_size = denom_->shalf_xh()->ndim();
+
+      for (size_t j0 = 0; j0 != nclo; ++j0) {
+        for (size_t j1 = 0; j1 != nvirt; ++j1) {
+          for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+            const size_t jall = j0 + nclo * (j1 + nvirt * j0o) + ioffset;
+            for (size_t j2 = 0; j2 != nact; ++j2) {
+              for (size_t j3 = 0; j3 != nact; ++j3) {
+                for (size_t j4 = 0; j4 != nact; ++j4) {
+                  for (size_t j5 = 0; j5 != nact; ++j5) {
+                    for (size_t is = 0; is != nstates; ++is) {
+                      for (size_t js = 0; js != nstates; ++js) {
+                        if (is != js) continue;
+                        const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
+                        const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
+                        const double VtuO = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+0)*nact*nact);
+                        const double VtuS = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+1)*nact*nact);
+                        const double factorOO = VrsO * VtuO * 2.0;
+                        const double factorOS = -VrsO * VtuS;
+                        const double factorSO = -VrsS * VtuO;
+                        const double factorSS = VrsS * VtuS;
+                        e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (*l)[jall] * (*t)[jall] * shift * 2.0;
+                        if (j2 == j4) e1->at(is,js)->element(j3, j5) += (factorOO + factorOS + factorSO) * (*l)[jall] * (*t)[jall] * shift * 2.0;
+                        e2->at(is,js)->element(j4, j5, j3, j2) -= factorSS * (*l)[jall] * (*t)[jall] * shift *  2.0;
+                        if (j4 == j5) e1->at(is,js)->element(j3, j2) += 2.0 * (*l)[jall] * (*t)[jall] * shift * factorSS * 2.0;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_airs;
+    }
+
+    // a r s t
+    {
+      const size_t interm_size = denom_->shalf_xxh()->ndim();
+
+      for (size_t j0 = 0; j0 != nvirt; ++j0) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          const size_t jall = j0 + nvirt * j1o + ioffset;
+          for (size_t j2 = 0; j2 != nact; ++j2) {
+            for (size_t j3 = 0; j3 != nact; ++j3) {
+              for (size_t j4 = 0; j4 != nact; ++j4)
+                for (size_t j5 = 0; j5 != nact; ++j5)
+                  for (size_t j6 = 0; j6 != nact; ++j6)
+                    for (size_t j7 = 0; j7 != nact; ++j7)
+                      for (size_t is = 0; is != nstates; ++is)
+                        for (size_t js = 0; js != nstates; ++js) {
+                          if (is != js) continue;
+                          const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                          const double VuvwO = denom_->shalf_xxh()->element(j1o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
+                          e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        }
+            }
+          }
+        }
+      }
+      ioffset += size_arst;
+    }
+
+    // r i s t
+    {
+      const size_t interm_size = denom_->shalf_xhh()->ndim();
+
+      for (size_t j0 = 0; j0 != nclo; ++j0) {
+        for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          const size_t jall = j0 + nclo * j1o + ioffset;
+          for (size_t j2 = 0; j2 != nact; ++j2) {
+            for (size_t j3 = 0; j3 != nact; ++j3) {
+              for (size_t j4 = 0; j4 != nact; ++j4)
+                for (size_t j5 = 0; j5 != nact; ++j5)
+                  for (size_t j6 = 0; j6 != nact; ++j6)
+                    for (size_t j7 = 0; j7 != nact; ++j7)
+                      for (size_t is = 0; is != nstates; ++is)
+                        for (size_t js = 0; js != nstates; ++js) {
+                          if (is != js) continue;
+                          const double VrstO = denom_->shalf_xhh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                          const double VuvwO = denom_->shalf_xhh()->element(j1o, j7 + nact * (j6 + nact * j5) + js * nact * nact * nact);
+                          e3->at(is,js)->element(j2, j3, j5, j4, j6, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j4 == j6) e2->at(is,js)->element(j2, j3, j5, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j4 == j5) e2->at(is,js)->element(j2, j3, j6, j7) += 2.0 * VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j3 == j6) e2->at(is,js)->element(j5, j4, j2, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j3 == j6 && j4 == j5) e1->at(is,js)->element(j2, j7) += 2.0 * VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j3 == j5) e2->at(is,js)->element(j2, j4, j6, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                          if (j3 == j5 && j4 == j6) e1->at(is,js)->element(j2, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
+                        }
+            }
+          }
+        }
+      }
+      ioffset += size_rist;
     }
   }
 

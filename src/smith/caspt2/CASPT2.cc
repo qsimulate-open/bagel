@@ -562,10 +562,10 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       auto source = make_shared<MultiTensor>(nstates_);
       for (auto& i : *source)
         i = init_residual();
-      if (info_->shift_imag() || info_->orthogonal_basis()) {
+      if (info_->orthogonal_basis()) {
         // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
-        // and therefore, only applied for imaginary case only
+        // and therefore, only applied for orthogonal basis case only
         for (int ist = 0; ist != nstates_; ++ist) { // N states
           sall_[ist]->zero();
           auto sist = make_shared<MultiTensor>(nstates_);
@@ -667,7 +667,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       for (auto& i : *sourceI)
         i = init_residual();
       // NACME case
-      if (info_->shift_imag() || info_->orthogonal_basis()) {
+      if (info_->orthogonal_basis()) {
         // This should also yield the right results for the real shift.
         // Nevertheless, it requires additional evaluation of residual-like term,
         // and therefore, only applied for imaginary case only
@@ -896,7 +896,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_ = dtmp;
   }
 
-  if (info_->shift_imag() || info_->orthogonal_basis()) {
+  if (info_->orthogonal_basis()) {
     auto dtmp2 = den2_tt_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -938,7 +938,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
     }
 
-    if (info_->shift_imag() || info_->orthogonal_basis()) {
+    if (info_->orthogonal_basis()) {
       shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
         const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
@@ -1019,7 +1019,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
   }
 
-  if (info_->shift_imag() || info_->orthogonal_basis()) {
+  if (info_->orthogonal_basis()) {
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_tt_);
     den2_ = dtmp;
