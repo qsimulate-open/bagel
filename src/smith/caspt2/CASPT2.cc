@@ -257,7 +257,6 @@ void CASPT2::CASPT2::solve() {
 
 // temporary
 void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
-  // aibj arbs arbi good
   const bool zero_aibj = false;
   const bool zero_arbs = false;
   const bool zero_arbi = false;
@@ -835,6 +834,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
     if (info_->shift_imag()) {
       den2_shift_ = ms.rdm12_shift();
+      correlated_norm_imag_ = ms.nimag();
     }
     Den1_ = ms.rdm21();
     if (!nocider)
@@ -910,6 +910,19 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_tt_ = dtmp2;
   }
 
+  if (info_->shift_imag()) {
+    auto dtmp2 = den2_shift_->copy();
+    for (int ist = 0; ist != nstates_; ++ist) {
+      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      for (int i = nclosed; i != nclosed+nact; ++i)
+        for (int j = nclosed; j != nclosed+nact; ++j) {
+          dtmp2->element(j, i) -= correlated_norm_imag_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
+        }
+    }
+    dtmp2->symmetrize();
+    den2_shift_ = dtmp2;
+  }
+
   shared_ptr<const Reference> ref = info_->ref();
   const MatView acoeff = coeff_->slice(nclosed+ncore, nclosed+ncore+nact);
 
@@ -954,7 +967,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     if (info_->shift_imag()) {
       shared_ptr<const Matrix> gd2_shift = focksub(den2_shift_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
-        const Matrix op3(*gd2_shift * (1.0/nstates_));
+        const Matrix op3(*gd2_shift * (1.0/nstates_) - *fock * correlated_norm_imag_[ist]);
         shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
         for (int i = 0; i != nact; ++i)
           for (int j = 0; j != nact; ++j)

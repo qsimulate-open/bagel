@@ -419,7 +419,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     // Finally, construct dshift...
     if (info_->orthogonal_basis()) {
       if (info_->shift_imag()) {
-        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
         timer.tick_print("dshift");
       } else {
         tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_real(lall_orthogonal_, t2all_orthogonal_);
@@ -430,6 +430,61 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
   }
+
+#if 0
+  if (!nocider) {
+    for (int mst = 0; mst != nstates; ++mst) {
+      const double mheffJ = (*heff_)(mst, targetJ);
+      const double mheffI = (*heff_)(mst, targetI);
+      shared_ptr<Queue> dec;
+
+      zero_total();
+      for (int nst = 0; nst != nstates; ++nst) {
+        const double nheffJ = (*heff_)(nst, targetJ);
+        const double nheffI = (*heff_)(nst, targetI);
+
+        if (!info_->sssr() || nst == mst) {
+          for (int lst = 0; lst != nstates; ++lst) {
+            if (info_->sssr() && (nst != lst || mst != lst))
+              continue;
+
+            e0_ = -info_->shift();
+            l2 = lall_[lst]->at(nst);
+            t2 = t2all_[lst]->at(mst);
+            dec = make_deci2q(true);
+            while (!dec->done())
+              dec->next_compute();
+
+            l2 = t2all_[lst]->at(nst);
+            t2 = lall_[lst]->at(mst);
+            dec = make_deci2q(false);
+            while (!dec->done())
+              dec->next_compute();
+          }
+          add_total(1.0);
+        }
+      }
+
+      shared_ptr<double> d0;
+      shared_ptr<RDM<1>> d1;
+      shared_ptr<RDM<2>> d2;
+      shared_ptr<RDM<3>> d3;
+      shared_ptr<RDM<3>> d4;
+      tie(d0, d1, d2, d3, d4) = read_denci(den0cit, den1cit, den2cit, den3cit, den4cit);
+
+      cout << "dens for the state " << mst << endl;
+      cout << " den0cit = " << setprecision(10) << *d0 << endl;
+      d1->rdm1_mat(0)->print("den0cit = ");
+      cout << "d2 = " << endl;
+      d2->print();
+      cout << "d3 = " << endl;
+      d3->print();
+      cout << "d4 = " << endl;
+      d4->print();
+
+    }
+  }
+#endif
 }
 
 #endif

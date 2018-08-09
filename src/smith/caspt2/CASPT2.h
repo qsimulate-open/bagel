@@ -98,6 +98,7 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<double> correlated_norm_lt_;
     std::vector<double> correlated_norm_tt_;
+    std::vector<double> correlated_norm_imag_;
     std::shared_ptr<Tensor> deci;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<const Matrix> dcheck_;

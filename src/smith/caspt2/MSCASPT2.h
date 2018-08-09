@@ -120,6 +120,8 @@ class MSCASPT2 {
     std::shared_ptr<const Denom<double>> denom_;
     std::vector<double> eig_;
 
+    std::vector<double> nimag_;
+
     std::shared_ptr<Vec<double>> etensor0_;
     std::shared_ptr<VecRDM<1>> etensor1_;
     std::shared_ptr<VecRDM<2>> etensor2_;
@@ -163,13 +165,14 @@ class MSCASPT2 {
     std::shared_ptr<Queue> make_deci4q(const bool reset = true, const bool diagonal = true);
 
     std::tuple<std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>> feed_denci();
+    std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> read_denci(std::shared_ptr<Tensor>, std::shared_ptr<Tensor>, std::shared_ptr<Tensor>, std::shared_ptr<Tensor>, std::shared_ptr<Tensor>);
     std::shared_ptr<VectorB> contract_rdm_deriv(std::shared_ptr<const CIWfn> ciwfn, int offset, int size, std::shared_ptr<const Matrix> fock);
     void zero_total();
     void add_total(double factor);
     void do_rdm_deriv(double factor);
 
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>>
+    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>>
       make_d2_real(std::vector<std::shared_ptr<VectorB>> amplitude, std::vector<std::shared_ptr<VectorB>> lambda) const;
@@ -200,6 +203,7 @@ class MSCASPT2 {
     std::shared_ptr<const Matrix> vden1() const { return vden1_; }
     std::shared_ptr<Dvec> ci_deriv() const { return ci_deriv_; }
     std::shared_ptr<const Matrix> dcheck() const { return dcheck_; }
+    std::vector<double> nimag() const { return nimag_; }
 };
 
 }
