@@ -1010,7 +1010,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           shared_ptr<RDM<3>> rdm3tmp;
           shared_ptr<RDM<4>> rdm4tmp;
           tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          // TODO overlap part should be here!
           for (size_t j7 = 0; j7 != nact; ++j7)
             for (size_t j0 = 0; j0 != nact; ++j0)
               for (size_t j6 = 0; j6 != nact; ++j6)
@@ -1022,6 +1021,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                           const double VuvwO = denom_->shalf_xhh()->element(j1o, j7 + nact*(j6 + nact*j5)+ js*nact*nact*nact);
                           const double factor = VrstO * VuvwO * smallz->element(j0o, j1o);
+                          e3->at(is,js)->element(j0, j1, j5, j2, j6, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
+                          if (j2 == j6) e2->at(is,js)->element(j0, j1, j5, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
+                          if (j2 == j5) e2->at(is,js)->element(j0, j1, j6, j7) -= largex->element(j0o, j1o) * 2.0 * VrstO * VuvwO;
+                          if (j1 == j6) e2->at(is,js)->element(j5, j2, j0, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
+                          if (j1 == j6 && j2 == j5) e1->at(is,js)->element(j0, j7) -= largex->element(j0o, j1o) * 2.0 * VrstO * VuvwO;
+                          if (j1 == j5) e2->at(is,js)->element(j0, j2, j6, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
+                          if (j1 == j5 && j2 == j6) e1->at(is,js)->element(j0, j7) += largex->element(j0o, j1o) * VrstO * VuvwO;
 #if 1
                           e4->at(is,js)->element(j0, j1, j5, j2, j6, j7) -= factor;
 #endif
