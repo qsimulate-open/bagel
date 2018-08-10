@@ -475,7 +475,6 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     qxmatao = make_shared<Matrix>(*coeff * *qxmat ^ *coeff);
   }
 
-
   // two-body part
   // first make occ-occ part (copy-and-paste from src/casscf/supercigrad.cc)
   shared_ptr<const DFFullDist> qij  = halfjj->compute_second_transform(ocoeff);

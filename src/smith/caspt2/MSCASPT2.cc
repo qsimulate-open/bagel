@@ -417,7 +417,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
 
     // Finally, construct dshift...
     if (info_->orthogonal_basis()) {
-      if (info_->shift_imag()) {
+      if (info_->shift_imag() && info_->shift() != 0.0) {
         tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
         timer.tick_print("dshift");
       } else {

@@ -896,7 +896,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_ = dtmp;
   }
 
-  if (info_->orthogonal_basis()) {
+  if (info_->orthogonal_basis() && !lall_.empty()) {
     auto dtmp2 = den2_tt_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -910,7 +910,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_tt_ = dtmp2;
   }
 
-  if (info_->shift_imag()) {
+  if (info_->shift_imag() && info_->shift() != 0.0) {
     auto dtmp2 = den2_shift_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -951,7 +951,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
     }
 
-    if (info_->orthogonal_basis()) {
+    if (info_->orthogonal_basis() && !lall_.empty()) {
       shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
         const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
@@ -964,7 +964,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
 
     // dshift-dependent term
-    if (info_->shift_imag()) {
+    if (info_->shift_imag() && info_->shift() != 0.0) {
       shared_ptr<const Matrix> gd2_shift = focksub(den2_shift_, coeff_->slice(ncore, coeff_->mdim()), false);
       for (int ist = 0; ist != nstates_; ++ist) {
         const Matrix op3(*gd2_shift * (1.0/nstates_) - *fock * correlated_norm_imag_[ist]);
@@ -1032,18 +1032,19 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
   }
 
-  if (info_->orthogonal_basis()) {
+  if (info_->orthogonal_basis() && !lall_.empty()) {
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_tt_);
     den2_ = dtmp;
   }
 
-  if (info_->shift_imag()) {
+  if (info_->shift_imag() && info_->shift() != 0.0) {
     energy_lt_ = compute_energy_lt();
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_shift_);
     den2_ = dtmp;
   }
+
 
   // restore original energy
   energy_ = pt2energy_;

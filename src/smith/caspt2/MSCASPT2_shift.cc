@@ -504,11 +504,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       const double VtO = denom_->shalf_h()->element(j0o, j4 + is*nact);
                       const double VuO = denom_->shalf_h()->element(j1o, j5 + js*nact);
                       const double factor = VtO * VuO * smallz->element(j0o, j1o);
-                      dshift->element(j0i, j6i) += -factor * rdm2tmp->element(j4, j5, j0, j6);
-                      if (j5 == j0 && j4 == j6 && is == js) dshift->element(j0i, j6i) += factor * 2.0;
-                      if (j5 == j0)                         dshift->element(j0i, j6i) += -factor * rdm1tmp->element(j4, j6);
-                      if (j4 == j6)                         dshift->element(j0i, j6i) += -factor * rdm1tmp->element(j5, j0);
-                      if (j4 == j5 && is == js)             dshift->element(j0i, j6i) += factor * 2.0 * rdm1tmp->element(j0, j6);
+#if 1
+                      dshift->element(j0i, j6i) += -1.0 * factor * rdm2tmp->element(j4, j5, j0, j6);
+                      if (j5 == j0 && j4 == j6 && is == js) dshift->element(j0i, j6i) +=  2.0 * factor;
+                      if (j5 == j0)                         dshift->element(j0i, j6i) += -1.0 * factor * rdm1tmp->element(j4, j6);
+                      if (j4 == j6)                         dshift->element(j0i, j6i) += -1.0 * factor * rdm1tmp->element(j5, j0);
+                      if (j4 == j5 && is == js)             dshift->element(j0i, j6i) +=  2.0 * factor * rdm1tmp->element(j0, j6);
+#endif
 #if 1
                       e2->at(is,js)->element(j4, j5, j0, j6) += factor * fockact_->element(j0, j6) * -1.0;
                       if (j5 == j0 && j4 == j6 && is == js) *(e0->at(is,js)) += factor * fockact_->element(j0, j6) * 2.0;
@@ -795,13 +797,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           const double factorOO = VrsO * VtuO * smallz->element(j0o, j1o) * 2.0;
                           const double factorOS = -VrsO * VtuS * smallz->element(j0o, j1o);
                           const double factorSO = -VrsS * VtuO * smallz->element(j0o, j1o);
-                          const double factorSS = VrsS * VtuS * smallz->element(j0o, j1o);
                           dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm3tmp->element(j0, j1, j4, j5, j2, j3);
-                          dshift->element(j2i, j3i) -= factorSS * rdm3tmp->element(j1, j4, j5, j0, j2, j3);
                           if (j3 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j1, j2, j5);
                           if (j1 == j2)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j3, j4, j5);
                           if (j1 == j2 && j3 == j4) dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm1tmp->element(j0, j5);
                           if (j1 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j2, j3, j0, j5);
+                          const double factorSS = VrsS * VtuS * smallz->element(j0o, j1o);
+                          dshift->element(j2i, j3i) -= factorSS * rdm3tmp->element(j1, j4, j5, j0, j2, j3);
                           if (j3 == j1)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j2, j4, j5, j0);
                           if (j4 == j2)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j1, j3, j5, j0);
                           if (j3 == j1 && j4 == j2) dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm1tmp->element(j5, j0);
