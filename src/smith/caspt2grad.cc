@@ -56,7 +56,8 @@ CASPT2Grad::CASPT2Grad(shared_ptr<const PTree> inp, shared_ptr<const Geometry> g
     auto cas = make_shared<CASNoopt>(inp, geom, ref);
     cas->compute();
     ref_ = cas->conv_to_ref();
-    fci_ = cas->fci();
+    if (ref_->nact())
+      fci_ = cas->fci();
     thresh_ = cas->thresh();
   }
 
@@ -381,7 +382,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     shared_ptr<const DFFullDist> fullks;
     fullks = task_->contract_D1(full);
     *out += *full->form_2index(fullks, 2.0);
-    shared_ptr<const DFFullDist> fulld = fullo->apply_2rdm(*task_->d20ms(), *task_->d10ms(), nclosed, nact);
+    shared_ptr<const DFFullDist> fulld = nact ? fullo->apply_2rdm(*task_->d20ms(), *task_->d10ms(), nclosed, nact) : fullo->apply_closed_2RDM();
     out->add_block(1.0, 0, 0, nmobasis, nocc, full->form_2index(fulld, 1.0));
     for (int i = 0; i != nmobasis; ++i)
       E2 += out->element(i,i) * .5;

@@ -148,21 +148,21 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
   MSCASPT2::MSCASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // extremely inefficient code for calculating d^(2) from the imaginary shift term. should improve the algorithm for realistic applications
-  const int nstates = info_->ciwfn()->nstates();
   const size_t nact = info_->nact();
+  const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
   const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   shared_ptr<Matrix> dshift = den2_->clone();
   auto e0 = make_shared<Vec<double>>();
@@ -176,21 +176,23 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   for (int i = 0; i != nstates; ++i)
     nimag[i] = 0.0;
 
-  for (size_t is = 0; is != nstates; ++is)
-    for (size_t js = 0; js != nstates; ++js)
-      if (!info_->sssr() || is == js) {
-        auto e0temp = make_shared<double>(0.0);
-        auto e1temp = make_shared<RDM<1>>(nact);
-        auto e2temp = make_shared<RDM<2>>(nact);
-        auto e3temp = make_shared<RDM<3>>(nact);
-        auto e4temp = make_shared<RDM<3>>(nact);
+  if (nact) {
+    for (size_t is = 0; is != nstates; ++is)
+      for (size_t js = 0; js != nstates; ++js)
+        if (!info_->sssr() || is == js) {
+          auto e0temp = make_shared<double>(0.0);
+          auto e1temp = make_shared<RDM<1>>(nact);
+          auto e2temp = make_shared<RDM<2>>(nact);
+          auto e3temp = make_shared<RDM<3>>(nact);
+          auto e4temp = make_shared<RDM<3>>(nact);
 
-        e0->emplace(is, js, e0temp);
-        e1->emplace(is, js, e1temp);
-        e2->emplace(is, js, e2temp);
-        e3->emplace(is, js, e3temp);
-        e4->emplace(is, js, e4temp);
-      }
+          e0->emplace(is, js, e0temp);
+          e1->emplace(is, js, e1temp);
+          e2->emplace(is, js, e2temp);
+          e3->emplace(is, js, e3temp);
+          e4->emplace(is, js, e4temp);
+        }
+  }
 
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates; ++istate) { // state of T
@@ -217,13 +219,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j2i, j2i) += Lambda;
               dshift->element(j3i, j3i) -= Lambda;
 
-              *(e0->at(istate,istate)) += Lambda * denom * 2.0;
+              if (nact)
+                *(e0->at(istate,istate)) += Lambda * denom * 2.0;
             }
       ioffset += size_aibj;
     }
 
     // a r b s
-    {
+    if (size_arbs) {
       const size_t interm_size = denom_->shalf_xx()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -324,7 +327,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a r b i
-    {
+    if (size_arbi) {
       const size_t interm_size = denom_->shalf_x()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -423,7 +426,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a i r j
-    {
+    if (size_airj) {
       const size_t interm_size = denom_->shalf_h()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -444,6 +447,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j0i, j0i) += Lambda;
               dshift->element(j2i, j2i) += Lambda;
+              if (fabs((*t)[jall]) > 1.0e-8) cout << setw(8) << j0 << setw(8) << j2 << setw(8) << j3o << setw(20) << setprecision(8) << denom << setw(20) << setprecision(8) << (*l)[jall] << setw(20) << (*t)[jall] << endl;
               smallz->element(j3o, j3o) -= Lambda;
               nimag[istate] -= Lambda;
               for (size_t j4 = 0; j4 != nact; ++j4) {
@@ -534,7 +538,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // r i s j
-    {
+    if (size_risj) {
       const size_t interm_size = denom_->shalf_hh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -697,7 +701,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a i r s & a r s i
-    {
+    if (size_airs) {
       const size_t interm_size = denom_->shalf_xh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -838,7 +842,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a r s t
-    {
+    if (size_arst) {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -946,7 +950,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // r i s t
-    {
+    if (size_rist) {
       const size_t interm_size = denom_->shalf_xhh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
@@ -1107,6 +1111,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
   }
 
+#if 0
   for (int i = 0; i != nstates; ++i) {
     cout << "nimag = " << setprecision(10) << nimag[i] << endl;
     cout << "e0 = " << setprecision(10) << *e0->at(i,i) << endl;
@@ -1116,6 +1121,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     cout << "e3 = " << endl;
     e3->at(i,i)->print();
   }
+#endif
 
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
 }
@@ -1131,13 +1137,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   shared_ptr<Matrix> dshift = den2_->clone();
   auto e0 = make_shared<Vec<double>>();

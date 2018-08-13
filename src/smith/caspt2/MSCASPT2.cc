@@ -67,18 +67,20 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm4fall_ = cas.rdm4fall_;
   rdm4all_ = cas.rdm4all_;
 
-  den0ci = cas.rdm0_->clone();
-  den1ci = cas.rdm1_->clone();
-  den2ci = cas.rdm2_->clone();
-  den3ci = cas.rdm3_->clone();
-  den4ci = cas.rdm3_->clone();
+  if (info_->nact()) {
+    den0ci = cas.rdm0_->clone();
+    den1ci = cas.rdm1_->clone();
+    den2ci = cas.rdm2_->clone();
+    den3ci = cas.rdm3_->clone();
+    den4ci = cas.rdm3_->clone();
 
-  // Total tensor (that is summed up)
-  den0cit = cas.rdm0_->clone();
-  den1cit = cas.rdm1_->clone();
-  den2cit = cas.rdm2_->clone();
-  den3cit = cas.rdm3_->clone();
-  den4cit = cas.rdm3_->clone();
+    // Total tensor (that is summed up)
+    den0cit = cas.rdm0_->clone();
+    den1cit = cas.rdm1_->clone();
+    den2cit = cas.rdm2_->clone();
+    den3cit = cas.rdm3_->clone();
+    den4cit = cas.rdm3_->clone();
+  }
 
   den0ciall = make_shared<Vec<Tensor>>();
   den1ciall = make_shared<Vec<Tensor>>();
@@ -138,7 +140,7 @@ void MSCASPT2::MSCASPT2::zero_total() {
 
 void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, const bool nocider) {
   Timer timer;
-  const int nstates = info_->ciwfn()->nstates();
+  const int nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
 
   // first-order energy from the energy expression
   {
@@ -149,7 +151,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       const double jheffJ = (*heff_)(jst, targetJ);
       const double jheffI = (*heff_)(jst, targetI);
       for (int ist = 0; ist != nstates; ++ist) { // ket
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           if (info_->sssr() && ist != istate)
             continue;
@@ -188,7 +191,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       // consistent with the next
       for (int jst = 0; jst != nstates; ++jst) {  // bra
         for (int ist = 0; ist != nstates; ++ist) {  // ket
-          set_rdm(jst, ist);
+          if (info_->nact())
+            set_rdm(jst, ist);
           for (int istate = 0; istate != nstates; ++istate) { // state of T
             if (info_->sssr() && (jst != istate || ist != istate))
               continue;
@@ -210,7 +214,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
 
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           if (info_->sssr() && (jst != istate || ist != istate))
             continue;
@@ -238,7 +243,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       for (int ist = 0; ist != nstates; ++ist) { // M
         if (info_->sssr() && jst != ist)
           continue;
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
 
         l2 = t2all_[jst]->at(ist);
         shared_ptr<Queue> queue = make_density1q(false, ist == jst);
@@ -262,7 +268,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       for (int ist = 0; ist != nstates; ++ist) { // ket
         if (info_->sssr() && jst != ist)
           continue;
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
 
         l2 = lall_[jst]->at(ist);
         shared_ptr<Queue> queue = make_density1q(false, ist == jst);
@@ -284,6 +291,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
   timer.tick_print("Correlated density matrix evaluation");
 
   if (!nocider) {
+    if (info_->nact()) {
     for (int mst = 0; mst != nstates; ++mst) {
       const double mheffJ = (*heff_)(mst, targetJ);
       const double mheffI = (*heff_)(mst, targetI);
@@ -414,6 +422,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
       timer.tick_print(ss.str());
     }
+    }
 
     // Finally, construct dshift...
     if (info_->orthogonal_basis()) {
@@ -426,7 +435,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       }
     }
 
-    do_rdm_deriv(1.0);
+    if (info_->nact())
+      do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
   }
 

@@ -882,7 +882,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
 
-  {
+  if (nact) {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
@@ -896,7 +896,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_ = dtmp;
   }
 
-  if (info_->orthogonal_basis() && !lall_.empty()) {
+  if (nact && info_->orthogonal_basis() && !lall_.empty()) {
     auto dtmp2 = den2_tt_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -910,7 +910,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den2_tt_ = dtmp2;
   }
 
-  if (info_->shift_imag() && info_->shift() != 0.0) {
+  if (nact && info_->shift_imag() && info_->shift() != 0.0) {
     auto dtmp2 = den2_shift_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
@@ -937,7 +937,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     return out;
   };
 
-  if (!nocider) {
+  if (nact && !nocider) {
     shared_ptr<const Matrix> fock = focksub(ref->rdm1_mat(), coeff_->slice(0, ref->nocc()), true); // f
     shared_ptr<const Matrix> gd2 = focksub(den2_, coeff_->slice(ncore, coeff_->mdim()), false); // g(d2)
 
@@ -1044,7 +1044,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     dtmp->ax_plus_y(1.0, den2_shift_);
     den2_ = dtmp;
   }
-
 
   // restore original energy
   energy_ = pt2energy_;

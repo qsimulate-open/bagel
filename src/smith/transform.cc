@@ -37,21 +37,20 @@ using namespace bagel::SMITH;
 template<typename DataType>
 shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(shared_ptr<const MultiTensor_<DataType>> tensor) const {
   // TODO maybe define the struct to define orthogonal basis (there are too many reduncies)
-//  const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
-//  const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
+  const size_t nact = info_->nact();
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
 
@@ -86,13 +85,13 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
 
@@ -395,21 +394,20 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
 
 template<typename DataType>
 shared_ptr<MultiTensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_amplitude(shared_ptr<const Vector_<DataType>> vector, const int nstates, const int istate) const {
-//  const size_t nact = info_->nact();
+  const size_t nact = info_->nact();
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
-//  const size_t nocc = nact + nclosed;
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
   auto out = make_shared<MultiTensor_<DataType>>(nstates);
@@ -438,13 +436,13 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   auto out = init_amplitude();
 
@@ -750,13 +748,13 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
   const double shift = info_->shift();
   const double shift2 = shift * shift;
 
@@ -789,7 +787,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // a r b s case
-      {
+      if (size_arbs) {
         ioffset += size_aibj;
         const size_t interm_size = denom_->shalf_xx()->ndim();
         for (auto& i3 : virt_)
@@ -811,7 +809,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // a r b i case
-      {
+      if (size_arbi) {
         ioffset += size_arbs;
         const size_t interm_size = denom_->shalf_x()->ndim();
         for (auto& i3 : virt_)
@@ -833,7 +831,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // a i r j case
-      {
+      if (size_airj) {
         ioffset += size_arbi;
         const size_t interm_size = denom_->shalf_h()->ndim();
         for (auto& i2 : closed_)
@@ -855,7 +853,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // r i s j case
-      {
+      if (size_risj) {
         ioffset += size_airj;
         const size_t interm_size = denom_->shalf_hh()->ndim();
         for (auto& i2 : closed_)
@@ -876,7 +874,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
 
       // a i r s & a r s i case
       // TODO implement complex case
-      {
+      if (size_airs) {
         ioffset += size_risj;
         const size_t interm_size = denom_->shalf_xh()->ndim();
         for (auto& i1 : virt_)
@@ -896,7 +894,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // a r s t case
-      {
+      if (size_arst) {
         ioffset += size_airs;
         const size_t interm_size = denom_->shalf_xxh()->ndim();
         for (auto& i1 : virt_) {
@@ -914,7 +912,7 @@ void SpinFreeMethod<DataType>::update_amplitude_orthogonal(shared_ptr<Vector_<Da
       }
 
       // r i s t case
-      {
+      if (size_rist) {
         ioffset += size_arst;
         const size_t interm_size = denom_->shalf_xhh()->ndim();
         for (auto& i2 : closed_) {
@@ -946,13 +944,13 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
   const size_t nocc = nact + nclosed;
   const size_t nclo = nclosed - ncore;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   size_t iortho = 0;
   DataType E_aibj = 0.0;
@@ -977,7 +975,7 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
   DataType E_arbs = 0.0;
   for (int l = 0; l != size_arbs; ++l, ++iortho) E_arbs += (*source)[iortho] * (*amplitude)[iortho] + (*residual)[iortho] * (*amplitude)[iortho];
   DataType E_arbi = 0.0;
-  {
+  if (size_arbi) {
     const size_t interm_size = denom_->shalf_x()->ndim();
     for (auto& i3 : virt_)
       for (auto& i2 : closed_)
@@ -995,7 +993,7 @@ DataType SpinFreeMethod<DataType>::print_energy_parts(const int iter, shared_ptr
     iortho += size_arbi;
   }
   DataType E_airj = 0.0;
-  {
+  if (size_airj) {
     const size_t interm_size = denom_->shalf_h()->ndim();
     for (auto& i2 : closed_)
       for (auto& i1 : virt_)
@@ -1037,13 +1035,13 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
   const size_t nocc = nact + nclosed;
   const size_t nclo = nclosed - ncore;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   size_t iortho = 0;
   DataType norm_aibj = 0.0;
@@ -1069,7 +1067,7 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
   for (int l = 0; l != size_arbs; ++l, ++iortho) norm_arbs += (*bra)[iortho] * (*ket)[iortho];
   // for arbi and airj case, covariant amplitude are used, as source and residual are contravariant
   DataType norm_arbi = 0.0;
-  {
+  if (size_arbi) {
     const size_t interm_size = denom_->shalf_x()->ndim();
     for (auto& i3 : virt_)
       for (auto& i2 : closed_)
@@ -1087,7 +1085,7 @@ DataType SpinFreeMethod<DataType>::compute_norm(shared_ptr<const Vector_<DataTyp
     iortho += size_arbi;
   }
   DataType norm_airj = 0.0;
-  {
+  if (size_airj) {
     const size_t interm_size = denom_->shalf_h()->ndim();
     for (auto& i2 : closed_)
       for (auto& i1 : virt_)

@@ -35,7 +35,8 @@ CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<con
 : grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
 
   // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
-  fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
+  if (ref_->nact())
+    fci_ = make_shared<KnowlesHandy>(fci_native_->conv_to_ciwfn(), r);
 
   if (ref_->nact() && coeff_ != ref_->coeff())
     fci_->update(coeff_);
@@ -77,7 +78,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>, shared_ptr<Matrix>> CPCASSCF::compu
     fock = finact;
   }
 
-  shared_ptr<Matrix> fact = qvec_->copy();
+  shared_ptr<Matrix> fact = nact ? qvec_->copy() : nullptr;
   for (int i = 0; i != nact; ++i)
     blas::ax_plus_y_n(occup[i], finact->element_ptr(0,nclosed+i), nmobasis, fact->data()+i*nmobasis);
 
@@ -206,11 +207,13 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     // contributions to Y
     source->first()->ax_plus_y(2.0, *fock_ * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
     // contributions to y
-    for (int istate = 0; istate != ref_->nstate(); ++istate) {
-      shared_ptr<const Dvec> rdm1deriv = fci_->rdm1deriv(istate);
-      for (int i = 0; i != nact; ++i)
-        for (int j = 0; j != nact; ++j)
-          source->second()->data(istate)->ax_plus_y(gzcore->element(j+nclosed, i+nclosed), rdm1deriv->data(j+nact*i));
+    if (nact) {
+      for (int istate = 0; istate != ref_->nstate(); ++istate) {
+        shared_ptr<const Dvec> rdm1deriv = fci_->rdm1deriv(istate);
+        for (int i = 0; i != nact; ++i)
+          for (int j = 0; j != nact; ++j)
+            source->second()->data(istate)->ax_plus_y(gzcore->element(j+nclosed, i+nclosed), rdm1deriv->data(j+nact*i));
+      }
     }
   }
   // antisymmetrize

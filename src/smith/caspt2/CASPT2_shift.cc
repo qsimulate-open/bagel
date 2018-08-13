@@ -42,13 +42,13 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
   const size_t nclo = nclosed - ncore;
 
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
   const double shift = info_->shift();
   const double shift2 = shift * shift;
@@ -82,7 +82,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // a r b s case
-      {
+      if (size_arbs) {
         ioffset += size_aibj;
         const size_t interm_size = denom_->shalf_xx()->ndim();
         for (auto& i3 : virt_)
@@ -104,7 +104,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // a r b i case
-      {
+      if (size_arbi) {
         ioffset += size_arbs;
         const size_t interm_size = denom_->shalf_x()->ndim();
         for (auto& i3 : virt_)
@@ -126,7 +126,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // a i r j case
-      {
+      if (size_airj) {
         ioffset += size_arbi;
         const size_t interm_size = denom_->shalf_h()->ndim();
         for (auto& i2 : closed_)
@@ -148,7 +148,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // r i s j case
-      {
+      if (size_risj) {
         ioffset += size_airj;
         const size_t interm_size = denom_->shalf_hh()->ndim();
         for (auto& i2 : closed_)
@@ -169,7 +169,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
 
       // a i r s & a r s i case
       // TODO implement complex case
-      {
+      if (size_airs) {
         ioffset += size_risj;
         const size_t interm_size = denom_->shalf_xh()->ndim();
         for (auto& i1 : virt_)
@@ -189,7 +189,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // a r s t case
-      {
+      if (size_arst) {
         ioffset += size_airs;
         const size_t interm_size = denom_->shalf_xxh()->ndim();
         for (auto& i1 : virt_) {
@@ -207,7 +207,7 @@ void CASPT2::CASPT2::add_shift(shared_ptr<VectorB> residual, shared_ptr<const Ve
       }
 
       // r i s t case
-      {
+      if (size_rist) {
         ioffset += size_arst;
         const size_t interm_size = denom_->shalf_xhh()->ndim();
         for (auto& i2 : closed_) {
@@ -237,13 +237,13 @@ double CASPT2::CASPT2::compute_energy_lt() {
   const size_t ncore = info_->ncore();
   const size_t nclo = nclosed - ncore;
   const size_t size_aibj = nvirt * nvirt * nclo * nclo;
-  const size_t size_arbs = denom_->shalf_xx()->ndim()  * nvirt * nvirt;
-  const size_t size_arbi = denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt;
-  const size_t size_airj = denom_->shalf_h()->ndim()   * nclo * nvirt * nclo;
-  const size_t size_risj = denom_->shalf_hh()->ndim()  * nclo * nclo;
-  const size_t size_airs = denom_->shalf_xh()->ndim()  * nclo * nvirt;
-  const size_t size_arst = denom_->shalf_xxh()->ndim() * nvirt;
-  const size_t size_rist = denom_->shalf_xhh()->ndim() * nclo;
+  const size_t size_arbs = nact ? denom_->shalf_xx()->ndim()  * nvirt * nvirt : 0;
+  const size_t size_arbi = nact ? denom_->shalf_x()->ndim()   * nvirt * nclo * nvirt : 0;
+  const size_t size_airj = nact ? denom_->shalf_h()->ndim()   * nclo * nvirt * nclo : 0;
+  const size_t size_risj = nact ? denom_->shalf_hh()->ndim()  * nclo * nclo : 0;
+  const size_t size_airs = nact ? denom_->shalf_xh()->ndim()  * nclo * nvirt : 0;
+  const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
+  const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
   double E_lt = 0.0;
 
 //  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
@@ -270,7 +270,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     }
 
     // a r b s
-    {
+    if (size_arbs) {
       const size_t interm_size = denom_->shalf_xx()->ndim();
       for (size_t j3 = 0; j3 != nvirt; ++j3)
         for (size_t j1 = 0; j1 != nvirt; ++j1) {
@@ -284,7 +284,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     ioffset += size_arbs;
 
     // a r b i
-    {
+    if (size_arbi) {
       const size_t interm_size = denom_->shalf_x()->ndim();
       for (size_t j3 = 0; j3 != nvirt; ++j3)
         for (size_t j2 = 0; j2 != nclo; ++j2)
@@ -301,7 +301,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     }
 
     // a i r j
-    {
+    if (size_airj) {
       const size_t interm_size = denom_->shalf_h()->ndim();
       for (size_t j2 = 0; j2 != nclo; ++j2)
         for (size_t j1 = 0; j1 != nvirt; ++j1)
@@ -318,7 +318,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     }
 
     // r i s j
-    {
+    if (size_risj) {
       const size_t interm_size = denom_->shalf_hh()->ndim();
       for (size_t j5 = 0; j5 != nclo; ++j5)
         for (size_t j6 = 0; j6 != nclo; ++j6) {
@@ -332,7 +332,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     }
 
     // a i r s & a r s i
-    {
+    if (size_airs) {
       const size_t interm_size = denom_->shalf_xh()->ndim();
       for (size_t j6 = 0; j6 != nclo; ++j6) {
         for (size_t j7 = 0; j7 != nvirt; ++j7) {
@@ -347,7 +347,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     ioffset += size_airs;
 
     // a r s t
-    {
+    if (size_arst) {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
       for (size_t j8 = 0; j8 != nvirt; ++j8) {
         for (size_t jo = 0; jo != interm_size; ++jo) {
@@ -360,7 +360,7 @@ double CASPT2::CASPT2::compute_energy_lt() {
     }
 
     // r i s t
-    {
+    if (size_rist) {
       const size_t interm_size = denom_->shalf_xhh()->ndim();
       for (size_t j8 = 0; j8 != nclo; ++j8) {
         for (size_t jo = 0; jo != interm_size; ++jo) {

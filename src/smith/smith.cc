@@ -48,7 +48,9 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
     cout << "  === SMITH program ===" << endl << endl;
 
   // make a smith_info class
+  cout << " Z " << endl;
   auto info = make_shared<const SMITH_Info<double>>(r, idata);
+  cout << " A " << endl;
 
   {
     // print memory requirements
@@ -72,9 +74,11 @@ Smith::Smith(const shared_ptr<const PTree> idata, shared_ptr<const Geometry> g, 
       cout << setprecision(2) << nstate*nstate*(nact6*2 + nact4 + nact2 + 1) * 8.e-9 << " GB" << endl;
     }
   }
+  cout << " B " << endl;
 
   if (info->restart())
     cout << " ** Restarting calculations is currently unavailable for non-relativistic SMITH methods.  Serialized archives will not be generated." << endl << endl;
+  cout << " C " << endl;
 
   if (method == "caspt2") {
     algo_ = make_shared<CASPT2::CASPT2>(info);
