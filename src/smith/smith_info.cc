@@ -110,7 +110,7 @@ SMITH_Info<DataType>::SMITH_Info(shared_ptr<const Reference> o, const shared_ptr
   // save inputs for pseudospin module
   aniso_data_ = idata->get_child_optional("aniso");
   external_rdm_ = idata->get<string>("external_rdm", "");
-  if (external_rdm_.empty() && !ciwfn()->civectors())
+  if (nact() && external_rdm_.empty() && !ciwfn()->civectors())
     throw runtime_error("CI vectors are missing. Most likely you ran CASSCF with external RDMs and forgot to specify external_rdm in the smith input block.");
 }
 
