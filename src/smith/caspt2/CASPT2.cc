@@ -651,7 +651,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
                 shared_ptr<Queue> normq = make_normq(true, jst == ist);
                 while (!normq->done())
                   normq->next_compute();
-                // I do not know why, but the linear energy is correct WITHOUT it !!!! (seriously, why???)
                 sall_[istate]->at(jst)->ax_plus_y(-2.0 * info_->shift() * pow((*heff_)(istate, target), 2.0), n);
               }
             }
@@ -804,24 +803,26 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     timer.tick_print("Correlated density matrix evaluation");
 
     // then form deci0 - 4
-    den0ci = rdm0_->clone();
-    den1ci = rdm1_->clone();
-    den2ci = rdm2_->clone();
-    den3ci = rdm3_->clone();
-    den4ci = rdm3_->clone();
-    shared_ptr<Queue> dec = make_deciq(/*reset = */true);
-    while (!dec->done())
-      dec->next_compute();
-    timer.tick_print("CI derivative evaluation");
+    if (info_->nact()) {
+      den0ci = rdm0_->clone();
+      den1ci = rdm1_->clone();
+      den2ci = rdm2_->clone();
+      den3ci = rdm3_->clone();
+      den4ci = rdm3_->clone();
+      shared_ptr<Queue> dec = make_deciq(/*reset = */true);
+      while (!dec->done())
+        dec->next_compute();
+      timer.tick_print("CI derivative evaluation");
 
-    // when active is divided into the blocks, den4ci is evaluated (activeblock)**2 times
-    double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
-    den4ci->scale(den4factor);
+      // when active is divided into the blocks, den4ci is evaluated (activeblock)**2 times
+      double den4factor = 1.0 / static_cast<double>(active_.nblock() * active_.nblock());
+      den4ci->scale(den4factor);
 
-    // and contract them with rdm derivs
-    do_rdm_deriv(1.0);
+      // and contract them with rdm derivs
+      do_rdm_deriv(1.0);
 
-    timer.tick_print("CI derivative contraction");
+      timer.tick_print("CI derivative contraction");
+    }
     cout << endl;
   } else {
     // in case when CASPT2 is not variational...
