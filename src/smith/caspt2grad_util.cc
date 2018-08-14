@@ -319,11 +319,9 @@ tuple<shared_ptr<Matrix>, shared_ptr<const DFFullDist>>
   {
     // Y2 = Y2_rs = Y2_ri + Y2_ra, so making both at once
     shared_ptr<Matrix> dkl;
-//    if (nact) {
-      dkl = ref_->rdm1_mat(); // D0SA
-      dkl->sqrt();
-      dkl->scale(1.0/sqrt(2.0));
-//    }
+    dkl = ref_->rdm1_mat(); // D0SA
+    dkl->sqrt();
+    dkl->scale(1.0/sqrt(2.0));
     Fock<1> fock(geom_, ref_->hcore()->clone(), nullptr, ocoeff * *dkl, /*grad*/false, /*rhf*/true);
     *out += *coeff_ % fock * *coeff_ * *d1_ * 2.0;
   }
