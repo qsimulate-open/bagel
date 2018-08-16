@@ -973,20 +973,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
   }
 
-#if 0
-  for (int i = 0; i != nstates; ++i) {
-    cout << "nimag = " << setprecision(10) << nimag[i] << endl;
-    cout << "e0 = " << setprecision(10) << *e0->at(i,i) << endl;
-    e1->at(i,i)->rdm1_mat(0)->print("e1 = ");
-    cout << "e2 = " << endl;
-    e2->at(i,i)->print();
-    cout << "e3 = " << endl;
-    e3->at(i,i)->print();
-    cout << "e4 = " << endl;
-    e3->at(i,i)->print();
-  }
-#endif
-
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
 }
 
