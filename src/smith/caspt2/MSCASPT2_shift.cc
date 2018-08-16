@@ -167,6 +167,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const bool xterm = true;
   const bool dterm = true;
 
+  Timer timer(1);
+
   shared_ptr<Matrix> dshift = den2_->clone();
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
@@ -221,11 +223,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j2i, j2i) += Lambda;
               dshift->element(j3i, j3i) -= Lambda;
-              if (nact)
-                *(e0->at(istate,istate)) += Lambda * denom * 2.0;
             }
       ioffset += size_aibj;
     }
+    timer.tick_print("dshift aibj");
 
     // a r b s
     if (size_arbs) {
@@ -309,6 +310,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_arbs;
     }
+    timer.tick_print("dshift arbs");
 
     // a r b i
     if (size_arbi) {
@@ -394,6 +396,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_arbi;
     }
+    timer.tick_print("dshift arbi");
 
     // a i r j
     if (size_airj) {
@@ -490,6 +493,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_airj;
     }
+    timer.tick_print("dshift airj");
 
     // r i s j
     if (size_risj) {
@@ -629,6 +633,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_risj;
     }
+    timer.tick_print("dshift risj");
 
     // a i r s & a r s i
     if (size_airs) {
@@ -743,6 +748,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_airs;
     }
+    timer.tick_print("dshift airs");
 
     // a r s t
     if (size_arst) {
@@ -833,6 +839,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
       ioffset += size_arst;
     }
+    timer.tick_print("dshift arst");
 
     // r i s t
     if (size_rist) {
@@ -971,6 +978,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_rist;
     }
+    timer.tick_print("dshift rist");
   }
 
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
