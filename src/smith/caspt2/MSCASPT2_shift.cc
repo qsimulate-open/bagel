@@ -447,7 +447,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j0i, j0i) += Lambda;
               dshift->element(j2i, j2i) += Lambda;
-              if (fabs((*t)[jall]) > 1.0e-8) cout << setw(8) << j0 << setw(8) << j2 << setw(8) << j3o << setw(20) << setprecision(8) << denom << setw(20) << setprecision(8) << (*l)[jall] << setw(20) << (*t)[jall] << endl;
               smallz->element(j3o, j3o) -= Lambda;
               nimag[istate] -= Lambda;
               for (size_t j4 = 0; j4 != nact; ++j4) {
@@ -1119,6 +1118,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     cout << "e2 = " << endl;
     e2->at(i,i)->print();
     cout << "e3 = " << endl;
+    e3->at(i,i)->print();
+    cout << "e4 = " << endl;
     e3->at(i,i)->print();
   }
 #endif
