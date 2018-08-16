@@ -273,38 +273,59 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
           if (is != js) continue;
-          shared_ptr<RDM<1>> rdm1tmp;
-          shared_ptr<RDM<2>> rdm2tmp;
-          shared_ptr<RDM<3>> rdm3tmp;
-          shared_ptr<RDM<4>> rdm4tmp;
-          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          for (size_t j0 = 0; j0 != nact; ++j0) {
-            for (size_t j1 = 0; j1 != nact; ++j1) {
-              for (size_t j2 = 0; j2 != nact; ++j2) {
-                for (size_t j3 = 0; j3 != nact; ++j3) {
-                  for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                    const double VrsO = denom_->shalf_xx()->element(j0o, j0 + j1*nact + is*nact*nact);
-                    for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                      const double VtuO = denom_->shalf_xx()->element(j1o, j2 + j3*nact + js*nact*nact);
-                      const double factor = VrsO * VtuO;
+          shared_ptr<RDM<1>> rdm1;
+          shared_ptr<RDM<2>> rdm2;
+          shared_ptr<RDM<3>> rdm3;
+          shared_ptr<RDM<4>> rdm4;
+          tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
+
+          {
+            auto Qmat = make_shared<Matrix>(interm_size, nact * nact);
+            auto Pmat = make_shared<Matrix>(interm_size, nact * nact);
+            // (1) Form Q^U_{tv} = z_{TU} V^{T}_{tv} and P^U_{rt} = -X_{TU} V^{T}_{rt}
+            for (size_t j0 = 0; j0 != nact; ++j0) {
+              for (size_t j1 = 0; j1 != nact; ++j1) {
+                for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                  // TODO think that I can use dgemm
+                  const double VrsO = denom_->shalf_xx()->element(j0o, j0 + j1 * nact + is * nact * nact);
+                  for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                    Qmat->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * VrsO;
+                    Pmat->element(j1o, j0 + j1 * nact) += -largex->element(j0o, j1o) * VrsO;
+                  }
+                }
+              }
+            }
+
+            auto Rmat = make_shared<RDM<2>>(nact);
+            // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
+            for (size_t j0 = 0; j0 != nact; ++j0) {
+              for (size_t j1 = 0; j1 != nact; ++j1) {
+                for (size_t j2 = 0; j2 != nact; ++j2) {
+                  for (size_t j3 = 0; j3 != nact; ++j3) {
+                    for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                      const double VrsO = denom_->shalf_xx()->element(j0o, j2 + j3 * nact + js * nact * nact);
+                      Rmat->element(j0, j1, j2, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
                       if (xterm)
-                        e2->at(is,js)->element(j0, j2, j1, j3) -= largex->element(j0o, j1o) * factor;
-                      for (size_t j4 = 0; j4 != nact; ++j4) {
-                        const size_t j4i = j4 + nclo;
-                        for (size_t j5 = 0; j5 != nact; ++j5) {
-                          const size_t j5i = j5 + nclo;
-                          if (dterm) {
-                            // this term stem from the density matrix dependent term of dshift
-                            e3->at(is,js)->element(j0, j2, j1, j3, j4, j5) += smallz->element(j0o, j1o) * factor * fockact_->element(j4, j5) * .5;
-                          }
-                          dshift->element(j4i, j5i) += smallz->element(j0o, j1o) * factor * rdm3tmp->element(j0, j2, j1, j3, j4, j5);
-                        }
-                      }
+                        e2->at(is, js)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     }
                   }
                 }
               }
             }
+            // (3) form d^{(2)}_{rs} and e3
+            for (size_t j0 = 0; j0 != nact; ++j0)
+              for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j2 = 0; j2 != nact; ++j2)
+                  for (size_t j3 = 0; j3 != nact; ++j3)
+                    for (size_t j4 = 0; j4 != nact; ++j4) {
+                      const size_t j4i = j4 + nclo;
+                      for (size_t j5 = 0; j5 != nact; ++j5) {
+                        const size_t j5i = j5 + nclo;
+                        dshift->element(j4i, j5i) += Rmat->element(j0, j1, j2, j3) * rdm3->element(j0, j2, j1, j3, j4, j5);
+                        if (dterm)
+                          e3->at(is,js)->element(j0, j2, j1, j3, j4, j5) += 0.5 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
+                      }
+                    }
           }
         }
       }
