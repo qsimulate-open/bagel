@@ -194,6 +194,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
   }
 
+  const double shift = info_->shift();
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates; ++istate) { // state of T
     shared_ptr<const VectorB> l = lambda[istate];
@@ -218,7 +219,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j2i, j2i) += Lambda;
               dshift->element(j3i, j3i) -= Lambda;
-
               if (nact)
                 *(e0->at(istate,istate)) += Lambda * denom * 2.0;
             }
@@ -1130,8 +1130,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>>
   MSCASPT2::MSCASPT2::make_d2_real(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // More of a debug code to debug the overlap gradient code [<I|l T|N> E_shift]
-  const int nstates = info_->ciwfn()->nstates();
   const size_t nact = info_->nact();
+  const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
   const size_t nvirt = info_->nvirt();
   const size_t ncore = info_->ncore();
@@ -1151,19 +1151,20 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   auto e2 = make_shared<VecRDM<2>>();
   auto e3 = make_shared<VecRDM<3>>();
 
-  for (size_t is = 0; is != nstates; ++is)
-    for (size_t js = 0; js != nstates; ++js)
-      if (!info_->sssr() || is == js) {
-        auto e0temp = make_shared<double>(0.0);
-        auto e1temp = make_shared<RDM<1>>(nact);
-        auto e2temp = make_shared<RDM<2>>(nact);
-        auto e3temp = make_shared<RDM<3>>(nact);
-
-        e0->emplace(is, js, e0temp);
-        e1->emplace(is, js, e1temp);
-        e2->emplace(is, js, e2temp);
-        e3->emplace(is, js, e3temp);
-      }
+  if (nact) {
+    for (size_t is = 0; is != nstates; ++is)
+      for (size_t js = 0; js != nstates; ++js)
+        if (!info_->sssr() || is == js) {
+          auto e0temp = make_shared<double>(0.0);
+          auto e1temp = make_shared<RDM<1>>(nact);
+          auto e2temp = make_shared<RDM<2>>(nact);
+          auto e3temp = make_shared<RDM<3>>(nact);
+          e0->emplace(is, js, e0temp);
+          e1->emplace(is, js, e1temp);
+          e2->emplace(is, js, e2temp);
+          e3->emplace(is, js, e3temp);
+        }
+  }
 
   const double shift = info_->shift();
   for (int istate = 0; istate != nstates; ++istate) { // state of T
@@ -1178,14 +1179,16 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             for (size_t j0 = 0; j0 != nclo; ++j0) {
               const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
               const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-              *(e0->at(istate,istate)) -= (*l)[jall] * 8.0 * 8.0 * (*t)[jall] * shift * 2.0;
-              *(e0->at(istate,istate)) -= (*l)[jall2] * -4.0 * -4.0 * (*t)[jall] * shift * 2.0;
+              if (nact) {
+                *(e0->at(istate,istate)) -= (*l)[jall] * 8.0 * 8.0 * (*t)[jall] * shift * 2.0;
+                *(e0->at(istate,istate)) -= (*l)[jall2] * -4.0 * -4.0 * (*t)[jall] * shift * 2.0;
+              }
             }
       ioffset += size_aibj;
     }
 
     // a r b s
-    {
+    if (size_arbs) {
       const size_t interm_size = denom_->shalf_xx()->ndim();
       for (size_t j3 = 0; j3 != nvirt; ++j3) {
         for (size_t j1 = 0; j1 != nvirt; ++j1) {
@@ -1212,7 +1215,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a r b i
-    {
+    if (size_arbi) {
       const size_t interm_size = denom_->shalf_x()->ndim();
 
       for (size_t j3 = 0; j3 != nvirt; ++j3) {
@@ -1240,7 +1243,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a i r j
-    {
+    if (size_airj) {
       const size_t interm_size = denom_->shalf_h()->ndim();
 
       for (size_t j2 = 0; j2 != nclo; ++j2) {
@@ -1269,7 +1272,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // r i s j
-    {
+    if (size_risj) {
       const size_t interm_size = denom_->shalf_hh()->ndim();
 
       for (size_t j0 = 0; j0 != nclo; ++j0) {
@@ -1305,7 +1308,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a i r s & a r s i
-    {
+    if (size_airs) {
       const size_t interm_size = denom_->shalf_xh()->ndim();
 
       for (size_t j0 = 0; j0 != nclo; ++j0) {
@@ -1344,7 +1347,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // a r s t
-    {
+    if (size_arst) {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
 
       for (size_t j0 = 0; j0 != nvirt; ++j0) {
@@ -1372,7 +1375,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
 
     // r i s t
-    {
+    if (size_rist) {
       const size_t interm_size = denom_->shalf_xhh()->ndim();
 
       for (size_t j0 = 0; j0 != nclo; ++j0) {
@@ -1406,6 +1409,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   }
 
   //scale
+#if 0
   for (int i = 0; i != nstates; ++i) {
     cout << "e0 = " << setprecision(10) << *e0->at(i,i) << endl;
     e1->at(i,i)->rdm1_mat(0)->print("e1 = ");
@@ -1414,6 +1418,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     cout << "e3 = " << endl;
     e3->at(i,i)->print();
   }
+#endif
 
   return tie(dshift, e0, e1, e2, e3);
 }

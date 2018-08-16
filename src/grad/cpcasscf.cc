@@ -152,15 +152,32 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   shared_ptr<Matrix> zcore, gzcore;
   if (ncore_ || additional_den) {
     assert(ncore_ < nclosed);
-    zcore = make_shared<Matrix>(nocca, nocca);
+    zcore = make_shared<Matrix>(nmobasis, nmobasis);
     for (int i = 0; i != ncore_; ++i)
       for (int j = ncore_; j != nclosed; ++j) {
         zcore->element(j, i) = - (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / (fock_->element(j,j) - fock_->element(i,i));
         assert(abs(fock_->element(i, j)) < 1.0e-8);
       }
+
+    // additional constraints?
+    for (int i = ncore_; i != nclosed; ++i) {
+      for (int j = ncore_; j != nclosed; ++j) {
+        if (i == j) continue;
+        const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+        zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+      }
+    }
+    for (int i = nocca; i != nocca + nvirt; ++i) {
+      for (int j = nocca; j != nocca + nvirt; ++j) {
+        if (i == j) continue;
+        const double fdiff = fock_->element(j,j) - fock_->element(i,i);
+        zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
+      }
+    }
     zcore->symmetrize();
-    if (additional_den)
-      *zcore += *additional_den;
+    if (additional_den) {
+      zcore->add_block(1.0, 0, 0, nocca, nocca, *additional_den);
+    }
     shared_ptr<Matrix> rot;
 
     // find good lambda that makes zcore positive definite
@@ -168,30 +185,41 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
     for (int i = 0; i != zmaxiter; ++i) {
       shared_ptr<Matrix> rotq;
-      VectorB eig(nocca);
+      VectorB eig(nmobasis);
       if (nact) {
-        rotq = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());
+        rotq = make_shared<Matrix>(*zcore * lambda);
+        for (int i = 0; i != nmobasis; ++i)
+          rotq->element(i,i) += 2.0;
       } else {
-        rotq = make_shared<Matrix>(*zcore);
-        for (int i = 0; i != nclosed; ++i)
-          rotq->element(i,i) += 2.0 * lambda;
+        rotq = make_shared<Matrix>(*zcore * lambda);
+        for (int i = 0; i != nmobasis; ++i)
+          rotq->element(i,i) += 2.0;
       }
       rotq->diagonalize(eig);
+      cout << i << setw(20) << setprecision(10) << eig[0] << endl;
       if (eig[0] < -numerical_zero__) lambda *= 0.5;
       else break;
     }
 
     if (nact) {
-      rot = make_shared<Matrix>(*zcore * lambda + *ref_->rdm1_mat());     // trick to make it positive definite
+      rot = make_shared<Matrix>(*zcore * lambda);
+      for (int i = 0; i != nmobasis; ++i) {
+        rot->element(i,i) += 2.0;
+      }
     } else {
-      rot = make_shared<Matrix>(*zcore);
-      for (int i = 0; i != nclosed; ++i)
-        rot->element(i,i) += 2.0 * lambda;
+      rot = make_shared<Matrix>(*zcore * lambda);
+      for (int i = 0; i != nmobasis; ++i) {
+        rot->element(i,i) += 2.0;
+      }
     }
     rot->sqrt();
     rot->scale(1.0/sqrt(2.0));
-    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, ocoeff * *rot, false, true);
-    gzcore = make_shared<Matrix>(*coeff_ % *gzcoreao * *coeff_ - *fock_); // compensate for the "trick"
+    auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rot, false, true);
+    // TODO stupid code now
+    auto rottemp = make_shared<Matrix>(nmobasis, nmobasis);
+    for (int i = 0; i != nmobasis; ++i) rottemp->element(i,i) = 1.0;
+    auto fv = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rottemp, false, true);
+    gzcore = make_shared<Matrix>(*coeff_ % (*gzcoreao + *fv) * *coeff_); // compensate for the "trick"
     gzcore->scale(1.0 / lambda);
   }
 
@@ -205,7 +233,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
   // patch frozen core contributions
   if (zcore) {
     // contributions to Y
-    source->first()->ax_plus_y(2.0, *fock_ * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
+    source->first()->ax_plus_y(2.0, *fock_ * *zcore + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
     // contributions to y
     if (nact) {
       for (int istate = 0; istate != ref_->nstate(); ++istate) {
@@ -279,7 +307,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   *xmat += *grad_->first();
   if (zcore)
-    xmat->ax_plus_y(2.0, *fock_ * *zcore->resize(nmobasis, nmobasis) + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
+    xmat->ax_plus_y(2.0, *fock_ * *zcore + *gzcore * *ref_->rdm1_mat()->resize(nmobasis, nmobasis));
   xmat->symmetrize();
   xmat->scale(0.5); // due to convention
   return make_tuple(result->first(), result->second(), xmat, zcore);

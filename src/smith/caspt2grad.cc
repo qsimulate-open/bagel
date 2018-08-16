@@ -432,10 +432,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   // form Zd + dZ^+
   shared_ptr<const Matrix> d0sa = nact ? ref->rdm1_mat()->resize(nmobasis, nmobasis) : d0ms;
   auto dm = make_shared<Matrix>(*zmat * *d0sa + (*d0sa ^ *zmat));
-
-  auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm);
-  if (smallz)
-    dtot->add_block(1.0, 0, 0, nocc, nocc, smallz);
+  auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm + *smallz);
 
   // form zdensity
   shared_ptr<const RDM<1>> zrdm1;
@@ -555,8 +552,14 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
 
   separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), d1);
 
+  // TODO correct?
+#if 0
   if (smallz)
-    separable_pair(smallz, d0sa);
+    separable_pair(smallz->get_submatrix(0,0,nocc,nocc), d0sa);
+#else
+  if (smallz)
+    separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), smallz);
+#endif
 
   // back transform the rest
   shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);
