@@ -219,7 +219,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     auto rottemp = make_shared<Matrix>(nmobasis, nmobasis);
     for (int i = 0; i != nmobasis; ++i) rottemp->element(i,i) = 1.0;
     auto fv = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rottemp, false, true);
-    gzcore = make_shared<Matrix>(*coeff_ % (*gzcoreao + *fv) * *coeff_); // compensate for the "trick"
+    gzcore = make_shared<Matrix>(*coeff_ % (*gzcoreao - *fv) * *coeff_); // compensate for the "trick"
     gzcore->scale(1.0 / lambda);
   }
 
