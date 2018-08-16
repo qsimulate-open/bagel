@@ -197,7 +197,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
   }
 
-  const double shift = info_->shift();
   const double shift2 = info_->shift() * info_->shift();
   for (int istate = 0; istate != nstates; ++istate) { // state of T
     shared_ptr<const VectorB> l = lambda[istate];
