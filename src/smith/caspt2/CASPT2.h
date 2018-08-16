@@ -1,4 +1,5 @@
 //
+//
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: CASPT2.h
 // Copyright (C) 2014 Shiozaki group
@@ -162,8 +163,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     void manipulate(std::shared_ptr<MultiTensor_<double>> s);
     void do_rdm_deriv(double factor);
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
-
-    double compute_energy_lt();
 
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);

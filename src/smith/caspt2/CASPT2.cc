@@ -1040,7 +1040,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   }
 
   if (info_->shift_imag() && info_->shift() != 0.0) {
-    energy_lt_ = compute_energy_lt();
     auto dtmp = den2_->copy();
     dtmp->ax_plus_y(1.0, den2_shift_);
     den2_ = dtmp;

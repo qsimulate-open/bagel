@@ -196,7 +196,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
           rotq->element(i,i) += 2.0;
       }
       rotq->diagonalize(eig);
-      cout << i << setw(20) << setprecision(10) << eig[0] << endl;
       if (eig[0] < -numerical_zero__) lambda *= 0.5;
       else break;
     }
