@@ -364,7 +364,7 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
     civec->data(0)->element(0,0) = 1.0;
     civector = civec;
   }
-  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, coeff);
+  auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, task_->smith()->algo()->info()->shift_imag(), coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
   tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());

@@ -55,6 +55,7 @@ class CPCASSCF {
     std::shared_ptr<FCI> fci_;
 
     int ncore_;
+    bool imag_;
     std::shared_ptr<const Matrix> coeff_;
 
     std::shared_ptr<PairFile<Matrix,Dvec>> form_sigma(std::shared_ptr<const PairFile<Matrix,Dvec>> z, std::shared_ptr<const DFFullDist>,
@@ -66,7 +67,7 @@ class CPCASSCF {
 
   public:
     CPCASSCF(std::shared_ptr<const PairFile<Matrix, Dvec>> grad, std::shared_ptr<const Dvec> c, std::shared_ptr<const DFHalfDist> halfj,
-             std::shared_ptr<const Reference> g, std::shared_ptr<FCI_base> f, const int ncore = 0, std::shared_ptr<const Matrix> coeff = nullptr);
+             std::shared_ptr<const Reference> g, std::shared_ptr<FCI_base> f, const int ncore = 0, const bool imag = false, std::shared_ptr<const Matrix> coeff = nullptr);
 
     // tuple of Z, z, and X.
     std::tuple<std::shared_ptr<const Matrix>, std::shared_ptr<const Dvec>, std::shared_ptr<const Matrix>, std::shared_ptr<const Matrix>>

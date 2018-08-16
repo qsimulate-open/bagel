@@ -31,8 +31,8 @@ using namespace bagel;
 using namespace btas;
 
 CPCASSCF::CPCASSCF(shared_ptr<const PairFile<Matrix, Dvec>> grad, shared_ptr<const Dvec> civ, shared_ptr<const DFHalfDist> h,
-                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, shared_ptr<const Matrix> coeff)
-: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), coeff_(coeff ? coeff : ref_->coeff()) {
+                   shared_ptr<const Reference> r, shared_ptr<FCI_base> f, const int ncore, const bool imag, shared_ptr<const Matrix> coeff)
+: grad_(grad), civector_(civ), halfj_(h), ref_(r), geom_(r->geom()), fci_native_(f), ncore_(ncore), imag_(imag), coeff_(coeff ? coeff : ref_->coeff()) {
 
   // FCI object in CPCASSCF should be Knowles--Handy (due to form_sigma)
   if (ref_->nact())
@@ -150,7 +150,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
 
   // frozen core contributions
   shared_ptr<Matrix> zcore, gzcore;
-  if (ncore_ || additional_den) {
+  if (ncore_ || imag_ || additional_den) {
     assert(ncore_ < nclosed);
     zcore = make_shared<Matrix>(nmobasis, nmobasis);
     for (int i = 0; i != ncore_; ++i)
@@ -159,7 +159,7 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
         assert(abs(fock_->element(i, j)) < 1.0e-8);
       }
 
-    // additional constraints?
+    // additional constraints for diagonal fock
     for (int i = ncore_; i != nclosed; ++i) {
       for (int j = ncore_; j != nclosed; ++j) {
         if (i == j) continue;
@@ -174,10 +174,12 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
         zcore->element(j, i) = fabs(fdiff) < 1.0e-8 ? 0.0 : - .5 * (grad_->first()->element(j, i) - grad_->first()->element(i, j)) / fdiff;
       }
     }
+
     zcore->symmetrize();
     if (additional_den) {
       zcore->add_block(1.0, 0, 0, nocca, nocca, *additional_den);
     }
+
     shared_ptr<Matrix> rot;
 
     // find good lambda that makes zcore positive definite
