@@ -375,7 +375,9 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   // form Zd + dZ^+
   shared_ptr<const Matrix> d0sa = nact ? ref->rdm1_mat()->resize(nmobasis, nmobasis) : d0ms;
   auto dm = make_shared<Matrix>(*zmat * *d0sa + (*d0sa ^ *zmat));
-  auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm + *smallz);
+  auto dtot = make_shared<Matrix>(*d0ms + *d11 + *d1 + *dm);
+  if (smallz)
+    *dtot += *smallz;
 
   // form zdensity
   shared_ptr<const RDM<1>> zrdm1;
