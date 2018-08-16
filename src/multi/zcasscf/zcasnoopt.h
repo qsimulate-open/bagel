@@ -34,6 +34,7 @@ class ZCASNoopt_base : public ZCASSCF {
     virtual void init_mat1e() override final { /*do nothing*/ }
     virtual void impose_symmetry(std::shared_ptr<ZMatrix>) const override final { }
     virtual void impose_symmetry(std::shared_ptr<ZRotFile>) const override final { }
+    virtual bool kramers() const = 0;
 
   protected:
     ZCASNoopt_base(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref)
@@ -47,6 +48,7 @@ class ZCASNoopt_base : public ZCASSCF {
 class ZCASNoopt : public ZCASNoopt_base {
   protected:
     virtual void init_coeff() override;
+    virtual bool kramers() const override { return true; }
 
   public:
     ZCASNoopt(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);
@@ -57,6 +59,7 @@ class ZCASNoopt : public ZCASNoopt_base {
 class ZCASNoopt_London : public ZCASNoopt_base {
   protected:
     virtual void init_coeff() override;
+    virtual bool kramers() const override { return false; }
 
   public:
     ZCASNoopt_London(std::shared_ptr<const PTree> idat, std::shared_ptr<const Geometry> geom, std::shared_ptr<const Reference> ref);

@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: gamma_forest_prod_asd.h
-// Copyright (C) 2014 Shane Parker
+// Copyright (C) 2014 Toru Shiozaki
 //
 // Author: Shane Parker <shane.parker@u.northwestern.edu>
 // Maintainer: Shiozaki Group
@@ -62,12 +62,12 @@ class GammaForestProdASD {
 
     void compute();
 
-    bool exist(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const {
+    bool exist(const BlockKey& bra, const BlockKey& ket, const std::list<GammaSQ>& gammalist) const {
       auto iter = std::find_if(sparselist_.begin(), sparselist_.end(), [&bra, &ket, &gammalist] (std::tuple<std::list<GammaSQ>, BlockInfo, BlockInfo> sparse) {
         return std::make_tuple(bra, ket, gammalist) == std::make_tuple(std::get<1>(sparse).key(), std::get<2>(sparse).key(), std::get<0>(sparse)); });
       return iter != sparselist_.end();
     }
-    std::shared_ptr<const Matrix> get(BlockKey bra, BlockKey ket, std::list<GammaSQ> gammalist) const { return gammas_.at(make_tuple(gammalist,bra,ket)); }
+    std::shared_ptr<const Matrix> get(const BlockKey& bra, const BlockKey& ket, const std::list<GammaSQ>& gammalist) const { return gammas_.at(make_tuple(gammalist,bra,ket)); }
     SparseList sparselist() const { return sparselist_; }
 
   private:

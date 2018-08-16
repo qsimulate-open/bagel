@@ -26,6 +26,7 @@
 #define __SRC_INPUT_INPUT_H
 
 #include <vector>
+#include <sstream>
 #include <src/util/string.h>
 #include <src/util/serialization.h>
 #include <boost/property_tree/ptree.hpp>
@@ -94,12 +95,12 @@ class PTree {
 
   public:
     PTree() : data_() {}
-
     PTree(const boost::property_tree::ptree& i, const std::string key) : data_(i), key_(key) { }
-
     PTree(const PTree& o) : data_(o.data_), key_(o.key_) { }
-
+    // constructor from an input file
     PTree(const std::string& input);
+    // constructor from a stringify'ed json object
+    PTree(std::stringstream& input);
 
     std::shared_ptr<PTree> get_child(const std::string& key) const;
     std::shared_ptr<PTree> get_child_optional(const std::string& key) const;

@@ -32,7 +32,7 @@ namespace bagel {
 
 class DFTGrid_base {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Molecule> mol_;
     std::shared_ptr<Grid> grid_;
 
     // TODO to be controlled by the input deck
@@ -46,30 +46,32 @@ class DFTGrid_base {
                                                     std::unique_ptr<double[]>& rho, std::unique_ptr<double[]>& sigma,
                                                     std::unique_ptr<double[]>& rhox, std::unique_ptr<double[]>& rhoy, std::unique_ptr<double[]>& rhoz) const;
   public:
-    DFTGrid_base(std::shared_ptr<const Geometry> geom) : geom_(geom) { }
+    DFTGrid_base(std::shared_ptr<const Molecule> mol) : mol_(mol) { }
 
     std::tuple<std::shared_ptr<const Matrix>,double> compute_xc(std::shared_ptr<const XCFunc> func, std::shared_ptr<const Matrix> mat) const;
     std::shared_ptr<const GradFile> compute_xcgrad(std::shared_ptr<const XCFunc> func, std::shared_ptr<const Matrix> mat) const;
     double fuzzy_cell(std::shared_ptr<const Atom> a, std::array<double,3>&& x) const;
+
+    std::shared_ptr<const Grid> grid() const { return grid_; }
 };
 
 
 // Becke-Chebyshev-Lebedev
 class BLGrid : public DFTGrid_base {
   public:
-    BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
+    BLGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Molecule> mol);
 };
 
 // Treutler-Ahlrichs-Chebyshev-Lebedev
 class TALGrid : public DFTGrid_base {
   public:
-    TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Geometry> geom);
+    TALGrid(const size_t nrad, const size_t nang, std::shared_ptr<const Molecule> mol);
 };
 
 // Pruned Grid
 class DefaultGrid : public DFTGrid_base {
   public:
-    DefaultGrid(std::shared_ptr<const Geometry> geom);
+    DefaultGrid(std::shared_ptr<const Molecule> mol);
 };
 
 }

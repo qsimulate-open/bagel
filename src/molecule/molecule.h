@@ -74,6 +74,9 @@ class Molecule {
     // Constructor helpers
     void common_init1();
 
+    // Absorbing potential
+    std::array<double,3> cap_;
+
   private:
     // serialization
     friend class boost::serialization::access;
@@ -138,6 +141,8 @@ class Molecule {
     double magnetic_field(const int i) const { return magnetic_field_[i]; }
 
     std::shared_ptr<const XYZFile> xyz() const;
+
+    std::array<double,3> cap() const { return cap_; }
 
     // In R12 methods, we need to construct a union of OBS and CABS.
     // Currently, this is done by creating another object and merge OBS and CABS into atoms_.

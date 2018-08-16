@@ -25,98 +25,10 @@
 #include <algorithm>
 
 #include <src/asd/dmrg/dmrg_block.h>
-#include <src/ci/ras/civector.h>
 #include <src/asd/dmrg/kronecker.h>
 
 using namespace bagel;
 using namespace std;
-
-DMRG_Block1::DMRG_Block1(GammaForestASD<RASDvec>&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e, const map<BlockKey,
-           shared_ptr<const Matrix>> spin, shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
-  Timer dmrgtime(2);
-
-  // Build set of blocks
-  for (auto& i : h2e) {
-    assert(i.second->ndim() == i.second->mdim());
-    blocks_.emplace(i.first.nelea, i.first.neleb, i.second->ndim());
-  }
-  dmrgtime.tick_print("prepare blocks");
-
-  // initialize operator space
-  for (auto o : forest.sparselist()) {
-    list<GammaSQ> gammalist = get<0>(o);
-
-    BlockInfo brakey = get<1>(o);
-    BlockInfo ketkey = get<2>(o);
-
-    assert(blocks_.count(brakey));
-    assert(blocks_.count(ketkey));
-
-    const int bratag = forest.block_tag(brakey);
-    const int kettag = forest.block_tag(ketkey);
-
-    assert(forest.template exist<0>(bratag, kettag, gammalist));
-    shared_ptr<const Matrix> mat = forest.template get<0>(bratag, kettag, gammalist);
-    btas::CRange<3> range(brakey.nstates, ketkey.nstates, lrint(pow(norb(), gammalist.size())));
-    // checking ndim
-    assert(mat->ndim() == range.extent(0)*range.extent(1));
-    // checking mdim
-    assert(mat->mdim() == range.extent(2));
-    // internal check
-    assert(mat->storage().size() == range.area());
-    // convert this matrix to 3-tensor
-    auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
-#ifdef HAVE_MPI_H
-    mpi__->broadcast(tensor->data(), tensor->size(), 0);
-    dmrgtime.tick_print("broadcast");
-#endif
-    // add matrix
-    CouplingBlock cb(brakey, ketkey, tensor);
-    sparse_[gammalist].emplace(cb.key(), cb);
-  }
-}
-
-DMRG_Block1::DMRG_Block1(GammaForestProdASD&& forest, const map<BlockKey, shared_ptr<const Matrix>> h2e,
-                                                    const map<BlockKey, shared_ptr<const Matrix>> spin,
-                                                    shared_ptr<const Matrix> coeff) : DMRG_Block(coeff), H2e_(h2e), spin_(spin) {
-  Timer dmrgtime(2);
-
-  // Build set of blocks
-  for (auto& i : h2e) {
-    assert(i.second->ndim() == i.second->mdim());
-    blocks_.emplace(i.first.nelea, i.first.neleb, i.second->ndim());
-  }
-  dmrgtime.tick_print("build block info");
-
-  // initialize operator space
-  for (auto o : forest.sparselist()) {
-    list<GammaSQ> gammalist = get<0>(o);
-
-    BlockInfo brakey = get<1>(o);
-    BlockInfo ketkey = get<2>(o);
-
-    assert(blocks_.count(brakey));
-    assert(blocks_.count(ketkey));
-
-    assert(forest.exist(brakey, ketkey, gammalist));
-    shared_ptr<const Matrix> mat = forest.get(brakey, ketkey, gammalist);
-    btas::CRange<3> range(brakey.nstates, ketkey.nstates, lrint(pow(norb(), gammalist.size())));
-    // checking ndim
-    assert(mat->ndim() == range.extent(0)*range.extent(1));
-    // checking mdim
-    assert(mat->mdim() == range.extent(2));
-    // internal check
-    assert(mat->storage().size() == range.area());
-    // convert this matrix to 3-tensor
-    auto tensor = make_shared<btas::Tensor3<double>>(range, move(mat->storage()));
-#ifdef HAVE_MPI_H
-    mpi__->broadcast(tensor->data(), tensor->size(), 0);
-#endif
-    // add matrix
-    CouplingBlock cb(brakey, ketkey, tensor);
-    sparse_[gammalist].emplace(cb.key(), cb);
-  }
-}
 
 string DMRG_Block1::block_info_to_string(const BlockKey bk, const int state) const {
   stringstream ss;

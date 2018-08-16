@@ -107,6 +107,9 @@ class SpinFreeMethod {
     void feed_rdm_denom();
     std::shared_ptr<CIWfnT> rotate_ciwfn(std::shared_ptr<const CIWfnT> input, const MatType& rotation) const;
 
+    // print out reference property matrices if requested
+    void reference_prop() const;
+
     // printing functions called from the solve function of a derived class
     static void print_iteration();
     static void print_iteration(const int i, const double en, const double err, const double tim, const int istate = -1);
@@ -165,9 +168,11 @@ class SpinFreeMethod {
 };
 
 template<> void SpinFreeMethod<double>::rotate_xms();
+template<> void SpinFreeMethod<double>::reference_prop() const;
 template<> void SpinFreeMethod<double>::feed_rdm_denom();
 template<> std::shared_ptr<CIWfn> SpinFreeMethod<double>::rotate_ciwfn(std::shared_ptr<const CIWfn> input, const Matrix& rotation) const;
 template<> void SpinFreeMethod<std::complex<double>>::rotate_xms();
+template<> void SpinFreeMethod<std::complex<double>>::reference_prop() const;
 template<> void SpinFreeMethod<std::complex<double>>::feed_rdm_denom();
 template<> std::shared_ptr<RelCIWfn> SpinFreeMethod<std::complex<double>>::rotate_ciwfn(std::shared_ptr<const RelCIWfn> input, const ZMatrix& rotation) const;
 template<> std::shared_ptr<Matrix> SpinFreeMethod<double>::feed_rdm_2fderiv(std::shared_ptr<const SMITH_Info<double>> info, std::shared_ptr<const Matrix> fockact, const int istate);

@@ -53,6 +53,9 @@ class CASNoopt : public CASSCF {
         energy_ = ref_->energy();
       }
 
+      if (canonical_)
+        coeff_ = semi_canonical_orb();
+
       if (do_hyperfine_ && !geom_->external() && nstate_ == 1 && external_rdm_.empty()) {
         HyperFine hfcc(geom_, spin_density(), fci_->det()->nspin(), "CASSCF");
         hfcc.compute();

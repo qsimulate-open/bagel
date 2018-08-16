@@ -114,7 +114,7 @@ void ZMatrix::diagonalize(VecView eig) {
   const int n = ndim();
   int info;
 #ifdef HAVE_SCALAPACK
-  if (localized_  || n <= blocksize__) {
+  if (localized_  || n <= 10*blocksize__) {
 #endif
     unique_ptr<complex<double>[]> work(new complex<double>[n*6]);
     unique_ptr<double[]> rwork(new double[3*ndim()]);
@@ -466,7 +466,7 @@ void ZMatrix::print (const string tag, int len) const {
     for (int j = 0; j != len_n; ++j) {
       cout << setw(6) << j;
       for (int k = 0; k != len_m % 6; ++k)
-        cout << setw(30) << setprecision(8) << *element_ptr(j, i * 6 + k);
+        cout << setw(30) << setprecision(10) << *element_ptr(j, i * 6 + k);
       cout << endl;
     }
     cout << endl;

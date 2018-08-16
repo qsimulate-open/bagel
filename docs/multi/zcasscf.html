@@ -153,7 +153,7 @@ algorithm returns the <em>n</em> lowest eigenstates regardless of their spin exp
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">canonical</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: If set to “true,” optimized orbitals will be transformed to semi-canonical orbitals. This option is ignored if <code class="docutils literal"><span class="pre">algorithm</span></code> is <code class="docutils literal"><span class="pre">noopt</span></code>.</div>
+<div class="line"><strong>Description</strong>: If set to “true,” optimized orbitals will be transformed to semi-canonical orbitals.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Default:</strong> false.</div>
 </div>
@@ -252,8 +252,67 @@ They can be read back in using the “load_ref” module.</div>
 <div class="topic">
 <p class="topic-title first"><code class="docutils literal"><span class="pre">aniso</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description</strong>: Performs magnetic anisotropy analysis (g-factors and zero-field splitting parameters).</div>
-<div class="line"><strong>Datatype</strong>: int</div>
+<div class="line"><strong>Description</strong>: Performs magnetic anisotropy analysis using a pseudospin Hamiltonian, to obtain g-factors and zero-field splitting parameters</div>
+<div class="line"><strong>Datatype</strong>: input block with several paramaters, given below:</div>
+<div class="line"><br /></div>
+<div class="line"><br /></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal"><span class="pre">nspin</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: 2 * the spin value of the pseudospin Hamiltonian</div>
+<div class="line"><strong>Datatype</strong>: integer</div>
+<div class="line"><strong>Default</strong>: Number of states in the CASSCF calculation minus one</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">ranks</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Which ranks of the Extended Stevens Operators to include in the zero-field splitting Hamiltonian</div>
+<div class="line"><strong>Datatype</strong>: Array of integers</div>
+<div class="line"><strong>Default</strong>: Even integers from 2 to <code class="docutils literal"><span class="pre">nspin</span></code></div>
+<div class="line"><strong>Recommendation</strong>: Normally use default.  The array [ 2, 4, 6 ] can be used to specify the commonly-used sixth-order Hamiltonian if using the giant spin approximation.</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">print_operators</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Option to print additional information.  If true, the Extended Stevens Operators will be printed in matrix form, along with the magnetic moment, spin, and orbital angular momentum matrices.</div>
+<div class="line"><strong>Datatype</strong>: bool</div>
+<div class="line"><strong>Default</strong>: false</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">zaxis</span></code> and <code class="docutils literal"><span class="pre">xaxis</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Can be used to specify the orientation of the axes along which we should quantize the spin when mapping the zero-field anisotropy</div>
+<div class="line"><strong>Datatype</strong>: Arrays of 3 doubles</div>
+<div class="line"><strong>Default</strong>: The primary g-anisotropy axes are used</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">states</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Which electronic states are to be mapped to the pseudospin Hamiltonian</div>
+<div class="line"><strong>Datatype</strong>: Array of integers</div>
+<div class="line"><strong>Default</strong>: The lowest-lying states are used</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">center</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Coordinates of the spin center (typically a metal atom for a mononuclear complex), given in Bohr radii</div>
+<div class="line"><strong>Datatype</strong>: Arrays of 3 doubles</div>
+<div class="line"><strong>Default</strong>: [  0.0,  0.0,  0.0 ]</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">energies</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Energies to be used in the anisotropy analysis.  This option can be used to replace the CASSCF energies with those generated using another method, such as CASPT2.</div>
+<div class="line"><strong>Datatype</strong>: Arrays of nspin+1 doubles</div>
+<div class="line"><strong>Default</strong>: The relativistic CASSCF energies are used.</div>
+<div class="line"><strong>Recommendation</strong>: Use the default.  This option is deprecated now that the “aniso” module is interfaced directly to relativistic CASPT2 and MRCI.</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">diagop</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: Operator to be diagonalized in order to determine a mapping from ab initio electronic states to pseudospin states.</div>
+<div class="line"><strong>Datatype</strong>: string - can be “Mu” for magnetic moment, “J”, “S”, or “L”</div>
+<div class="line"><strong>Default</strong>: Mu</div>
+<div class="line"><br /></div>
+<div class="line"><code class="docutils literal"><span class="pre">phases</span></code> and <code class="docutils literal"><span class="pre">phase_full</span></code></div>
+<div class="line"><br /></div>
+<div class="line"><strong>Description</strong>: This is a debugging tool.  It allows the use to apply an arbitrary phase shift to the pseudospin states.</div>
+<div class="line"><strong>Datatype</strong>: Array of doubles; double</div>
+<div class="line"><strong>Default</strong>: No phase shift is applied</div>
+</div>
 </div>
 </div>
 </div>
@@ -406,9 +465,11 @@ They can be read back in using the “load_ref” module.</div>
 <tr class="row-even"><td>Relativistic CASSCF</td>
 <td>J. E. Bates and T. Shiozaki, J. Chem. Phys. <strong>142</strong>, 044112 (2015).</td>
 </tr>
+<tr class="row-odd"><td>Second-order Relativistic CASSCF</td>
+<td>R. D. Reynolds, T. Yanai, and T. Shiozaki, arXiv:1804.06470 (2018).</td>
+</tr>
 </tbody>
 </table>
-<p>Note that the code has since been replaced by a more robust second-order algorithm (unpublished).</p>
 </div>
 <div class="section" id="general-references">
 <h3>General references<a class="headerlink" href="#general-references" title="Permalink to this headline">¶</a></h3>

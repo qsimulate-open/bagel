@@ -27,14 +27,14 @@
 
 #include <array>
 #include <memory>
-#include <src/wfn/geometry.h>
+#include <src/molecule/molecule.h>
 #include <src/util/math/xyzfile.h>
 
 namespace bagel {
 
 class Grid {
   protected:
-    const std::shared_ptr<const Geometry> geom_;
+    const std::shared_ptr<const Molecule> mol_;
     const std::shared_ptr<const Matrix> data_; // x,y,z,weight
 
     // basis functions and derivaties on this grid
@@ -44,8 +44,8 @@ class Grid {
     std::shared_ptr<Matrix> gradz_;
 
   public:
-    Grid(std::shared_ptr<const Geometry> g, std::shared_ptr<const Matrix>& o)
-      : geom_(g), data_(o) { assert(data_->ndim() == 4); }
+    Grid(std::shared_ptr<const Molecule> g, std::shared_ptr<const Matrix>& o)
+      : mol_(g), data_(o) { assert(data_->ndim() == 4); }
 
     std::shared_ptr<const Matrix> basis() const { return basis_; }
     std::shared_ptr<const Matrix> gradx() const { return gradx_; }

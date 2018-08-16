@@ -378,9 +378,9 @@ void MOFock<complex<double>>::init() {
   // print out the Fock matrix and terminate when preparing for external RDM runs
   if (info_->external_rdm() == "noref") {
     stringstream ss; ss << scientific << setprecision(15);
-    for (int i = 0; i != nact; ++i) {
-      for (int j = 0; j != nact; ++j)
-        ss << f->element(j+nclosed+ncore, i+nclosed+ncore) << " ";
+    for (int i = 0; i != nact*2; ++i) {
+      for (int j = 0; j != nact*2; ++j)
+        ss << f->element(j+(nclosed+ncore)*2, i+(nclosed+ncore)*2) << " ";
       ss << endl;
     }
     ofstream fs("FOCKMAT");

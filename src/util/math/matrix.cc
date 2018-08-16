@@ -106,7 +106,7 @@ void Matrix::diagonalize(VecView eig) {
   // assume that the matrix is symmetric
   // the leading order (nbasis supplied)
 #ifdef HAVE_SCALAPACK
-  if (localized_ || n <= blocksize__) {
+  if (localized_ || n <= 10*blocksize__) {
 #endif
     unique_ptr<double[]> work(new double[n*6]);
     dsyev_("V", "L", n, data(), n, eig.data(), work.get(), n*6, info);

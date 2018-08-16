@@ -1,7 +1,7 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: zharrison_parallel.cc
-// Copyright (C) 2013 Jefferson E. Bates
+// Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Jefferson E. Bates <jefferson.bates@northwestern.edu>
 // Maintainer: Shiozaki group

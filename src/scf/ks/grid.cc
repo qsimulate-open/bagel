@@ -23,6 +23,7 @@
 //
 
 #include <src/scf/ks/grid.h>
+#include <src/util/taskqueue.h>
 #include <src/util/parallel/resources.h>
 
 namespace bagel {
@@ -35,13 +36,13 @@ class GridBasisTask {
     const double x;
     const double y;
     const double z;
-    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Molecule> mol_;
   public:
-    GridBasisTask(double* aa, double* bb, double* cc, double* dd, const double xx, const double yy, const double zz, std::shared_ptr<const Geometry> g)
-    : a(aa), b(bb), c(cc), d(dd), x(xx), y(yy), z(zz), geom_(g) { }
+    GridBasisTask(double* aa, double* bb, double* cc, double* dd, const double xx, const double yy, const double zz, std::shared_ptr<const Molecule> g)
+    : a(aa), b(bb), c(cc), d(dd), x(xx), y(yy), z(zz), mol_(g) { }
     void compute() {
       int pos = 0;
-      for (auto& i : geom_->atoms()) {
+      for (auto& i : mol_->atoms()) {
         // xyz coordinate relative to the atom i
         const double rx = x - i->position(0);
         const double ry = y - i->position(1);
@@ -64,14 +65,14 @@ class GridDeriv2Task {
     const double x;
     const double y;
     const double z;
-    std::shared_ptr<const Geometry> geom_;
+    std::shared_ptr<const Molecule> mol_;
   public:
     GridDeriv2Task(double* aa, double* bb, double* cc, double* dd, double* ee, double* ff,
-                   const double xx, const double yy, const double zz, std::shared_ptr<const Geometry> g)
-    : a(aa), b(bb), c(cc), d(dd), e(ee), f(ff), x(xx), y(yy), z(zz), geom_(g) { }
+                   const double xx, const double yy, const double zz, std::shared_ptr<const Molecule> g)
+    : a(aa), b(bb), c(cc), d(dd), e(ee), f(ff), x(xx), y(yy), z(zz), mol_(g) { }
     void compute() {
       int pos = 0;
-      for (auto& i : geom_->atoms()) {
+      for (auto& i : mol_->atoms()) {
         // xyz coordinate relative to the atom i
         const double rx = x - i->position(0);
         const double ry = y - i->position(1);
@@ -91,16 +92,16 @@ using namespace bagel;
 
 void Grid::init() {
   const int ngrid = size();
-  basis_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
-  gradx_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
-  grady_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
-  gradz_ = make_shared<Matrix>(geom_->nbasis(), ngrid);
+  basis_ = make_shared<Matrix>(mol_->nbasis(), ngrid);
+  gradx_ = make_shared<Matrix>(mol_->nbasis(), ngrid);
+  grady_ = make_shared<Matrix>(mol_->nbasis(), ngrid);
+  gradz_ = make_shared<Matrix>(mol_->nbasis(), ngrid);
 
   // TODO I guess this should be more efficient..
   TaskQueue<GridBasisTask> tasks(ngrid);
   for (size_t g = 0; g != ngrid; ++g) {
     tasks.emplace_back(basis_->element_ptr(0,g), gradx_->element_ptr(0,g), grady_->element_ptr(0,g), gradz_->element_ptr(0,g),
-                                  data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
+                                  data_->element(0,g), data_->element(1,g), data_->element(2,g), mol_);
   }
   tasks.compute();
 }
@@ -109,13 +110,13 @@ void Grid::init() {
 array<shared_ptr<Matrix>,6> Grid::compute_grad2() const {
   array<shared_ptr<Matrix>,6> out;
   for (auto& i : out)
-   i = make_shared<Matrix>(geom_->nbasis(), size());
+   i = make_shared<Matrix>(mol_->nbasis(), size());
 
   TaskQueue<GridDeriv2Task> tasks(size());
   for (size_t g = 0; g != size(); ++g) {
     tasks.emplace_back(out[0]->element_ptr(0,g), out[1]->element_ptr(0,g), out[2]->element_ptr(0,g),
                                    out[3]->element_ptr(0,g), out[4]->element_ptr(0,g), out[5]->element_ptr(0,g),
-                                   data_->element(0,g), data_->element(1,g), data_->element(2,g), geom_);
+                                   data_->element(0,g), data_->element(1,g), data_->element(2,g), mol_);
   }
   tasks.compute();
   return out;

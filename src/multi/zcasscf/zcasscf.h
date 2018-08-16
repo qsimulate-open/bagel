@@ -82,6 +82,9 @@ class ZCASSCF : public Method, public std::enable_shared_from_this<ZCASSCF> {
     // Fock matrix with active 1RDM
     std::shared_ptr<ZMatrix> compute_active_fock(const ZMatView acoeff, std::shared_ptr<const ZMatrix> rdm1, const bool coulomb_only = false) const;
 
+    // Canonicalize the orbitals
+    std::shared_ptr<const ZCoeff_Block> semi_canonical_orb(const bool kramers) const;
+
     // energy
     std::vector<double> energy_;
 
