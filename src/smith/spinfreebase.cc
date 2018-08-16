@@ -224,7 +224,7 @@ void SpinFreeMethod<double>::reference_prop() const {
   const int nstates = info_->ciwfn()->nstates();
   const array<double,3> cap = info_->geom()->cap();
 
-  const bool dothis = !isnan(cap[0]);
+  const bool dothis = !::isnan(cap[0]);
   if (dothis) {
     auto acoeff = info_->coeff()->slice(info_->nclosed(), info_->nocc());
     auto ccoeff = info_->coeff()->slice(0, info_->nclosed());
