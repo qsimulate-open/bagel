@@ -166,9 +166,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const bool xterm = true;
   const bool dterm = true;
   const bool zterm = true;
+  const bool smallz_zero = false;
 
-  const double dtermfac = 2.0;
-  const double xtermfac = 2.0;
+  const double dtermfac = -2.0;
+  const double xtermfac = -2.0;
   const double ztermfac = 2.0;
 
   Timer timer(1);
@@ -282,6 +283,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_xx(j1o) - denom_->denom_xx(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -325,8 +327,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     for (size_t j0o = 0; j0o != interm_size; ++j0o) {
                       const double VrsO = denom_->shalf_xx()->element(j0o, j2 + j3 * nact + js * nact * nact);
                       Rmat->element(j0, j1, j2, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
-                      if (xterm)
+                      if (xterm) {
                         e2->at(is, js)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO * xtermfac;
+                      }
                     }
                   }
                 }
@@ -403,6 +406,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_x(j1o) - denom_->denom_x(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -501,6 +505,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_h(j1o) - denom_->denom_h(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -615,6 +620,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_hh(j1o) - denom_->denom_hh(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -808,6 +814,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_xh(j1o) - denom_->denom_xh(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -962,6 +969,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_xxh(j1o) - denom_->denom_xxh(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -1104,6 +1112,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           if (j1o == j0o) continue;
           const double fdiff = denom_->denom_xhh(j1o) - denom_->denom_xhh(j0o);
           smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
+          if (smallz_zero) smallz->element(j1o, j0o) = 0.0;
         }
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
