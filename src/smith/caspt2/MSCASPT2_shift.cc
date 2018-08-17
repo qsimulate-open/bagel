@@ -163,8 +163,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const size_t size_arst = nact ? denom_->shalf_xxh()->ndim() * nvirt : 0;
   const size_t size_rist = nact ? denom_->shalf_xhh()->ndim() * nclo : 0;
 
-  const bool xterm = true;
-  const bool dterm = true;
+  const bool xterm = false;
+  const bool dterm = false;
 
   Timer timer(1);
 
