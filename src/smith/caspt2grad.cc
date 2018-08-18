@@ -367,7 +367,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
   auto cp = make_shared<CPCASSCF>(grad, civector, halfj, ref, fci, ncore, task_->smith()->algo()->info()->shift_imag(), coeff);
   shared_ptr<const Matrix> zmat, xmat, smallz;
   shared_ptr<const Dvec> zvec;
-  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
+//  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), /*xms*/!!task_->dcheck());
+  tie(zmat, zvec, xmat, smallz) = cp->solve(task_->thresh(), gradinfo->maxziter(), task_->dcheck(), false);
 
   timer.tick_print("Z-CASSCF solution");
 
