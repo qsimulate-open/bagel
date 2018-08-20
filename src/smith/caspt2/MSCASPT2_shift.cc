@@ -1260,6 +1260,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>>
   MSCASPT2::MSCASPT2::make_d2_real(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
   // More of a debug code to debug the overlap gradient code [<I|l T|N> E_shift]
+  Timer timer(1);
   const size_t nact = info_->nact();
   const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
@@ -1312,6 +1313,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               }
             }
       ioffset += size_aibj;
+      timer.tick_print("dshift aibj");
     }
      // a r b s
     if (size_arbs) {
@@ -1338,6 +1340,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_arbs;
+      timer.tick_print("dshift arbs");
     }
      // a r b i
     if (size_arbi) {
@@ -1364,6 +1367,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_arbi;
+      timer.tick_print("dshift arbi");
     }
      // a i r j
     if (size_airj) {
@@ -1391,6 +1395,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_airj;
+      timer.tick_print("dshift airj");
     }
      // r i s j
     if (size_risj) {
@@ -1425,6 +1430,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_risj;
+      timer.tick_print("dshift risj");
     }
      // a i r s & a r s i
     if (size_airs) {
@@ -1462,6 +1468,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_airs;
+      timer.tick_print("dshift airs");
     }
      // a r s t
     if (size_arst) {
@@ -1488,6 +1495,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_arst;
+      timer.tick_print("dshift arst");
     }
      // r i s t
     if (size_rist) {
@@ -1519,6 +1527,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_rist;
+      timer.tick_print("dshift rist");
     }
   }
    //scale
