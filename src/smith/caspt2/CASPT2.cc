@@ -257,14 +257,14 @@ void CASPT2::CASPT2::solve() {
 
 // temporary
 void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
-  const bool zero_aibj = false;
+  const bool zero_aibj = true;
   const bool zero_arbs = false;
-  const bool zero_arbi = false;
-  const bool zero_airj = false;
-  const bool zero_risj = false;
-  const bool zero_airs = false;
-  const bool zero_arst = false;
-  const bool zero_rist = false;
+  const bool zero_arbi = true;
+  const bool zero_airj = true;
+  const bool zero_risj = true;
+  const bool zero_airs = true;
+  const bool zero_arst = true;
+  const bool zero_rist = true;
   for (int i = 0; i != nstates_; ++i) {
     if (!s->at(i)) continue;
     // a i b j

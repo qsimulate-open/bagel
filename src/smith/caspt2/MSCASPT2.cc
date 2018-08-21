@@ -430,7 +430,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
         tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
         timer.tick_print("dshift");
       } else {
-        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_) = make_d2_real(lall_orthogonal_, t2all_orthogonal_);
+        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_) = make_d2_real(lall_orthogonal_, t2all_orthogonal_);
         timer.tick_print("dshift");
       }
     }
