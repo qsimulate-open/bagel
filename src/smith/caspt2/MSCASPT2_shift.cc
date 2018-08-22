@@ -168,9 +168,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const bool zterm = true;
   const bool smallz_zero = false;
 
-  const double dtermfac = -2.0;
-  const double xtermfac = -2.0;
-  const double ztermfac = 2.0;
+  const double dtermfac = 1.0;
+  const double xtermfac = 1.0;
+  const double ztermfac = 1.0;
 
   Timer timer(1);
 
@@ -253,14 +253,22 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             smallz->element(j0o, j0o) -= Lambda;
             nimag[istate] -= Lambda;
             if (zterm) {
-              for (size_t j0 = 0; j0 != nact; ++j0) {
-                for (size_t j6 = 0; j6 != nact; ++j6) {
-                  for (size_t j2 = 0; j2 != nact; ++j2) {
-                    for (size_t j4 = 0; j4 != nact; ++j4) {
-                      for (size_t is = 0; is != nstates; ++is) {
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          e2->at(is, js)->element(j0, j6, j2, j4) += denom_->shalf_xx()->element(j0o, j0 + j2*nact + is*nact*nact) * denom_->shalf_xx()->element(j0o, j6 + j4*nact + js*nact*nact) * Lambda * denom * ztermfac;
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                const size_t kall = j1o + interm_size * (j1 + nvirt * j3) + ioffset;
+                const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
+                const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
+                const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
+                for (size_t j0 = 0; j0 != nact; ++j0) {
+                  for (size_t j6 = 0; j6 != nact; ++j6) {
+                    for (size_t j2 = 0; j2 != nact; ++j2) {
+                      for (size_t j4 = 0; j4 != nact; ++j4) {
+                        for (size_t is = 0; is != nstates; ++is) {
+                          for (size_t js = 0; js != nstates; ++js) {
+                            if (is != js) continue;
+                            const double VrsO = denom_->shalf_xx()->element(j0o, j0 + j2 * nact + is * nact * nact);
+                            const double VtuO = denom_->shalf_xx()->element(j1o, j6 + j4 * nact + js * nact * nact);
+                            e2->at(is, js)->element(j0, j6, j2, j4) += VrsO * VtuO * (lt + tl) * ztermfac;
+                          }
                         }
                       }
                     }
@@ -373,6 +381,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               const size_t jall = j0o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
               const size_t jall2 = j0o + interm_size * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
               const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
+              const double tcovar = ((*t)[jall] * 2.0 - (*t)[jall2]);
               const double denom = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j0o) - e0all_[istate];
               const double Lambda = lcovar * (*t)[jall] * shift2 / (denom * denom);
               dshift->element(j1i, j1i) -= Lambda;
@@ -380,17 +389,26 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j2i, j2i) += Lambda;
               smallz->element(j0o, j0o) -= Lambda;
               nimag[istate] -= Lambda;
-              if (zterm)
-                for (size_t j0 = 0; j0 != nact; ++j0) {
-                  for (size_t j6 = 0; j6 != nact; ++j6) {
-                    for (size_t is = 0; is != nstates; ++is) {
-                      for (size_t js = 0; js != nstates; ++js) {
-                        if (is != js) continue;
-                        e1->at(is, js)->element(j0, j6) += denom_->shalf_x()->element(j0o, j0 + is * nact) * denom_->shalf_x()->element(j0o, j6 + js * nact) * Lambda * denom * ztermfac;
+              if (zterm) {
+                for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                  const size_t kall = j1o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+                  const double denomk = eig_[j3 + nocc] + eig_[j1 + nocc] - eig_[j2 + ncore] + denom_->denom_x(j1o) - e0all_[istate];
+                  const double lt = lcovar * (*t)[kall] * shift2 / denomk;
+                  const double tl = tcovar * (*l)[kall] * shift2 / denom;
+                  for (size_t j0 = 0; j0 != nact; ++j0) {
+                    for (size_t j6 = 0; j6 != nact; ++j6) {
+                      for (size_t is = 0; is != nstates; ++is) {
+                        for (size_t js = 0; js != nstates; ++js) {
+                          if (is != js) continue;
+                          const double VrO = denom_->shalf_x()->element(j0o, j0 + is * nact);
+                          const double VsO = denom_->shalf_x()->element(j1o, j6 + js * nact);
+                          e1->at(is, js)->element(j0, j6) += VrO * VsO * (lt + tl) * ztermfac;
+                        }
                       }
                     }
                   }
                 }
+              }
               largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o);
               for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                 const size_t kall = j1o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
@@ -471,6 +489,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3o)) + ioffset;
               const size_t jall2 = j2 + nclo * (j1 + nvirt * (j0 + nclo * j3o)) + ioffset;
               const double lcovar = ((*l)[jall] * 2.0 - (*l)[jall2]);
+              const double tcovar = ((*t)[jall] * 2.0 - (*t)[jall2]);
               const double denom = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j3o) - e0all_[istate];
               const double Lambda = lcovar * (*t)[jall] * shift2 / (denom * denom);
               dshift->element(j1i, j1i) -= Lambda;
@@ -478,18 +497,27 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j2i, j2i) += Lambda;
               smallz->element(j3o, j3o) -= Lambda;
               nimag[istate] -= Lambda;
-              if (zterm)
-                for (size_t j4 = 0; j4 != nact; ++j4) {
-                  for (size_t j5 = 0; j5 != nact; ++j5) {
-                    for (size_t is = 0; is != nstates; ++is) {
-                      for (size_t js = 0; js != nstates; ++js) {
-                        if (is != js) continue;
-                        e1->at(is, js)->element(j4, j5) += -denom_->shalf_h()->element(j3o, j4 + is * nact) * denom_->shalf_h()->element(j3o, j5 + js * nact) * Lambda * denom * ztermfac;
-                        (*e0->at(is, js)) += 2.0 * denom_->shalf_h()->element(j3o, j4 + is * nact) * denom_->shalf_h()->element(j3o, j5 + js * nact) * Lambda * denom * ztermfac;
+              if (zterm) {
+                for (size_t j4o = 0; j4o != interm_size; ++j4o) {
+                  const size_t kall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j4o)) + ioffset;
+                  const double denomk = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j4o) - e0all_[istate];
+                  const double lt = lcovar * (*t)[kall] * shift2 / denomk;
+                  const double tl = tcovar * (*l)[kall] * shift2 / denom;
+                  for (size_t j4 = 0; j4 != nact; ++j4) {
+                    for (size_t j5 = 0; j5 != nact; ++j5) {
+                      for (size_t is = 0; is != nstates; ++is) {
+                        for (size_t js = 0; js != nstates; ++js) {
+                          if (is != js) continue;
+                          const double VrO = denom_->shalf_h()->element(j3o, j4 + is * nact);
+                          const double VsO = denom_->shalf_h()->element(j4o, j5 + js * nact);
+                          e1->at(is, js)->element(j4, j5) += - VrO * VsO * (lt + tl) * ztermfac;
+                          (*e0->at(is, js)) += 2.0 * VrO * VsO * (lt + tl) * ztermfac;
+                        }
                       }
                     }
                   }
                 }
+              }
               largey->element(j3o, j3o) -= Lambda * denom_->denom_h(j3o);
               for (size_t j4o = 0; j4o != interm_size; ++j4o) {
                 const size_t kall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j4o)) + ioffset;
@@ -583,29 +611,36 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             dshift->element(j1i, j1i) += Lambda;
             smallz->element(j2o, j2o) -= Lambda;
             nimag[istate] -= Lambda;
-            if (zterm)
-              for (size_t j2 = 0; j2 != nact; ++j2) {
-                for (size_t j3 = 0; j3 != nact; ++j3) {
-                  for (size_t j4 = 0; j4 != nact; ++j4) {
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      for (size_t is = 0; is != nstates; ++is) {
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          const double VrsO = denom_->shalf_hh()->element(j2o, j2 + j4*nact + is * nact * nact);
-                          const double VtuO = denom_->shalf_hh()->element(j2o, j3 + j5*nact + js * nact * nact);
-                          e2->at(is, js)->element(j2, j3, j4, j5) += VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j3 == j4) e1->at(is, js)->element(j2, j5) += VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j4 == j5) e1->at(is, js)->element(j2, j3) -= 2.0 * VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j2 == j3) e1->at(is, js)->element(j4, j5) -= 2.0 * VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j2 == j5) e1->at(is, js)->element(j4, j3) += VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j2 == j3 && j4 == j5) (*e0->at(is, js)) += 4.0 * VrsO * VtuO * Lambda * denom * ztermfac;
-                          if (j2 == j5 && j3 == j4) (*e0->at(is, js)) -= 2.0 * VrsO * VtuO * Lambda * denom * ztermfac;
+            if (zterm) {
+              for (size_t j3o = 0; j3o != interm_size; ++j3o) {
+                const size_t kall = j0 + nclo * (j1 + nclo * j3o) + ioffset;
+                const double denomk = - eig_[j0+ncore] - eig_[j1+ncore] + denom_->denom_hh(j3o) - e0all_[istate];
+                const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
+                const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
+                for (size_t j2 = 0; j2 != nact; ++j2) {
+                  for (size_t j3 = 0; j3 != nact; ++j3) {
+                    for (size_t j4 = 0; j4 != nact; ++j4) {
+                      for (size_t j5 = 0; j5 != nact; ++j5) {
+                        for (size_t is = 0; is != nstates; ++is) {
+                          for (size_t js = 0; js != nstates; ++js) {
+                            if (is != js) continue;
+                            const double VrsO = denom_->shalf_hh()->element(j2o, j2 + j4*nact + is * nact * nact);
+                            const double VtuO = denom_->shalf_hh()->element(j3o, j3 + j5*nact + js * nact * nact);
+                            e2->at(is, js)->element(j2, j3, j4, j5) += VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j3 == j4) e1->at(is, js)->element(j2, j5) += VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j4 == j5) e1->at(is, js)->element(j2, j3) -= 2.0 * VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j2 == j3) e1->at(is, js)->element(j4, j5) -= 2.0 * VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j2 == j5) e1->at(is, js)->element(j4, j3) += VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j2 == j3 && j4 == j5) (*e0->at(is, js)) += 4.0 * VrsO * VtuO * (lt + tl) * ztermfac;
+                            if (j2 == j5 && j3 == j4) (*e0->at(is, js)) -= 2.0 * VrsO * VtuO * (lt + tl) * ztermfac;
+                          }
                         }
                       }
                     }
                   }
                 }
               }
+            }
             largey->element(j2o, j2o) -= Lambda * denom_->denom_hh(j2o);
             for (size_t j3o = 0; j3o != interm_size; ++j3o) {
               const size_t kall = j0 + nclo * (j1 + nclo * j3o) + ioffset;
@@ -774,25 +809,31 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             smallz->element(j0o, j0o) -= Lambda;
             nimag[istate] -= Lambda;
             if (zterm)
-              for (size_t j2 = 0; j2 != nact; ++j2) {
-                for (size_t j3 = 0; j3 != nact; ++j3) {
-                  for (size_t j4 = 0; j4 != nact; ++j4) {
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      for (size_t is = 0; is != nstates; ++is) {
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
-                          const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
-                          const double VtuO = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+0)*nact*nact);
-                          const double VtuS = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+1)*nact*nact);
-                          const double factorOO = VrsO * VtuO * 2.0;
-                          const double factorOS = -VrsO * VtuS;
-                          const double factorSO = -VrsS * VtuO;
-                          const double factorSS = VrsS * VtuS;
-                          e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * Lambda * denom * ztermfac;
-                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * Lambda * denom * ztermfac;
-                          e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * Lambda * denom * ztermfac;
-                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * Lambda * denom * factorSS * ztermfac;
+              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
+                const double denomk = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
+                const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
+                const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
+                for (size_t j2 = 0; j2 != nact; ++j2) {
+                  for (size_t j3 = 0; j3 != nact; ++j3) {
+                    for (size_t j4 = 0; j4 != nact; ++j4) {
+                      for (size_t j5 = 0; j5 != nact; ++j5) {
+                        for (size_t is = 0; is != nstates; ++is) {
+                          for (size_t js = 0; js != nstates; ++js) {
+                            if (is != js) continue;
+                            const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
+                            const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
+                            const double VtuO = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+0)*nact*nact);
+                            const double VtuS = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+1)*nact*nact);
+                            const double factorOO = VrsO * VtuO * 2.0;
+                            const double factorOS = -VrsO * VtuS;
+                            const double factorSO = -VrsS * VtuO;
+                            const double factorSS = VrsS * VtuS;
+                            e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (lt + tl) * ztermfac;
+                            if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (lt + tl) * ztermfac;
+                            e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * (lt + tl) * ztermfac;
+                            if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * factorSS * (lt + tl) * ztermfac;
+                          }
                         }
                       }
                     }
@@ -939,20 +980,26 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           smallz->element(j1o, j1o) -= Lambda;
           nimag[istate] -= Lambda;
           if (zterm)
-            for (size_t j2 = 0; j2 != nact; ++j2) {
-              for (size_t j3 = 0; j3 != nact; ++j3) {
-                for (size_t j4 = 0; j4 != nact; ++j4)
-                  for (size_t j5 = 0; j5 != nact; ++j5)
-                    for (size_t j6 = 0; j6 != nact; ++j6)
-                      for (size_t j7 = 0; j7 != nact; ++j7)
-                        for (size_t is = 0; is != nstates; ++is)
-                          for (size_t js = 0; js != nstates; ++js) {
-                            if (is != js) continue;
-                            const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
-                            const double VuvwO = denom_->shalf_xxh()->element(j1o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
-                            e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                          }
+            for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+              const size_t kall = j0 + nvirt * j2o + ioffset;
+              const double denomk = eig_[j0+nocc] + denom_->denom_xxh(j2o) - e0all_[istate];
+              const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
+              const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
+              for (size_t j2 = 0; j2 != nact; ++j2) {
+                for (size_t j3 = 0; j3 != nact; ++j3) {
+                  for (size_t j4 = 0; j4 != nact; ++j4)
+                    for (size_t j5 = 0; j5 != nact; ++j5)
+                      for (size_t j6 = 0; j6 != nact; ++j6)
+                        for (size_t j7 = 0; j7 != nact; ++j7)
+                          for (size_t is = 0; is != nstates; ++is)
+                            for (size_t js = 0; js != nstates; ++js) {
+                              if (is != js) continue;
+                              const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                              const double VuvwO = denom_->shalf_xxh()->element(j2o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
+                              e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                            }
+                }
               }
             }
           largey->element(j1o, j1o) -= Lambda * denom_->denom_xxh(j1o);
@@ -1077,25 +1124,31 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           smallz->element(j1o, j1o) -= Lambda;
           nimag[istate] -= Lambda;
           if (zterm)
-            for (size_t j2 = 0; j2 != nact; ++j2) {
-              for (size_t j3 = 0; j3 != nact; ++j3) {
-                for (size_t j4 = 0; j4 != nact; ++j4)
-                  for (size_t j5 = 0; j5 != nact; ++j5)
-                    for (size_t j6 = 0; j6 != nact; ++j6)
-                      for (size_t j7 = 0; j7 != nact; ++j7)
-                        for (size_t is = 0; is != nstates; ++is)
-                          for (size_t js = 0; js != nstates; ++js) {
-                            if (is != js) continue;
-                            const double VrstO = denom_->shalf_xhh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
-                            const double VuvwO = denom_->shalf_xhh()->element(j1o, j7 + nact * (j6 + nact * j5) + js * nact * nact * nact);
-                            e3->at(is,js)->element(j2, j3, j5, j4, j6, j7) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j4 == j6) e2->at(is,js)->element(j2, j3, j5, j7) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j4 == j5) e2->at(is,js)->element(j2, j3, j6, j7) += 2.0 * VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j3 == j6) e2->at(is,js)->element(j5, j4, j2, j7) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j3 == j6 && j4 == j5) e1->at(is,js)->element(j2, j7) += 2.0 * VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j3 == j5) e2->at(is,js)->element(j2, j4, j6, j7) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                            if (j3 == j5 && j4 == j6) e1->at(is,js)->element(j2, j7) -= VrstO * VuvwO * Lambda * denom * ztermfac;
-                          }
+            for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+              const size_t kall = j0 + nclo * j2o + ioffset;
+              const double denomk = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
+              const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
+              const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
+              for (size_t j2 = 0; j2 != nact; ++j2) {
+                for (size_t j3 = 0; j3 != nact; ++j3) {
+                  for (size_t j4 = 0; j4 != nact; ++j4)
+                    for (size_t j5 = 0; j5 != nact; ++j5)
+                      for (size_t j6 = 0; j6 != nact; ++j6)
+                        for (size_t j7 = 0; j7 != nact; ++j7)
+                          for (size_t is = 0; is != nstates; ++is)
+                            for (size_t js = 0; js != nstates; ++js) {
+                              if (is != js) continue;
+                              const double VrstO = denom_->shalf_xhh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                              const double VuvwO = denom_->shalf_xhh()->element(j2o, j7 + nact * (j6 + nact * j5) + js * nact * nact * nact);
+                              e3->at(is,js)->element(j2, j3, j5, j4, j6, j7) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j4 == j6) e2->at(is,js)->element(j2, j3, j5, j7) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j4 == j5) e2->at(is,js)->element(j2, j3, j6, j7) += 2.0 * VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j3 == j6) e2->at(is,js)->element(j5, j4, j2, j7) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j3 == j6 && j4 == j5) e1->at(is,js)->element(j2, j7) += 2.0 * VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j3 == j5) e2->at(is,js)->element(j2, j4, j6, j7) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j3 == j5 && j4 == j6) e1->at(is,js)->element(j2, j7) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                            }
+                }
               }
             }
           largey->element(j1o, j1o) -= Lambda * denom_->denom_xhh(j1o);
@@ -1470,25 +1523,30 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j1 = 0; j1 != nvirt; ++j1) {
           for (size_t j0o = 0; j0o != interm_size; ++j0o) {
             const size_t jall = j0 + nclo * (j1 + nvirt * j0o) + ioffset;
-            for (size_t j2 = 0; j2 != nact; ++j2) {
-              for (size_t j3 = 0; j3 != nact; ++j3) {
-                for (size_t j4 = 0; j4 != nact; ++j4) {
-                  for (size_t j5 = 0; j5 != nact; ++j5) {
-                    for (size_t is = 0; is != nstates; ++is) {
-                      for (size_t js = 0; js != nstates; ++js) {
-                        if (is != js) continue;
-                        const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
-                        const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
-                        const double VtuO = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+0)*nact*nact);
-                        const double VtuS = denom_->shalf_xh()->element(j0o, j4 + j5*nact + (2*js+1)*nact*nact);
-                        const double factorOO = VrsO * VtuO * 2.0;
-                        const double factorOS = -VrsO * VtuS;
-                        const double factorSO = -VrsS * VtuO;
-                        const double factorSS = VrsS * VtuS;
-                        e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (*l)[jall] * (*t)[jall] * shift * 2.0;
-                        if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (*l)[jall] * (*t)[jall] * shift * 2.0;
-                        e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * (*l)[jall] * (*t)[jall] * shift *  2.0;
-                        if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * (*l)[jall] * (*t)[jall] * shift * factorSS * 2.0;
+            for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+              const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
+              const double lt = (*l)[jall] * (*t)[kall] * shift;
+              const double tl = (*t)[jall] * (*l)[kall] * shift;
+              for (size_t j2 = 0; j2 != nact; ++j2) {
+                for (size_t j3 = 0; j3 != nact; ++j3) {
+                  for (size_t j4 = 0; j4 != nact; ++j4) {
+                    for (size_t j5 = 0; j5 != nact; ++j5) {
+                      for (size_t is = 0; is != nstates; ++is) {
+                        for (size_t js = 0; js != nstates; ++js) {
+                          if (is != js) continue;
+                          const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
+                          const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
+                          const double VtuO = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+0)*nact*nact);
+                          const double VtuS = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+1)*nact*nact);
+                          const double factorOO = VrsO * VtuO * 2.0;
+                          const double factorOS = -VrsO * VtuS;
+                          const double factorSO = -VrsS * VtuO;
+                          const double factorSS = VrsS * VtuS;
+                          e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
+                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
+                          e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * (lt + tl);
+                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * factorSS * (lt + tl);
+                        }
                       }
                     }
                   }
@@ -1507,20 +1565,25 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
        for (size_t j0 = 0; j0 != nvirt; ++j0) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
           const size_t jall = j0 + nvirt * j1o + ioffset;
-          for (size_t j2 = 0; j2 != nact; ++j2) {
-            for (size_t j3 = 0; j3 != nact; ++j3) {
-              for (size_t j4 = 0; j4 != nact; ++j4)
-                for (size_t j5 = 0; j5 != nact; ++j5)
-                  for (size_t j6 = 0; j6 != nact; ++j6)
-                    for (size_t j7 = 0; j7 != nact; ++j7)
-                      for (size_t is = 0; is != nstates; ++is)
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
-                          const double VuvwO = denom_->shalf_xxh()->element(j1o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
-                          e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                        }
+          for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+            const size_t kall = j0 + nvirt * j2o + ioffset;
+            const double lt = (*l)[jall] * (*t)[kall] * shift;
+            const double tl = (*t)[jall] * (*l)[kall] * shift;
+            for (size_t j2 = 0; j2 != nact; ++j2) {
+              for (size_t j3 = 0; j3 != nact; ++j3) {
+                for (size_t j4 = 0; j4 != nact; ++j4)
+                  for (size_t j5 = 0; j5 != nact; ++j5)
+                    for (size_t j6 = 0; j6 != nact; ++j6)
+                      for (size_t j7 = 0; j7 != nact; ++j7)
+                        for (size_t is = 0; is != nstates; ++is)
+                          for (size_t js = 0; js != nstates; ++js) {
+                            if (is != js) continue;
+                            const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                            const double VuvwO = denom_->shalf_xxh()->element(j2o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
+                            e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (lt + tl);
+                            if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (lt + tl);
+                          }
+              }
             }
           }
         }
@@ -1534,25 +1597,30 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
        for (size_t j0 = 0; j0 != nclo; ++j0) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
           const size_t jall = j0 + nclo * j1o + ioffset;
-          for (size_t j2 = 0; j2 != nact; ++j2) {
-            for (size_t j3 = 0; j3 != nact; ++j3) {
-              for (size_t j4 = 0; j4 != nact; ++j4)
-                for (size_t j5 = 0; j5 != nact; ++j5)
-                  for (size_t j6 = 0; j6 != nact; ++j6)
-                    for (size_t j7 = 0; j7 != nact; ++j7)
-                      for (size_t is = 0; is != nstates; ++is)
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          const double VrstO = denom_->shalf_xhh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
-                          const double VuvwO = denom_->shalf_xhh()->element(j1o, j7 + nact * (j6 + nact * j5) + js * nact * nact * nact);
-                          e3->at(is,js)->element(j2, j3, j5, j4, j6, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j4 == j6) e2->at(is,js)->element(j2, j3, j5, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j4 == j5) e2->at(is,js)->element(j2, j3, j6, j7) += 2.0 * VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j3 == j6) e2->at(is,js)->element(j5, j4, j2, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j3 == j6 && j4 == j5) e1->at(is,js)->element(j2, j7) += 2.0 * VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j3 == j5) e2->at(is,js)->element(j2, j4, j6, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                          if (j3 == j5 && j4 == j6) e1->at(is,js)->element(j2, j7) -= VrstO * VuvwO * (*l)[jall] * (*t)[jall] * 2.0 * shift;
-                        }
+          for (size_t j2o = 0; j2o != interm_size; ++j2o) {
+            const size_t kall = j0 + nclo * j2o + ioffset;
+            const double lt = (*l)[jall] * (*t)[kall] * shift;
+            const double tl = (*t)[jall] * (*l)[kall] * shift;
+            for (size_t j2 = 0; j2 != nact; ++j2) {
+              for (size_t j3 = 0; j3 != nact; ++j3) {
+                for (size_t j4 = 0; j4 != nact; ++j4)
+                  for (size_t j5 = 0; j5 != nact; ++j5)
+                    for (size_t j6 = 0; j6 != nact; ++j6)
+                      for (size_t j7 = 0; j7 != nact; ++j7)
+                        for (size_t is = 0; is != nstates; ++is)
+                          for (size_t js = 0; js != nstates; ++js) {
+                            if (is != js) continue;
+                            const double VrstO = denom_->shalf_xhh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
+                            const double VuvwO = denom_->shalf_xhh()->element(j2o, j7 + nact * (j6 + nact * j5) + js * nact * nact * nact);
+                            e3->at(is,js)->element(j2, j3, j5, j4, j6, j7) -= VrstO * VuvwO * (lt + tl);
+                            if (j4 == j6) e2->at(is,js)->element(j2, j3, j5, j7) -= VrstO * VuvwO * (lt + tl);
+                            if (j4 == j5) e2->at(is,js)->element(j2, j3, j6, j7) += 2.0 * VrstO * VuvwO * (lt + tl);
+                            if (j3 == j6) e2->at(is,js)->element(j5, j4, j2, j7) -= VrstO * VuvwO * (lt + tl);
+                            if (j3 == j6 && j4 == j5) e1->at(is,js)->element(j2, j7) += 2.0 * VrstO * VuvwO * (lt + tl);
+                            if (j3 == j5) e2->at(is,js)->element(j2, j4, j6, j7) -= VrstO * VuvwO * (lt + tl);
+                            if (j3 == j5 && j4 == j6) e1->at(is,js)->element(j2, j7) -= VrstO * VuvwO * (lt + tl);
+                          }
+              }
             }
           }
         }
