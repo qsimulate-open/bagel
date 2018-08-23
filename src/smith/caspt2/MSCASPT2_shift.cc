@@ -168,8 +168,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const bool zterm = true;
   const bool smallz_zero = false;
 
-  const double dtermfac = 1.0;
-  const double xtermfac = 1.0;
+  const double dtermfac = 2.0;
+  const double xtermfac = 2.0;
   const double ztermfac = 1.0;
 
   Timer timer(1);
@@ -276,11 +276,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 }
               }
             }
-            largey->element(j0o, j0o) -= Lambda * denom_->denom_xx(j0o);
+            largey->element(j0o, j0o) -= Lambda * denom_->denom_xx(j0o) * 2.0;
+//            largey->element(j0o, j0o) -= Lambda * denom;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j1o + interm_size * (j1 + nvirt * j3) + ioffset;
-              const double denom2 = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
-              largey->element(j0o, j1o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+              const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
+              largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
             }
           }
         }
@@ -296,6 +297,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xx(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xx(j0o));
         }
@@ -409,11 +414,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
-              largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o);
+              largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o) * 2.0;
               for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                 const size_t kall = j1o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-                const double denom2 = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
-                largey->element(j0o, j1o) -= lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+                const double denomk = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
+                largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 / denomk + (*l)[kall] * tcovar * shift2 / denom;
+//                largey->element(j0o, j1o) -= lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
               }
             }
           }
@@ -429,6 +435,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_x(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_x(j0o));
         }
@@ -518,11 +528,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
-              largey->element(j3o, j3o) -= Lambda * denom_->denom_h(j3o);
+              largey->element(j3o, j3o) -= Lambda * denom_->denom_h(j3o) * 2.0;
               for (size_t j4o = 0; j4o != interm_size; ++j4o) {
                 const size_t kall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j4o)) + ioffset;
-                const double denom2 = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j4o) - e0all_[istate];
-                largey->element(j3o, j4o) -= lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+                const double denomk = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j4o) - e0all_[istate];
+//                largey->element(j3o, j4o) -= lcovar * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+                largey->element(j3o, j4o) += lcovar * (*t)[kall] * shift2 / denomk + (*l)[kall] * tcovar * shift2 / denom;
               }
             }
           }
@@ -538,6 +549,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_h(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_h(j0o));
         }
@@ -641,11 +656,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 }
               }
             }
-            largey->element(j2o, j2o) -= Lambda * denom_->denom_hh(j2o);
+            largey->element(j2o, j2o) -= Lambda * denom_->denom_hh(j2o) * 2.0;
             for (size_t j3o = 0; j3o != interm_size; ++j3o) {
               const size_t kall = j0 + nclo * (j1 + nclo * j3o) + ioffset;
-              const double denom2 = - eig_[j0+ncore] - eig_[j1+ncore] + denom_->denom_hh(j3o) - e0all_[istate];
-              largey->element(j2o, j3o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+              const double denomk = - eig_[j0+ncore] - eig_[j1+ncore] + denom_->denom_hh(j3o) - e0all_[istate];
+//              largey->element(j2o, j3o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+              largey->element(j2o, j3o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
             }
           }
         }
@@ -660,6 +676,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_hh(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_hh(j0o));
         }
@@ -790,6 +810,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     timer.tick_print("dshift risj");
 
     // a i r s & a r s i
+    // y seems wrong. dunno why...
     if (size_airs) {
       const size_t interm_size = denom_->shalf_xh()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
@@ -831,8 +852,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             const double factorSS = VrsS * VtuS;
                             e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (lt + tl) * ztermfac;
                             if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (lt + tl) * ztermfac;
-                            e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * (lt + tl) * ztermfac;
-                            if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * factorSS * (lt + tl) * ztermfac;
+                            e2->at(is,js)->element(j3, j5, j4, j2) += -1.0 * factorSS * (lt + tl) * ztermfac;
+                            if (j3 == j5) e1->at(is,js)->element(j4, j2) += 2.0 * factorSS * (lt + tl) * ztermfac;
                           }
                         }
                       }
@@ -840,11 +861,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
-            largey->element(j0o, j0o) -= Lambda * denom_->denom_xh(j0o);
+            largey->element(j0o, j0o) -= Lambda * denom_->denom_xh(j0o) * 2.0;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
-              const double denom2 = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
-              largey->element(j0o, j1o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+              const double denomk = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
+//              largey->element(j0o, j1o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+              largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
             }
           }
         }
@@ -860,6 +882,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xh(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xh(j0o));
         }
@@ -912,11 +938,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3 * nact + (2 * js + 1) * nact * nact);
                       RmatA->element(j0, j1, j3, j2) += QmatA->element(j0o, j0 + j1 * nact) * VrsO + QmatB->element(j0o, j0 + j1 * nact) * VrsS;
                       RmatC->element(j0, j1, j3, j2) += QmatC->element(j0o, j0 + j1 * nact) * VrsS;
-                      if (xterm) {
-                        e2->at(is, js)->element(j0, j1, j3, j2)       += PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
-                        if (j1 == j3) e1->at(is, js)->element(j0, j2) += PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
-                        e2->at(is, js)->element(j0, j2, j1, j3)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
-                        if (j1 == j3) e1->at(is, js)->element(j0, j2) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
+                      if (0) {
+                        e2->at(is, js)->element(j0, j1, j3, j2)       += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * xtermfac;
+                        if (j1 == j3) e1->at(is, js)->element(j0, j2) += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * xtermfac;
+//                        e2->at(is, js)->element(j0, j2, j1, j3)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
+//                        if (j1 == j3) e1->at(is, js)->element(j0, j2) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
+                        e2->at(is, js)->element(j1, j3, j2, j0)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
+                        if (j1 == j3) e1->at(is, js)->element(j2, j0) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
                       }
                     }
                   }
@@ -963,6 +991,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
     timer.tick_print("dshift airs");
 
+#if 0
     // a r s t
     if (size_arst) {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
@@ -997,16 +1026,17 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                               const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
                               const double VuvwO = denom_->shalf_xxh()->element(j2o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
                               e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (lt + tl) * ztermfac;
-                              if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (lt + tl) * ztermfac;
+                              if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) += VrstO * VuvwO * (lt + tl) * ztermfac;
                             }
                 }
               }
             }
-          largey->element(j1o, j1o) -= Lambda * denom_->denom_xxh(j1o);
+          largey->element(j1o, j1o) -= Lambda * denom_->denom_xxh(j1o) * 2.0;
           for (size_t j2o = 0; j2o != interm_size; ++j2o) {
             const size_t kall = j0 + nvirt * j2o + ioffset;
-            const double denom2 = eig_[j0+nocc] + denom_->denom_xxh(j2o) - e0all_[istate];
-            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+            const double denomk = eig_[j0+nocc] + denom_->denom_xxh(j2o) - e0all_[istate];
+//            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
           }
         }
       }
@@ -1021,6 +1051,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xxh(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xxh(j0o));
         }
@@ -1064,7 +1098,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           Rmat->element(j1, j2, j5, j4, j0, j3) += Qmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
                           if (xterm) {
                             e3->at(is, js)->element(j0, j1, j5, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO * xtermfac;
-                            if (j1 == j5) e2->at(is, js)->element(j0, j4, j2, j3) += -1.0 * Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO * xtermfac;
+                            if (j1 == j5) e2->at(is, js)->element(j0, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO * xtermfac;
                           }
                         }
                       }
@@ -1151,11 +1185,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 }
               }
             }
-          largey->element(j1o, j1o) -= Lambda * denom_->denom_xhh(j1o);
+          largey->element(j1o, j1o) -= Lambda * denom_->denom_xhh(j1o) * 2.0;
           for (size_t j2o = 0; j2o != interm_size; ++j2o) {
             const size_t kall = j0 + nclo * j2o + ioffset;
-            const double denom2 = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
-            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+            const double denomk = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
+//            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
+            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
           }
         }
       }
@@ -1170,6 +1205,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+          if (j0o == j1o)
+          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
+                                    + 0.25 * largey->element(j0o, j1o);
+          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xhh(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xhh(j0o));
         }
@@ -1303,6 +1342,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_rist;
     }
+#endif
     timer.tick_print("dshift rist");
   }
 
@@ -1516,7 +1556,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       ioffset += size_risj;
       timer.tick_print("dshift risj");
     }
-     // a i r s & a r s i is wrong, quite badly
+     // a i r s & a r s i is wrong
     if (size_airs) {
       const size_t interm_size = denom_->shalf_xh()->ndim();
        for (size_t j0 = 0; j0 != nclo; ++j0) {
@@ -1544,8 +1584,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           const double factorSS = VrsS * VtuS;
                           e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
                           if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
-                          e2->at(is,js)->element(j2, j4, j3, j5) -= factorSS * (lt + tl);
-                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += 2.0 * factorSS * (lt + tl);
+                          e2->at(is,js)->element(j3, j5, j4, j2) += -1.0 * factorSS * (lt + tl);
+                          if (j3 == j5) e1->at(is,js)->element(j4, j2) += 2.0 * factorSS * (lt + tl);
                         }
                       }
                     }
@@ -1581,7 +1621,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             const double VrstO = denom_->shalf_xxh()->element(j1o, j2 + nact * (j3 + nact * j4) + is * nact * nact * nact);
                             const double VuvwO = denom_->shalf_xxh()->element(j2o, j5 + nact * (j6 + nact * j7) + js * nact * nact * nact);
                             e3->at(is,js)->element(j3, j4, j7, j6, j2, j5) += VrstO * VuvwO * (lt + tl);
-                            if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) -= VrstO * VuvwO * (lt + tl);
+                            if (j4 == j7) e2->at(is,js)->element(j3, j6, j2, j5) += VrstO * VuvwO * (lt + tl);
                           }
               }
             }
