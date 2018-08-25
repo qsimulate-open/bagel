@@ -277,7 +277,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               }
             }
             largey->element(j0o, j0o) -= Lambda * denom_->denom_xx(j0o) * 2.0;
-//            largey->element(j0o, j0o) -= Lambda * denom;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j1o + interm_size * (j1 + nvirt * j3) + ioffset;
               const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
@@ -891,6 +890,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
 
+#if 0
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
           if (is != js) continue;
@@ -938,11 +938,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3 * nact + (2 * js + 1) * nact * nact);
                       RmatA->element(j0, j1, j3, j2) += QmatA->element(j0o, j0 + j1 * nact) * VrsO + QmatB->element(j0o, j0 + j1 * nact) * VrsS;
                       RmatC->element(j0, j1, j3, j2) += QmatC->element(j0o, j0 + j1 * nact) * VrsS;
-                      if (0) {
+                      if (xterm) {
                         e2->at(is, js)->element(j0, j1, j3, j2)       += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * xtermfac;
                         if (j1 == j3) e1->at(is, js)->element(j0, j2) += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * xtermfac;
-//                        e2->at(is, js)->element(j0, j2, j1, j3)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
-//                        if (j1 == j3) e1->at(is, js)->element(j0, j2) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
                         e2->at(is, js)->element(j1, j3, j2, j0)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
                         if (j1 == j3) e1->at(is, js)->element(j2, j0) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * xtermfac;
                       }
@@ -972,11 +970,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         if (j4 == j1)             dshift->element(j2i, j3i) +=  2.0 * RmatC->element(j0, j1, j4, j5) * rdm2->element(j2, j3, j5, j0);
                         if (dterm) {
                           e3->at(is,js)->element(j0, j1, j4, j5, j2, j3) += dtermfac * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= dtermfac * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j3 == j4)             e2->at(is,js)->element(j0, j1, j2, j5) += dtermfac * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j1 == j2)             e2->at(is,js)->element(j0, j3, j4, j5) += dtermfac * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j1 == j2 && j3 == j4) e1->at(is,js)->element(j0, j5)         += dtermfac * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j1 == j4)             e2->at(is,js)->element(j2, j3, j0, j5) += dtermfac * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                          e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= dtermfac * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j3 == j1)             e2->at(is,js)->element(j2, j4, j5, j0) += dtermfac * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j4 == j2)             e2->at(is,js)->element(j1, j3, j5, j0) += dtermfac * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                           if (j3 == j1 && j4 == j2) e1->at(is,js)->element(j5, j0)         += dtermfac *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
@@ -988,6 +986,79 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
       ioffset += size_airs;
+#else
+      for (size_t is = 0; is != nstates; ++is) {
+        for (size_t js = 0; js != nstates; ++js) {
+          if (is != js) continue;
+          shared_ptr<RDM<1>> rdm1tmp;
+          shared_ptr<RDM<2>> rdm2tmp;
+          shared_ptr<RDM<3>> rdm3tmp;
+          shared_ptr<RDM<4>> rdm4tmp;
+          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
+          for (size_t j5 = 0; j5 != nact; ++j5) {
+            for (size_t j4 = 0; j4 != nact; ++j4) {
+              for (size_t j0 = 0; j0 != nact; ++j0) {
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  for (size_t j0o = 0; j0o != interm_size; ++j0o) {
+                    const double VrsO = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+0)*nact*nact);
+                    const double VrsS = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+1)*nact*nact);
+                    for (size_t j1o = 0; j1o != interm_size; ++j1o) {
+                      const double VtuO = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+0)*nact*nact);
+                      const double VtuS = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+1)*nact*nact);
+                      const double xfactorOO = VrsO * VtuO * 2.0;
+                      const double xfactorOS = -VrsO * VtuS;
+                      const double xfactorSO = -VrsS * VtuO;
+                      const double xfactorSS = VrsS * VtuS;
+                      if (xterm) {
+                        const double xtermfaca = 2.0;
+                        e2->at(is,js)->element(j0, j1, j4, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * xtermfaca;
+                        if (j1 == j4) e1->at(is,js)->element(j0, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * xtermfaca;
+                        e2->at(is,js)->element(j1, j4, j5, j0) -= -1.0 * largex->element(j0o, j1o) * xfactorSS * xtermfaca;
+                        if (j1 == j4) e1->at(is,js)->element(j5, j0) -= 2.0 * largex->element(j0o, j1o) * xfactorSS * xtermfaca;
+                      }
+                      for (size_t j2 = 0; j2 != nact; ++j2) {
+                        const size_t j2i = j2 + nclo;
+                        for (size_t j3 = 0; j3 != nact; ++j3) {
+                          const size_t j3i = j3 + nclo;
+                          const double factorOO = VrsO * VtuO * smallz->element(j0o, j1o) * 2.0;
+                          const double factorOS = -VrsO * VtuS * smallz->element(j0o, j1o);
+                          const double factorSO = -VrsS * VtuO * smallz->element(j0o, j1o);
+                          const double factorSS = VrsS * VtuS * smallz->element(j0o, j1o);
+                          dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm3tmp->element(j0, j1, j4, j5, j2, j3);
+                          if (j3 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j1, j2, j5);
+                          if (j1 == j2)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j3, j4, j5);
+                          if (j1 == j2 && j3 == j4) dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm1tmp->element(j0, j5);
+                          if (j1 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j2, j3, j0, j5);
+                          dshift->element(j2i, j3i) -= factorSS * rdm3tmp->element(j1, j4, j5, j0, j2, j3);
+                          if (j3 == j1)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j2, j4, j5, j0);
+                          if (j4 == j2)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j1, j3, j5, j0);
+                          if (j3 == j1 && j4 == j2) dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm1tmp->element(j5, j0);
+                          if (j4 == j1)             dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm2tmp->element(j2, j3, j5, j0);
+                          if (dterm) {
+                            const double dtermfaca = 2.0;
+                            e3->at(is,js)->element(j0, j1, j4, j5, j2, j3) += dtermfaca * (factorOO + factorOS + factorSO) * fockact_->element(j2, j3);
+                            if (j3 == j4)             e2->at(is,js)->element(j0, j1, j2, j5) += dtermfaca * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
+                            if (j1 == j2)             e2->at(is,js)->element(j0, j3, j4, j5) += dtermfaca * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
+                            if (j1 == j2 && j3 == j4) e1->at(is,js)->element(j0, j5)         += dtermfaca * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
+                            if (j1 == j4)             e2->at(is,js)->element(j2, j3, j0, j5) += dtermfaca * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
+                            e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= dtermfaca * factorSS * fockact_->element(j2, j3);
+                            if (j3 == j1)             e2->at(is,js)->element(j2, j4, j5, j0) += dtermfaca * -1.0 * factorSS * fockact_->element(j2,j3);
+                            if (j4 == j2)             e2->at(is,js)->element(j1, j3, j5, j0) += dtermfaca * -1.0 * factorSS * fockact_->element(j2,j3);
+                            if (j3 == j1 && j4 == j2) e1->at(is,js)->element(j5, j0)         += dtermfaca *  2.0 * factorSS * fockact_->element(j2,j3);
+                            if (j4 == j1)             e2->at(is,js)->element(j2, j3, j5, j0) += dtermfaca *  2.0 * factorSS * fockact_->element(j2,j3);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      ioffset += size_airs;
+#endif
     }
     timer.tick_print("dshift airs");
 

@@ -164,6 +164,8 @@ class CASPT2 : public SpinFreeMethod<double> {
     void do_rdm_deriv(double factor);
     void add_shift(std::shared_ptr<VectorB> residual, std::shared_ptr<const VectorB> amplitude, const int state);
 
+    double compute_energy_lt();
+
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     CASPT2(const CASPT2& cas);
