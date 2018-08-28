@@ -734,6 +734,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
       auto largey = make_shared<Matrix>(interm_size, interm_size);
       auto largex = make_shared<Matrix>(interm_size, interm_size);
+      auto largeq = make_shared<Matrix>(interm_size, interm_size);
 
       for (size_t j0 = 0; j0 != nclo; ++j0) {
         const size_t j0i = j0;
@@ -747,42 +748,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             dshift->element(j1i, j1i) -= Lambda;
             smallz->element(j0o, j0o) -= Lambda;
             nimag[istate] -= Lambda;
+            largey->element(j0o, j0o) -= Lambda * denom_->denom_xh(j0o) * 2.0;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
               const double denomk = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
               const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
               const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
-              for (size_t j2 = 0; j2 != nact; ++j2) {
-                for (size_t j3 = 0; j3 != nact; ++j3) {
-                  for (size_t j4 = 0; j4 != nact; ++j4) {
-                    for (size_t j5 = 0; j5 != nact; ++j5) {
-                      for (size_t is = 0; is != nstates; ++is) {
-                        for (size_t js = 0; js != nstates; ++js) {
-                          if (is != js) continue;
-                          const double VrsO = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+0)*nact*nact);
-                          const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3*nact + (2*is+1)*nact*nact);
-                          const double VtuO = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+0)*nact*nact);
-                          const double VtuS = denom_->shalf_xh()->element(j1o, j4 + j5*nact + (2*js+1)*nact*nact);
-                          const double factorOO = VrsO * VtuO * 2.0;
-                          const double factorOS = -VrsO * VtuS;
-                          const double factorSO = -VrsS * VtuO;
-                          const double factorSS = VrsS * VtuS;
-                          e2->at(is,js)->element(j2, j3, j5, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
-                          if (j3 == j5) e1->at(is,js)->element(j2, j4) += (factorOO + factorOS + factorSO) * (lt + tl);
-                          e2->at(is,js)->element(j3, j5, j4, j2) += -1.0 * factorSS * (lt + tl);
-                          if (j3 == j5) e1->at(is,js)->element(j4, j2) += 2.0 * factorSS * (lt + tl);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            largey->element(j0o, j0o) -= Lambda * denom_->denom_xh(j0o) * 2.0;
-            for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-              const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
-              const double denomk = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
               largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
+              largeq->element(j0o, j1o) += (lt + tl);
             }
           }
         }
@@ -806,7 +779,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         }
       }
 
-#if 0
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
           if (is != js) continue;
@@ -832,11 +804,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   const double VrsS = denom_->shalf_xh()->element(j0o, j0 + j1 * nact + (2 * is + 1) * nact * nact);
                   for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                     QmatA->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * (2.0 * VrsO - VrsS);
-                    PmatA->element(j1o, j0 + j1 * nact) += -largex->element(j0o, j1o) * (2.0 * VrsO - VrsS);
+                    PmatA->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * (2.0 * VrsO - VrsS);
                     QmatB->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * (-VrsO);
-                    PmatB->element(j1o, j0 + j1 * nact) += -largex->element(j0o, j1o) * (-VrsO);
+                    PmatB->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * (-VrsO);
                     QmatC->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * VrsS;
-                    PmatC->element(j1o, j0 + j1 * nact) += -largex->element(j0o, j1o) * VrsS;
+                    PmatC->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * VrsS;
                   }
                 }
               }
@@ -854,12 +826,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       const double VrsS = denom_->shalf_xh()->element(j0o, j2 + j3 * nact + (2 * js + 1) * nact * nact);
                       RmatA->element(j0, j1, j3, j2) += QmatA->element(j0o, j0 + j1 * nact) * VrsO + QmatB->element(j0o, j0 + j1 * nact) * VrsS;
                       RmatC->element(j0, j1, j3, j2) += QmatC->element(j0o, j0 + j1 * nact) * VrsS;
-                      if (xterm) {
-                        e2->at(is, js)->element(j0, j1, j3, j2)       += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * 2.0;
-                        if (j1 == j3) e1->at(is, js)->element(j0, j2) += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS) * 2.0;
-                        e2->at(is, js)->element(j1, j3, j2, j0)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * 2.0;
-                        if (j1 == j3) e1->at(is, js)->element(j2, j0) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS * 2.0;
-                      }
+                      e2->at(is, js)->element(j0, j1, j3, j2)       += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS);
+                      if (j1 == j3) e1->at(is, js)->element(j0, j2) += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS);
+                      e2->at(is, js)->element(j1, j3, j2, j0)       += -1.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS;
+                      if (j1 == j3) e1->at(is, js)->element(j2, j0) +=  2.0 * PmatC->element(j0o, j0 + j1 * nact) * VrsS;
                     }
                   }
                 }
@@ -884,91 +854,22 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         if (j4 == j2)             dshift->element(j2i, j3i) += -1.0 * RmatC->element(j0, j1, j4, j5) * rdm2->element(j1, j3, j5, j0);
                         if (j3 == j1 && j4 == j2) dshift->element(j2i, j3i) +=  2.0 * RmatC->element(j0, j1, j4, j5) * rdm1->element(j5, j0);
                         if (j4 == j1)             dshift->element(j2i, j3i) +=  2.0 * RmatC->element(j0, j1, j4, j5) * rdm2->element(j2, j3, j5, j0);
-                        if (dterm) {
-                          e3->at(is,js)->element(j0, j1, j4, j5, j2, j3) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j3 == j4)             e2->at(is,js)->element(j0, j1, j2, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j1 == j2)             e2->at(is,js)->element(j0, j3, j4, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j1 == j2 && j3 == j4) e1->at(is,js)->element(j0, j5)         += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j1 == j4)             e2->at(is,js)->element(j2, j3, j0, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= 2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j3 == j1)             e2->at(is,js)->element(j2, j4, j5, j0) += 2.0 * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j4 == j2)             e2->at(is,js)->element(j1, j3, j5, j0) += 2.0 * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j3 == j1 && j4 == j2) e1->at(is,js)->element(j5, j0)         += 2.0 *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                          if (j4 == j1)             e2->at(is,js)->element(j2, j3, j5, j0) += 2.0 *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
-                        }
+                        e3->at(is,js)->element(j0, j1, j4, j5, j2, j3) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j3 == j4)             e2->at(is,js)->element(j0, j1, j2, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j1 == j2)             e2->at(is,js)->element(j0, j3, j4, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j1 == j2 && j3 == j4) e1->at(is,js)->element(j0, j5)         += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j1 == j4)             e2->at(is,js)->element(j2, j3, j0, j5) += 2.0 * RmatA->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= 2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j3 == j1)             e2->at(is,js)->element(j2, j4, j5, j0) += 2.0 * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j4 == j2)             e2->at(is,js)->element(j1, j3, j5, j0) += 2.0 * -1.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j3 == j1 && j4 == j2) e1->at(is,js)->element(j5, j0)         += 2.0 *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
+                        if (j4 == j1)             e2->at(is,js)->element(j2, j3, j5, j0) += 2.0 *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                       }
                     }
           }
         }
       }
       ioffset += size_airs;
-#else
-      for (size_t is = 0; is != nstates; ++is) {
-        for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
-          shared_ptr<RDM<1>> rdm1tmp;
-          shared_ptr<RDM<2>> rdm2tmp;
-          shared_ptr<RDM<3>> rdm3tmp;
-          shared_ptr<RDM<4>> rdm4tmp;
-          tie(rdm1tmp, rdm2tmp, rdm3tmp, rdm4tmp) = feed_rdm(is, js);
-          for (size_t j5 = 0; j5 != nact; ++j5) {
-            for (size_t j4 = 0; j4 != nact; ++j4) {
-              for (size_t j0 = 0; j0 != nact; ++j0) {
-                for (size_t j1 = 0; j1 != nact; ++j1) {
-                  for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                    const double VrsO = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+0)*nact*nact);
-                    const double VrsS = denom_->shalf_xh()->element(j0o, j0 + j1*nact + (2*is+1)*nact*nact);
-                    for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                      const double VtuO = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+0)*nact*nact);
-                      const double VtuS = denom_->shalf_xh()->element(j1o, j5 + j4*nact + (2*js+1)*nact*nact);
-                      const double xfactorOO = VrsO * VtuO * 2.0;
-                      const double xfactorOS = -VrsO * VtuS;
-                      const double xfactorSO = -VrsS * VtuO;
-                      const double xfactorSS = VrsS * VtuS;
-                      e2->at(is,js)->element(j0, j1, j4, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * 2.0;
-                      if (j1 == j4) e1->at(is,js)->element(j0, j5) -= largex->element(j0o, j1o) * (xfactorOO + xfactorOS + xfactorSO) * 2.0;
-                      e2->at(is,js)->element(j1, j4, j5, j0) -= -1.0 * largex->element(j0o, j1o) * xfactorSS * 2.0;
-                      if (j1 == j4) e1->at(is,js)->element(j5, j0) -= 2.0 * largex->element(j0o, j1o) * xfactorSS * 2.0;
-                      for (size_t j2 = 0; j2 != nact; ++j2) {
-                        const size_t j2i = j2 + nclo;
-                        for (size_t j3 = 0; j3 != nact; ++j3) {
-                          const size_t j3i = j3 + nclo;
-                          const double factorOO = VrsO * VtuO * smallz->element(j0o, j1o) * 2.0;
-                          const double factorOS = -VrsO * VtuS * smallz->element(j0o, j1o);
-                          const double factorSO = -VrsS * VtuO * smallz->element(j0o, j1o);
-                          const double factorSS = VrsS * VtuS * smallz->element(j0o, j1o);
-                          dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm3tmp->element(j0, j1, j4, j5, j2, j3);
-                          if (j3 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j1, j2, j5);
-                          if (j1 == j2)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j0, j3, j4, j5);
-                          if (j1 == j2 && j3 == j4) dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm1tmp->element(j0, j5);
-                          if (j1 == j4)             dshift->element(j2i, j3i) += (factorOO + factorOS + factorSO) * rdm2tmp->element(j2, j3, j0, j5);
-                          dshift->element(j2i, j3i) -= factorSS * rdm3tmp->element(j1, j4, j5, j0, j2, j3);
-                          if (j3 == j1)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j2, j4, j5, j0);
-                          if (j4 == j2)             dshift->element(j2i, j3i) += -1.0 * factorSS * rdm2tmp->element(j1, j3, j5, j0);
-                          if (j3 == j1 && j4 == j2) dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm1tmp->element(j5, j0);
-                          if (j4 == j1)             dshift->element(j2i, j3i) +=  2.0 * factorSS * rdm2tmp->element(j2, j3, j5, j0);
-                          e3->at(is,js)->element(j0, j1, j4, j5, j2, j3) += 2.0 * (factorOO + factorOS + factorSO) * fockact_->element(j2, j3);
-                          if (j3 == j4)             e2->at(is,js)->element(j0, j1, j2, j5) += 2.0 * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
-                          if (j1 == j2)             e2->at(is,js)->element(j0, j3, j4, j5) += 2.0 * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
-                          if (j1 == j2 && j3 == j4) e1->at(is,js)->element(j0, j5)         += 2.0 * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
-                          if (j1 == j4)             e2->at(is,js)->element(j2, j3, j0, j5) += 2.0 * (factorOO + factorOS + factorSO) * fockact_->element(j2,j3);
-                          e3->at(is,js)->element(j1, j4, j5, j0, j2, j3) -= 2.0 * factorSS * fockact_->element(j2, j3);
-                          if (j3 == j1)             e2->at(is,js)->element(j2, j4, j5, j0) += 2.0 * -1.0 * factorSS * fockact_->element(j2,j3);
-                          if (j4 == j2)             e2->at(is,js)->element(j1, j3, j5, j0) += 2.0 * -1.0 * factorSS * fockact_->element(j2,j3);
-                          if (j3 == j1 && j4 == j2) e1->at(is,js)->element(j5, j0)         += 2.0 *  2.0 * factorSS * fockact_->element(j2,j3);
-                          if (j4 == j1)             e2->at(is,js)->element(j2, j3, j5, j0) += 2.0 *  2.0 * factorSS * fockact_->element(j2,j3);
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      ioffset += size_airs;
-#endif
     }
     timer.tick_print("dshift airs");
 
