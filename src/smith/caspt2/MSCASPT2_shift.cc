@@ -416,9 +416,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               largey->element(j0o, j0o) -= Lambda * denom_->denom_x(j0o) * 2.0;
               for (size_t j1o = 0; j1o != interm_size; ++j1o) {
                 const size_t kall = j1o + interm_size * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-                const size_t kall2 = j1o + interm_size * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
                 const double denomk = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
-                const double tkcovar = ((*t)[kall] * 2.0 - (*t)[kall2]);
                 largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
               }
             }
@@ -531,9 +529,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               largey->element(j3o, j3o) -= Lambda * denom_->denom_h(j3o) * 2.0;
               for (size_t j4o = 0; j4o != interm_size; ++j4o) {
                 const size_t kall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j4o)) + ioffset;
-                const size_t kall2 = j2 + nclo * (j1 + nvirt * (j0 + nclo * j4o)) + ioffset;
                 const double denomk = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j4o) - e0all_[istate];
-                const double tkcovar = ((*t)[kall] * 2.0 - (*t)[kall2]);
                 largey->element(j3o, j4o) += lcovar * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
               }
             }
@@ -865,8 +861,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j0 + nclo * (j1 + nvirt * j1o) + ioffset;
               const double denomk = eig_[j1+nocc] - eig_[j0+ncore] + denom_->denom_xh(j1o) - e0all_[istate];
-//              largey->element(j0o, j1o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
-              largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
+              largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
             }
           }
         }
@@ -1063,7 +1058,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     }
     timer.tick_print("dshift airs");
 
-#if 0
     // a r s t
     if (size_arst) {
       const size_t interm_size = denom_->shalf_xxh()->ndim();
@@ -1107,8 +1101,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           for (size_t j2o = 0; j2o != interm_size; ++j2o) {
             const size_t kall = j0 + nvirt * j2o + ioffset;
             const double denomk = eig_[j0+nocc] + denom_->denom_xxh(j2o) - e0all_[istate];
-//            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
-            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
+            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
           }
         }
       }
@@ -1261,8 +1254,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           for (size_t j2o = 0; j2o != interm_size; ++j2o) {
             const size_t kall = j0 + nclo * j2o + ioffset;
             const double denomk = - eig_[j0+ncore] + denom_->denom_xhh(j2o) - e0all_[istate];
-//            largey->element(j1o, j2o) -= (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denom - 1.0 / denom2);
-            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 / denomk + (*l)[kall] * (*t)[jall] * shift2 / denom;
+            largey->element(j1o, j2o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
           }
         }
       }
@@ -1414,7 +1406,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_rist;
     }
-#endif
     timer.tick_print("dshift rist");
   }
 
