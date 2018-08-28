@@ -245,7 +245,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             dshift->element(j3i, j3i) -= Lambda;
             smallz->element(j0o, j0o) -= Lambda;
             nimag[istate] -= Lambda;
-            largey->element(j0o, j0o) -= Lambda * denom_->denom_xx(j0o) * 2.0;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
               const size_t kall = j1o + interm_size * (j1 + nvirt * j3) + ioffset;
               const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
@@ -267,10 +266,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-          if (j0o == j1o)
-          largex->element(j1o, j0o) = 0.25 * largey->element(j1o, j0o)
-                                    + 0.25 * largey->element(j0o, j1o);
-          else
           largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * denom_->denom_xx(j1o))
                                     + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * denom_->denom_xx(j0o));
         }
