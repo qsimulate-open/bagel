@@ -280,12 +280,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact * nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              for (size_t j1 = 0; j1 != nact; ++j1) {
-                copy_n(denom_->shalf_xx()->element_ptr(0, j0 + j1 * nact + is * nact * nact), interm_size, Vmat->element_ptr(0, j0 + j1 * nact));
-              }
-            }
+            auto Vmat = denom_->shalf_xx()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -386,10 +381,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              copy_n(denom_->shalf_x()->element_ptr(0, j0 + is * nact), interm_size, Vmat->element_ptr(0, j0));
-            }
+            auto Vmat = denom_->shalf_x()->get_submatrix(0, is * nact, interm_size, nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -484,10 +476,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              copy_n(denom_->shalf_h()->element_ptr(0, j0 + is * nact), interm_size, Vmat->element_ptr(0, j0));
-            }
+            auto Vmat = denom_->shalf_h()->get_submatrix(0, is * nact, interm_size, nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -584,12 +573,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact * nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              for (size_t j1 = 0; j1 != nact; ++j1) {
-                copy_n(denom_->shalf_hh()->element_ptr(0, j0 + j1 * nact + is * nact * nact), interm_size, Vmat->element_ptr(0, j0 + j1 * nact));
-              }
-            }
+            auto Vmat = denom_->shalf_hh()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -878,14 +862,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact * nact * nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              for (size_t j1 = 0; j1 != nact; ++j1) {
-                for (size_t j2 = 0; j2 != nact; ++j2) {
-                  copy_n(denom_->shalf_xxh()->element_ptr(0, j0 + nact*(j1 + nact * j2) + is * nact * nact * nact), interm_size, Vmat->element_ptr(0, j0 + nact * (j1 + nact * j2)));
-                }
-              }
-            }
+            auto Vmat = denom_->shalf_xxh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -989,14 +966,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = make_shared<Matrix>(interm_size, nact * nact * nact);
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              for (size_t j1 = 0; j1 != nact; ++j1) {
-                for (size_t j2 = 0; j2 != nact; ++j2) {
-                  copy_n(denom_->shalf_xhh()->element_ptr(0, j0 + nact*(j1 + nact * j2) + is * nact * nact * nact), interm_size, Vmat->element_ptr(0, j0 + nact * (j1 + nact * j2)));
-                }
-              }
-            }
+            auto Vmat = denom_->shalf_xhh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
