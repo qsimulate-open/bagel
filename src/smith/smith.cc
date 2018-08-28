@@ -129,9 +129,6 @@ void Smith::compute_gradient(const int istate, const int jstate, shared_ptr<cons
     msrot_ = algop->msrot();
     coeff_ = algop->coeff();
 
-    // TODO temporary. I do not think this should work for multiple gradient, and should be removed!!
-    algo_ = algop;
-
     // if spin-density is requested...
     if (idata_->get<bool>("_hyperfine")) {
       auto sp = make_shared<SPCASPT2::SPCASPT2>(*algop);
