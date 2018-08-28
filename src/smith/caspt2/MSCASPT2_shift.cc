@@ -652,7 +652,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       Rmat->element(j0, j2, j1, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
                       e2->at(is, js)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       if (j2 == j1)                         e1->at(is, js)->element(j0, j3) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
-                      if (j2 == j3)                         e1->at(is, js)->element(j0, j1) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
+                      if (j1 == j3)                         e1->at(is, js)->element(j0, j2) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       if (j0 == j2)                         e1->at(is, js)->element(j1, j3) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       if (j0 == j3)                         e1->at(is, js)->element(j1, j2) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       if (j0 == j2 && j1 == j3 && is == js) *(e0->at(is, js)) +=  4.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
