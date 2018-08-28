@@ -280,21 +280,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Qmat = make_shared<Matrix>(interm_size, nact * nact);
-            auto Pmat = make_shared<Matrix>(interm_size, nact * nact);
-            // (1) Form Q^U_{tv} = z_{TU} V^{T}_{tv} and P^U_{rt} = -X_{TU} V^{T}_{rt}
+            auto Vmat = make_shared<Matrix>(interm_size, nact * nact);
             for (size_t j0 = 0; j0 != nact; ++j0) {
               for (size_t j1 = 0; j1 != nact; ++j1) {
-                for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                  // TODO think that I can use dgemm
-                  const double VrsO = denom_->shalf_xx()->element(j0o, j0 + j1 * nact + is * nact * nact);
-                  for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                    Qmat->element(j1o, j0 + j1 * nact) += VrsO * smallz->element(j0o, j1o);
-                    Pmat->element(j1o, j0 + j1 * nact) += VrsO * (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o));
-                  }
-                }
+                copy_n(denom_->shalf_xx()->element_ptr(0, j0 + j1 * nact + is * nact * nact), interm_size, Vmat->element_ptr(0, j0 + j1 * nact));
               }
             }
+            auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
+            auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
             auto Rmat = make_shared<RDM<2>>(nact);
             // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
