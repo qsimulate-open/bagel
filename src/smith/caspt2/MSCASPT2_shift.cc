@@ -280,7 +280,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_xx()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_xx()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -381,7 +381,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_x()->get_submatrix(0, is * nact, interm_size, nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_x()->get_submatrix(0, is * nact, interm_size, nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -476,7 +476,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_h()->get_submatrix(0, is * nact, interm_size, nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_h()->get_submatrix(0, is * nact, interm_size, nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -573,7 +573,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_hh()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_hh()->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -727,30 +727,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto QmatA = make_shared<Matrix>(interm_size, nact * nact);
-            auto QmatB = make_shared<Matrix>(interm_size, nact * nact);
-            auto QmatC = make_shared<Matrix>(interm_size, nact * nact);
-            auto PmatA = make_shared<Matrix>(interm_size, nact * nact);
-            auto PmatB = make_shared<Matrix>(interm_size, nact * nact);
-            auto PmatC = make_shared<Matrix>(interm_size, nact * nact);
-            // (1) Form Q^U_{tv} = z_{TU} V^{T}_{tv} and P^U_{rt} = -X_{TU} V^{T}_{rt}
-            for (size_t j0 = 0; j0 != nact; ++j0) {
-              for (size_t j1 = 0; j1 != nact; ++j1) {
-                for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                  // TODO think that I can use dgemm
-                  const double VrsO = denom_->shalf_xh()->element(j0o, j0 + j1 * nact + (2 * is + 0) * nact * nact);
-                  const double VrsS = denom_->shalf_xh()->element(j0o, j0 + j1 * nact + (2 * is + 1) * nact * nact);
-                  for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                    QmatA->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * (2.0 * VrsO - VrsS);
-                    PmatA->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * (2.0 * VrsO - VrsS);
-                    QmatB->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * (-VrsO);
-                    PmatB->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * (-VrsO);
-                    QmatC->element(j1o, j0 + j1 * nact) += smallz->element(j0o, j1o) * VrsS;
-                    PmatC->element(j1o, j0 + j1 * nact) += (-largex->element(j0o, j1o) * 2.0 + largeq->element(j0o, j1o)) * VrsS;
-                  }
-                }
-              }
-            }
+            shared_ptr<Matrix> VmatA = denom_->shalf_xh()->get_submatrix(0, (2 * is + 0) * nact * nact, interm_size, nact * nact);
+            shared_ptr<Matrix> VmatB = denom_->shalf_xh()->get_submatrix(0, (2 * is + 1) * nact * nact, interm_size, nact * nact);
+            auto QmatA = make_shared<Matrix>(*smallz % (2.0 * (*VmatA) - (*VmatB)));
+            auto QmatB = make_shared<Matrix>(*smallz % (-1.0 * (*VmatA)));
+            auto QmatC = make_shared<Matrix>(*smallz % (*VmatB));
+            auto PmatA = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (2.0 * (*VmatA) - (*VmatB)));
+            auto PmatB = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (-1.0 * (*VmatA)));
+            auto PmatC = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*VmatB));
 
             auto RmatA = make_shared<RDM<2>>(nact);
             auto RmatC = make_shared<RDM<2>>(nact);
@@ -862,7 +846,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_xxh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_xxh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
@@ -966,7 +950,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
 
           {
-            auto Vmat = denom_->shalf_xhh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
+            shared_ptr<Matrix> Vmat = denom_->shalf_xhh()->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
             auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
             auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
 
