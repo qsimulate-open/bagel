@@ -250,8 +250,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
               const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
               const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
-              largeq->element(j0o, j1o) += lt + tl;
               largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
+              largeq->element(j0o, j1o) += (lt + tl);
             }
           }
         }
@@ -543,8 +543,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               const double denomk = - eig_[j0+ncore] - eig_[j1+ncore] + denom_->denom_hh(j1o) - e0all_[istate];
               const double lt = (*l)[jall] * (*t)[kall] * shift2 / denomk;
               const double tl = (*t)[jall] * (*l)[kall] * shift2 / denom;
-              largeq->element(j0o, j1o) += (lt + tl);
               largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (1.0 / denomk - 1.0/denom);
+              largeq->element(j0o, j1o) += (lt + tl);
             }
           }
         }
