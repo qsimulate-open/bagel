@@ -219,6 +219,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               dshift->element(j1i, j1i) -= Lambda;
               dshift->element(j2i, j2i) += Lambda;
               dshift->element(j3i, j3i) -= Lambda;
+              ((*e0->at(istate,istate))) += 2.0 * lcovar * (*t)[jall] / denom;
             }
       ioffset += size_aibj;
     }
