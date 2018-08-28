@@ -290,8 +290,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
   Den1_->scale(0.5);
   timer.tick_print("Correlated density matrix evaluation");
 
-  if (!nocider) {
-    if (info_->nact()) {
+  if (!nocider && info_->nact()) {
     for (int mst = 0; mst != nstates; ++mst) {
       const double mheffJ = (*heff_)(mst, targetJ);
       const double mheffI = (*heff_)(mst, targetI);
@@ -386,7 +385,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
 
-            e0_ = info_->orthogonal_basis() ? e0all_[lst] : e0all_[lst] - info_->shift();
+            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
             l2 = lall_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
@@ -422,17 +421,11 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       stringstream ss; ss << "CI derivative evaluation   (" << setw(2) << mst+1 << " /" << setw(2) << nstates << ")";
       timer.tick_print(ss.str());
     }
-    }
 
-    // Finally, construct dshift...
-    if (info_->orthogonal_basis()) {
-      if (info_->shift_imag() && info_->shift() != 0.0) {
-        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
-        timer.tick_print("dshift");
-      } else {
-        tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_) = make_d2_real(lall_orthogonal_, t2all_orthogonal_);
-        timer.tick_print("dshift");
-      }
+    // If we have imaginary shift, construct additional density due to the shif
+    if (info_->shift_imag() && info_->shift() != 0.0) {
+      tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+      timer.tick_print("dshift");
     }
 
     if (info_->nact())
