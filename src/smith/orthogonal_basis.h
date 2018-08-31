@@ -53,6 +53,8 @@ class Orthogonal_Basis {
     IndexRange active_;
     IndexRange virt_;
     std::vector<double> eig_;
+    std::vector<double> e0all_;
+    std::shared_ptr<Matrix> fockact_;
 
     // orbital numbers
     size_t nact_;
@@ -87,7 +89,7 @@ class Orthogonal_Basis {
 
   public:
     // Orthogonal basis: construct from scratch (using denom) for residual-type quantity
-    Orthogonal_Basis(const std::shared_ptr<SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f,
+    Orthogonal_Basis(const std::shared_ptr<SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0, std::shared_ptr<Matrix> fact,
                      std::shared_ptr<const Denom<DataType>> d, std::shared_ptr<const MultiTensor_<DataType>> tensor, const std::string type,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g0, std::shared_ptr<Vec<Tensor_<DataType>>> g1, std::shared_ptr<Vec<Tensor_<DataType>>> g2,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g3, std::shared_ptr<Vec<Tensor_<DataType>>> g4);
