@@ -229,6 +229,76 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_data(const int iext) {
 }
 
 
+shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int istate) const {
+  auto out = make_shared<MultiTensor_<double>>(nstates_ * Excitations::total);
+  for (int ist = 0; ist != nstates_; ++ist) {
+    if (!sssr_ || ist == istate) {
+      for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+        const int pos = iext + ist * Excitations::total;
+        const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(pos);
+        switch(iext) {
+          case Excitations::aibj:
+            out->at(pos) = dtensor->clone();
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
+                    unique_ptr<double[]> data1 = dtensor->get_block(i0, i3, i2, i1);
+                    sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+                    out->at(pos)->add_block(data0, i0, i1, i2, i3);
+                  }
+            break;
+          case Excitations::arbs:
+            out->at(pos) = dtensor->copy();
+            break;
+          case Excitations::arbi:
+            out->at(pos) = dtensor->clone();
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i2, i3);
+                    unique_ptr<double[]> data1 = dtensor->get_block(i0o, i3, i2, i1);
+                    sort_indices<0,3,2,1,2,1,-1,1>(data1, data0, i0o.size(), i3.size(), i2.size(), i1.size());
+                    out->at(pos)->add_block(data0, i0o, i1, i2, i3);
+                  }
+            break;
+          case Excitations::airj:
+            out->at(pos) = dtensor->clone();
+            for (auto& i2 : closed_)
+              for (auto& i1 : virt_)
+                for (auto& i0 : closed_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i1, i2);
+                    unique_ptr<double[]> data1 = dtensor->get_block(i0o, i2, i1, i0);
+                    sort_indices<0,3,2,1,2,1,-1,1>(data1, data0, i0o.size(), i2.size(), i1.size(), i0.size());
+                    out->at(pos)->add_block(data0, i0o, i0, i1, i2);
+                  }
+            break;
+          case Excitations::risj:
+            out->at(pos) = dtensor->copy();
+            break;
+          case Excitations::airs:
+            out->at(pos) = dtensor->copy();
+            break;
+          case Excitations::arst:
+            out->at(pos) = dtensor->copy();
+            break;
+          case Excitations::rist:
+            out->at(pos) = dtensor->copy();
+            break;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+
 void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
   for (int istate = 0; istate != nstates_; ++istate) {
     for (int ist = 0; ist != nstates_; ++ist) {
