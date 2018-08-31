@@ -106,12 +106,6 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
           for (auto& i0 : closed_) {
             if (!tensor->is_local(i0, i1, i2, i3)) continue;
             unique_ptr<DataType[]> data0 = tensor->get_block(i0, i1, i2, i3);
-            if (is_same<DataType,double>::value) {
-              const unique_ptr<DataType[]> data1 = tensor->get_block(i0, i3, i2, i1);
-              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-            } else {
-              blas::scale_n(0.25, data0.get(), tensor->get_size(i0, i1, i2, i3));
-            }
             size_t iall = 0;
             for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
               for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
