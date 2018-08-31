@@ -35,7 +35,7 @@ using namespace bagel::SMITH;
 
 template<typename DataType>
 Orthogonal_Basis<DataType>::Orthogonal_Basis(shared_ptr<const SMITH_Info<DataType>> info, const IndexRange c, const IndexRange a, const IndexRange v,
-vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<DataType>> d, const string type,
+vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<DataType>> d, const bool residual,
 shared_ptr<Vec<Tensor_<DataType>>> g0, shared_ptr<Vec<Tensor_<DataType>>> g1, shared_ptr<Vec<Tensor_<DataType>>> g2,
 shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : closed_(c), active_(a), virt_(v), eig_(f), e0all_(e0), fockact_(fact) {
   nact_ = info->nact();
@@ -81,15 +81,15 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
   rdm3all_ = g3;
   rdm4all_ = g4;
 
-  if (type == "amplitude") basis_type_ = Basis_Type::amplitude;
-  else if (type == "residual") basis_type_ = Basis_Type::residual;
+  if (residual) basis_type_ = Basis_Type::residual;
+  else basis_type_ = Basis_Type::amplitude;
 
   zero();
 }
 
 
 template<typename DataType>
-Orthogonal_Basis<DataType>::Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone, const string type) {
+Orthogonal_Basis<DataType>::Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone, const bool residual) {
   closed_ = o.closed_;
   active_ = o.active_;
   virt_ = o.virt_;
@@ -121,8 +121,8 @@ Orthogonal_Basis<DataType>::Orthogonal_Basis(const Orthogonal_Basis<DataType>& o
   rdm3all_ = o.rdm3all_;
   rdm4all_ = o.rdm4all_;
 
-  if (type == "amplitude") basis_type_ = Basis_Type::amplitude;
-  else if (type == "residual") basis_type_ = Basis_Type::residual;
+  if (residual) basis_type_ = Basis_Type::residual;
+  else basis_type_ = Basis_Type::amplitude;
 
   if (clone) zero();
 }

@@ -98,11 +98,11 @@ class Orthogonal_Basis {
   public:
     // Orthogonal basis: construct from scratch (using denom)
     Orthogonal_Basis(std::shared_ptr<const SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
-                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<DataType>> d, const std::string type,
+                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<DataType>> d, const bool residual,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g0, std::shared_ptr<Vec<Tensor_<DataType>>> g1, std::shared_ptr<Vec<Tensor_<DataType>>> g2,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g3, std::shared_ptr<Vec<Tensor_<DataType>>> g4);
-    // Or copy from existing orthogonal basis -- for amplitude-type quantity
-    Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone = true, const std::string type = "amplitude");
+    // Or copy from existing orthogonal basis
+    Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone = true, const bool residual = true);
 
     // Transform to redundant (should be amplitude)
     std::vector<std::shared_ptr<MultiTensor_<DataType>>> transform_to_redundant();
