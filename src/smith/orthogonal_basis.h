@@ -102,7 +102,7 @@ class Orthogonal_Basis {
                      std::shared_ptr<Vec<Tensor_<DataType>>> g0, std::shared_ptr<Vec<Tensor_<DataType>>> g1, std::shared_ptr<Vec<Tensor_<DataType>>> g2,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g3, std::shared_ptr<Vec<Tensor_<DataType>>> g4);
     // Or copy from existing orthogonal basis -- for amplitude-type quantity
-    Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const std::string type = "amplitude");
+    Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone = true, const std::string type = "amplitude");
 
     // Transform to redundant (should be amplitude)
     std::vector<std::shared_ptr<MultiTensor_<DataType>>> transform_to_redundant();

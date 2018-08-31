@@ -53,7 +53,6 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
 
   const int max = info->maxtile();
 
-  // aibj: is zero.
   interm_.push_back(IndexRange(0));
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     interm_.push_back(IndexRange(shalf[iext]->ndim(), max));
@@ -72,7 +71,7 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
     }
   }
 
-  // denom..... we store denominator for all orthogonal functions
+  // let me store denominator for all orthogonal functions
   // TODO should we merge denom with it??
   set_denom(d);
 
@@ -90,7 +89,42 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
 
 
 template<typename DataType>
-Orthogonal_Basis<DataType>::Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const string type) {
+Orthogonal_Basis<DataType>::Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone, const string type) {
+  closed_ = o.closed_;
+  active_ = o.active_;
+  virt_ = o.virt_;
+  eig_ = o.eig_;
+  e0all_ = o.e0all_;
+  fockact_ = o.fockact_;
+
+  nact_ = o.nact_;
+  nclosed_ = o.nclosed_;
+  nvirt_ = o.nvirt_;
+  nocc_ = o.nocc_;
+  ncore_ = o.ncore_;
+  nclo_ = o.nclo_;
+  norb_ = o.norb_;
+  nstates_ = o.nstates_;
+
+  sssr_ = o.sssr_;
+
+  shalf_ = o.shalf_;
+  size_ = o.size_;
+  interm_ = o.interm_;
+
+  data_ = o.data_;
+  denom_ = o.denom_;
+
+  rdm0all_ = o.rdm0all_;
+  rdm1all_ = o.rdm1all_;
+  rdm2all_ = o.rdm2all_;
+  rdm3all_ = o.rdm3all_;
+  rdm4all_ = o.rdm4all_;
+
+  if (type == "amplitude") basis_type_ = Basis_Type::amplitude;
+  else if (type == "residual") basis_type_ = Basis_Type::residual;
+
+  if (clone) zero();
 }
 
 
