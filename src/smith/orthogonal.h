@@ -90,7 +90,6 @@ class Orthogonal_Basis {
 
     // feed rdm
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
-    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
 
   public:
     // Orthogonal basis: construct from scratch (using denom)
@@ -101,13 +100,15 @@ class Orthogonal_Basis {
     // Or copy from existing orthogonal basis
     Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone = true, const bool residual = true);
 
+    // transform to orthogonal
+    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
     // Transform to redundant (should be amplitude)
-    std::vector<std::shared_ptr<MultiTensor_<double>>> transform_to_redundant();
-    std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate);
+    std::vector<std::shared_ptr<MultiTensor_<double>>> transform_to_redundant() const;
+    std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate) const;
     // update amplitude using residual
     void update(std::shared_ptr<const Orthogonal_Basis> residual, const double shift, const bool imag);
     // print convergence using source and residual
-    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual);
+    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual) const;
     // add shift to residual using amplitude
     void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const double shift, const bool imag);
     // compute density matrix due to the shift
