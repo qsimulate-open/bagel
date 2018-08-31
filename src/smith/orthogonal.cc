@@ -475,10 +475,8 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
   // we put the transformed data in data_[istate].
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!t->at(ist)) continue;
-    e0_ = e0all_[istate];
     for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
       shared_ptr<const Tensor_<double>> tensor = t->at(ist);
-      shared_ptr<const Tensor_<double>> dtensor = denom_[istate]->at(iext + ist * Excitations::total);
       switch(iext) {
         case Excitations::aibj:
           for (auto& i3 : virt_)
@@ -514,7 +512,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i3.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size()*i3.size(), i0.size()*i2.size(),
                                                 sqrt(0.5), transp.get(), i0o.size(), data1.get(), i0.size()*i2.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i3);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i3);
                   }
               }
             }
@@ -541,7 +539,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size()*i2.size()*i3.size(), i0.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i0.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i2, i3);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i2, i3);
                   }
             }
           }
@@ -568,7 +566,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i1.size()*i2.size(), i3.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i3.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1, i2);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1, i2);
                   }
             }
           }
@@ -597,7 +595,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i0.size()*i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i2.size(), i1.size()*i3.size(),
                                                 sqrt(0.5), transp.get(), i0o.size(), data1.get(), i1.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i2);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i2);
                   }
               }
             }
@@ -631,7 +629,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i1.size(), i2.size()*i3.size()*2,
                                                 1.0, transp.get(), i0o.size(), data2.get(), i2.size()*i3.size()*2, 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1);
                   }
               }
             }
@@ -661,7 +659,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size(), i0.size()*i2.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i2.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1);
                   }
                 }
               }
@@ -691,7 +689,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i2.size(), i0.size()*i1.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i1.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    denom_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i2);
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i2);
                   }
                 }
               }
