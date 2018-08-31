@@ -47,6 +47,8 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
   norb_ = nocc_ + nvirt_;
   nstates_ = info->ciwfn()->nstates();
 
+  sssr_ = info->sssr();
+
   set_size(d);
 
   rdm0all_ = g0;
@@ -113,30 +115,52 @@ void Orthogonal_Basis<DataType>::set_denom(shared_ptr<const Denom<DataType>> d) 
   size_t i = 0;
 
   for (int istate = 0; istate != nstates_; ++istate) {
-    for (int E = Excitations::aibj; E != Excitations::rist; ++E) {
-      switch(E) {
-        case Excitations::aibj:
-          for (size_t j3 = 0; j3 != nvirt_; ++j3)
-            for (size_t j2 = 0; j2 != nclo_; ++j2)
-              for (size_t j1 = 0; j1 != nvirt_; ++j1)
-                for (size_t j0 = 0; j0 != nclo_; ++j0, ++i) {
-                  denom(i) = - eig_[j0+ncore_] - eig_[j2+ncore_] + eig_[j1+nocc_] + eig_[j3+nocc_];
-                }
-          break;
-        case Excitations::arbs:
-          break;
-        case Excitations::arbi:
-          break;
-        case Excitations::airj:
-          break;
-        case Excitations::risj:
-          break;
-        case Excitations::airs:
-          break;
-        case Excitations::arst:
-          break;
-        case Excitations::rist:
-          break;
+    for (int ist = 0; ist != nstates_; ++ist) {
+      if (!sssr_ || ist == istate) {
+        for (int E = Excitations::aibj; E != Excitations::total; ++E) {
+          const size_t interm_size = shalf_[E]->ndim();
+          switch(E) {
+            case Excitations::aibj:
+              for (size_t j3 = 0; j3 != nvirt_; ++j3)
+                for (size_t j2 = 0; j2 != nclo_; ++j2)
+                  for (size_t j1 = 0; j1 != nvirt_; ++j1)
+                    for (size_t j0 = 0; j0 != nclo_; ++j0, ++i) {
+                      denom(i) = - eig_[j0+ncore_] - eig_[j2+ncore_] + eig_[j1+nocc_] + eig_[j3+nocc_];
+                    }
+              break;
+            case Excitations::arbs:
+              for (size_t j3 = 0; j3 != nvirt_; ++j3)
+                for (size_t j1 = 0; j1 != nvirt_; ++j1)
+                  for (size_t j02 = 0; j02 != interm_size; ++j02, ++i) {
+                    denom(i) = eig_[j3+nocc_] + eig_[j1+nocc_] + d->denom_xx(j02) - e0all_[ist];
+                  }
+              break;
+            case Excitations::arbi:
+              for (size_t j3 = 0; j3 != nvirt_; ++j3)
+                for (size_t j2 = 0; j2 != nclo_; ++j2)
+                  for (size_t j1 = 0; j1 != nvirt_; ++j1)
+                    for (size_t j0 = 0; j0 != interm_size; ++j0, ++i) {
+                      denom(i) = eig_[j3+nocc_] - eig_[j2+ncore_] + eig_[j1+nocc_] + d->denom_x(j0) - e0all_[ist];
+                    }
+              break;
+            case Excitations::airj:
+              break;
+              for (size_t j3 = 0; j3 != interm_size; ++j3)
+                for (size_t j2 = 0; j2 != nclo_; ++j2)
+                  for (size_t j1 = 0; j1 != nvirt_; ++j1)
+                    for (size_t j0 = 0; j0 != nclo_; ++j0, ++i) {
+                      denom(i) = eig_[j1+nocc_] - eig_[j2+ncore_] - eig_[j0+ncore_] + d->denom_h(j0) - e0all_[ist];
+                    }
+            case Excitations::risj:
+              break;
+            case Excitations::airs:
+              break;
+            case Excitations::arst:
+              break;
+            case Excitations::rist:
+              break;
+          }
+        }
       }
     }
   }

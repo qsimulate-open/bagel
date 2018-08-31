@@ -66,6 +66,8 @@ class Orthogonal_Basis {
     size_t norb_;
     size_t nstates_;
 
+    bool sssr_;
+
     // rdms
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm1all_;
