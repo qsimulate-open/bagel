@@ -96,9 +96,9 @@ class Orthogonal_Basis {
     void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<DataType>> t, const int istate);
 
   public:
-    // Orthogonal basis: construct from scratch (using denom) for residual-type quantity
-    Orthogonal_Basis(const std::shared_ptr<SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0, std::shared_ptr<Matrix> fact,
-                     std::shared_ptr<const Denom<DataType>> d, std::shared_ptr<const MultiTensor_<DataType>> tensor, const std::string type,
+    // Orthogonal basis: construct from scratch (using denom)
+    Orthogonal_Basis(std::shared_ptr<const SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
+                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<DataType>> d, const std::string type,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g0, std::shared_ptr<Vec<Tensor_<DataType>>> g1, std::shared_ptr<Vec<Tensor_<DataType>>> g2,
                      std::shared_ptr<Vec<Tensor_<DataType>>> g3, std::shared_ptr<Vec<Tensor_<DataType>>> g4);
     // Or copy from existing orthogonal basis -- for amplitude-type quantity

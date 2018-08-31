@@ -34,8 +34,8 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 template<typename DataType>
-Orthogonal_Basis<DataType>::Orthogonal_Basis(shared_ptr<SMITH_Info<DataType>> info, const IndexRange c, const IndexRange a, const IndexRange v,
-vector<double> f, vector<double> e0, shared_ptr<Matrix> fact, shared_ptr<const Denom<DataType>> d, shared_ptr<const MultiTensor_<DataType>> tensor, const string type,
+Orthogonal_Basis<DataType>::Orthogonal_Basis(shared_ptr<const SMITH_Info<DataType>> info, const IndexRange c, const IndexRange a, const IndexRange v,
+vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<DataType>> d, const string type,
 shared_ptr<Vec<Tensor_<DataType>>> g0, shared_ptr<Vec<Tensor_<DataType>>> g1, shared_ptr<Vec<Tensor_<DataType>>> g2,
 shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : closed_(c), active_(a), virt_(v), eig_(f), e0all_(e0), fockact_(fact) {
   nact_ = info->nact();
