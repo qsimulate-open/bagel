@@ -32,6 +32,7 @@
 #include <iomanip>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/futuretensor.h>
+#include <src/smith/orthogonal.h>
 #include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/smith/queue.h>

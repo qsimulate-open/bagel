@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: orthogonal_basis.h
+// Filename: orthogonal.h
 // Copyright (C) 2018 Toru Shiozaki
 //
 // Author: Jae Woo Park <jwpk1201@northwestern.edu>
@@ -23,8 +23,8 @@
 //
 
 
-#ifndef __SRC_SMITH_ORTHOGONAL_BASIS_H
-#define __SRC_SMITH_ORTHOGONAL_BASIS_H
+#ifndef __SRC_SMITH_ORTHOGONAL_H
+#define __SRC_SMITH_ORTHOGONAL_H
 
 #include <bagel_config.h>
 #ifdef COMPILE_SMITH
@@ -43,11 +43,8 @@ namespace SMITH {
 enum Basis_Type { residual, amplitude };
 enum Excitations { aibj, arbs, arbi, airj, risj, airs, arst, rist, total };
 
-template<typename DataType>
 class Orthogonal_Basis {
   protected:
-    using MatType = typename std::conditional<std::is_same<DataType,double>::value,Matrix,ZMatrix>::type;
-    using VecType = typename std::conditional<std::is_same<DataType,double>::value,VectorB,ZVectorB>::type;
 
     IndexRange closed_;
     IndexRange active_;
@@ -75,52 +72,52 @@ class Orthogonal_Basis {
     double e0_;
 
     // rdms
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm1all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm2all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm3all_;
-    std::shared_ptr<Vec<Tensor_<DataType>>> rdm4all_;
+    std::shared_ptr<Vec<Tensor_<double>>> rdm0all_;
+    std::shared_ptr<Vec<Tensor_<double>>> rdm1all_;
+    std::shared_ptr<Vec<Tensor_<double>>> rdm2all_;
+    std::shared_ptr<Vec<Tensor_<double>>> rdm3all_;
+    std::shared_ptr<Vec<Tensor_<double>>> rdm4all_;
 
     std::vector<size_t> size_;
     Basis_Type basis_type_;
-    std::vector<std::shared_ptr<MatType>> shalf_;
+    std::vector<std::shared_ptr<Matrix>> shalf_;
 
-    std::vector<std::shared_ptr<MultiTensor_<DataType>>> data_;
-    std::vector<std::shared_ptr<MultiTensor_<DataType>>> denom_;
-    std::shared_ptr<Tensor_<DataType>> init_data(const int iext);
-    void set_size(std::shared_ptr<const Denom<DataType>> d);
-    void set_denom(std::shared_ptr<const Denom<DataType>> d);
+    std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
+    std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
+    std::shared_ptr<Tensor_<double>> init_data(const int iext);
+    void set_size(std::shared_ptr<const Denom<double>> d);
+    void set_denom(std::shared_ptr<const Denom<double>> d);
 
     // feed rdm
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
-    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<DataType>> t, const int istate);
+    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
 
   public:
     // Orthogonal basis: construct from scratch (using denom)
-    Orthogonal_Basis(std::shared_ptr<const SMITH_Info<DataType>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
-                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<DataType>> d, const bool residual,
-                     std::shared_ptr<Vec<Tensor_<DataType>>> g0, std::shared_ptr<Vec<Tensor_<DataType>>> g1, std::shared_ptr<Vec<Tensor_<DataType>>> g2,
-                     std::shared_ptr<Vec<Tensor_<DataType>>> g3, std::shared_ptr<Vec<Tensor_<DataType>>> g4);
+    Orthogonal_Basis(std::shared_ptr<const SMITH_Info<double>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
+                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<double>> d, const bool residual,
+                     std::shared_ptr<Vec<Tensor_<double>>> g0, std::shared_ptr<Vec<Tensor_<double>>> g1, std::shared_ptr<Vec<Tensor_<double>>> g2,
+                     std::shared_ptr<Vec<Tensor_<double>>> g3, std::shared_ptr<Vec<Tensor_<double>>> g4);
     // Or copy from existing orthogonal basis
-    Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const bool clone = true, const bool residual = true);
+    Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone = true, const bool residual = true);
 
     // Transform to redundant (should be amplitude)
-    std::vector<std::shared_ptr<MultiTensor_<DataType>>> transform_to_redundant();
-    std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant(const int istate);
+    std::vector<std::shared_ptr<MultiTensor_<double>>> transform_to_redundant();
+    std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate);
     // update amplitude using residual
-    void update(std::shared_ptr<const Orthogonal_Basis<DataType>> residual, const double shift, const bool imag);
+    void update(std::shared_ptr<const Orthogonal_Basis> residual, const double shift, const bool imag);
     // print convergence using source and residual
-    void print_convergence(std::shared_ptr<const Orthogonal_Basis<DataType>> source, std::shared_ptr<const Orthogonal_Basis<DataType>> residual);
+    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual);
     // add shift to residual using amplitude
-    void add_shift(std::shared_ptr<const Orthogonal_Basis<DataType>> amplitude, const double shift, const bool imag);
+    void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const double shift, const bool imag);
     // compute density matrix due to the shift
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,
                std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const;
 
-    std::shared_ptr<MultiTensor_<DataType>> data(const size_t i) const { return data_[i]; }
-    std::shared_ptr<MultiTensor_<DataType>> denom(const size_t i) const { return denom_[i]; }
-    std::shared_ptr<MatType> shalf(const int type) const { return shalf_[type]; }
+    std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
+    std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
+    std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }
 
@@ -133,7 +130,9 @@ class Orthogonal_Basis {
         i->zero();
     }
 };
+
 }
 }
+
 #endif
 #endif

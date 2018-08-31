@@ -27,21 +27,19 @@
 
 #include <numeric>
 #include <src/smith/moint.h>
-#include <src/smith/orthogonal_basis.h>
+#include <src/smith/orthogonal.h>
 
 using namespace std;
 using namespace bagel;
 using namespace bagel::SMITH;
 
 
-template<typename DataType>
-void Orthogonal_Basis<DataType>::add_shift(shared_ptr<const Orthogonal_Basis<DataType>> t, const double shift, const bool imag) {
+void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const double shift, const bool imag) {
 }
 
 
-template<typename DataType>
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
-Orthogonal_Basis<DataType>::make_d2_imag(shared_ptr<const Orthogonal_Basis<DataType>> lambda, const double shift, const bool imag) const {
+Orthogonal_Basis::make_d2_imag(shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const {
   auto dshift = make_shared<Matrix>(norb_, norb_);
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
