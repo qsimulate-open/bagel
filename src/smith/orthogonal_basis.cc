@@ -73,6 +73,7 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
   }
 
   // denom..... we store denominator for all orthogonal functions
+  // TODO should we merge denom with it??
   set_denom(d);
 
   rdm0all_ = g0;
@@ -84,12 +85,7 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
   if (type == "amplitude") basis_type_ = Basis_Type::amplitude;
   else if (type == "residual") basis_type_ = Basis_Type::residual;
 
-  // transformation part will follow.
-  if (is_amplitude()) {
-    zero();
-  } else {
-    transform_to_orthogonal(tensor);
-  }
+  zero();
 }
 
 
@@ -444,12 +440,23 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 
 
 template<typename DataType>
-void Orthogonal_Basis<DataType>::transform_to_orthogonal(shared_ptr<const MultiTensor_<DataType>> t) {
+void Orthogonal_Basis<DataType>::transform_to_orthogonal(shared_ptr<const MultiTensor_<DataType>> t, const int istate) {
 }
 
 
 template<typename DataType>
-shared_ptr<MultiTensor_<DataType>> Orthogonal_Basis<DataType>::transform_to_redundant() {
+vector<shared_ptr<MultiTensor_<DataType>>> Orthogonal_Basis<DataType>::transform_to_redundant() {
+  vector<shared_ptr<MultiTensor_<DataType>>> out;
+
+  for (int istate = 0; istate != nstates_; ++istate)
+    out.push_back(transform_to_redundant(istate));
+
+  return out;
+}
+
+
+template<typename DataType>
+shared_ptr<MultiTensor_<DataType>> Orthogonal_Basis<DataType>::transform_to_redundant(const int istate) {
   auto out = make_shared<MultiTensor_<DataType>>();
   return out;
 }

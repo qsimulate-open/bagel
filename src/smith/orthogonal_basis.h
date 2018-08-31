@@ -93,7 +93,7 @@ class Orthogonal_Basis {
 
     // feed rdm
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
-    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<DataType>> t);
+    void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<DataType>> t, const int istate);
 
   public:
     // Orthogonal basis: construct from scratch (using denom) for residual-type quantity
@@ -105,7 +105,8 @@ class Orthogonal_Basis {
     Orthogonal_Basis(const Orthogonal_Basis<DataType>& o, const std::string type = "amplitude");
 
     // Transform to redundant (should be amplitude)
-    std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant();
+    std::vector<std::shared_ptr<MultiTensor_<DataType>>> transform_to_redundant();
+    std::shared_ptr<MultiTensor_<DataType>> transform_to_redundant(const int istate);
     // update amplitude using residual
     void update(std::shared_ptr<const Orthogonal_Basis<DataType>> residual, const double shift, const bool imag);
     // print convergence using source and residual
