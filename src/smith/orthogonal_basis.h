@@ -72,6 +72,8 @@ class Orthogonal_Basis {
 
     bool sssr_;
 
+    double e0_;
+
     // rdms
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm0all_;
     std::shared_ptr<Vec<Tensor_<DataType>>> rdm1all_;
@@ -83,8 +85,8 @@ class Orthogonal_Basis {
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<MatType>> shalf_;
 
-    std::shared_ptr<MultiTensor_<DataType>> data_;
-    std::shared_ptr<MultiTensor_<DataType>> denom_;
+    std::vector<std::shared_ptr<MultiTensor_<DataType>>> data_;
+    std::vector<std::shared_ptr<MultiTensor_<DataType>>> denom_;
     std::shared_ptr<Tensor_<DataType>> init_data(const int iext);
     void set_size(std::shared_ptr<const Denom<DataType>> d);
     void set_denom(std::shared_ptr<const Denom<DataType>> d);
@@ -115,8 +117,8 @@ class Orthogonal_Basis {
                std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const;
 
-    std::shared_ptr<MultiTensor_<DataType>> data() const { return data_; }
-    std::shared_ptr<MultiTensor_<DataType>> denom() const { return denom_; }
+    std::shared_ptr<MultiTensor_<DataType>> data(const size_t i) const { return data_[i]; }
+    std::shared_ptr<MultiTensor_<DataType>> denom(const size_t i) const { return denom_[i]; }
     std::shared_ptr<MatType> shalf(const int type) const { return shalf_[type]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }
@@ -124,15 +126,11 @@ class Orthogonal_Basis {
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
 
-    // Functions for LinearRM
-    double norm() const { return data_->norm(); }
-    double rms() const { return data_->rms(); }
-    DataType dot_product(std::shared_ptr<const Orthogonal_Basis<DataType>> o) const { return data_->dot_product(o->data()); }
-    DataType dot_product(const Orthogonal_Basis<DataType>& o) const { return data_->dot_product(o.data()); }
-    void zero() { data_->zero(); }
-    void scale(const DataType& a) { data_->scale(a); }
-    void ax_plus_y(const DataType a, std::shared_ptr<const Orthogonal_Basis<DataType>> o) { data_->ax_plus_y(a, o); }
-    void ax_plus_y(const DataType a, const Orthogonal_Basis<DataType>& o) const { data_->ax_plus_y(a, o); }
+    // Functions for LinearRM... will be just replaced by MultiTensor
+    void zero() {
+      for (auto& i : data_)
+        i->zero();
+    }
 };
 }
 }
