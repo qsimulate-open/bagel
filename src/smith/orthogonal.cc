@@ -716,7 +716,182 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
 }
 
 
-void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const double shift, const bool imag) {
+void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int istate, const double shift, const bool imag) {
+  const double shift2 = shift * shift;
+
+  for (int ist = 0; ist != nstates_; ++ist) {
+    e0_ = e0all_[istate];
+    if (!sssr_ || ist == istate) {
+      for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+        const int pos = ist * Excitations::total + iext;
+        const shared_ptr<Tensor_<double>> rtensor = r->data(istate)->at(pos);
+        const shared_ptr<Tensor_<double>> dtensor = denom_[istate]->at(pos);
+        switch(iext) {
+          case Excitations::aibj:
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> residual = rtensor->get_block(i0, i1, i2, i3);
+                    unique_ptr<double[]> denom    = dtensor->get_block(i0, i1, i2, i3);
+                    const size_t blocksize = rtensor->get_size(i0, i1, i2, i3);
+                    if (imag) {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                      }
+                    } else {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(1.0 / (denom[j] + shift));
+                      }
+                    }
+                    data_[istate]->at(pos)->add_block(residual, i0, i1, i2, i3);
+                  }
+            break;
+          case Excitations::arbs:
+            for (auto& i3 : virt_)
+              for (auto& i1 : virt_)
+                for (auto& i0o : interm_[iext]) {
+                  if (!dtensor->is_local(i0o, i1, i3)) continue;
+                  unique_ptr<double[]> residual = rtensor->get_block(i0o, i1, i3);
+                  unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1, i3);
+                  const size_t blocksize = rtensor->get_size(i0o, i1, i3);
+                  if (imag) {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                    }
+                  } else {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(1.0 / (denom[j] + shift));
+                    }
+                  }
+                  data_[istate]->at(pos)->add_block(residual, i0o, i1, i3);
+                }
+            break;
+          case Excitations::arbi:
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
+                    unique_ptr<double[]> residual = rtensor->get_block(i0o, i1, i2, i3);
+                    unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1, i2, i3);
+                    const size_t blocksize = rtensor->get_size(i0o, i1, i2, i3);
+                    if (imag) {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                      }
+                    } else {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(1.0 / (denom[j] + shift));
+                      }
+                    }
+                    data_[istate]->at(pos)->add_block(residual, i0o, i1, i2, i3);
+                  }
+            break;
+          case Excitations::airj:
+            for (auto& i2 : closed_)
+              for (auto& i1 : virt_)
+                for (auto& i0 : closed_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                    unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i1, i2);
+                    unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i1, i2);
+                    const size_t blocksize = rtensor->get_size(i0o, i0, i1, i2);
+                    if (imag) {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                      }
+                    } else {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(1.0 / (denom[j] + shift));
+                      }
+                    }
+                    data_[istate]->at(pos)->add_block(residual, i0o, i0, i1, i2);
+                  }
+            break;
+          case Excitations::risj:
+            for (auto& i2 : closed_)
+              for (auto& i0 : closed_)
+                for (auto& i0o : interm_[iext]) {
+                  if (!dtensor->is_local(i0o, i0, i2)) continue;
+                  unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i2);
+                  unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i2);
+                  const size_t blocksize = rtensor->get_size(i0o, i0, i2);
+                  if (imag) {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                    }
+                  } else {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(1.0 / (denom[j] + shift));
+                    }
+                  }
+                  data_[istate]->at(pos)->add_block(residual, i0o, i0, i2);
+                }
+            break;
+          case Excitations::airs:
+            for (auto& i1 : virt_)
+              for (auto& i0 : closed_)
+                for (auto& i0o : interm_[iext]) {
+                  if (!dtensor->is_local(i0o, i0, i1)) continue;
+                  unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i1);
+                  unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i1);
+                  const size_t blocksize = rtensor->get_size(i0o, i0, i1);
+                  if (imag) {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                    }
+                  } else {
+                    for (size_t j = 0; j != blocksize; ++j) {
+                      residual[j] *= -(1.0 / (denom[j] + shift));
+                    }
+                  }
+                  data_[istate]->at(pos)->add_block(residual, i0o, i0, i1);
+                }
+            break;
+          case Excitations::arst:
+            for (auto& i1 : virt_)
+              for (auto& i0o : interm_[iext]) {
+                if (!dtensor->is_local(i0o, i1)) continue;
+                unique_ptr<double[]> residual = rtensor->get_block(i0o, i1);
+                unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1);
+                const size_t blocksize = rtensor->get_size(i0o, i1);
+                if (imag) {
+                  for (size_t j = 0; j != blocksize; ++j) {
+                    residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                  }
+                } else {
+                  for (size_t j = 0; j != blocksize; ++j) {
+                    residual[j] *= -(1.0 / (denom[j] + shift));
+                  }
+                }
+                data_[istate]->at(pos)->add_block(residual, i0o, i1);
+              }
+            break;
+          case Excitations::rist:
+            for (auto& i0 : closed_)
+              for (auto& i0o : interm_[iext]) {
+                if (!dtensor->is_local(i0o, i0)) continue;
+                unique_ptr<double[]> residual = rtensor->get_block(i0o, i0);
+                unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0);
+                const size_t blocksize = rtensor->get_size(i0o, i0);
+                if (imag) {
+                  for (size_t j = 0; j != blocksize; ++j) {
+                    residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                  }
+                } else {
+                  for (size_t j = 0; j != blocksize; ++j) {
+                    residual[j] *= -(1.0 / (denom[j] + shift));
+                  }
+                }
+                data_[istate]->at(pos)->add_block(residual, i0o, i0);
+              }
+            break;
+        }
+      }
+    }
+  }
 }
 
 

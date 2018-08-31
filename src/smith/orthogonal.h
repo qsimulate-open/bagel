@@ -106,7 +106,7 @@ class Orthogonal_Basis {
     std::vector<std::shared_ptr<MultiTensor_<double>>> transform_to_redundant() const;
     std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate) const;
     // update amplitude using residual
-    void update(std::shared_ptr<const Orthogonal_Basis> residual, const double shift, const bool imag);
+    void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate, const double shift, const bool imag);
     // print convergence using source and residual
     void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual) const;
     // add shift to residual using amplitude
