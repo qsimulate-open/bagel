@@ -52,9 +52,13 @@ class Orthogonal_Basis {
     IndexRange closed_;
     IndexRange active_;
     IndexRange virt_;
+
     std::vector<double> eig_;
     std::vector<double> e0all_;
     std::shared_ptr<Matrix> fockact_;
+
+    // for intermediates
+    std::vector<IndexRange> interm_;
 
     // orbital numbers
     size_t nact_;
@@ -79,9 +83,9 @@ class Orthogonal_Basis {
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<MatType>> shalf_;
 
-    // the data should be distributed in a better way (use of tensors and blocks?). currently, this is just VectorB (or ZVectorB)
-    std::shared_ptr<VecType> data_;
-    std::shared_ptr<VecType> denom_;
+    std::shared_ptr<MultiTensor_<DataType>> data_;
+    std::shared_ptr<MultiTensor_<DataType>> denom_;
+    std::shared_ptr<Tensor_<DataType>> init_data(const int iext);
     void set_size(std::shared_ptr<const Denom<DataType>> d);
     void set_denom(std::shared_ptr<const Denom<DataType>> d);
 
@@ -111,10 +115,8 @@ class Orthogonal_Basis {
                std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const;
 
-    std::shared_ptr<VecType> data() const { return data_; }
-    DataType data(const int i) const { return (*data_)[i]; }
-    std::shared_ptr<VecType> denom() const { return denom_; }
-    DataType denom(const int i) { return (*denom_)[i]; }
+    std::shared_ptr<MultiTensor_<DataType>> data() const { return data_; }
+    std::shared_ptr<MultiTensor_<DataType>> denom() const { return denom_; }
     std::shared_ptr<MatType> shalf(const int type) const { return shalf_[type]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }

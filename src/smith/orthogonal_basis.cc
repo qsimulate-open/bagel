@@ -51,6 +51,24 @@ shared_ptr<Vec<Tensor_<DataType>>> g3, shared_ptr<Vec<Tensor_<DataType>>> g4) : 
 
   set_size(d);
 
+  const int max = info->maxtile();
+
+  // aibj: is zero.
+  interm_.push_back(IndexRange(0));
+  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
+    interm_.push_back(IndexRange(shalf[iext]->ndim(), max));
+  }
+
+  for (int istate = 0; istate != nstates_; ++istate) {
+    for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+      data_[iext + istate * Excitations::total] = init_data(iext);
+      denom_[iext + istate * Excitations::total] = init_data(iext);
+    }
+  }
+
+  // denom..... we store denominator for all orthogonal functions
+  set_denom(d);
+
   rdm0all_ = g0;
   rdm1all_ = g1;
   rdm2all_ = g2;
@@ -95,9 +113,6 @@ void Orthogonal_Basis<DataType>::set_size(shared_ptr<const Denom<DataType>> d) {
   shalf_.push_back(d->shalf_xxh());
   shalf_.push_back(d->shalf_xhh());
 
-  // denom..... we store denominator for all orthogonal functions
-  set_denom(d);
-
   size_.push_back(size_aibj);
   size_.push_back(size_arbs);
   size_.push_back(size_arbi);
@@ -111,16 +126,85 @@ void Orthogonal_Basis<DataType>::set_size(shared_ptr<const Denom<DataType>> d) {
 
 
 template<typename DataType>
+shared_ptr<Tensor_<DataType>> Orthogonal_Basis<DataType>::init_data(const int iext) {
+  // Now we use intermediate indices instead of orbital, and is somewhat complicated...
+  unordered_set<size_t> sparse;
+  shared_ptr<Tensor_<DataType>> out;
+  switch(iext) {
+    case Excitations::aibj:
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_)
+            for (auto& i0 : closed_)
+              sparse.insert(generate_hash_key(i0, i1, i2, i3));
+      out = make_shared<Tensor_<DataType>>({closed_, virt_, closed_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::arbs:
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          for (auto& i0o : interm_[iext])
+            sparse.insert(generate_hash_key(i0o, i1, i3));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], virt_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::arbi:
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_)
+            for (auto& i0o : interm_[iext])
+              sparse.insert(generate_hash_key(i0o, i1, i2, i3));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], virt_, closed_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::airj:
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          for (auto& i0 : closed_)
+            for (auto& i0o : interm_[iext])
+              sparse.insert(generate_hash_key(i0o, i0, i1, i2));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], closed_, virt_, closed_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::risj:
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          for (auto& i0o : interm_[iext])
+            sparse.insert(generate_hash_key(i0o, i0, i2));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], closed_, closed_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::airs:
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          for (auto& i0o : interm_[iext])
+            sparse.insert(generate_hash_key(i0o, i0, i1));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], closed_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::arst:
+      for (auto& i1 : virt_)
+        for (auto& i0o : interm_[iext])
+          sparse.insert(generate_hash_key(i0o, i1));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+    case Excitations::rist:
+      for (auto& i0 : closed_)
+        for (auto& i0o : interm_[iext])
+          sparse.insert(generate_hash_key(i0o, i0));
+      out = make_shared<Tensor_<DataType>>({interm_[iext], closed_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
+  }
+  return out;
+}
+
+
+template<typename DataType>
 void Orthogonal_Basis<DataType>::set_denom(shared_ptr<const Denom<DataType>> d) {
   size_t i = 0;
 
   for (int istate = 0; istate != nstates_; ++istate) {
     for (int ist = 0; ist != nstates_; ++ist) {
       if (!sssr_ || ist == istate) {
-        for (int E = Excitations::aibj; E != Excitations::total; ++E) {
-          const size_t interm_size = shalf_[E]->ndim();
-          switch(E) {
+        for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+          const size_t interm_size = shalf_[iext]->ndim();
+          switch(iext) {
             case Excitations::aibj:
+#if 0
               for (size_t j3 = 0; j3 != nvirt_; ++j3)
                 for (size_t j2 = 0; j2 != nclo_; ++j2)
                   for (size_t j1 = 0; j1 != nvirt_; ++j1)
@@ -128,29 +212,36 @@ void Orthogonal_Basis<DataType>::set_denom(shared_ptr<const Denom<DataType>> d) 
                       denom(i) = - eig_[j0+ncore_] - eig_[j2+ncore_] + eig_[j1+nocc_] + eig_[j3+nocc_];
                     }
               break;
+#endif
             case Excitations::arbs:
+#if 0
               for (size_t j3 = 0; j3 != nvirt_; ++j3)
                 for (size_t j1 = 0; j1 != nvirt_; ++j1)
                   for (size_t j02 = 0; j02 != interm_size; ++j02, ++i) {
                     denom(i) = eig_[j3+nocc_] + eig_[j1+nocc_] + d->denom_xx(j02) - e0all_[ist];
                   }
               break;
+#endif
             case Excitations::arbi:
+#if 0
               for (size_t j3 = 0; j3 != nvirt_; ++j3)
                 for (size_t j2 = 0; j2 != nclo_; ++j2)
                   for (size_t j1 = 0; j1 != nvirt_; ++j1)
                     for (size_t j0 = 0; j0 != interm_size; ++j0, ++i) {
                       denom(i) = eig_[j3+nocc_] - eig_[j2+ncore_] + eig_[j1+nocc_] + d->denom_x(j0) - e0all_[ist];
                     }
+#endif
               break;
             case Excitations::airj:
               break;
+#if 0
               for (size_t j3 = 0; j3 != interm_size; ++j3)
                 for (size_t j2 = 0; j2 != nclo_; ++j2)
                   for (size_t j1 = 0; j1 != nvirt_; ++j1)
                     for (size_t j0 = 0; j0 != nclo_; ++j0, ++i) {
                       denom(i) = eig_[j1+nocc_] - eig_[j2+ncore_] - eig_[j0+ncore_] + d->denom_h(j0) - e0all_[ist];
                     }
+#endif
             case Excitations::risj:
               break;
             case Excitations::airs:
