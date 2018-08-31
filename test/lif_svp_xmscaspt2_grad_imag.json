@@ -1,0 +1,34 @@
+{ "bagel" : [
+
+{
+  "title" : "molecule",
+  "basis" : "svp",
+  "df_basis" : "svp-jkfit",
+  "geometry" : [
+    { "atom" : "Li", "xyz" : [ 0.000000, 0.000000, 6.000000] },
+    { "atom" : "F",  "xyz" : [ 0.000000, 0.000000, 0.000000] }
+  ]
+},
+
+{
+  "title" : "force",
+  "target" : 0,
+  "method" : [ {
+    "title" : "caspt2",
+    "smith" : {
+      "method" : "caspt2",
+      "ms" : "true",
+      "xms" : "true",
+      "sssr" : "true",
+      "shift_imag" : "true",
+      "shift" : 0.2,
+      "frozen" : true
+    },
+    "nstate" : 4,
+    "nact" : 4,
+    "nclosed" : 3
+  } ]
+}
+
+]}
+
