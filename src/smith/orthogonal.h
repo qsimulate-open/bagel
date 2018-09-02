@@ -89,6 +89,10 @@ class Orthogonal_Basis {
     void set_size(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
 
+    // copy of the functions in SpinFreeMethod
+    std::shared_ptr<Tensor_<double>> init_amplitude() const;
+    void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
+
     // feed rdm
     std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
 

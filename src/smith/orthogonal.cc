@@ -792,7 +792,19 @@ vector<shared_ptr<MultiTensor_<double>>> Orthogonal_Basis::transform_to_redundan
 
 
 shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const int istate) const {
-  auto out = make_shared<MultiTensor_<double>>();
+  // we put the transformed data in out.
+  auto out = make_shared<MultiTensor_<double>>(nstates_);
+
+  for (int ist = 0; ist != nstates_; ++ist) {
+    if (!sssr_ || ist == istate) {
+      (*out)[ist] = init_amplitude();
+      for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+        shared_ptr<Tensor_<double>> tensor = out->at(ist);
+        const int pos = ist * Excitations::total + iext;
+        shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(pos);
+    }
+  }
+
   return out;
 }
 
@@ -1154,7 +1166,68 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
     }
     out[istate]->allreduce();
   }
-
 }
+
+
+// copy of the functions in SpinFreeMethod to initialize transformed tensors
+void Orthogonal_Basis::loop_over(function<void(const Index&, const Index&, const Index&, const Index&)> func) const {
+  for (auto& i3 : virt_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i2 : active_)
+    for (auto& i0 : active_)
+      for (auto& i3 : virt_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i0 : active_)
+    for (auto& i3 : virt_)
+      for (auto& i2 : closed_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : closed_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i2 : closed_)
+        for (auto& i0 : closed_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i1 : virt_)
+        for (auto& i0 : closed_) {
+          func(i0, i1, i2, i3);
+          func(i2, i1, i0, i3);
+        }
+  for (auto& i3 : active_)
+    for (auto& i2 : active_)
+      for (auto& i0 : active_)
+        for (auto& i1 : virt_)
+          func(i0, i1, i2, i3);
+  for (auto& i3 : active_)
+    for (auto& i1 : active_)
+      for (auto& i0 : active_)
+        for (auto& i2 : closed_)
+          func(i0, i1, i2, i3);
+}
+
+
+shared_ptr<Tensor_<double>> Orthogonal_Basis::init_amplitude() const {
+  unordered_set<size_t> sparse;
+  auto put = [&sparse](const Index& i0, const Index& i1, const Index& i2, const Index& i3) {
+    sparse.insert(generate_hash_key(i0, i1, i2, i3));
+  };
+  loop_over(put);
+
+  IndexRange occ(closed_);   occ.merge(active_);
+  IndexRange virt(active_);  virt.merge(virt_);
+
+  return make_shared<Tensor_<double>>(vector<IndexRange>{occ, virt, occ, virt}, /*kramers*/false, sparse, /*alloc*/true);
+}
+
 
 #endif
