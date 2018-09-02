@@ -113,7 +113,10 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
   size_ = o.size_;
   interm_ = o.interm_;
 
-  data_ = o.data_;
+  data_.resize(nstates_);
+  for (int i = 0; i != nstates_; ++i)
+    data_[i] = o.data_[i]->copy();
+
   denom_ = o.denom_;
 
   rdm0all_ = o.rdm0all_;
@@ -555,6 +558,8 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 for (auto& i0 : closed_) {
                   if (!tensor->is_local(i0, i1, i2, i3)) continue;
                   unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
+                  const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
+                  sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
                   data_[istate]->at(iext + ist * Excitations::total)->add_block(data0, i0, i1, i2, i3);
                 }
           break;
@@ -606,6 +611,8 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> data2(new double[blocksize]);
                     // i0 to be contracted
                     sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
+                    const unique_ptr<double[]> data1 = tensor->get_block(i2, i1, i0, i3);
+                    sort_indices<2,1,0,3,2,3,1,3>(data1, data2, i2.size(), i1.size(), i0.size(), i3.size());
                     unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size()*i2.size()*i3.size(), i0.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i0.size(), 0.0, interm.get(), i0o.size());
@@ -633,6 +640,8 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> data2(new double[blocksize]);
                     // i3 to be contracted
                     sort_indices<1,2,3,0,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
+                    const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
+                    sort_indices<1,0,3,2,2,3,1,3>(data1, data2, i0.size(), i3.size(), i2.size(), i1.size());
                     unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i1.size()*i2.size(), i3.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i3.size(), 0.0, interm.get(), i0o.size());
@@ -694,12 +703,14 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
                     unique_ptr<double[]> data2(new double[blocksize*2]);
                     // i2 i3 to be contracted
-                    sort_indices<0,1,2,3,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
-                    sort_indices<2,1,0,3,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
+                    sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
+                    sort_indices<0,3,2,1,0,1,1,1>(data1.get(), data2.get()+blocksize, i0.size(), i3.size(), i2.size(), i1.size());
                     unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i0o.size()]);
-                    btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i1.size(), i2.size()*i3.size()*2,
-                                                1.0, transp.get(), i0o.size(), data2.get(), i2.size()*i3.size()*2, 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1);
+                    unique_ptr<double[]> interm2(new double[i0.size()*i1.size()*i0o.size()]);
+                    btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size(), i0o.size(), i2.size()*i3.size()*2,
+                                                1.0, data2.get(), i0.size()*i1.size(), transp.get(), i0o.size(), 0.0, interm.get(), i0.size()*i1.size());
+                    sort_indices<2,0,1,0,1,1,1>(interm.get(), interm2.get(), i0.size(), i1.size(), i0o.size());
+                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm2, i0o, i0, i1);
                   }
               }
             }
@@ -725,7 +736,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i3 i2 i0 to be contracted
-                    sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+                    sort_indices<2,0,1,3,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
                     unique_ptr<double[]> interm(new double[i1.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size(), i0.size()*i2.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i2.size()*i3.size(), 0.0, interm.get(), i0o.size());
@@ -755,7 +766,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i3 i1 i0 to be contracted
-                    sort_indices<1,3,2,0,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
+                    sort_indices<2,3,1,0,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
                     unique_ptr<double[]> interm(new double[i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i2.size(), i0.size()*i1.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i1.size()*i3.size(), 0.0, interm.get(), i0o.size());
@@ -965,7 +976,28 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
 }
 
 
-void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, shared_ptr<const Orthogonal_Basis> r) const {
+void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, shared_ptr<const Orthogonal_Basis> r, const int istate, const int iter, const double error, const double timing) const {
+  shared_ptr<MultiTensor_<double>> tcovar = get_contravariant(istate);
+  double etot = 0.0;
+  vector<double> esector(Excitations::total);
+
+  for (int ist = 0; ist != nstates_; ++ist) {
+    if (!sssr_ || ist == istate) {
+      for (int iext = 0; iext != Excitations::total; ++iext) {
+        const int pos = ist * Excitations::total + iext;
+        esector[iext] += tcovar->at(pos)->dot_product(s->data(istate)->at(pos)) + tcovar->at(pos)->dot_product(r->data(istate)->at(pos));
+      }
+    }
+  }
+  
+  cout << setw(8) << iter;
+
+  for (int iext = 0; iext != Excitations::total; ++iext) {
+    cout << setprecision(6) << setw(12) << esector[iext];
+    etot += esector[iext];
+  }
+
+  cout << setw(15) << setprecision(8) << etot << setw(15) << error << setw(7) << setprecision(2) << timing << endl;
 }
 
 #endif

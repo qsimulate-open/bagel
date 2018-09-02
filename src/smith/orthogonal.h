@@ -109,7 +109,8 @@ class Orthogonal_Basis {
     // update amplitude using residual
     void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate, const double shift, const bool imag);
     // print convergence using source and residual
-    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual) const;
+    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual,
+        const int istate, const int iter, const double error, const double timing) const;
     // add shift to residual using amplitude
     void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const double shift, const bool imag);
     // compute density matrix due to the shift
@@ -126,7 +127,7 @@ class Orthogonal_Basis {
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
 
-    // Functions for LinearRM... will be just replaced by MultiTensor
+    void zero(const int istate) { data_[istate]->zero(); }
     void zero() {
       for (auto& i : data_)
         i->zero();
