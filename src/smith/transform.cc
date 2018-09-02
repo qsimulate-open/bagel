@@ -106,6 +106,12 @@ shared_ptr<Vector_<DataType>> SpinFreeMethod<DataType>::transform_to_orthogonal(
           for (auto& i0 : closed_) {
             if (!tensor->is_local(i0, i1, i2, i3)) continue;
             unique_ptr<DataType[]> data0 = tensor->get_block(i0, i1, i2, i3);
+            if (is_same<DataType,double>::value) {
+              const unique_ptr<DataType[]> data1 = tensor->get_block(i0, i3, i2, i1);
+              sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+            } else {
+              blas::scale_n(0.25, data0.get(), tensor->get_size(i0, i1, i2, i3));
+            }
             size_t iall = 0;
             for (int j3 = i3.offset()-nocc; j3 != i3.offset()+i3.size()-nocc; ++j3) {
               for (int j2 = i2.offset()-ncore; j2 != i2.offset()+i2.size()-ncore; ++j2)
@@ -469,7 +475,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                     data0[iall] = (*vector)[ioffset + jall];
                   }
             }
-            out->put_block(data0, i0, i1, i2, i3);
+            out->add_block(data0, i0, i1, i2, i3);
           }
   }
 
@@ -509,7 +515,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                                         sqrt(0.5), transp.get(), interm_size, interm.get(), interm_size, 0.0, data0.get(), i0.size()*i2.size());
             unique_ptr<DataType[]> data1(new DataType[blocksize]);
             sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-            out->put_block(data1, i0, i1, i2, i3);
+            out->add_block(data1, i0, i1, i2, i3);
           }
       }
   }
@@ -546,7 +552,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
             // R internal -> covariant
             btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), interm_size,
                                         1.0, transp.get(), interm_size, interm.get(), interm_size, 0.0, data0.get(), i0.size());
-            out->put_block(data0, i0, i1, i2, i3);
+            out->add_block(data0, i0, i1, i2, i3);
           }
     }
   }
@@ -583,7 +589,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
             btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), interm_size,
                                         1.0, interm.get(), i0.size()*i1.size()*i2.size(), transp.get(), interm_size, 0.0, data0.get(), i0.size()*i1.size()*i2.size());
 
-            out->put_block(data0, i0, i1, i2, i3);
+            out->add_block(data0, i0, i1, i2, i3);
           }
     }
   }
@@ -620,7 +626,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                                         sqrt(0.5), interm.get(), i0.size()*i2.size(), transp.get(), interm_size, 0.0, data0.get(), i0.size()*i2.size());
             unique_ptr<DataType[]> data1(new DataType[blocksize]);
             sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
-            out->put_block(data1, i0, i1, i2, i3);
+            out->add_block(data1, i0, i1, i2, i3);
           }
       }
   }
@@ -663,8 +669,8 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
             unique_ptr<DataType[]> data2(new DataType[blocksize]);
             copy_n(data0.get(), blocksize, data1.get());
             sort_indices<2,1,0,3,0,1,1,1>(data0.get()+blocksize, data2.get(), i0.size(), i1.size(), i2.size(), i3.size());
-            out->put_block(data1, i0, i1, i2, i3);
-            out->put_block(data2, i2, i1, i0, i3);
+            out->add_block(data1, i0, i1, i2, i3);
+            out->add_block(data2, i2, i1, i0, i3);
           }
       }
   }
@@ -701,7 +707,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                                         1.0, interm.get(), i1.size(), transp.get(), interm_size, 0.0, data0.get(), i1.size());
             unique_ptr<DataType[]> data1(new DataType[blocksize]);
             sort_indices<1,0,2,3,0,1,1,1>(data0, data1, i1.size(), i0.size(), i2.size(), i3.size());
-            out->put_block(data1, i0, i1, i2, i3);
+            out->add_block(data1, i0, i1, i2, i3);
           }
         }
   }
@@ -738,7 +744,7 @@ shared_ptr<Tensor_<DataType>> SpinFreeMethod<DataType>::transform_to_redundant_a
                                         1.0, interm.get(), i2.size(), transp.get(), interm_size, 0.0, data0.get(), i2.size());
             unique_ptr<DataType[]> data1(new DataType[blocksize]);
             sort_indices<1,2,0,3,0,1,1,1>(data0, data1, i2.size(), i0.size(), i1.size(), i3.size());
-            out->put_block(data1, i0, i1, i2, i3);
+            out->add_block(data1, i0, i1, i2, i3);
           }
         }
 
