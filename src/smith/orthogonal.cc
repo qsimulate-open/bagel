@@ -1000,4 +1000,161 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
   cout << setw(15) << setprecision(8) << etot << setw(15) << error << setw(7) << setprecision(2) << timing << endl;
 }
 
+
+vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
+  vector<shared_ptr<VectorB>> out(nstates_);
+
+  for (int istate = 0; istate != nstates_; ++istate) {
+    if (sssr_) {
+      out[istate] = make_shared<VectorB>(size_total());
+    } else {
+      out[istate] = make_shared<VectorB>(size_total()*nstates_);
+    }
+    size_t ioffset = 0;
+    for (int ist = 0; ist != nstates_; ++ist) {
+      if (!sssr_ || ist == istate) {
+        const double e0loc = e0all_[ist] - e0_;
+        for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+          const size_t interm_size = shalf_[iext]->ndim();
+          const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(iext + ist * Excitations::total);
+          switch(iext) {
+            case Excitations::aibj:
+              for (auto& i3 : virt_)
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_)
+                    for (auto& i0 : closed_) {
+                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                      unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
+                      size_t iall = 0;
+                      for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
+                              const size_t jall = j0-ncore_ + nclo_ * ((j1-nocc_) + nvirt_ * ((j2-ncore_) + nclo_ * (j3-nocc_)));
+                              (*out[istate])[jall + ioffset] = data0[iall];
+                            }
+                    }
+              ioffset += size(iext);
+              break;
+            case Excitations::arbs:
+              for (auto& i3 : virt_)
+                for (auto& i1 : virt_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i1, i3)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i3);
+                    size_t iall = 0;
+                    for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                      for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                        for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                          const size_t jall = j0o + interm_size * ((j1 - nocc_) + nvirt_ * (j3 - nocc_));
+                          (*out[istate])[jall + ioffset] = data0[iall];
+                        }
+                  }
+              ioffset += size(iext);
+              break;
+            case Excitations::arbi:
+              for (auto& i3 : virt_)
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_)
+                    for (auto& i0o : interm_[iext]) {
+                      if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
+                      unique_ptr<double[]> data0(new double[dtensor->get_size(i0o, i1, i2, i3)]);
+                      size_t iall = 0;
+                      for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                            for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                              const size_t jall = j0o + interm_size * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) + nclo_ * (j3 - nocc_)));
+                              (*out[istate])[jall + ioffset] = data0[iall];
+                            }
+                    }
+              ioffset += size(iext);
+              break;
+            case Excitations::airj:
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_)
+                    for (auto& i0o : interm_[iext]) {
+                      if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                      unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i2);
+                      size_t iall = 0;
+                      for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                        for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                          for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
+                            for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                              const size_t jall = j0 - ncore_ + nclo_ * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) * nclo_ * j0o));
+                              (*out[istate])[jall + ioffset] = data0[iall];
+                            }
+                    }
+              ioffset += size(iext);
+              break;
+            case Excitations::risj:
+              for (auto& i2 : closed_)
+                for (auto& i0 : closed_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i0, i2)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i2);
+                    size_t iall = 0;
+                    for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
+                        for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                          const size_t jall = j0 - ncore_ + nclo_ * ((j2 - ncore_) + nclo_ * j0o);
+                          (*out[istate])[jall + ioffset] = data0[iall];
+                        }
+                  }
+              ioffset += size(iext);
+              break;
+            case Excitations::airs:
+              for (auto& i1 : virt_)
+                for (auto& i0 : closed_)
+                  for (auto& i0o : interm_[iext]) {
+                    if (!dtensor->is_local(i0o, i0, i1)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i1);
+                    size_t iall = 0;
+                    for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                      for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
+                        for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                          const size_t jall = j0 - ncore_ + nclo_ * (j1 - nocc_ + nvirt_ * j0o);
+                          (*out[istate])[jall + ioffset] = data0[iall];
+                        }
+                  }
+              ioffset += size(iext);
+              break;
+            case Excitations::arst:
+              for (auto& i1 : virt_)
+                for (auto& i0o : interm_[iext]) {
+                  if (!dtensor->is_local(i0o, i1)) continue;
+                  unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1);
+                  size_t iall = 0;
+                  for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                    for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                      const size_t jall = j1 - nocc_ + nvirt_ * j0o;
+                      (*out[istate])[jall + ioffset] = data0[iall];
+                    }
+                }
+              ioffset += size(iext);
+              break;
+            case Excitations::rist:
+              for (auto& i0 : closed_)
+                for (auto& i0o : interm_[iext]) {
+                  if (!dtensor->is_local(i0o, i0)) continue;
+                  unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0);
+                  size_t iall = 0;
+                  for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
+                    for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
+                      const size_t jall = j0 - ncore_ + nclo_ * j0o;
+                      (*out[istate])[jall + ioffset] = data0[iall];
+                    }
+                }
+              ioffset += size(iext);
+              break;
+          }
+        }
+      }
+    }
+    out[istate]->allreduce();
+  }
+
+}
+
 #endif

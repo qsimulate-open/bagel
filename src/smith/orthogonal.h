@@ -123,6 +123,7 @@ class Orthogonal_Basis {
     std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }
+    std::vector<std::shared_ptr<VectorB>> vectorb() const;
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
