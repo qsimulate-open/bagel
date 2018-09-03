@@ -549,6 +549,8 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!t->at(ist)) continue;
     for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+      const size_t pos = iext + ist * Excitations::total;
+      data_[istate]->at(pos)->zero();
       shared_ptr<const Tensor_<double>> tensor = t->at(ist);
       switch(iext) {
         case Excitations::aibj:
@@ -560,7 +562,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                   unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
                   const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
                   sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-                  data_[istate]->at(iext + ist * Excitations::total)->add_block(data0, i0, i1, i2, i3);
+                  data_[istate]->at(pos)->add_block(data0, i0, i1, i2, i3);
                 }
           break;
         case Excitations::arbs:
@@ -587,7 +589,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i3.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size()*i3.size(), i0.size()*i2.size(),
                                                 sqrt(0.5), transp.get(), i0o.size(), data1.get(), i0.size()*i2.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i3);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i1, i3);
                   }
               }
             }
@@ -616,7 +618,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i2.size()*i3.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size()*i2.size()*i3.size(), i0.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i0.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1, i2, i3);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i1, i2, i3);
                   }
             }
           }
@@ -645,7 +647,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i0.size()*i1.size()*i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i1.size()*i2.size(), i3.size(),
                                                 1.0, transp.get(), i0o.size(), data2.get(), i3.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i1, i2);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i0, i1, i2);
                   }
             }
           }
@@ -674,7 +676,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i0.size()*i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i0.size()*i2.size(), i1.size()*i3.size(),
                                                 sqrt(0.5), transp.get(), i0o.size(), data1.get(), i1.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i0, i2);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i0, i2);
                   }
               }
             }
@@ -710,7 +712,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasTrans, i0.size()*i1.size(), i0o.size(), i2.size()*i3.size()*2,
                                                 1.0, data2.get(), i0.size()*i1.size(), transp.get(), i0o.size(), 0.0, interm.get(), i0.size()*i1.size());
                     sort_indices<2,0,1,0,1,1,1>(interm.get(), interm2.get(), i0.size(), i1.size(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm2, i0o, i0, i1);
+                    data_[istate]->at(pos)->add_block(interm2, i0o, i0, i1);
                   }
               }
             }
@@ -740,7 +742,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i1.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i1.size(), i0.size()*i2.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i2.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i1);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i1);
                   }
                 }
               }
@@ -770,11 +772,12 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                     unique_ptr<double[]> interm(new double[i2.size()*i0o.size()]);
                     btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0o.size(), i2.size(), i0.size()*i1.size()*i3.size(),
                                                 1.0, transp.get(), i0o.size(), data1.get(), i0.size()*i1.size()*i3.size(), 0.0, interm.get(), i0o.size());
-                    data_[istate]->at(iext + ist * Excitations::total)->add_block(interm, i0o, i2);
+                    data_[istate]->at(pos)->add_block(interm, i0o, i2);
                   }
                 }
               }
           break;
+          mpi__->barrier();
       }
     }
   }
@@ -800,8 +803,223 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
       (*out)[ist] = init_amplitude();
       for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
         shared_ptr<Tensor_<double>> tensor = out->at(ist);
-        const int pos = ist * Excitations::total + iext;
+        const size_t pos = iext + ist * Excitations::total;
         shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(pos);
+        switch(iext) {
+          case Excitations::aibj:
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!out->at(ist)->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
+                    tensor->add_block(data0, i0, i1, i2, i3);
+                  }
+            break;
+          case Excitations::arbs:
+            for (auto& i2 : active_)
+              for (auto& i0 : active_) {
+                auto create_transp = [&iext, this](const int i, const Index& I0, const Index& I2, const Index& I0o) {
+                  unique_ptr<double[]> out(new double[I0.size()*I2.size()*I0o.size()]);
+                  for (int j2 = I2.offset(), k = 0; j2 != I2.offset()+I2.size(); ++j2)
+                    for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                      copy_n(shalf_[iext]->element_ptr(I0o.offset(),(j0-nclosed_)+(j2-nclosed_)*nact_ + i*nact_*nact_),
+                             I0o.size(), out.get()+I0o.size()*k);
+                  return move(out);
+                };
+                for (auto& i0o : interm_[iext]) {
+                  unique_ptr<double[]> transp = create_transp(ist, i0, i2, i0o);
+                  for (auto& i3 : virt_)
+                    for (auto& i1 : virt_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i3);
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
+                                                  sqrt(0.5), transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
+                      unique_ptr<double[]> data1(new double[blocksize]);
+                      sort_indices<0,2,1,3,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i1.size(), i3.size());
+                      tensor->add_block(data1, i0, i1, i2, i3);
+                    }
+                }
+              }
+            break;
+          case Excitations::arbi:
+            for (auto& i0 : active_) {
+              auto create_transp = [&iext, this](const int i, const Index& I0, const Index& I0o) {
+                unique_ptr<double[]> out(new double[I0.size()*I0o.size()]);
+                for (int j0 = I0.offset(), k = 0; j0 != I0.offset()+I0.size(); ++j0, ++k)
+                  copy_n(shalf_[iext]->element_ptr(I0o.offset(), j0-nclosed_ + i*nact_), I0o.size(), out.get()+I0o.size()*k);
+                return move(out);
+              };
+              for (auto& i0o : interm_[iext]) {
+                unique_ptr<double[]> transp = create_transp(ist, i0, i0o);
+                for (auto& i3 : virt_)
+                  for (auto& i2 : closed_)
+                    for (auto& i1 : virt_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i2, i3);
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), i0o.size(),
+                                                  1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size());
+                      tensor->add_block(data0, i0, i1, i2, i3);
+                    }
+              }
+            }
+            break;
+          case Excitations::airj:
+            for (auto& i3 : active_) {
+              auto create_transp = [&iext, this](const int i, const Index& I3, const Index& I0o) {
+                unique_ptr<double[]> out(new double[I3.size()*I0o.size()]);
+                for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3, ++k)
+                  copy_n(shalf_[iext]->element_ptr(I0o.offset(),j3-nclosed_ + i*nact_), I0o.size(), out.get()+I0o.size()*k);
+                return move(out);
+              };
+              for (auto& i0o : interm_[iext]) {
+                unique_ptr<double[]> transp = create_transp(ist, i3, i0o);
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_)
+                    for (auto& i0 : closed_) {
+                      if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1, i2);
+                      unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1, i2)]);
+                      sort_indices<1,2,3,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size(), i2.size());
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), i0o.size(),
+                                                  1.0, interm2.get(), i0.size()*i1.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i2.size());
+                      tensor->add_block(data0, i0, i1, i2, i3);
+                    }
+              }
+            }
+            break;
+          case Excitations::risj:
+            for (auto& i3 : active_)
+              for (auto& i1 : active_) {
+                auto create_transp = [&iext, this](const int i, const Index& I1, const Index& I3, const Index& I0o) {
+                  unique_ptr<double[]> out(new double[I1.size()*I3.size()*I0o.size()]);
+                  for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                    for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1, ++k)
+                      copy_n(shalf_[iext]->element_ptr(I0o.offset(),(j1-nclosed_)+(j3-nclosed_)*nact_ + i*nact_*nact_),
+                             I0o.size(), out.get()+I0o.size()*k);
+                  return move(out);
+                };
+                for (auto& i0o : interm_[iext]) {
+                  unique_ptr<double[]> transp = create_transp(ist, i1, i3, i0o);
+                  for (auto& i2 : closed_)
+                    for (auto& i0 : closed_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i2);
+                      unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i2)]);
+                      sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i2.size());
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
+                                                  sqrt(0.5), interm2.get(), i0.size()*i2.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
+                      unique_ptr<double[]> data1(new double[blocksize]);
+                      sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i2.size(), i1.size(), i3.size());
+                      tensor->add_block(data1, i0, i1, i2, i3);
+                    }
+                }
+              }
+            break;
+          case Excitations::airs:
+            for (auto& i3 : active_)
+              for (auto& i2 : active_) {
+                auto create_transp = [&iext, this](const int i, const Index& I2, const Index& I3, const Index& I0o) {
+                  unique_ptr<double[]> out(new double[I2.size()*I3.size()*I0o.size()*2]);
+                  for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                    for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2, ++k) {
+                      copy_n(shalf_[iext]->element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_ + 2*i*nact_*nact_),
+                             I0o.size(), out.get()+I0o.size()*k);
+                      copy_n(shalf_[iext]->element_ptr(I0o.offset(), (j2-nclosed_)+(j3-nclosed_)*nact_ + (2*i+1)*nact_*nact_),
+                             I0o.size(), out.get()+I0o.size()*(k+I2.size()*I3.size()));
+                    }
+                  return move(out);
+                };
+                for (auto& i0o : interm_[iext]) {
+                  unique_ptr<double[]> transp = create_transp(ist, i2, i3, i0o);
+                  for (auto& i1 : virt_)
+                    for (auto& i0 : closed_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1);
+                      unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1)]);
+                      sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size());
+                      unique_ptr<double[]> data0(new double[blocksize*2]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size(), i2.size()*i3.size()*2, i0o.size(),
+                                                  1.0, interm2.get(), i0.size()*i1.size(), transp.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size());
+                      unique_ptr<double[]> data1(new double[blocksize]);
+                      unique_ptr<double[]> data2(new double[blocksize]);
+                      copy_n(data0.get(), blocksize, data1.get());
+                      sort_indices<2,1,0,3,0,1,1,1>(data0.get()+blocksize, data2.get(), i0.size(), i1.size(), i2.size(), i3.size());
+                      tensor->add_block(data1, i0, i1, i2, i3);
+                      tensor->add_block(data2, i2, i1, i0, i3);
+                    }
+                }
+              }
+            break;
+          case Excitations::arst:
+            for (auto& i3 : active_)
+              for (auto& i2 : active_)
+                for (auto& i0 : active_) {
+                  auto create_transp = [&iext, this](const int i, const Index& I0, const Index& I2, const Index& I3, const Index& I0o) {
+                    unique_ptr<double[]> out(new double[I0.size()*I2.size()*I3.size()*I0o.size()]);
+                    for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                      for (int j2 = I2.offset(); j2 != I2.offset()+I2.size(); ++j2)
+                        for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                          copy_n(shalf_[iext]->element_ptr(I0o.offset(),j0-nclosed_+nact_*(j2-nclosed_+nact_*(j3-nclosed_)) + i*nact_*nact_*nact_),
+                                 I0o.size(), out.get()+I0o.size()*k);
+                    return move(out);
+                  };
+                  for (auto& i0o : interm_[iext]) {
+                    unique_ptr<double[]> transp = create_transp(ist, i0, i2, i3, i0o);
+                    for (auto& i1 : virt_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1);
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size()*i3.size(), i1.size(), i0o.size(),
+                                                  1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size()*i3.size());
+                      unique_ptr<double[]> data1(new double[blocksize]);
+                      sort_indices<0,3,1,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i2.size(), i3.size(), i1.size());
+                      tensor->add_block(data1, i0, i1, i2, i3);
+                    }
+                  }
+                }
+            break;
+          case Excitations::rist:
+            for (auto& i3 : active_)
+              for (auto& i1 : active_)
+                for (auto& i0 : active_) {
+                  auto create_transp = [&iext, this](const int i, const Index& I0, const Index& I1, const Index& I3, const Index& I0o) {
+                    unique_ptr<double[]> out(new double[I0.size()*I1.size()*I3.size()*I0o.size()]);
+                    for (int j3 = I3.offset(), k = 0; j3 != I3.offset()+I3.size(); ++j3)
+                      for (int j1 = I1.offset(); j1 != I1.offset()+I1.size(); ++j1)
+                        for (int j0 = I0.offset(); j0 != I0.offset()+I0.size(); ++j0, ++k)
+                          copy_n(shalf_[iext]->element_ptr(I0o.offset(),j0-nclosed_+nact_*(j1-nclosed_+nact_*(j3-nclosed_)) + i*nact_*nact_*nact_),
+                                 I0o.size(), out.get()+I0o.size()*k);
+                    return move(out);
+                  };
+                  for (auto& i0o : interm_[iext]) {
+                    unique_ptr<double[]> transp = create_transp(ist, i0, i1, i3, i0o);
+                    for (auto& i2 : closed_) {
+                      if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                      const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
+                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i2);
+                      unique_ptr<double[]> data0(new double[blocksize]);
+                      btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i1.size()*i3.size(), i2.size(), i0o.size(),
+                                                  1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i3.size());
+                      unique_ptr<double[]> data1(new double[blocksize]);
+                      sort_indices<0,1,3,2,0,1,1,1>(data0.get(), data1.get(), i0.size(), i1.size(), i3.size(), i2.size());
+                      tensor->add_block(data1, i0, i1, i2, i3);
+                    }
+                  }
+                }
+            break;
+        }
+      }
     }
   }
 
@@ -813,7 +1031,6 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
   const double shift2 = shift * shift;
 
   for (int ist = 0; ist != nstates_; ++ist) {
-    e0_ = e0all_[istate];
     if (!sssr_ || ist == istate) {
       for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
         const int pos = ist * Excitations::total + iext;
@@ -1014,21 +1231,23 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
 
 
 vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
-  vector<shared_ptr<VectorB>> out(nstates_);
+  // temporary function to debug. will erase after implementing d2_imag in Orthogonal_Basis...
+  vector<shared_ptr<VectorB>> out;
 
   for (int istate = 0; istate != nstates_; ++istate) {
+    shared_ptr<VectorB> outv;
     if (sssr_) {
-      out[istate] = make_shared<VectorB>(size_total());
+      outv = make_shared<VectorB>(size_total());
     } else {
-      out[istate] = make_shared<VectorB>(size_total()*nstates_);
+      outv = make_shared<VectorB>(size_total()*nstates_);
     }
-    size_t ioffset = 0;
     for (int ist = 0; ist != nstates_; ++ist) {
+      size_t ioffset = 0;
       if (!sssr_ || ist == istate) {
-        const double e0loc = e0all_[ist] - e0_;
         for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
-          const size_t interm_size = shalf_[iext]->ndim();
-          const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(iext + ist * Excitations::total);
+          const size_t interm_size = (iext == Excitations::aibj) ? 0 : shalf_[iext]->ndim();
+          const int pos = ist * Excitations::total + iext;
+          const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(pos);
           switch(iext) {
             case Excitations::aibj:
               for (auto& i3 : virt_)
@@ -1038,15 +1257,14 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                       if (!dtensor->is_local(i0, i1, i2, i3)) continue;
                       unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
                       size_t iall = 0;
-                      for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall) {
-                              const size_t jall = j0-ncore_ + nclo_ * ((j1-nocc_) + nvirt_ * ((j2-ncore_) + nclo_ * (j3-nocc_)));
-                              (*out[istate])[jall + ioffset] = data0[iall];
+                      for (int j3 = i3.offset()-nocc_; j3 != i3.offset()+i3.size()-nocc_; ++j3)
+                        for (int j2 = i2.offset()-ncore_; j2 != i2.offset()+i2.size()-ncore_; ++j2)
+                          for (int j1 = i1.offset()-nocc_; j1 != i1.offset()+i1.size()-nocc_; ++j1)
+                            for (int j0 = i0.offset()-ncore_; j0 != i0.offset()+i0.size()-ncore_; ++j0, ++iall) {
+                              const size_t jall = j0 + nclo_ * (j1 + nvirt_ * (j2 + nclo_ * j3));
+                              (*outv)[jall + ioffset] = data0[iall];
                             }
                     }
-              ioffset += size(iext);
               break;
             case Excitations::arbs:
               for (auto& i3 : virt_)
@@ -1059,10 +1277,9 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                       for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                         for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                           const size_t jall = j0o + interm_size * ((j1 - nocc_) + nvirt_ * (j3 - nocc_));
-                          (*out[istate])[jall + ioffset] = data0[iall];
+                          (*outv)[jall + ioffset] = data0[iall];
                         }
                   }
-              ioffset += size(iext);
               break;
             case Excitations::arbi:
               for (auto& i3 : virt_)
@@ -1077,10 +1294,9 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                           for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                             for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                               const size_t jall = j0o + interm_size * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) + nclo_ * (j3 - nocc_)));
-                              (*out[istate])[jall + ioffset] = data0[iall];
+                              (*outv)[jall + ioffset] = data0[iall];
                             }
                     }
-              ioffset += size(iext);
               break;
             case Excitations::airj:
               for (auto& i2 : closed_)
@@ -1088,17 +1304,16 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                   for (auto& i0 : closed_)
                     for (auto& i0o : interm_[iext]) {
                       if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
-                      unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i2);
+                      unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i1, i2);
                       size_t iall = 0;
                       for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                         for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                           for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
                             for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                               const size_t jall = j0 - ncore_ + nclo_ * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) * nclo_ * j0o));
-                              (*out[istate])[jall + ioffset] = data0[iall];
+                              (*outv)[jall + ioffset] = data0[iall];
                             }
                     }
-              ioffset += size(iext);
               break;
             case Excitations::risj:
               for (auto& i2 : closed_)
@@ -1111,10 +1326,9 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
                         for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                           const size_t jall = j0 - ncore_ + nclo_ * ((j2 - ncore_) + nclo_ * j0o);
-                          (*out[istate])[jall + ioffset] = data0[iall];
+                          (*outv)[jall + ioffset] = data0[iall];
                         }
                   }
-              ioffset += size(iext);
               break;
             case Excitations::airs:
               for (auto& i1 : virt_)
@@ -1127,10 +1341,9 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                       for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
                         for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                           const size_t jall = j0 - ncore_ + nclo_ * (j1 - nocc_ + nvirt_ * j0o);
-                          (*out[istate])[jall + ioffset] = data0[iall];
+                          (*outv)[jall + ioffset] = data0[iall];
                         }
                   }
-              ioffset += size(iext);
               break;
             case Excitations::arst:
               for (auto& i1 : virt_)
@@ -1141,10 +1354,9 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                     for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                       const size_t jall = j1 - nocc_ + nvirt_ * j0o;
-                      (*out[istate])[jall + ioffset] = data0[iall];
+                      (*outv)[jall + ioffset] = data0[iall];
                     }
                 }
-              ioffset += size(iext);
               break;
             case Excitations::rist:
               for (auto& i0 : closed_)
@@ -1155,17 +1367,19 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
                     for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
                       const size_t jall = j0 - ncore_ + nclo_ * j0o;
-                      (*out[istate])[jall + ioffset] = data0[iall];
+                      (*outv)[jall + ioffset] = data0[iall];
                     }
                 }
-              ioffset += size(iext);
               break;
           }
+          ioffset += size(iext);
         }
       }
     }
-    out[istate]->allreduce();
+    outv->allreduce();
+    out.push_back(outv);
   }
+  return out;
 }
 
 

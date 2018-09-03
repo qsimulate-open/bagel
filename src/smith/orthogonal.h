@@ -116,12 +116,13 @@ class Orthogonal_Basis {
     void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual,
         const int istate, const int iter, const double error, const double timing) const;
     // add shift to residual using amplitude
-    void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const double shift, const bool imag);
+    void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const int istate, const double shift, const bool imag);
     // compute density matrix due to the shift
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,
                std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
       make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const;
 
+    std::shared_ptr<MultiTensor_<double>>& data(const size_t i) { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
     std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
