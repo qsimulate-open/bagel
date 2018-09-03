@@ -109,15 +109,25 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
 
   sssr_ = o.sssr_;
 
-  shalf_ = o.shalf_;
+  shalf_.resize(Excitations::total);
+  for (int i = 0; i != Excitations::total; ++i)
+    shalf_[i] = o.shalf_[i];
+
   size_ = o.size_;
   interm_ = o.interm_;
 
   data_.resize(nstates_);
-  for (int i = 0; i != nstates_; ++i)
-    data_[i] = o.data_[i]->copy();
+  for (int i = 0; i != nstates_; ++i) {
+    if (clone) {
+      data_[i] = o.data_[i]->clone();
+    } else {
+      data_[i] = o.data_[i]->copy();
+    }
+  }
 
-  denom_ = o.denom_;
+  denom_.resize(nstates_);
+  for (int i = 0; i != nstates_; ++i)
+    denom_[i] = o.denom_[i]->copy();
 
   rdm0all_ = o.rdm0all_;
   rdm1all_ = o.rdm1all_;
@@ -127,8 +137,6 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
 
   if (residual) basis_type_ = Basis_Type::residual;
   else basis_type_ = Basis_Type::amplitude;
-
-  if (clone) zero();
 }
 
 
@@ -430,6 +438,7 @@ void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
       }
     }
   }
+  mpi__->barrier();
 }
 
 
@@ -558,7 +567,7 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
             for (auto& i2 : closed_)
               for (auto& i1 : virt_)
                 for (auto& i0 : closed_) {
-                  if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                  if (!data_[istate]->at(pos)->is_local(i0, i1, i2, i3)) continue;
                   unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
                   const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
                   sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
@@ -580,9 +589,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 unique_ptr<double[]> transp = create_transp(ist, i0, i2, i0o);
                 for (auto& i3 : virt_)
                   for (auto& i1 : virt_) {
-                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i1, i3)) continue;
                     const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                    unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i0 i2 to be contracted
                     sort_indices<0,2,1,3,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
@@ -607,9 +616,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
               for (auto& i3 : virt_)
                 for (auto& i2 : closed_)
                   for (auto& i1 : virt_) {
-                    if (!tensor->is_local(i2, i3, i0, i1)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i1, i2, i3)) continue;
                     const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
-                    unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data2(new double[blocksize]);
                     // i0 to be contracted
                     sort_indices<2,3,0,1,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
@@ -636,9 +645,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
               for (auto& i2 : closed_)
                 for (auto& i1 : virt_)
                   for (auto& i0 : closed_) {
-                    if (!tensor->is_local(i2, i3, i0, i1)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i0, i1, i2)) continue;
                     const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
-                    unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data2(new double[blocksize]);
                     // i3 to be contracted
                     sort_indices<1,2,3,0,0,1,1,1>(data0, data2, i2.size(), i3.size(), i0.size(), i1.size());
@@ -667,9 +676,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 unique_ptr<double[]> transp = create_transp(ist, i1, i3, i0o);
                 for (auto& i2 : closed_)
                   for (auto& i0 : closed_) {
-                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i0, i2)) continue;
                     const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                    unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i1 i3 to be contracted
                     sort_indices<1,3,0,2,0,1,1,1>(data0, data1, i0.size(), i1.size(), i2.size(), i3.size());
@@ -699,10 +708,10 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 unique_ptr<double[]> transp = create_transp(ist, i2, i3, i0o);
                 for (auto& i1 : virt_)
                   for (auto& i0 : closed_) {
-                    if (!tensor->is_local(i2, i3, i0, i1)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i0, i1)) continue;
                     const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
-                    unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
-                    unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
+                    const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
                     unique_ptr<double[]> data2(new double[blocksize*2]);
                     // i2 i3 to be contracted
                     sort_indices<2,3,0,1,0,1,1,1>(data0.get(), data2.get()          , i2.size(), i3.size(), i0.size(), i1.size());
@@ -733,9 +742,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 for (auto& i0o : interm_[iext]) {
                   unique_ptr<double[]> transp = create_transp(ist, i0, i2, i3, i0o);
                   for (auto& i1 : virt_) {
-                    if (!tensor->is_local(i2, i3, i0, i1)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i1)) continue;
                     const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
-                    unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i3 i2 i0 to be contracted
                     sort_indices<2,0,1,3,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
@@ -763,9 +772,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 for (auto& i0o : interm_[iext]) {
                   unique_ptr<double[]> transp = create_transp(ist, i0, i1, i3, i0o);
                   for (auto& i2 : closed_) {
-                    if (!tensor->is_local(i2, i3, i0, i1)) continue;
+                    if (!data_[istate]->at(pos)->is_local(i0o, i2)) continue;
                     const size_t blocksize = tensor->get_size(i2, i3, i0, i1);
-                    unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
+                    const unique_ptr<double[]> data0 = tensor->get_block(i2, i3, i0, i1);
                     unique_ptr<double[]> data1(new double[blocksize]);
                     // i3 i1 i0 to be contracted
                     sort_indices<2,3,1,0,0,1,1,1>(data0, data1, i2.size(), i3.size(), i0.size(), i1.size());
@@ -777,20 +786,10 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 }
               }
           break;
-          mpi__->barrier();
       }
     }
   }
-}
-
-
-vector<shared_ptr<MultiTensor_<double>>> Orthogonal_Basis::transform_to_redundant() const {
-  vector<shared_ptr<MultiTensor_<double>>> out;
-
-  for (int istate = 0; istate != nstates_; ++istate)
-    out.push_back(transform_to_redundant(istate));
-
-  return out;
+  mpi__->barrier();
 }
 
 
@@ -811,7 +810,7 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
               for (auto& i2 : closed_)
                 for (auto& i1 : virt_)
                   for (auto& i0 : closed_) {
-                    if (!out->at(ist)->is_local(i0, i1, i2, i3)) continue;
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
                     unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
                     tensor->add_block(data0, i0, i1, i2, i3);
                   }
@@ -1022,6 +1021,7 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
       }
     }
   }
+  mpi__->barrier();
 
   return out;
 }
@@ -1202,6 +1202,7 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
       }
     }
   }
+  mpi__->barrier();
 }
 
 
@@ -1241,6 +1242,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
     } else {
       outv = make_shared<VectorB>(size_total()*nstates_);
     }
+    outv->zero();
     for (int ist = 0; ist != nstates_; ++ist) {
       size_t ioffset = 0;
       if (!sssr_ || ist == istate) {
@@ -1254,7 +1256,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                 for (auto& i2 : closed_)
                   for (auto& i1 : virt_)
                     for (auto& i0 : closed_) {
-                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+//                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
                       unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
                       size_t iall = 0;
                       for (int j3 = i3.offset()-nocc_; j3 != i3.offset()+i3.size()-nocc_; ++j3)
@@ -1270,7 +1272,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
               for (auto& i3 : virt_)
                 for (auto& i1 : virt_)
                   for (auto& i0o : interm_[iext]) {
-                    if (!dtensor->is_local(i0o, i1, i3)) continue;
+//                    if (!dtensor->is_local(i0o, i1, i3)) continue;
                     unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i3);
                     size_t iall = 0;
                     for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
@@ -1286,8 +1288,8 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                 for (auto& i2 : closed_)
                   for (auto& i1 : virt_)
                     for (auto& i0o : interm_[iext]) {
-                      if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
-                      unique_ptr<double[]> data0(new double[dtensor->get_size(i0o, i1, i2, i3)]);
+//                      if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
+                      unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1, i2, i3);
                       size_t iall = 0;
                       for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
                         for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
@@ -1303,14 +1305,14 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                 for (auto& i1 : virt_)
                   for (auto& i0 : closed_)
                     for (auto& i0o : interm_[iext]) {
-                      if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+//                      if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
                       unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i1, i2);
                       size_t iall = 0;
                       for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
                         for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
                           for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
                             for (int j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++iall) {
-                              const size_t jall = j0 - ncore_ + nclo_ * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) * nclo_ * j0o));
+                              const size_t jall = (j0 - ncore_) + nclo_ * ((j1 - nocc_) + nvirt_ * ((j2 - ncore_) + nclo_ * j0o));
                               (*outv)[jall + ioffset] = data0[iall];
                             }
                     }
@@ -1319,7 +1321,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
               for (auto& i2 : closed_)
                 for (auto& i0 : closed_)
                   for (auto& i0o : interm_[iext]) {
-                    if (!dtensor->is_local(i0o, i0, i2)) continue;
+//                    if (!dtensor->is_local(i0o, i0, i2)) continue;
                     unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i2);
                     size_t iall = 0;
                     for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
@@ -1334,7 +1336,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
               for (auto& i1 : virt_)
                 for (auto& i0 : closed_)
                   for (auto& i0o : interm_[iext]) {
-                    if (!dtensor->is_local(i0o, i0, i1)) continue;
+//                    if (!dtensor->is_local(i0o, i0, i1)) continue;
                     unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0, i1);
                     size_t iall = 0;
                     for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
@@ -1348,7 +1350,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
             case Excitations::arst:
               for (auto& i1 : virt_)
                 for (auto& i0o : interm_[iext]) {
-                  if (!dtensor->is_local(i0o, i1)) continue;
+//                  if (!dtensor->is_local(i0o, i1)) continue;
                   unique_ptr<double[]> data0 = dtensor->get_block(i0o, i1);
                   size_t iall = 0;
                   for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
@@ -1361,7 +1363,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
             case Excitations::rist:
               for (auto& i0 : closed_)
                 for (auto& i0o : interm_[iext]) {
-                  if (!dtensor->is_local(i0o, i0)) continue;
+//                  if (!dtensor->is_local(i0o, i0)) continue;
                   unique_ptr<double[]> data0 = dtensor->get_block(i0o, i0);
                   size_t iall = 0;
                   for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0)
@@ -1376,7 +1378,7 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
         }
       }
     }
-    outv->allreduce();
+//    outv->allreduce();
     out.push_back(outv);
   }
   return out;

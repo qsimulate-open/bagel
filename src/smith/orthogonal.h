@@ -108,7 +108,6 @@ class Orthogonal_Basis {
     // transform to orthogonal
     void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
     // Transform to redundant (should be amplitude)
-    std::vector<std::shared_ptr<MultiTensor_<double>>> transform_to_redundant() const;
     std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate) const;
     // update amplitude using residual
     void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate, const double shift, const bool imag);
