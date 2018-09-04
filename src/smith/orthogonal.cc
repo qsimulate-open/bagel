@@ -1227,9 +1227,9 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
     if (!sssr_ || istate == ist) {
       const int pos = Excitations::aibj + (sssr_ ? 0 : ist);
       esector[Excitations::aibj] += tcovar->at(pos)->dot_product(s->data(istate)->at(pos)) + tcovar->at(pos)->dot_product(r->data(istate)->at(pos));
-      etot += esector[Excitations::aibj];
     }
   }
+  etot += esector[Excitations::aibj];
   cout << setprecision(6) << setw(12) << esector[Excitations::aibj];
   for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
     esector[iext] = tcovar->at(iext)->dot_product(s->data(istate)->at(iext)) + tcovar->at(iext)->dot_product(r->data(istate)->at(iext));
