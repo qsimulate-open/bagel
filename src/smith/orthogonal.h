@@ -41,7 +41,7 @@ namespace SMITH {
 
 // class of excitations: note that airs and arsi are merged to one
 enum Basis_Type { residual, amplitude };
-enum Excitations { aibj, arbs, arbi, airj, risj, airs, arst, rist, total };
+enum Excitations { arbs, arbi, airj, risj, airs, arst, rist, aibj, total };
 
 class Orthogonal_Basis {
   protected:

@@ -37,31 +37,10 @@ using namespace bagel::SMITH;
 void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int istate, const double shift, const bool imag) {
   const double shift2 = shift * shift;
 
-  for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> ttensor = t->data(istate)->at(iext);
     const shared_ptr<Tensor_<double>> dtensor = denom_[istate]->at(iext);
     switch(iext) {
-      case Excitations::aibj:
-        for (auto& i3 : virt_)
-          for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                if (!dtensor->is_local(i0, i1, i2, i3)) continue;
-                unique_ptr<double[]> amplitude   = ttensor->get_block(i0, i1, i2, i3);
-                const unique_ptr<double[]> denom = dtensor->get_block(i0, i1, i2, i3);
-                const size_t blocksize = ttensor->get_size(i0, i1, i2, i3);
-                if (imag) {
-                  for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift2 / denom[j];
-                  }
-                } else {
-                  for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift;
-                  }
-                }
-                data_[istate]->at(iext)->add_block(amplitude, i0, i1, i2, i3);
-              }
-        break;
       case Excitations::arbs:
         for (auto& i3 : virt_)
           for (auto& i1 : virt_)
@@ -202,6 +181,32 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
             data_[istate]->at(iext)->add_block(amplitude, i0o, i0);
           }
         break;
+        case Excitations::aibj:
+          for (int ist = 0; ist != nstates_; ++ist) {
+            if (!sssr_ || ist == istate) {
+              const int pos = iext + (sssr_ ? 0 : ist);
+              for (auto& i3 : virt_)
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_)
+                    for (auto& i0 : closed_) {
+                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                      unique_ptr<double[]> amplitude   = t->data(istate)->at(pos)->get_block(i0, i1, i2, i3);
+                      const unique_ptr<double[]> denom = denom_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                      const size_t blocksize = ttensor->get_size(i0, i1, i2, i3);
+                      if (imag) {
+                        for (size_t j = 0; j != blocksize; ++j) {
+                          amplitude[j] *= shift2 / denom[j];
+                        }
+                      } else {
+                        for (size_t j = 0; j != blocksize; ++j) {
+                          amplitude[j] *= shift;
+                        }
+                      }
+                      data_[istate]->at(pos)->add_block(amplitude, i0, i1, i2, i3);
+                    }
+            }
+          }
+          break;
     }
   }
   mpi__->barrier();

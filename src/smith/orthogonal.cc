@@ -53,21 +53,34 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
 
   const int max = info->maxtile();
 
-  interm_.push_back(IndexRange(0));
   int keyoffset = closed_.nblock() + active_.nblock() + virt_.nblock();
-  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
+  for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
     interm_.push_back(IndexRange(shalf_[iext]->ndim(), max, keyoffset));
     keyoffset += interm_[iext].nblock();
   }
+  interm_.push_back(IndexRange(0));
 
+//  cout << " istate" << endl;
   for (int istate = 0; istate != nstates_; ++istate) {
-    auto tmp = make_shared<MultiTensor_<double>>(Excitations::total);
-    for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+    auto tmp = make_shared<MultiTensor_<double>>(Excitations::total + (sssr_ ? 0 : nstates_-1));
+    for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
       (*tmp)[iext] = init_data(iext);
     }
+    // aibj depends on whether sssr or msmr
+    if (sssr_) {
+      const int pos = Excitations::aibj;
+      (*tmp)[pos] = init_data(Excitations::aibj);
+    } else {
+      for (int ist = 0; ist != nstates_; ++ist) {
+        const int pos = Excitations::aibj + ist;
+        (*tmp)[pos] = init_data(Excitations::aibj);
+      }
+    }
+
     data_.push_back(tmp);
     denom_.push_back(tmp->clone());
   }
+//  cout << " set_denom" << endl;
 
   // let me store denominator for all orthogonal functions
   // TODO should we merge denom with it??
@@ -137,7 +150,6 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
 
 
 void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
-  const size_t size_aibj = nvirt_ * nvirt_ * nclo_ * nclo_;
   const size_t size_arbs = d->shalf_xx()->ndim()  * nvirt_ * nvirt_;
   const size_t size_arbi = d->shalf_x()->ndim()   * nvirt_ * nclo_ * nvirt_;
   const size_t size_airj = d->shalf_h()->ndim()   * nclo_ * nvirt_ * nclo_;
@@ -145,9 +157,9 @@ void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
   const size_t size_airs = d->shalf_xh()->ndim()  * nclo_ * nvirt_;
   const size_t size_arst = d->shalf_xxh()->ndim() * nvirt_;
   const size_t size_rist = d->shalf_xhh()->ndim() * nclo_;
-  const size_t size_all = size_aibj + size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist;
+  const size_t size_aibj = nvirt_ * nvirt_ * nclo_ * nclo_ * (sssr_ ? 1 : nstates_);
+  const size_t size_all = size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist + size_aibj;
 
-  shalf_.push_back(make_shared<Matrix>());
   shalf_.push_back(d->shalf_xx()->copy());
   shalf_.push_back(d->shalf_x()->copy());
   shalf_.push_back(d->shalf_h()->copy());
@@ -155,8 +167,8 @@ void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
   shalf_.push_back(d->shalf_xh()->copy());
   shalf_.push_back(d->shalf_xxh()->copy());
   shalf_.push_back(d->shalf_xhh()->copy());
+  shalf_.push_back(make_shared<Matrix>());
 
-  size_.push_back(size_aibj);
   size_.push_back(size_arbs);
   size_.push_back(size_arbi);
   size_.push_back(size_airj);
@@ -164,6 +176,7 @@ void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
   size_.push_back(size_airs);
   size_.push_back(size_arst);
   size_.push_back(size_rist);
+  size_.push_back(size_aibj);
   size_.push_back(size_all);
 }
 
@@ -174,14 +187,6 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_data(const int iext) {
   unordered_set<size_t> sparse;
   shared_ptr<Tensor_<double>> out;
   switch(iext) {
-    case Excitations::aibj:
-      for (auto& i3 : virt_)
-        for (auto& i2 : closed_)
-          for (auto& i1 : virt_)
-            for (auto& i0 : closed_)
-              sparse.insert(generate_hash_key(i0, i1, i2, i3));
-      out = make_shared<Tensor_<double>>(vector<IndexRange>{closed_, virt_, closed_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
-      break;
     case Excitations::arbs:
       for (auto& i3 : virt_)
         for (auto& i1 : virt_)
@@ -231,6 +236,14 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_data(const int iext) {
           sparse.insert(generate_hash_key(i0o, i0));
       out = make_shared<Tensor_<double>>(vector<IndexRange>{interm_[iext], closed_}, /*kramers=*/false, sparse, /*alloc=*/true);
       break;
+    case Excitations::aibj:
+      for (auto& i3 : virt_)
+        for (auto& i2 : closed_)
+          for (auto& i1 : virt_)
+            for (auto& i0 : closed_)
+              sparse.insert(generate_hash_key(i0, i1, i2, i3));
+      out = make_shared<Tensor_<double>>(vector<IndexRange>{closed_, virt_, closed_, virt_}, /*kramers=*/false, sparse, /*alloc=*/true);
+      break;
   }
   return out;
 }
@@ -238,22 +251,9 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_data(const int iext) {
 
 shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int istate) const {
   auto out = make_shared<MultiTensor_<double>>(Excitations::total);
-  for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(iext);
     switch(iext) {
-      case Excitations::aibj:
-        out->at(iext) = dtensor->clone();
-        for (auto& i3 : virt_)
-          for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                if (!dtensor->is_local(i0, i1, i2, i3)) continue;
-                unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
-                unique_ptr<double[]> data1 = dtensor->get_block(i0, i3, i2, i1);
-                sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-                out->at(iext)->add_block(data0, i0, i1, i2, i3);
-              }
-        break;
       case Excitations::arbs:
         out->at(iext) = dtensor->copy();
         break;
@@ -295,6 +295,24 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int i
       case Excitations::rist:
         out->at(iext) = dtensor->copy();
         break;
+      case Excitations::aibj:
+        for (int ist = 0; ist != nstates_; ++ist) {
+          if (!sssr_ || ist == istate) {
+            const int pos = iext + (sssr_ ? 0 : ist);
+            out->at(pos) = dtensor->clone();
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!data_[istate]->at(pos)->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = data_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                    unique_ptr<double[]> data1 = data_[istate]->at(pos)->get_block(i0, i3, i2, i1);
+                    sort_indices<0,3,2,1,8,1,-4,1>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+                    out->at(pos)->add_block(data0, i0, i1, i2, i3);
+                  }
+          }
+        }
+        break;
     }
   }
   return out;
@@ -304,31 +322,9 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int i
 void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
   for (int istate = 0; istate != nstates_; ++istate) {
     e0_ = e0all_[istate];
-    for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+    for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
       const shared_ptr<Tensor_<double>> dtensor = denom_[istate]->at(iext);
       switch(iext) {
-        case Excitations::aibj:
-          for (int ist = 0; ist != nstates_; ++ist) {
-            double e0loc = e0_ - e0all_[ist];
-            const int pos = iext;
-            if (!sssr_ || ist == istate) {
-              for (auto& i3 : virt_)
-                for (auto& i2 : closed_)
-                  for (auto& i1 : virt_)
-                    for (auto& i0 : closed_) {
-                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
-                      unique_ptr<double[]> data0(new double[dtensor->get_size(i0, i1, i2, i3)]);
-                      size_t iall = 0;
-                      for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
-                        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
-                          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
-                            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
-                              data0[iall] = - eig_[j0] - eig_[j2] + eig_[j1] + eig_[j3] + e0loc;
-                      denom_[istate]->at(pos)->put_block(data0, i0, i1, i2, i3);
-                    }
-              }
-            }
-            break;
         case Excitations::arbs:
             for (auto& i3 : virt_)
               for (auto& i1 : virt_)
@@ -427,6 +423,28 @@ void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
               denom_[istate]->at(iext)->put_block(data0, i0o, i0);
             }
          break;
+        case Excitations::aibj:
+          for (int ist = 0; ist != nstates_; ++ist) {
+            double e0loc = e0_ - e0all_[ist];
+            if (!sssr_ || ist == istate) {
+              const int pos = iext + (sssr_ ? 0 : ist);
+              for (auto& i3 : virt_)
+                for (auto& i2 : closed_)
+                  for (auto& i1 : virt_)
+                    for (auto& i0 : closed_) {
+                      if (!denom_[istate]->at(pos)->is_local(i0, i1, i2, i3)) continue;
+                      unique_ptr<double[]> data0(new double[denom_[istate]->at(pos)->get_size(i0, i1, i2, i3)]);
+                      size_t iall = 0;
+                      for (int j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3)
+                        for (int j2 = i2.offset(); j2 != i2.offset()+i2.size(); ++j2)
+                          for (int j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1)
+                            for (int j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++iall)
+                              data0[iall] = - eig_[j0] - eig_[j2] + eig_[j1] + eig_[j3] + e0loc;
+                      denom_[istate]->at(pos)->put_block(data0, i0, i1, i2, i3);
+                    }
+              }
+            }
+            break;
       }
     }
   }
@@ -549,21 +567,9 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
   // we put the transformed data in data_[istate].
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!t->at(ist)) continue;
-    for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+    for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
       shared_ptr<const Tensor_<double>> tensor = t->at(ist);
       switch(iext) {
-        case Excitations::aibj:
-          for (auto& i3 : virt_)
-            for (auto& i2 : closed_)
-              for (auto& i1 : virt_)
-                for (auto& i0 : closed_) {
-                  if (!data_[istate]->at(iext)->is_local(i0, i1, i2, i3)) continue;
-                  unique_ptr<double[]> data0 = tensor->get_block(i0, i1, i2, i3);
-                  const unique_ptr<double[]> data1 = tensor->get_block(i0, i3, i2, i1);
-                  sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
-                  data_[istate]->at(iext)->add_block(data0, i0, i1, i2, i3);
-                }
-          break;
         case Excitations::arbs:
           for (auto& i2 : active_)
             for (auto& i0 : active_) {
@@ -776,6 +782,21 @@ void Orthogonal_Basis::transform_to_orthogonal(shared_ptr<const MultiTensor_<dou
                 }
               }
           break;
+        case Excitations::aibj:
+          if (!sssr_ || ist == istate) {
+            const int pos = iext + (sssr_ ? 0 : ist);
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!data_[istate]->at(iext)->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = t->at(ist)->get_block(i0, i1, i2, i3);
+                    const unique_ptr<double[]> data1 = t->at(ist)->get_block(i0, i3, i2, i1);
+                    sort_indices<0,3,2,1,2,12,1,12>(data1, data0, i0.size(), i3.size(), i2.size(), i1.size());
+                    data_[istate]->at(pos)->add_block(data0, i0, i1, i2, i3);
+                  }
+          }
+          break;
       }
     }
   }
@@ -790,20 +811,10 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
   for (int ist = 0; ist != nstates_; ++ist) {
     if (!sssr_ || ist == istate) {
       (*out)[ist] = init_amplitude();
-      for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+      for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
         shared_ptr<Tensor_<double>> tensor = out->at(ist);
         shared_ptr<const Tensor_<double>> dtensor = data_[istate]->at(iext);
         switch(iext) {
-          case Excitations::aibj:
-            for (auto& i3 : virt_)
-              for (auto& i2 : closed_)
-                for (auto& i1 : virt_)
-                  for (auto& i0 : closed_) {
-                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
-                    unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
-                    tensor->add_block(data0, i0, i1, i2, i3);
-                  }
-            break;
           case Excitations::arbs:
             for (auto& i2 : active_)
               for (auto& i0 : active_) {
@@ -1006,6 +1017,17 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                   }
                 }
             break;
+          case Excitations::aibj:
+            const int pos = iext + (sssr_ ? 0 : ist);
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!tensor->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> data0 = data_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                    out->at(ist)->add_block(data0, i0, i1, i2, i3);
+                  }
+            break;
         }
       }
     }
@@ -1019,31 +1041,10 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
 void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int istate, const double shift, const bool imag) {
   const double shift2 = shift * shift;
 
-  for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+  for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> rtensor = r->data(istate)->at(iext);
     const shared_ptr<Tensor_<double>> dtensor = denom_[istate]->at(iext);
     switch(iext) {
-      case Excitations::aibj:
-        for (auto& i3 : virt_)
-          for (auto& i2 : closed_)
-            for (auto& i1 : virt_)
-              for (auto& i0 : closed_) {
-                if (!dtensor->is_local(i0, i1, i2, i3)) continue;
-                unique_ptr<double[]> residual = rtensor->get_block(i0, i1, i2, i3);
-                unique_ptr<double[]> denom    = dtensor->get_block(i0, i1, i2, i3);
-                const size_t blocksize = rtensor->get_size(i0, i1, i2, i3);
-                if (imag) {
-                  for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
-                  }
-                } else {
-                  for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(1.0 / (denom[j] + shift));
-                  }
-                }
-                data_[istate]->at(iext)->add_block(residual, i0, i1, i2, i3);
-              }
-        break;
       case Excitations::arbs:
         for (auto& i3 : virt_)
           for (auto& i1 : virt_)
@@ -1184,6 +1185,32 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
             data_[istate]->at(iext)->add_block(residual, i0o, i0);
           }
         break;
+      case Excitations::aibj:
+        for (int ist = 0; ist != nstates_; ++ist) {
+          if (!sssr_ || ist == istate) {
+            const int pos = iext + (sssr_ ? 0 : ist);
+            for (auto& i3 : virt_)
+              for (auto& i2 : closed_)
+                for (auto& i1 : virt_)
+                  for (auto& i0 : closed_) {
+                    if (!denom_[istate]->at(pos)->is_local(i0, i1, i2, i3)) continue;
+                    unique_ptr<double[]> residual = r->data(istate)->at(pos)->get_block(i0, i1, i2, i3);
+                    unique_ptr<double[]> denom    = denom_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                    const size_t blocksize = r->data(istate)->at(pos)->get_size(i0, i1, i2, i3);
+                    if (imag) {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                      }
+                    } else {
+                      for (size_t j = 0; j != blocksize; ++j) {
+                        residual[j] *= -(1.0 / (denom[j] + shift));
+                      }
+                    }
+                    data_[istate]->at(pos)->add_block(residual, i0, i1, i2, i3);
+                  }
+          }
+        }
+        break;
     }
   }
   mpi__->barrier();
@@ -1196,7 +1223,15 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
   vector<double> esector(Excitations::total);
 
   cout << setw(8) << iter;
-  for (int iext = 0; iext != Excitations::total; ++iext) {
+  for (int ist = 0; ist != nstates_; ++ist) {
+    if (!sssr_ || istate == ist) {
+      const int pos = Excitations::aibj + (sssr_ ? 0 : ist);
+      esector[Excitations::aibj] += tcovar->at(pos)->dot_product(s->data(istate)->at(pos)) + tcovar->at(pos)->dot_product(r->data(istate)->at(pos));
+      etot += esector[Excitations::aibj];
+    }
+  }
+  cout << setprecision(6) << setw(12) << esector[Excitations::aibj];
+  for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
     esector[iext] = tcovar->at(iext)->dot_product(s->data(istate)->at(iext)) + tcovar->at(iext)->dot_product(r->data(istate)->at(iext));
     cout << setprecision(6) << setw(12) << esector[iext];
     etot += esector[iext];
@@ -1213,27 +1248,10 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
   for (int istate = 0; istate != nstates_; ++istate) {
     auto outv = make_shared<VectorB>(size_total());
     int ioffset = 0;
-    for (int iext = Excitations::aibj; iext != Excitations::total; ++iext) {
+    for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
       const size_t interm_size = (iext == Excitations::aibj) ? 0 : shalf_[iext]->ndim();
       const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(iext);
       switch(iext) {
-        case Excitations::aibj:
-          for (auto& i3 : virt_)
-            for (auto& i2 : closed_)
-              for (auto& i1 : virt_)
-                for (auto& i0 : closed_) {
-                  if (!dtensor->is_local(i0, i1, i2, i3)) continue;
-                  unique_ptr<double[]> data0 = dtensor->get_block(i0, i1, i2, i3);
-                  size_t iall = 0;
-                  for (int j3 = i3.offset()-nocc_; j3 != i3.offset()+i3.size()-nocc_; ++j3)
-                    for (int j2 = i2.offset()-ncore_; j2 != i2.offset()+i2.size()-ncore_; ++j2)
-                      for (int j1 = i1.offset()-nocc_; j1 != i1.offset()+i1.size()-nocc_; ++j1)
-                        for (int j0 = i0.offset()-ncore_; j0 != i0.offset()+i0.size()-ncore_; ++j0, ++iall) {
-                          const size_t jall = j0 + nclo_ * (j1 + nvirt_ * (j2 + nclo_ * j3));
-                          (*outv)[jall + ioffset] = data0[iall];
-                        }
-                }
-          break;
         case Excitations::arbs:
           for (auto& i3 : virt_)
             for (auto& i1 : virt_)
@@ -1338,6 +1356,28 @@ vector<shared_ptr<VectorB>> Orthogonal_Basis::vectorb() const {
                   (*outv)[jall + ioffset] = data0[iall];
                 }
             }
+          break;
+        case Excitations::aibj:
+          for (int ist = 0; ist != nstates_; ++ist) {
+            if (!sssr_ || ist == istate) {
+              const int pos = iext + (sssr_ ? 0 : ist);
+               for (auto& i3 : virt_)
+                 for (auto& i2 : closed_)
+                   for (auto& i1 : virt_)
+                     for (auto& i0 : closed_) {
+                       if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                       unique_ptr<double[]> data0 = data_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                       size_t iall = 0;
+                       for (int j3 = i3.offset()-nocc_; j3 != i3.offset()+i3.size()-nocc_; ++j3)
+                         for (int j2 = i2.offset()-ncore_; j2 != i2.offset()+i2.size()-ncore_; ++j2)
+                           for (int j1 = i1.offset()-nocc_; j1 != i1.offset()+i1.size()-nocc_; ++j1)
+                             for (int j0 = i0.offset()-ncore_; j0 != i0.offset()+i0.size()-ncore_; ++j0, ++iall) {
+                               const size_t jall = j0 + nclo_ * (j1 + nvirt_ * (j2 + nclo_ * j3));
+                               (*outv)[jall + ioffset] = data0[iall];
+                             }
+                     }
+            }
+          }
           break;
       }
       ioffset += size(iext);

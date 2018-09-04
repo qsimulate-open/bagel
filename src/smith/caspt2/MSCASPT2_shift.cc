@@ -200,30 +200,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     shared_ptr<const VectorB> l = lambda[istate];
     shared_ptr<const VectorB> t = amplitude[istate];
     size_t ioffset = 0;
-    // a i b j
-    {
-      for (size_t j3 = 0; j3 != nvirt; ++j3)
-        for (size_t j2 = 0; j2 != nclo; ++j2)
-          for (size_t j1 = 0; j1 != nvirt; ++j1)
-            for (size_t j0 = 0; j0 != nclo; ++j0) {
-              const size_t j0i = j0;
-              const size_t j1i = j1 + nocc - ncore;
-              const size_t j2i = j2;
-              const size_t j3i = j3 + nocc - ncore;
-              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-              const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
-              const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
-              const double Lambda = lcovar * (*t)[jall] * shift2 / (denom * denom);
-              dshift->element(j0i, j0i) += Lambda;
-              dshift->element(j1i, j1i) -= Lambda;
-              dshift->element(j2i, j2i) += Lambda;
-              dshift->element(j3i, j3i) -= Lambda;
-              ((*e0->at(istate,istate))) += 2.0 * lcovar * (*t)[jall] / denom;
-            }
-      ioffset += size_aibj;
-    }
-    timer.tick_print("dshift aibj");
 
     // a r b s
     if (size_arbs) {
@@ -1064,6 +1040,31 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_rist;
     }
+    // a i b j
+    {
+      for (size_t j3 = 0; j3 != nvirt; ++j3)
+        for (size_t j2 = 0; j2 != nclo; ++j2)
+          for (size_t j1 = 0; j1 != nvirt; ++j1)
+            for (size_t j0 = 0; j0 != nclo; ++j0) {
+              const size_t j0i = j0;
+              const size_t j1i = j1 + nocc - ncore;
+              const size_t j2i = j2;
+              const size_t j3i = j3 + nocc - ncore;
+              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+              const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
+              const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
+              const double Lambda = lcovar * (*t)[jall] * shift2 / (denom * denom);
+              dshift->element(j0i, j0i) += Lambda;
+              dshift->element(j1i, j1i) -= Lambda;
+              dshift->element(j2i, j2i) += Lambda;
+              dshift->element(j3i, j3i) -= Lambda;
+              ((*e0->at(istate,istate))) += 2.0 * lcovar * (*t)[jall] / denom;
+            }
+      ioffset += size_aibj;
+    }
+
+    timer.tick_print("dshift aibj");
     timer.tick_print("dshift rist");
   }
 
