@@ -250,7 +250,7 @@ shared_ptr<Tensor_<double>> Orthogonal_Basis::init_data(const int iext) {
 
 
 shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int istate) const {
-  auto out = make_shared<MultiTensor_<double>>(Excitations::total);
+  auto out = make_shared<MultiTensor_<double>>(Excitations::total + (sssr_ ? 0 : nstates_-1));
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> dtensor = data_[istate]->at(iext);
     switch(iext) {
@@ -299,7 +299,7 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::get_contravariant(const int i
         for (int ist = 0; ist != nstates_; ++ist) {
           if (!sssr_ || ist == istate) {
             const int pos = iext + (sssr_ ? 0 : ist);
-            out->at(pos) = dtensor->clone();
+            out->at(pos) = data_[istate]->at(pos)->clone();
             for (auto& i3 : virt_)
               for (auto& i2 : closed_)
                 for (auto& i1 : virt_)
@@ -448,7 +448,7 @@ void Orthogonal_Basis::set_denom(shared_ptr<const Denom<double>> d) {
       }
     }
   }
-  mpi__->  barrier();
+  mpi__->barrier();
 }
 
 
