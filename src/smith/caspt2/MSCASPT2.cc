@@ -51,6 +51,8 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rall_  = cas.rall_;
   t2all_orthogonal_ = cas.t2all_orthogonal_;
   lall_orthogonal_ = cas.lall_orthogonal_;
+  t_orthogonal_ = cas.t_orthogonal_;
+  l_orthogonal_ = cas.l_orthogonal_;
   denom_ = cas.denom_;
   eig_ = cas.eig_;
   h1_ = cas.h1_;
@@ -424,8 +426,32 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
 
     // If we have imaginary shift, construct additional density due to the shift
     if (info_->shift_imag() && info_->shift() != 0.0) {
-      tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
-      timer.tick_print("dshift");
+      tie(den2_shift_, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = t_orthogonal_->make_d2_imag(l_orthogonal_);
+      timer.tick_print("dshift1");
+      shared_ptr<Matrix> dshift_temp;
+      shared_ptr<Vec<double>> etemp0;
+      shared_ptr<VecRDM<1>> etemp1;
+      shared_ptr<VecRDM<2>> etemp2;
+      shared_ptr<VecRDM<3>> etemp3;
+      shared_ptr<VecRDM<3>> etemp4;
+      std::vector<double> nimagtemp;
+
+      tie(dshift_temp, etemp0, etemp1, etemp2, etemp3, etemp4, nimagtemp) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
+
+      *den2_shift_ += *dshift_temp;
+      for (int ist = 0; ist != nstates; ++ist) {
+        for (int jst = 0; jst != nstates; ++jst) {
+          if (info_->sssr() && ist != jst) continue;
+          (*etensor0_->at(ist,jst)) += (*etemp0->at(ist,jst));
+          (*etensor1_->at(ist,jst)) += (*etemp1->at(ist,jst));
+          (*etensor2_->at(ist,jst)) += (*etemp2->at(ist,jst));
+          (*etensor3_->at(ist,jst)) += (*etemp3->at(ist,jst));
+          (*etensor4_->at(ist,jst)) += (*etemp4->at(ist,jst));
+        }
+        nimag_[ist] += nimagtemp[ist];
+      }
+
+      timer.tick_print("dshift2");
     }
 
     if (info_->nact())

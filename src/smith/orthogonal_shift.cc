@@ -206,13 +206,30 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
 
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
 Orthogonal_Basis::make_d2_imag(shared_ptr<const Orthogonal_Basis> lambda) const {
-  auto dshift = make_shared<Matrix>(norb_, norb_);
+  auto dshift = make_shared<Matrix>(norb_-ncore_, norb_-ncore_);
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
   auto e2 = make_shared<VecRDM<2>>();
   auto e3 = make_shared<VecRDM<3>>();
   auto e4 = make_shared<VecRDM<3>>();
   vector<double> nimag;
+  nimag.resize(nstates_);
+
+  for (size_t is = 0; is != nstates_; ++is)
+    for (size_t js = 0; js != nstates_; ++js)
+      if (!sssr_ || is == js) {
+        auto e0temp = make_shared<double>(0.0);
+        auto e1temp = make_shared<RDM<1>>(nact_);
+        auto e2temp = make_shared<RDM<2>>(nact_);
+        auto e3temp = make_shared<RDM<3>>(nact_);
+        auto e4temp = make_shared<RDM<3>>(nact_);
+
+        e0->emplace(is, js, e0temp);
+        e1->emplace(is, js, e1temp);
+        e2->emplace(is, js, e2temp);
+        e3->emplace(is, js, e3temp);
+        e4->emplace(is, js, e4temp);
+      }
 
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
 }

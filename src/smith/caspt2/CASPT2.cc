@@ -77,6 +77,7 @@ CASPT2::CASPT2::CASPT2(const CASPT2& cas) : SpinFreeMethod(cas) {
   // sall is changed in gradient and nacme codes while the others are not
   t2all_ = cas.t2all_;
   t2all_orthogonal_ = cas.t2all_orthogonal_;
+  t_orthogonal_ = cas.t_orthogonal_;
   rall_  = cas.rall_;
   for (int i = 0; i != nstates_; ++i) {
     sall_.push_back(cas.sall_[i]->copy());
@@ -122,7 +123,7 @@ void CASPT2::CASPT2::solve() {
 
   // solve linear equation for t amplitudes
   if (info_->orthogonal_basis()) {
-    tie(t2all_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
+    tie(t_orthogonal_, t2all_orthogonal_, t2all_) = solve_linear_orthogonal(sall_, t2all_);
   } else {
     t2all_ = solve_linear(sall_, t2all_);
   }
@@ -258,6 +259,7 @@ void CASPT2::CASPT2::solve() {
 
 // temporary
 void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
+#if 1
   const bool zero_aibj = false;
   const bool zero_arbs = false;
   const bool zero_arbi = false;
@@ -266,6 +268,16 @@ void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
   const bool zero_airs = false;
   const bool zero_arst = false;
   const bool zero_rist = false;
+#else
+  const bool zero_aibj = true;
+  const bool zero_arbs = false;
+  const bool zero_arbi = true;
+  const bool zero_airj = true;
+  const bool zero_risj = true;
+  const bool zero_airs = true;
+  const bool zero_arst = true;
+  const bool zero_rist = true;
+#endif
 
   for (int i = 0; i != nstates_; ++i) {
     if (!s->at(i)) continue;
@@ -442,7 +454,7 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
 }
 
 
-tuple<vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
+tuple<shared_ptr<Orthogonal_Basis>,vector<shared_ptr<VectorB>>,vector<shared_ptr<MultiTensor_<double>>>>
 CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
@@ -527,7 +539,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
   }
   cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
   vector<shared_ptr<VectorB>> out = amplitude->vectorb();
-  return make_tuple(out, t);
+  return make_tuple(amplitude, out, t);
 }
 
 
@@ -770,7 +782,7 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     // solve linear equation and store lambda in lall
     if (info_->orthogonal_basis()) {
       vector<shared_ptr<VectorB>> tmp;
-      tie(lall_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
+      tie(l_orthogonal_, lall_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
     } else {
       lall_ = solve_linear(sall_, lall_);
     }
