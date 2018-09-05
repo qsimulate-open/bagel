@@ -164,8 +164,6 @@ class CASPT2 : public SpinFreeMethod<double> {
     void manipulate(std::shared_ptr<MultiTensor_<double>> s);
     void do_rdm_deriv(double factor);
 
-    double compute_energy_lt();
-
   public:
     CASPT2(std::shared_ptr<const SMITH_Info<double>> ref);
     CASPT2(const CASPT2& cas);
