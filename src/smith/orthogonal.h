@@ -68,6 +68,8 @@ class Orthogonal_Basis {
     size_t nstates_;
 
     bool sssr_;
+    bool imag_;
+    double shift_;
 
     double e0_;
 
@@ -110,16 +112,16 @@ class Orthogonal_Basis {
     // Transform to redundant (should be amplitude)
     std::shared_ptr<MultiTensor_<double>> transform_to_redundant(const int istate) const;
     // update amplitude using residual
-    void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate, const double shift, const bool imag);
+    void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate);
     // print convergence using source and residual
     void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual,
         const int istate, const int iter, const double error, const double timing) const;
     // add shift to residual using amplitude
-    void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const int istate, const double shift, const bool imag);
+    void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const int istate);
     // compute density matrix due to the shift
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,
                std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
-      make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const;
+      make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda) const;
 
     std::shared_ptr<MultiTensor_<double>>& data(const size_t i) { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }

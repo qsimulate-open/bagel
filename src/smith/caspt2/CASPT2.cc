@@ -468,7 +468,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
       if (i+1 != nstates_) cout << endl;
       continue;
     } else {
-      amplitude->update(source, i, info_->shift(), info_->shift_imag());
+      amplitude->update(source, i);
     }
 
     auto solver = make_shared<LinearRM<MultiTensor>>(info_->davidson_subspace(), source->data(i));
@@ -503,7 +503,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
       ///^^^^^^^
       residual->transform_to_orthogonal(rall_[i], i);
       if (info_->shift() != 0.0)
-        residual->add_shift(amplitude, i, info_->shift(), info_->shift_imag());
+        residual->add_shift(amplitude, i);
       residual->data(i) = solver->compute_residual(amplitude->data(i), residual->data(i));
       amplitude->data(i) = solver->civec();
 
@@ -514,7 +514,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
 
       if (!conv) {
         amplitude->data(i)->zero();
-        amplitude->update(residual, i, info_->shift(), info_->shift_imag());
+        amplitude->update(residual, i);
       }
       if (conv) {
         t[i] = amplitude->transform_to_redundant(i);

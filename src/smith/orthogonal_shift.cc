@@ -34,28 +34,26 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 
-void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int istate, const double shift, const bool imag) {
-  const double shift2 = shift * shift;
+void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int istate) {
+  const double shift2 = shift_ * shift_;
 
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> ttensor = t->data(istate)->at(iext);
-    const shared_ptr<Tensor_<double>> dtensor = denom_[istate]->at(iext);
     switch(iext) {
       case Excitations::arbs:
         for (auto& i3 : virt_)
           for (auto& i1 : virt_)
             for (auto& i0o : interm_[iext]) {
-              if (!dtensor->is_local(i0o, i1, i3)) continue;
+              if (!ttensor->is_local(i0o, i1, i3)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1, i3);
-              const unique_ptr<double[]> denom = dtensor->get_block(i0o, i1, i3);
               const size_t blocksize = ttensor->get_size(i0o, i1, i3);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift2 / denom[j];
+                  amplitude[j] *= shift2;
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift;
+                  amplitude[j] *= shift_;
                 }
               }
               data_[istate]->at(iext)->add_block(amplitude, i0o, i1, i3);
@@ -66,17 +64,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
           for (auto& i2 : closed_)
             for (auto& i1 : virt_)
               for (auto& i0o : interm_[iext]) {
-                if (!dtensor->is_local(i0o, i1, i2, i3)) continue;
+                if (!ttensor->is_local(i0o, i1, i2, i3)) continue;
                 unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1, i2, i3);
-                const unique_ptr<double[]> denom = dtensor->get_block(i0o, i1, i2, i3);
                 const size_t blocksize = ttensor->get_size(i0o, i1, i2, i3);
-                if (imag) {
+                if (imag_) {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift2 / denom[j];
+                    amplitude[j] *= shift2;
                   }
                 } else {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift;
+                    amplitude[j] *= shift_;
                   }
                 }
                 data_[istate]->at(iext)->add_block(amplitude, i0o, i1, i2, i3);
@@ -87,17 +84,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
           for (auto& i1 : virt_)
             for (auto& i0 : closed_)
               for (auto& i0o : interm_[iext]) {
-                if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
+                if (!ttensor->is_local(i0o, i0, i1, i2)) continue;
                 unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i1, i2);
-                const unique_ptr<double[]> denom = dtensor->get_block(i0o, i0, i1, i2);
                 const size_t blocksize = ttensor->get_size(i0o, i0, i1, i2);
-                if (imag) {
+                if (imag_) {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift2 / denom[j];
+                    amplitude[j] *= shift2;
                   }
                 } else {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    amplitude[j] *= shift;
+                    amplitude[j] *= shift_;
                   }
                 }
                 data_[istate]->at(iext)->add_block(amplitude, i0o, i0, i1, i2);
@@ -107,17 +103,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         for (auto& i2 : closed_)
           for (auto& i0 : closed_)
             for (auto& i0o : interm_[iext]) {
-              if (!dtensor->is_local(i0o, i0, i2)) continue;
+              if (!ttensor->is_local(i0o, i0, i2)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i2);
-              const unique_ptr<double[]> denom = dtensor->get_block(i0o, i0, i2);
               const size_t blocksize = ttensor->get_size(i0o, i0, i2);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift2 / denom[j];
+                  amplitude[j] *= shift2;
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift;
+                  amplitude[j] *= shift_;
                 }
               }
               data_[istate]->at(iext)->add_block(amplitude, i0o, i0, i2);
@@ -127,17 +122,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
         for (auto& i1 : virt_)
           for (auto& i0 : closed_)
             for (auto& i0o : interm_[iext]) {
-              if (!dtensor->is_local(i0o, i0, i1)) continue;
+              if (!ttensor->is_local(i0o, i0, i1)) continue;
               unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0, i1);
-              const unique_ptr<double[]> denom = dtensor->get_block(i0o, i0, i1);
               const size_t blocksize = ttensor->get_size(i0o, i0, i1);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift2 / denom[j];
+                  amplitude[j] *= shift2;
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  amplitude[j] *= shift;
+                  amplitude[j] *= shift_;
                 }
               }
               data_[istate]->at(iext)->add_block(amplitude, i0o, i0, i1);
@@ -146,17 +140,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
       case Excitations::arst:
         for (auto& i1 : virt_)
           for (auto& i0o : interm_[iext]) {
-            if (!dtensor->is_local(i0o, i1)) continue;
+            if (!ttensor->is_local(i0o, i1)) continue;
             unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i1);
-            const unique_ptr<double[]> denom = dtensor->get_block(i0o, i1);
             const size_t blocksize = ttensor->get_size(i0o, i1);
-            if (imag) {
+            if (imag_) {
               for (size_t j = 0; j != blocksize; ++j) {
-                amplitude[j] *= shift2 / denom[j];
+                amplitude[j] *= shift2;
               }
             } else {
               for (size_t j = 0; j != blocksize; ++j) {
-                amplitude[j] *= shift;
+                amplitude[j] *= shift_;
               }
             }
             data_[istate]->at(iext)->add_block(amplitude, i0o, i1);
@@ -165,17 +158,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
       case Excitations::rist:
         for (auto& i0 : closed_)
           for (auto& i0o : interm_[iext]) {
-            if (!dtensor->is_local(i0o, i0)) continue;
+            if (!ttensor->is_local(i0o, i0)) continue;
             unique_ptr<double[]> amplitude   = ttensor->get_block(i0o, i0);
-            const unique_ptr<double[]> denom = dtensor->get_block(i0o, i0);
             const size_t blocksize = ttensor->get_size(i0o, i0);
-            if (imag) {
+            if (imag_) {
               for (size_t j = 0; j != blocksize; ++j) {
-                amplitude[j] *= shift2 / denom[j];
+                amplitude[j] *= shift2;
               }
             } else {
               for (size_t j = 0; j != blocksize; ++j) {
-                amplitude[j] *= shift;
+                amplitude[j] *= shift_;
               }
             }
             data_[istate]->at(iext)->add_block(amplitude, i0o, i0);
@@ -189,17 +181,16 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
                 for (auto& i2 : closed_)
                   for (auto& i1 : virt_)
                     for (auto& i0 : closed_) {
-                      if (!dtensor->is_local(i0, i1, i2, i3)) continue;
+                      if (!ttensor->is_local(i0, i1, i2, i3)) continue;
                       unique_ptr<double[]> amplitude   = t->data(istate)->at(pos)->get_block(i0, i1, i2, i3);
-                      const unique_ptr<double[]> denom = denom_[istate]->at(pos)->get_block(i0, i1, i2, i3);
                       const size_t blocksize = ttensor->get_size(i0, i1, i2, i3);
-                      if (imag) {
+                      if (imag_) {
                         for (size_t j = 0; j != blocksize; ++j) {
-                          amplitude[j] *= shift2 / denom[j];
+                          amplitude[j] *= shift2;
                         }
                       } else {
                         for (size_t j = 0; j != blocksize; ++j) {
-                          amplitude[j] *= shift;
+                          amplitude[j] *= shift_;
                         }
                       }
                       data_[istate]->at(pos)->add_block(amplitude, i0, i1, i2, i3);
@@ -214,7 +205,7 @@ void Orthogonal_Basis::add_shift(shared_ptr<const Orthogonal_Basis> t, const int
 
 
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
-Orthogonal_Basis::make_d2_imag(shared_ptr<const Orthogonal_Basis> lambda, const double shift, const bool imag) const {
+Orthogonal_Basis::make_d2_imag(shared_ptr<const Orthogonal_Basis> lambda) const {
   auto dshift = make_shared<Matrix>(norb_, norb_);
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();

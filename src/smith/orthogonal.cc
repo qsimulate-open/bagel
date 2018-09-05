@@ -48,6 +48,8 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
 
   fockact_ = fact->copy();
   sssr_ = info->sssr();
+  imag_ = info->shift_imag();
+  shift_ = info->shift();
 
   set_size(d);
 
@@ -117,6 +119,8 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
   nstates_ = o.nstates_;
 
   sssr_ = o.sssr_;
+  imag_ = o.imag_;
+  shift_ = o.shift_;
 
   shalf_.resize(Excitations::total);
   for (int i = 0; i != Excitations::total; ++i)
@@ -832,7 +836,14 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i1 : virt_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i3);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i3);
+                      const size_t interm_size = dtensor->get_size(i0o, i1, i3);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i3);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
                                                   sqrt(0.5), transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size());
@@ -858,7 +869,14 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i1 : virt_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i2, i3);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i1, i2, i3);
+                      const size_t interm_size = dtensor->get_size(i0o, i1, i2, i3);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1, i2, i3);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size(), i1.size()*i2.size()*i3.size(), i0o.size(),
                                                   1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size());
@@ -882,8 +900,15 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i0 : closed_) {
                       if (!dtensor->is_local(i0o, i0, i1, i2)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1, i2);
-                      unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1, i2)]);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1, i2);
+                      const size_t interm_size = dtensor->get_size(i0o, i0, i1, i2);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o,i0, i1, i2);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
+                      unique_ptr<double[]> interm2(new double[interm_size]);
                       sort_indices<1,2,3,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size(), i2.size());
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i1.size()*i2.size(), i3.size(), i0o.size(),
@@ -910,8 +935,15 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i0 : closed_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i2);
-                      unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i2)]);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i2);
+                      const size_t interm_size = dtensor->get_size(i0o, i0, i2);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i2);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
+                      unique_ptr<double[]> interm2(new double[interm_size]);
                       sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i2.size());
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasNoTrans, CblasNoTrans, i0.size()*i2.size(), i1.size()*i3.size(), i0o.size(),
@@ -943,7 +975,14 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i0 : closed_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i0, i1);
+                      const size_t interm_size = dtensor->get_size(i0o, i0, i1);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i0, i1);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
                       unique_ptr<double[]> interm2(new double[dtensor->get_size(i0o, i0, i1)]);
                       sort_indices<1,2,0,0,1,1,1>(interm.get(), interm2.get(), i0o.size(), i0.size(), i1.size());
                       unique_ptr<double[]> data0(new double[blocksize*2]);
@@ -977,7 +1016,14 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i1 : virt_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i1);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i1);
+                      const size_t interm_size = dtensor->get_size(i0o, i1);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i1);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i2.size()*i3.size(), i1.size(), i0o.size(),
                                                   1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i2.size()*i3.size());
@@ -1006,7 +1052,14 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                     for (auto& i2 : closed_) {
                       if (!tensor->is_local(i0, i1, i2, i3)) continue;
                       const size_t blocksize = tensor->get_size(i0, i1, i2, i3);
-                      const unique_ptr<double[]> interm = dtensor->get_block(i0o, i2);
+                      unique_ptr<double[]> interm = dtensor->get_block(i0o, i2);
+                      const size_t interm_size = dtensor->get_size(i0o, i2);
+                      if (imag_) {
+                        const unique_ptr<double[]> denom = denom_[istate]->at(iext)->get_block(i0o, i2);
+                        for (size_t i = 0; i != interm_size; ++i) {
+                          interm[i] *= denom[i];
+                        }
+                      }
                       unique_ptr<double[]> data0(new double[blocksize]);
                       btas::gemm_impl<true>::call(CblasColMajor, CblasConjTrans, CblasNoTrans, i0.size()*i1.size()*i3.size(), i2.size(), i0o.size(),
                                                   1.0, transp.get(), i0o.size(), interm.get(), i0o.size(), 0.0, data0.get(), i0.size()*i1.size()*i3.size());
@@ -1025,6 +1078,13 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
                   for (auto& i0 : closed_) {
                     if (!tensor->is_local(i0, i1, i2, i3)) continue;
                     unique_ptr<double[]> data0 = data_[istate]->at(pos)->get_block(i0, i1, i2, i3);
+                    if (imag_) {
+                      const unique_ptr<double[]> denom = denom_[istate]->at(pos)->get_block(i0,i1, i2, i3);
+                      const size_t blocksize = data_[istate]->at(pos)->get_size(i0, i1, i2, i3);
+                      for (size_t i = 0; i != blocksize; ++i) {
+                        data0[i] *= denom[i];
+                      }
+                    }
                     out->at(ist)->add_block(data0, i0, i1, i2, i3);
                   }
             break;
@@ -1038,8 +1098,8 @@ shared_ptr<MultiTensor_<double>> Orthogonal_Basis::transform_to_redundant(const 
 }
 
 
-void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int istate, const double shift, const bool imag) {
-  const double shift2 = shift * shift;
+void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int istate) {
+  const double shift2 = shift_ * shift_;
 
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
     const shared_ptr<Tensor_<double>> rtensor = r->data(istate)->at(iext);
@@ -1053,13 +1113,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
               unique_ptr<double[]> residual = rtensor->get_block(i0o, i1, i3);
               unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1, i3);
               const size_t blocksize = rtensor->get_size(i0o, i1, i3);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                  residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(1.0 / (denom[j] + shift));
+                  residual[j] *= -(1.0 / (denom[j] + shift_));
                 }
               }
               data_[istate]->at(iext)->add_block(residual, i0o, i1, i3);
@@ -1074,13 +1134,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
                 unique_ptr<double[]> residual = rtensor->get_block(i0o, i1, i2, i3);
                 unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1, i2, i3);
                 const size_t blocksize = rtensor->get_size(i0o, i1, i2, i3);
-                if (imag) {
+                if (imag_) {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                    residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                   }
                 } else {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(1.0 / (denom[j] + shift));
+                    residual[j] *= -(1.0 / (denom[j] + shift_));
                   }
                 }
                 data_[istate]->at(iext)->add_block(residual, i0o, i1, i2, i3);
@@ -1095,13 +1155,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
                 unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i1, i2);
                 unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i1, i2);
                 const size_t blocksize = rtensor->get_size(i0o, i0, i1, i2);
-                if (imag) {
+                if (imag_) {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                    residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                   }
                 } else {
                   for (size_t j = 0; j != blocksize; ++j) {
-                    residual[j] *= -(1.0 / (denom[j] + shift));
+                    residual[j] *= -(1.0 / (denom[j] + shift_));
                   }
                 }
                 data_[istate]->at(iext)->add_block(residual, i0o, i0, i1, i2);
@@ -1115,13 +1175,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
               unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i2);
               unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i2);
               const size_t blocksize = rtensor->get_size(i0o, i0, i2);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                  residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(1.0 / (denom[j] + shift));
+                  residual[j] *= -(1.0 / (denom[j] + shift_));
                 }
               }
               data_[istate]->at(iext)->add_block(residual, i0o, i0, i2);
@@ -1135,13 +1195,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
               unique_ptr<double[]> residual = rtensor->get_block(i0o, i0, i1);
               unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0, i1);
               const size_t blocksize = rtensor->get_size(i0o, i0, i1);
-              if (imag) {
+              if (imag_) {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                  residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                 }
               } else {
                 for (size_t j = 0; j != blocksize; ++j) {
-                  residual[j] *= -(1.0 / (denom[j] + shift));
+                  residual[j] *= -(1.0 / (denom[j] + shift_));
                 }
               }
               data_[istate]->at(iext)->add_block(residual, i0o, i0, i1);
@@ -1154,13 +1214,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
             unique_ptr<double[]> residual = rtensor->get_block(i0o, i1);
             unique_ptr<double[]> denom    = dtensor->get_block(i0o, i1);
             const size_t blocksize = rtensor->get_size(i0o, i1);
-            if (imag) {
+            if (imag_) {
               for (size_t j = 0; j != blocksize; ++j) {
-                residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
               }
             } else {
               for (size_t j = 0; j != blocksize; ++j) {
-                residual[j] *= -(1.0 / (denom[j] + shift));
+                residual[j] *= -(1.0 / (denom[j] + shift_));
               }
             }
             data_[istate]->at(iext)->add_block(residual, i0o, i1);
@@ -1173,13 +1233,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
             unique_ptr<double[]> residual = rtensor->get_block(i0o, i0);
             unique_ptr<double[]> denom    = dtensor->get_block(i0o, i0);
             const size_t blocksize = rtensor->get_size(i0o, i0);
-            if (imag) {
+            if (imag_) {
               for (size_t j = 0; j != blocksize; ++j) {
-                residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
               }
             } else {
               for (size_t j = 0; j != blocksize; ++j) {
-                residual[j] *= -(1.0 / (denom[j] + shift));
+                residual[j] *= -(1.0 / (denom[j] + shift_));
               }
             }
             data_[istate]->at(iext)->add_block(residual, i0o, i0);
@@ -1197,13 +1257,13 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
                     unique_ptr<double[]> residual = r->data(istate)->at(pos)->get_block(i0, i1, i2, i3);
                     unique_ptr<double[]> denom    = denom_[istate]->at(pos)->get_block(i0, i1, i2, i3);
                     const size_t blocksize = r->data(istate)->at(pos)->get_size(i0, i1, i2, i3);
-                    if (imag) {
+                    if (imag_) {
                       for (size_t j = 0; j != blocksize; ++j) {
-                        residual[j] *= -(denom[j] / (denom[j] * denom[j] + shift2));
+                        residual[j] *= -(1.0 / (denom[j] * denom[j] + shift2));
                       }
                     } else {
                       for (size_t j = 0; j != blocksize; ++j) {
-                        residual[j] *= -(1.0 / (denom[j] + shift));
+                        residual[j] *= -(1.0 / (denom[j] + shift_));
                       }
                     }
                     data_[istate]->at(pos)->add_block(residual, i0, i1, i2, i3);
