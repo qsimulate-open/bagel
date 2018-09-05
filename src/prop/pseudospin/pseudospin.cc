@@ -599,7 +599,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     }
   }
 
-  { // Adjust the phase to make the (M+1, M) elements of the raising operator real (default choice)
+  { // Adjust the phase to make the (M+1, M) elements of the raising operator real
     ZMatrix raising_op(nspin1_, nspin1_);
 
     if (diagset == "mu") {
@@ -631,34 +631,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     }
   }
   cout << endl;
-
-  // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
-  const shared_ptr<const PTree> phase_input = idata_->get_child_optional("phases");
-  if (phase_input) {
-    vector<double> phase_adjust = {};
-    for (auto& i : *phase_input)
-      phase_adjust.push_back(lexical_cast<double>(i->data()));
-
-    if (phase_adjust.size() != nspin1_ / 2)
-      throw runtime_error("Sorry, you seem to be trying to adjust the phase of pseudospin eigenfunctions.  We expect " + to_string(nspin1_/2) + " phases, one for each pair of time-reversal symmetric states.");
-
-    for (int i = 0; i != nspin1_ / 2; ++i) {
-      const complex<double> adjustment = polar(1.0, phase_adjust[i]);
-      cout << "  **  The phase of the m_s = " << " " + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) <<  phase_adjust[i] << " radians." << endl;
-      cout << "  **  The phase of the m_s = " << "-" + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) << -phase_adjust[i] << " radians." << endl;
-      for (int j = 0; j != nspin1_; ++j) {
-        transform.element(j, i) = adjustment * transform.element(j, i);
-        transform.element(j, nspin_ - i) = conj(adjustment) * transform.element(j, nspin_ - i);
-      }
-    }
-    cout << endl;
-  }
-
-  const double phase_input_2 = idata_->get<double>("phase_full", 0.0);
-  if (phase_input_2 != 0.0) {
-    transform.scale(polar(1.0, phase_input_2));
-    cout << "  **  The phase of all pseudospin functions will be shifted by " << setw(4) <<  phase_input_2 << " radians.  (This should have no effect.)" << endl << endl;
-  }
 
 #ifndef NDEBUG
   {
