@@ -87,7 +87,8 @@ class Orthogonal_Basis {
     std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
     std::shared_ptr<Tensor_<double>> init_data(const int iext);
-    std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate) const;
+    std::shared_ptr<MultiTensor_<double>> weight_by_denom(const int istate, std::shared_ptr<const MultiTensor_<double>> original) const;
+    std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
     void set_size(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
 
