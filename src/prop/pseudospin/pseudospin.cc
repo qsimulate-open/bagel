@@ -341,7 +341,14 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
   array<shared_ptr<ZMatrix>,3> ao_orbang;
   { // orbital angular momentum
     // TODO For geometries with only one metal atom, use that atom's position as default mcoord
-    const array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
+    array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
+
+    if (idata_->get<bool>("anstrom", false)) {
+      for (auto& i : mcoord) {
+        i /= au2angstrom__;
+      }
+    }
+
     const int n = geom_->nbasis();
 
     array<shared_ptr<ZMatrix>,3> angmom_large;
