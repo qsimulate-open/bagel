@@ -82,11 +82,19 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
           den4cirdmt = den4cirdm->at(nst, mst);
           if (info_->shift_imag()) {
             if (!info_->sssr() || nst == mst) {
+#if 0
               *(den0cirdmt) += *(etensor0_->at(nst, mst));
               *(den1cirdmt) += *(etensor1_->at(nst, mst));
               *(den2cirdmt) += *(etensor2_->at(nst, mst));
               *(den3cirdmt) += *(etensor3_->at(nst, mst));
-              *(den4cirdmt) += *(etensor4_->at(nst, mst));
+             *(den4cirdmt) += *(etensor4_->at(nst, mst));
+#else
+              *(den0cirdmt) += *(etensor0_->at(mst, nst));
+              *(den1cirdmt) += *(etensor1_->at(mst, nst));
+              *(den2cirdmt) += *(etensor2_->at(mst, nst));
+              *(den3cirdmt) += *(etensor3_->at(mst, nst));
+              *(den4cirdmt) += *(etensor4_->at(mst, nst));
+#endif
             }
           }
 

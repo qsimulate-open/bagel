@@ -248,7 +248,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -285,7 +285,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       for (size_t j5 = 0; j5 != nact; ++j5) {
                         const size_t j5i = j5 + nclo;
                         dshift->element(j4i, j5i) += Rmat->element(j0, j1, j2, j3) * rdm3->element(j0, j2, j1, j3, j4, j5);
-                        e3->at(is,js)->element(j0, j2, j1, j3, j4, j5) += 2.0 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
+                        e3->at(is, js)->element(j0, j2, j1, j3, j4, j5) += 2.0 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
                       }
                     }
           }
@@ -349,12 +349,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
           shared_ptr<RDM<4>> rdm4;
-          tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(is, js);
+          tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
 
           {
             shared_ptr<Matrix> Vmat = denom_->shalf_x()->get_submatrix(0, is * nact, interm_size, nact);
@@ -444,7 +444,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -541,7 +541,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -695,7 +695,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
 
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -814,7 +814,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -918,7 +918,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       for (size_t is = 0; is != nstates; ++is) {
         for (size_t js = 0; js != nstates; ++js) {
-          if (is != js) continue;
+          if (info_->sssr() && is != js) continue;
           shared_ptr<RDM<1>> rdm1;
           shared_ptr<RDM<2>> rdm2;
           shared_ptr<RDM<3>> rdm3;
@@ -1026,32 +1026,38 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
       ioffset += size_rist;
     }
+    timer.tick_print("dshift rist");
     // a i b j
     {
-      for (size_t j3 = 0; j3 != nvirt; ++j3)
-        for (size_t j2 = 0; j2 != nclo; ++j2)
-          for (size_t j1 = 0; j1 != nvirt; ++j1)
-            for (size_t j0 = 0; j0 != nclo; ++j0) {
-              const size_t j0i = j0;
-              const size_t j1i = j1 + nocc - ncore;
-              const size_t j2i = j2;
-              const size_t j3i = j3 + nocc - ncore;
-              const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-              const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
-              const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
-              const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc];
-              const double Lambda = shift2 * lcovar * (*t)[jall];
-              dshift->element(j0i, j0i) += Lambda;
-              dshift->element(j1i, j1i) -= Lambda;
-              dshift->element(j2i, j2i) += Lambda;
-              dshift->element(j3i, j3i) -= Lambda;
-              ((*e0->at(istate,istate))) += 2.0 * lcovar * (*t)[jall] * denom;
-            }
+      for (int is = 0; is != nstates; ++is) {
+        if (info_->sssr() && is != istate) continue;
+        double e0loc = e0all_[istate] - e0all_[is];
+        for (size_t j3 = 0; j3 != nvirt; ++j3)
+          for (size_t j2 = 0; j2 != nclo; ++j2)
+            for (size_t j1 = 0; j1 != nvirt; ++j1)
+              for (size_t j0 = 0; j0 != nclo; ++j0) {
+                const size_t j0i = j0;
+                const size_t j1i = j1 + nocc - ncore;
+                const size_t j2i = j2;
+                const size_t j3i = j3 + nocc - ncore;
+                const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
+                const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+                const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
+                const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc] + e0loc;
+                const double Lambda = shift2 * lcovar * (*t)[jall];
+                dshift->element(j0i, j0i) += Lambda;
+                dshift->element(j1i, j1i) -= Lambda;
+                dshift->element(j2i, j2i) += Lambda;
+                dshift->element(j3i, j3i) -= Lambda;
+                nimag[istate] += Lambda;
+                nimag[is] -= Lambda;
+                ((*e0->at(istate,istate))) += 2.0 * lcovar * (*t)[jall] * denom;
+              }
       ioffset += size_aibj;
+      }
     }
 
     timer.tick_print("dshift aibj");
-    timer.tick_print("dshift rist");
   }
 
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
