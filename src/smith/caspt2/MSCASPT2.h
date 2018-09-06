@@ -114,8 +114,6 @@ class MSCASPT2 {
     std::shared_ptr<Matrix> rdm3fderiv_;
 
     // in orthogonal basis
-    std::vector<std::shared_ptr<VectorB>> lall_orthogonal_;
-    std::vector<std::shared_ptr<VectorB>> t2all_orthogonal_;
     std::shared_ptr<Orthogonal_Basis> l_orthogonal_;
     std::shared_ptr<Orthogonal_Basis> t_orthogonal_;
     // temporary. to be removed...

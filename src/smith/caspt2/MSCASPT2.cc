@@ -49,8 +49,6 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
   rall_  = cas.rall_;
-  t2all_orthogonal_ = cas.t2all_orthogonal_;
-  lall_orthogonal_ = cas.lall_orthogonal_;
   t_orthogonal_ = cas.t_orthogonal_;
   l_orthogonal_ = cas.l_orthogonal_;
   denom_ = cas.denom_;
@@ -434,7 +432,10 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       shared_ptr<VecRDM<2>> etemp2;
       shared_ptr<VecRDM<3>> etemp3;
       shared_ptr<VecRDM<3>> etemp4;
-      std::vector<double> nimagtemp;
+      vector<double> nimagtemp;
+
+      vector<shared_ptr<VectorB>> lall_orthogonal_ = l_orthogonal_->vectorb();
+      vector<shared_ptr<VectorB>> t2all_orthogonal_ = t_orthogonal_->vectorb();
 
       tie(dshift_temp, etemp0, etemp1, etemp2, etemp3, etemp4, nimagtemp) = make_d2_imag(lall_orthogonal_, t2all_orthogonal_);
 
