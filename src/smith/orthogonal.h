@@ -83,12 +83,13 @@ class Orthogonal_Basis {
     std::vector<size_t> size_;
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<Matrix>> shalf_;
+    std::vector<VectorB> phi_;
 
     std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
     std::shared_ptr<Tensor_<double>> init_data(const int iext);
     std::shared_ptr<MultiTensor_<double>> weight_by_denom(const int istate, std::shared_ptr<const MultiTensor_<double>> original) const;
-    std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
+    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> get_zX(const int iext, std::shared_ptr<const Matrix> largey, std::shared_ptr<const Matrix> smallzin) const;
     void set_size(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
 
@@ -127,6 +128,7 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>>& data(const size_t i) { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
+    std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
     std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }

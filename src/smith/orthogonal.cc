@@ -128,6 +128,7 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
 
   size_ = o.size_;
   interm_ = o.interm_;
+  phi_ = o.phi_;
 
   data_.resize(nstates_);
   for (int i = 0; i != nstates_; ++i) {
@@ -182,6 +183,14 @@ void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
   size_.push_back(size_rist);
   size_.push_back(size_aibj);
   size_.push_back(size_all);
+
+  phi_.push_back(d->denom_xx());
+  phi_.push_back(d->denom_x());
+  phi_.push_back(d->denom_h());
+  phi_.push_back(d->denom_hh());
+  phi_.push_back(d->denom_xh());
+  phi_.push_back(d->denom_xxh());
+  phi_.push_back(d->denom_xhh());
 }
 
 

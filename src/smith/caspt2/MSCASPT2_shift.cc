@@ -201,7 +201,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     shared_ptr<const VectorB> t = amplitude[istate];
     size_t ioffset = 0;
 
-    // a r b s
     if (size_arbs) {
       const size_t interm_size = denom_->shalf_xx()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
@@ -285,7 +284,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       for (size_t j5 = 0; j5 != nact; ++j5) {
                         const size_t j5i = j5 + nclo;
                         dshift->element(j4i, j5i) += Rmat->element(j0, j1, j2, j3) * rdm3->element(j0, j2, j1, j3, j4, j5);
-                        e3->at(is, js)->element(j0, j2, j1, j3, j4, j5) += 2.0 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
+                        e3->at(is,js)->element(j0, j2, j1, j3, j4, j5) += 2.0 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
                       }
                     }
           }
@@ -296,6 +295,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     timer.tick_print("dshift arbs");
 
     // a r b i
+#if 1
     if (size_arbi) {
       const size_t interm_size = denom_->shalf_x()->ndim();
       auto smallz = make_shared<Matrix>(interm_size, interm_size);
@@ -326,7 +326,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const double denomk = eig_[j3+nocc] + eig_[j1+nocc] - eig_[j2+ncore] + denom_->denom_x(j1o) - e0all_[istate];
                 const double lt = lcovar * (*t)[kall] * shift2 * denom;
                 const double tl = tcovar * (*l)[kall] * shift2 * denomk;
-                largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (denom - denomk);
+                largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (denom - denomk);
                 largeq->element(j0o, j1o) += (lt + tl);
               }
             }
@@ -386,8 +386,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           }
         }
       }
-      ioffset += size_arbi;
     }
+#endif
+    ioffset += size_arbi;
     timer.tick_print("dshift arbi");
 
     // a i r j
@@ -421,7 +422,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const double denomk = eig_[j1+nocc] - eig_[j0+ncore] - eig_[j2+ncore] + denom_->denom_h(j1o) - e0all_[istate];
                 const double lt = lcovar * (*t)[kall] * shift2 * denom;
                 const double tl = tcovar * (*l)[kall] * shift2 * denomk;
-                largey->element(j0o, j1o) += (*l)[jall] * (*t)[kall] * shift2 * (denom - denomk);
+                largey->element(j0o, j1o) += lcovar * (*t)[kall] * shift2 * (denom - denomk);
                 largeq->element(j0o, j1o) += (lt + tl);
               }
             }
