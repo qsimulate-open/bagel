@@ -218,7 +218,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Matrix>> Orthogonal_Basis::get_zX(const int 
   }
   for (size_t j0o = 0; j0o != interm_size; ++j0o) {
     for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-      largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * (phi_[iext])[j1o]);
+      largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * (phi_[iext])[j1o])
                                 + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * (phi_[iext])[j0o]);
     }
   }
@@ -254,7 +254,7 @@ Orthogonal_Basis::make_d2_imag(shared_ptr<const Orthogonal_Basis> lambda) const 
         e4->emplace(is, js, e4temp);
       }
 
-  const double shift2 = shift_ * shift_;
+//  const double shift2 = shift_ * shift_;
 
   for (int istate = 0; istate != nstates_; ++istate) {
     shared_ptr<MultiTensor_<double>> tcovar = get_contravariant(istate);
