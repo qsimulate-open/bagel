@@ -1069,8 +1069,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const size_t j1i = j1 + nocc - ncore;
                 const size_t j2i = j2;
                 const size_t j3i = j3 + nocc - ncore;
-                const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset;
-                const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset;
+                const size_t jall = j0 + nclo * (j1 + nvirt * (j2 + nclo * j3)) + ioffset + (info_->sssr() ? 0 : is * size_aibj);
+                const size_t jall2 = j0 + nclo * (j3 + nvirt * (j2 + nclo * j1)) + ioffset + (info_->sssr() ? 0 : is * size_aibj);
                 const double lcovar = ((*l)[jall] * 8.0 - (*l)[jall2] * 4.0);
                 const double denom = - eig_[j0+ncore] - eig_[j2+ncore] + eig_[j1+nocc] + eig_[j3+nocc] + e0loc;
                 const double Lambda = shift2 * lcovar * (*t)[jall];
@@ -1084,7 +1084,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               }
       }
     }
-    ioffset += size_aibj;
+    ioffset += size_aibj * (info_->sssr() ? 1 : nstates);
     timer.tick_print("dshift aibj");
   }
 
