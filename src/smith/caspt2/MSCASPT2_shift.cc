@@ -474,7 +474,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const double VrO = denom_->shalf_h()->element(j0o, j1 + js * nact);
                 Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
                 e1->at(js, is)->element(j0, j1) += -Pmat->element(j0o, j0) * VrO;
-                (*e0->at(js, is)) += Pmat->element(j0o, j0) * VrO * 2.0;
+                if (j0 == j1 && is == js) (*e0->at(js, is)) += Pmat->element(j0o, j0) * VrO * 2.0;
               }
             }
           }
