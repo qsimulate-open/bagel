@@ -146,7 +146,10 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 
 
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
-  MSCASPT2::MSCASPT2::make_d2_imag(vector<shared_ptr<VectorB>> lambda, vector<shared_ptr<VectorB>> amplitude) const {
+  MSCASPT2::MSCASPT2::make_d2_imag(shared_ptr<Orthogonal_Basis> lorthog, shared_ptr<Orthogonal_Basis> torthog) const {
+
+  vector<shared_ptr<VectorB>> lambda = lorthog->vectorb();
+  vector<shared_ptr<VectorB>> amplitude = torthog->vectorb();
   const size_t nact = info_->nact();
   const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
@@ -577,10 +580,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const double VrsO = denom_->shalf_hh()->element(j0o, j2 + j3 * nact + js * nact * nact);
                     Rmat->element(j0, j2, j1, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
                     e2->at(js, is)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO;
+#if 0
                     if (j2 == j1)                         e1->at(js, is)->element(j0, j3) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     if (j1 == j3)                         e1->at(js, is)->element(j0, j2) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     if (j0 == j2)                         e1->at(js, is)->element(j1, j3) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     if (j0 == j3)                         e1->at(js, is)->element(j1, j2) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
+#endif
+                    if (j1 == j3)                         e1->at(js, is)->element(j0, j2) += -1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
+                    if (j0 == j2)                         e1->at(js, is)->element(j1, j3) += -1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     if (j0 == j2 && j1 == j3 && is == js) *(e0->at(js, is)) +=  4.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                     if (j0 == j3 && j1 == j2 && is == js) *(e0->at(js, is)) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                   }

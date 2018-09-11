@@ -83,22 +83,17 @@ class Orthogonal_Basis {
     std::vector<size_t> size_;
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<Matrix>> shalf_;
-    std::vector<VectorB> phi_;
 
     std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
     std::shared_ptr<Tensor_<double>> init_data(const int iext);
     std::shared_ptr<MultiTensor_<double>> weight_by_denom(const int istate, std::shared_ptr<const MultiTensor_<double>> original) const;
-    std::tuple<std::shared_ptr<Matrix>, std::shared_ptr<Matrix>> get_zX(const int iext, std::shared_ptr<const Matrix> largey, std::shared_ptr<const Matrix> smallzin) const;
     void set_size(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
 
     // copy of the functions in SpinFreeMethod
     std::shared_ptr<Tensor_<double>> init_amplitude() const;
     void loop_over(std::function<void(const Index&, const Index&, const Index&, const Index&)>) const;
-
-    // feed rdm
-    std::tuple<std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<4>>> feed_rdm(const int ist, const int jst) const;
 
   public:
     // Orthogonal basis: construct from scratch (using denom)
@@ -120,10 +115,6 @@ class Orthogonal_Basis {
         const int istate, const int iter, const double error, const double timing) const;
     // add shift to residual using amplitude
     void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const int istate);
-    // compute density matrix due to the shift
-    std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<Vec<double>>,
-               std::shared_ptr<VecRDM<1>>,std::shared_ptr<VecRDM<2>>,std::shared_ptr<VecRDM<3>>,std::shared_ptr<VecRDM<3>>,std::vector<double>>
-      make_d2_imag(std::shared_ptr<const Orthogonal_Basis> lambda) const;
 
     std::shared_ptr<MultiTensor_<double>>& data(const size_t i) { return data_[i]; }
     std::shared_ptr<MultiTensor_<double>> data(const size_t i) const { return data_[i]; }
