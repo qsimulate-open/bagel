@@ -208,15 +208,15 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     auto largex = make_shared<Matrix>(interm_size, interm_size);
     auto largeq = make_shared<Matrix>(interm_size, interm_size);
     for (int istate = 0; istate != nstates; ++istate) { // state of T
-      shared_ptr<const VectorB> l = lambda[istate];
-      shared_ptr<const VectorB> t = amplitude[istate];
+      shared_ptr<const VectorB> l = lorthog->vectorb(istate, Excitations::arbs);
+      shared_ptr<const VectorB> t = torthog->vectorb(istate, Excitations::arbs);
 
       for (size_t j3 = 0; j3 != nvirt; ++j3) {
         const size_t j3i = j3 + nocc - ncore;
         for (size_t j1 = 0; j1 != nvirt; ++j1) {
           const size_t j1i = j1 + nocc - ncore;
           for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-            const size_t jall = j0o + interm_size * (j1 + nvirt * j3) + ioffset;
+            const size_t jall = j0o + interm_size * (j1 + nvirt * j3);
             const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j0o) - e0all_[istate];
             const double Lambda = shift2 * (*l)[jall] * (*t)[jall];
             dshift->element(j1i, j1i) -= Lambda;
@@ -224,7 +224,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             smallz->element(j0o, j0o) -= Lambda;
             nimag[istate] -= Lambda;
             for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-              const size_t kall = j1o + interm_size * (j1 + nvirt * j3) + ioffset;
+              const size_t kall = j1o + interm_size * (j1 + nvirt * j3);
               const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
               const double lt = (*l)[jall] * (*t)[kall] * shift2 * denom;
               const double tl = (*t)[jall] * (*l)[kall] * shift2 * denomk;
