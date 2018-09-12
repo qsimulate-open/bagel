@@ -497,14 +497,8 @@ shared_ptr<GradFile> GradEval<CASPT2Grad>::compute(const string jobtitle, shared
 
   separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), d1);
 
-  // TODO correct?
-#if 0
-  if (smallz)
-    separable_pair(smallz->get_submatrix(0,0,nocc,nocc), d0sa);
-#else
   if (smallz)
     separable_pair(d0sa->get_submatrix(0,0,nocc,nocc), smallz);
-#endif
 
   // back transform the rest
   shared_ptr<DFDist> qrs = qri->back_transform(ocoeff);

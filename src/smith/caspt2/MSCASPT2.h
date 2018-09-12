@@ -116,10 +116,6 @@ class MSCASPT2 {
     // in orthogonal basis
     std::shared_ptr<Orthogonal_Basis> l_orthogonal_;
     std::shared_ptr<Orthogonal_Basis> t_orthogonal_;
-    // temporary. to be removed...
-    std::shared_ptr<const Denom<double>> denom_;
-    std::vector<double> eig_;
-
     std::vector<double> nimag_;
 
     std::shared_ptr<Vec<double>> etensor0_;

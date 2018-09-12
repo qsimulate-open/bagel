@@ -51,8 +51,6 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rall_  = cas.rall_;
   t_orthogonal_ = cas.t_orthogonal_;
   l_orthogonal_ = cas.l_orthogonal_;
-  denom_ = cas.denom_;
-  eig_ = cas.eig_;
   h1_ = cas.h1_;
   f1_ = cas.f1_;
   v2_ = cas.v2_;

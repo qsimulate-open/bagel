@@ -83,6 +83,7 @@ class Orthogonal_Basis {
     std::vector<size_t> size_;
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<Matrix>> shalf_;
+    std::vector<VectorB> phi_;
 
     std::vector<std::shared_ptr<MultiTensor_<double>>> data_;
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
@@ -125,9 +126,9 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>> denom(const size_t i) const { return denom_[i]; }
     std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
     std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
+    double phi(const int type, const size_t i) const { return phi_[type][i]; }
     size_t size(const int type) const { return size_[type]; }
     size_t size_total() const { return size_[Excitations::total]; }
-    std::shared_ptr<VectorB> vectorb(const int istate, const int iext) const;
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
