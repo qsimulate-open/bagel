@@ -337,9 +337,9 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
   // ms-caspt2: R_K = <proj_jst| H0 - E0_K |1_ist> + <proj_jst| H |0_K> is set to rall
   // loop over state of interest
   bool converged = true;
-  cout << endl << "      -----------------------------------------------------  CASPT2 iteration  --------------------------------------------------------------" << endl;
-  cout << "       #        aibj        arbs        arbi        airj        risj        airs        arst        rist           Etot          error   time" << endl;
-  cout << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  cout << endl << "      -------------------------------------------  CASPT2 iteration  ---------------------------------------------------" << endl;
+  cout << "       #      aibj      arbs      arbi      airj      risj      airs      arst      rist         Etot      error   time" << endl;
+  cout << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
 
   auto source = make_shared<Orthogonal_Basis>(info_, closed_, active_, virt_, eig_, e0all_, fockact_, denom_, /*residual=*/true, rdm0all_, rdm1all_, rdm2all_, rdm3all_, rdm4all_);
   auto amplitude = make_shared<Orthogonal_Basis>(*source, /*clone=*/true, /*residual=*/false);
@@ -410,7 +410,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     if (i+1 != nstates_) cout << endl;
     converged &= conv;
   }
-  cout << endl << "      ---------------------------------------------------------------------------------------------------------------------------------------" << endl << endl;
+  cout << endl << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
   return make_tuple(amplitude, t);
 }
 

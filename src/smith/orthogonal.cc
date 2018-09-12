@@ -1332,14 +1332,14 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
     }
   }
   etot += esector[Excitations::aibj];
-  cout << setprecision(6) << setw(12) << esector[Excitations::aibj];
+  cout << setprecision(5) << setw(10) << esector[Excitations::aibj];
   for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
     esector[iext] = tcovar->at(iext)->dot_product(s->data(istate)->at(iext)) + tcovar->at(iext)->dot_product(r->data(istate)->at(iext));
-    cout << setprecision(6) << setw(12) << esector[iext];
+    cout << setprecision(5) << setw(10) << esector[iext];
     etot += esector[iext];
   }
 
-  cout << setw(15) << setprecision(8) << etot << setw(15) << error << setw(7) << setprecision(2) << timing << endl;
+  cout << setw(13) << setprecision(7) << etot << setw(11) << error << setw(7) << setprecision(2) << timing << endl;
 }
 
 
