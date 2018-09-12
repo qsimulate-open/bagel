@@ -199,12 +199,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     auto largeq = make_shared<Matrix>(interm_size, interm_size);
     switch (iext) {
       case Excitations::arbs:
-#if 0
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
           const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
           const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          // for parallel, dshift, nimag should be allreduced after all is done!!!
+          // for parallel, dshift_cv, nimag should be allreduced after all is done!!!
           for (auto& i3 : torthog->virt())
             for (auto& i1 : torthog->virt())
               for (auto& i0o : torthog->interm(iext)) {
@@ -212,21 +211,26 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const unique_ptr<double[]> amplitude = t->get_block(i0o, i1, i3);
                 const unique_ptr<double[]> lambda    = l->get_block(i0o, i1, i3);
                 const unique_ptr<double[]> denom     = d->get_block(i0o, i1, i3);
+                for (size_t j3 = i3.offset(), jall = 0; j3 != i3.offset()+i3.size(); ++j3) {
+                  const size_t j3i = j3 - ncore;
+                  for (size_t j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) {
+                    const size_t j1i = j1 - ncore;
+                    for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
+                      const double Lambda = shift2 * lambda[jall] * amplitude[jall];
+                      dshift_cv->element(j1i, j1i) -= Lambda;
+                      dshift_cv->element(j3i, j3i) -= Lambda;
+                      smallz->element(j0o, j0o) -= Lambda;
+                      nimag[istate] -= Lambda;
+                    }
+                  }
+                }
                 for (auto& i1o : torthog->interm(iext)) {
                   const unique_ptr<double[]> amplitudek = t->get_block(i1o, i1, i3);
                   const unique_ptr<double[]> lambdak    = l->get_block(i1o, i1, i3);
                   const unique_ptr<double[]> denomk     = d->get_block(i1o, i1, i3);
-                  for (size_t j3 = i3.offset(); j3 != i3.offset()+i3.size(); ++j3) {
-                    const size_t j3i = j3 - ncore;
+                  for (size_t j3 = i3.offset(), jall = 0; j3 != i3.offset()+i3.size(); ++j3) {
                     for (size_t j1 = i1.offset(); j1 != i1.offset()+i1.size(); ++j1) {
-                      const size_t j1i = j1 - ncore;
-                      for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o) {
-                        const size_t jall   = j0o - i0o.offset() + i0o.size() * (j1 - i1.offset() + i1.size() * (j3 - i3.offset()));
-                        const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                        dshift_cv->element(j1i, j1i) -= Lambda;
-                        dshift_cv->element(j3i, j3i) -= Lambda;
-                        smallz->element(j0o, j0o) -= Lambda;
-                        nimag[istate] -= Lambda;
+                      for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                         for (size_t j1o = i1o.offset(); j1o != i1o.offset()+i1o.size(); ++j1o) {
                           const size_t kall = j1o - i1o.offset() + i1o.size() * (j1 - i1.offset() + i1.size() * (j3 - i3.offset()));
                           const double lt = lambda[jall] * amplitudek[kall] * shift2 * denom[jall];
@@ -243,35 +247,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         smallz->allreduce();
         largey->allreduce();
         largeq->allreduce();
-#else
-        for (int istate = 0; istate != nstates; ++istate) { // state of T
-          shared_ptr<const VectorB> lv = lorthog->vectorb(istate, Excitations::arbs);
-          shared_ptr<const VectorB> tv = torthog->vectorb(istate, Excitations::arbs);
-          for (size_t j3 = 0; j3 != nvirt; ++j3) {
-          const size_t j3i = j3 + nocc - ncore;
-          for (size_t j1 = 0; j1 != nvirt; ++j1) {
-            const size_t j1i = j1 + nocc - ncore;
-            for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-              const size_t jall = j0o + interm_size * (j1 + nvirt * j3);
-              const double denom = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j0o) - e0all_[istate];
-              const double Lambda = shift2 * (*lv)[jall] * (*tv)[jall];
-              dshift_cv->element(j1i, j1i) -= Lambda;
-              dshift_cv->element(j3i, j3i) -= Lambda;
-              smallz->element(j0o, j0o) -= Lambda;
-              nimag[istate] -= Lambda;
-              for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-                const size_t kall = j1o + interm_size * (j1 + nvirt * j3);
-                const double denomk = eig_[j3+nocc] + eig_[j1+nocc] + denom_->denom_xx(j1o) - e0all_[istate];
-                const double lt = (*lv)[jall] * (*tv)[kall] * shift2 * denom;
-                const double tl = (*tv)[jall] * (*lv)[kall] * shift2 * denomk;
-                largey->element(j0o, j1o) += (*lv)[jall] * (*tv)[kall] * shift2 * (denom - denomk);
-                largeq->element(j0o, j1o) += (lt + tl);
-              }
-            }
-          }
-        }
-      }
-#endif
       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
         for (size_t j1o = 0; j1o != interm_size; ++j1o) {
           if (j1o == j0o) continue;
