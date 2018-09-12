@@ -146,7 +146,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 
 
 tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
-  MSCASPT2::MSCASPT2::make_d2_imag(shared_ptr<Orthogonal_Basis> lorthog, shared_ptr<Orthogonal_Basis> torthog) const {
+  MSCASPT2::MSCASPT2::make_d2_imag() const {
   const size_t nact = info_->nact();
   const int nstates = nact ? info_->ciwfn()->nstates() : 1;
   const size_t nclosed = info_->nclosed();
@@ -189,7 +189,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   const double shift2 = info_->shift() * info_->shift();
 
   for (int iext = Excitations::arbs; iext != Excitations::total; ++iext) {
-    const size_t interm_size = (iext == Excitations::aibj) ? 1 : torthog->shalf(iext)->ndim();
+    const size_t interm_size = (iext == Excitations::aibj) ? 1 : t_orthogonal_->shalf(iext)->ndim();
     auto smallz = make_shared<Matrix>(interm_size, interm_size);
     auto largey = make_shared<Matrix>(interm_size, interm_size);
     auto largex = make_shared<Matrix>(interm_size, interm_size);
@@ -197,12 +197,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     switch (iext) {
       case Excitations::arbs:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i3 : torthog->virt())
-            for (auto& i1 : torthog->virt())
-              for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i3 : t_orthogonal_->virt())
+            for (auto& i1 : t_orthogonal_->virt())
+              for (auto& i0o : t_orthogonal_->interm(iext)) {
                 if (!t->is_local(i0o, i1, i3)) continue;
                 const unique_ptr<double[]> amplitude = t->get_block(i0o, i1, i3);
                 const unique_ptr<double[]> lambda    = l->get_block(i0o, i1, i3);
@@ -220,7 +220,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     }
                   }
                 }
-                for (auto& i1o : torthog->interm(iext)) {
+                for (auto& i1o : t_orthogonal_->interm(iext)) {
                   const unique_ptr<double[]> amplitudek = t->get_block(i1o, i1, i3);
                   const unique_ptr<double[]> lambdak    = l->get_block(i1o, i1, i3);
                   const unique_ptr<double[]> denomk     = d->get_block(i1o, i1, i3);
@@ -246,14 +246,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -265,7 +265,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<2>>(nact);
@@ -275,7 +275,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                        const double VrsO = torthog->shalf(iext)->element(j0o, j2 + j3 * nact + js * nact * nact);
+                        const double VrsO = t_orthogonal_->shalf(iext)->element(j0o, j2 + j3 * nact + js * nact * nact);
                         Rmat->element(j0, j1, j2, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
                         e2->at(js, is)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       }
@@ -303,13 +303,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::arbi:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i3 : torthog->virt())
-            for (auto& i2 : torthog->closed())
-              for (auto& i1 : torthog->virt())
-                for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i3 : t_orthogonal_->virt())
+            for (auto& i2 : t_orthogonal_->closed())
+              for (auto& i1 : t_orthogonal_->virt())
+                for (auto& i0o : t_orthogonal_->interm(iext)) {
                   if (!t->is_local(i0o, i1, i2, i3)) continue;
                   const unique_ptr<double[]> amplitude = t->get_block(i0o, i1, i2, i3);
                   const unique_ptr<double[]> lambda    = l->get_block(i0o, i1, i2, i3);
@@ -339,7 +339,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       }
                     }
                   }
-                  for (auto& i1o : torthog->interm(iext)) {
+                  for (auto& i1o : t_orthogonal_->interm(iext)) {
                     const unique_ptr<double[]> amplitudek = t->get_block(i1o, i1, i2, i3);
                     const unique_ptr<double[]> lambdak    = l->get_block(i1o, i1, i2, i3);
                     const unique_ptr<double[]> denomk     = d->get_block(i1o, i1, i2, i3);
@@ -367,14 +367,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -386,7 +386,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact, interm_size, nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact, interm_size, nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<1>>(nact);
@@ -394,7 +394,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
                   for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                    const double VrO = torthog->shalf(iext)->element(j0o, j1 + js * nact);
+                    const double VrO = t_orthogonal_->shalf(iext)->element(j0o, j1 + js * nact);
                     Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
                     e1->at(js, is)->element(j0, j1) += Pmat->element(j0o, j0) * VrO;
                   }
@@ -418,13 +418,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::airj:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i2 : torthog->closed())
-            for (auto& i1 : torthog->virt())
-              for (auto& i0 : torthog->closed())
-                for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i2 : t_orthogonal_->closed())
+            for (auto& i1 : t_orthogonal_->virt())
+              for (auto& i0 : t_orthogonal_->closed())
+                for (auto& i0o : t_orthogonal_->interm(iext)) {
                   if (!t->is_local(i0o, i0, i1, i2)) continue;
                   const unique_ptr<double[]> amplitude = t->get_block(i0o, i0, i1, i2);
                   const unique_ptr<double[]> lambda    = l->get_block(i0o, i0, i1, i2);
@@ -454,7 +454,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       }
                     }
                   }
-                  for (auto& i1o : torthog->interm(iext)) {
+                  for (auto& i1o : t_orthogonal_->interm(iext)) {
                     const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0, i1, i2);
                     const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0, i1, i2);
                     const unique_ptr<double[]> denomk     = d->get_block(i1o, i0, i1, i2);
@@ -482,14 +482,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -501,7 +501,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact, interm_size, nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact, interm_size, nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<1>>(nact);
@@ -509,7 +509,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
                   for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                    const double VrO = torthog->shalf(iext)->element(j0o, j1 + js * nact);
+                    const double VrO = t_orthogonal_->shalf(iext)->element(j0o, j1 + js * nact);
                     Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
                     e1->at(js, is)->element(j0, j1) += -Pmat->element(j0o, j0) * VrO;
                     if (j0 == j1 && is == js) (*e0->at(js, is)) += Pmat->element(j0o, j0) * VrO * 2.0;
@@ -542,12 +542,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::risj:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i2 : torthog->closed())
-            for (auto& i0 : torthog->closed())
-              for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i2 : t_orthogonal_->closed())
+            for (auto& i0 : t_orthogonal_->closed())
+              for (auto& i0o : t_orthogonal_->interm(iext)) {
                 if (!t->is_local(i0o, i0, i2)) continue;
                 const unique_ptr<double[]> amplitude = t->get_block(i0o, i0, i2);
                 const unique_ptr<double[]> lambda    = l->get_block(i0o, i0, i2);
@@ -565,7 +565,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     }
                   }
                 }
-                for (auto& i1o : torthog->interm(iext)) {
+                for (auto& i1o : t_orthogonal_->interm(iext)) {
                   const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0, i2);
                   const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0, i2);
                   const unique_ptr<double[]> denomk     = d->get_block(i1o, i0, i2);
@@ -591,14 +591,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -610,7 +610,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact * nact, interm_size, nact * nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<2>>(nact);
@@ -620,7 +620,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                        const double VrsO = torthog->shalf(iext)->element(j0o, j2 + j3 * nact + js * nact * nact);
+                        const double VrsO = t_orthogonal_->shalf(iext)->element(j0o, j2 + j3 * nact + js * nact * nact);
                         Rmat->element(j0, j2, j1, j3) += Qmat->element(j0o, j0 + j1 * nact) * VrsO;
                         e2->at(js, is)->element(j0, j2, j1, j3) += Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                         if (j2 == j1)                         e1->at(js, is)->element(j0, j3) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
@@ -707,12 +707,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::airs:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i1 : torthog->virt())
-            for (auto& i0 : torthog->closed())
-              for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i1 : t_orthogonal_->virt())
+            for (auto& i0 : t_orthogonal_->closed())
+              for (auto& i0o : t_orthogonal_->interm(iext)) {
                 if (!t->is_local(i0o, i0, i1)) continue;
                 const unique_ptr<double[]> amplitude = t->get_block(i0o, i0, i1);
                 const unique_ptr<double[]> lambda    = l->get_block(i0o, i0, i1);
@@ -730,7 +730,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     }
                   }
                 }
-                for (auto& i1o : torthog->interm(iext)) {
+                for (auto& i1o : t_orthogonal_->interm(iext)) {
                   const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0, i1);
                   const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0, i1);
                   const unique_ptr<double[]> denomk     = d->get_block(i1o, i0, i1);
@@ -756,14 +756,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -780,8 +780,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4c;
             tie(rdm1c, rdm2c, rdm3c, rdm4c) = feed_rdm(is, js);
             {
-              shared_ptr<Matrix> VmatA = torthog->shalf(iext)->get_submatrix(0, (2 * is + 0) * nact * nact, interm_size, nact * nact);
-              shared_ptr<Matrix> VmatB = torthog->shalf(iext)->get_submatrix(0, (2 * is + 1) * nact * nact, interm_size, nact * nact);
+              shared_ptr<Matrix> VmatA = t_orthogonal_->shalf(iext)->get_submatrix(0, (2 * is + 0) * nact * nact, interm_size, nact * nact);
+              shared_ptr<Matrix> VmatB = t_orthogonal_->shalf(iext)->get_submatrix(0, (2 * is + 1) * nact * nact, interm_size, nact * nact);
               auto QmatA = make_shared<Matrix>(*smallz % (2.0 * (*VmatA) - (*VmatB)));
               auto QmatB = make_shared<Matrix>(*smallz % (-1.0 * (*VmatA)));
               auto QmatC = make_shared<Matrix>(*smallz % (*VmatB));
@@ -796,8 +796,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                        const double VrsO = torthog->shalf(iext)->element(j0o, j2 + j3 * nact + (2 * js + 0) * nact * nact);
-                        const double VrsS = torthog->shalf(iext)->element(j0o, j2 + j3 * nact + (2 * js + 1) * nact * nact);
+                        const double VrsO = t_orthogonal_->shalf(iext)->element(j0o, j2 + j3 * nact + (2 * js + 0) * nact * nact);
+                        const double VrsS = t_orthogonal_->shalf(iext)->element(j0o, j2 + j3 * nact + (2 * js + 1) * nact * nact);
                         RmatA->element(j0, j1, j3, j2) += QmatA->element(j0o, j0 + j1 * nact) * VrsO + QmatB->element(j0o, j0 + j1 * nact) * VrsS;
                         RmatC->element(j0, j1, j3, j2) += QmatC->element(j0o, j0 + j1 * nact) * VrsS;
                         e2->at(js, is)->element(j0, j1, j3, j2)       += (PmatA->element(j0o, j0 + j1 * nact) * VrsO + PmatB->element(j0o, j0 + j1 * nact) * VrsS);
@@ -847,11 +847,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::arst:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i0 : torthog->virt())
-            for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i0 : t_orthogonal_->virt())
+            for (auto& i0o : t_orthogonal_->interm(iext)) {
               if (!t->is_local(i0o, i0)) continue;
               const unique_ptr<double[]> amplitude = t->get_block(i0o, i0);
               const unique_ptr<double[]> lambda    = l->get_block(i0o, i0);
@@ -865,7 +865,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   nimag[istate] -= Lambda;
                 }
               }
-              for (auto& i1o : torthog->interm(iext)) {
+              for (auto& i1o : t_orthogonal_->interm(iext)) {
                 const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0);
                 const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0);
                 const unique_ptr<double[]> denomk     = d->get_block(i1o, i0);
@@ -889,14 +889,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -908,7 +908,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<3>>(nact);
@@ -919,7 +919,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       for (size_t j4 = 0; j4 != nact; ++j4) {
                         for (size_t j5 = 0; j5 != nact; ++j5) {
                           for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                            const double VrstO = torthog->shalf(iext)->element(j0o, j3 + nact * (j4 + nact * j5) + js * nact * nact * nact);
+                            const double VrstO = t_orthogonal_->shalf(iext)->element(j0o, j3 + nact * (j4 + nact * j5) + js * nact * nact * nact);
                             Rmat->element(j1, j2, j5, j4, j0, j3) += Qmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
                             e3->at(js, is)->element(j0, j1, j5, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO;
                             if (j1 == j5) e2->at(js, is)->element(j0, j4, j2, j3) += Pmat->element(j0o, j2 + nact * (j0 + nact * j1)) * VrstO;
@@ -960,11 +960,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         break;
       case Excitations::rist:
         for (int istate = 0; istate != nstates; ++istate) { // state of T
-          const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(iext);
-          const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(iext);
-          for (auto& i0 : torthog->closed())
-            for (auto& i0o : torthog->interm(iext)) {
+          const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(iext);
+          const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(iext);
+          for (auto& i0 : t_orthogonal_->closed())
+            for (auto& i0o : t_orthogonal_->interm(iext)) {
               if (!t->is_local(i0o, i0)) continue;
               const unique_ptr<double[]> amplitude = t->get_block(i0o, i0);
               const unique_ptr<double[]> lambda    = l->get_block(i0o, i0);
@@ -978,7 +978,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   nimag[istate] -= Lambda;
                 }
               }
-              for (auto& i1o : torthog->interm(iext)) {
+              for (auto& i1o : t_orthogonal_->interm(iext)) {
                 const unique_ptr<double[]> amplitudek = t->get_block(i1o, i0);
                 const unique_ptr<double[]> lambdak    = l->get_block(i1o, i0);
                 const unique_ptr<double[]> denomk     = d->get_block(i1o, i0);
@@ -1002,14 +1002,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
             if (j1o == j0o) continue;
-            const double fdiff = torthog->phi(iext, j1o) - torthog->phi(iext, j0o);
+            const double fdiff = t_orthogonal_->phi(iext, j1o) - t_orthogonal_->phi(iext, j0o);
             smallz->element(j1o, j0o) = fabs(fdiff) > 1.0e-12 ? -0.5 * (largey->element(j1o, j0o) - largey->element(j0o, j1o)) / fdiff : 0.0;
           }
         }
         for (size_t j0o = 0; j0o != interm_size; ++j0o) {
           for (size_t j1o = 0; j1o != interm_size; ++j1o) {
-            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * torthog->phi(iext, j1o))
-                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * torthog->phi(iext, j0o));
+            largex->element(j1o, j0o) = 0.25 * (largey->element(j1o, j0o) + 2.0 * smallz->element(j1o, j0o) * t_orthogonal_->phi(iext, j1o))
+                                      + 0.25 * (largey->element(j0o, j1o) + 2.0 * smallz->element(j0o, j1o) * t_orthogonal_->phi(iext, j0o));
           }
         }
         for (size_t is = 0; is != nstates; ++is) {
@@ -1021,7 +1021,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
             shared_ptr<RDM<4>> rdm4;
             tie(rdm1, rdm2, rdm3, rdm4) = feed_rdm(js, is);
             {
-              shared_ptr<Matrix> Vmat = torthog->shalf(iext)->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
+              shared_ptr<Matrix> Vmat = t_orthogonal_->shalf(iext)->get_submatrix(0, is * nact * nact * nact, interm_size, nact * nact * nact);
               auto Qmat = make_shared<Matrix>((*smallz) % (*Vmat));
               auto Pmat = make_shared<Matrix>((-2.0 * (*largex) + (*largeq)) % (*Vmat));
               auto Rmat = make_shared<RDM<3>>(nact);
@@ -1032,7 +1032,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       for (size_t j4 = 0; j4 != nact; ++j4) {
                         for (size_t j5 = 0; j5 != nact; ++j5) {
                           for (size_t j0o = 0; j0o != interm_size; ++j0o) {
-                            const double VrstO = torthog->shalf(iext)->element(j0o, j3 + nact * (j4 + nact * j5) + js * nact * nact * nact);
+                            const double VrstO = t_orthogonal_->shalf(iext)->element(j0o, j3 + nact * (j4 + nact * j5) + js * nact * nact * nact);
                             Rmat->element(j0, j1, j5, j2, j4, j3) += Qmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
                             e3->at(js, is)->element(j0, j1, j5, j2, j4, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
                             if (j2 == j4)             e2->at(js, is)->element(j0, j1, j5, j3) += -1.0 * Pmat->element(j0o, j0 + nact * (j1 + nact * j2)) * VrstO;
@@ -1126,13 +1126,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
           for (int is = 0; is != nstates; ++is) {
             if (info_->sssr() && is != istate) continue;
             const int pos = iext + (info_->sssr() ? 0 : is);
-            const shared_ptr<Tensor_<double>> l = lorthog->data(istate)->at(pos);
-            const shared_ptr<Tensor_<double>> t = torthog->data(istate)->at(pos);
-            const shared_ptr<Tensor_<double>> d = torthog->denom(istate)->at(pos);
-            for (auto& i3 : torthog->virt())
-              for (auto& i2 : torthog->closed())
-                for (auto& i1 : torthog->virt())
-                  for (auto& i0 : torthog->closed()) {
+            const shared_ptr<Tensor_<double>> l = l_orthogonal_->data(istate)->at(pos);
+            const shared_ptr<Tensor_<double>> t = t_orthogonal_->data(istate)->at(pos);
+            const shared_ptr<Tensor_<double>> d = t_orthogonal_->denom(istate)->at(pos);
+            for (auto& i3 : t_orthogonal_->virt())
+              for (auto& i2 : t_orthogonal_->closed())
+                for (auto& i1 : t_orthogonal_->virt())
+                  for (auto& i0 : t_orthogonal_->closed()) {
                     if (!t->is_local(i0, i1, i2, i3)) continue;
                     const unique_ptr<double[]> amplitude = t->get_block(i0, i1, i2, i3);
                     const unique_ptr<double[]> lambda    = l->get_block(i0, i1, i2, i3);
