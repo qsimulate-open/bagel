@@ -1,5 +1,4 @@
 //
-//
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
 // Filename: CASPT2.h
 // Copyright (C) 2014 Toru Shiozaki
