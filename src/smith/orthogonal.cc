@@ -62,7 +62,6 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
   }
   interm_.push_back(IndexRange(0));
 
-//  cout << " istate" << endl;
   for (int istate = 0; istate != nstates_; ++istate) {
     auto tmp = make_shared<MultiTensor_<double>>(Excitations::total + (sssr_ ? 0 : nstates_-1));
     for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
@@ -83,8 +82,6 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
     denom_.push_back(tmp->clone());
   }
 
-  // let me store denominator for all orthogonal functions
-  // TODO should we merge denom with it??
   set_denom(d);
 
   rdm0all_ = g0;
