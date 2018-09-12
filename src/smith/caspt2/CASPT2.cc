@@ -256,122 +256,6 @@ void CASPT2::CASPT2::solve() {
 }
 
 
-// temporary
-void CASPT2::CASPT2::manipulate(shared_ptr<MultiTensor_<double>> s) {
-#if 1
-  const bool zero_aibj = false;
-  const bool zero_arbs = false;
-  const bool zero_arbi = false;
-  const bool zero_airj = false;
-  const bool zero_risj = false;
-  const bool zero_airs = false;
-  const bool zero_arst = false;
-  const bool zero_rist = false;
-#else
-  const bool zero_aibj = true;
-  const bool zero_arbs = false;
-  const bool zero_arbi = true;
-  const bool zero_airj = true;
-  const bool zero_risj = true;
-  const bool zero_airs = true;
-  const bool zero_arst = true;
-  const bool zero_rist = true;
-#endif
-
-  for (int i = 0; i != nstates_; ++i) {
-    if (!s->at(i)) continue;
-    // a i b j
-    if (zero_aibj)
-    for (auto& i3 : virt_)
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i0, i1, i2, i3);
-          }
-    // a r b s
-    if (zero_arbs)
-    for (auto& i2 : active_)
-      for (auto& i0 : active_)
-        for (auto& i3 : virt_)
-          for (auto& i1 : virt_) {
-            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i0, i1, i2, i3);
-          }
-    // a r b i
-    if (zero_arbi)
-    for (auto& i0 : active_)
-      for (auto& i3 : virt_)
-        for (auto& i2 : closed_)
-          for (auto& i1 : virt_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-          }
-    // a i r j
-    if (zero_airj)
-    for (auto& i3 : active_) 
-      for (auto& i2 : closed_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-          }
-    // r i s j
-    if (zero_risj)
-    for (auto& i3 : active_)
-      for (auto& i1 : active_)
-        for (auto& i2 : closed_)
-          for (auto& i0 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i0, i1, i2, i3);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i0, i1, i2, i3);
-          }
-    // a i r s & a r s i
-    if (zero_airs)
-    for (auto& i3 : active_)
-      for (auto& i2 : active_)
-        for (auto& i1 : virt_)
-          for (auto& i0 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-            s->at(i)->put_block(data, i0, i3, i2, i1);
-          }
-    // a r s t
-    if (zero_arst)
-    for (auto& i3 : active_)
-      for (auto& i2 : active_)
-        for (auto& i0 : active_)
-          for (auto& i1 : virt_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-          }
-    // r i s t
-    if (zero_rist)
-    for (auto& i3 : active_)
-      for (auto& i1 : active_)
-        for (auto& i0 : active_)
-          for (auto& i2 : closed_) {
-            const size_t blocksize = s->at(i)->get_size(i2, i3, i0, i1);
-            unique_ptr<double[]> data(new double[blocksize]);
-            for (int j = 0; j != blocksize; ++j) data[j] = 0.0;
-            s->at(i)->put_block(data, i2, i3, i0, i1);
-          }
-  }
-}
-
 // function to solve linear equation
 vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<shared_ptr<MultiTensor_<double>>> s, vector<shared_ptr<MultiTensor_<double>>> t) {
   Timer mtimer;
@@ -379,9 +263,6 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
   // loop over state of interest
   bool converged = true;
   for (int i = 0; i != nstates_; ++i) {  // K states
-    ///vvvvvvv
-    manipulate(s[i]);
-    ///^^^^^^^
     bool conv = false;
     double error = 0.0;
     e0_ = e0all_[i] - info_->shift();
@@ -422,9 +303,6 @@ vector<shared_ptr<MultiTensor_<double>>> CASPT2::CASPT2::solve_linear(vector<sha
           diagonal(r, t2, jst == ist);
         }
       }
-      ///vvvvvvv
-      manipulate(rall_[i]);
-      ///^^^^^^^
 
       // solve using subspace updates
       rall_[i] = solver->compute_residual(t[i], rall_[i]);
@@ -472,7 +350,6 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
     double error = 0.0;
     e0_ = e0all_[i];
     energy_[i] = 0.0;
-    manipulate(s[i]);
     source->transform_to_orthogonal(s[i], i);
 
     if (s[i]->rms() < 1.0e-15) {
@@ -510,9 +387,6 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
           diagonal(r, t2, jst == ist);
         }
       }
-      ///vvvvvvv
-      manipulate(rall_[i]);
-      ///^^^^^^^
       residual->transform_to_orthogonal(rall_[i], i);
       if (info_->shift() != 0.0)
         residual->add_shift(amplitude, i);
