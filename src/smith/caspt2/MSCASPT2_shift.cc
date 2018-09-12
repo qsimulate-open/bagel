@@ -156,7 +156,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   Timer timer(1);
 
   shared_ptr<Matrix> dshift = den2_->clone();
-  shared_ptr<Matrix> dshift_cv = den2_->clone();
   auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
   auto e2 = make_shared<VecRDM<2>>();
@@ -213,8 +212,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const size_t j1i = j1 - ncore;
                     for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                       const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                      dshift_cv->element(j1i, j1i) -= Lambda;
-                      dshift_cv->element(j3i, j3i) -= Lambda;
+                      dshift->element(j1i, j1i) -= Lambda;
+                      dshift->element(j3i, j3i) -= Lambda;
                       smallz->element(j0o, j0o) -= Lambda;
                       nimag[istate] -= Lambda;
                     }
@@ -272,6 +271,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -283,9 +284,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               // (3) form d^{(2)}_{rs} and e3
               for (size_t j0 = 0; j0 != nact; ++j0)
-                for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2)
                     for (size_t j3 = 0; j3 != nact; ++j3)
                       for (size_t j4 = 0; j4 != nact; ++j4) {
@@ -296,6 +300,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           e3->at(js, is)->element(j0, j2, j1, j3, j4, j5) += 2.0 * Rmat->element(j0, j1, j2, j3) * fockact_->element(j4, j5);
                         }
                       }
+                }
             }
           }
         }
@@ -330,9 +335,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         const size_t j1i = j1 - ncore;
                         for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                           const double Lambda = shift2 * lcovar[jall] * amplitude[jall];
-                          dshift_cv->element(j1i, j1i) -= Lambda;
-                          dshift_cv->element(j2i, j2i) += Lambda;
-                          dshift_cv->element(j3i, j3i) -= Lambda;
+                          dshift->element(j1i, j1i) -= Lambda;
+                          dshift->element(j2i, j2i) += Lambda;
+                          dshift->element(j3i, j3i) -= Lambda;
                           smallz->element(j0o, j0o) -= Lambda;
                           nimag[istate] -= Lambda;
                         }
@@ -393,6 +398,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j0o = 0; j0o != interm_size; ++j0o) {
                     const double VrO = t_orthogonal_->shalf(iext)->element(j0o, j1 + js * nact);
                     Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
@@ -400,9 +407,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               // (3) form d^{(2)}_{rs} and e3
               for (size_t j0 = 0; j0 != nact; ++j0)
-                for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     const size_t j2i = j2 + nclo;
                     for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -411,6 +421,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       e2->at(js, is)->element(j0, j1, j2, j3) += 2.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3);
                     }
                   }
+                }
             }
           }
         }
@@ -445,9 +456,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         const size_t j0i = j0 - ncore;
                         for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                           const double Lambda = shift2 * lcovar[jall] * amplitude[jall];
-                          dshift_cv->element(j0i, j0i) += Lambda;
-                          dshift_cv->element(j1i, j1i) -= Lambda;
-                          dshift_cv->element(j2i, j2i) += Lambda;
+                          dshift->element(j0i, j0i) += Lambda;
+                          dshift->element(j1i, j1i) -= Lambda;
+                          dshift->element(j2i, j2i) += Lambda;
                           smallz->element(j0o, j0o) -= Lambda;
                           nimag[istate] -= Lambda;
                         }
@@ -508,6 +519,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j0o = 0; j0o != interm_size; ++j0o) {
                     const double VrO = t_orthogonal_->shalf(iext)->element(j0o, j1 + js * nact);
                     Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
@@ -516,9 +529,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               // (3) form d^{(2)}_{rs} and e3
               for (size_t j0 = 0; j0 != nact; ++j0)
-                for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     const size_t j2i = j2 + nclo;
                     for (size_t j3 = 0; j3 != nact; ++j3) {
@@ -535,6 +551,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       if (j0 == j1 && is == js)             e1->at(js, is)->element(j2, j3) +=  2.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
                     }
                   }
+                }
             }
           }
         }
@@ -558,8 +575,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const size_t j0i = j0 - ncore;
                     for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                       const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                      dshift_cv->element(j0i, j0i) += Lambda;
-                      dshift_cv->element(j2i, j2i) += Lambda;
+                      dshift->element(j0i, j0i) += Lambda;
+                      dshift->element(j2i, j2i) += Lambda;
                       smallz->element(j0o, j0o) -= Lambda;
                       nimag[istate] -= Lambda;
                     }
@@ -617,6 +634,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -634,9 +653,12 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               // (3) form d^{(2)}_{rs} and e3
               for (size_t j4 = 0; j4 != nact; ++j4)
-                for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j4;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j5 = 0; j5 != nact; ++j5)
                     for (size_t j0 = 0; j0 != nact; ++j0)
                       for (size_t j2 = 0; j2 != nact; ++j2) {
@@ -700,6 +722,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           if (j0 == j4 && j1 == j5)                         e1->at(js,is)->element(j2, j3)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                         }
                       }
+                }
             }
           }
         }
@@ -723,8 +746,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const size_t j0i = j0 - ncore;
                     for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                       const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                      dshift_cv->element(j0i, j0i) += Lambda;
-                      dshift_cv->element(j1i, j1i) -= Lambda;
+                      dshift->element(j0i, j0i) += Lambda;
+                      dshift->element(j1i, j1i) -= Lambda;
                       smallz->element(j0o, j0o) -= Lambda;
                       nimag[istate] -= Lambda;
                     }
@@ -793,6 +816,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               // (2) form R_{tv,uw} = Q^U_{tv} V^{U}_{uw}
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j0o = 0; j0o != interm_size; ++j0o) {
@@ -809,9 +834,13 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              RmatA->allreduce();
+              RmatC->allreduce();
               // (3) form d^{(2)}_{rs} and e3
               for (size_t j4 = 0; j4 != nact; ++j4)
-                for (size_t j1 = 0; j1 != nact; ++j1)
+                for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j4;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j5 = 0; j5 != nact; ++j5)
                     for (size_t j0 = 0; j0 != nact; ++j0)
                       for (size_t j2 = 0; j2 != nact; ++j2) {
@@ -840,6 +869,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           if (j4 == j1)             e2->at(is,js)->element(j2, j3, j5, j0) += 2.0 *  2.0 * RmatC->element(j0, j1, j4, j5) * fockact_->element(j2, j3);
                         }
                       }
+                }
             }
           }
         }
@@ -860,7 +890,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const size_t j0i = j0 - ncore;
                 for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                   const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                  dshift_cv->element(j0i, j0i) -= Lambda;
+                  dshift->element(j0i, j0i) -= Lambda;
                   smallz->element(j0o, j0o) -= Lambda;
                   nimag[istate] -= Lambda;
                 }
@@ -914,6 +944,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               auto Rmat = make_shared<RDM<3>>(nact);
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j1 + nact * j0;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j4 = 0; j4 != nact; ++j4) {
@@ -930,8 +962,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               for (size_t j7 = 0; j7 != nact; ++j7)
-                for (size_t j0 = 0; j0 != nact; ++j0)
+                for (size_t j0 = 0; j0 != nact; ++j0) {
+                  const int jall = j0 + nact * j7;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j6 = 0; j6 != nact; ++j6)
                     for (size_t j5 = 0; j5 != nact; ++j5)
                       for (size_t j2 = 0; j2 != nact; ++j2)
@@ -953,6 +988,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             }
                           }
                         }
+                }
             }
           }
         }
@@ -973,7 +1009,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                 const size_t j0i = j0 - ncore;
                 for (size_t j0o = i0o.offset(); j0o != i0o.offset()+i0o.size(); ++j0o, ++jall) {
                   const double Lambda = shift2 * lambda[jall] * amplitude[jall];
-                  dshift_cv->element(j0i, j0i) += Lambda;
+                  dshift->element(j0i, j0i) += Lambda;
                   smallz->element(j0o, j0o) -= Lambda;
                   nimag[istate] -= Lambda;
                 }
@@ -1027,6 +1063,8 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
               auto Rmat = make_shared<RDM<3>>(nact);
               for (size_t j0 = 0; j0 != nact; ++j0) {
                 for (size_t j1 = 0; j1 != nact; ++j1) {
+                  const int jall = j0 + nact * j1;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j2 = 0; j2 != nact; ++j2) {
                     for (size_t j3 = 0; j3 != nact; ++j3) {
                       for (size_t j4 = 0; j4 != nact; ++j4) {
@@ -1048,8 +1086,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
                 }
               }
+              Rmat->allreduce();
               for (size_t j7 = 0; j7 != nact; ++j7)
-                for (size_t j0 = 0; j0 != nact; ++j0)
+                for (size_t j0 = 0; j0 != nact; ++j0) {
+                  const int jall = j0 + nact * j7;
+                  if (jall % mpi__->size() != mpi__->rank()) continue;
                   for (size_t j6 = 0; j6 != nact; ++j6)
                     for (size_t j5 = 0; j5 != nact; ++j5)
                       for (size_t j2 = 0; j2 != nact; ++j2)
@@ -1115,6 +1156,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             }
                           }
                         }
+                }
             }
           }
         }
@@ -1154,10 +1196,10 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           for (size_t j0 = i0.offset(); j0 != i0.offset()+i0.size(); ++j0, ++jall) {
                             const size_t j0i = j0 - ncore;
                             const double Lambda = shift2 * lcovar[jall] * amplitude[jall];
-                            dshift_cv->element(j0i, j0i) += Lambda;
-                            dshift_cv->element(j1i, j1i) -= Lambda;
-                            dshift_cv->element(j2i, j2i) += Lambda;
-                            dshift_cv->element(j3i, j3i) -= Lambda;
+                            dshift->element(j0i, j0i) += Lambda;
+                            dshift->element(j1i, j1i) -= Lambda;
+                            dshift->element(j2i, j2i) += Lambda;
+                            dshift->element(j3i, j3i) -= Lambda;
                             nimag[istate] += Lambda;
                             nimag[is] -= Lambda;
                             e0temp[is] += 2.0 * lcovar[jall] * amplitude[jall] * denom[jall];
@@ -1168,18 +1210,23 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
           }
         }
-        mpi__->allreduce(e0temp.data(), e0temp.size());
-
         for (int is = 0; is != nstates; ++is)
           ((*e0->at(is,is))) += e0temp[is];
         timer.tick_print("dshift aibj");
         break;
     }
   }
-  dshift_cv->allreduce();
+  dshift->allreduce();
+  for (size_t is = 0; is != nstates; ++is)
+    for (size_t js = 0; js != nstates; ++js)
+      if (!info_->sssr() || is == js) {
+        mpi__->allreduce(&*(e0->at(is,js)), 1);
+        e1->at(is,js)->allreduce();
+        e2->at(is,js)->allreduce();
+        e3->at(is,js)->allreduce();
+        e4->at(is,js)->allreduce();
+      }
   mpi__->allreduce(nimag.data(), nimag.size());
-
-  *dshift += *dshift_cv;
 
   return tie(dshift, e0, e1, e2, e3, e4, nimag);
 }
