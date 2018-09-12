@@ -104,6 +104,10 @@ class Orthogonal_Basis {
     // Or copy from existing orthogonal basis
     Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone = true, const bool residual = true);
 
+    IndexRange& virt() { return virt_; }
+    IndexRange& closed() { return closed_; }
+    IndexRange& interm(const int iext) { return interm_[iext]; }
+
     // transform to orthogonal
     void transform_to_orthogonal(std::shared_ptr<const MultiTensor_<double>> t, const int istate);
     // Transform to redundant (should be amplitude)
