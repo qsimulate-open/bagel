@@ -395,7 +395,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
 
       // compute rms for state i
       error = residual->data(i)->norm() / pow(residual->data(i)->size(), 0.25);
-      amplitude->print_convergence(source, residual, i, iter, error, mtimer.tick());
+      energy_[i] = amplitude->print_convergence(source, residual, i, iter, error, mtimer.tick());
       conv = error < info_->thresh();
 
       if (!conv) {

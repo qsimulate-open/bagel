@@ -44,7 +44,7 @@ namespace bagel {
 namespace SMITH {
 
 
-// this assumes < 256 blocks; TODO runtime determination?
+// this assumes < 65536 blocks; TODO runtime determination?
 const static int shift = 16;
 
 static size_t generate_hash_key(const std::vector<size_t>& o) {

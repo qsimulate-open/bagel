@@ -1316,7 +1316,7 @@ void Orthogonal_Basis::update(shared_ptr<const Orthogonal_Basis> r, const int is
 }
 
 
-void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, shared_ptr<const Orthogonal_Basis> r, const int istate, const int iter, const double error, const double timing) const {
+double Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, shared_ptr<const Orthogonal_Basis> r, const int istate, const int iter, const double error, const double timing) const {
   shared_ptr<MultiTensor_<double>> tcovar = get_contravariant(istate, true);
   double etot = 0.0;
   vector<double> esector(Excitations::total);
@@ -1337,6 +1337,8 @@ void Orthogonal_Basis::print_convergence(shared_ptr<const Orthogonal_Basis> s, s
   }
 
   cout << setw(13) << setprecision(7) << etot << setw(11) << error << setw(7) << setprecision(2) << timing << endl;
+
+  return etot;
 }
 
 

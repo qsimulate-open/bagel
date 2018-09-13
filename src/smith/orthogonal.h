@@ -116,7 +116,7 @@ class Orthogonal_Basis {
     // update amplitude using residual
     void update(std::shared_ptr<const Orthogonal_Basis> residual, const int istate);
     // print convergence using source and residual
-    void print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual,
+    double print_convergence(std::shared_ptr<const Orthogonal_Basis> source, std::shared_ptr<const Orthogonal_Basis> residual,
         const int istate, const int iter, const double error, const double timing) const;
     // add shift to residual using amplitude
     void add_shift(std::shared_ptr<const Orthogonal_Basis> amplitude, const int istate);
