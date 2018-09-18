@@ -48,7 +48,7 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
   const size_t ndet = ci_deriv_->data(0)->size();
   const size_t ijmax = info_->cimaxchunk();
   const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ((mpi__->size() > ((ijnum-1) / ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
+  const size_t npass = ndet < 1000 ? 1 : ((mpi__->size() > ((ijnum-1) / ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
   const size_t nsize = (ndet - 1) / npass + 1;
 
   for (int nst = 0; nst != nstates; ++nst) {
