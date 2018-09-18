@@ -714,7 +714,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
     if (info_->shift_imag()) {
-      den2_shift_ = ms.rdm12_shift();
       correlated_norm_imag_ = ms.nimag();
     }
     Den1_ = ms.rdm21();
@@ -767,12 +766,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int ncore = info_->ncore();
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
-
-  if (info_->shift_imag() && info_->shift() != 0.0) {
-    auto dtmp = den2_->copy();
-    dtmp->ax_plus_y(1.0, den2_shift_);
-    den2_ = dtmp;
-  }
 
   if (nact) {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
