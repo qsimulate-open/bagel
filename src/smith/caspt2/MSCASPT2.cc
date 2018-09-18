@@ -292,50 +292,27 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
               dec->next_compute();
             add_total(llhJI);
           }
-
-          if (info_->orthogonal_basis()) {
-            // Consistent with the nexts
-            if (info_->sssr() && (nst != lst || mst != lst))
-              continue;
-
-            e0_ = e0all_[lst];
-            l2 = t2all_[lst]->at(nst);
-            t2 = t2all_[lst]->at(mst);
-            dec = make_deciq(true);
-            while(!dec->done())
-              dec->next_compute();
-            dec = make_deci2q(false);
-            while (!dec->done())
-              dec->next_compute();
-
-            add_total(2.0 * llhJI);
-          }
-        }
-
-        if ((!info_->sssr() || nst == mst) && info_->orthogonal_basis()) {
-          // Consistent with the nexts
-          const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
-          const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
-          l2 = t2all_[mst]->at(nst);
-          dec = make_deci3q(/*zero*/true);
-          while (!dec->done())
-            dec->next_compute();
-          add_total(mmhJI);
-
-          l2 = t2all_[nst]->at(mst);
-          dec = make_deci4q(true);
-          while (!dec->done())
-            dec->next_compute();
-          add_total(nnhJI);
         }
 
         if (!info_->sssr() || nst == mst) {
-          l2 = lall_[mst]->at(nst);
+          if (info_->orthogonal_basis()) {
+            l2 = lall_[mst]->at(nst)->copy();
+            const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
+            l2->ax_plus_y(mmhJI, t2all_[mst]->at(nst));
+          } else {
+            l2 = lall_[mst]->at(nst);
+          }
           dec = make_deci3q(/*zero*/true);
           while (!dec->done())
             dec->next_compute();
 
-          l2 = lall_[nst]->at(mst);
+          if (info_->orthogonal_basis()) {
+            l2 = lall_[nst]->at(mst)->copy();
+            const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
+            l2->ax_plus_y(nnhJI, t2all_[nst]->at(mst));
+          } else {
+            l2 = lall_[nst]->at(mst);
+          }
           dec = make_deci4q(false);
           while (!dec->done())
             dec->next_compute();
@@ -345,7 +322,15 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
               continue;
 
             e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
-            l2 = lall_[lst]->at(nst);
+            if (info_->orthogonal_basis()) {
+              l2 = lall_[lst]->at(nst)->copy();
+              const double lheffJ = (*heff_)(lst, targetJ);
+              const double lheffI = (*heff_)(lst, targetI);
+              const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
+              l2->ax_plus_y(llhJI * 2.0, t2all_[lst]->at(nst));
+            } else {
+              l2 = lall_[lst]->at(nst);
+            }
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
             while (!dec->done())
