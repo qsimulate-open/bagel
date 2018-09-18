@@ -122,8 +122,7 @@ void Smith::compute_gradient(const int istate, const int jstate, shared_ptr<cons
       vd1_ = algop->vden1();
 
     // compute <1|1>
-    wf1norm_ = algop->correlated_norm_lt();
-    wf1norm_tt_ = algop->correlated_norm_tt();
+    wf1norm_ = algop->correlated_norm();
     // convert ci derivative tensor to civec
     cider_ = algop->ci_deriv();
     msrot_ = algop->msrot();

@@ -713,9 +713,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     ms.solve_gradient(targetJ, targetI, nocider);
     den1_ = ms.rdm11();
     den2_ = ms.rdm12();
-    if (info_->orthogonal_basis()) {
-      den2_tt_ = ms.rdm12_tt();
-    }
     if (info_->shift_imag()) {
       den2_shift_ = ms.rdm12_shift();
       correlated_norm_imag_ = ms.nimag();
@@ -729,14 +726,13 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     timer.tick();
   }
 
-  correlated_norm_lt_.resize(nstates_);
-  correlated_norm_tt_.resize(nstates_);
+  correlated_norm_.resize(nstates_);
   if (nstates_ == 1 && info_->shift() == 0.0) {
     n = init_residual();
     shared_ptr<Queue> normq = make_normq();
     while (!normq->done())
       normq->next_compute();
-    correlated_norm_lt_[0] = dot_product_transpose(n, t2);
+    correlated_norm_[0] = dot_product_transpose(n, t2);
   } else {
     n = init_residual();
     for (int istate = 0; istate != nstates_; ++istate) {
@@ -755,8 +751,14 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
           tmp2 += dot_product_transpose(n, t2all_[istate]->at(jst));
         }
       }
-      correlated_norm_lt_[istate] = tmp;
-      correlated_norm_tt_[istate] = tmp2;
+      correlated_norm_[istate] = tmp;
+      if (info_->orthogonal_basis()) {
+        const double factor = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
+        correlated_norm_[istate] += tmp2 * factor;
+      }
+      if (info_->shift_imag() && info_->shift() != 0.0) {
+        correlated_norm_[istate] += correlated_norm_imag_[istate];
+      }
     }
   }
   timer.tick_print("T1 norm evaluation");
@@ -766,45 +768,25 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
   const int nclosed = info_->nclosed()-info_->ncore();
   const int nact = info_->nact();
 
+  if (info_->shift_imag() && info_->shift() != 0.0) {
+    auto dtmp = den2_->copy();
+    dtmp->ax_plus_y(1.0, den2_shift_);
+    den2_ = dtmp;
+  }
+
   if (nact) {
     // d_1^(2) -= <1|1><0|E_mn|0>     [Celani-Werner Eq. (A6)]
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       for (int i = nclosed; i != nclosed+nact; ++i)
         for (int j = nclosed; j != nclosed+nact; ++j) {
-          dtmp->element(j, i) -= correlated_norm_lt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
+          dtmp->element(j, i) -= correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
         }
     }
     dtmp->symmetrize();
     den2_ = dtmp;
-  }
-
-  if (nact && info_->orthogonal_basis() && !lall_.empty()) {
-    auto dtmp2 = den2_tt_->copy();
-    for (int ist = 0; ist != nstates_; ++ist) {
-      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j) {
-          dtmp2->element(j, i) -= correlated_norm_tt_[ist] * (*rdmtmp)(j-nclosed, i-nclosed) * factor;
-        }
-    }
-    dtmp2->symmetrize();
-    den2_tt_ = dtmp2;
-  }
-
-  if (nact && info_->shift_imag() && info_->shift() != 0.0) {
-    auto dtmp2 = den2_shift_->copy();
-    for (int ist = 0; ist != nstates_; ++ist) {
-      auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j) {
-          dtmp2->element(j, i) -= correlated_norm_imag_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-        }
-    }
-    dtmp2->symmetrize();
-    den2_shift_ = dtmp2;
   }
 
   shared_ptr<const Reference> ref = info_->ref();
@@ -828,35 +810,12 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
     // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
     for (int ist = 0; ist != nstates_; ++ist) {
-      const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_lt_[ist]);
+      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
+      const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_[ist]);
       shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
       for (int i = 0; i != nact; ++i)
         for (int j = 0; j != nact; ++j)
           ci_deriv_->data(ist)->ax_plus_y(2.0*op(j,i), deriv->data(j+i*nact));
-    }
-
-    if (info_->orthogonal_basis() && !lall_.empty()) {
-      shared_ptr<const Matrix> gd2_tt = focksub(den2_tt_, coeff_->slice(ncore, coeff_->mdim()), false);
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
-        const Matrix op2(*gd2_tt * (1.0/nstates_) - *fock * correlated_norm_tt_[ist] * factor);
-        shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
-        for (int i = 0; i != nact; ++i)
-          for (int j = 0; j != nact; ++j)
-            ci_deriv_->data(ist)->ax_plus_y(2.0*op2(j,i), deriv->data(j+i*nact));
-      }
-    }
-
-    // dshift-dependent term
-    if (info_->shift_imag() && info_->shift() != 0.0) {
-      shared_ptr<const Matrix> gd2_shift = focksub(den2_shift_, coeff_->slice(ncore, coeff_->mdim()), false);
-      for (int ist = 0; ist != nstates_; ++ist) {
-        const Matrix op3(*gd2_shift * (1.0/nstates_) - *fock * correlated_norm_imag_[ist]);
-        shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
-        for (int i = 0; i != nact; ++i)
-          for (int j = 0; j != nact; ++j)
-            ci_deriv_->data(ist)->ax_plus_y(2.0*op3(j,i), deriv->data(j+i*nact));
-      }
     }
 
     // y_I += <I|H|0> (for mixed states); taking advantage of the fact that unrotated CI vectors are eigenvectors
@@ -914,18 +873,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
       // also rotate cideriv back to the MS states
       btas::contract(1.0, *ci_deriv_->copy(), {0,1,2}, (*xmsmat_), {3,2}, 0.0, *ci_deriv_, {0,1,3});
     }
-  }
-
-  if (info_->orthogonal_basis() && !lall_.empty()) {
-    auto dtmp = den2_->copy();
-    dtmp->ax_plus_y(1.0, den2_tt_);
-    den2_ = dtmp;
-  }
-
-  if (info_->shift_imag() && info_->shift() != 0.0) {
-    auto dtmp = den2_->copy();
-    dtmp->ax_plus_y(1.0, den2_shift_);
-    den2_ = dtmp;
   }
 
   // restore original energy

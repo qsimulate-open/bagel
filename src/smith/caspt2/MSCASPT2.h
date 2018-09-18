@@ -89,7 +89,6 @@ class MSCASPT2 {
     // storage for output
     std::shared_ptr<Matrix> den1_;
     std::shared_ptr<Matrix> den2_;
-    std::shared_ptr<Matrix> den2_tt_;
     std::shared_ptr<Matrix> den2_shift_;
     std::shared_ptr<Tensor> Den1_;
     std::shared_ptr<Dvec> ci_deriv_;
@@ -193,7 +192,6 @@ class MSCASPT2 {
 
     std::shared_ptr<const Matrix> rdm11() const { return den1_; }
     std::shared_ptr<const Matrix> rdm12() const { return den2_; }
-    std::shared_ptr<const Matrix> rdm12_tt() const { return den2_tt_; }
     std::shared_ptr<const Matrix> rdm12_shift() const { return den2_shift_; }
     std::shared_ptr<const Tensor> rdm21() const { return Den1_; }
     std::shared_ptr<const Matrix> vden1() const { return vden1_; }

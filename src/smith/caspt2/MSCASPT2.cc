@@ -184,31 +184,6 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     den2->zero();
     shared_ptr<Tensor> result2 = den2->clone();
     result2->zero();
-    // if Hylleraas, second-order contribution from energy
-    if (info_->orthogonal_basis()) {
-      // consistent with the next
-      for (int jst = 0; jst != nstates; ++jst) {  // bra
-        for (int ist = 0; ist != nstates; ++ist) {  // ket
-          if (info_->nact())
-            set_rdm(jst, ist);
-          for (int istate = 0; istate != nstates; ++istate) { // state of T
-            if (info_->sssr() && (jst != istate || ist != istate))
-              continue;
-            l2 = t2all_[istate]->at(ist);
-            t2 = t2all_[istate]->at(jst);
-            shared_ptr<Queue> queue = make_densityq(true, ist == jst);
-            while (!queue->done())
-              queue->next_compute();
-
-            const double ijhJI = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
-            result2->ax_plus_y(ijhJI, den2);
-          }
-        }
-      }
-      den2_tt_ = result2->matrix();
-      den2->zero();
-      result2->zero();
-    }
 
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
@@ -217,7 +192,13 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           if (info_->sssr() && (jst != istate || ist != istate))
             continue;
-          l2 = lall_[istate]->at(ist);
+          if (info_->orthogonal_basis()) {
+            const double ijhJI = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
+            l2 = lall_[istate]->at(ist)->copy();
+            l2->ax_plus_y(ijhJI, t2all_[istate]->at(ist));
+          } else {
+            l2 = lall_[istate]->at(ist);
+          }
           t2 = t2all_[istate]->at(jst);
           shared_ptr<Queue> queue = make_densityq(true, ist == jst);
           while (!queue->done())
@@ -227,49 +208,29 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       }
     }
     den2_ = result2->matrix();
-
   }
 
-  if (info_->orthogonal_basis()) {
-    for (int jst = 0; jst != nstates; ++jst) { // N
-      den1->zero();
-      Den1->zero();
-      const double jheffJ = (*heff_)(jst, targetJ);
-      const double jheffI = (*heff_)(jst, targetI);
-      const double nnhJI = (jheffJ*jheffI + jheffI*jheffJ) * 0.5;
-
-      for (int ist = 0; ist != nstates; ++ist) { // M
-        if (info_->sssr() && jst != ist)
-          continue;
-        if (info_->nact())
-          set_rdm(jst, ist);
-
-        l2 = t2all_[jst]->at(ist);
-        shared_ptr<Queue> queue = make_density1q(false, ist == jst);
-        while (!queue->done())
-          queue->next_compute();
-
-        shared_ptr<Queue> queue2 = make_density2q(false, ist == jst);
-        while (!queue2->done())
-          queue2->next_compute();
-      }
-      den1_->ax_plus_y(nnhJI, den1->matrix());
-      Den1_->ax_plus_y(nnhJI, Den1);
-    }
-  }
 
   // first-order contribution from the lambda terms
   {
     den1->zero();
     Den1->zero();
     for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      const double nnhJI = (jheffJ*jheffI + jheffI*jheffJ) * 0.5;
       for (int ist = 0; ist != nstates; ++ist) { // ket
         if (info_->sssr() && jst != ist)
           continue;
         if (info_->nact())
           set_rdm(jst, ist);
 
-        l2 = lall_[jst]->at(ist);
+        if (info_->orthogonal_basis()) {
+          l2 = lall_[jst]->at(ist)->copy();
+          l2->ax_plus_y(nnhJI, t2all_[jst]->at(ist));
+        } else {
+          l2 = lall_[jst]->at(ist);
+        }
         shared_ptr<Queue> queue = make_density1q(false, ist == jst);
         while (!queue->done())
           queue->next_compute();
