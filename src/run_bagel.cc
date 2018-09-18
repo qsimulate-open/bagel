@@ -113,8 +113,9 @@ void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
     } else if (title == "forces" || title == "force" || title == "nacme" || title == "dgrad") {
       // "forces" does many force calculations at once (SA-CASSCF and MS-CASPT2)
 
-      auto opt = make_shared<Force>(itree, geom, ref);
-      opt->compute();
+      auto force = make_shared<Force>(itree, geom, ref);
+      force->compute();
+      ref = force->conv_to_ref();
 
     } else if (title == "hessian") {
 
@@ -183,10 +184,10 @@ void bagel::impl::run_bagel_(shared_ptr<const PTree> idata) {
       auto multisite = make_shared<MultiSite>(itree, ref);
       ref = multisite->mref();
     } else if (title == "asd_dmrg") {
-        auto asd_dmrg = make_shared<RASD>(itree, ref);
-        asd_dmrg->project_active();
-        asd_dmrg->sweep();
-        ref = asd_dmrg->sref();
+      auto asd_dmrg = make_shared<RASD>(itree, ref);
+      asd_dmrg->project_active();
+      asd_dmrg->sweep();
+      ref = asd_dmrg->sref();
     } else if (title == "localize") {
       if (ref == nullptr) throw runtime_error("Localize needs a reference");
       if (ref->coeffB()) throw runtime_error("Localize is not implemented for UHF/ROHF");
