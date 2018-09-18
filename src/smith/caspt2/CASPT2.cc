@@ -772,11 +772,9 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     auto dtmp = den2_->copy();
     for (int ist = 0; ist != nstates_; ++ist) {
       auto rdmtmp = rdm1all_->at(ist, ist)->matrix();
-      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       for (int i = nclosed; i != nclosed+nact; ++i)
-        for (int j = nclosed; j != nclosed+nact; ++j) {
+        for (int j = nclosed; j != nclosed+nact; ++j)
           dtmp->element(j, i) -= correlated_norm_[ist] * (*rdmtmp)(j-nclosed, i-nclosed);
-        }
     }
     dtmp->symmetrize();
     den2_ = dtmp;
@@ -803,7 +801,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     // correct cideriv for fock derivative [Celani-Werner Eq. (C1), some terms in first and second lines]
     // y_I += (g[d^(2)]_ij - Nf_ij) <I|E_ij|0>
     for (int ist = 0; ist != nstates_; ++ist) {
-      const double factor = (*heff_)(ist, targetJ) * (*heff_)(ist, targetI);
       const Matrix op(*gd2 * (1.0/nstates_) - *fock * correlated_norm_[ist]);
       shared_ptr<const Dvec> deriv = ref->rdm1deriv(ist);
       for (int i = 0; i != nact; ++i)
