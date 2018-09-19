@@ -369,7 +369,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     // If we have imaginary shift, construct additional density due to the shift
     if (info_->shift_imag() && info_->shift() != 0.0) {
       shared_ptr<Matrix> dshift;
-      tie(dshift, etensor0_, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag();
+      tie(dshift, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag();
       *den2_ += *dshift;
       timer.tick_print("dshift");
     }

@@ -145,7 +145,7 @@ tuple<shared_ptr<RDM<1>>,shared_ptr<RDM<2>>,shared_ptr<RDM<3>>,shared_ptr<RDM<4>
 }
 
 
-tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
+tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<VecRDM<3>>,shared_ptr<VecRDM<3>>,vector<double>>
   MSCASPT2::MSCASPT2::make_d2_imag() const {
   const size_t nact = info_->nact();
   const int nstates = nact ? info_->ciwfn()->nstates() : 1;
@@ -156,7 +156,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   Timer timer(1);
 
   shared_ptr<Matrix> dshift = den2_->clone();
-  auto e0 = make_shared<Vec<double>>();
   auto e1 = make_shared<VecRDM<1>>();
   auto e2 = make_shared<VecRDM<2>>();
   auto e3 = make_shared<VecRDM<3>>();
@@ -171,13 +170,11 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
     for (size_t is = 0; is != nstates; ++is)
       for (size_t js = 0; js != nstates; ++js)
         if (!info_->sssr() || is == js) {
-          auto e0temp = make_shared<double>(0.0);
           auto e1temp = make_shared<RDM<1>>(nact);
           auto e2temp = make_shared<RDM<2>>(nact);
           auto e3temp = make_shared<RDM<3>>(nact);
           auto e4temp = make_shared<RDM<3>>(nact);
 
-          e0->emplace(is, js, e0temp);
           e1->emplace(is, js, e1temp);
           e2->emplace(is, js, e2temp);
           e3->emplace(is, js, e3temp);
@@ -525,7 +522,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                     const double VrO = t_orthogonal_->shalf(iext)->element(j0o, j1 + js * nact);
                     Rmat->element(j0, j1) += Qmat->element(j0o, j0) * VrO;
                     e1->at(js, is)->element(j0, j1) += -Pmat->element(j0o, j0) * VrO;
-                    if (j0 == j1 && is == js) (*e0->at(js, is)) += Pmat->element(j0o, j0) * VrO * 2.0;
                   }
                 }
               }
@@ -545,7 +541,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                       if (j0 == j3)                         dshift->element(j2i, j3i) += -1.0 * Rmat->element(j0, j1) * rdm1->element(j1, j2);
                       if (j0 == j1 && is == js)             dshift->element(j2i, j3i) +=  2.0 * Rmat->element(j0, j1) * rdm1->element(j2, j3);
                       e2->at(js, is)->element(j0, j1, j2, j3) += -1.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
-                      if (j1 == j2 && j0 == j3 && is == js) (*e0->at(js, is)) += 2.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
                       if (j1 == j2)                         e1->at(js, is)->element(j0, j3) += -1.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
                       if (j0 == j3)                         e1->at(js, is)->element(j1, j2) += -1.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
                       if (j0 == j1 && is == js)             e1->at(js, is)->element(j2, j3) +=  2.0 * Rmat->element(j0, j1) * fockact_->element(j2, j3) * 2.0;
@@ -646,8 +641,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                         if (j1 == j3)                         e1->at(js, is)->element(j0, j2) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                         if (j0 == j2)                         e1->at(js, is)->element(j1, j3) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                         if (j0 == j3)                         e1->at(js, is)->element(j1, j2) +=  1.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
-                        if (j0 == j2 && j1 == j3 && is == js) *(e0->at(js, is)) +=  4.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
-                        if (j0 == j3 && j1 == j2 && is == js) *(e0->at(js, is)) += -2.0 * Pmat->element(j0o, j0 + j1 * nact) * VrsO;
                       }
                     }
                   }
@@ -706,18 +699,14 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                           if (j0 == j5)                                     e2->at(js,is)->element(j1, j4, j2, j3) += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j5 && j2 == j4)                         e1->at(js,is)->element(j1, j3)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                           if (j1 == j3 && j0 == j5)                         e1->at(js,is)->element(j2, j4)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
-                          if (j1 == j3 && j0 == j5 && j2 == j4 && is == js) (*e0->at(js,is))                       += 2.0 *  4.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j4)                                     e2->at(js,is)->element(j1, j5, j2, j3) += 2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j4 && j2 == j5)                         e1->at(js,is)->element(j1, j3)         += 2.0 * factor * fockact_->element(j2, j3);
                           if (j1 == j3 && j0 == j4)                         e1->at(js,is)->element(j2, j5)         += 2.0 * factor * fockact_->element(j2, j3);
-                          if (j1 == j3 && j0 == j4 && j2 == j5 && is == js) (*e0->at(js,is))                       += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j3)                                     e2->at(js,is)->element(j2, j5, j1, j4) += 2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j3 && j2 == j5)                         e1->at(js,is)->element(j1, j4)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j3 && j2 == j4)                         e1->at(js,is)->element(j1, j5)         += 2.0 * factor * fockact_->element(j2, j3);
                           if (j1 == j5 && j0 == j3)                         e1->at(js,is)->element(j2, j4)         += 2.0 * factor * fockact_->element(j2, j3);
-                          if (j0 == j3 && j1 == j5 && j2 == j4 && is == js) (*e0->at(js,is))                       += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j3 && j1 == j4)                         e1->at(js,is)->element(j2, j5)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
-                          if (j1 == j4 && j2 == j5 && j0 == j3 && is == js) (*e0->at(js,is))                       += 2.0 *  4.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j5 && j1 == j4)                         e1->at(js,is)->element(j2, j3)         += 2.0 *  4.0 * factor * fockact_->element(j2, j3);
                           if (j0 == j4 && j1 == j5)                         e1->at(js,is)->element(j2, j3)         += 2.0 * -2.0 * factor * fockact_->element(j2, j3);
                         }
@@ -1163,7 +1152,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
         timer.tick_print("dshift rist");
         break;
       case Excitations::aibj:
-        vector<double> e0temp(nstates, 0.0);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           for (int is = 0; is != nstates; ++is) {
             if (info_->sssr() && is != istate) continue;
@@ -1202,7 +1190,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                             dshift->element(j3i, j3i) -= Lambda;
                             nimag[istate] += Lambda;
                             nimag[is] -= Lambda;
-                            e0temp[is] += 2.0 * lcovar[jall] * amplitude[jall] * denom[jall];
                           }
                         }
                       }
@@ -1210,8 +1197,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
                   }
           }
         }
-        for (int is = 0; is != nstates; ++is)
-          ((*e0->at(is,is))) += e0temp[is];
         timer.tick_print("dshift aibj");
         break;
     }
@@ -1220,7 +1205,6 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
   for (size_t is = 0; is != nstates; ++is)
     for (size_t js = 0; js != nstates; ++js)
       if (!info_->sssr() || is == js) {
-        mpi__->allreduce(&*(e0->at(is,js)), 1);
         e1->at(is,js)->allreduce();
         e2->at(is,js)->allreduce();
         e3->at(is,js)->allreduce();
@@ -1228,7 +1212,7 @@ tuple<shared_ptr<Matrix>,shared_ptr<Vec<double>>,shared_ptr<VecRDM<1>>,shared_pt
       }
   mpi__->allreduce(nimag.data(), nimag.size());
 
-  return tie(dshift, e0, e1, e2, e3, e4, nimag);
+  return tie(dshift, e1, e2, e3, e4, nimag);
 }
 
 #endif

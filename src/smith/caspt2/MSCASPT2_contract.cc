@@ -82,7 +82,6 @@ void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
           den4cirdmt = den4cirdm->at(nst, mst);
           if (info_->shift_imag()) {
             if (!info_->sssr() || nst == mst) {
-              *(den0cirdmt) += *(etensor0_->at(nst, mst));
               *(den1cirdmt) += *(etensor1_->at(nst, mst));
               *(den2cirdmt) += *(etensor2_->at(nst, mst));
               *(den3cirdmt) += *(etensor3_->at(nst, mst));
