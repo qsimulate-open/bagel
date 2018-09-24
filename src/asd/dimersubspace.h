@@ -25,7 +25,7 @@
 #ifndef __SRC_ASD_DIMESUBSPACE_H
 #define __SRC_ASD_DIMESUBSPACE_H
 
-#include <src/util/string.h>
+#include <src/util/string_util.h>
 #include <src/util/math/csymmatrix.h>
 #include <src/asd/dimer/dimer_cispace.h>
 

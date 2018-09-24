@@ -28,7 +28,7 @@
 #include <cfenv>
 #include <thread>
 #include <src/global.h>
-#include <src/util/string.h>
+#include <src/util/string_util.h>
 #include <src/util/parallel/mpi_interface.h>
 #include <src/util/parallel/resources.h>
 
