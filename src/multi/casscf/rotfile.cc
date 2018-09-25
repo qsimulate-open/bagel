@@ -325,5 +325,5 @@ void RotationMatrix<DataType>::print(const string in) const {
 }
 
 
-template class RotationMatrix<double>;
-template class RotationMatrix<std::complex<double>>;
+template class bagel::RotationMatrix<double>;
+template class bagel::RotationMatrix<std::complex<double>>;
