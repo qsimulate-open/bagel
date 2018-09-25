@@ -385,6 +385,7 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
       ao_orbang[i]->add_block( -w, 3*n, 2*n, n, n, angmom_small[i][3]);
 
       (*magnetic_moment[i]).add_block(1.0, 0, 0, 4*n, 4*n, ao_orbang[i]);
+      magnetic_moment[i]->scale(-0.5);
     }
   }
 
