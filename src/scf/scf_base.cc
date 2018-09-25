@@ -108,8 +108,8 @@ void SCF_base_<ZMatrix, ZOverlap, ZHcore, enable_if<true>::type>::get_coeff(cons
   coeff_ = cref->zcoeff();
 }
 
-template class SCF_base_<Matrix, Overlap, Hcore>;
-template class SCF_base_<ZMatrix, ZOverlap, ZHcore>;
+template class bagel::SCF_base_<Matrix, Overlap, Hcore>;
+template class bagel::SCF_base_<ZMatrix, ZOverlap, ZHcore>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base)
 BOOST_CLASS_EXPORT_IMPLEMENT(SCF_base_London)
