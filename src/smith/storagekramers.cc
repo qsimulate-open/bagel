@@ -186,8 +186,8 @@ void StorageKramers<DataType>::add_block(const unique_ptr<DataType[]>& dat, cons
 }
 
 // explicit instantiation
-template class StorageKramers<double>;
-template class StorageKramers<complex<double>>;
+template class bagel::SMITH::StorageKramers<double>;
+template class bagel::SMITH::StorageKramers<complex<double>>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(StorageKramers<double>)
 BOOST_CLASS_EXPORT_IMPLEMENT(StorageKramers<complex<double>>)

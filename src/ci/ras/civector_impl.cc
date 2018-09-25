@@ -97,5 +97,5 @@ void RASCivector_impl<DataType>::synchronize(const int root) {
 }
 
 
-template class RASCivector_impl<double>;
+template class bagel::RASCivector_impl<double>;
 

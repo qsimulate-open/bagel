@@ -202,17 +202,17 @@ void GammaForest<VecType,N>::couple_blocks(const DimerSubspace<VecType>& AB, con
 }
 
 
-template class GammaForest<CASDvec,1>;
-template class GammaForest<CASDvec,2>;
-template class GammaForest<CASDvec,3>;
-template class GammaForest<CASDvec,4>;
-template class GammaForest<CASDvec,5>;
-template class GammaForest<CASDvec,6>;
-template class GammaForest<CASDvec,7>;
-template class GammaForest<RASDvec,1>;
-template class GammaForest<RASDvec,2>;
-template class GammaForest<RASDvec,3>;
-template class GammaForest<RASDvec,4>;
-template class GammaForest<RASDvec,5>;
-template class GammaForest<RASDvec,6>;
-template class GammaForest<RASDvec,7>;
+template class bagel::GammaForest<CASDvec,1>;
+template class bagel::GammaForest<CASDvec,2>;
+template class bagel::GammaForest<CASDvec,3>;
+template class bagel::GammaForest<CASDvec,4>;
+template class bagel::GammaForest<CASDvec,5>;
+template class bagel::GammaForest<CASDvec,6>;
+template class bagel::GammaForest<CASDvec,7>;
+template class bagel::GammaForest<RASDvec,1>;
+template class bagel::GammaForest<RASDvec,2>;
+template class bagel::GammaForest<RASDvec,3>;
+template class bagel::GammaForest<RASDvec,4>;
+template class bagel::GammaForest<RASDvec,5>;
+template class bagel::GammaForest<RASDvec,6>;
+template class bagel::GammaForest<RASDvec,7>;

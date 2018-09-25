@@ -268,8 +268,8 @@ size_t StorageIncore<DataType>::localsize() const {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class StorageIncore<double>;
-template class StorageIncore<complex<double>>;
+template class bagel::SMITH::StorageIncore<double>;
+template class bagel::SMITH::StorageIncore<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_CLASS_EXPORT_IMPLEMENT(StorageIncore<double>)

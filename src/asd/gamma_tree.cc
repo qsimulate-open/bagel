@@ -130,7 +130,7 @@ GammaTree<VecType>::GammaTree(shared_ptr<const VecType> ket) : ket_(ket) {
 }
 
 
-template class GammaBranch<CASDvec>;
-template class GammaBranch<RASDvec>;
-template class GammaTree<CASDvec>;
-template class GammaTree<RASDvec>;
+template class bagel::GammaBranch<CASDvec>;
+template class bagel::GammaBranch<RASDvec>;
+template class bagel::GammaTree<CASDvec>;
+template class bagel::GammaTree<RASDvec>;
