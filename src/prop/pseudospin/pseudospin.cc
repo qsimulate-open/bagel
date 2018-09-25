@@ -734,10 +734,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
       const double val = (k % 2 == 0) ? -1.0 : 1.0;
       trev_target->element(k, nspin_ - k) = val;
     }
-    if (phase_input_2 != 0.0) {
-      trev_target->scale(polar(1.0, -2.0 * phase_input_2));
-      assert((*trev_s - *trev_target).rms() < 1.0e-10);
-    }
+    assert((*trev_s - *trev_target).rms() < 1.0e-10);
   }
 #endif
 
