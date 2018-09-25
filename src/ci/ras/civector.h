@@ -132,7 +132,7 @@ class RASCivecView_ : public RASCivector_impl<DataType> {
     }
 };
 
-template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin() const; // returns S^2 | civec >
+template<> std::shared_ptr<bagel::RASCivector<double>> RASCivecView_<double>::spin() const; // returns S^2 | civec >
 template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_lower(std::shared_ptr<const RASDeterminants>) const; // S_-
 template<> std::shared_ptr<RASCivector<double>> RASCivecView_<double>::spin_raise(std::shared_ptr<const RASDeterminants>) const; // S_+
 

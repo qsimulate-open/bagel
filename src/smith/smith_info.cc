@@ -325,8 +325,8 @@ shared_ptr<const Reference>  SMITH_Info<DataType>::extract_ref(const vector<int>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class SMITH_Info<double>;
-template class SMITH_Info<complex<double>>;
+template class bagel::SMITH_Info<double>;
+template class bagel::SMITH_Info<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_CLASS_EXPORT_IMPLEMENT(SMITH_Info<double>)

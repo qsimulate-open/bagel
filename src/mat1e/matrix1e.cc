@@ -110,8 +110,8 @@ void Matrix1e_<MatType, Enable>::init(shared_ptr<const Molecule> mol) {
 }
 
 
-template class Matrix1e_<Matrix>;
-template class Matrix1e_<ZMatrix>;
+template class bagel::Matrix1e_<Matrix>;
+template class bagel::Matrix1e_<ZMatrix>;
 
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Matrix1e)

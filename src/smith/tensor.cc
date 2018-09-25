@@ -160,8 +160,8 @@ shared_ptr<typename Tensor_<DataType>::VecType> Tensor_<DataType>::vectorb() con
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class Tensor_<double>;
-template class Tensor_<complex<double>>;
+template class SMITH::Tensor_<double>;
+template class SMITH::Tensor_<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Tensor_<double>)
