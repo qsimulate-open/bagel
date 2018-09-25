@@ -51,7 +51,7 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
   imag_ = info->shift_imag();
   shift_ = info->shift();
 
-  set_size(d);
+  set_shalf(d);
 
   const int max = info->maxtile();
 
@@ -122,7 +122,6 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
   for (int i = 0; i != Excitations::total; ++i)
     shalf_[i] = o.shalf_[i];
 
-  size_ = o.size_;
   interm_ = o.interm_;
   phi_ = o.phi_;
 
@@ -150,17 +149,7 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
 }
 
 
-void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
-  const size_t size_arbs = d->shalf_xx()->ndim()  * nvirt_ * nvirt_;
-  const size_t size_arbi = d->shalf_x()->ndim()   * nvirt_ * nclo_ * nvirt_;
-  const size_t size_airj = d->shalf_h()->ndim()   * nclo_ * nvirt_ * nclo_;
-  const size_t size_risj = d->shalf_hh()->ndim()  * nclo_ * nclo_;
-  const size_t size_airs = d->shalf_xh()->ndim()  * nclo_ * nvirt_;
-  const size_t size_arst = d->shalf_xxh()->ndim() * nvirt_;
-  const size_t size_rist = d->shalf_xhh()->ndim() * nclo_;
-  const size_t size_aibj = nvirt_ * nvirt_ * nclo_ * nclo_ * (sssr_ ? 1 : nstates_);
-  const size_t size_all = size_arbs + size_arbi + size_airj + size_risj + size_airs + size_arst + size_rist + size_aibj;
-
+void Orthogonal_Basis::set_shalf(shared_ptr<const Denom<double>> d) {
   shalf_.push_back(d->shalf_xx()->copy());
   shalf_.push_back(d->shalf_x()->copy());
   shalf_.push_back(d->shalf_h()->copy());
@@ -169,16 +158,6 @@ void Orthogonal_Basis::set_size(shared_ptr<const Denom<double>> d) {
   shalf_.push_back(d->shalf_xxh()->copy());
   shalf_.push_back(d->shalf_xhh()->copy());
   shalf_.push_back(make_shared<Matrix>());
-
-  size_.push_back(size_arbs);
-  size_.push_back(size_arbi);
-  size_.push_back(size_airj);
-  size_.push_back(size_risj);
-  size_.push_back(size_airs);
-  size_.push_back(size_arst);
-  size_.push_back(size_rist);
-  size_.push_back(size_aibj);
-  size_.push_back(size_all);
 
   phi_.push_back(d->denom_xx());
   phi_.push_back(d->denom_x());

@@ -80,7 +80,6 @@ class Orthogonal_Basis {
     std::shared_ptr<Vec<Tensor_<double>>> rdm3all_;
     std::shared_ptr<Vec<Tensor_<double>>> rdm4all_;
 
-    std::vector<size_t> size_;
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<Matrix>> shalf_;
     std::vector<VectorB> phi_;
@@ -89,7 +88,7 @@ class Orthogonal_Basis {
     std::vector<std::shared_ptr<MultiTensor_<double>>> denom_;
     std::shared_ptr<Tensor_<double>> init_data(const int iext);
     std::shared_ptr<MultiTensor_<double>> weight_by_denom(const int istate, std::shared_ptr<const MultiTensor_<double>> original) const;
-    void set_size(std::shared_ptr<const Denom<double>> d);
+    void set_shalf(std::shared_ptr<const Denom<double>> d);
     void set_denom(std::shared_ptr<const Denom<double>> d);
 
     // copy of the functions in SpinFreeMethod
@@ -127,8 +126,6 @@ class Orthogonal_Basis {
     std::shared_ptr<MultiTensor_<double>> get_contravariant(const int istate, const bool weight = false) const;
     std::shared_ptr<Matrix> shalf(const int type) const { return shalf_[type]; }
     double phi(const int type, const size_t i) const { return phi_[type][i]; }
-    size_t size(const int type) const { return size_[type]; }
-    size_t size_total() const { return size_[Excitations::total]; }
 
     bool is_residual() const { return (basis_type_ == Basis_Type::residual); }
     bool is_amplitude() const { return (basis_type_ == Basis_Type::amplitude); }
