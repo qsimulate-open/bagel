@@ -763,8 +763,8 @@ DataType SpinFreeMethod<DataType>::dot_product_transpose(shared_ptr<const Tensor
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class SpinFreeMethod<double>;
-template class SpinFreeMethod<complex<double>>;
+template class bagel::SMITH::SpinFreeMethod<double>;
+template class bagel::SMITH::SpinFreeMethod<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif

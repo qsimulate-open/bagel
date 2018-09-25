@@ -69,6 +69,6 @@ shared_ptr<MatType> Overlap_Point_<MatType, IntType, Enable>::compute() const {
 }
 
 
-template class Overlap_Point_<bagel::Matrix, Point_OverlapBatch>;
-template class Overlap_Point_<bagel::ZMatrix, Point_ComplexOverlapBatch>;
+template class bagel::Overlap_Point_<bagel::Matrix, Point_OverlapBatch>;
+template class bagel::Overlap_Point_<bagel::ZMatrix, Point_ComplexOverlapBatch>;
 

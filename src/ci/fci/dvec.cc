@@ -221,6 +221,6 @@ shared_ptr<Dvector<DataType>> Dvector<DataType>::extract_state(const vector<int>
 }
 
 
-template class Dvector<double>;
-template class Dvector<complex<double>>;
+template class bagel::Dvector<double>;
+template class bagel::Dvector<complex<double>>;
 
