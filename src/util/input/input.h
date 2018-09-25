@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <sstream>
-#include <src/util/string.h>
+#include <src/util/string_util.h>
 #include <src/util/serialization.h>
 #include <boost/property_tree/ptree.hpp>
 

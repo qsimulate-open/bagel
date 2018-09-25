@@ -48,6 +48,7 @@ class Force {
     void force_export(const std::string jobtitle, std::shared_ptr<const GradInfo> gradinfo, const std::vector<double> energy, std::shared_ptr<const GradFile> out, const bool export_single);
     const std::vector<double>& force_dipole() const { return force_dipole_; }
 
+    std::shared_ptr<const Reference> conv_to_ref() const { return ref_; }
 };
 
 }

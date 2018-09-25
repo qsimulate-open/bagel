@@ -226,6 +226,7 @@ shared_ptr<GradFile> Force::compute() {
     }
   }
 
+  ref_ = ref;
   return out;
 }
 

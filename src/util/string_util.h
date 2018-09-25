@@ -1,6 +1,6 @@
 //
 // BAGEL - Brilliantly Advanced General Electronic Structure Library
-// Filename: string.h
+// Filename: string_util.h
 // Copyright (C) 2013 Toru Shiozaki
 //
 // Author: Toru Shiozaki <shiozaki@northwestern.edu>
@@ -24,8 +24,8 @@
 
 // Degraded version of lexical_cast.
 
-#ifndef __SRC_UTIL_STRING_H
-#define __SRC_UTIL_STRING_H
+#ifndef __SRC_UTIL_STRING_UTIL_H
+#define __SRC_UTIL_STRING_UTIL_H
 
 #include <sstream>
 #include <boost/lexical_cast.hpp>
@@ -42,3 +42,4 @@ std::string to_upper(const std::string& in) { std::string tmp(in); boost::algori
 }}
 
 #endif
+

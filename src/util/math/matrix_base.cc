@@ -315,8 +315,8 @@ unique_ptr<DataType[]> Matrix_base<DataType>::getlocal() const {
 #endif
 
 
-template class Matrix_base<double>;
-template class Matrix_base<complex<double>>;
+template class bagel::Matrix_base<double>;
+template class bagel::Matrix_base<complex<double>>;
 
 BOOST_CLASS_EXPORT_IMPLEMENT(Matrix_base<double>)
 BOOST_CLASS_EXPORT_IMPLEMENT(Matrix_base<complex<double>>)
