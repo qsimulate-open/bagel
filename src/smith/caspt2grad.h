@@ -56,7 +56,6 @@ class CASPT2Grad : public Method {
     std::shared_ptr<RDM<2>> d20ms_;
     // norm of the first-order wave function
     std::vector<double> wf1norm_;
-    std::vector<double> wf1norm_tt_;
 
     // second-order spin density matrix
     std::shared_ptr<const Matrix> sd1_;
@@ -94,7 +93,6 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
     std::vector<double> wf1norm() const { return wf1norm_; }
-    std::vector<double> wf1norm_tt() const { return wf1norm_tt_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI_base> fci() const { return fci_; }

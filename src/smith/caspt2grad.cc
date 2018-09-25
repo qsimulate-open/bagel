@@ -178,7 +178,6 @@ void CASPT2Grad::compute_gradient(const int istate, const int jstate, shared_ptr
     cideriv_ = smith_->cideriv()->copy();
   ncore_   = smith_->algo()->info()->ncore();
   wf1norm_ = smith_->wf1norm();
-  wf1norm_tt_ = smith_->wf1norm_tt();
   msrot_   = smith_->msrot();
   nstates_ = wf1norm_.size();
   assert(msrot_->ndim() == nstates_ && msrot_->mdim() == nstates_);

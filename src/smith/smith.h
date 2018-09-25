@@ -63,7 +63,6 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> sdm11_;
     // norm of the first-order wave function <1|1>
     std::vector<double> wf1norm_;
-    std::vector<double> wf1norm_tt_;
     // ci derivative
     std::shared_ptr<const Dvec> cider_;
     // rotation matrix in MS-CASPT2
@@ -89,7 +88,6 @@ class Smith : public Method {
     std::shared_ptr<const Matrix> sdm1() const { return sdm1_; }
     std::shared_ptr<const Matrix> sdm11() const { return sdm11_; }
     std::vector<double> wf1norm() const { return wf1norm_; }
-    std::vector<double> wf1norm_tt() const { return wf1norm_tt_; }
     std::shared_ptr<const Dvec> cideriv() const { return cider_; }
     std::shared_ptr<const Matrix> msrot() const { return msrot_; }
     std::shared_ptr<const Matrix> vd1() const { return vd1_; }
