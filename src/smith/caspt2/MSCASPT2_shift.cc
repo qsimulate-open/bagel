@@ -1167,12 +1167,9 @@ tuple<shared_ptr<Matrix>,shared_ptr<VecRDM<1>>,shared_ptr<VecRDM<2>>,shared_ptr<
                     const unique_ptr<double[]> amplitude = t->get_block(i0, i1, i2, i3);
                     const unique_ptr<double[]> lambda    = l->get_block(i0, i1, i2, i3);
                     const unique_ptr<double[]> denom     = d->get_block(i0, i1, i2, i3);
-                    unique_ptr<double[]> tcovar          = t->get_block(i0, i1, i2, i3);
                     unique_ptr<double[]> lcovar          = l->get_block(i0, i1, i2, i3);
                     {
-                      const unique_ptr<double[]> amplitude2 = t->get_block(i0, i3, i2, i1);
                       const unique_ptr<double[]> lambda2    = l->get_block(i0, i3, i2, i1);
-                      sort_indices<0,3,2,1,8,1,-4,1>(amplitude2, tcovar, i0.size(), i3.size(), i2.size(), i1.size());
                       sort_indices<0,3,2,1,8,1,-4,1>(lambda2, lcovar, i0.size(), i3.size(), i2.size(), i1.size());
                     }
                     for (size_t j3 = i3.offset(), jall = 0; j3 != i3.offset()+i3.size(); ++j3) {
