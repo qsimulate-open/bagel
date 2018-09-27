@@ -42,7 +42,7 @@ void FutureTensor_<DataType>::init() const {
   mpi__->barrier();
 }
 
-template class FutureTensor_<double>;
-template class FutureTensor_<complex<double>>;
+template class bagel::SMITH::FutureTensor_<double>;
+template class bagel::SMITH::FutureTensor_<complex<double>>;
 
 #endif

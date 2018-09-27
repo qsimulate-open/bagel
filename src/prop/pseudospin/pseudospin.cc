@@ -341,7 +341,14 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
   array<shared_ptr<ZMatrix>,3> ao_orbang;
   { // orbital angular momentum
     // TODO For geometries with only one metal atom, use that atom's position as default mcoord
-    const array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
+    array<double, 3> mcoord = idata_->get_array<double,3>("center", array<double, 3>({{0.0, 0.0, 0.0}}));
+
+    if (idata_->get<bool>("anstrom", false)) {
+      for (auto& i : mcoord) {
+        i /= au2angstrom__;
+      }
+    }
+
     const int n = geom_->nbasis();
 
     array<shared_ptr<ZMatrix>,3> angmom_large;
@@ -378,6 +385,7 @@ void Pseudospin::compute_numerical_hamiltonian(const vector<double> energy_in, s
       ao_orbang[i]->add_block( -w, 3*n, 2*n, n, n, angmom_small[i][3]);
 
       (*magnetic_moment[i]).add_block(1.0, 0, 0, 4*n, 4*n, ao_orbang[i]);
+      magnetic_moment[i]->scale(-0.5);
     }
   }
 
@@ -599,7 +607,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     }
   }
 
-  { // Adjust the phase to make the (M+1, M) elements of the raising operator real (default choice)
+  { // Adjust the phase to make the (M+1, M) elements of the raising operator real
     ZMatrix raising_op(nspin1_, nspin1_);
 
     if (diagset == "mu") {
@@ -631,34 +639,6 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
     }
   }
   cout << endl;
-
-  // For testing arbitrary phase shifts applied to pseudospin eigenfunctions
-  const shared_ptr<const PTree> phase_input = idata_->get_child_optional("phases");
-  if (phase_input) {
-    vector<double> phase_adjust = {};
-    for (auto& i : *phase_input)
-      phase_adjust.push_back(lexical_cast<double>(i->data()));
-
-    if (phase_adjust.size() != nspin1_ / 2)
-      throw runtime_error("Sorry, you seem to be trying to adjust the phase of pseudospin eigenfunctions.  We expect " + to_string(nspin1_/2) + " phases, one for each pair of time-reversal symmetric states.");
-
-    for (int i = 0; i != nspin1_ / 2; ++i) {
-      const complex<double> adjustment = polar(1.0, phase_adjust[i]);
-      cout << "  **  The phase of the m_s = " << " " + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) <<  phase_adjust[i] << " radians." << endl;
-      cout << "  **  The phase of the m_s = " << "-" + spin_val(nspin_ - 2*i) << " pseudospin function will be shifted by " << setw(11) << -phase_adjust[i] << " radians." << endl;
-      for (int j = 0; j != nspin1_; ++j) {
-        transform.element(j, i) = adjustment * transform.element(j, i);
-        transform.element(j, nspin_ - i) = conj(adjustment) * transform.element(j, nspin_ - i);
-      }
-    }
-    cout << endl;
-  }
-
-  const double phase_input_2 = idata_->get<double>("phase_full", 0.0);
-  if (phase_input_2 != 0.0) {
-    transform.scale(polar(1.0, phase_input_2));
-    cout << "  **  The phase of all pseudospin functions will be shifted by " << setw(4) <<  phase_input_2 << " radians.  (This should have no effect.)" << endl << endl;
-  }
 
 #ifndef NDEBUG
   {
@@ -734,10 +714,7 @@ shared_ptr<const ZMatrix> Pseudospin::compute_spin_eigenvalues() const {
       const double val = (k % 2 == 0) ? -1.0 : 1.0;
       trev_target->element(k, nspin_ - k) = val;
     }
-    if (phase_input_2 != 0.0) {
-      trev_target->scale(polar(1.0, -2.0 * phase_input_2));
-      assert((*trev_s - *trev_target).rms() < 1.0e-10);
-    }
+    assert((*trev_s - *trev_target).rms() < 1.0e-10);
   }
 #endif
 

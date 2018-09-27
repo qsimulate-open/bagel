@@ -487,10 +487,10 @@ void MOFock<double>::init() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class K2ext<double>;
-template class K2ext<complex<double>>;
-template class MOFock<double>;
-template class MOFock<complex<double>>;
+template class bagel::SMITH::K2ext<double>;
+template class bagel::SMITH::K2ext<complex<double>>;
+template class bagel::SMITH::MOFock<double>;
+template class bagel::SMITH::MOFock<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #endif

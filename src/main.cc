@@ -47,12 +47,14 @@ int main(int argc, char** argv) {
     cout << "  message: " << e.what() << endl;
     print_footer();
   } catch (const exception& e) {
-    resources__->proc()->cout_on();
-    if (mpi__->size() > 1)
+    if (resources__)
+      resources__->proc()->cout_on();
+    if (mpi__ && mpi__->size() > 1)
       cout << "  ERROR ON MPI PROCESS " << mpi__->rank() << ": EXCEPTION RAISED:  " << e.what() << endl;
     else
       cout << "  ERROR: EXCEPTION RAISED:  " << e.what() << endl;
-    resources__->proc()->cout_off();
+    if (resources__)
+      resources__->proc()->cout_off();
   } catch (...) {
     throw;
   }

@@ -34,8 +34,8 @@ using namespace bagel::SMITH;
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // explict instantiation at the end of the file
-template class MultiTensor_<double>;
-template class MultiTensor_<complex<double>>;
+template class bagel::SMITH::MultiTensor_<double>;
+template class bagel::SMITH::MultiTensor_<complex<double>>;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 BOOST_CLASS_EXPORT_IMPLEMENT(MultiTensor_<double>)
