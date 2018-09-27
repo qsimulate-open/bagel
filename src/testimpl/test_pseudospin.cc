@@ -85,9 +85,9 @@ std::vector<double> zfs_param(std::string inp) {
 
 std::vector<double> reference_pseudospin_parameters() {
   std::vector<double> out(5);
-  out[0] =  4.00860538 * gscale;
-  out[1] =  4.00860437 * gscale;
-  out[2] =  4.00442918 * gscale;
+  out[0] =  2.00430269 * gscale;
+  out[1] =  2.00430219 * gscale;
+  out[2] =  2.00221459 * gscale;
   out[3] =  0.00000164;
   out[4] =  0.00000000;
   return out;
