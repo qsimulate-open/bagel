@@ -121,6 +121,7 @@ void Opt::compute_mep(shared_ptr<XYZFile> mep_start) {
       current_ = make_shared<Geometry>(*current_, displ, make_shared<const PTree>());
       current_->print_atoms();
     }
+
     if (optinfo()->internal()) {
       if (optinfo()->redundant())
         bmat_red_ = current_->compute_redundant_coordinate(bmat_red_[0]);
