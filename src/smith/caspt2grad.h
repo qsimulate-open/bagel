@@ -92,7 +92,6 @@ class CASPT2Grad : public Method {
     std::shared_ptr<const Tensor> d2() const { return d2_; }
     std::shared_ptr<const RDM<1>> d10ms() const { return d10ms_; }
     std::shared_ptr<const RDM<2>> d20ms() const { return d20ms_; }
-    std::vector<double> wf1norm() const { return wf1norm_; }
 
     std::shared_ptr<const Dvec> cideriv() const { return cideriv_; }
     std::shared_ptr<FCI_base> fci() const { return fci_; }
@@ -106,6 +105,7 @@ class CASPT2Grad : public Method {
     int maxziter() const { return maxziter_; }
 
     bool do_hyperfine() const { return do_hyperfine_; }
+    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
@@ -128,7 +128,6 @@ class CASPT2Grad : public Method {
     // function for gradient
     std::tuple<std::shared_ptr<Matrix>,std::shared_ptr<const DFFullDist>>
       compute_Y(std::shared_ptr<const DFHalfDist> half, std::shared_ptr<const DFHalfDist> halfj, std::shared_ptr<const DFHalfDist> halfjj, const bool nacme);
-    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
     // function for nacme
     void augment_Y(std::shared_ptr<Matrix> d0ms, std::shared_ptr<Matrix> g0, std::shared_ptr<Dvec> g1, std::shared_ptr<const DFHalfDist> halfj, const int istate, const int jstate, const double egap);
