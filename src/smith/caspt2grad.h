@@ -82,6 +82,7 @@ class CASPT2Grad : public Method {
 
     // properties
     bool do_hyperfine_;
+    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
   public:
     CASPT2Grad(std::shared_ptr<const PTree>, std::shared_ptr<const Geometry>, std::shared_ptr<const Reference>);
@@ -105,7 +106,6 @@ class CASPT2Grad : public Method {
     int maxziter() const { return maxziter_; }
 
     bool do_hyperfine() const { return do_hyperfine_; }
-    std::shared_ptr<DFFullDist> contract_D1(std::shared_ptr<const DFFullDist> full) const;
 
     std::shared_ptr<const Reference> conv_to_ref() const override { return ref_; }
 
