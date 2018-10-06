@@ -216,7 +216,6 @@ tuple<shared_ptr<const Matrix>, shared_ptr<const Dvec>, shared_ptr<const Matrix>
     rot->sqrt();
     rot->scale(1.0/sqrt(2.0));
     auto gzcoreao = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rot, false, true);
-    // TODO stupid code now
     auto rottemp = make_shared<Matrix>(nmobasis, nmobasis);
     for (int i = 0; i != nmobasis; ++i) rottemp->element(i,i) = 1.0;
     auto fv = make_shared<Fock<1>>(geom_, ref_->hcore(), nullptr, *coeff_ * *rottemp, false, true);

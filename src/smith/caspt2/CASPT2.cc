@@ -653,7 +653,6 @@ void CASPT2::CASPT2::solve_gradient(const int targetJ, const int targetI, shared
     }
     // solve linear equation and store lambda in lall
     if (info_->orthogonal_basis()) {
-      vector<shared_ptr<VectorB>> tmp;
       tie(l_orthogonal_, lall_) = solve_linear_orthogonal(sall_, lall_);
     } else {
       lall_ = solve_linear(sall_, lall_);
