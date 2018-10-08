@@ -92,15 +92,6 @@ class Dvector_base {
     const std::vector<CiPtr>& dvec() const { return dvec_; }
 
     // returns a vector of CiType's which correspond to an unconverged state
-    std::vector<CiPtr> dvec(const std::vector<int>& conv) {
-      std::vector<CiPtr> out;
-      auto c = conv.begin();
-      for (auto& i : dvec_) {
-        if (*c++ == 0) out.push_back(i);
-        else out.push_back(nullptr);
-      }
-      return out;
-    }
     std::vector<CiConstPtr> dvec(const std::vector<int>& conv) const {
       std::vector<CiConstPtr> out;
       auto c = conv.begin();

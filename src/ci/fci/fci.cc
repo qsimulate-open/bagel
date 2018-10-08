@@ -339,7 +339,11 @@ void FCI::compute() {
 
     // constructing Dvec's for Davidson
     auto ccn = make_shared<const CASDvec>(cc_->dvec());
-    auto sigman = make_shared<const CASDvec>(sigma->dvec());
+    auto sigman = make_shared<CASDvec>(sigma->dvec());
+    for (int ist = 0; ist != nstate_; ++ist) {
+      if (!conv[ist])
+        sigman->data(ist)->spin_decontaminate();
+    }
     const vector<double> energies = davidson_->compute(ccn->dvec(conv), sigman->dvec(conv));
 
     // get residual and new vectors

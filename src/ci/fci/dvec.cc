@@ -71,18 +71,6 @@ Dvector<DataType>::Dvector(shared_ptr<const Civector<DataType>> e, const size_t 
 
 
 template <typename DataType>
-vector<shared_ptr<Civector<DataType>>> Dvector<DataType>::dvec(const vector<int>& conv) {
-  vector<shared_ptr<Civector<DataType>>> out;
-  auto c = conv.begin();
-  for (auto& i : dvec_) {
-    if (*c++ == 0) out.push_back(i);
-    else out.push_back(nullptr);
-  }
-  return out;
-}
-
-
-template <typename DataType>
 vector<shared_ptr<const Civector<DataType>>> Dvector<DataType>::dvec(const vector<int>& conv) const {
   vector<shared_ptr<const Civector<DataType>>> out;
   auto c = conv.begin();
