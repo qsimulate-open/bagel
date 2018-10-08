@@ -53,11 +53,11 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
 
   set_shalf(d);
 
-  const int max = info->maxtile();
-
   int keyoffset = closed_.nblock() + active_.nblock() + virt_.nblock();
   for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
-    interm_.push_back(IndexRange(shalf_[iext]->ndim(), max, keyoffset));
+    // should have < 256 blocks.
+    const int maxtile = max(((int)(shalf_[iext]->ndim() / 255) + 1), info->maxtile());
+    interm_.push_back(IndexRange(shalf_[iext]->ndim(), maxtile, keyoffset));
     keyoffset += interm_[iext].nblock();
   }
   interm_.push_back(IndexRange(0));
