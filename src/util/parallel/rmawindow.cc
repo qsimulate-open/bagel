@@ -63,7 +63,8 @@ void RMAWindow<DataType>::initialize() {
 #ifdef HAVE_MPI_H
   assert(!initialized_);
   // allocate a window
-  MPI_Win_allocate(localsize()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, mpi__->mpi_comm(), &win_base_, &win_);
+  data_ = unique_ptr<DataType[]>(new DataType[localsize()]);
+  MPI_Win_create(data_.get(), localsize()*sizeof(DataType), sizeof(DataType), MPI_INFO_NULL, mpi__->mpi_comm(), &win_);
   MPI_Win_lock_all(MPI_MODE_NOCHECK, win_);
 
   initialized_ = true;
@@ -88,7 +89,7 @@ void RMAWindow<DataType>::zero() {
   fence();
   const size_t loc = localsize();
   if (loc)
-    fill_n(win_base_, loc, 0.0);
+    fill_n(data_.get(), loc, 0.0);
   fence_local();
   mpi__->barrier();
 }
@@ -100,7 +101,7 @@ void RMAWindow<DataType>::scale(const DataType& a) {
   fence();
   const size_t loc = localsize();
   if (loc)
-    blas::scale_n(a, win_base_, loc);
+    blas::scale_n(a, data_.get(), loc);
   fence_local();
   mpi__->barrier();
 }
@@ -116,7 +117,7 @@ RMAWindow<DataType>& RMAWindow<DataType>::operator=(const RMAWindow<DataType>& o
   const size_t loc = localsize();
   assert(loc == o.localsize());
   if (loc)
-    copy_n(o.win_base_, loc, win_base_);
+    copy_n(o.data_.get(), loc, data_.get());
   fence_local();
   o.fence_local();
   mpi__->barrier();
@@ -150,7 +151,7 @@ void RMAWindow<DataType>::ax_plus_y(const DataType& a, const RMAWindow<DataType>
   o.fence();
   const size_t loc = localsize();
   if (loc)
-    blas::ax_plus_y_n(a, o.win_base_, loc, win_base_);
+    blas::ax_plus_y_n(a, o.data_.get(), loc, data_.get());
   fence_local();
   o.fence_local();
   mpi__->barrier();
@@ -163,7 +164,7 @@ DataType RMAWindow<DataType>::dot_product(const RMAWindow<DataType>& o) const {
   fence();
   o.fence();
   const size_t loc = localsize();
-  DataType out = loc ? blas::dot_product(win_base_, loc, o.win_base_) : 0.0;
+  DataType out = loc ? blas::dot_product(data_.get(), loc, o.data_.get()) : 0.0;
   fence_local();
   o.fence_local();
   mpi__->allreduce(&out, 1);
@@ -334,7 +335,7 @@ void RMAWindow<DataType>::set_element(const size_t rank, const size_t disp, cons
 template<typename DataType>
 void RMAWindow<DataType>::accumulate_buffer(const DataType a, const unique_ptr<DataType[]>& buf) {
   fence();
-  blas::ax_plus_y_n(a, buf.get(), localsize(), win_base_);
+  blas::ax_plus_y_n(a, buf.get(), localsize(), data_.get());
   fence_local();
   mpi__->barrier();
 }

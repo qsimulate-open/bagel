@@ -96,6 +96,14 @@ class Denom {
     std::shared_ptr<const MatType> shalf_xh() const { return shalf_xh_; }
     std::shared_ptr<const MatType> shalf_xhh() const { return shalf_xhh_; }
     std::shared_ptr<const MatType> shalf_xxh() const { return shalf_xxh_; }
+    
+    VectorB denom_x() const { return denom_x_; }
+    VectorB denom_h() const { return denom_h_; }
+    VectorB denom_xx() const { return denom_xx_; }
+    VectorB denom_hh() const { return denom_hh_; }
+    VectorB denom_xh() const { return denom_xh_; }
+    VectorB denom_xhh() const { return denom_xhh_; }
+    VectorB denom_xxh() const { return denom_xxh_; }
 
     const double& denom_x(const size_t i) const { return denom_x_(i); }
     const double& denom_h(const size_t i) const { return denom_h_(i); }

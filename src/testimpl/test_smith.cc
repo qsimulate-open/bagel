@@ -48,6 +48,12 @@ std::vector<double> reference_xms() {
   out[5] = -0.0336409542;
   return out;
 }
+std::vector<double> reference_xms_imag() {
+  std::vector<double> out(6);
+  out[2] =  0.0340306364;
+  out[5] = -0.0340306364;
+  return out;
+}
 
 #ifdef COMPILE_SMITH
 BOOST_AUTO_TEST_SUITE(TEST_SMITH)
@@ -57,6 +63,7 @@ BOOST_AUTO_TEST_CASE(CASPT2_Opt) {
     BOOST_CHECK(compare(run_force("li2_svp_caspt2_shift"),   reference_shift(),  1.0e-5));
     BOOST_CHECK(compare(run_force("lif_svp_mscaspt2_grad"),  reference_ms(),  1.0e-5));
     BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_grad"), reference_xms(), 1.0e-5));
+    BOOST_CHECK(compare(run_force("lif_svp_xmscaspt2_grad_imag"), reference_xms_imag(), 1.0e-5));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

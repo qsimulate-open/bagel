@@ -31,6 +31,7 @@
 #include <iomanip>
 #include <src/smith/spinfreebase.h>
 #include <src/smith/futuretensor.h>
+#include <src/smith/orthogonal.h>
 #include <src/scf/hf/fock.h>
 #include <src/util/f77.h>
 #include <src/smith/queue.h>
@@ -83,19 +84,24 @@ class CASPT2 : public SpinFreeMethod<double> {
     std::vector<std::shared_ptr<MultiTensor>> sall_;
     std::vector<std::shared_ptr<MultiTensor>> lall_;
 
+    // in orthogonal basis
+    std::shared_ptr<Orthogonal_Basis> l_orthogonal_;
+    std::shared_ptr<Orthogonal_Basis> t_orthogonal_;
+
     std::shared_ptr<const Matrix> den1_;
     std::shared_ptr<const Matrix> den2_;
+    std::shared_ptr<const Matrix> den2_shift_;
     std::shared_ptr<const Tensor> Den1_;
     // for derivative coupling only
     std::shared_ptr<const Matrix> vden1_;
 
     std::vector<double> correlated_norm_;
+    std::vector<double> correlated_norm_imag_;
     std::shared_ptr<Tensor> deci;
     std::shared_ptr<Dvec> ci_deriv_;
     std::shared_ptr<const Matrix> dcheck_;
 
     void diagonal(std::shared_ptr<Tensor> r, std::shared_ptr<const Tensor> t, const bool diagonal) const;
-
 
     std::shared_ptr<FutureTensor> Gamma0_();
     std::shared_ptr<FutureTensor> Gamma92_();
@@ -146,6 +152,8 @@ class CASPT2 : public SpinFreeMethod<double> {
 
     std::vector<std::shared_ptr<MultiTensor_<double>>>
       solve_linear(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
+    std::tuple<std::shared_ptr<Orthogonal_Basis>,std::vector<std::shared_ptr<MultiTensor_<double>>>>
+      solve_linear_orthogonal(std::vector<std::shared_ptr<MultiTensor_<double>>> s, std::vector<std::shared_ptr<MultiTensor_<double>>> t);
 
     std::tuple<std::shared_ptr<double>,std::shared_ptr<RDM<1>>,std::shared_ptr<RDM<2>>,std::shared_ptr<RDM<3>>,std::shared_ptr<RDM<3>>> feed_denci();
     std::shared_ptr<VectorB> contract_rdm_deriv(std::shared_ptr<const CIWfn> ciwfn, int offset, int size, std::shared_ptr<const Matrix> fock);

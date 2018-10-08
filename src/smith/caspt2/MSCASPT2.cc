@@ -49,6 +49,8 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   t2all_ = cas.t2all_;
   lall_  = cas.lall_;
   rall_  = cas.rall_;
+  t_orthogonal_ = cas.t_orthogonal_;
+  l_orthogonal_ = cas.l_orthogonal_;
   h1_ = cas.h1_;
   f1_ = cas.f1_;
   v2_ = cas.v2_;
@@ -63,18 +65,20 @@ MSCASPT2::MSCASPT2::MSCASPT2(const CASPT2::CASPT2& cas) {
   rdm4fall_ = cas.rdm4fall_;
   rdm4all_ = cas.rdm4all_;
 
-  den0ci = cas.rdm0_->clone();
-  den1ci = cas.rdm1_->clone();
-  den2ci = cas.rdm2_->clone();
-  den3ci = cas.rdm3_->clone();
-  den4ci = cas.rdm3_->clone();
+  if (info_->nact()) {
+    den0ci = cas.rdm0_->clone();
+    den1ci = cas.rdm1_->clone();
+    den2ci = cas.rdm2_->clone();
+    den3ci = cas.rdm3_->clone();
+    den4ci = cas.rdm3_->clone();
 
-  // Total tensor (that is summed up)
-  den0cit = cas.rdm0_->clone();
-  den1cit = cas.rdm1_->clone();
-  den2cit = cas.rdm2_->clone();
-  den3cit = cas.rdm3_->clone();
-  den4cit = cas.rdm3_->clone();
+    // Total tensor (that is summed up)
+    den0cit = cas.rdm0_->clone();
+    den1cit = cas.rdm1_->clone();
+    den2cit = cas.rdm2_->clone();
+    den3cit = cas.rdm3_->clone();
+    den4cit = cas.rdm3_->clone();
+  }
 
   den0ciall = make_shared<Vec<Tensor>>();
   den1ciall = make_shared<Vec<Tensor>>();
@@ -132,77 +136,9 @@ void MSCASPT2::MSCASPT2::zero_total() {
 }
 
 
-void MSCASPT2::MSCASPT2::do_rdm_deriv(double factor) {
-  Timer timer(1);
-  const int nstates = info_->ciwfn()->nstates();
-  std::shared_ptr<Vec<double>> den0cirdm;
-  std::shared_ptr<VecRDM<1>> den1cirdm;
-  std::shared_ptr<VecRDM<2>> den2cirdm;
-  std::shared_ptr<VecRDM<3>> den3cirdm;
-  std::shared_ptr<VecRDM<3>> den4cirdm;
-  tie(den0cirdm, den1cirdm, den2cirdm, den3cirdm, den4cirdm) = feed_denci();
-
-  ci_deriv_ = make_shared<Dvec>(info_->ref()->ciwfn()->det(), nstates);
-  const size_t nact  = info_->nact();
-  const size_t norb2 = nact * nact;
-  const size_t ndet = ci_deriv_->data(0)->size();
-  const size_t ijmax = info_->cimaxchunk();
-  const size_t ijnum = ndet * norb2 * norb2;
-  const size_t npass = ndet < 1000 ? 1 : ((mpi__->size() > ((ijnum-1) / ijmax + 1)) && (mpi__->size() != 1)) ? mpi__->size() : (ijnum - 1) / ijmax + 1;
-  const size_t nsize = (ndet - 1) / npass + 1;
-
-  for (int nst = 0; nst != nstates; ++nst) {
-    if (npass > 1)
-      cout << "       - CI derivative contraction (state " << setw(2) << nst + 1 << ") will be done with " << npass << " passes" << endl;
-
-    // Fock-weighted 2RDM derivative evaluated first (needed for calculating Fock-weighted 3RDM derivative)
-    rdm2fderiv_ = SpinFreeMethod<double>::feed_rdm_2fderiv(info_, fockact_, nst);
-
-    if (npass > 1)
-      timer.tick_print("Fock-weighted 2RDM derivative");
-
-    // embarrasingly parallel mode. npass > 1 -> distribute among the nodes.
-    // otherwise just do using all the nodes.
-    const int nproc = npass > 1 ? 1 : mpi__->size();
-    const int ncomm = mpi__->size() / nproc;
-    const int icomm = mpi__->rank() / nproc;
-    mpi__->split(nproc);
-
-    for (int ipass = 0; ipass != npass; ++ipass) {
-      if (ipass % ncomm == icomm && ncomm != icomm) {
-        const size_t ioffset = ipass * nsize;
-        const size_t isize = (ipass != (npass - 1)) ? nsize : ndet - ioffset;
-        tie(rdm0deriv_, rdm1deriv_, rdm2deriv_, rdm3fderiv_)
-          = SpinFreeMethod<double>::feed_rdm_deriv(info_, fockact_, nst, ioffset, isize, rdm2fderiv_);
-        for (int mst = 0; mst != nstates; ++mst) {
-          den0cirdmt = den0cirdm->at(nst, mst);
-          den1cirdmt = den1cirdm->at(nst, mst);
-          den2cirdmt = den2cirdm->at(nst, mst);
-          den3cirdmt = den3cirdm->at(nst, mst);
-          den4cirdmt = den4cirdm->at(nst, mst);
-
-          shared_ptr<VectorB> bdata = contract_rdm_deriv(info_->ciwfn(), ioffset, isize, fockact_);
-          blas::ax_plus_y_n(factor, bdata->data(), ndet, ci_deriv_->data(mst)->data());
-        }
-
-        if (npass > 1) {
-          stringstream ss; ss << "Multipassing (" << setw(2) << ipass + 1 << " / " << npass << ")";
-          timer.tick_print(ss.str());
-        }
-      }
-    }
-    mpi__->merge();
-  }
-
-  if (npass > 1)
-    for (int mst = 0; mst != nstates; ++mst)
-      mpi__->allreduce(ci_deriv_->data(mst)->data(), ndet);
-}
-
-
 void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, const bool nocider) {
   Timer timer;
-  const int nstates = info_->ciwfn()->nstates();
+  const int nstates = info_->nact() ? info_->ciwfn()->nstates() : 1;
 
   // first-order energy from the energy expression
   {
@@ -213,7 +149,8 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       const double jheffJ = (*heff_)(jst, targetJ);
       const double jheffI = (*heff_)(jst, targetI);
       for (int ist = 0; ist != nstates; ++ist) { // ket
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           if (info_->sssr() && ist != istate)
             continue;
@@ -245,33 +182,55 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
   // second-order contribution from the lambda terms
   {
     den2->zero();
+    shared_ptr<Tensor> result2 = den2->clone();
+    result2->zero();
+
     for (int jst = 0; jst != nstates; ++jst) { // bra
       for (int ist = 0; ist != nstates; ++ist) { // ket
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
         for (int istate = 0; istate != nstates; ++istate) { // state of T
           if (info_->sssr() && (jst != istate || ist != istate))
             continue;
-          l2 = lall_[istate]->at(ist);
+          if (info_->orthogonal_basis()) {
+            const double ijhJI = (*heff_)(istate, targetJ) * (*heff_)(istate, targetI);
+            l2 = lall_[istate]->at(ist)->copy();
+            l2->ax_plus_y(ijhJI, t2all_[istate]->at(ist));
+          } else {
+            l2 = lall_[istate]->at(ist);
+          }
           t2 = t2all_[istate]->at(jst);
-          shared_ptr<Queue> queue = make_densityq(false, ist == jst);
+          shared_ptr<Queue> queue = make_densityq(true, ist == jst);
           while (!queue->done())
             queue->next_compute();
+          result2->ax_plus_y(1.0, den2);
         }
       }
     }
-    den2_ = den2->matrix();
+    den2_ = result2->matrix();
   }
+
+
   // first-order contribution from the lambda terms
   {
     den1->zero();
     Den1->zero();
     for (int jst = 0; jst != nstates; ++jst) { // bra
+      const double jheffJ = (*heff_)(jst, targetJ);
+      const double jheffI = (*heff_)(jst, targetI);
+      const double nnhJI = (jheffJ*jheffI + jheffI*jheffJ) * 0.5;
       for (int ist = 0; ist != nstates; ++ist) { // ket
         if (info_->sssr() && jst != ist)
           continue;
-        set_rdm(jst, ist);
+        if (info_->nact())
+          set_rdm(jst, ist);
 
-        l2 = lall_[jst]->at(ist);
+        if (info_->orthogonal_basis()) {
+          l2 = lall_[jst]->at(ist)->copy();
+          l2->ax_plus_y(nnhJI, t2all_[jst]->at(ist));
+        } else {
+          l2 = lall_[jst]->at(ist);
+        }
         shared_ptr<Queue> queue = make_density1q(false, ist == jst);
         while (!queue->done())
           queue->next_compute();
@@ -284,12 +243,13 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
     den1_->ax_plus_y(1.0, den1->matrix());
     Den1_->ax_plus_y(1.0, Den1);
   }
+
   // because of the convention...
   den1_->scale(0.5);
   Den1_->scale(0.5);
   timer.tick_print("Correlated density matrix evaluation");
 
-  if (!nocider) {
+  if (!nocider && info_->nact()) {
     for (int mst = 0; mst != nstates; ++mst) {
       const double mheffJ = (*heff_)(mst, targetJ);
       const double mheffI = (*heff_)(mst, targetI);
@@ -323,7 +283,7 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             add_total(lnhJI);
           }
 
-          if (!info_->sssr() || (mst == lst && nst == lst)) {
+          if ((!info_->sssr() || (mst == lst && nst == lst)) && !info_->orthogonal_basis()) {
             e0_ = 2.0*info_->shift();
             l2 = t2all_[lst]->at(nst);
             t2 = t2all_[lst]->at(mst);
@@ -335,12 +295,24 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
         }
 
         if (!info_->sssr() || nst == mst) {
-          l2 = lall_[mst]->at(nst);
+          if (info_->orthogonal_basis()) {
+            l2 = lall_[mst]->at(nst)->copy();
+            const double mmhJI  = (mheffJ * mheffI + mheffI * mheffJ) * 0.5;
+            l2->ax_plus_y(mmhJI, t2all_[mst]->at(nst));
+          } else {
+            l2 = lall_[mst]->at(nst);
+          }
           dec = make_deci3q(/*zero*/true);
           while (!dec->done())
             dec->next_compute();
 
-          l2 = lall_[nst]->at(mst);
+          if (info_->orthogonal_basis()) {
+            l2 = lall_[nst]->at(mst)->copy();
+            const double nnhJI  = (nheffJ * nheffI + nheffI * nheffJ) * 0.5;
+            l2->ax_plus_y(nnhJI, t2all_[nst]->at(mst));
+          } else {
+            l2 = lall_[nst]->at(mst);
+          }
           dec = make_deci4q(false);
           while (!dec->done())
             dec->next_compute();
@@ -349,8 +321,16 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
             if (info_->sssr() && (nst != lst || mst != lst))
               continue;
 
-            e0_ = e0all_[lst] - info_->shift();
-            l2 = lall_[lst]->at(nst);
+            e0_ = info_->shift_imag() ? e0all_[lst] : e0all_[lst] - info_->shift();
+            if (info_->orthogonal_basis()) {
+              l2 = lall_[lst]->at(nst)->copy();
+              const double lheffJ = (*heff_)(lst, targetJ);
+              const double lheffI = (*heff_)(lst, targetI);
+              const double llhJI  = (lheffJ * lheffI + lheffI * lheffJ) * 0.5;
+              l2->ax_plus_y(llhJI * 2.0, t2all_[lst]->at(nst));
+            } else {
+              l2 = lall_[lst]->at(nst);
+            }
             t2 = t2all_[lst]->at(mst);
             dec = make_deciq(false);
             while (!dec->done())
@@ -386,7 +366,16 @@ void MSCASPT2::MSCASPT2::solve_gradient(const int targetJ, const int targetI, co
       timer.tick_print(ss.str());
     }
 
-    do_rdm_deriv(1.0);
+    // If we have imaginary shift, construct additional density due to the shift
+    if (info_->shift_imag() && info_->shift() != 0.0) {
+      shared_ptr<Matrix> dshift;
+      tie(dshift, etensor1_, etensor2_, etensor3_, etensor4_, nimag_) = make_d2_imag();
+      *den2_ += *dshift;
+      timer.tick_print("dshift");
+    }
+
+    if (info_->nact())
+      do_rdm_deriv(1.0);
     timer.tick_print("CI derivative contraction");
   }
 }
