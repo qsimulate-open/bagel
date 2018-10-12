@@ -73,13 +73,6 @@ class Orthogonal_Basis {
 
     double e0_;
 
-    // rdms
-    std::shared_ptr<Vec<Tensor_<double>>> rdm0all_;
-    std::shared_ptr<Vec<Tensor_<double>>> rdm1all_;
-    std::shared_ptr<Vec<Tensor_<double>>> rdm2all_;
-    std::shared_ptr<Vec<Tensor_<double>>> rdm3all_;
-    std::shared_ptr<Vec<Tensor_<double>>> rdm4all_;
-
     Basis_Type basis_type_;
     std::vector<std::shared_ptr<Matrix>> shalf_;
     std::vector<VectorB> phi_;
@@ -98,9 +91,7 @@ class Orthogonal_Basis {
   public:
     // Orthogonal basis: construct from scratch (using denom)
     Orthogonal_Basis(std::shared_ptr<const SMITH_Info<double>> i, const IndexRange c, const IndexRange a, const IndexRange v, std::vector<double> f, std::vector<double> e0,
-                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<double>> d, const bool residual,
-                     std::shared_ptr<Vec<Tensor_<double>>> g0, std::shared_ptr<Vec<Tensor_<double>>> g1, std::shared_ptr<Vec<Tensor_<double>>> g2,
-                     std::shared_ptr<Vec<Tensor_<double>>> g3, std::shared_ptr<Vec<Tensor_<double>>> g4);
+                     std::shared_ptr<const Matrix> fact, std::shared_ptr<const Denom<double>> d, const bool residual);
     // Or copy from existing orthogonal basis
     Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone = true, const bool residual = true);
 

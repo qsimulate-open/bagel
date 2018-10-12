@@ -34,9 +34,7 @@ using namespace bagel;
 using namespace bagel::SMITH;
 
 Orthogonal_Basis::Orthogonal_Basis(shared_ptr<const SMITH_Info<double>> info, const IndexRange c, const IndexRange a, const IndexRange v,
-vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<double>> d, const bool residual,
-shared_ptr<Vec<Tensor_<double>>> g0, shared_ptr<Vec<Tensor_<double>>> g1, shared_ptr<Vec<Tensor_<double>>> g2,
-shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : closed_(c), active_(a), virt_(v), eig_(f), e0all_(e0) {
+vector<double> f, vector<double> e0, shared_ptr<const Matrix> fact, shared_ptr<const Denom<double>> d, const bool residual) : closed_(c), active_(a), virt_(v), eig_(f), e0all_(e0) {
   nact_ = info->nact();
   nclosed_ = info->nclosed();
   nvirt_ = info->nvirt();
@@ -53,11 +51,11 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
 
   set_shalf(d);
 
-  const int max = info->maxtile();
-
   int keyoffset = closed_.nblock() + active_.nblock() + virt_.nblock();
   for (int iext = Excitations::arbs; iext != Excitations::aibj; ++iext) {
-    interm_.push_back(IndexRange(shalf_[iext]->ndim(), max, keyoffset));
+    // should have < 256 blocks.
+    const int maxtile = max(((int)(shalf_[iext]->ndim() / 255) + 1), info->maxtile());
+    interm_.push_back(IndexRange(shalf_[iext]->ndim(), maxtile, keyoffset));
     keyoffset += interm_[iext].nblock();
   }
   interm_.push_back(IndexRange(0));
@@ -83,12 +81,6 @@ shared_ptr<Vec<Tensor_<double>>> g3, shared_ptr<Vec<Tensor_<double>>> g4) : clos
   }
 
   set_denom(d);
-
-  rdm0all_ = g0;
-  rdm1all_ = g1;
-  rdm2all_ = g2;
-  rdm3all_ = g3;
-  rdm4all_ = g4;
 
   if (residual) basis_type_ = Basis_Type::residual;
   else basis_type_ = Basis_Type::amplitude;
@@ -137,12 +129,6 @@ Orthogonal_Basis::Orthogonal_Basis(const Orthogonal_Basis& o, const bool clone, 
   denom_.resize(nstates_);
   for (int i = 0; i != nstates_; ++i)
     denom_[i] = o.denom_[i]->copy();
-
-  rdm0all_ = o.rdm0all_;
-  rdm1all_ = o.rdm1all_;
-  rdm2all_ = o.rdm2all_;
-  rdm3all_ = o.rdm3all_;
-  rdm4all_ = o.rdm4all_;
 
   if (residual) basis_type_ = Basis_Type::residual;
   else basis_type_ = Basis_Type::amplitude;

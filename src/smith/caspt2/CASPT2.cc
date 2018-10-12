@@ -341,7 +341,7 @@ CASPT2::CASPT2::solve_linear_orthogonal(vector<shared_ptr<MultiTensor_<double>>>
   cout << "       #      aibj      arbs      arbi      airj      risj      airs      arst      rist         Etot      error   time" << endl;
   cout << "      ------------------------------------------------------------------------------------------------------------------" << endl << endl;
 
-  auto source = make_shared<Orthogonal_Basis>(info_, closed_, active_, virt_, eig_, e0all_, fockact_, denom_, /*residual=*/true, rdm0all_, rdm1all_, rdm2all_, rdm3all_, rdm4all_);
+  auto source = make_shared<Orthogonal_Basis>(info_, closed_, active_, virt_, eig_, e0all_, fockact_, denom_, /*residual=*/true);
   auto amplitude = make_shared<Orthogonal_Basis>(*source, /*clone=*/true, /*residual=*/false);
   auto residual = make_shared<Orthogonal_Basis>(*source, /*clone=*/true, /*residual=*/true);
 
