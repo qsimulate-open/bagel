@@ -50,8 +50,8 @@ std::vector<double> reference_xms() {
 }
 std::vector<double> reference_xms_imag() {
   std::vector<double> out(6);
-  out[2] =  0.0340306364;
-  out[5] = -0.0340306364;
+  out[2] =  0.0340340025;
+  out[5] = -0.0340340025;
   return out;
 }
 
