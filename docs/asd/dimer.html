@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Description &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="ASD orbital optimization" href="asd_orbopt.html" />
     <link rel="prev" title="Dimer ASD" href="dimer_asd.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -57,26 +48,26 @@
 <div class="section" id="common-keywords">
 <h2>Common keywords<a class="headerlink" href="#common-keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dimerize</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dimerize</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Set <code class="docutils literal"><span class="pre">title</span></code> to <code class="docutils literal"><span class="pre">dimerize</span></code> to start constructing dimer.</div>
+<div class="line"><strong>Description:</strong> Set <code class="docutils literal notranslate"><span class="pre">title</span></code> to <code class="docutils literal notranslate"><span class="pre">dimerize</span></code> to start constructing dimer.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">form</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">form</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether the dimer fragments are covalently linked.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Value:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">linked</span></code>: covalently linked dimer</div>
-<div class="line"><code class="docutils literal"><span class="pre">displace</span></code>: separated fragments</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">linked</span></code>: covalently linked dimer</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">displace</span></code>: separated fragments</div>
 </div>
 <div class="line"><strong>Default:</strong> displace</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dimer_active</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dimer_active</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong></div>
 <div class="line-block">
@@ -87,21 +78,21 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">hf</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">hf</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Dimer restricted Hartree-Fock calculation options.</div>
 <div class="line"><strong>Default:</strong> use the same options as monomer <a class="reference internal" href="../scf/hf.html#hf"><span class="std std-ref">Hartree–Fock</span></a> calculations</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">localization</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">localization</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Localize dimer molecular orbitals.</div>
 <div class="line"><strong>Default:</strong> use default <a class="reference internal" href="../miscellaneous/localization.html#localization"><span class="std std-ref">Orbital localization</span></a></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">active_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">active_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold overlap for obitals to be treated as active.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -112,14 +103,14 @@
 <div class="section" id="keywords-for-non-covalently-linked-dimer">
 <h2>Keywords for non-covalently linked dimer<a class="headerlink" href="#keywords-for-non-covalently-linked-dimer" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">translate</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">translate</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Spatial distance in Cartesian coordinates, duplicate and translate one monomer to form the dimer.</div>
 <div class="line"><strong>Datatype:</strong> array&lt;double, 3&gt;</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">angstrom</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">angstrom</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Whether the translation is in a.u. or angstrom.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -127,14 +118,14 @@
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">scheme</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">scheme</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Options to assign dimer active orbitals.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">active_first</span></code>: pick active space from dimer orbitals first, then attempt to localize</div>
-<div class="line"><code class="docutils literal"><span class="pre">localize_first</span></code>: localize dimer orbitals, then pick the active space within each fragment</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">active_first</span></code>: pick active space from dimer orbitals first, then attempt to localize</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">localize_first</span></code>: localize dimer orbitals, then pick the active space within each fragment</div>
 </div>
 <div class="line"><strong>Default:</strong> active_first</div>
 </div>
@@ -143,7 +134,7 @@
 <div class="section" id="keywords-for-covalently-linked-dimer">
 <h2>Keywords for covalently linked dimer<a class="headerlink" href="#keywords-for-covalently-linked-dimer" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">region_sizes</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">region_sizes</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of atoms in three regions [left, bridge, right].</div>
 <div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
@@ -190,12 +181,14 @@
                         title="next chapter">ASD orbital optimization</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

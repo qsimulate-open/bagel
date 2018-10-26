@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Full configuration interaction (FCI) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Relativistic full configuration interaction (RelFCI)" href="zfci.html" />
     <link rel="prev" title="Configuration interaction" href="ci_methods.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -61,7 +52,7 @@ This FCI section is closely related to that for the <a class="reference internal
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span> <span class="pre">(or</span> <span class="pre">maxiter_fci)</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span> <span class="pre">(or</span> <span class="pre">maxiter_fci)</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations in the FCI algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -69,7 +60,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span> <span class="pre">(or</span> <span class="pre">thresh_fci)</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span> <span class="pre">(or</span> <span class="pre">thresh_fci)</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold for the convergence of the selected CI algorithm.</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -77,21 +68,21 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">algorithm</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> FCI algorithm to be used.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">KH,</span> <span class="pre">Knowles,</span> <span class="pre">Handy</span></code>: Use the Knowles–Handy algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">HZ,</span> <span class="pre">Harrison,</span> <span class="pre">Zarrabian</span></code>: Use the Harrison–Zarrabian algorithm.</div>
-<div class="line"><code class="docutils literal"><span class="pre">Dist,</span> <span class="pre">parallel</span></code>: Use a parallel algorithm based on HZ.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">KH,</span> <span class="pre">Knowles,</span> <span class="pre">Handy</span></code>: Use the Knowles–Handy algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">HZ,</span> <span class="pre">Harrison,</span> <span class="pre">Zarrabian</span></code>: Use the Harrison–Zarrabian algorithm.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">Dist,</span> <span class="pre">parallel</span></code>: Use a parallel algorithm based on HZ.</div>
 </div>
 <div class="line"><strong>Default:</strong> KH or Dist depending on the size of the calculation and the number of MPI processes.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">frozen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use of the freeze core approximation.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -99,15 +90,15 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ncore</span></code></p>
 <div class="line-block">
-<div class="line"><strong>Description:</strong> Number of frozen core orbitals. <code class="docutils literal"><span class="pre">ncore</span></code> overides <code class="docutils literal"><span class="pre">frozen</span></code>.</div>
+<div class="line"><strong>Description:</strong> Number of frozen core orbitals. <code class="docutils literal notranslate"><span class="pre">ncore</span></code> overides <code class="docutils literal notranslate"><span class="pre">frozen</span></code>.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> If <code class="docutils literal"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
+<div class="line"><strong>Default:</strong> If <code class="docutils literal notranslate"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">norb</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">norb</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of correlated orbitals. Any high-energy orbitals in excess of this number will be excluded.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -115,7 +106,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">active</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">active</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Orbital indices for the orbitals to be included. Note that orbital numbers start from 1.</div>
 <div class="line"><strong>Datatype:</strong> vector&lt;int&gt;</div>
@@ -123,7 +114,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">charge</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">charge</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The total charge of the system.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -131,7 +122,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nspin</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nspin</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> The number associated with the spin states: 0 for singlet, 1 for doublet, 2 for triplet, etc.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -139,7 +130,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nstate</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nstate</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of states to be calculated.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -147,7 +138,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  Number of vectors retained in the limited-memory Davidson algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -156,15 +147,15 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nguess</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nguess</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of guess configurations</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> <code class="docutils literal"><span class="pre">nstate</span></code></div>
+<div class="line"><strong>Default:</strong> <code class="docutils literal notranslate"><span class="pre">nstate</span></code></div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">only_ints</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">only_ints</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> If true, calculates integrals and dumps to a file. This is used to interface BAGEL to an external program.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -172,7 +163,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">dipoles</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">dipoles</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Calculate dipoles</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -180,7 +171,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">restart</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">restart</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Generate binary archive files that can be used to restart a calculation.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -188,7 +179,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">print_thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">print_thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Threshold below which CI coefficients are not printed</div>
 <div class="line"><strong>Datatype:</strong> double</div>
@@ -201,7 +192,7 @@ This FCI section is closely related to that for the <a class="reference internal
 <p>A Hartree–Fock and FCI calculation on an oxygen molecule with an elongated bond. The HF calculation is a references for the FCI calculation. Please refer to <a class="reference internal" href="../miscellaneous/molden.html#molden"><span class="std std-ref">MOLDEN</span></a> for more information on the print input block.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -228,7 +219,7 @@ This FCI section is closely related to that for the <a class="reference internal
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="o">---------------------------</span>
       <span class="nx">FCI</span> <span class="nx">calculation</span>
 <span class="o">---------------------------</span>
 
@@ -345,12 +336,14 @@ This FCI section is closely related to that for the <a class="reference internal
                         title="next chapter">Relativistic full configuration interaction (RelFCI)</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

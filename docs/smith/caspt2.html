@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Multireference second-order perturbation theory (CASPT2) &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Multireference configuration interaction (MRCI)" href="mrci.html" />
     <link rel="prev" title="SMITH3-generated code" href="smith.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -55,7 +46,7 @@
 Fully internally contracted single-state version (SS-CASPT2), multi-state version (MS-CASPT2) and its extended variant (XMS-CASPT2) are available.
 CASPT2 in BAGEL is implemented with the automatic code generator SMITH3,
 and the SMITH information for XMS-CASPT2 should be passed in a separate array in the input.</p>
-<p>Title: <code class="docutils literal"><span class="pre">smith</span></code></p>
+<p>Title: <code class="docutils literal notranslate"><span class="pre">smith</span></code></p>
 </div>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
@@ -71,19 +62,19 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 <h3>SMITH keywords<a class="headerlink" href="#smith-keywords" title="Permalink to this headline">¶</a></h3>
 <p>The default values are recommended unless mentioned otherwise.</p>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">method</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">method</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Do multistate CASPT2.</div>
 <div class="line"><strong>Datatype:</strong> string</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">caspt2</span></code>: Standard CASPT2.</div>
-<div class="line"><code class="docutils literal"><span class="pre">casa</span></code>  : Use Dyall’s Hamiltonian</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">caspt2</span></code>: Standard CASPT2.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">casa</span></code>  : Use Dyall’s Hamiltonian</div>
 </div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ms</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ms</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Do multistate CASPT2.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -91,7 +82,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">xms</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">xms</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Do extended multistate CASPT2.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -99,20 +90,20 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">sssr</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">sssr</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Use SS-SR contraction scheme.</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
 <div class="line"><strong>Values:</strong></div>
 <div class="line-block">
-<div class="line"><code class="docutils literal"><span class="pre">true</span></code>: use SS-SR contraction scheme.</div>
-<div class="line"><code class="docutils literal"><span class="pre">false</span></code>: use MS-MR contraction scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use SS-SR contraction scheme.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use MS-MR contraction scheme.</div>
 </div>
 <div class="line"><strong>Default:</strong> true.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">shift</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">shift</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Vertical shift.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -120,7 +111,34 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">shift_imag</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Whether to use imaginary or real shift.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use imaginary shift.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use real shift.</div>
+</div>
+<div class="line"><strong>Default:</strong> false.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">orthogonal_basis</span></code></p>
+<div class="line-block">
+<div class="line"><strong>Description:</strong> Whether to use orthogonal basis in CASPT2 iterations.</div>
+<div class="line"><strong>Datatype:</strong> bool</div>
+<div class="line"><strong>Values:</strong></div>
+<div class="line-block">
+<div class="line"><code class="docutils literal notranslate"><span class="pre">true</span></code>: use orthogonal basis.</div>
+<div class="line"><code class="docutils literal notranslate"><span class="pre">false</span></code>: use redundant basis.</div>
+</div>
+<div class="line"><strong>Default:</strong> with imaginary shift, true. otherwise, false.</div>
+<div class="line"><strong>Recommendation:</strong> Imaginary shift only works with true. Use of orthogonal basis makes the code slightly slower due to the additional transformations.</div>
+</div>
+</div>
+<div class="topic">
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Convergence threshold.</div>
 <div class="line"><strong>Datatype:</strong> double precision</div>
@@ -128,7 +146,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">thresh_overlap</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">thresh_overlap</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Overlap cutoff threshold for internally contracted basis.</div>
 <div class="line"><strong>Datatype:</strong> Double precision</div>
@@ -136,7 +154,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">frozen</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">frozen</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description</strong>: Freeze core orbitals.</div>
 <div class="line"><strong>Datatype</strong>: bool</div>
@@ -144,15 +162,15 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">ncore</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">ncore</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen core orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
-<div class="line"><strong>Default:</strong> If <code class="docutils literal"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
+<div class="line"><strong>Default:</strong> If <code class="docutils literal notranslate"><span class="pre">frozen</span></code> is true, subvalence orbitals are frozen. If false, zero.</div>
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">nfrozenvirt</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">nfrozenvirt</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of frozen virtual orbitals.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -160,7 +178,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">block_diag_fock</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">block_diag_fock</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Using a block-diagonal zeroth-order Hamiltonian</div>
 <div class="line"><strong>Datatype:</strong> bool</div>
@@ -168,7 +186,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxiter</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxiter</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of iterations in CASPT2 calculations.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -176,7 +194,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">maxtile</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">maxtile</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Maximum number of orbitals in a single data tile used in CASPT2.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -184,7 +202,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">cimaxchunk</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">cimaxchunk</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Number of elements per pass in the multipassing algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -193,7 +211,7 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">davidson_subspace</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">davidson_subspace</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  Number of vectors retained in the limited-memory Davidson algorithm.</div>
 <div class="line"><strong>Datatype:</strong> int</div>
@@ -205,11 +223,11 @@ and the SMITH information for XMS-CASPT2 should be passed in a separate array in
 </div>
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<p>XMS-CASPT2 calculation based on the two-state CASSCF reference function, with vertical shift of 0.2 <span class="math">\(E_h\)</span>. “SS-SR” contraction scheme is used.
-The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</span> and three <span class="math">\(\pi^*\)</span> orbitals, is used.</p>
+<p>XMS-CASPT2 calculation based on the two-state CASSCF reference function, with vertical shift of 0.2 <span class="math notranslate nohighlight">\(E_h\)</span>. “SS-SR” contraction scheme is used.
+The active space of (6e,6o), which comprises three <span class="math notranslate nohighlight">\(\pi\)</span> and three <span class="math notranslate nohighlight">\(\pi^*\)</span> orbitals, is used.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 <span class="p">{</span>
   <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
   <span class="s2">&quot;basis&quot;</span> <span class="o">:</span> <span class="s2">&quot;svp&quot;</span><span class="p">,</span>
@@ -248,7 +266,7 @@ The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</s
 </pre></div>
 </div>
 <p>from which one obtains</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span>  <span class="o">*</span> <span class="nx">freezing</span> <span class="mi">6</span> <span class="nx">orbitals</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span>  <span class="o">*</span> <span class="nx">freezing</span> <span class="mi">6</span> <span class="nx">orbitals</span>
   <span class="o">*</span> <span class="nx">SS</span><span class="o">-</span><span class="nx">SR</span> <span class="nx">internal</span> <span class="nx">contraction</span> <span class="nx">is</span> <span class="nx">used</span>
      <span class="o">-</span> <span class="nx">MO</span> <span class="nx">integral</span> <span class="nx">evaluation</span>                    <span class="mf">0.17</span>
 
@@ -423,12 +441,14 @@ The active space of (6e,6o), which comprises three <span class="math">\(\pi\)</s
                         title="next chapter">Multireference configuration interaction (MRCI)</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>

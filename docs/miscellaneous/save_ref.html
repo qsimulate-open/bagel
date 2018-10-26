@@ -4,20 +4,12 @@
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Saving and loading MOs and CI coefficients &#8212; BAGEL Manual</title>
     <link rel="stylesheet" href="../_static/override.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '1.1.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
@@ -25,8 +17,7 @@
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Supplementary information" href="../supp_info/supp_info.html" />
     <link rel="prev" title="Printing orbital densities to cube files" href="moprint.html" /> 
-  </head>
-  <body>
+  </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -56,12 +47,12 @@ This file can be read back to provide a reference for a future calculation.</p>
 <p>For some non-relativistic methods, this feature is redundant with the restart capability provided by writing and reading Molden files, but
 the binary archives used in this module are compatible with every method in BAGEL.</p>
 <p>Binary archives generated using a different version of BAGEL might not be readable.</p>
-<p>Commands: <code class="docutils literal"><span class="pre">save_ref</span></code> and <code class="docutils literal"><span class="pre">load_ref</span></code></p>
+<p>Commands: <code class="docutils literal notranslate"><span class="pre">save_ref</span></code> and <code class="docutils literal notranslate"><span class="pre">load_ref</span></code></p>
 </div>
 <div class="section" id="keywords">
 <h2>Keywords<a class="headerlink" href="#keywords" title="Permalink to this headline">¶</a></h2>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">file</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">file</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong> Name of the file to be generated.  The extension .archive will be appended.</div>
 <div class="line-block">
@@ -72,7 +63,7 @@ the binary archives used in this module are compatible with every method in BAGE
 </div>
 </div>
 <div class="topic">
-<p class="topic-title first"><code class="docutils literal"><span class="pre">continue_geom</span></code></p>
+<p class="topic-title first"><code class="docutils literal notranslate"><span class="pre">continue_geom</span></code></p>
 <div class="line-block">
 <div class="line"><strong>Description:</strong>  This option is only used with load_ref.</div>
 <div class="line-block">
@@ -89,15 +80,15 @@ the binary archives used in this module are compatible with every method in BAGE
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
 <p>The following input files show how to use this restart feature.
 The example given is for relativistic CASSCF calculations of the ground triplet for the oxygen dimer.
-The initial calculation obtains a wavefunction for a 4-orbital active space comprised of the <span class="math">\(\pi\)</span> and <span class="math">\(\pi^\ast\)</span>
+The initial calculation obtains a wavefunction for a 4-orbital active space comprised of the <span class="math notranslate nohighlight">\(\pi\)</span> and <span class="math notranslate nohighlight">\(\pi^\ast\)</span>
 orbitals and saves the molecular orbital coefficients to a binary archive.</p>
 <p>The second file loads this archive and uses it to give the initial guess for a calculation with a larger 6-orbital active space
-which also includes the <span class="math">\(\sigma\)</span> and <span class="math">\(\sigma^\ast\)</span> orbitals.</p>
+which also includes the <span class="math notranslate nohighlight">\(\sigma\)</span> and <span class="math notranslate nohighlight">\(\sigma^\ast\)</span> orbitals.</p>
 <p>The third file loads the same archive, projects to a slightly different geometry, and runs CASSCF at the new geometry.</p>
 <div class="section" id="sample-input">
 <h3>Sample input<a class="headerlink" href="#sample-input" title="Permalink to this headline">¶</a></h3>
 <p>Write binary archive:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
   <span class="p">{</span>
     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -139,7 +130,7 @@ which also includes the <span class="math">\(\sigma\)</span> and <span class="ma
 </pre></div>
 </div>
 <p>Load a binary archive without changing the reference:</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
   <span class="p">{</span>
     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;load_ref&quot;</span><span class="p">,</span>
@@ -161,7 +152,7 @@ which also includes the <span class="math">\(\sigma\)</span> and <span class="ma
 </div>
 <p>Load a binary archive and use its orbitals to generate an initial guess at a new geometry.
 We could also have changed the basis set in the input, rather than changing the atomic coordinates.</p>
-<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
+<div class="highlight-javascript notranslate"><div class="highlight"><pre><span></span><span class="p">{</span> <span class="s2">&quot;bagel&quot;</span> <span class="o">:</span> <span class="p">[</span>
 
   <span class="p">{</span>
     <span class="s2">&quot;title&quot;</span> <span class="o">:</span> <span class="s2">&quot;molecule&quot;</span><span class="p">,</span>
@@ -231,12 +222,14 @@ We could also have changed the basis set in the input, rather than changing the 
                         title="next chapter">Supplementary information</a></p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
+    <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    </div>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
