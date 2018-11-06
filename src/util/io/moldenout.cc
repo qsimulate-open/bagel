@@ -60,17 +60,22 @@ void MoldenOut::write_geom() {
   ofs_ << "[Atoms] Angs" << endl;
 
   for (int i = 0; i < num_atoms; ++i) {
-     shared_ptr<const Atom> cur_atom = mol_->atoms(i);
+    shared_ptr<const Atom> cur_atom = mol_->atoms(i);
 
-     const string cur_name = cur_atom->name();
-     const int cur_number = cur_atom->atom_number();
-     const array<double,3> cur_pos = cur_atom->position();
+    const string cur_name = cur_atom->name();
+    ofs_ << setw(2) << cur_name << setw(8)  << i+1;
 
-     ofs_ << setw(2) << cur_name << setw(8)  << i+1
-                                 << setw(8)  << cur_number << setiosflags(ios_base::scientific)
-                                 << setw(20) << setprecision(12) << cur_pos[0]*au2angstrom__
-                                 << setw(20) << setprecision(12) << cur_pos[1]*au2angstrom__
-                                 << setw(20) << setprecision(12) << cur_pos[2]*au2angstrom__ << endl;
+    if (to_lower(cur_name) != "q")
+      ofs_ << fixed << " " << setw(20) << cur_atom->atom_number();
+    else
+      ofs_ << fixed << " " << setw(20) << setprecision(12) << cur_atom->atom_charge(); 
+    ofs_ << scientific;
+
+    const array<double,3> cur_pos = cur_atom->position();
+
+    ofs_ << setw(20) << setprecision(12) << cur_pos[0]*au2angstrom__
+         << setw(20) << setprecision(12) << cur_pos[1]*au2angstrom__
+         << setw(20) << setprecision(12) << cur_pos[2]*au2angstrom__ << endl;
   }
 }
 
